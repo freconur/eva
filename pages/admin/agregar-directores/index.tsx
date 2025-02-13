@@ -1,5 +1,4 @@
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
-import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
 import React, { useEffect } from 'react'

@@ -1,8 +1,6 @@
 import LayoutMenu from '@/components/layouts/LayoutMenu'
 import { GlobalContextProvider } from '@/features/context/GlolbalContext'
 import '@/styles/globals.css'
-import type { AppProps } from 'next/app'
-
 interface Props {
   children: JSX.Element | JSX.Element[]
 }

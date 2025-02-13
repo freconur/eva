@@ -1,8 +1,5 @@
 import React from 'react'
 import SidebarInfoUser from './SidebarInfoUser';
-import { SiTrueup } from 'react-icons/si';
-import { useRolUsers } from '@/features/hooks/useRolUsers';
-import { useGlobalContext } from '@/features/context/GlolbalContext';
 import Link from 'next/link';
 import useUsuario from '@/features/hooks/useUsuario';
 

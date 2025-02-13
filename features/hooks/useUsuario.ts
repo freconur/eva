@@ -1,5 +1,5 @@
 import { LoginData, User } from "../types/types"
-import { browserSessionPersistence, createUserWithEmailAndPassword, getAuth, onAuthStateChanged, setPersistence, signInWithEmailAndPassword, signOut, } from "firebase/auth"
+import { browserSessionPersistence, getAuth, onAuthStateChanged, setPersistence, signInWithEmailAndPassword, signOut, } from "firebase/auth"
 import { useGlobalContext, useGlobalContextDispatch } from "../context/GlolbalContext"
 // import { getFirestore, doc, getDoc } from "firebase/firestore/lite"
 import { AppAction } from "../actions/appAction"
@@ -64,9 +64,7 @@ const useUsuario = () => {
   }
 
   const createNewDirector = (data: User) => {
-    const auth = getAuth();
     try {
-
       if (currentUserData.perfil?.rol === 1) {
         console.log('agregando director')
         axios

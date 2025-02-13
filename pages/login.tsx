@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { useForm } from 'react-hook-form'
 import useUsuario from '@/features/hooks/useUsuario'
-import { LoginData } from '@/features/types/types'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { app } from '@/firebase/firebase.config'
@@ -21,7 +19,7 @@ const Login = () => {
     onAuthStateChanged(auth, (user) => {
       if (user) {
         if (currentUserData.perfil?.rol === 1) {
-           router.push('/especialistas/agregar-directores')
+          router.push('/especialistas/agregar-directores')
         }
         if (currentUserData.perfil?.rol === 2) {
           router.push('/directores/agregar-profesores')

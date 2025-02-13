@@ -1,4 +1,3 @@
-// 'use client'
 import { createContext, useContext, useReducer, ReactNode, Dispatch } from "react";
 import { AppReducerValues, AppActions } from "../types/types";
 import { appReducer } from "../reducer/appReducer"

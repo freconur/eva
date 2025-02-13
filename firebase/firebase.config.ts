@@ -1,4 +1,4 @@
-"use client"
+
 import { initializeApp } from "firebase/app";
 const firebaseConfig = {
   apiKey: "AIzaSyDli98HId_qZcJq0yez2nr4ueS12aeFQw0",

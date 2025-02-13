@@ -1,7 +1,6 @@
 import PrivateRouteDocentes from '@/components/layouts/PrivateRoutesDocentes'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
-import { Alternativas } from '@/features/types/types'
 import AgregarPreguntasRespuestas from '@/modals/agregarPreguntasYRespuestas'
 import EvaluarEstudiante from '@/modals/evaluarEstudiante'
 import Link from 'next/link'

@@ -1,7 +1,5 @@
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
-import PrivateRouteDocentes from '@/components/layouts/PrivateRoutesDocentes'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
-import AgregarPreguntasRespuestas from '@/modals/agregarPreguntasYRespuestas'
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 
