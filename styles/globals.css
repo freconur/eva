@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: rgb(234, 239, 248);
+  --secondary: rgba(187, 241, 255, 0.4);
+  --tertiary: rgba(233, 251, 255, 0.6);
+}
+
+#__next {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+#__next > main {
+  margin: 1rem auto 0;
+  max-width: 80ch;
+}
+
+body {
+  color: "black";
+  background-color: #f1f6ffa3;
+}
