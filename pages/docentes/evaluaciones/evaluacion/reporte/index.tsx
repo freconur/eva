@@ -154,21 +154,25 @@ const Reportes = () => {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {
-              estudiantes?.map((dir, index) => {
-                return (
-                  <tr key={index} className='h-[60px] hover:bg-blue-100 duration-100 cursor-pointer'>
-                    <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{index + 1}</td>
-                    <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.dni}</td>
-                    <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.nombresApellidos}</td>
-                    <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{dir.respuestasCorrectas}</td>
-                    <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{Number(dir.totalPreguntas) - Number(dir.respuestasCorrectas)}</td>
-                    <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{dir.totalPreguntas}</td>
-                  </tr>
-                )
-              })
+              dataEstadisticas.length > 0 ?
+                estudiantes?.map((dir, index) => {
+                  return (
+                    <tr key={index} className='h-[60px] hover:bg-blue-100 duration-100 cursor-pointer'>
+                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{index + 1}</td>
+                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.dni}</td>
+                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.nombresApellidos}</td>
+                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{dir.respuestasCorrectas}</td>
+                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{Number(dir.totalPreguntas) - Number(dir.respuestasCorrectas)}</td>
+                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{dir.totalPreguntas}</td>
+                    </tr>
+                  )
+                })
+                :
+                null
             }
           </tbody>
         </table>
+        <p className='text-lg text-slate-400 text-center '>Aun no existen datos, evalua a los estudiantes para poder ver resultados.</p>
       </div>
     </div>
   )
