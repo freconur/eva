@@ -40,6 +40,10 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
     })
   }
   const handleSubmitform = handleSubmit(async (data) => {
+
+
+
+
     validateRespuests(preguntasRespuestasEstudiante)
     salvarPreguntRespuestaEstudiante(data, id, preguntasRespuestasEstudiante, repuestasCorrectas, sizePreguntas)
     getPreguntasRespuestas(id)
@@ -52,6 +56,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
     if (sizePreguntas - 1 !== ordenLimitePregunta) {
       setOrdenLimitePregunta(ordenLimitePregunta + 1)
       validateRespuests(preguntasRespuestasEstudiante)
+      //aqui tendria que agregar la funcion para que vaya incrementando
     }
     setActivarBotonSiguiente(false)
 

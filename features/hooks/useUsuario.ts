@@ -128,7 +128,7 @@ const useUsuario = () => {
     }
   }
 
-  const crearNuevoDocente = (data: User) => {
+  const crearNuevoDocente = async (data: User) => {
     try {
       axios
         .post(`${URL_API}crear-docente`,

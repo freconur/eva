@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDoc, getDocs, getFirestore, setDoc } from "firebase/firestore/lite"
+import { addDoc, collection, doc, getDoc, getDocs, getFirestore, increment, setDoc, updateDoc } from "firebase/firestore/lite"
 import { AppAction } from "../actions/appAction"
 import { useGlobalContext, useGlobalContextDispatch } from "../context/GlolbalContext"
 import { Evaluaciones, PreguntasRespuestas, User, UserEstudiante } from "../types/types"
@@ -22,7 +22,7 @@ export const useAgregarEvaluaciones = () => {
     dispatch({ type: AppAction.EVALUACIONES, payload: allEvaluaciones })
   }
   const crearEvaluacion = async (value: string) => {
-    
+
     await addDoc(collection(db, "/evaluaciones"), {
       idDocente: currentUserData.dni,
       nombre: value
@@ -68,14 +68,14 @@ export const useAgregarEvaluaciones = () => {
       alternativas: data.alternativas,
     });
   }
-  const salvarPreguntRespuestaEstudiante = async (data: UserEstudiante, id: string, pq: PreguntasRespuestas[], respuestasCorrectas:number, sizePreguntas:number) => {
+  const salvarPreguntRespuestaEstudiante = async (data: UserEstudiante, id: string, pq: PreguntasRespuestas[], respuestasCorrectas: number, sizePreguntas: number) => {
     const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`);
     await setDoc(rutaRef, {
       nombresApellidos: data.nombresApellidos,
       dni: data.dni,
       dniDocente: currentUserData.dni,
-      respuestasCorrectas:respuestasCorrectas,
-      totalPreguntas:sizePreguntas
+      respuestasCorrectas: respuestasCorrectas,
+      totalPreguntas: sizePreguntas
     })
     pq.forEach(async (a) => {
       let rta: string = ""
@@ -90,6 +90,39 @@ export const useAgregarEvaluaciones = () => {
         pregunta: a.pregunta,
         respuesta: a.respuesta,
         respuestaEstudiante: rta.length > 0 && rta
+      })
+
+
+      // const docRef = doc(db, "cities", "SF");
+      // const docSnap = await getDoc(docRef);
+
+      const docRef = doc(db, `/evaluaciones/${id}/${currentUserData.dni}`, `${a.id}`);
+      const querySnapshot = await getDoc(docRef);
+      // const docSnap = await getDoc(docRef);
+      if (!querySnapshot.exists()) {
+        const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.id}`)
+        await setDoc(dataGraficos, {
+          a: 0,
+          b: 0,
+          c: 0
+        })
+      }
+
+      const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.id}`)
+      a.alternativas?.map(async al => {
+        if (al.selected === true && al.alternativa === "a") {
+          await updateDoc(dataGraficos, {
+            a: increment(1)
+          })
+        } else if (al.selected === true && al.alternativa === "b") {
+          await updateDoc(dataGraficos, {
+            b: increment(1)
+          })
+        } else if (al.selected === true && al.alternativa === "c") {
+          await updateDoc(dataGraficos, {
+            c: increment(1)
+          })
+        }
       })
     })
   }
