@@ -12,25 +12,26 @@ export const useRegistros = () => {
   const dispatch = useGlobalContextDispatch()
 
   const getDirectores = async () => {
-    // const querySnapshot = await getDocs(collection(db, "usuarios"));
-    // const directores: User[] = []
-    // querySnapshot.forEach((doc) => {
-    //   directores.push(doc.data())
-    // });
-
-
     const q = query(collection(db, "usuarios"), where("rol", "==", 2));
-
     const querySnapshot = await getDocs(q);
     const directores: User[] = []
     querySnapshot.forEach((doc) => {
       directores.push(doc.data())
-      // doc.data() is never undefined for query doc snapshots
     });
     dispatch({ type: AppAction.DIRECTORES, payload: directores })
   }
 
+  const getDocentesDeDirectores = async (idDirector: string) => {
+    const q = query(collection(db, "usuarios"), where("dniDirector", "==", `${idDirector}`));
+    const querySnapshot = await getDocs(q);
+    const arrayDocentesDirectores: User[] = []
+    querySnapshot.forEach((doc) => {
+      arrayDocentesDirectores.push(doc.data())
+    });
+    dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayDocentesDirectores })
+  }
   return {
-    getDirectores
+    getDirectores,
+    getDocentesDeDirectores
   }
 }

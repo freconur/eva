@@ -15,7 +15,8 @@ const initialState: AppReducerValues = {
   preguntasRespuestasEstudiante: [],
   preguntasRespuestasEstudianteInitialValue: [],
   directores: [],
-  estudiantes: []
+  estudiantes: [],
+  docentesDeDirectores: []
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

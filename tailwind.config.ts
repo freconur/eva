@@ -25,6 +25,7 @@ const config: Config = {
         'centrar-contenido': 'auto'
       },
       colors: {
+        'colorSecundario':'#0a47c4',
         'principal': '#19246f',
         'tere': '#47d07d',
         'modal': 'rgba(0,0,0,.24)',

@@ -11,7 +11,8 @@ export type AppReducerValues = {
   preguntasRespuestasEstudiante: PreguntasRespuestas[],
   preguntasRespuestasEstudianteInitialValue:PreguntasRespuestas[],
   directores:User[],
-  estudiantes:Estudiante[]
+  estudiantes:Estudiante[],
+  docentesDeDirectores:User[]
 }
 
 
@@ -27,6 +28,7 @@ export type AppActions =
   | { type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES_INITIAL_VALUE; payload: PreguntasRespuestas[] }
   | { type: AppAction.DIRECTORES; payload: User[] }
   | { type: AppAction.ESTUDIANTES; payload: Estudiante[] }
+  | { type: AppAction.DOCENTES_DIRECTORES; payload: User[] }
 
 export type LoginData = {
   usuario: string,

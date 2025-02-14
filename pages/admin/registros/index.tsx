@@ -1,6 +1,7 @@
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useRegistros } from '@/features/hooks/useRegistros'
+import Link from 'next/link'
 import React, { useEffect } from 'react'
 
 const Registros = () => {
@@ -9,7 +10,7 @@ const Registros = () => {
   const { directores } = useGlobalContext()
   useEffect(() => {
     getDirectores()
-  },[])
+  }, [])
 
   console.log('directores', directores)
   return (
@@ -19,9 +20,9 @@ const Registros = () => {
         <table className='w-full  bg-white  rounded-md shadow-md relative'>
           <thead className='bg-blue-700 border-b-2 border-blue-300 '>
             <tr className='text-white capitalize font-nunito '>
-            <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
-            <th className="py-3 md:p-2 pl-1 md:pl-2 text-left ">descripcion</th>
-            <th className="py-3 md:p-2  text-left">institución educativa</th>
+              <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
+              <th className="py-3 md:p-2 pl-1 md:pl-2 text-left ">descripcion</th>
+              <th className="py-3 md:p-2  text-left">institución educativa</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -29,9 +30,17 @@ const Registros = () => {
               directores.map((dir, index) => {
                 return (
                   <tr key={index} className='h-[60px] hover:bg-blue-100 duration-100 cursor-pointer'>
-                    <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{index + 1}</td>
-                    <td  className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.nombres} {dir.apellidos}</td>
-                    <td  className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.institucion}</td>
+                    <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>
+                      <Link href={`/admin/registros/registros-directores/${dir.dni}`}>
+                        {index + 1}
+                      </Link>
+                    </td>
+                    <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>
+                      <Link href={`/admin/registros/registros-directores/${dir.dni}`}>
+                        {dir.nombres} {dir.apellidos}
+                      </Link>
+                    </td>
+                    <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.institucion}</td>
                   </tr>
                 )
               })

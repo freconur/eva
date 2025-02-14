@@ -1,10 +1,9 @@
 import { createPortal } from "react-dom"
 import styles from './agregarPreguntaRespuestas.module.css'
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones";
-import { Alternativas, Evaluaciones, PreguntasRespuestas } from "@/features/types/types";
 
 interface Props {
   showModal: boolean,
@@ -53,8 +52,8 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
           <h3 className={styles.title}>agregar preguntas y respuestas</h3>
           <form onSubmit={handleSubmitform} >
             <div className='w-full my-2'>
-              <p className='text-slate-400 text-xl uppercase'>pregunta</p>
-              <input
+              <p className={styles.titlePregunta}>pregunta:</p>
+              <textarea
                 {...register("pregunta",
                   {
                     required: { value: true, message: "institucion es requerido" },
@@ -62,18 +61,18 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
                     maxLength: { value: 400, message: "nombre debe tener un maximo de 150 caracteres" },
                   }
                 )}
-                className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
-                type="text"
+                className={styles.textAreaPregunta}
                 placeholder="escribe una pregunta"
+
               />
             </div>
 
-            <p className='text-slate-400 text-xl uppercase'>alternativas</p>
+            <p className={styles.titlePregunta}>alternativas</p>
             <div className={styles.inputAlternativas}>
 
               {/* alternativa A */}
-              <div className="flex justify-center items-center">
-                <p className="uppercase mr-5 text-slate-400">a.</p>
+              <div className="flex gap-3 justify-center items-center">
+                <p className={styles.alternativa}>a.</p>
                 <input
                   {...register("a",
                     {
@@ -82,7 +81,7 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
                       maxLength: { value: 150, message: "nombre debe tener un maximo de 150 caracteres" },
                     }
                   )}
-                  className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
+                  className={styles.alternativaInput}
                   type="text"
                   placeholder="alternativa a"
                 />
@@ -90,7 +89,7 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
 
               {/* alternativa B */}
               <div className="flex gap-3 justify-center items-center">
-                <p className="uppercase text-slate-400">b.</p>
+                <p className={styles.alternativa}>b.</p>
                 <input
                   {...register("b",
                     {
@@ -99,14 +98,14 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
                       maxLength: { value: 150, message: "nombre debe tener un maximo de 150 caracteres" },
                     }
                   )}
-                  className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
+                  className={styles.alternativaInput}
                   type="text"
                   placeholder="alternativa b"
                 />
               </div>
               {/* alternativa C */}
               <div className="flex gap-3 justify-center items-center">
-                <p className="uppercase text-slate-400">c.</p>
+                <p className={styles.alternativa}>c.</p>
                 <input
                   {...register("c",
                     {
@@ -115,14 +114,14 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
                       maxLength: { value: 150, message: "nombre debe tener un maximo de 150 caracteres" },
                     }
                   )}
-                  className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
+                  className={styles.alternativaInput}
                   type="text"
                   placeholder="alternativa c"
                 />
               </div>
             </div>
             <div className=" gap-3">
-              <p className="uppercase text-slate-400">respuesta correcta</p>
+              <p className={styles.titlePregunta}>respuesta correcta</p>
               <input
                 {...register("respuesta",
                   {
@@ -131,9 +130,9 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
                     maxLength: { value: 1, message: "nombre debe tener un maximo de 1 caracteres" },
                   }
                 )}
-                className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
+                className={styles.inputAlternativa}
                 type="text"
-                placeholder="escribe la respuesta correcta"
+                placeholder="escribe la alternativa correcta"
               />
             </div>
             <button className='flex justify-center items-center bg-blue-500 hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase'>guardar</button>
