@@ -19,16 +19,16 @@ const Login = () => {
     onAuthStateChanged(auth, (user) => {
       if (user) {
         if (currentUserData.perfil?.rol === 1) {
-          router.push('/especialistas/mi-cuenta')
+          router.push('/mi-cuenta')
         }
         if (currentUserData.perfil?.rol === 2) {
-          router.push('/directores/mi-cuenta')
+          router.push('/mi-cuenta')
         }
         if (currentUserData.perfil?.rol === 3) {
-          router.push('/docentes/mi-cuenta')
+          router.push('/mi-cuenta')
         }
         if (currentUserData.perfil?.rol === 4) {
-          router.push('/admin/mi-cuenta')
+          router.push('/mi-cuenta')
         }
       }
     })
@@ -49,29 +49,29 @@ const Login = () => {
   console.log('currentUserData', currentUserData)
   return (
     <div className='grid h-login w-full p-1 place-content-center'>
-      <div className='min-w-[320px] bg-white p-5'>
-        <h1 className='text-slate-500 text-xl uppercase font-semibold text-center'>inicio de sesión</h1>
+      <div className='min-w-[320px] bg-white p-5 shadow-xl'>
+        <h1 className='text-colorSegundo text-xl uppercase font-semibold text-center font-comfortaa'>inicio de sesión</h1>
         <form onSubmit={handleSubmit} >
           <div>
             <div className='w-full my-5'>
-              <p className='text-slate-400 text-sm uppercase'>usuario:</p>
+              <p className='text-slate-500 text-sm uppercase font-comfortaa'>usuario:</p>
               <input
                 onChange={handleChangeValuesLogin}
-                className='p-3 outline-none rounded-md shadow-md w-full'
+                className='p-3 outline-none rounded-sm shadow-md w-full text-slate-400'
                 type="email" placeholder="nombre de usuario"
                 name="usuario" />
             </div>
             <div className='w-full my-5'>
-              <p className='text-slate-400 text-sm uppercase'>contraseña:</p>
+              <p className='text-slate-500 text-sm uppercase font-comfortaa'>contraseña:</p>
               <input
                 onChange={handleChangeValuesLogin}
                 name="contrasena"
                 type="password"
-                className='p-3 outline-none rounded-md shadow-md w-full'
+                className='p-3 outline-none rounded-sm shadow-md w-full text-slate-400'
                 placeholder="contraseña" />
             </div>
           </div>
-          <button className='p-3 bg-principal uppercase font-semibold cursor-pointer rounded-md shadow-md text-white w-full'>ingresar</button>
+          <button className='p-3 bg-gradient-to-r to-colorQuinto  from-colorSegundo uppercase font-semibold cursor-pointer rounded-md shadow-md text-white w-full'>ingresar</button>
 
         </form>
       </div>
