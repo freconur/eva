@@ -21,11 +21,11 @@ const AgregarDirectores = () => {
 
   return (
     <div className='grid h-login w-full p-1 place-content-center'>
-      <div className='w-[700px]'>
-        <h1 className='font-semibold text-center text-2xl uppercase text-slate-600' >Registrar Profesor</h1>
+      <div className='w-[700px] bg-hoverTableSale p-10 shadow-lg'>
+        <h1 className='font-semibold text-center text-2xl uppercase text-colorPrincipal font-montserrat' >Registrar Profesor</h1>
         <form onClick={handleAgregarDirector} action="">
-          <div className='w-full my-2'>
-            <p className='text-slate-400 text-sm uppercase'>nombres de docente:</p>
+          <div className='w-full  my-5'>
+            <p className='text-slate-400 text-sm uppercase font-montserrat mb-2'>nombres de docente:</p>
             <input 
             {...register("nombres",
               {
@@ -34,14 +34,14 @@ const AgregarDirectores = () => {
                 maxLength: { value: 100, message: "nombre debe tener un maximo de 100 caracteres" },
               }
             )}
-            className='p-3 outline-none rounded-md shadow-md w-full' 
+            className='p-3 outline-none rounded-md shadow-md w-full text-slate-500' 
             type="text" 
             placeholder="nombre de docente" 
             />
-          </div>
           {errors.nombres && <span className='text-red-400 text-sm'>{errors.nombres.message as string}</span>}
-          <div className='w-full my-2'>
-            <p className='text-slate-400 text-sm uppercase'>apellidos de docente:</p>
+          </div>
+          <div className='w-full my-5'>
+            <p className='text-slate-400 text-sm uppercase mb-2'>apellidos de docente:</p>
             <input 
             {...register("apellidos",
               {
@@ -50,13 +50,13 @@ const AgregarDirectores = () => {
                 maxLength: { value: 40, message: "numero modular debe tener un maximo de 40 caracteres" },
               }
             )}
-            className='p-3 outline-none rounded-md shadow-md w-full' 
+            className='p-3 outline-none rounded-md shadow-md w-full text-slate-500' 
             type="text" 
             placeholder="apellidos de docente" />
-          </div>
           {errors.apellidos && <span className='text-red-400 text-sm'>{errors.apellidos.message as string}</span>}
-          <div className='w-full my-2'>
-            <p className='text-slate-400 text-sm uppercase'>dni:</p>
+          </div>
+          <div className='w-full my-5 '>
+            <p className='text-slate-400 text-sm uppercase mb-2'>dni:</p>
             <input 
             {...register("dni",
               {
@@ -65,13 +65,13 @@ const AgregarDirectores = () => {
                 maxLength: { value: 8, message: "dni debe tener un maximo de 8 caracteres" },
               }
             )}
-            className='p-3 outline-none rounded-md shadow-md w-full' 
+            className='p-3 outline-none rounded-md shadow-md w-full text-slate-500' 
             type="number"
             placeholder="dni de docente" />
-          </div>
           {errors.dni && <span className='text-red-400 text-sm'>{errors.dni.message as string}</span>}
+          </div>
           
-          <button className='flex justify-center items-center bg-blue-500 hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase'>registrar</button>
+          <button className='flex justify-center items-center bg-colorSegundo hover:opacity-80 duration-300 p-3 rounded-md w-full text-white hover:text-white uppercase font-semibold font-comfortaa'>registrar</button>
         </form>
       </div>
     </div>

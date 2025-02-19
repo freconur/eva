@@ -19,16 +19,16 @@ const Login = () => {
     onAuthStateChanged(auth, (user) => {
       if (user) {
         if (currentUserData.perfil?.rol === 1) {
-          router.push('/especialistas/agregar-directores')
+          router.push('/especialistas/mi-cuenta')
         }
         if (currentUserData.perfil?.rol === 2) {
-          router.push('/directores/agregar-profesores')
+          router.push('/directores/mi-cuenta')
         }
         if (currentUserData.perfil?.rol === 3) {
-          router.push('/docentes/agregar-evaluaciones')
+          router.push('/docentes/mi-cuenta')
         }
         if (currentUserData.perfil?.rol === 4) {
-          router.push('/admin/agregar-evaluaciones')
+          router.push('/admin/mi-cuenta')
         }
       }
     })
@@ -49,7 +49,7 @@ const Login = () => {
   console.log('currentUserData', currentUserData)
   return (
     <div className='grid h-login w-full p-1 place-content-center'>
-      <div className='min-w-[320px]'>
+      <div className='min-w-[320px] bg-white p-5'>
         <h1 className='text-slate-500 text-xl uppercase font-semibold text-center'>inicio de sesión</h1>
         <form onSubmit={handleSubmit} >
           <div>
@@ -75,10 +75,10 @@ const Login = () => {
 
         </form>
       </div>
-      <div className='p-3'>
+      {/* <div className='p-3'>
         <h4 className='capitalize text-center text-blue-500 mb-2'>crear nuevo usuario</h4>
         <button className='capitalize p-3 w-full border-[1px] border-emerald-400 hover:border-emerald-600 text-emerald-400 hover:text-white hover:bg-emerald-600 duration-300'>nuevo usuario</button>
-      </div>
+      </div> */}
     </div>
   )
 }

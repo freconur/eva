@@ -7,6 +7,17 @@ const config: Config = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+    fontFamily: {
+      comfortaa: ['Comfortaa'],
+      signikaNegative: ['Signika Negative'],
+      dmMono: ['DM Mono'],
+      martianMono: ['Martian Mono'],
+      nunito: ['Nunito'],
+      sidebar: ['Pacifico'],
+      logoSidebar:["DM Serif Display"],
+      montserrat:['Montserrat'],
+      jp:['Noto Sans JP'],
+    },
     extend: {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
@@ -25,6 +36,12 @@ const config: Config = {
         'centrar-contenido': 'auto'
       },
       colors: {
+        'colorPrincipal':'#050C9C',
+        'colorSegundo':'#3572EF',
+        'colorTercero':'#3ABEF9',
+        'colorCuarto':'#A7E6FF',
+        'colorQuinto':'#1D24CA',
+        'colorSexto':'#1F6E8C',
         'colorSecundario':'#0a47c4',
         'principal': '#19246f',
         'tere': '#47d07d',
@@ -42,7 +59,7 @@ const config: Config = {
         'sidebarHover':'#ffcf4c',
         'cardStatisticsIcon':'#e0dcfe',
         'headerTable':'#e4eefd',
-        'hoverTableSale':'#fbf9ff',
+        'hoverTableSale':'#f4f4f4',
         'gg-1': '#1bb920',
         'gg-2': '#3e9438',
         'gg-3': '#0f7e1b',
@@ -93,7 +110,7 @@ const config: Config = {
         '8': 'repeat(8, minmax(0, 1fr))',
         'gridSideBar': 'auto calc(100vh - 194px) auto',
         'flashcardWelcome': 'auto auto',
-        'gridRows': 'auto auto 10%',
+        'gridRows': '30% auto 10%',
         'gridRowsSales': '10% auto',
         'gridRowsSalesPay': '90% 10%',
         'gridRowsSalesPayModal': '50% 10%',

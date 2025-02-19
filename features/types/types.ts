@@ -9,11 +9,12 @@ export type AppReducerValues = {
   preguntasRespuestas: PreguntasRespuestas[],
   sizePreguntas: number,
   preguntasRespuestasEstudiante: PreguntasRespuestas[],
-  preguntasRespuestasEstudianteInitialValue:PreguntasRespuestas[],
-  directores:User[],
-  estudiantes:Estudiante[],
-  docentesDeDirectores:User[],
-  dataEstadisticas:DataEstadisticas[]
+  preguntasRespuestasEstudianteInitialValue: PreguntasRespuestas[],
+  directores: User[],
+  estudiantes: Estudiante[],
+  docentesDeDirectores: User[],
+  dataEstadisticas: DataEstadisticas[],
+  reporteDirector: DataEstadisticas[],
 }
 
 
@@ -31,6 +32,7 @@ export type AppActions =
   | { type: AppAction.ESTUDIANTES; payload: Estudiante[] }
   | { type: AppAction.DOCENTES_DIRECTORES; payload: User[] }
   | { type: AppAction.DATA_ESTADISTICAS; payload: DataEstadisticas[] }
+  | { type: AppAction.REPORTE_DIRECTOR; payload: DataEstadisticas[] }
 
 export type LoginData = {
   usuario: string,
@@ -72,17 +74,17 @@ export type UserEstudiante = {
   id?: string
   nombresApellidos?: string,
   dni?: string,
-  dniDocente?:string,
-  respuestasCorrectas?:string,
-  totalPreguntas?:string
+  dniDocente?: string,
+  respuestasCorrectas?: string,
+  totalPreguntas?: string
 }
 
 export type Estudiante = {
-  dni?:string,
-  nombresApellidos?:string,
-  dniDocente?:string,
-  respuestasCorrectas?:number,
-  totalPreguntas?:number
+  dni?: string,
+  nombresApellidos?: string,
+  dniDocente?: string,
+  respuestasCorrectas?: number,
+  totalPreguntas?: number
 }
 export type User = {
   nombres?: string,
@@ -98,8 +100,8 @@ export type User = {
 
 export type DataEstadisticas = {
   id?: string
-  a?:number,
-  b?:number,
-  c?:number,
-  total?:number
+  a?: number,
+  b?: number,
+  c?: number,
+  total?: number
 }
