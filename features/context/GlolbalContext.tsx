@@ -21,7 +21,8 @@ const initialState: AppReducerValues = {
   reporteDirector: [],
   loaderLogin:false,
   warningLogin:"",
-  loaderPages: false
+  loaderPages: false,
+  loaderReporteDirector:false
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

@@ -18,6 +18,7 @@ import {
 } from 'chart.js';
 import { Bar } from "react-chartjs-2"
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
+import { RiLoader4Line } from 'react-icons/ri'
 
 ChartJS.register(
   CategoryScale,
@@ -44,7 +45,7 @@ const Reportes = () => {
   };
 
   const route = useRouter()
-  const { estudiantes, currentUserData, dataEstadisticas, preguntasRespuestas } = useGlobalContext()
+  const { estudiantes, currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages } = useGlobalContext()
   const { estudiantesQueDieronExamen } = useReporteDocente()
   const { getPreguntasRespuestas } = useAgregarEvaluaciones()
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
@@ -87,8 +88,6 @@ const Reportes = () => {
     estudiantesQueDieronExamen(`${route.query.idExamen}`, `${currentUserData.dni}`)
     getPreguntasRespuestas(`${route.query.idExamen}`)
   }, [route.query.idExamen, currentUserData.dni])
-  console.log('preguntasRespuestas', preguntasRespuestas)
-  console.log('dataEstadisticas', dataEstadisticas)
   const options = {
     plugins: {
       legend: {
@@ -110,71 +109,84 @@ const Reportes = () => {
   }
 
   return (
-    <div className='p-10 grid items-center justify-center'>
-      <h1 className='text-2xl uppercase mb-10 font-semibold text-blue-700'>reporte de evalucion</h1>
-      {/* <Bar className="w-full h-full"
+    <>
+      {
+        loaderPages ?
+          <div className='grid grid-rows-loader'>
+            <div className='flex justify-center items-center'>
+              <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
+              <span className='text-colorTercero animate-pulse'>...cargando</span>
+            </div>
+          </div>
+          :
+          <div className='p-10 grid items-center justify-center'>
+            <h1 className='text-2xl uppercase mb-10 font-semibold text-blue-700'>reporte de evalucion</h1>
+            {/* <Bar className="w-full h-full"
         data={data}
       // data={iterateData(dat)} 
       /> */}
-      <div className=' gap-10 grid items-center justify-center m-auto' >
-        {
-          dataEstadisticas?.map((dat, index) => {
-            return (
-              <div key={index} className="w-[800px]  p-2 rounded-lg">
-                <h3 className='text-slate-600 text-lg mb-10'>{iterarPregunta(`${dat.id}`)}</h3>
-                <div className='bg-white w-[500px] rounded-md grid place-content-center'>
-                  <Bar className="w-full h-full"
-                    // data={data}
-                    options={options}
-                    data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
-                  />
-                  <div className='text-sm  flex gap-[90px] items-center justify-center ml-[30px] text-slate-500'>
-                    <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
-                    <p>{dat.b} |{((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
-                    <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
-                  </div>
-                  <div className='text-center text-md  text-green-500'>respuesta:<span className='text-green-500 font-semibold ml-2'>{preguntasRespuestas[Number(index) - 1]?.respuesta}</span> </div>
-                </div>
-              </div>
-            )
-          })
-        }
-
-
-        <table className='w-full  bg-white  rounded-md shadow-md relative'>
-          <thead className='bg-blue-700 border-b-2 border-blue-300 '>
-            <tr className='text-white capitalize font-nunito '>
-              <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
-              <th className="py-3 md:p-2 pl-1 md:pl-2 text-left ">dni</th>
-              <th className="py-3 md:p-2  text-left">nombres y apellidos</th>
-              <th className="py-3 md:p-2  text-left">rpta. correctas</th>
-              <th className="py-3 md:p-2  text-left">rpta. incorrectas</th>
-              <th className="py-3 md:p-2  text-left">total de preguntas</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {
-              dataEstadisticas.length > 0 ?
-                estudiantes?.map((dir, index) => {
+            <div className=' gap-10 grid items-center justify-center m-auto' >
+              {
+                dataEstadisticas?.map((dat, index) => {
                   return (
-                    <tr key={index} className='h-[60px] hover:bg-blue-100 duration-100 cursor-pointer'>
-                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{index + 1}</td>
-                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.dni}</td>
-                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.nombresApellidos}</td>
-                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{dir.respuestasCorrectas}</td>
-                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{Number(dir.totalPreguntas) - Number(dir.respuestasCorrectas)}</td>
-                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{dir.totalPreguntas}</td>
-                    </tr>
+                    <div key={index} className="w-[800px]  p-2 rounded-lg">
+                      <h3 className='text-slate-600 text-lg mb-10'>{iterarPregunta(`${dat.id}`)}</h3>
+                      <div className='bg-white w-[500px] rounded-md grid place-content-center'>
+                        <Bar className="w-full h-full"
+                          // data={data}
+                          options={options}
+                          data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
+                        />
+                        <div className='text-sm  flex gap-[90px] items-center justify-center ml-[30px] text-slate-500'>
+                          <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
+                          <p>{dat.b} |{((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
+                          <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
+                        </div>
+                        <div className='text-center text-md  text-green-500'>respuesta:<span className='text-green-500 font-semibold ml-2'>{preguntasRespuestas[Number(index) - 1]?.respuesta}</span> </div>
+                      </div>
+                    </div>
                   )
                 })
-                :
-                null
-            }
-          </tbody>
-        </table>
-        <p className='text-lg text-slate-400 text-center '>Aun no existen datos, evalua a los estudiantes para poder ver resultados.</p>
-      </div>
-    </div>
+              }
+
+
+              <table className='w-full  bg-white  rounded-md shadow-md relative'>
+                <thead className='bg-blue-700 border-b-2 border-blue-300 '>
+                  <tr className='text-white capitalize font-nunito '>
+                    <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
+                    <th className="py-3 md:p-2 pl-1 md:pl-2 text-left ">dni</th>
+                    <th className="py-3 md:p-2  text-left">nombres y apellidos</th>
+                    <th className="py-3 md:p-2  text-left">rpta. correctas</th>
+                    <th className="py-3 md:p-2  text-left">rpta. incorrectas</th>
+                    <th className="py-3 md:p-2  text-left">total de preguntas</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {
+                    dataEstadisticas.length > 0 ?
+                      estudiantes?.map((dir, index) => {
+                        return (
+                          <tr key={index} className='h-[60px] hover:bg-blue-100 duration-100 cursor-pointer'>
+                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{index + 1}</td>
+                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.dni}</td>
+                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.nombresApellidos}</td>
+                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{dir.respuestasCorrectas}</td>
+                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{Number(dir.totalPreguntas) - Number(dir.respuestasCorrectas)}</td>
+                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{dir.totalPreguntas}</td>
+                          </tr>
+                        )
+                      })
+                      :
+                      null
+                  }
+                </tbody>
+              </table>
+              <p className='text-lg text-slate-400 text-center '>Aun no existen datos, evalua a los estudiantes para poder ver resultados.</p>
+            </div>
+          </div>
+
+      }
+    </>
   )
 }
 

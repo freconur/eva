@@ -18,6 +18,7 @@ export type AppReducerValues = {
   loaderLogin:boolean,
   warningLogin:string,
   loaderPages:boolean,
+  loaderReporteDirector:boolean
 }
 
 
@@ -39,6 +40,7 @@ export type AppActions =
   | { type: AppAction.LOADER_LOGIN; payload: boolean }
   | { type: AppAction.WARNING_LOGIN; payload: string }
   | { type: AppAction.LOADER_PAGES; payload: boolean }
+  | { type: AppAction.LOADER_REPORTE_DIRECTOR; payload: boolean }
 
 export type LoginData = {
   usuario: string,

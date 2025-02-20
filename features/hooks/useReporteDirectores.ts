@@ -14,7 +14,7 @@ export const useReporteDirectores = () => {
 
 
   const reporteDirectorData = async (idDirector: string, idEvaluacion: string) => {
-
+    dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: true })
     const getDocenterIdRef = query(collection(db, "usuarios"), where("dniDirector", "==", `${idDirector}`));
     const getDocenterId = await getDocs(getDocenterIdRef);
     const docentesDelDirector: string[] = []
@@ -56,7 +56,7 @@ export const useReporteDirectores = () => {
                     rta.a = Number(data.a) > 0 ? Number(rta.a) + Number(data.a) : Number(rta.a)
                     rta.b = Number(data.b) > 0 ? Number(rta.b) + Number(data.b) : Number(rta.b)
                     rta.c = Number(data.c) > 0 ? Number(rta.c) + Number(data.c) : Number(rta.c)
-                    
+
                   }
                 })
                 // console.log('arrayAcumulativoDeRespuestas',arrayAcumulativoDeRespuestas)
@@ -66,7 +66,7 @@ export const useReporteDirectores = () => {
         })
         setTimeout(() => {
           resolve(arrayAcumulativoDeRespuestas)
-        },10000)
+        }, 10000)
         // dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: arrayAcumulativoDeRespuestas })
         // console.log('arrayAcumulativoDeRespuestas', arrayAcumulativoDeRespuestas)
       } catch (error) {
@@ -76,26 +76,28 @@ export const useReporteDirectores = () => {
     })
     newPromise.then(response => {
       // console.log('response esperando')
-      try {
-        const newPromise = new Promise<DataEstadisticas[]>((resolve, reject) => {
+      const newPromiseDos = new Promise<DataEstadisticas[]>((resolve, reject) => {
+        try {
           response.map((a, index) => {
             a.total = Number(a.a) + Number(a.b) + Number(a.c)
           })
           resolve(response)
-        })
-      }catch(error) {
-        console.log(error)
-      }
-
-      newPromise.then(newArray => {
-        dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: response })
-        
+        } catch (error) {
+          console.log(error)
+          reject(false)
+        }
       })
-      return response
-    })
-    .then(res => {
-      // console.log('res', res)
-      agregarDatosEstadisticosDirector(res, idEvaluacion)
+
+      newPromiseDos.then(newArray => {
+        dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: newArray })
+        dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: false })
+        return newArray
+      })
+      // return response
+      .then(res => {
+        console.log('res promesados', res)
+        agregarDatosEstadisticosDirector(res, idEvaluacion)
+      })
     })
   }
 
@@ -107,6 +109,7 @@ export const useReporteDirectores = () => {
         a: pq.a,
         b: pq.b,
         c: pq.c,
+        total:pq.total
       });
     })
   }

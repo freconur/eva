@@ -17,6 +17,7 @@ import {
 import { Bar } from "react-chartjs-2"
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { DataEstadisticas } from '@/features/types/types';
+import { RiLoader4Line } from 'react-icons/ri';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -47,7 +48,7 @@ const Reporte = () => {
       labels: ['a', 'b', 'c'],
       datasets: [
         {
-          label: "estadisticas de respuesta",
+          label: "total",
           data: [data.a, data.b, data.c],
           backgroundColor: [
             'rgba(255, 99, 132, 0.2)',
@@ -78,14 +79,14 @@ const Reporte = () => {
     }
   }
   const { reporteDirectorData, agregarDatosEstadisticosDirector } = useReporteDirectores()
-  const { currentUserData, reporteDirector, preguntasRespuestas } = useGlobalContext()
+  const { currentUserData, reporteDirector, preguntasRespuestas, loaderReporteDirector } = useGlobalContext()
   const { getPreguntasRespuestas } = useAgregarEvaluaciones()
   const route = useRouter()
   useEffect(() => {
     // if(reporteDirector) {
     // agregarDatosEstadisticosDirector(reporteDirector, `${router.query.idEvaluacion}`)
     // }
-    // reporteDirectorData(`${currentUserData.dni}`, `${route.query.idEvaluacion}`)
+    reporteDirectorData(`${currentUserData.dni}`, `${route.query.idEvaluacion}`)
     console.log('holiwis')
     console.log('reporteDirector', reporteDirector)
     getPreguntasRespuestas(`${route.query.idEvaluacion}`)
@@ -94,9 +95,9 @@ const Reporte = () => {
   console.log('holi2')
   const iterarPregunta = (index: string) => {
     return (
-      <h3>
-        <span className='text-colorSegundo mr-2 font-semibold'>{index}.</span>{preguntasRespuestas[Number(index) - 1]?.pregunta}
-      </h3>
+      <div className='flex'>
+        <span className='text-colorSegundo mr-2 font-semibold'>{index}.</span> <h3 className='text-slate-500 mr-2'>{preguntasRespuestas[Number(index) - 1]?.pregunta}</h3>
+      </div>
     )
   }
   const options = {
@@ -111,49 +112,51 @@ const Reporte = () => {
     },
   };
   return (
-    <div className='grid justify-center items-center relative z-10'>
-      <div className='w-[1024px] bg-white grid justify-center items-center p-20'>
-        <h1 className='text-2xl text-center text-cyan-700 font-semibold uppercase mb-20'>reporte de evaluación</h1>
-        <div>
-          {/* {reporteDirector?.map((reporte, index) => {
-          return (
-            <div key={index} className='flex gap-5'>
-              <div># {reporte.id}</div>
-              <div>a: {reporte.a}</div>
-              <div>b: {reporte.b}</div>
-              <div>c: {reporte.c}</div>
+    <>
+      {
+        loaderReporteDirector ?
+          <div className='grid grid-rows-loader'>
+            <div className='flex justify-center items-center'>
+              <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
+              <span className='text-colorTercero animate-pulse'>...cargando</span>
             </div>
-          )
-        })} */}
-          <div>
-            {
-              reporteDirector?.map((dat, index) => {
-                return (
-                  <div key={index} className="w-[800px]  p-2 rounded-lg">
-                    <h3 className='text-gray-500 text-lg mb-10'>{iterarPregunta(`${dat.id}`)}</h3>
-                    <div className='bg-white rounded-md grid justify-center items-center place-content-center'>
-                      <div className='grid justify-center m-auto items-center w-[500px]'>
-                      <Bar className="m-auto w-[500px]"
-                        // data={data}
-                        options={options}
-                        data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
-                      />
-                      </div>
-                      <div className='text-sm  flex gap-[90px] items-center justify-center ml-[30px] text-slate-500'>
-                        <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
-                        <p>{dat.b} |{((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
-                        <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
-                      </div>
-                      <div className='text-center text-md  w-[150px] text-colorTercero p-2  rounded-md mt-5 border border-colorTercero'>respuesta:<span className='text-colorTercero font-semibold ml-2'>{preguntasRespuestas[Number(index) - 1]?.respuesta}</span> </div>
-                    </div>
-                  </div>
-                )
-              })
-            }
           </div>
-        </div>
-      </div>
-    </div>
+          :
+          <div className='grid justify-center items-center relative z-10'>
+            <div className='w-[1024px] bg-white grid justify-center items-center p-20'>
+              <h1 className='text-2xl text-center text-cyan-700 font-semibold uppercase mb-20'>reporte de evaluación</h1>
+              <div>
+                <div>
+                  {
+                    reporteDirector?.map((dat, index) => {
+                      return (
+                        <div key={index} className="w-[800px]  p-2 rounded-lg">
+                          {iterarPregunta(`${dat.id}`)}
+                          <div className='bg-white rounded-md grid justify-center items-center place-content-center'>
+                            <div className='grid justify-center m-auto items-center w-[500px]'>
+                              <Bar className="m-auto w-[500px]"
+                                // data={data}
+                                options={options}
+                                data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
+                              />
+                            </div>
+                            <div className='text-sm  flex gap-[90px] items-center justify-center ml-[30px] text-slate-500'>
+                              <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
+                              <p>{dat.b} |{((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
+                              <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
+                            </div>
+                            <div className='text-center text-md  w-[150px] text-colorTercero p-2  rounded-md mt-5 border border-colorTercero'>respuesta:<span className='text-colorTercero font-semibold ml-2'>{preguntasRespuestas[Number(index)]?.respuesta}</span> </div>
+                          </div>
+                        </div>
+                      )
+                    })
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+      }
+    </>
   )
 }
 
