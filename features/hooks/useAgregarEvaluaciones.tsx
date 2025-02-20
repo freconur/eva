@@ -14,12 +14,31 @@ export const useAgregarEvaluaciones = () => {
 
   const getEvaluaciones = async () => {
     // let allEvaluaciones: Evaluaciones[] = []
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true })
+
     const querySnapshot = await getDocs(collection(db, "evaluaciones"));
     let allEvaluaciones: Evaluaciones[] = []
-    querySnapshot.forEach((doc) => {
-      allEvaluaciones.push({ ...doc.data(), id: doc.id })
-    });
-    dispatch({ type: AppAction.EVALUACIONES, payload: allEvaluaciones })
+
+    const newPromise = new Promise<boolean>((resolve, reject) => {
+      try {
+        querySnapshot.forEach((doc) => {
+          allEvaluaciones.push({ ...doc.data(), id: doc.id })
+        });
+
+        resolve(true)
+      } catch (error) {
+        console.log('error', error)
+        dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+        reject(false)
+      }
+    })
+
+    newPromise.then(response => {
+      if (response === true) {
+        dispatch({ type: AppAction.EVALUACIONES, payload: allEvaluaciones })
+        dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+      }
+    })
   }
   const crearEvaluacion = async (value: string) => {
 
@@ -39,19 +58,33 @@ export const useAgregarEvaluaciones = () => {
   }
 
   const getPreguntasRespuestas = async (id: string) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     if (id.length > 0) {
       const querySnapshot = await getDocs(collection(db, `/evaluaciones/${id}/preguntasRespuestas`));
       const count = querySnapshot.size
       let preguntasrespuestas: PreguntasRespuestas[] = []
-      querySnapshot.forEach((doc) => {
-        preguntasrespuestas.push({ ...doc.data(), id: doc.id })
-      });
 
-      preguntasrespuestas.sort((a: any, b: any) => a.id - b.id)
-      console.log('preguntasrespuestas', preguntasrespuestas)
-      dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: preguntasrespuestas })
-      // dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES_INITIAL_VALUE, payload: preguntasrespuestas })
-      dispatch({ type: AppAction.SIZE_PREGUNTAS, payload: count })
+      const newPromise = new Promise<boolean>((resolve, reject) => {
+        try {
+          querySnapshot.forEach((doc) => {
+            preguntasrespuestas.push({ ...doc.data(), id: doc.id })
+          });
+          preguntasrespuestas.sort((a: any, b: any) => a.id - b.id)
+          resolve(true)
+        }catch(error) {
+          console.log('error', error)
+          dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+          reject(false)
+        }
+      })
+
+      newPromise.then(response => {
+        if(response === true) {
+          dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: preguntasrespuestas })
+          dispatch({ type: AppAction.SIZE_PREGUNTAS, payload: count })
+          dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+        }
+      })
     }
   }
 

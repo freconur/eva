@@ -106,6 +106,7 @@ const config: Config = {
         // 'fondo-claro':"#0000"
       },
       gridTemplateRows: {
+        'loader': 'calc(100vh - 60px)',
         'layoutGlobal': 'auto 1fr auto',
         '8': 'repeat(8, minmax(0, 1fr))',
         'gridSideBar': 'auto calc(100vh - 194px) auto',
