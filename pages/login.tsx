@@ -78,7 +78,7 @@ const Login = () => {
             loaderLogin ?
               <div className='flex  justify-center items-center'>
                 <RiLoader4Line className="animate-spin text-3xl text-slate-500 " />
-                <span className='text-slate-500'>...validando datos</span>
+                <span className='text-slate-500'>...validando datos </span>
               </div>
 
               :
