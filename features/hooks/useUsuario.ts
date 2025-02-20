@@ -19,6 +19,7 @@ const useUsuario = () => {
     const user = await getDoc(refUser)
 
     if (user.exists()) {
+      dispatch({type:AppAction.LOADER_LOGIN, payload:false})
       dispatch({
         type: AppAction.CURRENT_USER_DATA, payload: {
           nombres: user.data().nombres,
@@ -31,27 +32,42 @@ const useUsuario = () => {
       })
     } else {
       console.log('usuario incorrecto o la contraseña no es valida.')
+      dispatch({type:AppAction.LOADER_LOGIN, payload:false})
     }
   }
   const signIn = async (loginData: LoginData) => {
+    dispatch({type:AppAction.LOADER_LOGIN, payload:true})
+    dispatch({type:AppAction.WARNING_LOGIN, payload:''})
     console.log('loginDatad', loginData)
     try {
       // return await signInWithEmailAndPassword(auth, loginData.usuario, loginData.contrasena)
       await setPersistence(auth, browserSessionPersistence)
         .then(async () => {
           return await signInWithEmailAndPassword(auth, loginData.usuario, loginData.contrasena)
-        }).then(response => getUser(response.user.uid))
+        }).then(response => {
+          console.log('response', response)
+          // debugger
+          getUser(response.user.uid)
+        })
       // .catch(Error) {
       //   console.log('error', Error)
       // }
     } catch (error) {
-      console.log('error', error)
+      dispatch({type:AppAction.LOADER_LOGIN, payload:false})
+      if(error) {
+        console.log('error')
+        dispatch({type:AppAction.WARNING_LOGIN, payload:'el usuario o contraseña son invalidos'})
+
+      }
     }
   }
   const logout = () => {
     signOut(auth)
     // AsyncStorage.setItem(TOKEN_KEY, JSON.stringify({}))
     // dispatch({ type: AttendanceRegister.USER_TOKEN, payload: { token: "", isAuthenticated: false } })
+    dispatch({
+      type: AppAction.CURRENT_USER_DATA, payload: {}
+    })
   }
 
 

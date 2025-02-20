@@ -4,6 +4,7 @@ import useUsuario from '@/features/hooks/useUsuario'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { app } from '@/firebase/firebase.config'
+import { RiLoader4Line } from 'react-icons/ri'
 
 
 const initialValue = { usuario: "", contrasena: "" }
@@ -12,7 +13,7 @@ const Login = () => {
   const auth = getAuth(app)
   const router = useRouter()
   const { signIn } = useUsuario()
-  const { currentUserData } = useGlobalContext()
+  const { currentUserData, loaderLogin, warningLogin } = useGlobalContext()
   const [loginValues, setLoginValues] = useState(initialValue)
 
   useEffect(() => {
@@ -32,7 +33,7 @@ const Login = () => {
         }
       }
     })
-  }, [currentUserData.perfil?.rol])
+  }, [currentUserData.perfil?.rol, loaderLogin, warningLogin])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -46,7 +47,8 @@ const Login = () => {
   }
 
   // console.log('loginValues', loginValues)
-  console.log('currentUserData', currentUserData)
+  console.log('currentUserData probadno')
+  console.log('warningLogin', warningLogin)
   return (
     <div className='grid h-login w-full p-1 place-content-center'>
       <div className='min-w-[320px] bg-white p-5 shadow-xl'>
@@ -71,7 +73,26 @@ const Login = () => {
                 placeholder="contraseña" />
             </div>
           </div>
-          <button className='p-3 bg-gradient-to-r to-colorQuinto  from-colorSegundo uppercase font-semibold cursor-pointer rounded-md shadow-md text-white w-full'>ingresar</button>
+
+          {
+            loaderLogin ?
+              <div className='flex  justify-center items-center'>
+                <RiLoader4Line className="animate-spin text-3xl text-slate-500 " />
+                <span className='text-slate-500'>...validando datos</span>
+              </div>
+
+              :
+              <>
+                {
+                  warningLogin?.length > 0 &&
+                  <span className='text-red-400 text-sm mb-3'>
+                    * {warningLogin}
+                  </span>
+                }
+                <button className='p-3 bg-gradient-to-r to-colorQuinto  from-colorSegundo uppercase font-semibold cursor-pointer rounded-md shadow-md text-white w-full'>ingresar</button>
+              </>
+
+          }
 
         </form>
       </div>

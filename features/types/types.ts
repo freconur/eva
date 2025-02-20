@@ -15,6 +15,8 @@ export type AppReducerValues = {
   docentesDeDirectores: User[],
   dataEstadisticas: DataEstadisticas[],
   reporteDirector: DataEstadisticas[],
+  loaderLogin:boolean,
+  warningLogin:string,
 }
 
 
@@ -33,6 +35,8 @@ export type AppActions =
   | { type: AppAction.DOCENTES_DIRECTORES; payload: User[] }
   | { type: AppAction.DATA_ESTADISTICAS; payload: DataEstadisticas[] }
   | { type: AppAction.REPORTE_DIRECTOR; payload: DataEstadisticas[] }
+  | { type: AppAction.LOADER_LOGIN; payload: boolean }
+  | { type: AppAction.WARNING_LOGIN; payload: string }
 
 export type LoginData = {
   usuario: string,

@@ -37,8 +37,9 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
           </p>
         </li> */}
       </ul>
-      <div onClick={logout} className="rounded-sm text-slate-600 pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:bg-pastel14 hover:text-white duration-300  whitespace-nowrap my-3 drop-shadow-lg">
-        <span className='font-montserrat text-base flex-1 ml-2 text-md'>cerrar sesión</span>
+      <div onClick={logout} className="ml-2 border rounded-sm border-white  duration-300 hover:border-red-300 p-3 h-[50px] font-montserrat hover:text-red-300 text-slate-600 w-[200px] cursor-pointer">
+        {/* <p className='font-montserrat text-base flex-1 ml-2 text-md hover:text-red-300 text-slate-600 w-full h-[50px]'>cerrar sesión</p> */}
+        cerrar sesión
       </div>
     </div>
   )

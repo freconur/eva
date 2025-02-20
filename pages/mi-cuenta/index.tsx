@@ -1,3 +1,4 @@
+import PrivateRoute from '@/components/layouts/PrivateRoutesAdmin'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import React, { useEffect } from 'react'
 
@@ -40,3 +41,4 @@ const MiCuenta = () => {
 }
 
 export default MiCuenta
+MiCuenta.Auth = PrivateRoute
