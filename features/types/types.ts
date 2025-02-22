@@ -113,7 +113,7 @@ export type User = {
   dniDirector?: string,
   rolDirector?: number,
   rol?: number,
-  region?:string
+  region?:number
 }
 
 export type DataEstadisticas = {
