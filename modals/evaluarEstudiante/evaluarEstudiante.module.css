@@ -38,7 +38,11 @@
   align-items: center;
 }
 .containerSale {
-  width: 100%;
+  width: 500px;
+  height:600px;
+  display:grid;
+  justify-content: center;
+  align-items: center;
   background-color: #f3f3f3;
   /* width: 400px; */
   /* background-color: #f6fdff; */

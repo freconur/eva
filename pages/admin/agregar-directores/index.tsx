@@ -7,11 +7,12 @@ import { useForm } from 'react-hook-form'
 const AgregarDirectores = () => {
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
-  const { getUserData, createNewDirector } = useUsuario()
-  const { currentUserData } = useGlobalContext()
+  const { getUserData, createNewDirector, getRegiones } = useUsuario()
+  const { currentUserData, regiones } = useGlobalContext()
 
   useEffect(() => {
     getUserData()
+    getRegiones()
   }, [currentUserData.dni])
   const handleAgregarDirector = handleSubmit(data => {
     console.log("data", data)
@@ -21,7 +22,7 @@ const AgregarDirectores = () => {
 
   return (
     <div className='grid h-login w-full p-1 place-content-center'>
-      <div className='w-[700px]'>
+      <div className='w-[700px] bg-white p-10 rounded-sm shadow-md'>
         <h1 className='font-semibold text-center text-2xl uppercase text-slate-600'>Registrar Director</h1>
         <form onClick={handleAgregarDirector} action="">
           <div className='w-full my-2'>
@@ -70,6 +71,28 @@ const AgregarDirectores = () => {
               placeholder="nombre de usuario" />
           </div>
           {errors.dni && <span className='text-red-400 text-sm'>{errors.dni.message as string}</span>}
+          <div className='w-full my-2'>
+            <p className='text-slate-400 text-sm uppercase'>region:</p>
+            <select
+              {...register("region",
+                {
+                  required: { value: true, message: "region es requerido" },
+                  minLength: { value: 1, message: "selecciona una región" },
+                  maxLength: { value: 1, message: "selecciona una región" },
+                }
+              )}
+              className='w-full p-3 rounded-md bg-white text-slate-400'>
+              <option>--REGIONES--</option>
+
+              {regiones?.map((region, index) => {
+                return (
+                  <option value={Number(region.codigo)}>{region.region?.toUpperCase()}</option>
+                )
+              })}
+            </select>
+          </div>
+
+          {errors.region && <span className='text-red-400 text-sm'>{errors.region.message as string}</span>}
           <div className='w-full my-2'>
             <p className='text-slate-400 text-sm uppercase'>nombres:</p>
             <input

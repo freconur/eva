@@ -11,7 +11,7 @@ const SidebarInfoUser = ({ showSidebar }: Props) => {
   const { showSidebarValue } = useRolUsers()
   const { currentUserData } = useGlobalContext()
   return (
-    <div className=' border-b-[1px] border-slate-200 p-2'>
+    <div className='relative  border-b-[1px] border-slate-200 p-2'>
       <div onClick={() => showSidebarValue(showSidebar)} className='capitalize p-2 w-[30px] h-[30px] bg-red-400 justify-center items-center flex rounded-full text-white l-10 cursor-pointer relative left-[213px] shadow-md'>x</div>
       {/* <div className='grid justify-end '>
 

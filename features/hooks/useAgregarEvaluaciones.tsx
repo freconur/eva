@@ -71,7 +71,7 @@ export const useAgregarEvaluaciones = () => {
           });
           preguntasrespuestas.sort((a: any, b: any) => a.id - b.id)
           resolve(true)
-        }catch(error) {
+        } catch (error) {
           console.log('error', error)
           dispatch({ type: AppAction.LOADER_PAGES, payload: false })
           reject(false)
@@ -79,7 +79,7 @@ export const useAgregarEvaluaciones = () => {
       })
 
       newPromise.then(response => {
-        if(response === true) {
+        if (response === true) {
           dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: preguntasrespuestas })
           dispatch({ type: AppAction.SIZE_PREGUNTAS, payload: count })
           dispatch({ type: AppAction.LOADER_PAGES, payload: false })
@@ -102,6 +102,8 @@ export const useAgregarEvaluaciones = () => {
     });
   }
   const salvarPreguntRespuestaEstudiante = async (data: UserEstudiante, id: string, pq: PreguntasRespuestas[], respuestasCorrectas: number, sizePreguntas: number) => {
+    dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true })
+
     const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`);
     await setDoc(rutaRef, {
       nombresApellidos: data.nombresApellidos,
@@ -110,54 +112,66 @@ export const useAgregarEvaluaciones = () => {
       respuestasCorrectas: respuestasCorrectas,
       totalPreguntas: sizePreguntas
     })
-    pq.forEach(async (a) => {
-      let rta: string = ""
-      a.alternativas?.forEach(x => {
-        if (x.selected === true) {
-          rta = `${x.alternativa}`
-          console.log('rta', rta)
-        }
-      })
-      const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}/${data.dni}/${a.id}`);
-      await setDoc(rutaRef, {
-        pregunta: a.pregunta,
-        respuesta: a.respuesta,
-        respuestaEstudiante: rta.length > 0 && rta
-      })
 
-
-      // const docRef = doc(db, "cities", "SF");
-      // const docSnap = await getDoc(docRef);
-
-      const docRef = doc(db, `/evaluaciones/${id}/${currentUserData.dni}`, `${a.id}`);
-      const querySnapshot = await getDoc(docRef);
-      // const docSnap = await getDoc(docRef);
-      if (!querySnapshot.exists()) {
-        const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.id}`)
-        await setDoc(dataGraficos, {
-          a: 0,
-          b: 0,
-          c: 0
+    const promiseGuardarData = new Promise<boolean>((resolve, reject) => {
+      try {
+        pq.forEach(async (a) => {
+          let rta: string = ""
+          a.alternativas?.forEach(x => {
+            if (x.selected === true) {
+              rta = `${x.alternativa}`
+              console.log('rta', rta)
+            }
+          })
+          const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}/${data.dni}/${a.id}`);
+          await setDoc(rutaRef, {
+            pregunta: a.pregunta,
+            respuesta: a.respuesta,
+            respuestaEstudiante: rta.length > 0 && rta
+          })
+          const docRef = doc(db, `/evaluaciones/${id}/${currentUserData.dni}`, `${a.id}`);
+          const querySnapshot = await getDoc(docRef);
+          // const docSnap = await getDoc(docRef);
+          if (!querySnapshot.exists()) {
+            const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.id}`)
+            await setDoc(dataGraficos, {
+              a: 0,
+              b: 0,
+              c: 0
+            })
+          }
+          const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.id}`)
+          a.alternativas?.map(async al => {
+            if (al.selected === true && al.alternativa === "a") {
+              await updateDoc(dataGraficos, {
+                a: increment(1)
+              })
+            } else if (al.selected === true && al.alternativa === "b") {
+              await updateDoc(dataGraficos, {
+                b: increment(1)
+              })
+            } else if (al.selected === true && al.alternativa === "c") {
+              await updateDoc(dataGraficos, {
+                c: increment(1)
+              })
+            }
+          })
         })
+        resolve(true)
+      } catch (error) {
+        console.log('error', error)
+        dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+        reject(false)
       }
-
-      const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.id}`)
-      a.alternativas?.map(async al => {
-        if (al.selected === true && al.alternativa === "a") {
-          await updateDoc(dataGraficos, {
-            a: increment(1)
-          })
-        } else if (al.selected === true && al.alternativa === "b") {
-          await updateDoc(dataGraficos, {
-            b: increment(1)
-          })
-        } else if (al.selected === true && al.alternativa === "c") {
-          await updateDoc(dataGraficos, {
-            c: increment(1)
-          })
-        }
-      })
     })
+
+    promiseGuardarData.then(response => {
+      if(response ===true) {
+        console.log('response update data', response)
+        dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+      }
+    })
+
   }
   const prEstudiantes = (data: PreguntasRespuestas[]) => {
     dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES, payload: data })

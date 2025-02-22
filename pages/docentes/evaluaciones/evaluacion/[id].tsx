@@ -55,12 +55,12 @@ const Evaluacion = () => {
           <div className='grid justify-center items-center relative mt-3'>
             <div className='w-[1024px] bg-white  p-20'>
               <h1 className='text-2xl text-colorSexto font-semibold uppercase mb-10'>{evaluacion.nombre}</h1>
-              <div className='flex gap-3'>
-                <button onClick={handleshowModal} className='bg-green-500 p-3 rounded-md shadow text-white capitalize font-semibold'>agregar preguntas</button>
+              <div className='flex gap-3 justify-end'>
+                {/* <button onClick={handleshowModal} className='bg-green-500 p-3 rounded-md shadow text-white capitalize font-semibold'>agregar preguntas</button> */}
 
-                <button onClick={handleShowModalEstudiante} className='bg-indigo-500 p-3 rounded-md shadow text-white capitalize font-semibold'>evaluar estudiante</button>
-                <div className='bg-red-400 p-3 rounded-md shadow text-white capitalize font-semibold cursor-pointer'>
-                  <Link href={`reporte?idExamen=${route.query.id}`}>reportes</Link>
+                <button onClick={handleShowModalEstudiante} className='border-iconColor border-[1px] p-3 rounded-md shadow text-iconColor hover:bg-iconColor hover:text-white duration-300 hover:duration-300 capitalize font-semibold'>evaluar estudiante</button>
+                <div className='bg-colorTercero p-3 rounded-md shadow text-white capitalize font-semibold cursor-pointer hover:bg-colorCuarto hover:text-colorQuinto duration-300 hover:duration-300'>
+                  <Link href={`reporte?idExamen=${route.query.id}`}>reporte</Link>
                 </div>
               </div>
               <div className='flex gap-3 justify-end'>

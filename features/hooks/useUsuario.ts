@@ -1,9 +1,9 @@
-import { LoginData, User } from "../types/types"
+import { LoginData, Region, User } from "../types/types"
 import { browserSessionPersistence, getAuth, onAuthStateChanged, setPersistence, signInWithEmailAndPassword, signOut, } from "firebase/auth"
 import { useGlobalContext, useGlobalContextDispatch } from "../context/GlolbalContext"
 // import { getFirestore, doc, getDoc } from "firebase/firestore/lite"
 import { AppAction } from "../actions/appAction"
-import { getFirestore, doc, getDoc, setDoc, } from "firebase/firestore/lite"
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, } from "firebase/firestore/lite"
 import { app } from "@/firebase/firebase.config"
 import axios from "axios"
 
@@ -34,6 +34,17 @@ const useUsuario = () => {
       console.log('usuario incorrecto o la contraseña no es valida.')
       dispatch({type:AppAction.LOADER_LOGIN, payload:false})
     }
+  }
+
+  const getRegiones = async() => {
+    const regionRef = collection(db,'region')
+    const queryRegiones = await getDocs(regionRef)
+    const arrayRegiones: Region[] = []
+    queryRegiones.forEach((doc) => {
+      arrayRegiones.push(doc.data())
+    })
+
+    dispatch({type:AppAction.REGIONES, payload:arrayRegiones})
   }
   const signIn = async (loginData: LoginData) => {
     dispatch({type:AppAction.LOADER_LOGIN, payload:true})
@@ -106,6 +117,7 @@ const useUsuario = () => {
               modular: data.modular,
               nombres: data.nombres,
               apellidos: data.apellidos,
+              region:Number(data.region)
             });
           })
       } else if (currentUserData.perfil?.rol === 4) {
@@ -174,7 +186,8 @@ const useUsuario = () => {
     getUserData,
     logout,
     createNewDirector,
-    crearNuevoDocente
+    crearNuevoDocente,
+    getRegiones
   }
 
 }

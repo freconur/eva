@@ -18,7 +18,9 @@ export type AppReducerValues = {
   loaderLogin:boolean,
   warningLogin:string,
   loaderPages:boolean,
-  loaderReporteDirector:boolean
+  loaderReporteDirector:boolean,
+  loaderSalvarPregunta:boolean,
+  regiones:Region[]
 }
 
 
@@ -41,6 +43,8 @@ export type AppActions =
   | { type: AppAction.WARNING_LOGIN; payload: string }
   | { type: AppAction.LOADER_PAGES; payload: boolean }
   | { type: AppAction.LOADER_REPORTE_DIRECTOR; payload: boolean }
+  | { type: AppAction.LOADER_SALVAR_PREGUNTA; payload: boolean }
+  | { type: AppAction.REGIONES; payload: Region[] }
 
 export type LoginData = {
   usuario: string,
@@ -59,6 +63,11 @@ export type Alternativas = [
   { d?: string },
   { e?: string }
 ]
+
+export type Region = {
+  codigo?:number,
+  region?:string
+}
 
 export type Alternativa = {
   alternativa?: string,
@@ -103,7 +112,8 @@ export type User = {
   modular?: string,
   dniDirector?: string,
   rolDirector?: number,
-  rol?: number
+  rol?: number,
+  region?:string
 }
 
 export type DataEstadisticas = {
