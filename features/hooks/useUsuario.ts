@@ -107,7 +107,7 @@ const useUsuario = () => {
               nombres: `${data.nombres}`,
               apellidos: `${data.apellidos}`,
             })
-          .then(async response => {
+          .then(async response => { 
             console.log('response.status', response)
             await setDoc(doc(db, "usuarios", `${data.dni}`), {
               dni: `${data.dni}`,
