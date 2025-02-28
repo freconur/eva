@@ -8,24 +8,26 @@ interface Props {
 }
 const SidebarInfoUser = ({ showSidebar }: Props) => {
 
-  const { showSidebarValue } = useRolUsers()
+
   const { currentUserData } = useGlobalContext()
+
+  console.log('currentUserData', currentUserData)
   return (
-    <div className='relative  border-b-[1px] border-slate-200 p-2'>
-      <div onClick={() => showSidebarValue(showSidebar)} className='capitalize p-2 w-[30px] h-[30px] bg-red-400 justify-center items-center flex rounded-full text-white l-10 cursor-pointer relative left-[213px] shadow-md'>x</div>
+    <div className='border-b-[1px] border-slate-200 pb-5 pl-3'>
+
       {/* <div className='grid justify-end '>
 
       </div> */}
       <div >
-        <p className='capitalize text-center  text-slate-600 text-2xl'>{currentUserData.institucion}</p>
+        <p className='text-slate-600 text-sm uppercase'>{currentUserData.institucion ? currentUserData.institucion : null}</p>
       </div>
       <div className='mt-1 w-full flex justify-center items-center'>
-        <div className='bg-colorSegundo shadow-md w-[100px] h-[100px] rounded-full m-auto flex justify-content items-center'>
+        {/* <div className='bg-colorSegundo shadow-md w-[50px] h-[50px] rounded-full m-auto flex justify-content items-center'>
           <p className=' text-4xl uppercase font-semibold text-white m-auto'>{currentUserData.nombres ? currentUserData.nombres[0] : null}</p>
-        </div>
+        </div> */}
       </div>
-      <div className='mt-1'><p className='capitalize text-center  text-slate-500'>{currentUserData.nombres} {currentUserData.apellidos}</p></div>
-      <div className='mt-1'><p className='capitalize text-center  text-slate-400'>{currentUserData.perfil?.nombre}</p></div>
+      <div className='mt-1'><p className='capitalize   text-slate-500'>{currentUserData.nombres} {currentUserData.apellidos}</p></div>
+      <div className='mt-1'><p className='capitalize   text-slate-400'>{currentUserData.perfil?.nombre}</p></div>
     </div>
   )
 }

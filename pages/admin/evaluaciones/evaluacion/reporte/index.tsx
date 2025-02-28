@@ -1,7 +1,7 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useReporteDirectores } from '@/features/hooks/useReporteDirectores'
 import { useRouter } from 'next/router'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,9 +15,9 @@ import {
   ChartData,
 } from 'chart.js';
 import { Bar } from "react-chartjs-2"
-import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { DataEstadisticas } from '@/features/types/types';
 import { RiLoader4Line } from 'react-icons/ri';
+import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -28,11 +28,20 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+const ReporteRegional = () => {
+  const data = {
+    labels: ['a', 'b', 'c'],
+    datasets: [{
+      axis: 'y',
+      label: 'My First Dataset',
+      // data: dataEstadisticas,
+      data: [65, 59, 80],
+      fill: false,
 
-
-const Reporte = () => {
-  
-  const iterateData = (data: DataEstadisticas, respuesta: string) => {
+      borderWidth: 1
+    }]
+  };
+const iterateData = (data: DataEstadisticas, respuesta: string) => {
     return {
       labels: ['a', 'b', 'c'],
       datasets: [
@@ -67,19 +76,26 @@ const Reporte = () => {
       ]
     }
   }
-  const { reporteDirectorData, agregarDatosEstadisticosDirector } = useReporteDirectores()
-  const { currentUserData, reporteDirector, preguntasRespuestas, loaderReporteDirector } = useGlobalContext()
-  const { getPreguntasRespuestas } = useAgregarEvaluaciones()
   const route = useRouter()
+  const [loaderReporteDirector, setLoaderReporteDirector] = useState(false)
+  const { reporteRegionales, getRegiones } = useReporteDirectores()
+  const { regiones, reporteRegional, preguntasRespuestas, loaderReporteRegional } = useGlobalContext()
+  const { getPreguntasRespuestas } = useAgregarEvaluaciones()
+  const [regionValue, setRegionValue] = useState({ region: 0 })
+
   useEffect(() => {
-    
+    getRegiones()
+  }, [])
+
+  useEffect(() => {
+    if (regionValue.region !== 0) {
+      reporteRegionales(Number(regionValue.region), `${route.query.idEvaluacion}`)
+    }
     getPreguntasRespuestas(`${route.query.idEvaluacion}`)
-  }, [currentUserData.dni, route.query.idEvaluacion])
-
-
-  useEffect(() => {
-    reporteDirectorData(`${currentUserData.dni}`, `${route.query.idEvaluacion}`)
-  },[])
+  }, [regionValue.region])
+  const handleRegion = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setRegionValue({ region: Number(e.target.value) })
+  }
   const iterarPregunta = (index: string) => {
     return (
       <div className='flex'>
@@ -98,12 +114,29 @@ const Reporte = () => {
       },
     },
   };
-  console.log('reporteDirector', reporteDirector)
+  //tengo que traerme toda la informacion de la cada director que corresponda a la region.
   return (
-    
-    <>
+    <div className="p-10">
+      <div className='mb-10'>
+
+        <h1 className='uppercase text-2xl  font-montserrat font-semibold text-colorSexto'>reporte regional</h1>
+        <div>
+          <p className='text-xl text-slate-600 mb-2 capitalize'>selecciona una región:</p>
+          <select onChange={handleRegion} className=' text-slate-500 p-3 rounded-md shadow-lg w-full'>
+            <option>---REGION---</option>
+            {
+              regiones?.map((region, index) => {
+                return (
+                  <option key={index} value={region.codigo}>{region.region?.toUpperCase()}</option>
+                )
+              })
+            }
+          </select>
+        </div>
+      </div>
+<>
       {
-        loaderReporteDirector ?
+        loaderReporteRegional ?
           <div className='grid grid-rows-loader'>
             <div className='flex justify-center items-center'>
               <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
@@ -117,21 +150,22 @@ const Reporte = () => {
               <div>
                 <div>
                   {
-                    reporteDirector?.map((dat, index) => {
+                    reporteRegional?.map((dat, index) => {
                       return (
                         <div key={index} className="w-[800px]  p-2 rounded-lg">
                           {iterarPregunta(`${dat.id}`)}
                           <div className='bg-white rounded-md grid justify-center items-center place-content-center'>
                             <div className='grid justify-center m-auto items-center w-[500px]'>
                               <Bar className="m-auto w-[500px]"
+                                // data={data}
                                 options={options}
                                 data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
                               />
                             </div>
                             <div className='text-sm  flex gap-[90px] items-center justify-center ml-[30px] text-slate-500'>
-                              <p>{dat?.a} | {((100 * Number(dat?.a)) / Number(dat?.total)).toFixed(0)}%</p>
-                              <p>{dat?.b} |{((100 * Number(dat?.b)) / Number(dat?.total)).toFixed(0)}%</p>
-                              <p>{dat?.c} | {((100 * Number(dat?.c)) / Number(dat?.total)).toFixed(0)}%</p>
+                              <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
+                              <p>{dat.b} |{((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
+                              <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
                             </div>
                             <div className='text-center text-md  w-[150px] text-colorTercero p-2  rounded-md mt-5 border border-colorTercero'>respuesta:<span className='text-colorTercero font-semibold ml-2'>{preguntasRespuestas[Number(index)]?.respuesta}</span> </div>
                           </div>
@@ -145,7 +179,9 @@ const Reporte = () => {
           </div>
       }
     </>
+
+    </div>
   )
 }
 
-export default Reporte
+export default ReporteRegional

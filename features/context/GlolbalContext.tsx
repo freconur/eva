@@ -24,7 +24,9 @@ const initialState: AppReducerValues = {
   loaderPages: false,
   loaderReporteDirector:false,
   loaderSalvarPregunta:false,
-  regiones:[]
+  regiones:[],
+  reporteRegional: [],
+  loaderReporteRegional:false
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

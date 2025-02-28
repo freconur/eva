@@ -4,6 +4,16 @@ import { AppActions, AppReducerValues } from "../types/types";
 
 export const appReducer = (state: AppReducerValues, action: AppActions) => {
   switch (action.type) {
+    case AppAction.LOADER_REPORTE_REGIONAL:
+      return {
+        ...state,
+        loaderReporteRegional:action.payload
+      }
+    case AppAction.REPORTE_REGIONAL:
+      return {
+        ...state,
+        reporteRegional:action.payload
+      }
     case AppAction.REGIONES:
       return {
         ...state,

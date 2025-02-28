@@ -32,8 +32,8 @@ const AgregarEvaluaciones = () => {
         showModal &&
         <AgregarPreguntasRespuestas showModal={showModal} handleshowModal={handleshowModal}  />
       } */}
-      <div className='grid h-login w-full p-1 place-content-center'>
-        <div className='w-[700px]'>
+      <div className='grid h-login w-full p-1 place-content-center bg-gradient-to-t from-hoverTableSale  to-hoverTableSale'>
+        <div className='w-[700px] bg-white h-[250px] p-10 grid shadow-2xl rounded-lg'>
           <h1 className='font-semibold text-center text-2xl uppercase text-slate-600'>crear evaluacion</h1>
 
           <form onSubmit={handleAgregarEvaluacion}>

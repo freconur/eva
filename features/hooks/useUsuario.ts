@@ -28,6 +28,7 @@ const useUsuario = () => {
           institucion: user.data().institucion,
           modular: user.data().modular,
           perfil: user.data().perfil,
+          region: user.data().region
         }
       })
     } else {
@@ -91,6 +92,7 @@ const useUsuario = () => {
   }
 
   const createNewDirector = (data: User) => {
+    dispatch({type:AppAction.LOADER_PAGES, payload:true})
     try {
       if (currentUserData.perfil?.rol === 1) {
         console.log('agregando director')
@@ -118,7 +120,10 @@ const useUsuario = () => {
               nombres: data.nombres,
               apellidos: data.apellidos,
               region:Number(data.region)
-            });
+            })
+            .then(res => {
+              dispatch({type:AppAction.LOADER_PAGES, payload:false})
+            })
           })
       } else if (currentUserData.perfil?.rol === 4) {
         console.log('agregando director como admin')
@@ -145,7 +150,11 @@ const useUsuario = () => {
                 modular: data.modular,
                 nombres: data.nombres,
                 apellidos: data.apellidos,
-              });
+                region:Number(data.region)
+              })
+              .then((res) => {
+                dispatch({type:AppAction.LOADER_PAGES, payload:false})
+              })
             })
         } catch (error) {
           console.log('error', error)
@@ -174,6 +183,7 @@ const useUsuario = () => {
             perfil: data.perfil,
             nombres: `${data.nombres}`,
             apellidos: `${data.apellidos}`,
+            region: currentUserData.region
           });
         })
     } catch (error) {

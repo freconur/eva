@@ -20,7 +20,10 @@ export type AppReducerValues = {
   loaderPages:boolean,
   loaderReporteDirector:boolean,
   loaderSalvarPregunta:boolean,
-  regiones:Region[]
+  regiones:Region[],
+  reporteRegional:DataEstadisticas[],
+  loaderReporteRegional:boolean,
+
 }
 
 
@@ -45,6 +48,8 @@ export type AppActions =
   | { type: AppAction.LOADER_REPORTE_DIRECTOR; payload: boolean }
   | { type: AppAction.LOADER_SALVAR_PREGUNTA; payload: boolean }
   | { type: AppAction.REGIONES; payload: Region[] }
+  | { type: AppAction.REPORTE_REGIONAL; payload: DataEstadisticas[] }
+  | { type: AppAction.LOADER_REPORTE_REGIONAL; payload: boolean }
 
 export type LoginData = {
   usuario: string,
@@ -121,5 +126,10 @@ export type DataEstadisticas = {
   a?: number,
   b?: number,
   c?: number,
-  total?: number
+  total?: number,
+}
+
+export type Regiones = {
+  codigo?:number,
+  region?:string
 }
