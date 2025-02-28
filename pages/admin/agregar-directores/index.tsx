@@ -98,7 +98,7 @@ const AgregarDirectores = () => {
 
                     {regiones?.map((region, index) => {
                       return (
-                        <option value={Number(region.codigo)}>{region.region?.toUpperCase()}</option>
+                        <option key={index} value={Number(region.codigo)}>{region.region?.toUpperCase()}</option>
                       )
                     })}
                   </select>
