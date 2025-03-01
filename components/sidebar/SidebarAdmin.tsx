@@ -31,6 +31,11 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
             </Link>
           </li>
           <li className='rounded-md text-slate-600 pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
+            <Link href="/admin/agregar-especialista" className='p-3'>
+              Agregar especilista
+            </Link>
+          </li>
+          <li className='rounded-md text-slate-600 pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
             <Link href="/admin/agregar-directores" className='p-3'>
               Agregar director
             </Link>

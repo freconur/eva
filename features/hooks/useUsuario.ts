@@ -19,7 +19,7 @@ const useUsuario = () => {
     const user = await getDoc(refUser)
 
     if (user.exists()) {
-      dispatch({type:AppAction.LOADER_LOGIN, payload:false})
+      dispatch({ type: AppAction.LOADER_LOGIN, payload: false })
       dispatch({
         type: AppAction.CURRENT_USER_DATA, payload: {
           nombres: user.data().nombres,
@@ -28,28 +28,29 @@ const useUsuario = () => {
           institucion: user.data().institucion,
           modular: user.data().modular,
           perfil: user.data().perfil,
-          region: user.data().region
+          region: user.data().region,
+          rol:user.data().rol
         }
       })
     } else {
       console.log('usuario incorrecto o la contraseña no es valida.')
-      dispatch({type:AppAction.LOADER_LOGIN, payload:false})
+      dispatch({ type: AppAction.LOADER_LOGIN, payload: false })
     }
   }
 
-  const getRegiones = async() => {
-    const regionRef = collection(db,'region')
+  const getRegiones = async () => {
+    const regionRef = collection(db, 'region')
     const queryRegiones = await getDocs(regionRef)
     const arrayRegiones: Region[] = []
     queryRegiones.forEach((doc) => {
       arrayRegiones.push(doc.data())
     })
 
-    dispatch({type:AppAction.REGIONES, payload:arrayRegiones})
+    dispatch({ type: AppAction.REGIONES, payload: arrayRegiones })
   }
   const signIn = async (loginData: LoginData) => {
-    dispatch({type:AppAction.LOADER_LOGIN, payload:true})
-    dispatch({type:AppAction.WARNING_LOGIN, payload:''})
+    dispatch({ type: AppAction.LOADER_LOGIN, payload: true })
+    dispatch({ type: AppAction.WARNING_LOGIN, payload: '' })
     console.log('loginDatad', loginData)
     try {
       // return await signInWithEmailAndPassword(auth, loginData.usuario, loginData.contrasena)
@@ -65,10 +66,10 @@ const useUsuario = () => {
       //   console.log('error', Error)
       // }
     } catch (error) {
-      dispatch({type:AppAction.LOADER_LOGIN, payload:false})
-      if(error) {
+      dispatch({ type: AppAction.LOADER_LOGIN, payload: false })
+      if (error) {
         console.log('error')
-        dispatch({type:AppAction.WARNING_LOGIN, payload:'el usuario o contraseña son invalidos'})
+        dispatch({ type: AppAction.WARNING_LOGIN, payload: 'el usuario o contraseña son invalidos' })
 
       }
     }
@@ -90,9 +91,39 @@ const useUsuario = () => {
       }
     })
   }
-
+  const createNewEspecialista = (data: User) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true })
+    console.log('currentUserData.rol', currentUserData.rol)
+    try {
+      if (currentUserData.rol === 4) {
+        axios
+          .post(`${URL_API}crear-director`,
+            {
+              email: `${data.dni}@evaluaciones.com`,
+              password: `${data.dni}`,
+              dni: `${data.dni}`,
+            }
+          )
+          .then(async res => {
+            console.log('res', res)
+            await setDoc(doc(db, "usuarios", `${data.dni}`), {
+              dni: `${data.dni}`,
+              // institucion: `${data.institucion}`,
+              perfil: data.perfil,
+              rol: data.perfil?.rol,
+              modular: data.modular,
+              nombres: data.nombres,
+              apellidos: data.apellidos,
+              region: Number(data.region)
+            })
+          })
+      }
+    } catch (error) {
+      console.log('error', error)
+    }
+  }
   const createNewDirector = (data: User) => {
-    dispatch({type:AppAction.LOADER_PAGES, payload:true})
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     try {
       if (currentUserData.perfil?.rol === 1) {
         console.log('agregando director')
@@ -109,7 +140,7 @@ const useUsuario = () => {
               nombres: `${data.nombres}`,
               apellidos: `${data.apellidos}`,
             })
-          .then(async response => { 
+          .then(async response => {
             console.log('response.status', response)
             await setDoc(doc(db, "usuarios", `${data.dni}`), {
               dni: `${data.dni}`,
@@ -119,11 +150,11 @@ const useUsuario = () => {
               modular: data.modular,
               nombres: data.nombres,
               apellidos: data.apellidos,
-              region:Number(data.region)
+              region: Number(data.region)
             })
-            .then(res => {
-              dispatch({type:AppAction.LOADER_PAGES, payload:false})
-            })
+              .then(res => {
+                dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+              })
           })
       } else if (currentUserData.perfil?.rol === 4) {
         console.log('agregando director como admin')
@@ -150,11 +181,11 @@ const useUsuario = () => {
                 modular: data.modular,
                 nombres: data.nombres,
                 apellidos: data.apellidos,
-                region:Number(data.region)
+                region: Number(data.region)
               })
-              .then((res) => {
-                dispatch({type:AppAction.LOADER_PAGES, payload:false})
-              })
+                .then((res) => {
+                  dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+                })
             })
         } catch (error) {
           console.log('error', error)
@@ -197,7 +228,8 @@ const useUsuario = () => {
     logout,
     createNewDirector,
     crearNuevoDocente,
-    getRegiones
+    getRegiones,
+    createNewEspecialista
   }
 
 }
