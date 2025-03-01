@@ -29,7 +29,7 @@ const useUsuario = () => {
           modular: user.data().modular,
           perfil: user.data().perfil,
           region: user.data().region,
-          rol:user.data().rol
+          rol: user.data().rol
         }
       })
     } else {
@@ -116,6 +116,9 @@ const useUsuario = () => {
               apellidos: data.apellidos,
               region: Number(data.region)
             })
+          })
+          .then(res => {
+            dispatch({ type: AppAction.LOADER_PAGES, payload: false })
           })
       }
     } catch (error) {

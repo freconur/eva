@@ -1,3 +1,4 @@
+import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
@@ -145,4 +146,4 @@ const AgregarDirectores = () => {
 
 
 export default AgregarDirectores
-AgregarDirectores.Auth = PrivateRouteAdmin
+AgregarDirectores.Auth = PrivateRouteAdmins

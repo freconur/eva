@@ -20,8 +20,8 @@ const AgregarDirectores = () => {
   })
 
   return (
-    <div className='grid h-login w-full p-1 place-content-center'>
-      <div className='w-[700px]'>
+    <div className='grid justify-center items-center relative mt-3'>
+      <div className='w-[1024px] bg-white  p-20'>
         <h1 className='font-semibold text-center text-2xl uppercase text-slate-600'>Registrar Director</h1>
         <form onClick={handleAgregarDirector} action="">
           <div className='w-full my-2'>

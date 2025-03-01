@@ -1,4 +1,4 @@
-import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
+import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -62,4 +62,4 @@ const AgregarEvaluaciones = () => {
 }
 
 export default AgregarEvaluaciones
-AgregarEvaluaciones.Auth = PrivateRouteAdmins
+AgregarEvaluaciones.Auth = PrivateRouteEspecialista

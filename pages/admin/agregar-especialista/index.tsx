@@ -1,3 +1,4 @@
+import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
@@ -145,4 +146,4 @@ const AgregareEspecialista = () => {
 
 
 export default AgregareEspecialista
-AgregareEspecialista.Auth = PrivateRouteAdmin
+AgregareEspecialista.Auth = PrivateRouteAdmins

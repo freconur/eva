@@ -9,7 +9,7 @@ import React, { useEffect } from 'react'
 interface Props {
   children: JSX.Element | JSX.Element[]
 }
-const PrivateRouteAdmin = ({ children }: Props) => {
+const PrivateRouteAdmins = ({ children }: Props) => {
 
   const router = useRouter()
   const auth = getAuth(app)
@@ -27,7 +27,7 @@ const PrivateRouteAdmin = ({ children }: Props) => {
   }, [])
 
   useEffect(() => {
-    console.log('userData de especialista', currentUserData)
+    console.log('ruta admin', currentUserData)
     if (currentUserData.dni) {
       if (currentUserData.perfil?.rol !== undefined) {
         if (Number(currentUserData?.perfil.rol) !== 4) {
@@ -41,4 +41,4 @@ const PrivateRouteAdmin = ({ children }: Props) => {
   )
 }
 
-export default PrivateRouteAdmin
+export default PrivateRouteAdmins

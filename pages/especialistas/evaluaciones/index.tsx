@@ -1,5 +1,4 @@
-import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
-import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
+import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import Link from 'next/link'
@@ -70,4 +69,4 @@ const Evaluaciones = () => {
 }
 
 export default Evaluaciones
-Evaluaciones.Auth = PrivateRouteAdmins
+Evaluaciones.Auth = PrivateRouteEspecialista
