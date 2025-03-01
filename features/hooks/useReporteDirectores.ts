@@ -189,82 +189,93 @@ export const useReporteDirectores = () => {
   const reporteRegionales = async (regionValue: number, idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: true })
     const dniDirectoreDeRegion: string[] = []
-    
+
     let dataEstadisticasRegionalesAcumulativo: DataEstadisticas[] = []
     const directoreRegionRef = collection(db, 'usuarios')
     const directoreRegionQuery = query(directoreRegionRef, where("region", "==", regionValue))
 
-    const getDataRegionPromise = new Promise<string[]>(async (resolve, reject) => {
-      try {
-        await getDocs(directoreRegionQuery).then(res => {
-          res.forEach(doc => {
-            dniDirectoreDeRegion.push(doc.data().dni)
-          })
-          resolve(dniDirectoreDeRegion)
-        })
-      } catch (error) {
-        console.log('error', error)
-        reject(error)
-      }
-    })
 
-    const reporteFinalRegional = new Promise<DataEstadisticas[]>(async (resolve, reject) => {
-      try {
-        await getDataRegionPromise.then(async res => {
-          res.forEach(async (dni) => {
-            const evaluacionesDirectorRef = collection(db, `/evaluaciones-directores/${dni}/${idEvaluacion}`)
-            await getDocs(evaluacionesDirectorRef)
-              .then(evaluaciones => {
-                if (evaluaciones.size > 0) {//preguntamos si la collecition tiene datos, si tiene ingresa a la condicion
-                  
-                  if (dataEstadisticasRegionalesAcumulativo.length === 0) {
-                    const dataEstadisticasRegionales: DataEstadisticas[] = []
-                    evaluaciones.forEach(doc => dataEstadisticasRegionales.push({
-                      ...doc.data(),
-                      id: doc.id,
-                      total: Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
-                    }))
-                    console.log('entrando cuando el array se encuentra vacio, solo ingresara una vez')
-                    dataEstadisticasRegionales.sort((a: any, b: any) => a.id - b.id).forEach(a => dataEstadisticasRegionalesAcumulativo.push(a))
-                    // resolve(dataEstadisticasRegionalesAcumulativo)
-                  } else if (dataEstadisticasRegionalesAcumulativo.length > 0) {
-                    const dataEstadisticasRegionales: DataEstadisticas[] = []
-                    evaluaciones.forEach(doc => dataEstadisticasRegionales.push({
-                      ...doc.data(),
-                      id: doc.id,
-                      total: Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
-                    }))
-                    dataEstadisticasRegionales.sort((a: any, b: any) => a.id - b.id).forEach(data => {
-                      dataEstadisticasRegionalesAcumulativo.map(rta => {
-                        if (rta.id === data.id) {
-                          // rta.a = Number(data.a) > 0 ? Number(rta.a) + Number(data.a) : Number(rta.a)
-                          // rta.b = Number(data.b) > 0 ? Number(rta.b) + Number(data.b) : Number(rta.b)
-                          // rta.c = Number(data.c) > 0 ? Number(rta.c) + Number(data.c) : Number(rta.c)
-                          rta.a = Number(rta.a) + Number(data.a)
-                          rta.b = Number(rta.b) + Number(data.b)
-                          rta.c = Number(rta.c) + Number(data.c)
-                          rta.total = Number(rta.total) + Number(data.total)
-                        }
-                      })
-                    })
-                  }
-                }
-                resolve(dataEstadisticasRegionalesAcumulativo)
-              })
+    const sizesDirectores = await getDocs(directoreRegionQuery)
+
+    if (sizesDirectores.size === 0) {
+      console.log('la region no tiene data')
+      dispatch({ type: AppAction.REPORTE_REGIONAL, payload: [] })
+      dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: false })
+      // dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: false })
+    } else {
+      const getDataRegionPromise = new Promise<string[]>(async (resolve, reject) => {
+        try {
+          await getDocs(directoreRegionQuery).then(res => {
+            res.forEach(doc => {
+              dniDirectoreDeRegion.push(doc.data().dni)
+            })
+            resolve(dniDirectoreDeRegion)
           })
-        })
-      } catch (error) {
-        console.log('error', error)
-        reject(error)
-      }
-    })
-    reporteFinalRegional.then(rtaFinal => {
-      setTimeout(() => {
-        dispatch({ type: AppAction.REPORTE_REGIONAL, payload: rtaFinal })
-        dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: false })
-        console.log('rtafinal', rtaFinal)
-      }, 5000)
-    })
+        } catch (error) {
+          console.log('error', error)
+          reject(error)
+        }
+      })
+
+      const reporteFinalRegional = new Promise<DataEstadisticas[]>(async (resolve, reject) => {
+        try {
+          await getDataRegionPromise.then(async res => {
+            res.forEach(async (dni) => {
+              const evaluacionesDirectorRef = collection(db, `/evaluaciones-directores/${dni}/${idEvaluacion}`)
+              await getDocs(evaluacionesDirectorRef)
+                .then(evaluaciones => {
+                  if (evaluaciones.size > 0) {//preguntamos si la collecition tiene datos, si tiene ingresa a la condicion
+
+                    if (dataEstadisticasRegionalesAcumulativo.length === 0) {
+                      const dataEstadisticasRegionales: DataEstadisticas[] = []
+                      evaluaciones.forEach(doc => dataEstadisticasRegionales.push({
+                        ...doc.data(),
+                        id: doc.id,
+                        total: Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
+                      }))
+                      console.log('entrando cuando el array se encuentra vacio, solo ingresara una vez')
+                      dataEstadisticasRegionales.sort((a: any, b: any) => a.id - b.id).forEach(a => dataEstadisticasRegionalesAcumulativo.push(a))
+                      // resolve(dataEstadisticasRegionalesAcumulativo)
+                    } else if (dataEstadisticasRegionalesAcumulativo.length > 0) {
+                      const dataEstadisticasRegionales: DataEstadisticas[] = []
+                      evaluaciones.forEach(doc => dataEstadisticasRegionales.push({
+                        ...doc.data(),
+                        id: doc.id,
+                        total: Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
+                      }))
+                      dataEstadisticasRegionales.sort((a: any, b: any) => a.id - b.id).forEach(data => {
+                        dataEstadisticasRegionalesAcumulativo.map(rta => {
+                          if (rta.id === data.id) {
+                            // rta.a = Number(data.a) > 0 ? Number(rta.a) + Number(data.a) : Number(rta.a)
+                            // rta.b = Number(data.b) > 0 ? Number(rta.b) + Number(data.b) : Number(rta.b)
+                            // rta.c = Number(data.c) > 0 ? Number(rta.c) + Number(data.c) : Number(rta.c)
+                            rta.a = Number(rta.a) + Number(data.a)
+                            rta.b = Number(rta.b) + Number(data.b)
+                            rta.c = Number(rta.c) + Number(data.c)
+                            rta.total = Number(rta.total) + Number(data.total)
+                          }
+                        })
+                      })
+                    }
+                  }
+                  resolve(dataEstadisticasRegionalesAcumulativo)
+                })
+            })
+          })
+        } catch (error) {
+          console.log('error', error)
+          reject(error)
+        }
+      })
+      reporteFinalRegional.then(rtaFinal => {
+        setTimeout(() => {
+          dispatch({ type: AppAction.REPORTE_REGIONAL, payload: rtaFinal })
+          dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: false })
+          console.log('rtafinal', rtaFinal)
+        }, 5000)
+      })
+    }
+
   }
 
 

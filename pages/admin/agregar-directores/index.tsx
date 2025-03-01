@@ -89,8 +89,6 @@ const AgregarDirectores = () => {
                     {...register("region",
                       {
                         required: { value: true, message: "region es requerido" },
-                        minLength: { value: 1, message: "selecciona una región" },
-                        maxLength: { value: 1, message: "selecciona una región" },
                       }
                     )}
                     className='w-full p-3 rounded-md bg-white text-slate-400 shadow-md'>
