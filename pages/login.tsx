@@ -45,13 +45,11 @@ const Login = () => {
       [e.target.name]: e.target.value
     })
   }
-
-  // console.log('loginValues', loginValues)
-  console.log('currentUserData probadno')
-  console.log('warningLogin', warningLogin)
   return (
     <div className='grid h-login w-full p-1 place-content-center'>
-      <div className='min-w-[320px] bg-white p-5 shadow-xl'>
+      <h1 className='text-center text-3xl uppercase text-colorSecundario font-semibold font-montserrat mb-10 [text-shadow:_0_2px_4px_rgba(0,0,0,0.5)] '>sistema de evaluación <br />
+        regional de puno</h1>
+      <div className='min-w-[320px] bg-white p-5 shadow-xl m-auto'>
         <h1 className='text-colorSegundo text-xl uppercase font-semibold text-center font-comfortaa'>inicio de sesión</h1>
         <form onSubmit={handleSubmit} >
           <div>
@@ -96,10 +94,6 @@ const Login = () => {
 
         </form>
       </div>
-      {/* <div className='p-3'>
-        <h4 className='capitalize text-center text-blue-500 mb-2'>crear nuevo usuario</h4>
-        <button className='capitalize p-3 w-full border-[1px] border-emerald-400 hover:border-emerald-600 text-emerald-400 hover:text-white hover:bg-emerald-600 duration-300'>nuevo usuario</button>
-      </div> */}
     </div>
   )
 }

@@ -204,7 +204,7 @@ const useUsuario = () => {
       axios
         .post(`${URL_API}crear-docente`,
           {
-            email: `${data.dni}@eva.com`,
+            email: `${data.dni}@evaluaciones.com`,
             password: `${data.dni}`,
             dni: `${data.dni}`,
           })

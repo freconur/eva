@@ -36,6 +36,7 @@ const config: Config = {
         'centrar-contenido': 'auto'
       },
       colors: {
+        'color-login-page':'#121f3d',
         'colorPrincipal':'#050C9C',
         'colorSegundo':'#3572EF',
         'colorTercero':'#3ABEF9',
