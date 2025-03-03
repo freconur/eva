@@ -99,7 +99,7 @@ const useUsuario = () => {
         axios
           .post(`${URL_API}crear-director`,
             {
-              email: `${data.dni}@evaluaciones.com`,
+              email: `${data.dni}@formativa.com`,
               password: `${data.dni}`,
               dni: `${data.dni}`,
             }
@@ -133,7 +133,7 @@ const useUsuario = () => {
         axios
           .post(`${URL_API}crear-director`,
             {
-              email: `${data.dni}@evaluaciones.com`,
+              email: `${data.dni}@formativa.com`,
               password: `${data.dni}`,
               dni: `${data.dni}`,
               rol: currentUserData.perfil?.rol,
@@ -165,7 +165,7 @@ const useUsuario = () => {
           axios
             .post(`${URL_API}crear-director`,
               {
-                email: `${data.dni}@evaluaciones.com`,
+                email: `${data.dni}@formativa.com`,
                 password: `${data.dni}`,
                 dni: `${data.dni}`,
                 rol: currentUserData.perfil?.rol,
@@ -204,7 +204,7 @@ const useUsuario = () => {
       axios
         .post(`${URL_API}crear-docente`,
           {
-            email: `${data.dni}@evaluaciones.com`,
+            email: `${data.dni}@formativa.com`,
             password: `${data.dni}`,
             dni: `${data.dni}`,
           })
