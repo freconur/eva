@@ -154,7 +154,7 @@ const TercerNivel = () => {
               </div>
               <p className='relative z-[40] text-2xl capitalize text-center font-montserrat font-bold text-white'>5to grado: resuelve problemas</p>
             </div>
-            <div className='cursor-pointer bg-gb-2 h-[100px] relative  grid justify-center items-center hover:opacity-90'>
+            <div className='cursor-pointer bg-cardStatisticsIcon h-[100px] relative  grid justify-center items-center hover:opacity-90'>
               <div className='absolute top-0 bottom-0 left-0 right-0 bg-slate-700 opacity-20 z-[30]'></div>
               <div className='absolute top-[24px] overflow-hidden right-[100px] z-[20]'>
                 <Image
@@ -166,7 +166,7 @@ const TercerNivel = () => {
               </div>
               <p className='relative z-[40] text-2xl capitalize font-montserrat font-bold text-white'>6to grado: lee</p>
             </div>
-            <div className='cursor-pointer bg-gb-1 h-[100px] relative  grid justify-center items-center hover:opacity-90'>
+            <div className='cursor-pointer bg-headerTable h-[100px] relative  grid justify-center items-center hover:opacity-90'>
               <div className='absolute top-0 bottom-0 left-0 right-0 bg-slate-700 opacity-20 z-[30]'></div>
               <div className='absolute top-[24px] overflow-hidden right-[100px] z-[20]'>
                 <Image

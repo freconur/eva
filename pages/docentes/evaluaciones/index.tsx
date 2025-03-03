@@ -135,7 +135,7 @@ const Evaluaciones = () => {
             <div className='absolute z-[50] top-[-20px] right-[105px]'>
               <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>2</p>
             </div>
-            <div className="bg-iconColor flex justify-center items-center text-2xl p-3 break-all ">
+            <div className="bg-headerTable flex justify-center items-center text-2xl p-3 break-all ">
               <p className='break-all text-tableEstandares6 capitalize'>estándar de aprendizaje</p>
             </div>
             <div className='bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md'>
