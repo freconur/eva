@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Navbar from '../navbar/Navbar'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
@@ -7,7 +7,8 @@ import useUsuario from '@/features/hooks/useUsuario'
 import SidebarDirectores from '../sidebar/SidebarDirectores'
 import SidebarDocentes from '../sidebar/SidebarDocentes'
 import SidebarAdmin from '../sidebar/SidebarAdmin'
-
+import Image from 'next/image'
+import logo from '../../assets/formativa-logo.png'
 
 interface Props {
   children: JSX.Element | JSX.Element[]
@@ -59,6 +60,14 @@ const LayoutMenu = ({ children }: Props) => {
   }
   return (
     <div className='relative'>
+      <div className='absolute grid justify-center z-[900] items-center bg-white w-[99px] h-[99px] right-[10px] top-[70px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
+          <Image
+            alt="logo formativa"
+            src={logo}
+            width={80}
+            height={80}
+          />
+        </div>
       {currentUserData.perfil?.rol &&
         siderbarSegunPerfil()
         // <div className='grid h-loader place-content-center justify-center items-center m-auto'>cargando .....</div>

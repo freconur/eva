@@ -114,7 +114,7 @@ const Login = () => {
                   </span>
                 }
                 <div className=''>
-                  <button className='hover:opacity-80 duration-300 p-3 bg-gradient-to-r to-color-boton  from-colorSexto uppercase font-semibold cursor-pointer rounded-md shadow-md text-white w-full'>ingresar</button>
+                  <button className='hover:opacity-80 duration-300 p-3 bg-color-boton-login uppercase font-semibold cursor-pointer rounded-md shadow-md text-white w-full'>ingresar</button>
                 </div>
               </>
 

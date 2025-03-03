@@ -37,6 +37,11 @@ const config: Config = {
         'centrar-contenido': 'auto'
       },
       colors: {
+        'azul-claro4':'#3674B5',
+        'azul-claro3':'#578FCA',
+        'azul-claro2':'#A1E3F9',
+        'azul-claro':'#D1F8EF',
+        'color-boton-login':'#fe9907',
         'fondoSegundocolor':'#18495c',
         'tableEstandares6':'#000957',
         'tableEstandares5':'#FFF2DB',

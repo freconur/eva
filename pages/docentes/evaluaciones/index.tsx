@@ -4,11 +4,10 @@ import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect } from 'react'
-import { RiLoader4Line } from 'react-icons/ri'
 import primaria from '../../../assets/primaria.png'
 import secundaria from '../../../assets/secundaria.png'
 import inicial from '../../../assets/inicial.png'
-
+import logo from '../../../assets/formativa-logo.png'
 const Evaluaciones = () => {
   const { getEvaluaciones } = useAgregarEvaluaciones()
   const { evaluaciones, currentUserData, loaderPages } = useGlobalContext()
@@ -19,7 +18,15 @@ const Evaluaciones = () => {
 
   console.log('evaluaciones', evaluaciones)
   return (
-    <div className=' h-full p-10'>
+    <div className='relative h-full p-10'>
+      {/* <div className='absolute grid justify-center z-[900] items-center bg-white w-[70px] h-[70px] right-[10px] top-[10px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
+          <Image
+            alt="logo formativa"
+            src={logo}
+            width={50}
+            height={50}
+          />
+        </div> */}
       <h1 className='font-martianMono uppercase text-3xl text-white text-center mb-10'>evaluaciones por niveles</h1>
       <div className='grid gap-10 justify-center items-center'>
         <div className='grid grid-cols-3 h-[200px] w-[75%] bg-ggw-1 overflow-hidden rounded-md drop-shadow-2xl'>
