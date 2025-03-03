@@ -25,7 +25,8 @@ const config: Config = {
           'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
       height: {
-        'altura': 'calc(100vh - 72px)',
+        'altura-total':"100vh",
+        'altura': 'calc(100vh - 60px)',
         'login': 'calc(100vh - 70px)',
         'heightSales': 'calc(100vh - 110px)',
         'heightSalesProducts': 'calc(100vh - 150px)',
@@ -36,6 +37,15 @@ const config: Config = {
         'centrar-contenido': 'auto'
       },
       colors: {
+        'fondoSegundocolor':'#18495c',
+        'tableEstandares6':'#000957',
+        'tableEstandares5':'#FFF2DB',
+        'tableEstandares4':'#FFAB5B',
+        'tableEstandares3':'#00879E',
+        'tableEstandares2':'#577BC1',
+        'tablaestandares1':'#344CB7',
+        'color-boton':'#07294d',
+        'color-azul-oscuro':'#002060',
         'color-login-page':'#121f3d',
         'colorPrincipal':'#050C9C',
         'colorSegundo':'#3572EF',
@@ -119,6 +129,7 @@ const config: Config = {
         'gridRowsSalesPayModal': '50% 10%',
         'layout': '200px minmax(900px, 1fr) 100px',
         'tableSales': '90px',
+        'tablaEstandar':'65% 35%'
         // 'promtpr':'20% auto 10%'
       },
       gridTemplateColumns: {
