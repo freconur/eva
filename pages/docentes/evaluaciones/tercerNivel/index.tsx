@@ -14,7 +14,7 @@ const TercerNivel = () => {
               <div className='absolute z-[50] top-[-30px] right-[105px] m-auto'>
                 <p className='font-martianMono font-semibold text-[140px] text-white opacity-50 '>3</p>
               </div>
-              <h2 className='text-3xl capitalize font-bold text-center'>estándar de aprendizaje</h2>
+              <h2 className='text-3xl  font-bold text-center'>Estándar de aprendizaje</h2>
             </div>
             <div className='cursor-pointer bg-azul-claro4 h-[100px] relative  grid justify-center items-center hover:opacity-90'>
               <div className='absolute top-0 bottom-0 left-0 right-0 bg-slate-700 opacity-20 z-[30]'></div>
@@ -71,7 +71,7 @@ const TercerNivel = () => {
               <div className='absolute z-[50] top-[-30px] right-[105px] m-auto'>
                 <p className='font-martianMono font-semibold text-[140px] text-white opacity-50 '>4</p>
               </div>
-              <h2 className='text-3xl capitalize font-bold text-center text-white'>estándar de aprendizaje</h2>
+              <h2 className='text-3xl  font-bold text-center text-white'>Estándar de aprendizaje</h2>
             </div>
             <div className='cursor-pointer bg-colorTercero h-[100px] relative  grid justify-center items-center hover:opacity-90'>
               <div className='absolute top-0 bottom-0 left-0 right-0 bg-slate-700 opacity-20 z-[30]'></div>
@@ -128,7 +128,7 @@ const TercerNivel = () => {
               <div className='absolute z-[50] top-[-30px] right-[105px] m-auto'>
                 <p className='font-martianMono font-semibold text-[140px] text-white opacity-50 '>5</p>
               </div>
-              <h2 className='text-3xl capitalize font-bold text-center text-color-azul-oscuro'>estándar de aprendizaje</h2>
+              <h2 className='text-3xl  font-bold text-center text-color-azul-oscuro'>Estándar de aprendizaje</h2>
             </div>
             <div className='cursor-pointer bg-pastel2 h-[100px] relative  grid justify-center items-center hover:opacity-90'>
               <div className='absolute top-0 bottom-0 left-0 right-0 bg-slate-700 opacity-20 z-[30]'></div>

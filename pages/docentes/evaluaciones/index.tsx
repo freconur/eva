@@ -46,7 +46,7 @@ const Evaluaciones = () => {
               <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>6</p>
             </div>
             <div className="relative z-[40] bg-tableEstandares4 flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-tableEstandares6 capitalize'>estándar de aprendizaje</p>
+              <p className='break-all text-tableEstandares6'>Estándar de aprendizaje</p>
             </div>
             <div className='relative z-[40] bg-white text-center opacity-90 grid justify-center items-center rounded-t-md'>
               <p className='font-martianMono uppercase'>nivel 6</p>
@@ -57,7 +57,7 @@ const Evaluaciones = () => {
               <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>7</p>
             </div>
             <div className="bg-tableEstandares3 flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-white capitalize'>estándar de aprendizaje</p>
+              <p className='break-all text-white'>Estándar de aprendizaje</p>
             </div>
             <div className='bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md'>
               <p className='font-martianMono uppercase'>nivel 7</p>
@@ -85,7 +85,7 @@ const Evaluaciones = () => {
               <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>3</p>
             </div>
             <div className="bg-colorCuarto flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-tableEstandares6 capitalize'>estándar de aprendizaje</p>
+              <p className='break-all text-tableEstandares6'>Estándar de aprendizaje</p>
             </div>
             <div className='bg-white text-center opacity-90 grid justify-center items-center rounded-t-md'>
               <p className='font-martianMono uppercase'>nivel 3</p>
@@ -97,7 +97,7 @@ const Evaluaciones = () => {
               <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>4</p>
             </div>
             <div className="bg-graduado-blue-1 flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-white capitalize'>estándar de aprendizaje</p>
+              <p className='break-all text-white '>Estándar de aprendizaje</p>
             </div>
             <div className='bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md'>
               <p className='font-martianMono uppercase'>nivel 4</p>
@@ -108,7 +108,7 @@ const Evaluaciones = () => {
               <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>5</p>
             </div>
             <div className="bg-pastel13 flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-tableEstandares6 capitalize'>estándar de aprendizaje</p>
+              <p className='break-all text-tableEstandares6'>Estándar de aprendizaje</p>
             </div>
             <div className='bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md'>
               <p className='font-martianMono uppercase'>nivel 5</p>
@@ -132,7 +132,7 @@ const Evaluaciones = () => {
               <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>1</p>
             </div>
             <div className="bg-tere flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-white capitalize'>estándar de aprendizaje</p>
+              <p className='break-all text-white'>Estándar de aprendizaje</p>
             </div>
             <div className='bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md'>
               <p className='font-martianMono uppercase'>nivel 1</p>
@@ -143,7 +143,7 @@ const Evaluaciones = () => {
               <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>2</p>
             </div>
             <div className="bg-headerTable flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-tableEstandares6 capitalize'>estándar de aprendizaje</p>
+              <p className='break-all text-tableEstandares6 '>Estándar de aprendizaje</p>
             </div>
             <div className='bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md'>
               <p className='font-martianMono uppercase'>nivel 2</p>
