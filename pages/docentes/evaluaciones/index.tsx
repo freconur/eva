@@ -19,7 +19,7 @@ const Evaluaciones = () => {
 
   console.log('evaluaciones', evaluaciones)
   return (
-    <div className='bg-gradient-to-r to-color-azul-oscuro from-1% from-fondoSegundocolor to-99% h-full p-10'>
+    <div className=' h-full p-10'>
       <h1 className='font-martianMono uppercase text-3xl text-white text-center mb-10'>evaluaciones por niveles</h1>
       <div className='grid gap-10 justify-center items-center'>
         <div className='grid grid-cols-3 h-[200px] w-[75%] bg-ggw-1 overflow-hidden rounded-md drop-shadow-2xl'>
@@ -59,7 +59,7 @@ const Evaluaciones = () => {
 
         </div>
         <div className='grid grid-cols-4 h-[200px] bg-gos-1 overflow-hidden rounded-md drop-shadow-2xl'>
-          <div className='relative h-full grid justify-center items-center uppercase  p-3 font-semibold'>
+          <Link href="/docentes/evaluaciones/tercerNivel"  className='relative h-full grid justify-center items-center uppercase  p-3 font-semibold'>
             <div className='absolute z-[10] right-[-5px] bottom-[-10px] opacity-80'>
               <Image
                 alt="logo formativa"
@@ -69,8 +69,11 @@ const Evaluaciones = () => {
               />
             </div>
             <h3 className='relative z-[30] text-2xl text-white font-bold font-montserrat text-center'>educación primaria</h3>
-          </div>
-          <div className='grid relative grid-rows-tablaEstandar bg-colorCuarto cursor-pointer hover:opacity-80'>
+          </Link>
+          {/* <div className='grid relative grid-rows-tablaEstandar bg-colorCuarto cursor-pointer hover:opacity-80'> */}
+            <Link href="/docentes/evaluaciones/tercerNivel" 
+              className='grid relative grid-rows-tablaEstandar bg-colorCuarto cursor-pointer hover:opacity-80'
+            >
             <div className='absolute z-[50] top-[-20px] right-[105px]'>
               <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>3</p>
             </div>
@@ -80,8 +83,9 @@ const Evaluaciones = () => {
             <div className='bg-white text-center opacity-90 grid justify-center items-center rounded-t-md'>
               <p className='font-martianMono uppercase'>nivel 3</p>
             </div>
-          </div>
-          <div className='grid grid-rows-tablaEstandar bg-graduado-blue-1 cursor-pointer hover:opacity-80 relative'>
+            </Link>
+          {/* </div> */}
+          <Link href="/docentes/evaluaciones/tercerNivel"  className='grid grid-rows-tablaEstandar bg-graduado-blue-1 cursor-pointer hover:opacity-80 relative'>
             <div className='absolute z-[50] top-[-20px] right-[105px]'>
               <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>4</p>
             </div>
@@ -91,8 +95,8 @@ const Evaluaciones = () => {
             <div className='bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md'>
               <p className='font-martianMono uppercase'>nivel 4</p>
             </div>
-          </div>
-          <div className='grid grid-rows-tablaEstandar bg-pastel13 cursor-pointer hover:opacity-80 relative'>
+          </Link>
+          <Link href="/docentes/evaluaciones/tercerNivel" className='grid grid-rows-tablaEstandar bg-pastel13 cursor-pointer hover:opacity-80 relative'>
             <div className='absolute z-[50] top-[-20px] right-[105px]'>
               <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>5</p>
             </div>
@@ -102,7 +106,7 @@ const Evaluaciones = () => {
             <div className='bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md'>
               <p className='font-martianMono uppercase'>nivel 5</p>
             </div>
-          </div>
+          </Link>
         </div>
         <div className='grid grid-cols-3 h-[200px]  w-[75%] bg-pastel14 overflow-hidden rounded-md  drop-shadow-2xl'>
           <div className='relative h-full grid justify-center items-center uppercase text-tableEstandares6 p-3 font-semibold'>

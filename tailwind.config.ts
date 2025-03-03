@@ -117,6 +117,7 @@ const config: Config = {
         // 'fondo-claro':"#0000"
       },
       gridTemplateRows: {
+        'nivelPrimaria':'150px auto auto auto auto',
         'loaderPreguntaRespuesta':'1fr',
         'loader': 'calc(100vh - 60px)',
         'layoutGlobal': 'auto 1fr auto',
