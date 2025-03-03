@@ -31,6 +31,14 @@ const LayoutMenu = ({ children }: Props) => {
     if (currentUserData.perfil?.rol === 1) {
       return (
         <>
+          <div className='absolute grid justify-center z-[900] items-center bg-white w-[99px] h-[99px] right-[10px] top-[70px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
+            <Image
+              alt="logo formativa"
+              src={logo}
+              width={80}
+              height={80}
+            />
+          </div>
           <SidebarEspecialistas showSidebar={showSidebar} />
           <Navbar />
         </>
@@ -38,20 +46,44 @@ const LayoutMenu = ({ children }: Props) => {
     } else if (currentUserData.perfil?.rol === 2) {
       return (
         <>
+          <div className='absolute grid justify-center z-[900] items-center bg-white w-[99px] h-[99px] right-[10px] top-[70px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
+            <Image
+              alt="logo formativa"
+              src={logo}
+              width={80}
+              height={80}
+            />
+          </div>
           <SidebarDirectores showSidebar={showSidebar} />
           <Navbar />
         </>
       )
-    } else if(currentUserData.perfil?.rol === 3){
+    } else if (currentUserData.perfil?.rol === 3) {
       return (
         <>
+          <div className='absolute grid justify-center z-[900] items-center bg-white w-[99px] h-[99px] right-[10px] top-[70px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
+            <Image
+              alt="logo formativa"
+              src={logo}
+              width={80}
+              height={80}
+            />
+          </div>
           <SidebarDocentes showSidebar={showSidebar} />
           <Navbar />
         </>
       )
-    }else if(currentUserData.perfil?.rol === 4){
+    } else if (currentUserData.perfil?.rol === 4) {
       return (
         <>
+          <div className='absolute grid justify-center z-[900] items-center bg-white w-[99px] h-[99px] right-[10px] top-[70px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
+            <Image
+              alt="logo formativa"
+              src={logo}
+              width={80}
+              height={80}
+            />
+          </div>
           <SidebarAdmin showSidebar={showSidebar} />
           <Navbar />
         </>
@@ -60,14 +92,7 @@ const LayoutMenu = ({ children }: Props) => {
   }
   return (
     <div className='relative'>
-      <div className='absolute grid justify-center z-[900] items-center bg-white w-[99px] h-[99px] right-[10px] top-[70px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
-          <Image
-            alt="logo formativa"
-            src={logo}
-            width={80}
-            height={80}
-          />
-        </div>
+
       {currentUserData.perfil?.rol &&
         siderbarSegunPerfil()
         // <div className='grid h-loader place-content-center justify-center items-center m-auto'>cargando .....</div>
