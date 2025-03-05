@@ -132,6 +132,7 @@ export type DataEstadisticas = {
   a?: number,
   b?: number,
   c?: number,
+  d?:number,
   total?: number,
 }
 

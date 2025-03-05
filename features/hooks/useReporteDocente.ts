@@ -22,7 +22,11 @@ export const useReporteDocente = () => {
     dataEstadisticas.forEach((doc) => {
       // doc.data() is never undefined for query doc snapshots
       console.log(doc.id, " => ", doc.data());
-      arrayDataEstadisticas.push({...doc.data(),id:doc.id, total:Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)})
+      arrayDataEstadisticas.push({
+        ...doc.data(),
+        id:doc.id, 
+        total: doc.data().d === undefined ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) : Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) + Number(doc.data().d)
+      })
     });
     arrayDataEstadisticas.sort((a: any, b: any) => a.id - b.id)
     dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: arrayDataEstadisticas })

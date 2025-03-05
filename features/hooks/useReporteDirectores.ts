@@ -47,7 +47,7 @@ export const useReporteDirectores = () => {
                       {
                         ...doc.data(),
                         id: doc.id,
-                        total: Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
+                        total: doc.data().d === undefined ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) : Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) + Number(doc.data().d)
                       }))
                     console.log('array vacio agregando datos first time')
                     arrayOrdenadoRespuestas.sort((a: any, b: any) => a.id - b.id).forEach(a => arrayAcumulativoDeRespuestas.push(a))
@@ -56,16 +56,26 @@ export const useReporteDirectores = () => {
                     evaluaciones.forEach(doc => arrayOrdenadoRespuestas.push({
                       ...doc.data(),
                       id: doc.id,
-                      total: Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
+                      total: doc.data().d === undefined ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) : Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) + Number(doc.data().d)
                     }))
+                    // if(doc.data().d === undefined)
                     arrayOrdenadoRespuestas?.sort((a: any, b: any) => a.id - b.id).forEach(data => {
                       arrayAcumulativoDeRespuestas?.map((rta, i) => {
-
-                        if (rta.id === data.id) {
-                          rta.a = Number(rta.a) + Number(data.a)
-                          rta.b = Number(rta.b) + Number(data.b)
-                          rta.c = Number(rta.c) + Number(data.c)
-                          rta.total = Number(rta.total) + Number(data.total)
+                        if(rta.d === undefined) {
+                          if (rta.id === data.id) {
+                            rta.a = Number(rta.a) + Number(data.a)
+                            rta.b = Number(rta.b) + Number(data.b)
+                            rta.c = Number(rta.c) + Number(data.c)
+                            rta.total = Number(rta.total) + Number(data.total)
+                          }
+                        } else {
+                          if (rta.id === data.id) {
+                            rta.a = Number(rta.a) + Number(data.a)
+                            rta.b = Number(rta.b) + Number(data.b)
+                            rta.c = Number(rta.c) + Number(data.c)
+                            rta.d = Number(rta.d) + Number(data.d)
+                            rta.total = Number(rta.total) + Number(data.total)
+                          }
                         }
                       })
                     })
@@ -172,13 +182,25 @@ export const useReporteDirectores = () => {
   const agregarDatosEstadisticosDirector = async (data: DataEstadisticas[], idEvaluacion: string) => {
     data.map(async pq => {
       const pathRef = doc(db, `/evaluaciones-directores/${currentUserData.dni}/${idEvaluacion}`, `${pq.id}`)
-      await setDoc(pathRef, {
-        id: pq.id,
-        a: pq.a,
-        b: pq.b,
-        c: pq.c,
-        total: pq.total
-      })
+
+      if (pq.d === undefined) {
+        await setDoc(pathRef, {
+          id: pq.id,
+          a: pq.a,
+          b: pq.b,
+          c: pq.c,
+          total: pq.total
+        })
+      } else {
+        await setDoc(pathRef, {
+          id: pq.id,
+          a: pq.a,
+          b: pq.b,
+          c: pq.c,
+          d: pq.d,
+          total: pq.total
+        })
+      }
       // .then(response => {
       //   dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: false })
       // })

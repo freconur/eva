@@ -168,28 +168,63 @@ export const useAgregarEvaluaciones = () => {
           // const docSnap = await getDoc(docRef);
           if (!querySnapshot.exists()) {
             const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.id}`)
-            await setDoc(dataGraficos, {
-              a: 0,
-              b: 0,
-              c: 0
-            })
-          }
-          const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.id}`)
-          a.alternativas?.map(async al => {
-            if (al.selected === true && al.alternativa === "a") {
-              await updateDoc(dataGraficos, {
-                a: increment(1)
-              })
-            } else if (al.selected === true && al.alternativa === "b") {
-              await updateDoc(dataGraficos, {
-                b: increment(1)
-              })
-            } else if (al.selected === true && al.alternativa === "c") {
-              await updateDoc(dataGraficos, {
-                c: increment(1)
+            if (a.alternativas?.length === 3) {
+              await setDoc(dataGraficos, {
+                a: 0,
+                b: 0,
+                c: 0
               })
             }
-          })
+            //esto es nuevo para mas alternativas
+            if (a.alternativas?.length === 4) {
+              await setDoc(dataGraficos, {
+                a: 0,
+                b: 0,
+                c: 0,
+                d: 0
+              })
+            }
+          }
+          const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.id}`)
+          if(a.alternativas?.length === 3){
+            a.alternativas?.map(async al => {
+              if (al.selected === true && al.alternativa === "a") {
+                await updateDoc(dataGraficos, {
+                  a: increment(1)
+                })
+              } else if (al.selected === true && al.alternativa === "b") {
+                await updateDoc(dataGraficos, {
+                  b: increment(1)
+                })
+              } else if (al.selected === true && al.alternativa === "c") {
+                await updateDoc(dataGraficos, {
+                  c: increment(1)
+                })
+              }
+            })
+          }
+          //esto es nuevo para mas alternativas
+          if(a.alternativas?.length === 4) {
+            a.alternativas?.map(async al => {
+              if (al.selected === true && al.alternativa === "a") {
+                await updateDoc(dataGraficos, {
+                  a: increment(1)
+                })
+              } else if (al.selected === true && al.alternativa === "b") {
+                await updateDoc(dataGraficos, {
+                  b: increment(1)
+                })
+              } else if (al.selected === true && al.alternativa === "c") {
+                await updateDoc(dataGraficos, {
+                  c: increment(1)
+                })
+              }else if (al.selected === true && al.alternativa === "d") {
+                await updateDoc(dataGraficos, {
+                  d: increment(1)
+                })
+              }
+            })
+          }
         })
         resolve(true)
       } catch (error) {

@@ -31,7 +31,7 @@ const Evaluacion = () => {
     }
   }, [route.query.idExamen])
 
-
+  console.log('evaluacion', evaluacion)
   return (
     <>
       {
@@ -60,7 +60,7 @@ const Evaluacion = () => {
 
                 <button onClick={handleShowModalEstudiante} className='border-iconColor border-[1px] p-3 rounded-md shadow text-iconColor hover:bg-iconColor hover:text-white duration-300 hover:duration-300 capitalize font-semibold'>evaluar estudiante</button>
                 <div className='bg-colorTercero p-3 rounded-md shadow text-white capitalize font-semibold cursor-pointer hover:bg-colorCuarto hover:text-colorQuinto duration-300 hover:duration-300'>
-                  <Link href={`reporte?idExamen=${route.query.id}`}>reporte</Link>
+                  <Link href={`prueba/reporte?idExamen=${route.query.idExamen}`}>reporte</Link>
                 </div>
               </div>
               <div className='flex gap-3 justify-end'>
@@ -87,7 +87,7 @@ const Evaluacion = () => {
                           )
                         })
                       }
-                      <div className='text-green-500 border border-green-500 p-3 rounded-md w-[120px] mt-4'>respuesta: {pr.respuesta}</div>
+                      {/* <div className='text-green-500 border border-green-500 p-3 rounded-md w-[120px] mt-4'>respuesta: {pr.respuesta}</div> */}
                     </li>
                   )
                 })}

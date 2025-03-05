@@ -31,14 +31,14 @@ ChartJS.register(
 
 
 const Reporte = () => {
-  
+
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
     return {
-      labels: ['a', 'b', 'c'],
+      labels: data.d === undefined ? ['a', 'b', 'c'] : ['a', 'b', 'c', 'd'],
       datasets: [
         {
           label: "total",
-          data: [data.a, data.b, data.c],
+          data: [data.a, data.b, data.c, data.d !== 0 && data.d],
           backgroundColor: [
             'rgba(255, 99, 132, 0.2)',
             'rgba(255, 159, 64, 0.2)',
@@ -72,14 +72,14 @@ const Reporte = () => {
   const { getPreguntasRespuestas } = useAgregarEvaluaciones()
   const route = useRouter()
   useEffect(() => {
-    
+
     getPreguntasRespuestas(`${route.query.idEvaluacion}`)
   }, [currentUserData.dni, route.query.idEvaluacion])
 
 
   useEffect(() => {
     reporteDirectorData(`${currentUserData.dni}`, `${route.query.idEvaluacion}`)
-  },[])
+  }, [])
   const iterarPregunta = (index: string) => {
     return (
       <div className='flex'>
@@ -100,7 +100,7 @@ const Reporte = () => {
   };
   console.log('reporteDirector', reporteDirector)
   return (
-    
+
     <>
       {
         loaderReporteDirector ?
@@ -129,9 +129,13 @@ const Reporte = () => {
                               />
                             </div>
                             <div className='text-sm  flex gap-[90px] items-center justify-center ml-[30px] text-slate-500'>
-                              <p>{dat?.a} | {((100 * Number(dat?.a)) / Number(dat?.total)).toFixed(0)}%</p>
-                              <p>{dat?.b} |{((100 * Number(dat?.b)) / Number(dat?.total)).toFixed(0)}%</p>
-                              <p>{dat?.c} | {((100 * Number(dat?.c)) / Number(dat?.total)).toFixed(0)}%</p>
+                              <p>{dat.a} | {dat.total === 0 ? 0 : ((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)} %</p>
+                              <p>{dat.b} |{dat.total === 0 ? 0 : ((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
+                              <p>{dat.c} | {dat.total === 0 ? 0 : ((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
+                              {
+                                dat.d &&
+                                <p>{dat.d} | {dat.total === 0 ? 0 : ((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
+                              }
                             </div>
                             <div className='text-center text-md  w-[150px] text-colorTercero p-2  rounded-md mt-5 border border-colorTercero'>respuesta:<span className='text-colorTercero font-semibold ml-2'>{preguntasRespuestas[Number(index)]?.respuesta}</span> </div>
                           </div>

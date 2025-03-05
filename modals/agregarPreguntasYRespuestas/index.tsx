@@ -27,6 +27,7 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
   }
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
   const handleSubmitform = handleSubmit(async (data) => {
+    console.log('data', data)
     let rtaConvert: any = []
     Object.entries(data).forEach(([key, value]) => {
       if (key.length === 1) {
@@ -34,7 +35,8 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
       }
 
     });
-    if (rtaConvert.length === 3) {
+    // if (rtaConvert.length === 3) {
+    if (rtaConvert.length >= 3) {
       guardarPreguntasRespuestas({ id: id, pregunta: data.pregunta, respuesta: data.respuesta, alternativas: rtaConvert })
       console.log('rtaConvert', rtaConvert)
       reset()
@@ -119,6 +121,15 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
                   placeholder="alternativa c"
                 />
               </div>
+              <div className="flex gap-3 justify-center items-center">
+                <p className={styles.alternativa}>d.</p>
+                <input
+                  {...register("d")}
+                  className={styles.alternativaInput}
+                  type="text"
+                  placeholder="alternativa d"
+                />
+              </div>
             </div>
             <div className=" gap-3">
               <p className={styles.titlePregunta}>respuesta correcta</p>
@@ -135,6 +146,7 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
                 placeholder="escribe la alternativa correcta"
               />
             </div>
+
             <button className='flex justify-center items-center bg-blue-500 hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase'>guardar</button>
           </form>
         </div>

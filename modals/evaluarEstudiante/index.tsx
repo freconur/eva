@@ -54,11 +54,13 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
     reset()
   })
   const siguientePregunta = () => {
+    // debugger
     if (sizePreguntas - 1 !== ordenLimitePregunta) {
       setOrdenLimitePregunta(ordenLimitePregunta + 1)
       validateRespuests(preguntasRespuestasEstudiante)
       //aqui tendria que agregar la funcion para que vaya incrementando
     }
+    // debugger
     setActivarBotonSiguiente(false)
 
   }
@@ -95,6 +97,8 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
   }, [activarBotonSiguiente])
 
   useEffect(() => { prEstudiantes(preguntasRespuestas) }, [preguntasRespuestas])
+  console.log('preguntasRespuestas', preguntasRespuestas)
+  
   return container
     ? createPortal(
       <div className={styles.containerModal}>
@@ -179,7 +183,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
                   </div>
 
                   {
-                    ordenLimitePregunta === 24 ?
+                    ordenLimitePregunta === preguntasRespuestas.length -1 ?
                       <button
                         // onClick={salvarPrEstudiante}
                         disabled={activarBotonSiguiente === true ? false : true} className='flex justify-center items-center bg-blue-500 hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase'>guardar</button>

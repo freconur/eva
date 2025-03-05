@@ -31,18 +31,6 @@ ChartJS.register(
   Legend
 );
 const Reportes = () => {
-  const data = {
-    labels: ['a', 'b', 'c'],
-    datasets: [{
-      axis: 'y',
-      label: 'My First Dataset',
-      // data: dataEstadisticas,
-      data: [65, 59, 80],
-      fill: false,
-
-      borderWidth: 1
-    }]
-  };
 
   const route = useRouter()
   const { estudiantes, currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages, loaderReporteDirector } = useGlobalContext()
@@ -50,11 +38,12 @@ const Reportes = () => {
   const { getPreguntasRespuestas } = useAgregarEvaluaciones()
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
     return {
-      labels: ['a', 'b', 'c'],
+
+      labels: data.d === undefined ? ['a', 'b', 'c'] : ['a', 'b', 'c', 'd'],
       datasets: [
         {
           label: "estadisticas de respuesta",
-          data: [data.a, data.b, data.c],
+          data: [data.a, data.b, data.c, data.d !== 0 && data.d],
           backgroundColor: [
             'rgba(255, 99, 132, 0.2)',
             'rgba(255, 159, 64, 0.2)',
@@ -107,7 +96,7 @@ const Reportes = () => {
       </h3>
     )
   }
-// console.log('dataEstadisticas', dataEstadisticas)
+  console.log('dataEstadisticas', dataEstadisticas)
   return (
     <>
       {
@@ -138,13 +127,13 @@ const Reportes = () => {
                               />
                             </div>
                             <div className='text-sm  flex gap-[90px] items-center justify-center ml-[30px] text-slate-500'>
-                              <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
-                              <p>{dat.b} |{((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
-                              <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
-                              {dat.d &&
-                              <p>{dat.d} | {((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
-                              
-                            }
+                              <p>{dat.a} | {dat.total === 0 ? 0 : ((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)} %</p>
+                              <p>{dat.b} |{dat.total === 0 ? 0 : ((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
+                              <p>{dat.c} | {dat.total === 0 ? 0 : ((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
+                              {
+                                dat.d &&
+                                <p>{dat.d} | {dat.total === 0 ? 0 : ((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
+                              }
                             </div>
                             <div className='text-center text-md  w-[150px] text-colorTercero p-2  rounded-md mt-5 border border-colorTercero'>respuesta:<span className='text-colorTercero font-semibold ml-2'>{preguntasRespuestas[Number(index)]?.respuesta}</span> </div>
                           </div>
@@ -156,36 +145,36 @@ const Reportes = () => {
               </div>
             </div>
             <table className='w-full  bg-white  rounded-md shadow-md relative'>
-                <thead className='bg-blue-700 border-b-2 border-blue-300 '>
-                  <tr className='text-white capitalize font-nunito '>
-                    <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
-                    <th className="py-3 md:p-2 pl-1 md:pl-2 text-left ">dni</th>
-                    <th className="py-3 md:p-2  text-left">nombres y apellidos</th>
-                    <th className="py-3 md:p-2  text-left">rpta. correctas</th>
-                    <th className="py-3 md:p-2  text-left">rpta. incorrectas</th>
-                    <th className="py-3 md:p-2  text-left">total de preguntas</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {
-                    dataEstadisticas.length > 0 ?
-                      estudiantes?.map((dir, index) => {
-                        return (
-                          <tr key={index} className='h-[60px] hover:bg-blue-100 duration-100 cursor-pointer'>
-                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{index + 1}</td>
-                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.dni}</td>
-                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.nombresApellidos}</td>
-                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{dir.respuestasCorrectas}</td>
-                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{Number(dir.totalPreguntas) - Number(dir.respuestasCorrectas)}</td>
-                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{dir.totalPreguntas}</td>
-                          </tr>
-                        )
-                      })
-                      :
-                      null
-                  }
-                </tbody>
-              </table>
+              <thead className='bg-blue-700 border-b-2 border-blue-300 '>
+                <tr className='text-white capitalize font-nunito '>
+                  <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
+                  <th className="py-3 md:p-2 pl-1 md:pl-2 text-left ">dni</th>
+                  <th className="py-3 md:p-2  text-left">nombres y apellidos</th>
+                  <th className="py-3 md:p-2  text-left">rpta. correctas</th>
+                  <th className="py-3 md:p-2  text-left">rpta. incorrectas</th>
+                  <th className="py-3 md:p-2  text-left">total de preguntas</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {
+                  dataEstadisticas.length > 0 ?
+                    estudiantes?.map((dir, index) => {
+                      return (
+                        <tr key={index} className='h-[60px] hover:bg-blue-100 duration-100 cursor-pointer'>
+                          <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{index + 1}</td>
+                          <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.dni}</td>
+                          <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dir.nombresApellidos}</td>
+                          <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{dir.respuestasCorrectas}</td>
+                          <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{Number(dir.totalPreguntas) - Number(dir.respuestasCorrectas)}</td>
+                          <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>{dir.totalPreguntas}</td>
+                        </tr>
+                      )
+                    })
+                    :
+                    null
+                }
+              </tbody>
+            </table>
           </div>
       }
 
