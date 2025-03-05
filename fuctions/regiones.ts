@@ -25,3 +25,17 @@ export const regionTexto = (id: string) => {
   })
   return rta
 }
+
+export const convertGrade = (grade:string) => {
+  if(grade === "1") return "1ro grado"
+  if(grade === "2") return "2do grado"
+  if(grade === "3") return "3ro grado"
+  if(grade === "4") return "4to grado"
+  if(grade === "5") return "5to grado"
+  if(grade === "6") return "6to grado"
+  if(grade === "7") return "1ro sec."
+  if(grade === "8") return "2ro sec."
+  if(grade === "9") return "3ro sec."
+  if(grade === "10") return "4to sec."
+  if(grade === "11") return "5to sec."
+  }

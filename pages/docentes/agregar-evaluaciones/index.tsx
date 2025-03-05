@@ -22,7 +22,7 @@ const AgregarEvaluaciones = () => {
   }
   const handleAgregarEvaluacion = (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault()
-    crearEvaluacion(nombreEvaluacion.evaluacion)
+    // crearEvaluacion(nombreEvaluacion.evaluacion)
     setNombreEvaluacion(initialValues)
   }
   return (

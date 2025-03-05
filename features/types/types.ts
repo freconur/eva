@@ -23,6 +23,8 @@ export type AppReducerValues = {
   regiones:Region[],
   reporteRegional:DataEstadisticas[],
   loaderReporteRegional:boolean,
+  grados:Grades[],
+  evaluacionesGradoYCategoria:Evaluaciones[]
 
 }
 
@@ -50,6 +52,8 @@ export type AppActions =
   | { type: AppAction.REGIONES; payload: Region[] }
   | { type: AppAction.REPORTE_REGIONAL; payload: DataEstadisticas[] }
   | { type: AppAction.LOADER_REPORTE_REGIONAL; payload: boolean }
+  | { type: AppAction.GRADOS; payload: Grades[] }
+  | { type: AppAction.EVALUACIONES_GRADO_CATEGORIA; payload: Evaluaciones[] }
 
 export type LoginData = {
   usuario: string,
@@ -89,7 +93,9 @@ export type Evaluaciones = {
   id?: string,
   idDocente?: string,
   nombre?: string,
-  preguntasRespuestas?: PreguntasRespuestas
+  preguntasRespuestas?: PreguntasRespuestas,
+  grado?:number,
+  categoria?:number
 }
 
 export type UserEstudiante = {
@@ -132,4 +138,17 @@ export type DataEstadisticas = {
 export type Regiones = {
   codigo?:number,
   region?:string
+}
+
+export type Grades = {
+  id?:string,
+  nombre?:string,
+  grado?:number
+}
+
+export type CreaEvaluacion ={ 
+  id?:string,
+  grado?:number,
+  categoria?:string,
+  nombreEvaluacion?:string
 }

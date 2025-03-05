@@ -1,7 +1,7 @@
-import { addDoc, collection, doc, getDoc, getDocs, getFirestore, increment, setDoc, updateDoc } from "firebase/firestore/lite"
+import { addDoc, collection, doc, getDoc, getDocs, getFirestore, increment, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore/lite"
 import { AppAction } from "../actions/appAction"
 import { useGlobalContext, useGlobalContextDispatch } from "../context/GlolbalContext"
-import { Evaluaciones, PreguntasRespuestas, User, UserEstudiante } from "../types/types"
+import { CreaEvaluacion, Evaluaciones, Grades, PreguntasRespuestas, User, UserEstudiante } from "../types/types"
 
 
 
@@ -40,11 +40,45 @@ export const useAgregarEvaluaciones = () => {
       }
     })
   }
-  const crearEvaluacion = async (value: string) => {
+
+
+  const getGrades = async () => {
+    const refGrados = collection(db, 'grados')
+    const q = query(refGrados, orderBy("grado"))
+    await getDocs(q)
+      .then(res => {
+        const grados: Grades[] = []
+        if (res.size > 0) {
+          res.forEach(doc => {
+            grados.push({ ...doc.data(), id: doc.id })
+          })
+        }
+        dispatch({ type: AppAction.GRADOS, payload: grados })
+      })
+  }
+
+  const getEvaluacionesGradoYCategoria = async (grado: number, categoria: number) => {
+    const refGrados = collection(db, 'evaluaciones')
+    const q = query(refGrados, where("grado", "==", Number(grado)), where("categoria", "==", Number(categoria)))
+    // const q = query(refGrados, )
+
+    await getDocs(q)
+      .then(res => {
+        const allEvaluaciones: Evaluaciones[] = []
+        res.forEach(doc => {
+          allEvaluaciones.push({ ...doc.data(), id: doc.id })
+        })
+        dispatch({ type: AppAction.EVALUACIONES_GRADO_CATEGORIA, payload: allEvaluaciones })
+      })
+  }
+  const crearEvaluacion = async (value: CreaEvaluacion) => {
+
 
     await addDoc(collection(db, "/evaluaciones"), {
       idDocente: currentUserData.dni,
-      nombre: value
+      nombre: value.nombreEvaluacion,
+      grado: Number(value.grado),
+      categoria: Number(value.categoria)
     })
   }
 
@@ -166,7 +200,7 @@ export const useAgregarEvaluaciones = () => {
     })
 
     promiseGuardarData.then(response => {
-      if(response ===true) {
+      if (response === true) {
         console.log('response update data', response)
         dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
       }
@@ -184,6 +218,8 @@ export const useAgregarEvaluaciones = () => {
     getEvaluacion,
     getPreguntasRespuestas,
     prEstudiantes,
-    salvarPreguntRespuestaEstudiante
+    salvarPreguntRespuestaEstudiante,
+    getGrades,
+    getEvaluacionesGradoYCategoria
   }
 }
