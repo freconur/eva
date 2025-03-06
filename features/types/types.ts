@@ -112,7 +112,8 @@ export type Estudiante = {
   nombresApellidos?: string,
   dniDocente?: string,
   respuestasCorrectas?: number,
-  totalPreguntas?: number
+  totalPreguntas?: number,
+  respuestasIncorrectas?:number
 }
 export type User = {
   nombres?: string,

@@ -72,14 +72,14 @@ export const useAgregarEvaluaciones = () => {
       })
   }
   const crearEvaluacion = async (value: CreaEvaluacion) => {
-
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true })
 
     await addDoc(collection(db, "/evaluaciones"), {
       idDocente: currentUserData.dni,
       nombre: value.nombreEvaluacion,
       grado: Number(value.grado),
       categoria: Number(value.categoria)
-    })
+    }).then(res => dispatch({ type: AppAction.LOADER_PAGES, payload: false }))
   }
 
   const getEvaluacion = async (id: string) => {
@@ -186,7 +186,7 @@ export const useAgregarEvaluaciones = () => {
             }
           }
           const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.id}`)
-          if(a.alternativas?.length === 3){
+          if (a.alternativas?.length === 3) {
             a.alternativas?.map(async al => {
               if (al.selected === true && al.alternativa === "a") {
                 await updateDoc(dataGraficos, {
@@ -204,7 +204,7 @@ export const useAgregarEvaluaciones = () => {
             })
           }
           //esto es nuevo para mas alternativas
-          if(a.alternativas?.length === 4) {
+          if (a.alternativas?.length === 4) {
             a.alternativas?.map(async al => {
               if (al.selected === true && al.alternativa === "a") {
                 await updateDoc(dataGraficos, {
@@ -218,7 +218,7 @@ export const useAgregarEvaluaciones = () => {
                 await updateDoc(dataGraficos, {
                   c: increment(1)
                 })
-              }else if (al.selected === true && al.alternativa === "d") {
+              } else if (al.selected === true && al.alternativa === "d") {
                 await updateDoc(dataGraficos, {
                   d: increment(1)
                 })

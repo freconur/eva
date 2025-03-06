@@ -24,7 +24,7 @@ export const useReporteDocente = () => {
       console.log(doc.id, " => ", doc.data());
       arrayDataEstadisticas.push({
         ...doc.data(),
-        id:doc.id, 
+        id: doc.id,
         total: doc.data().d === undefined ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) : Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) + Number(doc.data().d)
       })
     });
@@ -39,9 +39,9 @@ export const useReporteDocente = () => {
     docsEstudiantes.forEach((doc) => {
       // doc.data() is never undefined for query doc snapshots
       console.log(doc.id, " => ", doc.data());
-      arrayEstudiantes.push(doc.data())
+      arrayEstudiantes.push({ ...doc.data(), respuestasIncorrectas: Number(doc.data().totalPreguntas) - Number(doc.data().respuestasCorrectas) })
     });
-
+    console.log('arrayEstudiantes', arrayEstudiantes)
     dispatch({ type: AppAction.ESTUDIANTES, payload: arrayEstudiantes })
   }
 

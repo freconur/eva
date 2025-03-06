@@ -200,6 +200,7 @@ const useUsuario = () => {
   }
 
   const crearNuevoDocente = async (data: User) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     try {
       axios
         .post(`${URL_API}crear-docente`,
@@ -220,6 +221,7 @@ const useUsuario = () => {
             region: currentUserData.region
           });
         })
+        .then(res => dispatch({ type: AppAction.LOADER_PAGES, payload: false }))
     } catch (error) {
       console.log('error', error)
     }

@@ -93,7 +93,7 @@ const AgregarDirectores = () => {
                       }
                     )}
                     className='w-full p-3 rounded-md bg-white text-slate-400 shadow-md'>
-                    <option>--REGIONES--</option>
+                    <option>--UGEL--</option>
 
                     {regiones?.map((region, index) => {
                       return (
