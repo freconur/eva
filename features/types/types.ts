@@ -88,6 +88,7 @@ export type PreguntasRespuestas = {
   pregunta?: string,
   respuesta?: string,
   alternativas?: Alternativa[],
+  order?:number
 }
 export type Evaluaciones = {
   id?: string,

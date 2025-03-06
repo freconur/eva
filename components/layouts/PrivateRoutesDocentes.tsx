@@ -27,7 +27,7 @@ const PrivateRouteDocentes = ({ children }: Props) => {
   }, [])
 
   useEffect(() => {
-    console.log('userData de Docentes', currentUserData)
+    // console.log('userData de Docentes', currentUserData)
     if (currentUserData.dni) {
       if (currentUserData.perfil?.rol !== undefined) {
         if (Number(currentUserData?.perfil.rol) !== 3) {
@@ -36,7 +36,7 @@ const PrivateRouteDocentes = ({ children }: Props) => {
       }
     }
   }, [currentUserData.dni]);
-  console.log('docente', currentUserData)
+  // console.log('docente', currentUserData)
   return (
     <>{children}</>
   )

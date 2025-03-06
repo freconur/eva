@@ -1,4 +1,4 @@
-import { collection, getDocs, getFirestore } from "firebase/firestore/lite"
+import { collection, getDocs, getFirestore, orderBy, query } from "firebase/firestore/lite"
 import { useGlobalContext, useGlobalContextDispatch } from "../context/GlolbalContext"
 import { DataEstadisticas, Estudiante } from "../types/types"
 import { AppAction } from "../actions/appAction"
@@ -17,6 +17,7 @@ export const useReporteDocente = () => {
 
     //datos para grafico
     const refData = collection(db, `/evaluaciones/${idExamen}/${idDocente}/`)
+    // const q = query(refData, orderBy("order","asc"))
     const dataEstadisticas = await getDocs(refData)
     const arrayDataEstadisticas: DataEstadisticas[] = []
     dataEstadisticas.forEach((doc) => {

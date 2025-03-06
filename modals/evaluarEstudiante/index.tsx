@@ -158,7 +158,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
                   <div className={styles.preguntasContainer}>
                     <p className={styles.preguntaTitulo}>
                       <span className={styles.numeroPregunta}>
-                        {preguntasRespuestasEstudiante[ordenLimitePregunta]?.id}.
+                        {preguntasRespuestasEstudiante[ordenLimitePregunta]?.order}.
                       </span>
                       {preguntasRespuestasEstudiante[ordenLimitePregunta]?.pregunta}</p>
                     <ul className={styles.respuestaContainer}>

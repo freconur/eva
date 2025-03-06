@@ -11,7 +11,7 @@ const SidebarInfoUser = ({ showSidebar }: Props) => {
 
   const { currentUserData } = useGlobalContext()
 
-  console.log('currentUserData', currentUserData)
+  // console.log('currentUserData', currentUserData)
   return (
     <div className='border-b-[1px] border-slate-200 pb-5 pl-3'>
 

@@ -43,7 +43,7 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
       reset()
     }
   })
-
+console.log('id de modal', id)
 
   return container
     ? createPortal(

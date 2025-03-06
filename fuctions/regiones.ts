@@ -16,7 +16,6 @@ const regiones = [
 ]
 
 export const regionTexto = (id: string) => {
-  console.log("id", id)
   let rta
   regiones.forEach(reg => {
     if (Number(id) === reg.id) {

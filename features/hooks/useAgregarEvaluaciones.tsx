@@ -94,7 +94,9 @@ export const useAgregarEvaluaciones = () => {
   const getPreguntasRespuestas = async (id: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     if (id.length > 0) {
-      const querySnapshot = await getDocs(collection(db, `/evaluaciones/${id}/preguntasRespuestas`));
+      const pethRef = collection(db, `/evaluaciones/${id}/preguntasRespuestas`)
+      const q =  query(pethRef, orderBy("order","asc"));
+      const querySnapshot = await getDocs(q);
       const count = querySnapshot.size
       let preguntasrespuestas: PreguntasRespuestas[] = []
 
@@ -103,7 +105,10 @@ export const useAgregarEvaluaciones = () => {
           querySnapshot.forEach((doc) => {
             preguntasrespuestas.push({ ...doc.data(), id: doc.id })
           });
-          preguntasrespuestas.sort((a: any, b: any) => a.id - b.id)
+          console.log('rta 1', preguntasrespuestas)
+          // preguntasrespuestas.sort((a: any, b: any) => Number(a.order) - Number(b.order))
+          // console.log('rta 2', preguntasrespuestas)
+          // preguntasrespuestas.sort((a: any, b: any) => a.id - b.id)
           resolve(true)
         } catch (error) {
           console.log('error', error)
@@ -133,6 +138,7 @@ export const useAgregarEvaluaciones = () => {
       pregunta: data.pregunta,
       respuesta: data.respuesta,
       alternativas: data.alternativas,
+      order: count + 1 //modificacion para poder ordenar las preguntas en caso se falle y no querer volver a agregarlas desde cero
     });
   }
   const salvarPreguntRespuestaEstudiante = async (data: UserEstudiante, id: string, pq: PreguntasRespuestas[], respuestasCorrectas: number, sizePreguntas: number) => {
@@ -185,7 +191,7 @@ export const useAgregarEvaluaciones = () => {
               })
             }
           }
-          const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.id}`)
+          const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.order}`)
           if (a.alternativas?.length === 3) {
             a.alternativas?.map(async al => {
               if (al.selected === true && al.alternativa === "a") {
