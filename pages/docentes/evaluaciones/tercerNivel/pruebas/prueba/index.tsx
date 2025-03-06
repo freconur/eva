@@ -31,7 +31,7 @@ const Evaluacion = () => {
     }
   }, [route.query.idExamen])
 
-  console.log('evaluacion', evaluacion)
+  console.log('preguntasRespuestas', preguntasRespuestas)
   return (
     <>
       {
@@ -80,8 +80,15 @@ const Evaluacion = () => {
                         pr.alternativas.map((al, index) => {
                           return (
                             <div key={index} className='flex gap-5 pl-5 justify-start items-center mb-2'>
-                              <p className='uppercase text-sm text-colorSegundo'>{al.alternativa} - </p>
-                              <p className='text-colorPrincipal'>{al.descripcion}</p>
+                              {
+                                al.descripcion?.length === 0 ?
+                                  null
+                                  :
+                                  <>
+                                    <p className='uppercase text-sm text-colorSegundo'>{al.alternativa} - </p>
+                                    <p className='text-colorPrincipal'>{al.descripcion}</p>
+                                  </>
+                              }
                             </div>
 
                           )

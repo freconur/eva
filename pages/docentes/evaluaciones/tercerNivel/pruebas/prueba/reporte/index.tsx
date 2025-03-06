@@ -122,6 +122,7 @@ const Reportes = () => {
       </h3>
     )
   }
+  console.log('dataEstadisticas', dataEstadisticas)
   return (
     <>
 

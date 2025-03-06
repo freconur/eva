@@ -31,6 +31,7 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
     let rtaConvert: any = []
     Object.entries(data).forEach(([key, value]) => {
       if (key.length === 1) {
+        if(value.length > 0)
         rtaConvert.push({ alternativa: key, descripcion: value })
       }
 

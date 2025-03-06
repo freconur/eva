@@ -88,6 +88,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
         })
       }
     })
+    console.log('preguntasRespuestasEstudiante', preguntasRespuestasEstudiante)
     prEstudiantes(preguntasRespuestasEstudiante)
   }
   useEffect(() => {
@@ -98,7 +99,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
 
   useEffect(() => { prEstudiantes(preguntasRespuestas) }, [preguntasRespuestas])
   console.log('preguntasRespuestas', preguntasRespuestas)
-  
+
   return container
     ? createPortal(
       <div className={styles.containerModal}>
@@ -166,15 +167,22 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
                         preguntasRespuestasEstudiante[ordenLimitePregunta]?.alternativas?.map((al, index) => {
                           return (
                             <li key={index} className={styles.respuestas}>
-                              <p className={styles.alternativa}>{al.alternativa}. </p>
-                              <input
-                                className={styles.radio}
-                                type="radio"
-                                name={preguntasRespuestasEstudiante[ordenLimitePregunta]?.id}
-                                value={al.alternativa}
-                                checked={al?.selected}
-                                onChange={handleCheckedRespuesta} />
-                              <p className={styles.descripcionrespuesta}>{al.descripcion}</p>
+                              {
+                                al.descripcion?.length === 0 ?
+                                  null
+                                  :
+                                  <>
+                                    <p className={styles.alternativa}>{al.alternativa}. </p>
+                                    <input
+                                      className={styles.radio}
+                                      type="radio"
+                                      name={preguntasRespuestasEstudiante[ordenLimitePregunta]?.id}
+                                      value={al.alternativa}
+                                      checked={al?.selected}
+                                      onChange={handleCheckedRespuesta} />
+                                    <p className={styles.descripcionrespuesta}>{al.descripcion}</p>
+                                  </>
+                              }
                             </li>
                           )
                         })
@@ -183,7 +191,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
                   </div>
 
                   {
-                    ordenLimitePregunta === preguntasRespuestas.length -1 ?
+                    ordenLimitePregunta === preguntasRespuestas.length - 1 ?
                       <button
                         // onClick={salvarPrEstudiante}
                         disabled={activarBotonSiguiente === true ? false : true} className='flex justify-center items-center bg-blue-500 hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase'>guardar</button>
