@@ -155,7 +155,7 @@ const Reportes = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {
-                        dataEstadisticas.length > 0 ?
+                        dataEstadisticas.length >= 0 ?
                           estudiantes?.map((dir, index) => {
                             return (
                               <tr key={index} className='h-[60px] hover:bg-blue-100 duration-100 cursor-pointer'>

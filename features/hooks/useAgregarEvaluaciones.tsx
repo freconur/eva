@@ -160,7 +160,7 @@ export const useAgregarEvaluaciones = () => {
           a.alternativas?.forEach(x => {
             if (x.selected === true) {
               rta = `${x.alternativa}`
-              console.log('rta', rta)
+              // console.log('rta', rta)
             }
           })
           const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}/${data.dni}/${a.id}`);

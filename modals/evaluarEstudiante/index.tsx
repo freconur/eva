@@ -27,7 +27,6 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
 
   const validateRespuests = (data: PreguntasRespuestas[]) => {
-
     data.forEach(pq => {
       if (preguntasRespuestasEstudiante[ordenLimitePregunta]?.id === pq.id) {
         pq.alternativas?.forEach(a => {
@@ -42,8 +41,10 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
   }
   const handleSubmitform = handleSubmit(async (data) => {
 
-
-
+    // data.map((a:any) => {
+    //   if(a.alternativas) {}
+    // })
+    console.log(' de handle submit', data)
 
     validateRespuests(preguntasRespuestasEstudiante)
     salvarPreguntRespuestaEstudiante(data, id, preguntasRespuestasEstudiante, repuestasCorrectas, sizePreguntas)
@@ -66,21 +67,24 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
   }
   const handleCheckedRespuesta = (e: React.ChangeEvent<HTMLInputElement>) => {
     preguntasRespuestasEstudiante?.map((pq: PreguntasRespuestas, index: number) => {
-      if (Number(pq.id) === Number(e.target.name)) {
+      // if (Number(pq.id) === Number(e.target.name)) {
+      if (Number(pq.order) === Number(e.target.name)) {
         pq.alternativas?.map(al => {
 
-
-          if (al.alternativa === e.target.value) {
-            al.selected = true
-            return al
-          } else {
-            al.selected = false
+          console.log('al', al)
+          if (al.descripcion?.length !== 0) {
+            if (al.alternativa === e.target.value) {
+              al.selected = true
+              return al
+            } else {
+              al.selected = false
+            }
           }
         })
       }
     })
     preguntasRespuestasEstudiante.find(p => {
-      if (Number(e.target.name) === Number(p.id)) {
+      if (Number(e.target.name) === Number(p.order)) {
         p.alternativas?.map(a => {
           if (a.selected === true) {
             setActivarBotonSiguiente(true)
