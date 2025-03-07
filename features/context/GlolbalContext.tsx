@@ -19,16 +19,17 @@ const initialState: AppReducerValues = {
   docentesDeDirectores: [],
   dataEstadisticas: [],
   reporteDirector: [],
-  loaderLogin:false,
-  warningLogin:"",
+  loaderLogin: false,
+  warningLogin: "",
   loaderPages: false,
-  loaderReporteDirector:false,
-  loaderSalvarPregunta:false,
-  regiones:[],
+  loaderReporteDirector: false,
+  loaderSalvarPregunta: false,
+  regiones: [],
   reporteRegional: [],
-  loaderReporteRegional:false,
+  loaderReporteRegional: false,
   grados: [],
-  evaluacionesGradoYCategoria:[]
+  evaluacionesGradoYCategoria: [],
+  evaluacionesPsicolinguistica: []
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

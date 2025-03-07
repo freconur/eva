@@ -64,6 +64,9 @@ const Evaluacion = () => {
                       <div className='flex gap-3 mb-3'>
                         <span className='text-slate-600 font-semibold'>{index + 1}.</span><p className='text-slate-500 text-lg'> {pr.pregunta}</p>
                       </div>
+                      <div className='flex gap-3 mb-3'>
+                        <span className='text-slate-600 font-semibold'>habilidad:</span><p className='text-slate-500 text-lg'> {pr.preguntaDocente}</p>
+                      </div>
                       {
                         pr.alternativas &&
                         pr.alternativas.map((al, index) => {

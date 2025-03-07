@@ -118,7 +118,7 @@ const Reportes = () => {
   const iterarPregunta = (index: string) => {
     return (
       <h3>
-        {preguntasRespuestas[Number(index) - 1]?.id}. {preguntasRespuestas[Number(index) - 1]?.pregunta}
+        {preguntasRespuestas[Number(index) - 1]?.id}. {preguntasRespuestas[Number(index) - 1]?.preguntaDocente}
       </h3>
     )
   }

@@ -4,55 +4,60 @@ import { AppActions, AppReducerValues } from "../types/types";
 
 export const appReducer = (state: AppReducerValues, action: AppActions) => {
   switch (action.type) {
+    case AppAction.PSICOLINGUISTICA:
+      return {
+        ...state,
+        evaluacionesPsicolinguistica: action.payload
+      }
     case AppAction.EVALUACIONES_GRADO_CATEGORIA:
       return {
         ...state,
-        evaluacionesGradoYCategoria:action.payload
+        evaluacionesGradoYCategoria: action.payload
       }
     case AppAction.GRADOS:
       return {
         ...state,
-        grados:action.payload
+        grados: action.payload
       }
     case AppAction.LOADER_REPORTE_REGIONAL:
       return {
         ...state,
-        loaderReporteRegional:action.payload
+        loaderReporteRegional: action.payload
       }
     case AppAction.REPORTE_REGIONAL:
       return {
         ...state,
-        reporteRegional:action.payload
+        reporteRegional: action.payload
       }
     case AppAction.REGIONES:
       return {
         ...state,
-        regiones:action.payload
+        regiones: action.payload
       }
     case AppAction.LOADER_SALVAR_PREGUNTA:
       return {
         ...state,
-        loaderSalvarPregunta:action.payload
+        loaderSalvarPregunta: action.payload
       }
     case AppAction.LOADER_REPORTE_DIRECTOR:
       return {
         ...state,
-        loaderReporteDirector:action.payload
+        loaderReporteDirector: action.payload
       }
     case AppAction.LOADER_PAGES:
       return {
         ...state,
-        loaderPages:action.payload
+        loaderPages: action.payload
       }
     case AppAction.WARNING_LOGIN:
       return {
         ...state,
-        warningLogin:action.payload
+        warningLogin: action.payload
       }
     case AppAction.LOADER_LOGIN:
       return {
         ...state,
-        loaderLogin:action.payload
+        loaderLogin: action.payload
       }
     case AppAction.REPORTE_DIRECTOR:
       return {

@@ -37,6 +37,7 @@ const config: Config = {
         'centrar-contenido': 'auto'
       },
       colors: {
+        'backgroundModal':'#0f253b',
         'azul-claro4':'#3674B5',
         'azul-claro3':'#578FCA',
         'azul-claro2':'#A1E3F9',

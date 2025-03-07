@@ -15,16 +15,17 @@ export type AppReducerValues = {
   docentesDeDirectores: User[],
   dataEstadisticas: DataEstadisticas[],
   reporteDirector: DataEstadisticas[],
-  loaderLogin:boolean,
-  warningLogin:string,
-  loaderPages:boolean,
-  loaderReporteDirector:boolean,
-  loaderSalvarPregunta:boolean,
-  regiones:Region[],
-  reporteRegional:DataEstadisticas[],
-  loaderReporteRegional:boolean,
-  grados:Grades[],
-  evaluacionesGradoYCategoria:Evaluaciones[]
+  loaderLogin: boolean,
+  warningLogin: string,
+  loaderPages: boolean,
+  loaderReporteDirector: boolean,
+  loaderSalvarPregunta: boolean,
+  regiones: Region[],
+  reporteRegional: DataEstadisticas[],
+  loaderReporteRegional: boolean,
+  grados: Grades[],
+  evaluacionesGradoYCategoria: Evaluaciones[],
+  evaluacionesPsicolinguistica: Psicolinguistica[]
 
 }
 
@@ -54,6 +55,7 @@ export type AppActions =
   | { type: AppAction.LOADER_REPORTE_REGIONAL; payload: boolean }
   | { type: AppAction.GRADOS; payload: Grades[] }
   | { type: AppAction.EVALUACIONES_GRADO_CATEGORIA; payload: Evaluaciones[] }
+  | { type: AppAction.PSICOLINGUISTICA; payload: Psicolinguistica[] }
 
 export type LoginData = {
   usuario: string,
@@ -74,8 +76,8 @@ export type Alternativas = [
 ]
 
 export type Region = {
-  codigo?:number,
-  region?:string
+  codigo?: number,
+  region?: string
 }
 
 export type Alternativa = {
@@ -88,7 +90,7 @@ export type PreguntasRespuestas = {
   pregunta?: string,
   respuesta?: string,
   alternativas?: Alternativa[],
-  order?:number,
+  order?: number,
   preguntaDocente?: string
 }
 export type Evaluaciones = {
@@ -96,8 +98,8 @@ export type Evaluaciones = {
   idDocente?: string,
   nombre?: string,
   preguntasRespuestas?: PreguntasRespuestas,
-  grado?:number,
-  categoria?:number
+  grado?: number,
+  categoria?: number
 }
 
 export type UserEstudiante = {
@@ -115,7 +117,7 @@ export type Estudiante = {
   dniDocente?: string,
   respuestasCorrectas?: number,
   totalPreguntas?: number,
-  respuestasIncorrectas?:number
+  respuestasIncorrectas?: number
 }
 export type User = {
   nombres?: string,
@@ -127,7 +129,7 @@ export type User = {
   dniDirector?: string,
   rolDirector?: number,
   rol?: number,
-  region?:number
+  region?: number
 }
 
 export type DataEstadisticas = {
@@ -135,24 +137,29 @@ export type DataEstadisticas = {
   a?: number,
   b?: number,
   c?: number,
-  d?:number,
+  d?: number,
   total?: number,
 }
 
 export type Regiones = {
-  codigo?:number,
-  region?:string
+  codigo?: number,
+  region?: string
 }
 
 export type Grades = {
-  id?:string,
-  nombre?:string,
-  grado?:number
+  id?: string,
+  nombre?: string,
+  grado?: number
 }
 
-export type CreaEvaluacion ={ 
-  id?:string,
-  grado?:number,
-  categoria?:string,
-  nombreEvaluacion?:string
+export type CreaEvaluacion = {
+  id?: string,
+  grado?: number,
+  categoria?: string,
+  nombreEvaluacion?: string
+}
+
+export type Psicolinguistica = {
+  nombre?: string,
+  id?: string
 }
