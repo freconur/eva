@@ -85,7 +85,7 @@ const AgregarDirectores = () => {
                 </div>
                 {errors.dni && <span className='text-red-400 text-sm'>{errors.dni.message as string}</span>}
                 <div className='w-full my-2'>
-                  <p className='text-slate-400 text-sm uppercase'>region:</p>
+                  <p className='text-slate-400 text-sm uppercase'>ugel:</p>
                   <select
                     {...register("region",
                       {

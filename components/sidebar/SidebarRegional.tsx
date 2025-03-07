@@ -7,8 +7,8 @@ import logo from '../../assets/formativa-logo.png'
 const SidebarRegional = () => {
   const { currentUserData } = useGlobalContext()
   return (
-    <div className='border-b-[1px] border-slate-200 pb-2 '>
-      <h1 className='uppercase text-lg text-center font-dmMono text-slate-600'>planificación curricular</h1>
+    <div className='z-relative z-[10] border-b-[1px] border-slate-200 pb-2 '>
+      <h1 className='uppercase text-lg text-center font-dmMono text-white'>planificación curricular</h1>
       <div className='flex justify-center items-center'>
         <Image
           alt="foto de perfil"
@@ -19,7 +19,7 @@ const SidebarRegional = () => {
           height={70}
         />
       </div>
-      <p className='capitalize text-sm text-center p-2 text-slate-500 text-md '>
+      <p className='capitalize text-sm text-center p-2 text-white text-md '>
       ugel {regionTexto(`${currentUserData.region}`)}
       </p>
     </div>

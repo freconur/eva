@@ -138,6 +138,7 @@ export const useAgregarEvaluaciones = () => {
       pregunta: data.pregunta,
       respuesta: data.respuesta,
       alternativas: data.alternativas,
+      preguntaDocente: data.preguntaDocente,
       order: count + 1 //modificacion para poder ordenar las preguntas en caso se falle y no querer volver a agregarlas desde cero
     });
   }

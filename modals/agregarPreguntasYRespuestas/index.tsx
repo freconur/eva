@@ -38,7 +38,7 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
     });
     // if (rtaConvert.length === 3) {
     if (rtaConvert.length >= 3) {
-      guardarPreguntasRespuestas({ id: id, pregunta: data.pregunta, respuesta: data.respuesta, alternativas: rtaConvert })
+      guardarPreguntasRespuestas({ id: id, preguntaDocente: data.preguntaDocente, pregunta: data.pregunta, respuesta: data.respuesta, alternativas: rtaConvert })
       console.log('rtaConvert', rtaConvert)
       reset()
     }
@@ -59,7 +59,7 @@ console.log('id de modal', id)
               <textarea
                 {...register("pregunta",
                   {
-                    required: { value: true, message: "institucion es requerido" },
+                    required: { value: true, message: "pregunta es requerido" },
                     minLength: { value: 5, message: "nombre debe tener un minimo de 5 caracteres" },
                     maxLength: { value: 400, message: "nombre debe tener un maximo de 150 caracteres" },
                   }
@@ -69,7 +69,21 @@ console.log('id de modal', id)
 
               />
             </div>
+            <div className='w-full my-2'>
+              <p className={styles.titlePregunta}>pregunta especialidad:</p>
+              <textarea
+                {...register("preguntaDocente",
+                  {
+                    required: { value: true, message: "pregunta especialidad es requerido" },
+                    minLength: { value: 5, message: "nombre debe tener un minimo de 5 caracteres" },
+                    maxLength: { value: 400, message: "nombre debe tener un maximo de 150 caracteres" },
+                  }
+                )}
+                className={styles.textAreaPregunta}
+                placeholder="escribe una pregunta"
 
+              />
+            </div>
             <p className={styles.titlePregunta}>alternativas</p>
             <div className={styles.inputAlternativas}>
 

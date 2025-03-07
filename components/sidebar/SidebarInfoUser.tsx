@@ -19,15 +19,15 @@ const SidebarInfoUser = ({ showSidebar }: Props) => {
 
       </div> */}
       <div >
-        <p className='text-slate-600 text-sm uppercase'>{currentUserData.institucion ? currentUserData.institucion : null}</p>
+        <p className='text-white text-sm uppercase'>{currentUserData.institucion ? currentUserData.institucion : null}</p>
       </div>
       <div className='mt-1 w-full flex justify-center items-center'>
         {/* <div className='bg-colorSegundo shadow-md w-[50px] h-[50px] rounded-full m-auto flex justify-content items-center'>
           <p className=' text-4xl uppercase font-semibold text-white m-auto'>{currentUserData.nombres ? currentUserData.nombres[0] : null}</p>
         </div> */}
       </div>
-      <div className='mt-1'><p className='capitalize   text-slate-500'>{currentUserData.nombres} {currentUserData.apellidos}</p></div>
-      <div className='mt-1'><p className='capitalize   text-slate-400'>{currentUserData.perfil?.nombre}</p></div>
+      <div className='mt-1'><p className='capitalize   text-white'>{currentUserData.nombres} {currentUserData.apellidos}</p></div>
+      <div className='mt-1'><p className='capitalize   text-white'>{currentUserData.perfil?.nombre}</p></div>
     </div>
   )
 }

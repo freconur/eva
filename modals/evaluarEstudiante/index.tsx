@@ -28,7 +28,8 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
 
   const validateRespuests = (data: PreguntasRespuestas[]) => {
     data.forEach(pq => {
-      if (preguntasRespuestasEstudiante[ordenLimitePregunta]?.id === pq.id) {
+      // if (preguntasRespuestasEstudiante[ordenLimitePregunta]?.id === pq.id) {
+        if (preguntasRespuestasEstudiante[ordenLimitePregunta]?.order === pq.order) {
         pq.alternativas?.forEach(a => {
           if (a.selected === true) {
             if (a.alternativa === pq.respuesta) {
@@ -180,7 +181,8 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
                                     <input
                                       className={styles.radio}
                                       type="radio"
-                                      name={preguntasRespuestasEstudiante[ordenLimitePregunta]?.id}
+                                      name={`${preguntasRespuestasEstudiante[ordenLimitePregunta]?.order}`}
+                                      // name={preguntasRespuestasEstudiante[ordenLimitePregunta]?.id}
                                       value={al.alternativa}
                                       checked={al?.selected}
                                       onChange={handleCheckedRespuesta} />
