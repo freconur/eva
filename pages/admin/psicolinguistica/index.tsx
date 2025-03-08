@@ -36,12 +36,12 @@ const Psicolinguistica = () => {
           {evaluacionesPsicolinguistica?.map((psico) => {
             return (
               <li key={psico.id} className='p-1 rounded-md bg-gradient-to-r drop-shadow-lg from-indigo-500 via-purple-500 to-pink-500 hover:opacity-80 duration-400 :hover:duration-400'>
-                <Link href="" className='bg-color-boton rounded-md p-3 h-full m-auto grid justify-center items-center'>
+                <Link href={`/admin/psicolinguistica/examen/${psico.id}`} className='bg-color-boton rounded-md p-3 h-full m-auto grid justify-center items-center'>
                   <div className='w-full flex items-center justify-center'>
                     <PiFilesFill className='text-[100px] text-white' />
                   </div>
                   <p className='text-lg uppercase text-cyan-100 font-semibold text-center'>{psico.nombre}</p>
-
+                  
                 </Link>
               </li>
             )

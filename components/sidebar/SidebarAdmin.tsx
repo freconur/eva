@@ -17,32 +17,32 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
 
     <div className={`z-[2000] grid-rows-gridRows p-2 justify-evenly grid fixed duration-300 drop-shadow-xl h-full w-[250px] bg-graduado-blue-2 ${showSidebar ? "left-[0px]" : "-left-[300px]"}`}>
       {/* <div onClick={() => showSidebarValue(showSidebar)} className='capitalize p-2 w-[30px] h-[30px] bg-red-400 justify-center items-center flex rounded-full text-white l-10 cursor-pointer relative'>x</div> */}
-      <BackgroundSidebar/>
+      <BackgroundSidebar />
       <div onClick={() => showSidebarValue(showSidebar)} className='absolute capitalize p-2 w-[30px] h-[30px] bg-red-400 justify-center items-center flex rounded-full text-white l-10 cursor-pointer left-[235px] top-[30px] shadow-md'>x</div>
       <div>
         <SidebarRegional />
         <ul className='capitalize font-montserrat border-b-[1px] border-slate-200 pb-5 mb-5'>
-          <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-violet-300 hover:text-violet-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
+          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-violet-300 hover:text-violet-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
             <Link href="/mi-cuenta" className='p-3'>
               Mi cuenta
             </Link>
           </li>
-          <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-green-300 hover:text-green-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
+          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-green-300 hover:text-green-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
             <Link href="/admin/evaluaciones" className='p-3'>
               Evaluaciones
             </Link>
           </li>
-          <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
+          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
             <Link href="/admin/agregar-especialista" className='p-3'>
               Agregar especilista
             </Link>
           </li>
-          <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
+          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
             <Link href="/admin/agregar-directores" className='p-3'>
               Agregar director
             </Link>
           </li>
-          <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
+          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
             <Link href="/admin/agregar-evaluaciones" className='p-3'>
               Agregar evaluación
             </Link>

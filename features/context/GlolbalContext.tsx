@@ -29,7 +29,9 @@ const initialState: AppReducerValues = {
   loaderReporteRegional: false,
   grados: [],
   evaluacionesGradoYCategoria: [],
-  evaluacionesPsicolinguistica: []
+  evaluacionesPsicolinguistica: [],
+  psicolinguisticaById: {},
+  preguntasPsicolinguistica:[]
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

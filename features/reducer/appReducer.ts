@@ -4,6 +4,16 @@ import { AppActions, AppReducerValues } from "../types/types";
 
 export const appReducer = (state: AppReducerValues, action: AppActions) => {
   switch (action.type) {
+    case AppAction.PSICOLINGUISTICA_PREGUNTAS:
+      return {
+        ...state,
+        preguntasPsicolinguistica:action.payload
+      }
+    case AppAction.PSICOLINGUISTICA_BY_ID:
+      return {
+        ...state,
+        psicolinguisticaById:action.payload
+      }
     case AppAction.PSICOLINGUISTICA:
       return {
         ...state,
