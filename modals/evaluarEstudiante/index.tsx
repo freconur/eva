@@ -17,9 +17,9 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
   const { preguntasRespuestas, sizePreguntas, preguntasRespuestasEstudiante, loaderSalvarPregunta } = useGlobalContext()
   const [ordenLimitePregunta, setOrdenLimitePregunta] = useState(0)
   // const [ initialValueData, setInitialValueData] = useState([...preguntasRespuestas])
-  const [activarBotonSiguiente, setActivarBotonSiguiente] = useState(false)
+  const [activarBotonSiguiente, setActivarBotonSiguiente] = useState(true)
   const [repuestasCorrectas, setRespuestasCorrectas] = useState(0)
-  const { prEstudiantes, salvarPreguntRespuestaEstudiante, getPreguntasRespuestas } = useAgregarEvaluaciones()
+  const { prEstudiantes,resetPRestudiantes, salvarPreguntRespuestaEstudiante, getPreguntasRespuestas } = useAgregarEvaluaciones()
   let container;
   if (typeof window !== "undefined") {
     container = document.getElementById("portal-modal");
@@ -29,7 +29,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
   const validateRespuests = (data: PreguntasRespuestas[]) => {
     data.forEach(pq => {
       // if (preguntasRespuestasEstudiante[ordenLimitePregunta]?.id === pq.id) {
-        if (preguntasRespuestasEstudiante[ordenLimitePregunta]?.order === pq.order) {
+      if (preguntasRespuestasEstudiante[ordenLimitePregunta]?.order === pq.order) {
         pq.alternativas?.forEach(a => {
           if (a.selected === true) {
             if (a.alternativa === pq.respuesta) {
@@ -39,20 +39,24 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
         })
       }
     })
+    console.log('datadata', data)
   }
   const handleSubmitform = handleSubmit(async (data) => {
 
     // data.map((a:any) => {
     //   if(a.alternativas) {}
     // })
+    
     console.log(' de handle submit', data)
-
     validateRespuests(preguntasRespuestasEstudiante)
     salvarPreguntRespuestaEstudiante(data, id, preguntasRespuestasEstudiante, repuestasCorrectas, sizePreguntas)
     getPreguntasRespuestas(id)
     setOrdenLimitePregunta(0)
     setRespuestasCorrectas(0)
     prEstudiantes(preguntasRespuestas)
+    setActivarBotonSiguiente(true)
+    // resetPRestudiantes(id)
+    // getPreguntasRespuestas(id)
     reset()
   })
   const siguientePregunta = () => {
@@ -63,7 +67,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
       //aqui tendria que agregar la funcion para que vaya incrementando
     }
     // debugger
-    setActivarBotonSiguiente(false)
+    setActivarBotonSiguiente(true)
 
   }
   const handleCheckedRespuesta = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,23 +92,27 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
       if (Number(e.target.name) === Number(p.order)) {
         p.alternativas?.map(a => {
           if (a.selected === true) {
-            setActivarBotonSiguiente(true)
+            setActivarBotonSiguiente(false)
           }
         })
       }
     })
     console.log('preguntasRespuestasEstudiante', preguntasRespuestasEstudiante)
     prEstudiantes(preguntasRespuestasEstudiante)
+    
   }
-  useEffect(() => {
-    preguntasRespuestasEstudiante[ordenLimitePregunta]?.alternativas?.map(a => {
-      if (a.selected === true) return setActivarBotonSiguiente(true)
-    })
-  }, [activarBotonSiguiente])
+  // useEffect(() => {
+  //   preguntasRespuestasEstudiante[ordenLimitePregunta]?.alternativas?.map(a => {
+  //     if (a.selected === true) return setActivarBotonSiguiente(false)
+  //   })
+  // }, [activarBotonSiguiente])
 
   useEffect(() => { prEstudiantes(preguntasRespuestas) }, [preguntasRespuestas])
-  console.log('preguntasRespuestas', preguntasRespuestas)
 
+
+
+  console.log('preguntasRespuestas', preguntasRespuestas)
+console.log('activarBotonSiguiente', activarBotonSiguiente)
   return container
     ? createPortal(
       <div className={styles.containerModal}>
@@ -184,7 +192,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
                                       name={`${preguntasRespuestasEstudiante[ordenLimitePregunta]?.order}`}
                                       // name={preguntasRespuestasEstudiante[ordenLimitePregunta]?.id}
                                       value={al.alternativa}
-                                      checked={al?.selected}
+                                      checked={al?.selected === undefined ? false : al.selected}
                                       onChange={handleCheckedRespuesta} />
                                     <p className={styles.descripcionrespuesta}>{al.descripcion}</p>
                                   </>
@@ -200,10 +208,10 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
                     ordenLimitePregunta === preguntasRespuestas.length - 1 ?
                       <button
                         // onClick={salvarPrEstudiante}
-                        disabled={activarBotonSiguiente === true ? false : true} className='flex justify-center items-center bg-blue-500 hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase'>guardar</button>
+                        disabled={activarBotonSiguiente && true} className='flex justify-center items-center bg-blue-500 hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase'>guardar</button>
                       :
                       // <button disabled={activarBotonSiguiente === true ? false : true} onClick={siguientePregunta} className={`flex justify-center items-center ${activarBotonSiguiente ? "bg-blue-500" : "bg-gray-400"} hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase`}>siguiente</button>
-                      <button disabled={activarBotonSiguiente === true ? false : true} onClick={siguientePregunta} className={activarBotonSiguiente ? styles.botonSiguiente : styles.botonSiguienteDisabled}>siguiente</button>
+                      <button disabled={activarBotonSiguiente && true} onClick={siguientePregunta} className={!activarBotonSiguiente ? styles.botonSiguiente : styles.botonSiguienteDisabled}>siguiente</button>
                   }
                 </form>
               </>

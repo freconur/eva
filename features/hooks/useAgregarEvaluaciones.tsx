@@ -95,7 +95,7 @@ export const useAgregarEvaluaciones = () => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     if (id.length > 0) {
       const pethRef = collection(db, `/evaluaciones/${id}/preguntasRespuestas`)
-      const q =  query(pethRef, orderBy("order","asc"));
+      const q = query(pethRef, orderBy("order", "asc"));
       const querySnapshot = await getDocs(q);
       const count = querySnapshot.size
       let preguntasrespuestas: PreguntasRespuestas[] = []
@@ -105,7 +105,6 @@ export const useAgregarEvaluaciones = () => {
           querySnapshot.forEach((doc) => {
             preguntasrespuestas.push({ ...doc.data(), id: doc.id })
           });
-          console.log('rta 1', preguntasrespuestas)
           // preguntasrespuestas.sort((a: any, b: any) => Number(a.order) - Number(b.order))
           // console.log('rta 2', preguntasrespuestas)
           // preguntasrespuestas.sort((a: any, b: any) => a.id - b.id)
@@ -122,6 +121,7 @@ export const useAgregarEvaluaciones = () => {
           dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: preguntasrespuestas })
           dispatch({ type: AppAction.SIZE_PREGUNTAS, payload: count })
           dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+          return preguntasrespuestas
         }
       })
     }
@@ -236,6 +236,16 @@ export const useAgregarEvaluaciones = () => {
         resolve(true)
       } catch (error) {
         console.log('error', error)
+        ////////
+        pq.map(p => {
+          p.alternativas?.map(a => {
+            if (a.selected === true) {
+              a.selected = false
+            }
+          })
+        })
+        dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES, payload: pq })
+        ///////
         dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
         reject(false)
       }
@@ -250,7 +260,12 @@ export const useAgregarEvaluaciones = () => {
 
   }
   const prEstudiantes = (data: PreguntasRespuestas[]) => {
+
     dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES, payload: data })
+  }
+  const resetPRestudiantes = (id: string) => {
+    dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES, payload: [] })
+    getPreguntasRespuestas(id)
   }
 
   return {
@@ -262,6 +277,7 @@ export const useAgregarEvaluaciones = () => {
     prEstudiantes,
     salvarPreguntRespuestaEstudiante,
     getGrades,
-    getEvaluacionesGradoYCategoria
+    getEvaluacionesGradoYCategoria,
+    resetPRestudiantes
   }
 }
