@@ -31,6 +31,11 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
               Evaluaciones
             </Link>
           </li>
+          <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-green-300 hover:text-green-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
+            <Link href="/directores/agregar-evaluaciones" className='p-3'>
+              Agregar evaluaciones
+            </Link>
+          </li>
           <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
             <Link href="/directores/agregar-profesores" className='p-3'>
               Agregar Profesores
