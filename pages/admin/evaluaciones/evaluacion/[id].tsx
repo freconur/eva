@@ -4,9 +4,11 @@ import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import { Alternativas } from '@/features/types/types'
 import AgregarPreguntasRespuestas from '@/modals/agregarPreguntasYRespuestas'
 import EvaluarEstudiante from '@/modals/evaluarEstudiante'
+import UpdatePreguntaRespuesta from '@/modals/updatePreguntaRespuesta'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
+import { MdEditSquare } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 
 const Evaluacion = () => {
@@ -15,12 +17,19 @@ const Evaluacion = () => {
   const { getEvaluacion, getPreguntasRespuestas } = useAgregarEvaluaciones()
   const [showModal, setShowModal] = useState(false)
   const [showModalEstudiante, setShowModalEstudiante] = useState(false)
+  const [pregunta, setPregunta] = useState({})
+  const [showModalUpdatePReguntaRespuesta, setShowModalUpdatePReguntaRespuesta] = useState(false)
+
   const handleshowModal = () => {
     setShowModal(!showModal)
   }
 
-  const handleShowModalEstudiante = () => {
-    setShowModalEstudiante(!showModalEstudiante)
+  const handleShowModalUpdatePreguntaRespuesta = () => {
+    setShowModalUpdatePReguntaRespuesta(!showModalUpdatePReguntaRespuesta)
+  }
+
+  const handleSelectPregunta = (index:number) => {
+    setPregunta(preguntasRespuestas[index])
   }
   useEffect(() => {
     getEvaluacion(`${route.query.id}`)
@@ -28,12 +37,15 @@ const Evaluacion = () => {
       getPreguntasRespuestas(`${route.query.id}`)
     }
   }, [route.query.id])
-  // console.log('preguntasRespuestas', preguntasRespuestas)
+  console.log('preguntasRespuestas', preguntasRespuestas)
   return (
 
 
     <>
-
+      {
+        showModalUpdatePReguntaRespuesta &&
+        <UpdatePreguntaRespuesta id={`${route.query.id}`} pregunta={pregunta} handleShowModalUpdatePreguntaRespuesta={handleShowModalUpdatePreguntaRespuesta}/>
+      }
       {
         loaderPages ?
           <div className='grid grid-rows-loader'>
@@ -63,9 +75,11 @@ const Evaluacion = () => {
                     <li key={index} className='border-t-2 border-blue-200 pb-3 pt-3'>
                       <div className='flex gap-3 mb-3'>
                         <span className='text-slate-600 font-semibold'>{index + 1}.</span><p className='text-slate-500 text-lg'> {pr.pregunta}</p>
+
                       </div>
                       <div className='flex gap-3 mb-3'>
                         <span className='text-slate-600 font-semibold'>habilidad:</span><p className='text-slate-500 text-lg'> {pr.preguntaDocente}</p>
+                        <MdEditSquare onClick={() => { handleSelectPregunta(index); handleShowModalUpdatePreguntaRespuesta() }} className='text-xl text-yellow-500 cursor-pointer' />
                       </div>
                       {
                         pr.alternativas &&

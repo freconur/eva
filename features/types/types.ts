@@ -86,8 +86,8 @@ export type Region = {
 }
 
 export type Alternativa = {
-  alternativa?: string,
-  descripcion?: string,
+  alternativa?: string | undefined,
+  descripcion?: string | undefined,
   selected: boolean
 }
 export type Psicolinguistica = {

@@ -1,7 +1,7 @@
 import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, increment, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore/lite"
 import { AppAction } from "../actions/appAction"
 import { useGlobalContext, useGlobalContextDispatch } from "../context/GlolbalContext"
-import { CreaEvaluacion, Evaluaciones, Grades, PreguntasRespuestas, User, UserEstudiante } from "../types/types"
+import { Alternativa, CreaEvaluacion, Evaluaciones, Grades, PreguntasRespuestas, User, UserEstudiante } from "../types/types"
 
 
 
@@ -275,9 +275,162 @@ export const useAgregarEvaluaciones = () => {
   const updateEvaluacion = async (evaluacion: Evaluaciones, id: string) => {
     const pathRef = doc(db, "evaluaciones", `${id}`);
     await updateDoc(pathRef, { ...evaluacion, timestamp: serverTimestamp() })
-    .then(res => {
-      getEvaluaciones()
-    })
+      .then(res => {
+        getEvaluaciones()
+      })
+  }
+
+  const updatePreguntaRespuesta = async (data: PreguntasRespuestas, alternativass: Alternativa[], id: string) => {
+    console.log('data final', { ...data, alternativas: alternativass })
+    const pathRef = doc(db, `/evaluaciones/${id}/preguntasRespuestas`, `${data.id}`)
+    console.log('alternativasslengh', alternativass.length)
+    console.log('3', alternativass[3])
+    if (alternativass[3] === undefined) {
+      await updateDoc(pathRef, {
+        order: data.order,
+        pregunta: data.pregunta,
+        preguntaDocente: data.preguntaDocente,
+        respuesta: data.respuesta,
+        alternativas: [
+          {
+            // selected: alternativass[0].selected,
+            descripcion: alternativass[0].descripcion,
+            alternativa: alternativass[0].alternativa,
+          },
+          {
+            // selected: alternativass[1].selected,
+            descripcion: alternativass[1].descripcion,
+            alternativa: alternativass[1].alternativa,
+          },
+          {
+            // selected: alternativass[2].selected,
+            descripcion: alternativass[2].descripcion,
+            alternativa: alternativass[2].alternativa,
+          }
+        ]
+      })
+    } else {
+      await updateDoc(pathRef, {
+        order: data.order,
+        pregunta: data.pregunta,
+        preguntaDocente: data.preguntaDocente,
+        respuesta: data.respuesta,
+        alternativas: [
+          {
+            // selected: alternativass[0].selected,
+            descripcion: alternativass[0].descripcion,
+            alternativa: alternativass[0].alternativa,
+          },
+          {
+            // selected: alternativass[1].selected,
+            descripcion: alternativass[1].descripcion,
+            alternativa: alternativass[1].alternativa,
+          },
+          {
+            // selected: alternativass[2].selected,
+            descripcion: alternativass[2].descripcion,
+            alternativa: alternativass[2].alternativa,
+          },
+          {
+            // selected: alternativass[3].selected,
+            descripcion: alternativass[3].descripcion,
+            alternativa: alternativass[3].alternativa,
+          }
+        ]
+      })
+    }
+    // console.log('4',alternativass[4])
+    // if (alternativass[3]?.descripcion) {
+    //   if (alternativass[3]?.descripcion?.length > 0) {
+    //     console.log('estoy en 4')
+    //     await updateDoc(pathRef, {
+    //       // alternativas: alternativass,
+    //       order: data.order,
+    //       pregunta: data.pregunta,
+    //       preguntaDocente: data.preguntaDocente,
+    //       respuesta: data.respuesta,
+    //       alternativas: [
+    //         {
+    //           selected: alternativass[0].selected,
+    //           descripcion: alternativass[0].descripcion,
+    //           alternativa: alternativass[0].alternativa,
+    //         },
+    //         {
+    //           selected: alternativass[1].selected,
+    //           descripcion: alternativass[1].descripcion,
+    //           alternativa: alternativass[1].alternativa,
+    //         },
+    //         {
+    //           selected: alternativass[2].selected,
+    //           descripcion: alternativass[2].descripcion,
+    //           alternativa: alternativass[2].alternativa,
+    //         },
+    //         {
+    //           selected: alternativass[2].selected,
+    //           descripcion: alternativass[2].descripcion,
+    //           alternativa: alternativass[2].alternativa,
+    //         }
+    //       ]
+    //     })
+    //   } else {
+    //     console.log('estoy en 3')
+    //     await updateDoc(pathRef, {
+    //       // alternativas: alternativass,
+    //       order: data.order,
+    //       pregunta: data.pregunta,
+    //       preguntaDocente: data.preguntaDocente,
+    //       respuesta: data.respuesta,
+    //       alternativas: [
+    //         {
+    //           selected: alternativass[0].selected,
+    //           descripcion: alternativass[0].descripcion,
+    //           alternativa: alternativass[0].alternativa,
+    //         },
+    //         {
+    //           selected: alternativass[1].selected,
+    //           descripcion: alternativass[1].descripcion,
+    //           alternativa: alternativass[1].alternativa,
+    //         },
+    //         {
+    //           selected: alternativass[2].selected,
+    //           descripcion: alternativass[2].descripcion,
+    //           alternativa: alternativass[2].alternativa,
+    //         },
+    //       ]
+    //     })
+    //   }
+    // }
+    // if (alternativass.length === 4) {
+    //   await updateDoc(pathRef, {
+    //     // alternativas: alternativass,
+    //     order: data.order,
+    //     pregunta: data.pregunta,
+    //     preguntaDocente: data.preguntaDocente,
+    //     respuesta: data.respuesta,
+    //     alternativas: [
+    //       {
+    //         selected: alternativass[0].selected,
+    //         descripcion: alternativass[0].descripcion,
+    //         alternativa: alternativass[0].alternativa,
+    //       },
+    //       {
+    //         selected: alternativass[1].selected,
+    //         descripcion: alternativass[1].descripcion,
+    //         alternativa: alternativass[1].alternativa,
+    //       },
+    //       {
+    //         selected: alternativass[2].selected,
+    //         descripcion: alternativass[2].descripcion,
+    //         alternativa: alternativass[2].alternativa,
+    //       },
+    //       {
+    //         selected: alternativass[3].selected,
+    //         descripcion: alternativass[3].descripcion,
+    //         alternativa: alternativass[3].alternativa,
+    //       }
+    //     ]
+    //   })
+    // }
   }
   return {
     guardarPreguntasRespuestas,
@@ -291,6 +444,7 @@ export const useAgregarEvaluaciones = () => {
     getEvaluacionesGradoYCategoria,
     resetPRestudiantes,
     deleteEvaluacion,
-    updateEvaluacion
+    updateEvaluacion,
+    updatePreguntaRespuesta
   }
 }
