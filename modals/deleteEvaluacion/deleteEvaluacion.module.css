@@ -12,18 +12,18 @@
 
 .closeModalContainer {
   width: 100%;
-  justify-content: space-between;
+  justify-content: flex-end;
   display: flex;
 }
 .close {
   font-weight: 600;
-  color: #ee7c78;
+  color: #fffce3;
   text-decoration: underline;
   cursor: pointer;
   transition: 0.2s ease;
 }
-.close:hover{
-  color: #ff1e00;
+.close:hover {
+  color: #ffcf4c;
   transition: 0.2s ease;
 }
 .closeModal {
@@ -37,15 +37,9 @@
   justify-content: center;
   align-items: center;
 }
-.formulario {
-  display:grid
-}
 .containerSale {
-  background-color: #f3f3f3;
-  /* background-color: red; */
-  width: 1000px;
-  display: grid;
-  /* justify-content: center; */
+  background-color: #0f253b;
+  width: 100%;
   /* width: 400px; */
   /* background-color: #f6fdff; */
   border-radius: 5px;
@@ -53,7 +47,6 @@
   /* cursor: pointer; */
   padding: 20px;
   margin: 0px;
-  /* height:500px */
 }
 @media (min-width: 400px) {
   .containerSale {
@@ -72,17 +65,18 @@
 }
 @media (min-width: 768px) {
   .containerSale {
-    width: 1200px;
+    width: 750px;
   }
 }
 .title {
   font-family: "Montserrat";
-  font-size: medium;
+  font-size: x-large;
   font-weight: 600;
   text-align: center;
+  margin-bottom: 20px;
   /* color: #182c18; */
   text-transform: capitalize;
-  color: rgba(129, 140, 248);
+  color: #a7e6ff;
 }
 .options {
   display: flex;
@@ -154,7 +148,59 @@
 
   border-color: rgba(129, 140, 248);
 }
+.inputLabel {
+  color: white;
+  margin-bottom: 10px;
+}
+.inputNombresDni {
+  background-color: #121f3d;
+  width: 100%;
+  padding: 5px;
+  border: 1px solid transparent;
+  border-color: white;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  color: white;
+}
+.inputNombresDni:focus {
+  outline: none;
+  border-color: #a7e6ff;
+}
 
+.buttonDelete {
+  background: rgb(228, 35, 115);
+  width: 100px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-radius: 10px;
+  color: #ffff;
+  font-size:15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.buttonCrearEvaluacion {
+  background: rgb(247, 243, 36);
+  width: 100px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-radius: 10px;
+  color: #0f253b;
+  font-size:15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.buttonCrearEvaluacion:hover {
+  color: #20bf6b !important;
+  border-radius: 50px;
+  border-color: #20bf6b !important;
+  transition: all 0.3s ease 0s;
+}
+.buttonDelete:hover {
+  color: #20bf6b !important;
+  border-radius: 50px;
+  border-color: #00f7ff !important;
+  transition: all 0.3s ease 0s;
+}
 .selectOption {
   width: 100%;
   height: 45px;
@@ -239,11 +285,11 @@
 .lista:hover {
   /* background-color:#c1ffff; */
   border-color: rgb(3, 78, 218);
-  color:rgb(3, 78, 218);
+  color: rgb(3, 78, 218);
   /* color:white; */
   /* font-weight: 600; */
   transition: all 0.3s ease 0s;
-  box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.1);
+  box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
   /* box-shadow: 11px 11px 39px -13px rgba(0,0,0,0.71); */
   cursor: pointer;
 }
@@ -256,14 +302,14 @@
   justify-content: center;
   align-items: center;
   height: 20px;
-  color:white;
+  color: white;
   font-weight: 600;
-  font-family: 'Montserrat';
+  font-family: "Montserrat";
   text-transform: lowercase;
 }
 
 .inputAlternativas {
-  display:grid;
+  display: grid;
   gap: 20px;
   margin-bottom: 20px;
 }
@@ -275,32 +321,31 @@
   margin-bottom: 10px;
 }
 .textAreaPregunta {
-  padding:10px;
+  padding: 10px;
   outline: none;
   border-radius: 10px;
-  box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.1);
+  box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
   width: 100%;
   color: #72717e;
-  height: 100px;
+  height: 150px;
 }
-
-.alternativa{
+.alternativa {
   text-transform: uppercase;
   color: #ff1e00;
   /* margin-right: 5x; */
 }
 .alternativaInput {
-  width:100%;
+  width: 100%;
   border-radius: 10px;
   height: 40px;
   padding: 10px;
-  box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.1);
+  box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 .inputAlternativa {
-  width:100%;
+  width: 100%;
   border-radius: 10px;
   height: 40px;
   padding: 10px;
-  box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.1);
+  box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
   margin-bottom: 10px;
 }

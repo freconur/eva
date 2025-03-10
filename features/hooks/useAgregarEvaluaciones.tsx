@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDoc, getDocs, getFirestore, increment, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore/lite"
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, increment, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore/lite"
 import { AppAction } from "../actions/appAction"
 import { useGlobalContext, useGlobalContextDispatch } from "../context/GlolbalContext"
 import { CreaEvaluacion, Evaluaciones, Grades, PreguntasRespuestas, User, UserEstudiante } from "../types/types"
@@ -268,6 +268,17 @@ export const useAgregarEvaluaciones = () => {
     getPreguntasRespuestas(id)
   }
 
+  const deleteEvaluacion = async (id: string) => {
+    await deleteDoc(doc(db, "evaluaciones", `${id}`));
+  }
+
+  const updateEvaluacion = async (evaluacion: Evaluaciones, id: string) => {
+    const pathRef = doc(db, "evaluaciones", `${id}`);
+    await updateDoc(pathRef, { ...evaluacion, timestamp: serverTimestamp() })
+    .then(res => {
+      getEvaluaciones()
+    })
+  }
   return {
     guardarPreguntasRespuestas,
     crearEvaluacion,
@@ -278,6 +289,8 @@ export const useAgregarEvaluaciones = () => {
     salvarPreguntRespuestaEstudiante,
     getGrades,
     getEvaluacionesGradoYCategoria,
-    resetPRestudiantes
+    resetPRestudiantes,
+    deleteEvaluacion,
+    updateEvaluacion
   }
 }

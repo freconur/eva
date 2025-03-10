@@ -26,6 +26,7 @@ const useUsuario = () => {
           apellidos: user.data().apellidos,
           dni: user.data().dni,
           institucion: user.data().institucion,
+          dniDirector:user.data().dniDirector,
           modular: user.data().modular,
           perfil: user.data().perfil,
           region: user.data().region,

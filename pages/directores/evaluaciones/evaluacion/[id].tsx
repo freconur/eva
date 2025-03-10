@@ -33,6 +33,10 @@ const Evaluacion = () => {
   return (
     <>
       {
+        showModal &&
+        <AgregarPreguntasRespuestas id={`${route.query.id}`} showModal={showModal} handleshowModal={handleshowModal} />
+      }
+      {
         loaderPages ?
           <div className='grid grid-rows-loader'>
             <div className='flex justify-center items-center'>
@@ -46,7 +50,7 @@ const Evaluacion = () => {
             <div className='w-[1024px] bg-white  p-20'>
               <h1 className='text-2xl text-colorSexto font-semibold uppercase mb-10'>{evaluacion.nombre}</h1>
               <div className='flex gap-3 justify-end'>
-                {/* <button onClick={handleshowModal} className='bg-green-500 p-3 rounded-md shadow text-white capitalize font-semibold'>agregar preguntas</button> */}
+                <button onClick={handleshowModal} className='bg-green-500 p-3 rounded-md shadow text-white capitalize font-semibold'>agregar preguntas</button>
                 <Link href={`reporte?id=${currentUserData.dni}&idEvaluacion=${route.query.id}`} className='bg-colorTercero p-3 rounded-md duration-300 hover:bg-colorCuarto hover:text-colorSegundo text-white shadow-md capitalize font-semibold'>generar repote de evaluación</Link>
               </div>
               <h2 className='text-2xl text-colorSexto capitalize mb-2 mt-5' >preguntas y respuestas</h2>

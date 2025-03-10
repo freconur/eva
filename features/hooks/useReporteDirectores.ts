@@ -21,10 +21,16 @@ export const useReporteDirectores = () => {
     const getDniDocentesDeDirectores = new Promise<string[]>(async (resolve, reject) => {
       try {
         await getDocs(getDocenterIdRef).then(res => {
-          res.forEach(doc => {
-            docentesDelDirector.push(doc.id)
-          })
-          resolve(docentesDelDirector)
+          if (res.size === 0) {
+            console.log('res.size', res.size)
+            dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: false })
+            reject()
+          } else {
+            res.forEach(doc => {
+              docentesDelDirector.push(doc.id)
+            })
+            resolve(docentesDelDirector)
+          }
         })
       } catch (error) {
         console.log('error', error)
@@ -61,7 +67,7 @@ export const useReporteDirectores = () => {
                     // if(doc.data().d === undefined)
                     arrayOrdenadoRespuestas?.sort((a: any, b: any) => a.id - b.id).forEach(data => {
                       arrayAcumulativoDeRespuestas?.map((rta, i) => {
-                        if(rta.d === undefined) {
+                        if (rta.d === undefined) {
                           if (rta.id === data.id) {
                             rta.a = Number(rta.a) + Number(data.a)
                             rta.b = Number(rta.b) + Number(data.b)
@@ -80,6 +86,8 @@ export const useReporteDirectores = () => {
                       })
                     })
                   }
+                } else {
+                  dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: false })
                 }
                 resolve(arrayAcumulativoDeRespuestas)
               })
@@ -91,6 +99,7 @@ export const useReporteDirectores = () => {
       }
     })
     await reporteDirectorColegio.then(res => {
+      console.log('llegamos al final antes del setime')
       setTimeout(() => {
         agregarDatosEstadisticosDirector(res, idEvaluacion)
         dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: false })

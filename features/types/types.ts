@@ -27,7 +27,8 @@ export type AppReducerValues = {
   evaluacionesGradoYCategoria: Evaluaciones[],
   evaluacionesPsicolinguistica: Psicolinguistica[]
   psicolinguisticaById: Psicolinguistica,
-  preguntasPsicolinguistica:PsicolinguiticaExamen[]
+  preguntasPsicolinguistica: PsicolinguiticaExamen[],
+  preguntasPsicolinguisticaActualizadas: PsicolinguiticaExamen[],
 }
 
 
@@ -59,6 +60,7 @@ export type AppActions =
   | { type: AppAction.PSICOLINGUISTICA; payload: Psicolinguistica[] }
   | { type: AppAction.PSICOLINGUISTICA_BY_ID; payload: Psicolinguistica }
   | { type: AppAction.PSICOLINGUISTICA_PREGUNTAS; payload: PsicolinguiticaExamen[] }
+  | { type: AppAction.PSICOLINGUISTICA_PREGUNTAS_ACTUALIZADAS; payload: PsicolinguiticaExamen[] }
 
 export type LoginData = {
   usuario: string,
@@ -96,8 +98,8 @@ export type Psicolinguistica = {
 export type PsicolinguiticaExamen = {
   id?: string,
   pregunta?: string,
-  order?:number,
-  alternativas?: string
+  order?: number,
+  alternativas?: Alternativa[]
 }
 export type PreguntasRespuestas = {
   id?: string,
@@ -173,3 +175,10 @@ export type CreaEvaluacion = {
   nombreEvaluacion?: string
 }
 
+export type respuestaPsicolinguistica = {
+  nombreApellidos?:string,
+  dni?:string,
+  grado?:string,
+  seccion?:string,
+  
+}

@@ -31,8 +31,8 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
     let rtaConvert: any = []
     Object.entries(data).forEach(([key, value]) => {
       if (key.length === 1) {
-        if(value.length > 0)
-        rtaConvert.push({ alternativa: key, descripcion: value })
+        if (value.length > 0)
+          rtaConvert.push({ alternativa: key, descripcion: value })
       }
 
     });
@@ -43,107 +43,113 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
       reset()
     }
   })
-console.log('id de modal', id)
+  console.log('id de modal', id)
 
   return container
     ? createPortal(
       <div className={styles.containerModal}>
         <div className={styles.containerSale}>
           <div className={styles.closeModalContainer}>
+            <h3 className={styles.title}>agregar preguntas y respuestas</h3>
             <div className={styles.close} onClick={handleshowModal}>cerrar</div>
           </div>
-          <h3 className={styles.title}>agregar preguntas y respuestas</h3>
-          <form onSubmit={handleSubmitform} >
-            <div className='w-full my-2'>
-              <p className={styles.titlePregunta}>pregunta:</p>
-              <textarea
-                {...register("pregunta",
-                  {
-                    required: { value: true, message: "pregunta es requerido" },
-                    minLength: { value: 5, message: "nombre debe tener un minimo de 5 caracteres" },
-                    maxLength: { value: 400, message: "nombre debe tener un maximo de 150 caracteres" },
-                  }
-                )}
-                className={styles.textAreaPregunta}
-                placeholder="escribe una pregunta"
 
-              />
+          <form className={styles.formulario} onSubmit={handleSubmitform} >
+            <div>
+              <div className='w-full my-2'>
+                {/* <p className={styles.titlePregunta}>pregunta:</p> */}
+                <textarea
+                  {...register("pregunta",
+                    {
+                      required: { value: true, message: "pregunta es requerido" },
+                      minLength: { value: 5, message: "nombre debe tener un minimo de 5 caracteres" },
+                      maxLength: { value: 400, message: "nombre debe tener un maximo de 150 caracteres" },
+                    }
+                  )}
+                  className={styles.textAreaPregunta}
+                  placeholder="PREGUNTA DE EXAMEN"
+
+                />
+              </div>
+              <div className='w-full my-2'>
+                {/* <p className={styles.titlePregunta}>pregunta especialidad:</p> */}
+                <textarea
+                  {...register("preguntaDocente",
+                    {
+                      required: { value: true, message: "pregunta especialidad es requerido" },
+                      minLength: { value: 5, message: "nombre debe tener un minimo de 5 caracteres" },
+                      maxLength: { value: 400, message: "nombre debe tener un maximo de 150 caracteres" },
+                    }
+                  )}
+                  className={styles.textAreaPregunta}
+                  placeholder="PREGUNTA DE ACTUACIÓN"
+
+                />
+              </div>
+
             </div>
-            <div className='w-full my-2'>
-              <p className={styles.titlePregunta}>pregunta especialidad:</p>
-              <textarea
-                {...register("preguntaDocente",
-                  {
-                    required: { value: true, message: "pregunta especialidad es requerido" },
-                    minLength: { value: 5, message: "nombre debe tener un minimo de 5 caracteres" },
-                    maxLength: { value: 400, message: "nombre debe tener un maximo de 150 caracteres" },
-                  }
-                )}
-                className={styles.textAreaPregunta}
-                placeholder="escribe una pregunta"
+            <div>
+              <p className={styles.titlePregunta}>alternativas</p>
+              <div className={styles.inputAlternativas}>
 
-              />
-            </div>
-            <p className={styles.titlePregunta}>alternativas</p>
-            <div className={styles.inputAlternativas}>
+                {/* alternativa A */}
+                <div className="flex gap-3 justify-center items-center">
+                  <p className={styles.alternativa}>a.</p>
+                  <input
+                    {...register("a",
+                      {
+                        required: { value: true, message: "institucion es requerido" },
+                        minLength: { value: 1, message: "nombre debe tener un minimo de 1 caracteres" },
+                        maxLength: { value: 150, message: "nombre debe tener un maximo de 150 caracteres" },
+                      }
+                    )}
+                    className={styles.alternativaInput}
+                    type="text"
+                    placeholder="alternativa a"
+                  />
+                </div>
 
-              {/* alternativa A */}
-              <div className="flex gap-3 justify-center items-center">
-                <p className={styles.alternativa}>a.</p>
-                <input
-                  {...register("a",
-                    {
-                      required: { value: true, message: "institucion es requerido" },
-                      minLength: { value: 1, message: "nombre debe tener un minimo de 1 caracteres" },
-                      maxLength: { value: 150, message: "nombre debe tener un maximo de 150 caracteres" },
-                    }
-                  )}
-                  className={styles.alternativaInput}
-                  type="text"
-                  placeholder="alternativa a"
-                />
-              </div>
-
-              {/* alternativa B */}
-              <div className="flex gap-3 justify-center items-center">
-                <p className={styles.alternativa}>b.</p>
-                <input
-                  {...register("b",
-                    {
-                      required: { value: true, message: "institucion es requerido" },
-                      minLength: { value: 1, message: "nombre debe tener un minimo de 1 caracteres" },
-                      maxLength: { value: 150, message: "nombre debe tener un maximo de 150 caracteres" },
-                    }
-                  )}
-                  className={styles.alternativaInput}
-                  type="text"
-                  placeholder="alternativa b"
-                />
-              </div>
-              {/* alternativa C */}
-              <div className="flex gap-3 justify-center items-center">
-                <p className={styles.alternativa}>c.</p>
-                <input
-                  {...register("c",
-                    {
-                      required: { value: true, message: "institucion es requerido" },
-                      minLength: { value: 1, message: "nombre debe tener un minimo de 1 caracteres" },
-                      maxLength: { value: 150, message: "nombre debe tener un maximo de 150 caracteres" },
-                    }
-                  )}
-                  className={styles.alternativaInput}
-                  type="text"
-                  placeholder="alternativa c"
-                />
-              </div>
-              <div className="flex gap-3 justify-center items-center">
-                <p className={styles.alternativa}>d.</p>
-                <input
-                  {...register("d")}
-                  className={styles.alternativaInput}
-                  type="text"
-                  placeholder="alternativa d"
-                />
+                {/* alternativa B */}
+                <div className="flex gap-3 justify-center items-center">
+                  <p className={styles.alternativa}>b.</p>
+                  <input
+                    {...register("b",
+                      {
+                        required: { value: true, message: "institucion es requerido" },
+                        minLength: { value: 1, message: "nombre debe tener un minimo de 1 caracteres" },
+                        maxLength: { value: 150, message: "nombre debe tener un maximo de 150 caracteres" },
+                      }
+                    )}
+                    className={styles.alternativaInput}
+                    type="text"
+                    placeholder="alternativa b"
+                  />
+                </div>
+                {/* alternativa C */}
+                <div className="flex gap-3 justify-center items-center">
+                  <p className={styles.alternativa}>c.</p>
+                  <input
+                    {...register("c",
+                      {
+                        required: { value: true, message: "institucion es requerido" },
+                        minLength: { value: 1, message: "nombre debe tener un minimo de 1 caracteres" },
+                        maxLength: { value: 150, message: "nombre debe tener un maximo de 150 caracteres" },
+                      }
+                    )}
+                    className={styles.alternativaInput}
+                    type="text"
+                    placeholder="alternativa c"
+                  />
+                </div>
+                <div className="flex gap-3 justify-center items-center">
+                  <p className={styles.alternativa}>d.</p>
+                  <input
+                    {...register("d")}
+                    className={styles.alternativaInput}
+                    type="text"
+                    placeholder="alternativa d"
+                  />
+                </div>
               </div>
             </div>
             <div className=" gap-3">

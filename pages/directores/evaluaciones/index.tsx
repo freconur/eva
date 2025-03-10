@@ -5,6 +5,7 @@ import Link from 'next/link'
 import styles from './evaluaciones.module.css'
 import React, { useEffect } from 'react'
 import { RiLoader4Line } from 'react-icons/ri'
+import { MdDeleteForever } from 'react-icons/md'
 
 const Evaluaciones = () => {
   const { getEvaluaciones } = useAgregarEvaluaciones()
@@ -35,6 +36,7 @@ const Evaluaciones = () => {
                   <tr className='text-white capitalize font-nunito '>
                     <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
                     <th className="py-3 md:p-2  text-left">nombre de evaluación</th>
+                    <th className="py-3 md:p-2  text-left"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -53,6 +55,7 @@ const Evaluaciones = () => {
                                 {eva.nombre}
                               </Link>
                             </td>
+                            
                           </tr>
                         )
                       })
