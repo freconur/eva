@@ -269,7 +269,7 @@ export const useAgregarEvaluaciones = () => {
   }
 
   const deleteEvaluacion = async (id: string) => {
-    await deleteDoc(doc(db, "evaluaciones", `${id}`));
+    await deleteDoc(doc(db, "evaluaciones", `${id}`)).then(res=>getEvaluaciones())
   }
 
   const updateEvaluacion = async (evaluacion: Evaluaciones, id: string) => {
@@ -309,6 +309,7 @@ export const useAgregarEvaluaciones = () => {
           }
         ]
       })
+      .then(res=>getPreguntasRespuestas(id))
     } else {
       await updateDoc(pathRef, {
         order: data.order,
@@ -338,99 +339,8 @@ export const useAgregarEvaluaciones = () => {
           }
         ]
       })
+      .then(res=>getPreguntasRespuestas(id))
     }
-    // console.log('4',alternativass[4])
-    // if (alternativass[3]?.descripcion) {
-    //   if (alternativass[3]?.descripcion?.length > 0) {
-    //     console.log('estoy en 4')
-    //     await updateDoc(pathRef, {
-    //       // alternativas: alternativass,
-    //       order: data.order,
-    //       pregunta: data.pregunta,
-    //       preguntaDocente: data.preguntaDocente,
-    //       respuesta: data.respuesta,
-    //       alternativas: [
-    //         {
-    //           selected: alternativass[0].selected,
-    //           descripcion: alternativass[0].descripcion,
-    //           alternativa: alternativass[0].alternativa,
-    //         },
-    //         {
-    //           selected: alternativass[1].selected,
-    //           descripcion: alternativass[1].descripcion,
-    //           alternativa: alternativass[1].alternativa,
-    //         },
-    //         {
-    //           selected: alternativass[2].selected,
-    //           descripcion: alternativass[2].descripcion,
-    //           alternativa: alternativass[2].alternativa,
-    //         },
-    //         {
-    //           selected: alternativass[2].selected,
-    //           descripcion: alternativass[2].descripcion,
-    //           alternativa: alternativass[2].alternativa,
-    //         }
-    //       ]
-    //     })
-    //   } else {
-    //     console.log('estoy en 3')
-    //     await updateDoc(pathRef, {
-    //       // alternativas: alternativass,
-    //       order: data.order,
-    //       pregunta: data.pregunta,
-    //       preguntaDocente: data.preguntaDocente,
-    //       respuesta: data.respuesta,
-    //       alternativas: [
-    //         {
-    //           selected: alternativass[0].selected,
-    //           descripcion: alternativass[0].descripcion,
-    //           alternativa: alternativass[0].alternativa,
-    //         },
-    //         {
-    //           selected: alternativass[1].selected,
-    //           descripcion: alternativass[1].descripcion,
-    //           alternativa: alternativass[1].alternativa,
-    //         },
-    //         {
-    //           selected: alternativass[2].selected,
-    //           descripcion: alternativass[2].descripcion,
-    //           alternativa: alternativass[2].alternativa,
-    //         },
-    //       ]
-    //     })
-    //   }
-    // }
-    // if (alternativass.length === 4) {
-    //   await updateDoc(pathRef, {
-    //     // alternativas: alternativass,
-    //     order: data.order,
-    //     pregunta: data.pregunta,
-    //     preguntaDocente: data.preguntaDocente,
-    //     respuesta: data.respuesta,
-    //     alternativas: [
-    //       {
-    //         selected: alternativass[0].selected,
-    //         descripcion: alternativass[0].descripcion,
-    //         alternativa: alternativass[0].alternativa,
-    //       },
-    //       {
-    //         selected: alternativass[1].selected,
-    //         descripcion: alternativass[1].descripcion,
-    //         alternativa: alternativass[1].alternativa,
-    //       },
-    //       {
-    //         selected: alternativass[2].selected,
-    //         descripcion: alternativass[2].descripcion,
-    //         alternativa: alternativass[2].alternativa,
-    //       },
-    //       {
-    //         selected: alternativass[3].selected,
-    //         descripcion: alternativass[3].descripcion,
-    //         alternativa: alternativass[3].alternativa,
-    //       }
-    //     ]
-    //   })
-    // }
   }
   return {
     guardarPreguntasRespuestas,

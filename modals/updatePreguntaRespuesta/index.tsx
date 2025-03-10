@@ -165,7 +165,7 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
                       onChange={handleChangeInput}
                     />
                   </div>
-                  <p className={styles.tituloBotones}>¿Quieres actualizar esta evaluación?</p>
+                  <p className={styles.tituloBotones}>¿Quieres actualizar esta pregunta y sus alternativas?</p>
                   <div className='flex gap-3 justify-center items-center'>
 
                     <button onClick={() => { handleShowModalUpdatePreguntaRespuesta(); setValueInput(initialValue) }} className={styles.buttonCrearEvaluacion}>CANCELAR</button>

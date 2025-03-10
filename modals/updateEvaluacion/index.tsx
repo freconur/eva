@@ -74,7 +74,7 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva, evaluacion }:
                   <div className='flex gap-3 justify-center items-center'>
 
                     <button onClick={() => { handleShowInputUpdate(); setValueInput(initialValue) }} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
-                    <button onClick={() => { handleActualizar() }} className={styles.buttonDelete}>SI</button>
+                    <button onClick={() => { handleActualizar();handleShowInputUpdate() }} className={styles.buttonDelete}>SI</button>
 
                   </div>
 
