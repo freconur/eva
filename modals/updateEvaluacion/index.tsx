@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom"
-import styles from '../deleteEvaluacion/deleteEvaluacion.module.css'
+import styles from '../updateEvaluacion/updateEvaluacion.module.css'
 import { useForm } from "react-hook-form";
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { Evaluaciones, Psicolinguistica } from "@/features/types/types";
@@ -70,7 +70,9 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva, evaluacion }:
                     onChange={handleChangeInput}
                     placeholder={nameEva}
                   />
+                  <p className={styles.tituloBotones}>¿Quieres actualizar esta evaluación?</p>
                   <div className='flex gap-3 justify-center items-center'>
+
                     <button onClick={() => { handleShowInputUpdate(); setValueInput(initialValue) }} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
                     <button onClick={() => { handleActualizar() }} className={styles.buttonDelete}>SI</button>
 

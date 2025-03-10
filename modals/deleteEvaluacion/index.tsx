@@ -46,6 +46,7 @@ const handleDeleteEvaluacion = () => {
                   <div className={styles.close} onClick={handleShowModalDelete} >cerrar</div>
                 </div>
                 <h3 className={styles.title}>¿Estás seguro que quieres borrar esta evaluación?</h3>
+                <p className={styles.advertenciaEliminar}>Esta acción no se puede deshacer, si aceptas, la evaluación se eliminará para siempre.</p>
                 <div >
 
                   <div className='flex gap-3 justify-center items-center'>

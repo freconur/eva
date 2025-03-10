@@ -26,6 +26,11 @@
   color: #ffcf4c;
   transition: 0.2s ease;
 }
+.tituloBotones{
+  color:#ffff;
+  text-align: center;
+  margin-bottom:10px
+}
 .closeModal {
   border-radius: 100%;
   background-color: red;
