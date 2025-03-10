@@ -9,7 +9,6 @@ import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones"
 import { useEffect, useState } from "react";
 
 interface Props {
-  handleShowModalPreguntaRespuesta: () => void
   pregunta: PreguntasRespuestas,
   id: string,
   handleShowModalUpdatePreguntaRespuesta: () => void
@@ -30,7 +29,7 @@ const initialValue = {
 
 const initialValueAlternativas = { descripcion: "", alternativa: "", selected: false }
 
-const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespuesta,handleShowModalPreguntaRespuesta, id }: Props) => {
+const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespuesta, id }: Props) => {
   const { loaderSalvarPregunta, } = useGlobalContext()
   const { updateEvaluacion } = useAgregarEvaluaciones()
   // const [valueInput, setValueInput] = useState<PreguntasRespuestas>(pregunta)
@@ -109,7 +108,7 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
               :
               <>
                 <div className={styles.closeModalContainer}>
-                  <div className={styles.close} onClick={() => { handleShowModalPreguntaRespuesta(); setValueInput(initialValue) }} >cerrar</div>
+                  <div className={styles.close} onClick={() => { handleShowModalUpdatePreguntaRespuesta(); setValueInput(initialValue) }} >cerrar</div>
                 </div>
                 <h3 className={styles.title}>Editar pregunta</h3>
                 <div>
@@ -169,8 +168,8 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
                   <p className={styles.tituloBotones}>¿Quieres actualizar esta evaluación?</p>
                   <div className='flex gap-3 justify-center items-center'>
 
-                    <button onClick={() => { handleShowModalPreguntaRespuesta(); setValueInput(initialValue) }} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
-                    <button onClick={() => {handleShowModalUpdatePreguntaRespuesta();handleActualizar() }} className={styles.buttonDelete}>SI</button>
+                    <button onClick={() => { handleShowModalUpdatePreguntaRespuesta(); setValueInput(initialValue) }} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
+                    <button onClick={() => { handleShowModalUpdatePreguntaRespuesta(); handleActualizar() }} className={styles.buttonDelete}>SI</button>
 
                   </div>
 
