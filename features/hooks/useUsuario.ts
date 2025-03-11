@@ -9,6 +9,7 @@ import axios from "axios"
 
 const useUsuario = () => {
   const URL_API = "https://api-ugel-production.up.railway.app/"
+  // const URL_API = "http://localhost:3001/"
   const auth = getAuth(app)
   const db = getFirestore(app)
   const { currentUserData } = useGlobalContext()
@@ -146,35 +147,46 @@ const useUsuario = () => {
     try {
       if (currentUserData.perfil?.rol === 1) {
         console.log('agregando director')
-        axios
-          .post(`${URL_API}crear-director`,
-            {
-              email: `${data.dni}@formativa.com`,
-              password: `${data.dni}`,
-              dni: `${data.dni}`,
-              rol: currentUserData.perfil?.rol,
-              institucion: `${data.institucion}`,
-              modular: `${data.modular}`,
-              perfil: data.perfil,
-              nombres: `${data.nombres}`,
-              apellidos: `${data.apellidos}`,
-            })
-          .then(async response => {
-            console.log('response.status', response)
-            await setDoc(doc(db, "usuarios", `${data.dni}`), {
-              dni: `${data.dni}`,
-              institucion: `${data.institucion}`,
-              perfil: data.perfil,
-              rol: data.perfil?.rol,
-              modular: data.modular,
-              nombres: data.nombres,
-              apellidos: data.apellidos,
-              region: Number(data.region)
-            })
-              .then(res => {
-                dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+        try {
+          axios
+            .post(`${URL_API}crear-director`,
+              {
+                email: `${data.dni}@formativa.com`,
+                password: `${data.dni}`,
+                dni: `${data.dni}`,
+                rol: currentUserData.perfil?.rol,
+                institucion: `${data.institucion}`,
+                modular: `${data.modular}`,
+                perfil: data.perfil,
+                nombres: `${data.nombres}`,
+                apellidos: `${data.apellidos}`,
               })
-          })
+            .then(async (res) => {
+              if (res.data.exists === true) {
+                console.log('ya existe el usuario')
+                dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: `${data.dni} ${res.data.warning}` })
+                dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+              } else {
+                console.log('no existe se creara el usuario')
+                await setDoc(doc(db, "usuarios", `${data.dni}`), {
+                  dni: `${data.dni}`,
+                  institucion: `${data.institucion}`,
+                  perfil: data.perfil,
+                  rol: data.perfil?.rol,
+                  modular: data.modular,
+                  nombres: data.nombres,
+                  apellidos: data.apellidos,
+                  region: Number(data.region)
+                })
+                  .then((res) => {
+                    dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: "" })
+                    dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+                  })
+              }
+            })
+        } catch (error) {
+          console.log('error', error)
+        }
       } else if (currentUserData.perfil?.rol === 4) {
         console.log('agregando director como admin')
         try {
@@ -191,20 +203,28 @@ const useUsuario = () => {
                 nombres: `${data.nombres}`,
                 apellidos: `${data.apellidos}`,
               })
-            .then(async response => {
-              await setDoc(doc(db, "usuarios", `${data.dni}`), {
-                dni: `${data.dni}`,
-                institucion: `${data.institucion}`,
-                perfil: data.perfil,
-                rol: data.perfil?.rol,
-                modular: data.modular,
-                nombres: data.nombres,
-                apellidos: data.apellidos,
-                region: Number(data.region)
-              })
-                .then((res) => {
-                  dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+            .then(async (res) => {
+              if (res.data.exists === true) {
+                console.log('ya existe el usuario')
+                dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: `${data.dni} ${res.data.warning}` })
+                dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+              } else {
+                console.log('no existe se creara el usuario')
+                await setDoc(doc(db, "usuarios", `${data.dni}`), {
+                  dni: `${data.dni}`,
+                  institucion: `${data.institucion}`,
+                  perfil: data.perfil,
+                  rol: data.perfil?.rol,
+                  modular: data.modular,
+                  nombres: data.nombres,
+                  apellidos: data.apellidos,
+                  region: Number(data.region)
                 })
+                  .then((res) => {
+                    dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: "" })
+                    dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+                  })
+              }
             })
         } catch (error) {
           console.log('error', error)
@@ -217,6 +237,7 @@ const useUsuario = () => {
 
   const crearNuevoDocente = async (data: User) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
+    console.log('data', data)
     try {
       axios
         .post(`${URL_API}crear-docente`,
@@ -224,10 +245,22 @@ const useUsuario = () => {
             email: `${data.dni}@formativa.com`,
             password: `${data.dni}`,
             dni: `${data.dni}`,
+            rol: currentUserData.perfil?.rol,
+            institucion: `${data.institucion}`,
+            modular: `${data.modular}`,
+            perfil: data.perfil,
+            nombres: `${data.nombres}`,
+            apellidos: `${data.apellidos}`,
           })
-        .then(async response => {
-          await setDoc(doc(db, "usuarios", `${data.dni}`), {
-            dni: `${data.dni}`,
+        .then(async (res) => {
+          if (res.data.exists === true) {
+            console.log('ya existe el usuario')
+            dispatch({ type: AppAction.WARNING_USUARIO_EXISTE,payload:`${data.dni} ${res.data.warning}` })
+            dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+          } else {
+            console.log('no existe se creara el usuario')
+            await setDoc(doc(db, "usuarios", `${data.dni}`), {
+              dni: `${data.dni}`,
             rol: data.perfil?.rol,
             institucion: currentUserData.institucion,
             dniDirector: currentUserData.dni,
@@ -235,12 +268,40 @@ const useUsuario = () => {
             nombres: `${data.nombres}`,
             apellidos: `${data.apellidos}`,
             region: currentUserData.region
-          });
+            })
+              .then((res) => {
+                dispatch({ type: AppAction.WARNING_USUARIO_EXISTE,payload: "" })
+                dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+              })
+          }
         })
-        .then(res => dispatch({ type: AppAction.LOADER_PAGES, payload: false }))
     } catch (error) {
       console.log('error', error)
     }
+    // try {
+    //   axios
+    //     .post(`${URL_API}crear-docente`,
+    //       {
+    //         email: `${data.dni}@formativa.com`,
+    //         password: `${data.dni}`,
+    //         dni: `${data.dni}`,
+    //       })
+    //     .then(async response => {
+    //       await setDoc(doc(db, "usuarios", `${data.dni}`), {
+    //         dni: `${data.dni}`,
+    //         rol: data.perfil?.rol,
+    //         institucion: currentUserData.institucion,
+    //         dniDirector: currentUserData.dni,
+    //         perfil: data.perfil,
+    //         nombres: `${data.nombres}`,
+    //         apellidos: `${data.apellidos}`,
+    //         region: currentUserData.region
+    //       });
+    //     })
+    //     .then(res => dispatch({ type: AppAction.LOADER_PAGES, payload: false }))
+    // } catch (error) {
+    //   console.log('error', error)
+    // }
   }
 
   return {

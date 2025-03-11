@@ -9,7 +9,7 @@ const AgregarDirectores = () => {
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
   const { getUserData, createNewDirector, crearNuevoDocente } = useUsuario()
-  const { currentUserData, loaderPages } = useGlobalContext()
+  const { currentUserData, loaderPages, warningUsuarioExiste } = useGlobalContext()
 
   useEffect(() => {
     getUserData()
@@ -17,7 +17,7 @@ const AgregarDirectores = () => {
   const handleAgregarDirector = handleSubmit(data => {
 
     crearNuevoDocente({ ...data, perfil: { rol: 3, nombre: "docente" } })
-    reset()
+    // reset()
   })
 
   return (
@@ -81,7 +81,9 @@ const AgregarDirectores = () => {
                     placeholder="dni de docente" />
                   {errors.dni && <span className='text-red-400 text-sm'>{errors.dni.message as string}</span>}
                 </div>
-
+                <div className='justify-center flex items-center'>
+                  {warningUsuarioExiste?.length > 0 && <p className='text-teal-700 '>{warningUsuarioExiste}</p>}
+                </div>
                 <button className='flex justify-center items-center bg-colorSegundo hover:opacity-80 duration-300 p-3 rounded-md w-full text-white hover:text-white uppercase font-semibold font-comfortaa'>registrar</button>
               </form>
             </>

@@ -10,7 +10,7 @@ const AgregarDirectores = () => {
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
   const { getUserData, createNewDirector, getRegiones, getUsersDirectores } = useUsuario()
-  const { currentUserData, regiones, loaderPages, usuariosDirectores } = useGlobalContext()
+  const { currentUserData, regiones, loaderPages, usuariosDirectores, warningUsuarioExiste } = useGlobalContext()
 
   useEffect(() => {
     getUserData()
@@ -88,7 +88,7 @@ const AgregarDirectores = () => {
 
               <h1 className='text-colorTercero font-semibold text-3xl font-mono mb-10 capitalize'>Registrar Director</h1>
               <div className='bg-white p-5 w-[400px]'>
-                <form onClick={handleAgregarDirector} action="">
+                <form onClick={handleAgregarDirector}>
                   <div className='w-full my-2'>
                     <p className='text-slate-400 text-sm uppercase'>nombre de la i.e.:</p>
                     <input
@@ -185,6 +185,9 @@ const AgregarDirectores = () => {
                       placeholder="nombre de usuario" />
                   </div>
                   {errors.apellidos && <span className='text-red-400 text-sm'>{errors.apellidos.message as string}</span>}
+                  <div className='justify-center flex items-center'>
+                    {warningUsuarioExiste?.length > 0 && <p className='text-teal-700 font-semibold'>{warningUsuarioExiste}</p>}
+                  </div>
                   <button className='flex justify-center items-center bg-blue-500 hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase'>registrar</button>
                 </form>
               </div>
