@@ -28,7 +28,7 @@ const Evaluacion = () => {
     setShowModalUpdatePReguntaRespuesta(!showModalUpdatePReguntaRespuesta)
   }
 
-  const handleSelectPregunta = (index:number) => {
+  const handleSelectPregunta = (index: number) => {
     setPregunta(preguntasRespuestas[index])
   }
   useEffect(() => {
@@ -44,7 +44,7 @@ const Evaluacion = () => {
     <>
       {
         showModalUpdatePReguntaRespuesta &&
-        <UpdatePreguntaRespuesta id={`${route.query.id}`} pregunta={pregunta} handleShowModalUpdatePreguntaRespuesta={handleShowModalUpdatePreguntaRespuesta}/>
+        <UpdatePreguntaRespuesta id={`${route.query.id}`} pregunta={pregunta} handleShowModalUpdatePreguntaRespuesta={handleShowModalUpdatePreguntaRespuesta} />
       }
       {
         loaderPages ?
@@ -89,7 +89,6 @@ const Evaluacion = () => {
                               <p className='uppercase text-sm text-colorSegundo'>{al.alternativa} - </p>
                               <p className='text-colorPrincipal'>{al.descripcion}</p>
                             </div>
-
                           )
                         })
                       }

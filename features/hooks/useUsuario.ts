@@ -3,7 +3,7 @@ import { browserSessionPersistence, getAuth, onAuthStateChanged, setPersistence,
 import { useGlobalContext, useGlobalContextDispatch } from "../context/GlolbalContext"
 // import { getFirestore, doc, getDoc } from "firebase/firestore/lite"
 import { AppAction } from "../actions/appAction"
-import { getFirestore, doc, getDoc, setDoc, collection, getDocs, } from "firebase/firestore/lite"
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, where, query, orderBy, } from "firebase/firestore/lite"
 import { app } from "@/firebase/firebase.config"
 import axios from "axios"
 
@@ -14,6 +14,21 @@ const useUsuario = () => {
   const { currentUserData } = useGlobalContext()
   const dispatch = useGlobalContextDispatch()
 
+
+  const getUsersDirectores = async () => {
+    const pathRef = query(collection(db, "usuarios"), where("rol", "==", 2), orderBy("rol", "asc"))
+    await getDocs(pathRef)
+      .then(res => {
+        const arryaDirectores: User[] = []
+        res.forEach((doc) => {
+          arryaDirectores.push(doc.data())
+        });
+        dispatch({ type: AppAction.USUARIOS_DIRECTORES, payload: arryaDirectores })
+      })
+    // const q = query(collection(db, "cities"), where("capital", "==", true));
+    // const querySnapshot = await getDocs(collection(db, "cities"));
+
+  }
   const getUser = async (id: string) => {
     const refUser = doc(db, 'usuarios', id as string)
     const user = await getDoc(refUser)
@@ -26,7 +41,7 @@ const useUsuario = () => {
           apellidos: user.data().apellidos,
           dni: user.data().dni,
           institucion: user.data().institucion,
-          dniDirector:user.data().dniDirector,
+          dniDirector: user.data().dniDirector,
           modular: user.data().modular,
           perfil: user.data().perfil,
           region: user.data().region,
@@ -235,7 +250,8 @@ const useUsuario = () => {
     createNewDirector,
     crearNuevoDocente,
     getRegiones,
-    createNewEspecialista
+    createNewEspecialista,
+    getUsersDirectores
   }
 
 }
