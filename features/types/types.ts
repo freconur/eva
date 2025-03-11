@@ -30,7 +30,9 @@ export type AppReducerValues = {
   preguntasPsicolinguistica: PsicolinguiticaExamen[],
   preguntasPsicolinguisticaActualizadas: PsicolinguiticaExamen[],
   usuariosDirectores:User[],
-  warningUsuarioExiste:string
+  warningUsuarioExiste:string,
+  dataDirector:User,
+  warningUsuarioNoEncontrado:string
 }
 
 
@@ -65,6 +67,8 @@ export type AppActions =
   | { type: AppAction.PSICOLINGUISTICA_PREGUNTAS_ACTUALIZADAS; payload: PsicolinguiticaExamen[] }
   | { type: AppAction.USUARIOS_DIRECTORES; payload: User[] }
   | { type: AppAction.WARNING_USUARIO_EXISTE; payload: string }
+  | { type: AppAction.DATA_DIRECTOR; payload: User }
+  | { type: AppAction.WARNING_USUARIO_NO_ENCONTRADO; payload: string }
 
 export type LoginData = {
   usuario: string,

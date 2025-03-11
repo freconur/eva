@@ -4,6 +4,16 @@ import { AppActions, AppReducerValues } from "../types/types";
 
 export const appReducer = (state: AppReducerValues, action: AppActions) => {
   switch (action.type) {
+    case AppAction.WARNING_USUARIO_NO_ENCONTRADO:
+      return {
+        ...state,
+        warningUsuarioNoEncontrado:action.payload
+      }
+    case AppAction.DATA_DIRECTOR:
+      return {
+        ...state,
+        dataDirector:action.payload
+      }
     case AppAction.WARNING_USUARIO_EXISTE:
       return {
         ...state,

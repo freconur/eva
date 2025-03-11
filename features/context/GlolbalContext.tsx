@@ -34,7 +34,9 @@ const initialState: AppReducerValues = {
   preguntasPsicolinguistica: [],
   preguntasPsicolinguisticaActualizadas: [],
   usuariosDirectores:[],
-  warningUsuarioExiste:""
+  warningUsuarioExiste:"",
+  dataDirector:{},
+  warningUsuarioNoEncontrado:"",
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

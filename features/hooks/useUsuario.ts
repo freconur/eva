@@ -3,7 +3,7 @@ import { browserSessionPersistence, getAuth, onAuthStateChanged, setPersistence,
 import { useGlobalContext, useGlobalContextDispatch } from "../context/GlolbalContext"
 // import { getFirestore, doc, getDoc } from "firebase/firestore/lite"
 import { AppAction } from "../actions/appAction"
-import { getFirestore, doc, getDoc, setDoc, collection, getDocs, where, query, orderBy, } from "firebase/firestore/lite"
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, where, query, orderBy, updateDoc, } from "firebase/firestore/lite"
 import { app } from "@/firebase/firebase.config"
 import axios from "axios"
 
@@ -26,10 +26,28 @@ const useUsuario = () => {
         });
         dispatch({ type: AppAction.USUARIOS_DIRECTORES, payload: arryaDirectores })
       })
-    // const q = query(collection(db, "cities"), where("capital", "==", true));
-    // const querySnapshot = await getDocs(collection(db, "cities"));
-
   }
+  const getDirectorById = async (dni: string) => {
+    dispatch({ type: AppAction.WARNING_USUARIO_NO_ENCONTRADO, payload: "" })
+    const pathRef = doc(db, "usuarios", `${dni}`)
+    await getDoc(pathRef)
+      .then(res => {
+        if (res.exists()) {
+          dispatch({ type: AppAction.DATA_DIRECTOR, payload: res.data() })
+        } else {
+          dispatch({ type: AppAction.WARNING_USUARIO_NO_ENCONTRADO, payload: "no se encontro usuario prueba con otro dni" })
+        }
+      })
+  }
+  const updateDirector = async (dniDirector: string, data: User) => {
+    const pathRef = doc(db, "usuarios", `${dniDirector}`);
+    await updateDoc(pathRef, data)
+      .then(res => {
+        getUsersDirectores()
+        dispatch({ type: AppAction.DATA_DIRECTOR, payload: {} })
+      })
+  }
+
   const getUser = async (id: string) => {
     const refUser = doc(db, 'usuarios', id as string)
     const user = await getDoc(refUser)
@@ -255,22 +273,22 @@ const useUsuario = () => {
         .then(async (res) => {
           if (res.data.exists === true) {
             console.log('ya existe el usuario')
-            dispatch({ type: AppAction.WARNING_USUARIO_EXISTE,payload:`${data.dni} ${res.data.warning}` })
+            dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: `${data.dni} ${res.data.warning}` })
             dispatch({ type: AppAction.LOADER_PAGES, payload: false })
           } else {
             console.log('no existe se creara el usuario')
             await setDoc(doc(db, "usuarios", `${data.dni}`), {
               dni: `${data.dni}`,
-            rol: data.perfil?.rol,
-            institucion: currentUserData.institucion,
-            dniDirector: currentUserData.dni,
-            perfil: data.perfil,
-            nombres: `${data.nombres}`,
-            apellidos: `${data.apellidos}`,
-            region: currentUserData.region
+              rol: data.perfil?.rol,
+              institucion: currentUserData.institucion,
+              dniDirector: currentUserData.dni,
+              perfil: data.perfil,
+              nombres: `${data.nombres}`,
+              apellidos: `${data.apellidos}`,
+              region: currentUserData.region
             })
               .then((res) => {
-                dispatch({ type: AppAction.WARNING_USUARIO_EXISTE,payload: "" })
+                dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: "" })
                 dispatch({ type: AppAction.LOADER_PAGES, payload: false })
               })
           }
@@ -305,6 +323,7 @@ const useUsuario = () => {
   }
 
   return {
+    getDirectorById,
     signIn,
     getUserData,
     logout,
@@ -312,7 +331,8 @@ const useUsuario = () => {
     crearNuevoDocente,
     getRegiones,
     createNewEspecialista,
-    getUsersDirectores
+    getUsersDirectores,
+    updateDirector
   }
 
 }

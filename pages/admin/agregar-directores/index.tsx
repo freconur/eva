@@ -1,17 +1,21 @@
 import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
+import SearchUsuarios from '@/components/searchUsuarios'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
-import React, { useEffect } from 'react'
+import UpdateUsuarioDirector from '@/modals/updateUsuarioDirector'
+import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { MdEditSquare } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 
 const AgregarDirectores = () => {
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
   const { getUserData, createNewDirector, getRegiones, getUsersDirectores } = useUsuario()
-  const { currentUserData, regiones, loaderPages, usuariosDirectores, warningUsuarioExiste } = useGlobalContext()
-
+  const { currentUserData, regiones, loaderPages, usuariosDirectores, warningUsuarioExiste, dataDirector, warningUsuarioNoEncontrado } = useGlobalContext()
+  const [showModal, setShowModal] = useState<boolean>(false)
+  const [idUsuario, setIdUsuario] = useState<string>("")
   useEffect(() => {
     getUserData()
     getRegiones()
@@ -23,18 +27,72 @@ const AgregarDirectores = () => {
     reset()
   })
 
+  const handleShowModal = () => {
+    setShowModal(!showModal)
+  }
+  console.log('warningUsuarioNoEncontrado', warningUsuarioNoEncontrado)
   return (
     <div className='grid grid-cols-2 w-[1100px] p-1 place-content-center mt-5 m-auto'>
+      {
+        showModal &&
+        <UpdateUsuarioDirector idUsuario={idUsuario} handleShowModal={handleShowModal} />
+      }
       <div className='p-5'>
         <div className='w-ful w-[500px] '>
           <h1 className='text-colorTercero font-semibold text-3xl font-mono mb-10 capitalize'>Usuarios de directores</h1>
+          <SearchUsuarios />
+          {
+            warningUsuarioNoEncontrado.length > 0 ?
+              <table className='w-full  bg-white  rounded-md shadow-md mb-5'>
+                <thead className='bg-azul-claro4 border-b-2 border-blue-300 '>
+                  <tr className='text-white capitalize font-nunito '>
+                    <th className="uppercase  pl-1 md:pl-2 px-1 text-center">Mensaje</th>
+
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  <tr>
+                    <td className=' text-slate-500 pl-1 md:pl-2 px-1 text-center'>{warningUsuarioNoEncontrado}</td>
+
+                  </tr>
+                </tbody>
+              </table>
+              :
+
+              Object.keys(dataDirector).length !== 0 ?
+                <table className='w-full  bg-white  rounded-md shadow-md mb-5'>
+                  <thead className='bg-azul-claro4 border-b-2 border-blue-300 '>
+                    <tr className='text-white capitalize font-nunito '>
+                      <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
+                      <th className="py-3 md:p-2  text-left">dni</th>
+                      <th className="py-3 md:p-2  text-left">nombre de evaluación</th>
+                      <th className="py-3 md:p-2  text-left">editar</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    <tr>
+                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>1</td>
+                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dataDirector.dni}</td>
+                      <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>{dataDirector.nombres} {dataDirector.apellidos}</td>
+                      {
+                        dataDirector.rol === 2 &&
+                        <td className='text-center flex items-center justify-center'>
+                          <MdEditSquare onClick={() => { handleShowModal(); setIdUsuario(`${dataDirector.dni}`) }} className='text-xl text-yellow-500 cursor-pointer' />
+                        </td>
+                      }
+                    </tr>
+                  </tbody>
+                </table>
+                :
+                null
+          }
           <table className='w-full  bg-white  rounded-md shadow-md'>
             <thead className='bg-azul-claro4 border-b-2 border-blue-300 '>
               <tr className='text-white capitalize font-nunito '>
                 <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
                 <th className="py-3 md:p-2  text-left">dni</th>
                 <th className="py-3 md:p-2  text-left">nombre de evaluación</th>
-                {/* <th className="py-3 md:p-2  text-left"></th> */}
+                <th className="py-3 md:p-2  text-left">editar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -58,10 +116,10 @@ const AgregarDirectores = () => {
                             {director.nombres} {director.apellidos}
                           </div>
                         </td>
+                        <td>
+                          <MdEditSquare onClick={() => { handleShowModal(); setIdUsuario(`${director.dni}`) }} className='text-xl text-yellow-500 cursor-pointer' />
+                        </td>
                         {/* <td>
-                              <MdEditSquare onClick={() => { setNameEva(`${eva.nombre}`); handleShowInputUpdate(); setIdEva(`${eva.id}`) }} className='text-xl text-yellow-500 cursor-pointer' />
-                            </td>
-                            <td>
                               <MdDeleteForever onClick={() => { handleShowModalDelete(); setIdEva(`${eva.id}`) }} className='text-xl text-red-500 cursor-pointer' />
                             </td> */}
                       </tr>
