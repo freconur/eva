@@ -37,6 +37,7 @@ const initialState: AppReducerValues = {
   warningUsuarioExiste:"",
   dataDirector:{},
   warningUsuarioNoEncontrado:"",
+  evaluacionesDirector: []
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

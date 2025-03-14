@@ -14,6 +14,7 @@ const Pruebas = () => {
   useEffect(() => {
     getEvaluacionesGradoYCategoria(Number(route.query.grado), Number(route.query.categoria))
   }, [route.query.grado, route.query.categoria])
+  console.log('evaluacionesGradoYCategoria', evaluacionesGradoYCategoria)
   return (
 
     <div className='p-10'>

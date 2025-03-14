@@ -32,7 +32,8 @@ export type AppReducerValues = {
   usuariosDirectores:User[],
   warningUsuarioExiste:string,
   dataDirector:User,
-  warningUsuarioNoEncontrado:string
+  warningUsuarioNoEncontrado:string,
+  evaluacionesDirector:Evaluaciones[]
 }
 
 
@@ -69,6 +70,7 @@ export type AppActions =
   | { type: AppAction.WARNING_USUARIO_EXISTE; payload: string }
   | { type: AppAction.DATA_DIRECTOR; payload: User }
   | { type: AppAction.WARNING_USUARIO_NO_ENCONTRADO; payload: string }
+  | { type: AppAction.EVALUACIONES_DIRECTOR; payload: Evaluaciones[] }
 
 export type LoginData = {
   usuario: string,

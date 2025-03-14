@@ -37,6 +37,7 @@ const config: Config = {
         'centrar-contenido': 'auto'
       },
       colors: {
+        'colorBrand1':'#d6333b',
         'amarilloLogo':'#facc15',
         'textTitulos':'#ffffff',
         'headerPsicolinguistica':'#ffffff45',

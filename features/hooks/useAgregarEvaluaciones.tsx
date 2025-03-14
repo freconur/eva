@@ -15,8 +15,9 @@ export const useAgregarEvaluaciones = () => {
   const getEvaluaciones = async () => {
     // let allEvaluaciones: Evaluaciones[] = []
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
-
-    const querySnapshot = await getDocs(collection(db, "evaluaciones"));
+    const pathRef = collection(db, "evaluaciones")
+    const q = query(pathRef, where("rol", "==", 4));
+    const querySnapshot = await getDocs(q)
     let allEvaluaciones: Evaluaciones[] = []
 
     const newPromise = new Promise<boolean>((resolve, reject) => {
@@ -59,17 +60,50 @@ export const useAgregarEvaluaciones = () => {
 
   const getEvaluacionesGradoYCategoria = async (grado: number, categoria: number) => {
     const refGrados = collection(db, 'evaluaciones')
-    const q = query(refGrados, where("grado", "==", Number(grado)), where("categoria", "==", Number(categoria)))
+    // const q = query(refGrados, where("grado", "==", Number(grado)), where("categoria", "==", Number(categoria)))
+    const q = query(refGrados, where("grado", "==", Number(grado)), where("categoria", "==", Number(categoria)), where("rol", "==", 4))
+    const q1 = query(refGrados, where("grado", "==", Number(grado)), where("categoria", "==", Number(categoria)), where("idDocente", "==", `${currentUserData.dniDirector}`))
     // const q = query(refGrados, )
 
-    await getDocs(q)
-      .then(res => {
-        const allEvaluaciones: Evaluaciones[] = []
-        res.forEach(doc => {
-          allEvaluaciones.push({ ...doc.data(), id: doc.id })
-        })
-        dispatch({ type: AppAction.EVALUACIONES_GRADO_CATEGORIA, payload: allEvaluaciones })
+    const allEvaluaciones: Evaluaciones[] = []
+    await getDocs(q).then(res => {
+      res.forEach(doc => {
+        allEvaluaciones.push({ ...doc.data(), id: doc.id })
       })
+    })
+    await getDocs(q1).then(res2 => {
+      res2.forEach(doc => {
+        allEvaluaciones.push({ ...doc.data(), id: doc.id })
+      })
+
+    })
+    dispatch({ type: AppAction.EVALUACIONES_GRADO_CATEGORIA, payload: allEvaluaciones })
+    // const newPromise = new Promise<any>(async (resolve, reject) => {
+    //   await getDocs(q1)
+    //     .then(async (res) => {
+    //       res.forEach(doc => {
+    //         allEvaluaciones.push({ ...doc.data(), id: doc.id })
+    //       })
+    //       resolve(true)
+    //     })
+    // })
+    // newPromise.then(async res => {
+    //   if (res === true) {
+    //     await getDocs(q).then(res2 => {
+    //       res2.forEach(doc => {
+    //         allEvaluaciones.push({ ...doc.data(), id: doc.id })
+    //       })
+
+    //     })
+    //       .then(res => {
+
+    //         setTimeout(() => {
+              
+    //         }, 3000)
+
+    //       })
+    //   }
+    // })
   }
   const crearEvaluacion = async (value: CreaEvaluacion) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
@@ -269,14 +303,16 @@ export const useAgregarEvaluaciones = () => {
   }
 
   const deleteEvaluacion = async (id: string) => {
-    await deleteDoc(doc(db, "evaluaciones", `${id}`)).then(res=>getEvaluaciones())
+    await deleteDoc(doc(db, "evaluaciones", `${id}`)).then(res => getEvaluaciones())
   }
 
   const updateEvaluacion = async (evaluacion: Evaluaciones, id: string) => {
     const pathRef = doc(db, "evaluaciones", `${id}`);
+    console.log('rta', evaluacion)
     await updateDoc(pathRef, { ...evaluacion, timestamp: serverTimestamp() })
       .then(res => {
         getEvaluaciones()
+        getEvaluacionesDirector()
       })
   }
 
@@ -309,7 +345,7 @@ export const useAgregarEvaluaciones = () => {
           }
         ]
       })
-      .then(res=>getPreguntasRespuestas(id))
+        .then(res => getPreguntasRespuestas(id))
     } else {
       await updateDoc(pathRef, {
         order: data.order,
@@ -339,8 +375,21 @@ export const useAgregarEvaluaciones = () => {
           }
         ]
       })
-      .then(res=>getPreguntasRespuestas(id))
+        .then(res => getPreguntasRespuestas(id))
     }
+  }
+
+  const getEvaluacionesDirector = async () => {
+    const pathRef = (collection(db, "evaluaciones"))
+    const q = query(pathRef, where("idDocente", "==", `${currentUserData.dni}`))
+    await getDocs(q)
+      .then(async (res) => {
+        const arrayEvaluacionesDirector: Evaluaciones[] = []
+        res.forEach((doc) => {
+          arrayEvaluacionesDirector.push({ ...doc.data(), id: doc.id })
+        });
+        dispatch({ type: AppAction.EVALUACIONES_DIRECTOR, payload: arrayEvaluacionesDirector })
+      })
   }
   return {
     guardarPreguntasRespuestas,
@@ -355,6 +404,7 @@ export const useAgregarEvaluaciones = () => {
     resetPRestudiantes,
     deleteEvaluacion,
     updateEvaluacion,
-    updatePreguntaRespuesta
+    updatePreguntaRespuesta,
+    getEvaluacionesDirector
   }
 }

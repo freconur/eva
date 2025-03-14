@@ -15,8 +15,8 @@ interface Props {
   nameEva: string,
 }
 const initialValue = { nombre: "", categoria: 0, grado: 0, idDocente: "" }
-const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva, evaluacion }: Props) => {
-  const { loaderSalvarPregunta, } = useGlobalContext()
+const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
+  const { loaderSalvarPregunta,evaluacion } = useGlobalContext()
   const { updateEvaluacion } = useAgregarEvaluaciones()
   const [valueInput, setValueInput] = useState<Evaluaciones>(evaluacion)
   // const [valueInput, setValueInput] = useState<Evaluaciones>(initialValue)
@@ -32,13 +32,20 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva, evaluacion }:
   }
 
   const handleActualizar = () => {
-    console.log('nameUpdate', nameUpdate)
-    console.log('valueInput', valueInput)
-    updateEvaluacion(valueInput, idEva)
+    // console.log('nameUpdate', nameUpdate)
+    // console.log('valueInput', valueInput)
+    updateEvaluacion({...evaluacion,nombre:valueInput.nombre}, idEva)
+    setValueInput(initialValue)
   }
   useEffect(() => {
+    // setValueInput(initialValue)
     getEvaluacion(idEva)
   }, [])
+  useEffect(() => {
+    setValueInput({idDocente:valueInput.idDocente, grado:valueInput.grado, nombre:valueInput.nombre, categoria:valueInput.categoria })
+  },[evaluacion.id])
+  // console.log('evaluacion',evaluacion)
+  // console.log('valueInput',valueInput)
   return container
     ? createPortal(
       <div className={styles.containerModal}>
@@ -74,7 +81,7 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva, evaluacion }:
                   <div className='flex gap-3 justify-center items-center'>
 
                     <button onClick={() => { handleShowInputUpdate(); setValueInput(initialValue) }} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
-                    <button onClick={() => { handleActualizar();handleShowInputUpdate() }} className={styles.buttonDelete}>SI</button>
+                    <button onClick={() => { handleActualizar();handleShowInputUpdate();setValueInput(initialValue) }} className={styles.buttonDelete}>SI</button>
 
                   </div>
 

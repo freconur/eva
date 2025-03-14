@@ -6,6 +6,7 @@ import styles from './evaluaciones.module.css'
 import React, { useEffect } from 'react'
 import { RiLoader4Line } from 'react-icons/ri'
 import { MdDeleteForever } from 'react-icons/md'
+import EvaluacionesDirector from '@/components/evaluaciones-director'
 
 const Evaluaciones = () => {
   const { getEvaluaciones } = useAgregarEvaluaciones()
@@ -17,7 +18,8 @@ const Evaluaciones = () => {
 
   console.log('evaluaciones', evaluaciones)
   return (
-    <>
+    // <div className='grid grid-cols-2'>
+    <div className='flex gap-5 p-5 justify-center'>
       {
         loaderPages ?
           <div className='grid grid-rows-loader'>
@@ -29,8 +31,9 @@ const Evaluaciones = () => {
 
           :
           <div className='grid justify-center items-center relative mt-3'>
-            <div className='w-[1024px] bg-white  p-20'>
-              <h1 className='text-colorSexto font-semibold text-3xl font-mono mb-10 capitalize'>evaluaciones</h1>
+            {/* <div className='w-[1024px] bg-white  p-20'> */}
+            <div className='w-full'>
+              <h1 className='text-colorTercero font-semibold text-3xl font-mono mb-10 capitalize'>evaluaciones</h1>
               <table className='w-full  bg-white  rounded-md shadow-md'>
                 <thead className='bg-colorSegundo border-b-2 border-blue-300 '>
                   <tr className='text-white capitalize font-nunito '>
@@ -68,7 +71,8 @@ const Evaluaciones = () => {
           </div>
 
       }
-    </>
+      <EvaluacionesDirector/>
+    </div>
   )
 }
 
