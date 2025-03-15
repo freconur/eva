@@ -125,7 +125,8 @@ export type Evaluaciones = {
   nombre?: string,
   preguntasRespuestas?: PreguntasRespuestas,
   grado?: number,
-  categoria?: number
+  categoria?: number,
+  rol?:number
 }
 
 export type UserEstudiante = {
