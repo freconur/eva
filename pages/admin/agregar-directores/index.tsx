@@ -3,12 +3,13 @@ import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import SearchUsuarios from '@/components/searchUsuarios'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
+import DeleteUsuario from '@/modals/deleteUsuario'
 import UpdateUsuarioDirector from '@/modals/updateUsuarioDirector'
 import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { MdEditSquare } from 'react-icons/md'
+import { MdDeleteForever, MdEditSquare } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
-
+import { ToastContainer, toast } from 'react-toastify';
 const AgregarDirectores = () => {
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
@@ -16,6 +17,7 @@ const AgregarDirectores = () => {
   const { currentUserData, regiones, loaderPages, usuariosDirectores, warningUsuarioExiste, dataDirector, warningUsuarioNoEncontrado } = useGlobalContext()
   const [showModal, setShowModal] = useState<boolean>(false)
   const [idUsuario, setIdUsuario] = useState<string>("")
+  const[showDeleteUsuario, setShowDeleteUsuario] = useState<boolean>(false)
   useEffect(() => {
     getUserData()
     getRegiones()
@@ -26,16 +28,24 @@ const AgregarDirectores = () => {
     createNewDirector({ ...data, perfil: { rol: 2, nombre: "director" } })
     reset()
   })
-
+  const handleShowModalDelete = () => {
+    setShowDeleteUsuario(!showDeleteUsuario)
+  }
   const handleShowModal = () => {
     setShowModal(!showModal)
   }
   console.log('warningUsuarioNoEncontrado', warningUsuarioNoEncontrado)
   return (
+    <>
+      <ToastContainer />
     <div className='grid grid-cols-2 w-[1100px] p-1 place-content-center mt-5 m-auto'>
       {
         showModal &&
         <UpdateUsuarioDirector idUsuario={idUsuario} handleShowModal={handleShowModal} />
+      }
+      {
+        showDeleteUsuario &&
+        <DeleteUsuario idUsuario={idUsuario} handleShowModalDelete={handleShowModalDelete}/>
       }
       <div className='p-5'>
         <div className='w-ful w-[500px] '>
@@ -66,7 +76,8 @@ const AgregarDirectores = () => {
                       <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
                       <th className="py-3 md:p-2  text-left">dni</th>
                       <th className="py-3 md:p-2  text-left">nombre de evaluación</th>
-                      <th className="py-3 md:p-2  text-left">editar</th>
+                      <th className="py-3 md:p-2  text-left"></th>
+                      <th className="py-3 md:p-2  text-left"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -78,6 +89,12 @@ const AgregarDirectores = () => {
                         dataDirector.rol === 2 &&
                         <td className='text-center flex items-center justify-center'>
                           <MdEditSquare onClick={() => { handleShowModal(); setIdUsuario(`${dataDirector.dni}`) }} className='text-xl text-yellow-500 cursor-pointer' />
+                        </td>
+                      }
+                      {
+                        dataDirector.rol === 2 &&
+                        <td className='text-center flex items-center justify-center'>
+                          <MdDeleteForever onClick={() => { handleShowModalDelete();  setIdUsuario(`${dataDirector.dni}`) }} className='text-xl text-red-500 cursor-pointer' />
                         </td>
                       }
                     </tr>
@@ -92,7 +109,9 @@ const AgregarDirectores = () => {
                 <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
                 <th className="py-3 md:p-2  text-left">dni</th>
                 <th className="py-3 md:p-2  text-left">nombre de evaluación</th>
-                <th className="py-3 md:p-2  text-left">editar</th>
+                <th className="py-3 md:p-2  text-left"></th>
+                <th className="py-3 md:p-2  text-left"></th>
+
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -119,9 +138,9 @@ const AgregarDirectores = () => {
                         <td>
                           <MdEditSquare onClick={() => { handleShowModal(); setIdUsuario(`${director.dni}`) }} className='text-xl text-yellow-500 cursor-pointer' />
                         </td>
-                        {/* <td>
-                              <MdDeleteForever onClick={() => { handleShowModalDelete(); setIdEva(`${eva.id}`) }} className='text-xl text-red-500 cursor-pointer' />
-                            </td> */}
+                        <td>
+                              <MdDeleteForever onClick={() => { handleShowModalDelete();  setIdUsuario(`${director.dni}`) }} className='text-xl text-red-500 cursor-pointer' />
+                            </td>
                       </tr>
                     )
                   })
@@ -255,6 +274,7 @@ const AgregarDirectores = () => {
       </div>
 
     </div>
+    </>
   )
 }
 

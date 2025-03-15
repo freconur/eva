@@ -118,11 +118,11 @@ const Reportes = () => {
   const iterarPregunta = (index: string) => {
     return (
       <>
-        <h3 className='text-slate-600 font-montserrat font-semibold'>
-          {preguntasRespuestas[Number(index) - 1]?.id}. {preguntasRespuestas[Number(index) - 1]?.pregunta}
+        <h3 className='text-slate-700 font-montserrat text-md flex'>
+          <p className='text-colorTercero font-semibold mr-2'>{preguntasRespuestas[Number(index) - 1]?.order}.</p> {preguntasRespuestas[Number(index) - 1]?.pregunta}
         </h3>
-        <h4 className='text-slate-500 font-montserrat'>
-          Habilidad: {preguntasRespuestas[Number(index) - 1]?.preguntaDocente}
+        <h4 className='text-slate-500 ml-7 text-md font-montserrat'>
+          <strong> Actuacion</strong>: {preguntasRespuestas[Number(index) - 1]?.preguntaDocente}
         </h4>
       </>
     )

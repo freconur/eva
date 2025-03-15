@@ -6,7 +6,7 @@ import { AppAction } from "../actions/appAction"
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs, where, query, orderBy, updateDoc, } from "firebase/firestore/lite"
 import { app } from "@/firebase/firebase.config"
 import axios from "axios"
-
+import { ToastContainer, toast } from 'react-toastify';
 const useUsuario = () => {
   const URL_API = "https://api-ugel-production.up.railway.app/"
   // const URL_API = "http://localhost:3001/"
@@ -296,31 +296,28 @@ const useUsuario = () => {
     } catch (error) {
       console.log('error', error)
     }
-    // try {
-    //   axios
-    //     .post(`${URL_API}crear-docente`,
-    //       {
-    //         email: `${data.dni}@formativa.com`,
-    //         password: `${data.dni}`,
-    //         dni: `${data.dni}`,
-    //       })
-    //     .then(async response => {
-    //       await setDoc(doc(db, "usuarios", `${data.dni}`), {
-    //         dni: `${data.dni}`,
-    //         rol: data.perfil?.rol,
-    //         institucion: currentUserData.institucion,
-    //         dniDirector: currentUserData.dni,
-    //         perfil: data.perfil,
-    //         nombres: `${data.nombres}`,
-    //         apellidos: `${data.apellidos}`,
-    //         region: currentUserData.region
-    //       });
-    //     })
-    //     .then(res => dispatch({ type: AppAction.LOADER_PAGES, payload: false }))
-    // } catch (error) {
-    //   console.log('error', error)
-    // }
   }
+  const deleteUsuarioById = (idUsuario:string) => {
+    const newPromise = new Promise<boolean>((resolve, reject) => {
+      try {
+        axios.post(`${URL_API}borrar-usuario`,{dni:idUsuario})
+        .then(res => {
+          console.log('resDelete', res)
+          resolve(true)
+        })
+      }catch(error) {
+        console.log('error', error)
+        reject(false)
+      }
+    })
+    toast.promise(newPromise,
+      {
+        pending: 'Eliminando usuario',
+        success: 'Se ha eliminado usuario con exito 👌',
+        error: 'Parece que algo fallo, intentalo despues 🤯'
+      })
+  }
+
 
   return {
     getDirectorById,
@@ -332,7 +329,8 @@ const useUsuario = () => {
     getRegiones,
     createNewEspecialista,
     getUsersDirectores,
-    updateDirector
+    updateDirector,
+    deleteUsuarioById
   }
 
 }

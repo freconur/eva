@@ -78,7 +78,7 @@ const Evaluacion = () => {
 
                       </div>
                       <div className='flex gap-3 mb-3'>
-                        <span className='text-slate-600 font-semibold'>habilidad:</span><p className='text-slate-500 text-lg'> {pr.preguntaDocente}</p>
+                        <span className='text-slate-600 font-semibold'>Actuación:</span><p className='text-slate-500 text-lg'> {pr.preguntaDocente}</p>
                         <MdEditSquare onClick={() => { handleSelectPregunta(index); handleShowModalUpdatePreguntaRespuesta() }} className='text-xl text-yellow-500 cursor-pointer' />
                       </div>
                       {

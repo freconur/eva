@@ -27,7 +27,7 @@ const PrivateRoute = ({ children }: Props) => {
   }, [])
 
   useEffect(() => {
-    console.log('ruta de especialista', currentUserData)
+    // console.log('ruta de especialista', currentUserData)
     if (!currentUserData) {
           router.push('/login')
     }

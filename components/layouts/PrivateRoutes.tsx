@@ -27,7 +27,7 @@ const PrivateRouteAdmins = ({ children }: Props) => {
   }, [])
 
   useEffect(() => {
-    console.log('ruta admin', currentUserData)
+    // console.log('ruta admin', currentUserData)
     if (currentUserData.dni) {
       if (currentUserData.perfil?.rol !== undefined) {
         if (Number(currentUserData?.perfil.rol) !== 4) {

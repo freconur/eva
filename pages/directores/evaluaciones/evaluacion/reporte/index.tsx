@@ -82,8 +82,9 @@ const Reporte = () => {
   }, [])
   const iterarPregunta = (index: string) => {
     return (
-      <div className='flex'>
-        <span className='text-colorSegundo mr-2 font-semibold'>{index}.</span> <h3 className='text-slate-500 mr-2'>{preguntasRespuestas[Number(index) - 1]?.pregunta}</h3>
+      <div className='grid gap-1'>
+        <h3 className='text-slate-500 mr-2'><span className='text-colorSegundo mr-2 font-semibold'>{index}.</span>{preguntasRespuestas[Number(index) - 1]?.pregunta}</h3>
+        <h3 className='text-slate-500 mr-2'><span className='text-colorSegundo mr-2 font-semibold'>Actuación:</span> {preguntasRespuestas[Number(index) - 1]?.preguntaDocente}</h3>
       </div>
     )
   }

@@ -216,8 +216,12 @@ export const useReporteDirectores = () => {
     })
   }
 
-
+  const resetReporteRegional = () => {
+    // dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: true })
+    dispatch({ type: AppAction.REPORTE_REGIONAL, payload: [] })
+  }
   const reporteRegionales = async (regionValue: number, idEvaluacion: string) => {
+    resetReporteRegional()
     dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: true })
     const dniDirectoreDeRegion: string[] = []
 
@@ -324,6 +328,7 @@ export const useReporteDirectores = () => {
     reporteDirectorData,
     agregarDatosEstadisticosDirector,
     getRegiones,
-    reporteRegionales
+    reporteRegionales,
+    resetReporteRegional
   }
 }

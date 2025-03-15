@@ -78,7 +78,7 @@ const ReporteRegional = () => {
   }
   const route = useRouter()
   const [loaderReporteDirector, setLoaderReporteDirector] = useState(false)
-  const { reporteRegionales, getRegiones } = useReporteDirectores()
+  const { reporteRegionales, getRegiones, resetReporteRegional } = useReporteDirectores()
   const { regiones, reporteRegional, preguntasRespuestas, loaderReporteRegional } = useGlobalContext()
   const { getPreguntasRespuestas } = useAgregarEvaluaciones()
   const [regionValue, setRegionValue] = useState({ region: 0 })
@@ -87,6 +87,7 @@ const ReporteRegional = () => {
     getRegiones()
   }, [])
 
+  useEffect(() => {resetReporteRegional()},[])
   useEffect(() => {
     if (regionValue.region !== 0) {
       reporteRegionales(Number(regionValue.region), `${route.query.idEvaluacion}`)
@@ -98,8 +99,9 @@ const ReporteRegional = () => {
   }
   const iterarPregunta = (index: string) => {
     return (
-      <div className='flex'>
-        <span className='text-colorSegundo mr-2 font-semibold'>{index}.</span> <h3 className='text-slate-500 mr-2'>{preguntasRespuestas[Number(index) - 1]?.preguntaDocente}</h3>
+      <div className='grid gap-1'>
+        <h3 className='text-slate-500 mr-2'><span className='text-colorSegundo mr-2 font-semibold'>{index}.</span> {preguntasRespuestas[Number(index) - 1]?.pregunta}</h3>
+        <h3 className='text-slate-500 ml-8'><strong>Actuación:</strong> {preguntasRespuestas[Number(index) - 1]?.preguntaDocente}</h3>
       </div>
     )
   }
@@ -119,11 +121,11 @@ const ReporteRegional = () => {
     <div className="grid justify-center items-center relative mt-3">
       <div className='w-[1024px] bg-white  p-20'>
 
-        <h1 className='uppercase text-2xl  font-montserrat font-semibold text-colorSexto'>reporte regional</h1>
+        <h1 className='uppercase text-2xl  font-montserrat font-semibold text-colorSexto mb-5'>Reporte UGEL</h1>
         <div>
-          <p className='text-xl text-slate-600 mb-2 capitalize'>selecciona una región:</p>
+          {/* <p className='text-xl text-slate-600 mb-2 capitalize'>selecciona una región:</p> */}
           <select onChange={handleRegion} className=' text-slate-500 p-3 rounded-md shadow-lg w-full mb-10'>
-            <option>---REGION---</option>
+            <option>---UGEL---</option>
             {
               regiones?.map((region, index) => {
                 return (
@@ -142,45 +144,45 @@ const ReporteRegional = () => {
               </div>
               :
               reporteRegional.length > 0 ?
-              <div className='grid justify-center items-center relative z-10'>
-                <div className='w-[1024px] grid justify-center items-center p-20'>
-                  <h1 className='text-2xl text-center text-cyan-700 font-semibold uppercase mb-20'>reporte de evaluación</h1>
-                  <div>
+                <div className='grid justify-center items-center relative z-10'>
+                  <div className='w-[1024px] grid justify-center items-center p-20'>
+                    <h1 className='text-2xl text-center text-cyan-700 font-semibold uppercase mb-20'>reporte de evaluación</h1>
                     <div>
-                      {
-                        reporteRegional?.map((dat, index) => {
-                          return (
-                            <div key={index} className="w-[800px]  p-2 rounded-lg">
-                              {iterarPregunta(`${dat.id}`)}
-                              <div className='bg-white rounded-md grid justify-center items-center place-content-center'>
-                                <div className='grid justify-center m-auto items-center w-[500px]'>
-                                  <Bar className="m-auto w-[500px]"
-                                    // data={data}
-                                    options={options}
-                                    data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
-                                  />
+                      <div>
+                        {
+                          reporteRegional?.map((dat, index) => {
+                            return (
+                              <div key={index} className="w-[800px]  p-2 rounded-lg">
+                                {iterarPregunta(`${dat.id}`)}
+                                <div className='bg-white rounded-md grid justify-center items-center place-content-center'>
+                                  <div className='grid justify-center m-auto items-center w-[500px]'>
+                                    <Bar className="m-auto w-[500px]"
+                                      // data={data}
+                                      options={options}
+                                      data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
+                                    />
+                                  </div>
+                                  <div className='text-sm  flex gap-[90px] items-center justify-center ml-[30px] text-slate-500'>
+                                    <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
+                                    <p>{dat.b} |{((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
+                                    <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
+                                  </div>
+                                  <div className='text-center text-md  w-[150px] text-colorTercero p-2  rounded-md mt-5 border border-colorTercero'>respuesta:<span className='text-colorTercero font-semibold ml-2'>{preguntasRespuestas[Number(index)]?.respuesta}</span> </div>
                                 </div>
-                                <div className='text-sm  flex gap-[90px] items-center justify-center ml-[30px] text-slate-500'>
-                                  <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
-                                  <p>{dat.b} |{((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
-                                  <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
-                                </div>
-                                <div className='text-center text-md  w-[150px] text-colorTercero p-2  rounded-md mt-5 border border-colorTercero'>respuesta:<span className='text-colorTercero font-semibold ml-2'>{preguntasRespuestas[Number(index)]?.respuesta}</span> </div>
                               </div>
-                            </div>
-                          )
-                        })
-                      }
+                            )
+                          })
+                        }
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              :
-              <>
-                <div className='w-full flex justify-center items-center'>
-                  <p className='text-slate-500'>No hay resultados</p>
-                </div>
-              </>
+                :
+                <>
+                  <div className='w-full flex justify-center items-center'>
+                    <p className='text-slate-500'>No hay resultados</p>
+                  </div>
+                </>
           }
         </div>
       </div>
