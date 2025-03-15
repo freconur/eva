@@ -33,6 +33,9 @@ const PrivateRouteEspecialista = ({ children }: Props) => {
         if (Number(currentUserData?.perfil.rol) !== 1) {
           router.push('/login')
         }
+        // if (Number(currentUserData?.perfil.rol) === 1) {
+        //   router.push('/login')
+        // }
       }
     }
   }, [currentUserData.dni]);

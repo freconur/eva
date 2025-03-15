@@ -33,6 +33,9 @@ const PrivateRouteAdmins = ({ children }: Props) => {
         if (Number(currentUserData?.perfil.rol) !== 4) {
           router.push('/login')
         }
+        // if (Number(currentUserData?.perfil.rol) === 4) {
+        //   router.push('/login')
+        // }
       }
     }
   }, [currentUserData.dni]);

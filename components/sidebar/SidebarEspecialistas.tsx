@@ -34,7 +34,26 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
               Evaluaciones
             </Link>
           </li>
-
+          {/* <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
+            <Link href="/especialistas/agregar-especialista" className='p-3'>
+              Agregar especilista
+            </Link>
+          </li> */}
+          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
+            <Link href="/especialistas/agregar-directores" className='p-3'>
+              Agregar director
+            </Link>
+          </li>
+          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
+            <Link href="/especialistas/agregar-evaluaciones" className='p-3'>
+              Agregar evaluación
+            </Link>
+          </li>
+          {/* <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-green-300 hover:text-green-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
+            <Link href="/especialistas/evaluaciones" className='p-3'>
+              Evaluaciones
+            </Link>
+          </li> */}
         </ul>
         <SidebarInfoUser showSidebar={showSidebar} />
       </div>
