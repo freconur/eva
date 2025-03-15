@@ -19,7 +19,11 @@ export const useAgregarEvaluaciones = () => {
     const q = query(pathRef, where("rol", "==", 4));
     const querySnapshot = await getDocs(q)
     let allEvaluaciones: Evaluaciones[] = []
-
+    // const q2 = query(pathRef, where("rol", "==", 1));
+    // const querySnapshot2 = await getDocs(q2)
+    // querySnapshot2.forEach((doc) => {
+    //   allEvaluaciones.push({ ...doc.data(), id: doc.id })
+    // });
     const newPromise = new Promise<boolean>((resolve, reject) => {
       try {
         querySnapshot.forEach((doc) => {
@@ -112,7 +116,8 @@ export const useAgregarEvaluaciones = () => {
       idDocente: currentUserData.dni,
       nombre: value.nombreEvaluacion,
       grado: Number(value.grado),
-      categoria: Number(value.categoria)
+      categoria: Number(value.categoria),
+      rol:4
     }).then(res => dispatch({ type: AppAction.LOADER_PAGES, payload: false }))
   }
 
