@@ -8,8 +8,8 @@ import { app } from "@/firebase/firebase.config"
 import axios from "axios"
 import { ToastContainer, toast } from 'react-toastify';
 const useUsuario = () => {
-  // const URL_API = "https://api-ugel-production.up.railway.app/"
-  const URL_API = "http://localhost:3001/"
+  const URL_API = "https://api-ugel-production.up.railway.app/"
+  // const URL_API = "http://localhost:3001/"
   const auth = getAuth(app)
   const db = getFirestore(app)
   const { currentUserData } = useGlobalContext()
