@@ -74,10 +74,10 @@
 }
 .title {
   font-family: "Montserrat";
-  font-size: medium;
+  font-size: 15px;
   font-weight: 600;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 1px;
   /* color: #182c18; */
   text-transform: uppercase;
   color: rgb(23, 23, 255);
@@ -275,7 +275,8 @@
   color: #086e19;
   font-weight: 600;
   font-family: "Montserrat";
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  font-size: 13px;
 }
 .respuestaContainer {
   display: grid;
@@ -298,6 +299,7 @@
 }
 .descripcionrespuesta {
   color: rgb(17, 17, 136);
+  font-size: 13px;
 }
 .numeroPregunta {
   font-size: 17px;
@@ -342,7 +344,7 @@
 }
 
 .tituloPreguntasRespuestas {
-  font-size: 20px;
+  font-size: 15px;
   text-transform: uppercase;
   text-align: center;
   color: rgb(112, 112, 112);

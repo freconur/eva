@@ -136,7 +136,7 @@ console.log('activarBotonSiguiente', activarBotonSiguiente)
                 <h3 className={styles.title}>evaluar estudiante</h3>
                 <form onSubmit={handleSubmitform} >
                   <div className='w-full my-2'>
-                    <p className={styles.inputLabel}>dni</p>
+                    {/* <p className={styles.inputLabel}>dni</p> */}
                     <input
                       {...register("dni",
                         {
@@ -147,12 +147,12 @@ console.log('activarBotonSiguiente', activarBotonSiguiente)
                       )}
                       className={styles.inputNombresDni}
                       type="number"
-                      placeholder="dni de estudiante"
+                      placeholder="DNI DE ESTUDIANTE"
                     />
                     {errors.dni && <span className='text-red-400 text-sm'>{errors.dni.message as string}</span>}
                   </div>
                   <div className='w-full my-2'>
-                    <p className={styles.inputLabel}>nombre y apellidos</p>
+                    {/* <p className={styles.inputLabel}>nombre y apellidos</p> */}
                     <input
                       {...register("nombresApellidos",
                         {
@@ -163,11 +163,11 @@ console.log('activarBotonSiguiente', activarBotonSiguiente)
                       )}
                       className={styles.inputNombresDni}
                       type="text"
-                      placeholder="nombres y apellidos de estudiante"
+                      placeholder="NOMBRES Y APELLIDOS DE ESTUDIANTES"
                     />
                     {errors.nombresApellidos && <span className='text-red-400 text-sm'>{errors.nombresApellidos.message as string}</span>}
                   </div>
-                  <h2 className={styles.tituloPreguntasRespuestas}>preguntas</h2>
+                  {/* <p className={styles.tituloPreguntasRespuestas}>preguntas</p> */}
                   <div className={styles.preguntasContainer}>
                     <p className={styles.preguntaTitulo}>
                       <span className={styles.numeroPregunta}>

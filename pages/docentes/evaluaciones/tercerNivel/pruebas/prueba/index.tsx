@@ -77,7 +77,7 @@ const Evaluacion = () => {
                         <span className='text-slate-600 font-semibold'>{index + 1}.</span><p className='text-slate-500 text-lg'> {pr.pregunta}</p>
                       </div>
                       <div className='grid gap-3 mb-3'>
-                        <span className='text-slate-600 font-semibold'>Habilidad: </span><p className='text-slate-500 text-lg'> {pr.preguntaDocente}</p>
+                        <span className='text-slate-600 font-semibold'>Actuación: </span><p className='text-slate-500 text-lg'> {pr.preguntaDocente}</p>
                       </div>
                       {
                         pr.alternativas &&

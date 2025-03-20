@@ -77,9 +77,9 @@ const Evaluacion = () => {
                         <span className='text-slate-600 font-semibold'>{index + 1}.</span><p className='text-slate-500 text-lg'> {pr.pregunta}</p>
 
                       </div>
-                      <div className='flex gap-3 mb-3'>
-                        <span className='text-slate-600 font-semibold'>Actuación:</span><p className='text-slate-500 text-lg'> {pr.preguntaDocente}</p>
-                        <MdEditSquare onClick={() => { handleSelectPregunta(index); handleShowModalUpdatePreguntaRespuesta() }} className='text-xl text-yellow-500 cursor-pointer' />
+                      <div className='flex gap-3 mb-3 '>
+                        <span className='text-slate-600 font-semibold'>Actuación:</span><p className='text-slate-500 text-lg w-[90%]'> {pr.preguntaDocente}</p>
+                        <MdEditSquare onClick={() => { handleSelectPregunta(index); handleShowModalUpdatePreguntaRespuesta() }} className='text-xl  text-yellow-500 cursor-pointer' />
                       </div>
                       {
                         pr.alternativas &&
