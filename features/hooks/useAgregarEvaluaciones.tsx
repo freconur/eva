@@ -190,7 +190,8 @@ export const useAgregarEvaluaciones = () => {
       dni: data.dni,
       dniDocente: currentUserData.dni,
       respuestasCorrectas: respuestasCorrectas,
-      totalPreguntas: sizePreguntas
+      totalPreguntas: sizePreguntas,
+      respuestas:pq
     })
 
     const promiseGuardarData = new Promise<boolean>((resolve, reject) => {
@@ -207,7 +208,8 @@ export const useAgregarEvaluaciones = () => {
           await setDoc(rutaRef, {
             pregunta: a.pregunta,
             respuesta: a.respuesta,
-            respuestaEstudiante: rta.length > 0 && rta
+            respuestaEstudiante: rta.length > 0 && rta,
+            preguntaDocente: a.preguntaDocente
           })
           const docRef = doc(db, `/evaluaciones/${id}/${currentUserData.dni}`, `${a.id}`);
           const querySnapshot = await getDoc(docRef);

@@ -32,7 +32,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
       if (preguntasRespuestasEstudiante[ordenLimitePregunta]?.order === pq.order) {
         pq.alternativas?.forEach(a => {
           if (a.selected === true) {
-            if (a.alternativa === pq.respuesta) {
+            if (a.alternativa?.toLowerCase() === pq.respuesta?.toLowerCase()) {
               setRespuestasCorrectas(repuestasCorrectas + 1)
             }
           }
@@ -42,11 +42,6 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
     console.log('datadata', data)
   }
   const handleSubmitform = handleSubmit(async (data) => {
-
-    // data.map((a:any) => {
-    //   if(a.alternativas) {}
-    // })
-    
     console.log(' de handle submit', data)
     validateRespuests(preguntasRespuestasEstudiante)
     salvarPreguntRespuestaEstudiante(data, id, preguntasRespuestasEstudiante, repuestasCorrectas, sizePreguntas)

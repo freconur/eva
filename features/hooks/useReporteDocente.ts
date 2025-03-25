@@ -22,7 +22,6 @@ export const useReporteDocente = () => {
     const arrayDataEstadisticas: DataEstadisticas[] = []
     dataEstadisticas.forEach((doc) => {
       // doc.data() is never undefined for query doc snapshots
-      console.log(doc.id, " => ", doc.data());
       arrayDataEstadisticas.push({
         ...doc.data(),
         id: doc.id,
@@ -32,18 +31,22 @@ export const useReporteDocente = () => {
     arrayDataEstadisticas.sort((a: any, b: any) => a.id - b.id)
     dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: arrayDataEstadisticas })
 
-    console.log('path', `/usuarios/${idDocente}/${idExamen}`)
     const queryEstudiantes = collection(db, `/usuarios/${currentUserData.dni}/${idExamen}`)
     const docsEstudiantes = await getDocs(queryEstudiantes)
 
     const arrayEstudiantes: Estudiante[] = []
     docsEstudiantes.forEach((doc) => {
       // doc.data() is never undefined for query doc snapshots
-      console.log(doc.id, " => ", doc.data());
       arrayEstudiantes.push({ ...doc.data(), respuestasIncorrectas: Number(doc.data().totalPreguntas) - Number(doc.data().respuestasCorrectas) })
     });
-    console.log('arrayEstudiantes', arrayEstudiantes)
     dispatch({ type: AppAction.ESTUDIANTES, payload: arrayEstudiantes })
+
+    //codigo para crear la tabla de estudiantes con las pregunta de actuacion
+
+
+
+
+
   }
 
   return {

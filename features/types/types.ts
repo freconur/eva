@@ -135,10 +135,11 @@ export type UserEstudiante = {
   dni?: string,
   dniDocente?: string,
   respuestasCorrectas?: string,
-  totalPreguntas?: string
+  totalPreguntas?: string,
 }
 
 export type Estudiante = {
+  respuestas?:PreguntasRespuestas[]
   dni?: string,
   nombresApellidos?: string,
   dniDocente?: string,

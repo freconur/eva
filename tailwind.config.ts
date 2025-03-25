@@ -18,6 +18,21 @@ const config: Config = {
       montserrat:['Montserrat'],
       jp:['Noto Sans JP'],
     },
+    screens: {
+      xss:'320px',
+      mb:'350px',
+      xsm: '420px',
+      xm: '482px',
+      xs: '550px',
+      sm: '620px',
+      cz: '664px',
+      tablet:'688px',
+      md: '768px',
+      cs: '953px',
+      lg: '1024px',
+      xl: '1200px',
+      xxl: '1360px',
+    },
     extend: {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
