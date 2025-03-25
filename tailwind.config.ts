@@ -37,6 +37,11 @@ const config: Config = {
         'centrar-contenido': 'auto'
       },
       colors: {
+        'tableSec1':"#034C53",
+        'tableSec2':"#007074",
+        'tableSec3':"#F38C79",
+        'tableSec4':"#FFC1B4",
+        'tableSec5':"#FBF5DD",
         'colorBrand1':'#d6333b',
         'amarilloLogo':'#facc15',
         'textTitulos':'#ffffff',

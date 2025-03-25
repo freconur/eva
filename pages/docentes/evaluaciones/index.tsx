@@ -1,66 +1,83 @@
-import PrivateRouteDocentes from '@/components/layouts/PrivateRoutesDocentes'
-import { useGlobalContext } from '@/features/context/GlolbalContext'
-import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
-import Image from 'next/image'
-import Link from 'next/link'
-import React, { useEffect } from 'react'
-import primaria from '../../../assets/primaria.png'
-import secundaria from '../../../assets/secundaria.png'
-import inicial from '../../../assets/inicial.png'
-import logo from '../../../assets/formativa-logo.png'
-import { RiLoader4Line } from 'react-icons/ri'
+import PrivateRouteDocentes from "@/components/layouts/PrivateRoutesDocentes";
+import { useGlobalContext } from "@/features/context/GlolbalContext";
+import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones";
+import Image from "next/image";
+import Link from "next/link";
+import React, { useEffect } from "react";
+import primaria from "../../../assets/primaria.png";
+import secundaria from "../../../assets/secundaria.png";
+import inicial from "../../../assets/inicial.png";
+import logo from "../../../assets/formativa-logo.png";
+import { RiLoader4Line } from "react-icons/ri";
 const Evaluaciones = () => {
-  const { getEvaluaciones } = useAgregarEvaluaciones()
-  const { evaluaciones, currentUserData, loaderPages } = useGlobalContext()
+  const { getEvaluaciones } = useAgregarEvaluaciones();
+  const { evaluaciones, currentUserData, loaderPages } = useGlobalContext();
 
   useEffect(() => {
-    getEvaluaciones()
-  }, [currentUserData.dni])
+    getEvaluaciones();
+  }, [currentUserData.dni]);
 
-  console.log('evaluaciones', evaluaciones)
+  console.log("evaluaciones", evaluaciones);
   return (
-    <div className='relative h-full p-10'>
-      <h1 className='font-martianMono uppercase text-3xl text-white text-center mb-10'>evaluaciones por niveles</h1>
-      <div className='grid gap-10 justify-center items-center'>
-        <div className='grid grid-cols-3 h-[200px] w-[75%] bg-ggw-1 overflow-hidden rounded-md drop-shadow-2xl'>
-          <div className='relative h-full grid justify-center items-center uppercase  p-3 font-semibold'>
-            <div className='absolute z-[10] right-[10px] bottom-[-10px] opacity-70'>
-              <Image
-                alt="logo formativa"
-                src={secundaria}
-                width={400}
-                height={300}
-              />
-            </div>
-            <h3 className='relative z-[30] text-2xl text-white font-bold font-montserrat text-center'>educación secundaria</h3>
+    <div className="relative h-full p-10">
+      <h1 className="font-martianMono uppercase text-3xl text-white text-center mb-10">
+        evaluaciones por niveles
+      </h1>
+      <div className="grid gap-10 justify-center items-center">
+        <div className="grid grid-cols-3 h-[200px] w-[75%] bg-ggw-1 overflow-hidden rounded-md drop-shadow-2xl">
+          <div className="relative h-full grid justify-center items-center uppercase  p-3 font-semibold">
+            <Link
+              href="/docentes/evaluaciones/secundaria"
+              className="relative h-full grid justify-center items-center uppercase  p-3 font-semibold"
+            >
+              <div className="absolute z-[10] right-[10px] bottom-[-10px] opacity-70">
+                <Image
+                  alt="logo formativa"
+                  src={secundaria}
+                  width={400}
+                  height={300}
+                />
+              </div>
+              <h3 className="relative z-[30] text-2xl text-white font-bold font-montserrat text-center">
+                educación secundaria
+              </h3>
+            </Link>
           </div>
-          <div className='relative grid grid-rows-tablaEstandar bg-tableEstandares4 cursor-pointer hover:opacity-80'>
-            <div className='absolute z-[50] top-[-20px] right-[105px]'>
-              <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>6</p>
+          <Link href="/docentes/evaluaciones/secundaria" className="relative grid grid-rows-tablaEstandar bg-tableEstandares4 cursor-pointer hover:opacity-80">
+            <div className="absolute z-[50] top-[-20px] right-[105px]">
+              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
+                6
+              </p>
             </div>
             <div className="relative z-[40] bg-tableEstandares4 flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-tableEstandares6'>Estándar de aprendizaje</p>
+              <p className="break-all text-tableEstandares6">
+                Estándar de aprendizaje
+              </p>
             </div>
-            <div className='relative z-[40] bg-white text-center opacity-90 grid justify-center items-center rounded-t-md'>
-              <p className='font-martianMono uppercase'>nivel 6</p>
+            <div className="relative z-[40] bg-white text-center opacity-90 grid justify-center items-center rounded-t-md">
+              <p className="font-martianMono uppercase">nivel 6</p>
             </div>
-          </div>
-          <div className='grid relative grid-rows-tablaEstandar bg-tableEstandares3 cursor-pointer hover:opacity-80'>
-            <div className='absolute z-[50] top-[-20px] right-[105px]'>
-              <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>7</p>
+          </Link>
+          <Link href="/docentes/evaluaciones/secundaria" className="grid relative grid-rows-tablaEstandar bg-tableEstandares3 cursor-pointer hover:opacity-80">
+            <div className="absolute z-[50] top-[-20px] right-[105px]">
+              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
+                7
+              </p>
             </div>
             <div className="bg-tableEstandares3 flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-white'>Estándar de aprendizaje</p>
+              <p className="break-all text-white">Estándar de aprendizaje</p>
             </div>
-            <div className='bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md'>
-              <p className='font-martianMono uppercase'>nivel 7</p>
+            <div className="bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md">
+              <p className="font-martianMono uppercase">nivel 7</p>
             </div>
-          </div>
-
+          </Link>
         </div>
-        <div className='grid grid-cols-4 h-[200px] bg-gos-1 overflow-hidden rounded-md drop-shadow-2xl'>
-          <Link href="/docentes/evaluaciones/tercerNivel" className='relative h-full grid justify-center items-center uppercase  p-3 font-semibold'>
-            <div className='absolute z-[10] right-[-5px] bottom-[-10px] opacity-80'>
+        <div className="grid grid-cols-4 h-[200px] bg-gos-1 overflow-hidden rounded-md drop-shadow-2xl">
+          <Link
+            href="/docentes/evaluaciones/tercerNivel"
+            className="relative h-full grid justify-center items-center uppercase  p-3 font-semibold"
+          >
+            <div className="absolute z-[10] right-[-5px] bottom-[-10px] opacity-80">
               <Image
                 alt="logo formativa"
                 src={primaria}
@@ -68,49 +85,68 @@ const Evaluaciones = () => {
                 height={200}
               />
             </div>
-            <h3 className='relative z-[30] text-2xl text-white font-bold font-montserrat text-center'>educación primaria</h3>
+            <h3 className="relative z-[30] text-2xl text-white font-bold font-montserrat text-center">
+              educación primaria
+            </h3>
           </Link>
           {/* <div className='grid relative grid-rows-tablaEstandar bg-colorCuarto cursor-pointer hover:opacity-80'> */}
-          <Link href="/docentes/evaluaciones/tercerNivel"
-            className='grid relative grid-rows-tablaEstandar bg-colorCuarto cursor-pointer hover:opacity-80'
+          <Link
+            href="/docentes/evaluaciones/tercerNivel"
+            className="grid relative grid-rows-tablaEstandar bg-colorCuarto cursor-pointer hover:opacity-80"
           >
-            <div className='absolute z-[50] top-[-20px] right-[105px]'>
-              <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>3</p>
+            <div className="absolute z-[50] top-[-20px] right-[105px]">
+              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
+                3
+              </p>
             </div>
             <div className="bg-colorCuarto flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-tableEstandares6'>Estándar de aprendizaje</p>
+              <p className="break-all text-tableEstandares6">
+                Estándar de aprendizaje
+              </p>
             </div>
-            <div className='bg-white text-center opacity-90 grid justify-center items-center rounded-t-md'>
-              <p className='font-martianMono uppercase'>nivel 3</p>
+            <div className="bg-white text-center opacity-90 grid justify-center items-center rounded-t-md">
+              <p className="font-martianMono uppercase">nivel 3</p>
             </div>
           </Link>
           {/* </div> */}
-          <Link href="/docentes/evaluaciones/tercerNivel" className='grid grid-rows-tablaEstandar bg-graduado-blue-1 cursor-pointer hover:opacity-80 relative'>
-            <div className='absolute z-[50] top-[-20px] right-[105px]'>
-              <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>4</p>
+          <Link
+            href="/docentes/evaluaciones/tercerNivel"
+            className="grid grid-rows-tablaEstandar bg-graduado-blue-1 cursor-pointer hover:opacity-80 relative"
+          >
+            <div className="absolute z-[50] top-[-20px] right-[105px]">
+              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
+                4
+              </p>
             </div>
             <div className="bg-graduado-blue-1 flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-white '>Estándar de aprendizaje</p>
+              <p className="break-all text-white ">Estándar de aprendizaje</p>
             </div>
-            <div className='bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md'>
-              <p className='font-martianMono uppercase'>nivel 4</p>
+            <div className="bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md">
+              <p className="font-martianMono uppercase">nivel 4</p>
             </div>
           </Link>
-          <Link href="/docentes/evaluaciones/tercerNivel" className='grid grid-rows-tablaEstandar bg-pastel13 cursor-pointer hover:opacity-80 relative'>
-            <div className='absolute z-[50] top-[-20px] right-[105px]'>
-              <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>5</p>
+          <Link
+            href="/docentes/evaluaciones/tercerNivel"
+            className="grid grid-rows-tablaEstandar bg-pastel13 cursor-pointer hover:opacity-80 relative"
+          >
+            <div className="absolute z-[50] top-[-20px] right-[105px]">
+              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
+                5
+              </p>
             </div>
             <div className="bg-pastel13 flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-tableEstandares6'>Estándar de aprendizaje</p>
+              <p className="break-all text-tableEstandares6">
+                Estándar de aprendizaje
+              </p>
             </div>
-            <div className='bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md'>
-              <p className='font-martianMono uppercase'>nivel 5</p>
+            <div className="bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md">
+              <p className="font-martianMono uppercase">nivel 5</p>
             </div>
           </Link>
         </div>
-        <div className='grid grid-cols-3 h-[200px]  w-[75%] bg-pastel14 overflow-hidden rounded-md  drop-shadow-2xl'>
-          <div className='relative h-full grid justify-center items-center uppercase text-tableEstandares6 p-3 font-semibold'>
-            <div className='absolute z-[10] right-[0px] bottom-[-10px] opacity-80'>
+        <div className="grid grid-cols-3 h-[200px]  w-[75%] bg-pastel14 overflow-hidden rounded-md  drop-shadow-2xl">
+          <div className="relative h-full grid justify-center items-center uppercase text-tableEstandares6 p-3 font-semibold">
+            <div className="absolute z-[10] right-[0px] bottom-[-10px] opacity-80">
               <Image
                 alt="logo formativa"
                 src={inicial}
@@ -118,33 +154,40 @@ const Evaluaciones = () => {
                 height={200}
               />
             </div>
-            <h3 className='relative z-[30] text-2xl text-white font-bold font-montserrat text-center'>educación inicial</h3>
+            <h3 className="relative z-[30] text-2xl text-white font-bold font-montserrat text-center">
+              educación inicial
+            </h3>
           </div>
-          <div className='grid grid-rows-tablaEstandar bg-tere cursor-pointer hover:opacity-80 relative'>
-            <div className='absolute z-[50] top-[-20px] right-[105px]'>
-              <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>1</p>
+          <div className="grid grid-rows-tablaEstandar bg-tere cursor-pointer hover:opacity-80 relative">
+            <div className="absolute z-[50] top-[-20px] right-[105px]">
+              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
+                1
+              </p>
             </div>
             <div className="bg-tere flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-white'>Estándar de aprendizaje</p>
+              <p className="break-all text-white">Estándar de aprendizaje</p>
             </div>
-            <div className='bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md'>
-              <p className='font-martianMono uppercase'>nivel 1</p>
+            <div className="bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md">
+              <p className="font-martianMono uppercase">nivel 1</p>
             </div>
           </div>
-          <div className='grid grid-rows-tablaEstandar bg-iconColor cursor-pointer hover:opacity-80 relative'>
-            <div className='absolute z-[50] top-[-20px] right-[105px]'>
-              <p className='font-martianMono font-semibold text-[120px] text-white opacity-50 '>2</p>
+          <div className="grid grid-rows-tablaEstandar bg-iconColor cursor-pointer hover:opacity-80 relative">
+            <div className="absolute z-[50] top-[-20px] right-[105px]">
+              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
+                2
+              </p>
             </div>
             <div className="bg-headerTable flex justify-center items-center text-2xl p-3 break-all ">
-              <p className='break-all text-tableEstandares6 '>Estándar de aprendizaje</p>
+              <p className="break-all text-tableEstandares6 ">
+                Estándar de aprendizaje
+              </p>
             </div>
-            <div className='bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md'>
-              <p className='font-martianMono uppercase'>nivel 2</p>
+            <div className="bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md">
+              <p className="font-martianMono uppercase">nivel 2</p>
             </div>
           </div>
         </div>
       </div>
-
     </div>
 
     // <>
@@ -197,8 +240,8 @@ const Evaluaciones = () => {
 
     //   }
     // </>
-  )
-}
+  );
+};
 
-export default Evaluaciones
-Evaluaciones.Auth = PrivateRouteDocentes
+export default Evaluaciones;
+Evaluaciones.Auth = PrivateRouteDocentes;
