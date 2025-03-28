@@ -1,41 +1,41 @@
 import { AppAction } from "../actions/appAction";
 
 export type AppReducerValues = {
-  testValue: boolean,
-  showSidebar: boolean,
-  currentUserData: User,
-  evaluaciones: Evaluaciones[],
-  evaluacion: Evaluaciones,
-  preguntasRespuestas: PreguntasRespuestas[],
-  sizePreguntas: number,
-  preguntasRespuestasEstudiante: PreguntasRespuestas[],
-  preguntasRespuestasEstudianteInitialValue: PreguntasRespuestas[],
-  directores: User[],
-  estudiantes: Estudiante[],
-  docentesDeDirectores: User[],
-  dataEstadisticas: DataEstadisticas[],
-  reporteDirector: DataEstadisticas[],
-  loaderLogin: boolean,
-  warningLogin: string,
-  loaderPages: boolean,
-  loaderReporteDirector: boolean,
-  loaderSalvarPregunta: boolean,
-  regiones: Region[],
-  reporteRegional: DataEstadisticas[],
-  loaderReporteRegional: boolean,
-  grados: Grades[],
-  evaluacionesGradoYCategoria: Evaluaciones[],
-  evaluacionesPsicolinguistica: Psicolinguistica[]
-  psicolinguisticaById: Psicolinguistica,
-  preguntasPsicolinguistica: PsicolinguiticaExamen[],
-  preguntasPsicolinguisticaActualizadas: PsicolinguiticaExamen[],
-  usuariosDirectores:User[],
-  warningUsuarioExiste:string,
-  dataDirector:User,
-  warningUsuarioNoEncontrado:string,
-  evaluacionesDirector:Evaluaciones[]
-}
-
+  testValue: boolean;
+  showSidebar: boolean;
+  currentUserData: User;
+  evaluaciones: Evaluaciones[];
+  evaluacion: Evaluaciones;
+  preguntasRespuestas: PreguntasRespuestas[];
+  sizePreguntas: number;
+  preguntasRespuestasEstudiante: PreguntasRespuestas[];
+  preguntasRespuestasEstudianteInitialValue: PreguntasRespuestas[];
+  directores: User[];
+  estudiantes: Estudiante[];
+  docentesDeDirectores: User[];
+  dataEstadisticas: DataEstadisticas[];
+  reporteDirector: DataEstadisticas[];
+  loaderLogin: boolean;
+  warningLogin: string;
+  loaderPages: boolean;
+  loaderReporteDirector: boolean;
+  loaderSalvarPregunta: boolean;
+  regiones: Region[];
+  reporteRegional: DataEstadisticas[];
+  loaderReporteRegional: boolean;
+  grados: Grades[];
+  evaluacionesGradoYCategoria: Evaluaciones[];
+  evaluacionesPsicolinguistica: Psicolinguistica[];
+  psicolinguisticaById: Psicolinguistica;
+  preguntasPsicolinguistica: PsicolinguiticaExamen[];
+  preguntasPsicolinguisticaActualizadas: PsicolinguiticaExamen[];
+  usuariosDirectores: User[];
+  warningUsuarioExiste: string;
+  dataDirector: User;
+  warningUsuarioNoEncontrado: string;
+  evaluacionesDirector: Evaluaciones[];
+  // reporteGlobal: Evaluaciones[];
+};
 
 export type AppActions =
   | { type: AppAction.TEST_VALUE; payload: boolean }
@@ -45,8 +45,14 @@ export type AppActions =
   | { type: AppAction.EVALUACION; payload: Evaluaciones }
   | { type: AppAction.PREGUNTAS_RESPUESTAS; payload: PreguntasRespuestas[] }
   | { type: AppAction.SIZE_PREGUNTAS; payload: number }
-  | { type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES; payload: PreguntasRespuestas[] }
-  | { type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES_INITIAL_VALUE; payload: PreguntasRespuestas[] }
+  | {
+      type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES;
+      payload: PreguntasRespuestas[];
+    }
+  | {
+      type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES_INITIAL_VALUE;
+      payload: PreguntasRespuestas[];
+    }
   | { type: AppAction.DIRECTORES; payload: User[] }
   | { type: AppAction.ESTUDIANTES; payload: Estudiante[] }
   | { type: AppAction.DOCENTES_DIRECTORES; payload: User[] }
@@ -64,23 +70,30 @@ export type AppActions =
   | { type: AppAction.EVALUACIONES_GRADO_CATEGORIA; payload: Evaluaciones[] }
   | { type: AppAction.PSICOLINGUISTICA; payload: Psicolinguistica[] }
   | { type: AppAction.PSICOLINGUISTICA_BY_ID; payload: Psicolinguistica }
-  | { type: AppAction.PSICOLINGUISTICA_PREGUNTAS; payload: PsicolinguiticaExamen[] }
-  | { type: AppAction.PSICOLINGUISTICA_PREGUNTAS_ACTUALIZADAS; payload: PsicolinguiticaExamen[] }
+  | {
+      type: AppAction.PSICOLINGUISTICA_PREGUNTAS;
+      payload: PsicolinguiticaExamen[];
+    }
+  | {
+      type: AppAction.PSICOLINGUISTICA_PREGUNTAS_ACTUALIZADAS;
+      payload: PsicolinguiticaExamen[];
+    }
   | { type: AppAction.USUARIOS_DIRECTORES; payload: User[] }
   | { type: AppAction.WARNING_USUARIO_EXISTE; payload: string }
   | { type: AppAction.DATA_DIRECTOR; payload: User }
   | { type: AppAction.WARNING_USUARIO_NO_ENCONTRADO; payload: string }
   | { type: AppAction.EVALUACIONES_DIRECTOR; payload: Evaluaciones[] }
+  // | { type: AppAction.REPORTE_GLOBAL; payload: DataEstadisticas[] };
 
 export type LoginData = {
-  usuario: string,
-  contrasena: string
-}
+  usuario: string;
+  contrasena: string;
+};
 
 export type UserPerfil = {
-  rol?: number,
-  nombre?: string
-}
+  rol?: number;
+  nombre?: string;
+};
 
 export type Alternativas = [
   { a?: string },
@@ -88,109 +101,108 @@ export type Alternativas = [
   { c?: string },
   { d?: string },
   { e?: string }
-]
+];
 
 export type Region = {
-  codigo?: number,
-  region?: string
-}
+  codigo?: number;
+  region?: string;
+};
 
 export type Alternativa = {
-  alternativa?: string | undefined,
-  descripcion?: string | undefined,
-  selected: boolean
-}
+  alternativa?: string | undefined;
+  descripcion?: string | undefined;
+  selected: boolean;
+};
 export type Psicolinguistica = {
-  nombre?: string,
-  id?: string
-}
+  nombre?: string;
+  id?: string;
+};
 
 export type PsicolinguiticaExamen = {
-  id?: string,
-  pregunta?: string,
-  order?: number,
-  alternativas?: Alternativa[]
-}
+  id?: string;
+  pregunta?: string;
+  order?: number;
+  alternativas?: Alternativa[];
+};
 export type PreguntasRespuestas = {
-  id?: string,
-  pregunta?: string,
-  respuesta?: string,
-  alternativas?: Alternativa[],
-  order?: number,
-  preguntaDocente?: string
-}
+  id?: string;
+  pregunta?: string;
+  respuesta?: string;
+  alternativas?: Alternativa[];
+  order?: number;
+  preguntaDocente?: string;
+};
 export type Evaluaciones = {
-  id?: string,
-  idDocente?: string,
-  nombre?: string,
-  preguntasRespuestas?: PreguntasRespuestas,
-  grado?: number,
-  categoria?: number,
-  rol?:number
-}
+  id?: string;
+  idDocente?: string;
+  nombre?: string;
+  preguntasRespuestas?: PreguntasRespuestas;
+  grado?: number;
+  categoria?: number;
+  rol?: number;
+};
 
 export type UserEstudiante = {
-  id?: string
-  nombresApellidos?: string,
-  dni?: string,
-  dniDocente?: string,
-  respuestasCorrectas?: string,
-  totalPreguntas?: string,
-}
+  id?: string;
+  nombresApellidos?: string;
+  dni?: string;
+  dniDocente?: string;
+  respuestasCorrectas?: string;
+  totalPreguntas?: string;
+};
 
 export type Estudiante = {
-  respuestas?:PreguntasRespuestas[]
-  dni?: string,
-  nombresApellidos?: string,
-  dniDocente?: string,
-  respuestasCorrectas?: number,
-  totalPreguntas?: number,
-  respuestasIncorrectas?: number
-}
+  respuestas?: PreguntasRespuestas[];
+  dni?: string;
+  nombresApellidos?: string;
+  dniDocente?: string;
+  respuestasCorrectas?: number;
+  totalPreguntas?: number;
+  respuestasIncorrectas?: number;
+};
 export type User = {
-  nombres?: string,
-  apellidos?: string,
-  dni?: string,
-  institucion?: string,
-  perfil?: UserPerfil,
-  modular?: string,
-  dniDirector?: string,
-  rolDirector?: number,
-  rol?: number,
-  region?: number
-}
+  nombres?: string;
+  apellidos?: string;
+  dni?: string;
+  institucion?: string;
+  perfil?: UserPerfil;
+  modular?: string;
+  dniDirector?: string;
+  rolDirector?: number;
+  rol?: number;
+  region?: number;
+};
 
 export type DataEstadisticas = {
-  id?: string
-  a?: number,
-  b?: number,
-  c?: number,
-  d?: number,
-  total?: number,
-}
+  id?: string;
+  a?: number;
+  b?: number;
+  c?: number;
+  d?: number;
+  total?: number;
+};
 
 export type Regiones = {
-  codigo?: number,
-  region?: string
-}
+  codigo?: number;
+  region?: string;
+};
 
 export type Grades = {
-  id?: string,
-  nombre?: string,
-  grado?: number
-}
+  id?: string;
+  nombre?: string;
+  grado?: number;
+};
 
 export type CreaEvaluacion = {
-  id?: string,
-  grado?: number,
-  categoria?: string,
-  nombreEvaluacion?: string
-}
+  id?: string;
+  grado?: number;
+  categoria?: string;
+  nombreEvaluacion?: string;
+};
 
 export type respuestaPsicolinguistica = {
-  nombreApellidos?:string,
-  dni?:string,
-  grado?:string,
-  seccion?:string,
-  
-}
+  nombreApellidos?: string;
+  dni?: string;
+  grado?: string;
+  seccion?: string;
+};

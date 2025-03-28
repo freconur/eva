@@ -135,7 +135,7 @@ const Reporte = () => {
                               <p>{dat.c} | {dat.total === 0 ? 0 : ((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
                               {
                                 dat.d &&
-                                <p>{dat.d} | {dat.total === 0 ? 0 : ((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
+                                <p>{dat.d} | {dat.total === 0 ? `${0}%` : ((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
                               }
                             </div>
                             <div className='text-center text-md  w-[150px] text-colorTercero p-2  rounded-md mt-5 border border-colorTercero'>respuesta:<span className='text-colorTercero font-semibold ml-2'>{preguntasRespuestas[Number(index)]?.respuesta}</span> </div>
