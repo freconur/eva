@@ -85,6 +85,7 @@ const ReporteRegional = () => {
     getRegiones,
     resetReporteRegional,
     reporteRegionalGlobal,
+    resetReporteGlobal
   } = useReporteDirectores();
   const {
     regiones,
@@ -101,15 +102,16 @@ const ReporteRegional = () => {
 
   useEffect(() => {
     resetReporteRegional();
+    resetReporteGlobal()
   }, []);
   useEffect(() => {
-    if (regionValue.region !== 0) {
+    if (regionValue.region !== 0 && regionValue.region !== 15) {
       reporteRegionales(
         Number(regionValue.region),
         `${route.query.idEvaluacion}`
       );
+      getPreguntasRespuestas(`${route.query.idEvaluacion}`);
     }
-    getPreguntasRespuestas(`${route.query.idEvaluacion}`);
   }, [regionValue.region]);
   const handleRegion = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setRegionValue({ region: Number(e.target.value) });

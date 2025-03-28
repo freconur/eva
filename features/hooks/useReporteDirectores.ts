@@ -300,8 +300,14 @@ export const useReporteDirectores = () => {
     // dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: true })
     dispatch({ type: AppAction.REPORTE_REGIONAL, payload: [] });
   };
+  const resetReporteGlobal = () => {
+    // dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: true })
+    dispatch({ type: AppAction.REPORTE_REGIONAL, payload: [] });
+  };
 
   const reporteRegionalGlobal = async (idEvaluacion: string) => {
+    resetReporteGlobal();
+    dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: true });
     //pathref es la referencia para hacer el get de todos los directores que estan en la collection de evaluaciones-directores
     const pathRefEvaluacionesDirectores = collection(
       db,
@@ -438,10 +444,10 @@ export const useReporteDirectores = () => {
 
     reporteGlobalPromise.then((res) => {
       console.log("linea 405 res", res);
-      dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: false });
-      dispatch({ type: AppAction.REPORTE_REGIONAL, payload: res });
-      // setTimeout(() => {
-      // },3000)
+      setTimeout(() => {
+        dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: false });
+        dispatch({ type: AppAction.REPORTE_REGIONAL, payload: res });
+      },3000)
     });
 
     // getDniDirectores
@@ -702,5 +708,7 @@ export const useReporteDirectores = () => {
     reporteRegionales,
     resetReporteRegional,
     reporteRegionalGlobal,
+    resetReporteGlobal,
+
   };
 };
