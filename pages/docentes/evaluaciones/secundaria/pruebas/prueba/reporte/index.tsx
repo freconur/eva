@@ -166,7 +166,7 @@ const Reportes = () => {
     setShowDeleteEstudiante(!showDeleteEstudiante);
   };
 
-  // console.log('estudiantes', estudiantes)
+  console.log('estudiantes', estudiantes)
   return (
     <>
       {showDeleteEstudiante && (

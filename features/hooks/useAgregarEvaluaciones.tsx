@@ -182,6 +182,7 @@ export const useAgregarEvaluaciones = () => {
     });
   }
   const salvarPreguntRespuestaEstudiante = async (data: UserEstudiante, id: string, pq: PreguntasRespuestas[], respuestasCorrectas: number, sizePreguntas: number) => {
+    console.log('tiene que salir la respuesta', respuestasCorrectas)
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true })
 
     const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`);

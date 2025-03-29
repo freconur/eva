@@ -39,20 +39,33 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
         })
       }
     })
-    console.log('datadata', data)
+  }
+  const validateUltimaRespuesta = (data: PreguntasRespuestas[], dataForm:any) => {
+    data.forEach(pq => {
+      // if (preguntasRespuestasEstudiante[ordenLimitePregunta]?.id === pq.id) {
+      if (preguntasRespuestasEstudiante[ordenLimitePregunta]?.order === pq.order) {
+        pq.alternativas?.forEach(a => {
+          if (a.selected === true) {
+            if (a.alternativa?.toLowerCase() === pq.respuesta?.toLowerCase()) {
+              // setRespuestasCorrectas(repuestasCorrectas + 1)
+              salvarPreguntRespuestaEstudiante(dataForm, id, preguntasRespuestasEstudiante, repuestasCorrectas + 1, sizePreguntas)
+            }
+          }
+        })
+      }
+    })
   }
   const handleSubmitform = handleSubmit(async (data) => {
-    console.log(' de handle submit', data)
-    validateRespuests(preguntasRespuestasEstudiante)
-    salvarPreguntRespuestaEstudiante(data, id, preguntasRespuestasEstudiante, repuestasCorrectas, sizePreguntas)
-    getPreguntasRespuestas(id)
-    setOrdenLimitePregunta(0)
-    setRespuestasCorrectas(0)
-    prEstudiantes(preguntasRespuestas)
-    setActivarBotonSiguiente(true)
-    // resetPRestudiantes(id)
-    // getPreguntasRespuestas(id)
-    reset()
+    // setOrdenLimitePregunta(ordenLimitePregunta + 1)
+    // validateRespuests(preguntasRespuestasEstudiante)
+    validateUltimaRespuesta(preguntasRespuestasEstudiante, data)
+      // salvarPreguntRespuestaEstudiante(data, id, preguntasRespuestasEstudiante, repuestasCorrectas, sizePreguntas)
+      getPreguntasRespuestas(id)
+      setOrdenLimitePregunta(0)
+      setRespuestasCorrectas(0)
+      prEstudiantes(preguntasRespuestas)
+      setActivarBotonSiguiente(true)
+      reset()
   })
   const siguientePregunta = () => {
     // debugger
@@ -71,7 +84,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
       if (Number(pq.order) === Number(e.target.name)) {
         pq.alternativas?.map(al => {
 
-          console.log('al', al)
+          // console.log('al', al)
           if (al.descripcion?.length !== 0) {
             if (al.alternativa === e.target.value) {
               al.selected = true
@@ -106,8 +119,12 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
 
 
 
-  console.log('preguntasRespuestas', preguntasRespuestas)
-console.log('activarBotonSiguiente', activarBotonSiguiente)
+  // console.log('preguntasRespuestas', preguntasRespuestas)
+console.log('sizePreguntas', sizePreguntas)
+console.log('repuestasCorrectas', repuestasCorrectas)
+
+console.log('ordenLimitePregunta', ordenLimitePregunta)
+
   return container
     ? createPortal(
       <div className={styles.containerModal}>

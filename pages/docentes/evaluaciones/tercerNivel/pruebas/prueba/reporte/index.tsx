@@ -151,7 +151,7 @@ const Reportes = () => {
     const rta: Alternativa | undefined = data.alternativas?.find(
       (r) => r.selected === true
     );
-    console.log("rta", rta);
+    // console.log("rta", rta);
     if (rta?.alternativa) {
       if (rta.alternativa.toLowerCase() === data.respuesta?.toLowerCase()) {
         return (
@@ -171,6 +171,8 @@ const Reportes = () => {
   const handleShowModalDelete = () => {
     setShowDeleteEstudiante(!showDeleteEstudiante);
   };
+
+  console.log('estudiantes', estudiantes)
   return (
     <>
       {showDeleteEstudiante && (
