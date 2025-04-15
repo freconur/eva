@@ -17,7 +17,7 @@ const AgregarDirectores = () => {
   const handleAgregarDirector = handleSubmit(data => {
 
     crearNuevoDocente({ ...data, perfil: { rol: 3, nombre: "docente" } })
-    // reset()
+    reset()
   })
 
   return (

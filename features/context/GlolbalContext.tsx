@@ -33,11 +33,18 @@ const initialState: AppReducerValues = {
   psicolinguisticaById: {},
   preguntasPsicolinguistica: [],
   preguntasPsicolinguisticaActualizadas: [],
-  usuariosDirectores:[],
-  warningUsuarioExiste:"",
-  dataDirector:{},
-  warningUsuarioNoEncontrado:"",
-  evaluacionesDirector: []
+  usuariosDirectores: [],
+  warningUsuarioExiste: "",
+  dataDirector: {},
+  warningUsuarioNoEncontrado: "",
+  evaluacionesDirector: [],
+  evaluacionDesempeñoDocente: [],
+  getPreguntaRespuestaDocentes: [],
+  dataDocente: {},
+  warningDataDocente:"",
+  dataEvaluacionDocente:{},
+  reporteIndividualDocente:{},
+  loaderModales:false
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

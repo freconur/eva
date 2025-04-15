@@ -49,7 +49,7 @@ const Login = () => {
     })
   }
   return (
-    <div className='relative grid h-altura-total w-full p-1 place-content-center '>
+    <div className='relative grid h-altura-total w-full p-1 place-content-center bg-tableEstandares6'>
       {/* <div className='relative w-full grid justify-center items-center'> */}
         <div className='absolute grid justify-center items-center bg-white w-[150px] h-[150px] left-[10px] top-[10px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
           <Image

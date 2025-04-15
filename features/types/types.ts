@@ -34,13 +34,20 @@ export type AppReducerValues = {
   dataDirector: User;
   warningUsuarioNoEncontrado: string;
   evaluacionesDirector: Evaluaciones[];
-  // reporteGlobal: Evaluaciones[];
+  evaluacionDesempeñoDocente: CrearEvaluacionDocente[];
+  getPreguntaRespuestaDocentes: PRDocentes[];
+  dataDocente: User;
+  warningDataDocente:string
+  dataEvaluacionDocente:DataEvaluacion,
+  reporteIndividualDocente: ReporteDocenteIndividual,
+  loaderModales:boolean
 };
 
 export type AppActions =
   | { type: AppAction.TEST_VALUE; payload: boolean }
   | { type: AppAction.SHOW_SIDEBAR; payload: boolean }
   | { type: AppAction.CURRENT_USER_DATA; payload: User }
+  | { type: AppAction.DATA_DOCENTE; payload: User }
   | { type: AppAction.EVALUACIONES; payload: Evaluaciones[] }
   | { type: AppAction.EVALUACION; payload: Evaluaciones }
   | { type: AppAction.PREGUNTAS_RESPUESTAS; payload: PreguntasRespuestas[] }
@@ -83,7 +90,13 @@ export type AppActions =
   | { type: AppAction.DATA_DIRECTOR; payload: User }
   | { type: AppAction.WARNING_USUARIO_NO_ENCONTRADO; payload: string }
   | { type: AppAction.EVALUACIONES_DIRECTOR; payload: Evaluaciones[] }
-  // | { type: AppAction.REPORTE_GLOBAL; payload: DataEstadisticas[] };
+  | { type: AppAction.EVALUACIONES_DOCENTES; payload: CrearEvaluacionDocente[] }
+  | { type: AppAction.GET_PREGUNTA_RESPUESTA_DOCENTE; payload: PRDocentes[] }
+  | { type: AppAction.WARNING_DATA_DOCENTE; payload: string }
+  | { type: AppAction.DATA_EVALUACION_DOCENTE; payload: DataEvaluacion }
+  | { type: AppAction.REPORTE_INDIVIDUAL_DOCENTE; payload: ReporteDocenteIndividual }
+  | { type: AppAction.LOADER_MODALES; payload: boolean }
+// | { type: AppAction.REPORTE_GLOBAL; payload: DataEstadisticas[] };
 
 export type LoginData = {
   usuario: string;
@@ -206,3 +219,47 @@ export type respuestaPsicolinguistica = {
   grado?: string;
   seccion?: string;
 };
+
+export type CrearEvaluacionDocente = {
+  name?: string;
+  categoria?: string;
+  id?: string;
+};
+
+export type PreviewPRDocentes = {
+  criterio?: string;
+  a?: string;
+  b?: string;
+  c?: string;
+  d?: string;
+  id?: string;
+};
+export type PRDocentes = {
+  criterio?: string;
+  alternativas?: AlternativasDocente[];
+  order?: number;
+  id?: string;
+  calificacion?:number
+};
+
+export interface AlternativasDocente {
+  value?: number;
+  descripcion?: string;
+  alternativa?: string;
+  selected?: boolean;
+  id?:string
+}
+
+export type DataEvaluacion = {
+  name?:string;
+  categoria?:string
+}
+
+export type ReporteDocenteIndividual = {
+  calificacion?:number,
+  dni?:string,
+  dniDirector?:string,
+  info?:User,
+  observacion?:string,
+  resultados?:PRDocentes[]
+}
