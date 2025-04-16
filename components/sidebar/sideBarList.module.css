@@ -26,7 +26,10 @@
 .containerListaEstudiantes:focus-within .listaEstudiantes {
   max-height: 300px;
 }
-
+.containerMenu {
+  display:grid;
+  gap:10px
+}
 .mostrarListaEstudiantes {
   /* position: none; */
   /* top:0px; */
