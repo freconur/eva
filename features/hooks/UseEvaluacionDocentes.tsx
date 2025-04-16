@@ -1,11 +1,9 @@
 import React from 'react'
 import { AlternativasDocente, CrearEvaluacionDocente, DataEstadisticas, PRDocentes, PreviewPRDocentes, User } from '../types/types'
-// import { addDoc, collection, getFirestore, query, where } from 'firebase/firestore/lite'
 import { onSnapshot, addDoc, query, where, deleteDoc, doc, collection, getDocs, getFirestore, setDoc, updateDoc, getDoc, increment, orderBy } from "firebase/firestore";
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AppAction } from '../actions/appAction';
 import { } from 'firebase/firestore/lite';
-// import { deleteDoc, doc } from 'firebase/firestore/lite';
 
 const UseEvaluacionDocentes = () => {
   const dispatch = useGlobalContextDispatch()
@@ -22,25 +20,21 @@ const UseEvaluacionDocentes = () => {
       }
     });
     onSnapshot(collection(db, "/evaluaciones-docentes"), (querySnapshot) => {
-      // onSnapshot(q, (querySnapshot) => {
       const arrayEvaluaciones: CrearEvaluacionDocente[] = [];
       querySnapshot.forEach((doc) => {
         arrayEvaluaciones.push({ ...doc.data(), id: doc.id });
       });
-      // console.log("Current cities in CA: ", arrayEvaluaciones.join(", "));
       dispatch({ type: AppAction.EVALUACIONES_DOCENTES, payload: arrayEvaluaciones })
     });
   }
   const getEvaluacionesDocentes = () => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     onSnapshot(collection(db, "/evaluaciones-docentes"), (querySnapshot) => {
-      // onSnapshot(q, (querySnapshot) => {
       const arrayEvaluaciones: CrearEvaluacionDocente[] = [];
       querySnapshot.forEach((doc) => {
         console.log(doc.data())
         arrayEvaluaciones.push({ ...doc.data(), id: doc.id });
       });
-      // console.log("Current cities in CA: ", arrayEvaluaciones.join(", "));
       dispatch({ type: AppAction.EVALUACIONES_DOCENTES, payload: arrayEvaluaciones })
       dispatch({ type: AppAction.LOADER_PAGES, payload: false })
     });
@@ -55,7 +49,6 @@ const UseEvaluacionDocentes = () => {
     const pathRef = collection(db, path)
     await getDocs(pathRef)
       .then(async (response) => {
-        // console.log('rta', response.size)
         const arrayAlternativa: AlternativasDocente[] = []
         for (const [key, value] of Object.entries(data)) {
           if (key === 'a') { arrayAlternativa.push({ value: 1, descripcion: value, alternativa: "a" }) }
@@ -128,7 +121,6 @@ const UseEvaluacionDocentes = () => {
   }
   const buscarDocenteReporteDeEvaluacion = async (idEvaluacion: string, idDocente: string) => {
     `/usuarios/49163626/KtOATuI2gOKH80n1R6yt/88490965`
-    console.log('rta', idEvaluacion, idDocente)
     if (idEvaluacion.length > 0 && idDocente.length > 0) {
       console.log('cumplimos condicion')
       const path = doc(db, `/usuarios/${currentUserData?.dni}/${idEvaluacion}`, idDocente)

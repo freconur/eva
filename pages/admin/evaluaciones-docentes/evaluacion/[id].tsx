@@ -18,7 +18,7 @@ const EvaluacionDocente = () => {
 	const { getPreguntaRespuestaDocentes, dataEvaluacionDocente, dataDocente, loaderPages, dataDirector, warningDataDocente } = useGlobalContext()
 	const { getPreguntasRespuestasDocentes, getDataEvaluacion, buscarDirector } = UseEvaluacionDocentes()
 	const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false)
-	const [valueDni, setValueDni] = useState<number>(0)
+	const [valueDni, setValueDni] = useState<string>("")
 	const [showEvaluarDocente, setShowEvaluarDocente] = useState<boolean>(false)
 	const [dataUpdate, setDataUpdate] = useState<PRDocentes>({})
 	const handleShowModalPreguntas = () => {
@@ -31,7 +31,7 @@ const EvaluacionDocente = () => {
 		setShowEvaluarDocente(!showEvaluarDocente)
 	}
 	const handleChangeDniDocente = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setValueDni(Number(e.target.value))
+		setValueDni(e.target.value)
 	}
 	useEffect(() => {
 		if (valueDni.toString().length === 8) {
