@@ -108,6 +108,24 @@ const UseEvaluacionDocentes = () => {
     }
   }
 
+  const buscarDirector = async (dni: string) => {
+    dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: "" })
+    const docRef = doc(db, "usuarios", `${dni}`);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      if (docSnap.data().rol === 2) {
+        console.log('es un director')
+        dispatch({ type: AppAction.DATA_DIRECTOR, payload: docSnap.data() })
+      } else {
+        dispatch({ type: AppAction.DATA_DIRECTOR, payload: {} })
+        dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: "no se encontro director" })
+      }
+    } else {
+      dispatch({ type: AppAction.DATA_DIRECTOR, payload: {} })
+      dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: "no se encontro director" })
+    }
+  }
   const buscarDocenteReporteDeEvaluacion = async (idEvaluacion: string, idDocente: string) => {
     `/usuarios/49163626/KtOATuI2gOKH80n1R6yt/88490965`
     console.log('rta', idEvaluacion, idDocente)
@@ -191,7 +209,45 @@ const UseEvaluacionDocentes = () => {
         .then(response => dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false }))
     })
   }
+  const reporteEvaluacionDocenteAdmin = (idEvaluacion: string, dniDirector: string) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true })
+    buscarDirector(dniDirector)
+    const path = `/evaluaciones-docentes/${idEvaluacion}/${dniDirector}/`
+    const refData = collection(db, path)
+    const arrayDataEstadisticas: DataEstadisticas[] = []
 
+    const newPromise = new Promise<DataEstadisticas[]>(async (resolve, reject) => {
+      try {
+        await getDocs(refData)
+          .then(response => {
+            let index = 0
+            response.forEach((doc) => {
+              index = index + 1
+              console.log('index', index)
+              console.log('response.size', response.size)
+              // doc.data() is never undefined for query doc snapshots
+              arrayDataEstadisticas.push({
+                ...doc.data(),
+                id: doc.id,
+                total: doc.data().d === undefined ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) : Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) + Number(doc.data().d)
+              })
+            })
+            if (response.size === index) {
+              arrayDataEstadisticas.sort((a: any, b: any) => a.id - b.id)
+              resolve(arrayDataEstadisticas)
+            }
+          })
+      } catch (error) {
+        console.log('error', error)
+        reject()
+      }
+    })
+    newPromise.then(res => {
+      dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: arrayDataEstadisticas })
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+    }
+    )
+  }
   const reporteEvaluacionDocentes = (idEvaluacion: string) => {
     const path = `/evaluaciones-docentes/${idEvaluacion}/${currentUserData.dni}/`
     const refData = collection(db, path)
@@ -285,7 +341,9 @@ const UseEvaluacionDocentes = () => {
     getDataEvaluacion,
     resetDocente,
     agregarObservacionDocente,
-    buscarDocenteReporteDeEvaluacion
+    buscarDocenteReporteDeEvaluacion,
+    buscarDirector,
+    reporteEvaluacionDocenteAdmin
   }
 
 }
