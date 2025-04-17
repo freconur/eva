@@ -320,12 +320,12 @@ const UseEvaluacionDocentes = () => {
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
   }
 
-  const reporteUgelGlobal = async (ugel: number, idEvaluacion: string) => {
+  const reporteUgelGlobal = async (ugel: number, idEvaluacion: string, totalPreguntas: number) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     const usuariosUgel = collection(db, "usuarios");
 
     // Create a query against the collection.
-    const q = query(usuariosUgel, where("region", "==", Number(ugel)),where("rol", "==", 2));
+    const q = query(usuariosUgel, where("region", "==", Number(ugel)), where("rol", "==", 2));
     const arrayDirectoresUgel: string[] = []
     const getDirectoresPromise = new Promise<string[]>(async (resolve, reject) => {
       let index = 0
@@ -353,15 +353,13 @@ const UseEvaluacionDocentes = () => {
         let arrayAcumulativoDeRespuestas: DataEstadisticas[] = [];
         try {
           let index = 0
-          res.forEach(async(director) => {
+          res.forEach(async (director) => {
             index = index + 1
-            console.log('rta', director === '49163626' && 'este es el dni 49163626')
             const path = `/evaluaciones-docentes/${idEvaluacion}/${director}`
             const pathRef = collection(db, path)
             await getDocs(pathRef)
               .then(async (resultadoDirector) => {
                 if (resultadoDirector.size > 0) {
-                  console.log('si soy del 49163626')
                   if (arrayAcumulativoDeRespuestas.length === 0) {
                     const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
                     resultadoDirector.forEach((doc) => {
@@ -425,11 +423,13 @@ const UseEvaluacionDocentes = () => {
                         });
                       });
                   }
-                } 
+                }
               })
-              if(res.length === index) {
-                // debugger
+            if (res.length === index) {
+              // debugger
+              setTimeout(() => {
                 resolve(arrayAcumulativoDeRespuestas)
+              }, 5000)
             }
           })
           // getDirectoresPromise.then(async (directores) => {
@@ -522,21 +522,21 @@ const UseEvaluacionDocentes = () => {
           //       resolve(arrayAcumulativoDeRespuestas)
           //   }
           // })
-  
+
         } catch (error) {
           reject()
         }
       })
-  
+
       getDataEvaluacion.then(data => {
-        // if(data) {
+        if (data.length === totalPreguntas) {
           console.log('data', data)
           dispatch({ type: AppAction.REPORTE_REGIONAL, payload: data })
           dispatch({ type: AppAction.LOADER_PAGES, payload: false })
-        // }
+        }
       })
     })
-    
+
   }
 
   return {

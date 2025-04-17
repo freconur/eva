@@ -86,7 +86,7 @@ const ReporteRegional = () => {
   useEffect(() => {
     if (route.query.idEvaluacion) {
       if (regionValue.length > 0 && route.query.idEvaluacion.length > 0) {
-        reporteUgelGlobal(Number(regionValue), `${route.query.idEvaluacion}`)
+        reporteUgelGlobal(Number(regionValue), `${route.query.idEvaluacion}`,getPreguntaRespuestaDocentes.length )
       }
     }
   }, [regionValue, route.query.idEvaluacion])
@@ -120,6 +120,7 @@ const ReporteRegional = () => {
     getPreguntasRespuestasDocentes(`${route.query.idEvaluacion}`)
   },[route.query.idEvaluacion])
   console.log('reporteRegional', reporteRegional)
+  console.log('getPreguntaRespuestaDocentes', getPreguntaRespuestaDocentes)
   const options = {
     plugins: {
       legend: {
