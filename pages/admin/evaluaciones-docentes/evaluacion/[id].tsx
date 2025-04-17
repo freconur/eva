@@ -69,25 +69,26 @@ const EvaluacionDocente = () => {
 						/>
 						{
 							dataDirector.dni ?
-							<Link href={`reporte?idEvaluacion=${router.query.id}&idDirector=${dataDirector.dni}`} className='p-1  border-[1px] h-[50px] border-green-500 rounded-sm drop-shadow-xl'>
-								<div className='text-white text-[14px]'>Dni: <strong>{dataDirector.dni}</strong></div>
-								<div className='text-white text-[14px]'>Nombres: <strong>{dataDirector.nombres} {dataDirector.apellidos}</strong> </div>
-							</Link>
-							:
+								<Link href={`reporte?idEvaluacion=${router.query.id}&idDirector=${dataDirector.dni}`} className='p-1  border-[1px] h-[50px] border-green-500 rounded-sm drop-shadow-xl'>
+									<div className='text-white text-[14px]'>Dni: <strong>{dataDirector.dni}</strong></div>
+									<div className='text-white text-[14px]'>Nombres: <strong>{dataDirector.nombres} {dataDirector.apellidos}</strong> </div>
+								</Link>
+								:
 								<div className='flex justify-center items-center'>
-								<p className="text-white">{warningDataDocente}</p>
-							</div>
+									<p className="text-white">{warningDataDocente}</p>
+								</div>
 						}
 					</div>
 				</div>
 				<div className='flex gap-2'>
 					<button onClick={() => handleShowModalPreguntas()} className='h-[50px] relative z-[30] p-3 bg-gradient-to-r from-tere to-gg-3  text-textTitulos  rounded-sm drop-shadow-lg '>Agregar preguntas</button>
-					{/* <button onClick={handleShowEvaluarDocente} className='h-[50px] relative z-[30] p-3 bg-gradient-to-r from-amarilloLogo to-tableEstandares4  text-textTitulos  rounded-sm drop-shadow-lg '>Evaluar docente</button> */}
-					{/* <div className='h-[50px] relative z-[30] p-3 bg-gradient-to-r from-colorTercero to-colorSecundario  text-textTitulos  rounded-sm drop-shadow-lg '>
-			<Link href={`reporte?idEvaluacion=${router.query.id}`}>
-			  Reporte
-			</Link>
-		  </div> */}
+					{/* <button onClick={() => handleShowModalPreguntas()} className='h-[50px] relative z-[30] p-3 bg-gradient-to-r from-tere to-gg-3  text-textTitulos  rounded-sm drop-shadow-lg '>Reporte ugel</button> */}
+					{/* <button className='h-[50px] relative z-[30] p-3 bg-gradient-to-r from-amarilloLogo to-tableEstandares4  text-textTitulos  rounded-sm drop-shadow-lg '>Reporte ugel</button> */}
+					<div className='h-[50px] relative z-[30] p-3 bg-gradient-to-r from-colorTercero to-colorSecundario  text-textTitulos  rounded-sm drop-shadow-lg '>
+						<Link href={`reporte-ugel?idEvaluacion=${router.query.id}`}>
+							Reporte ugel
+						</Link>
+					</div>
 					{/* //estes boton me tendria que llevar a la pagina de reportes ya no abre un modal */}
 
 				</div>

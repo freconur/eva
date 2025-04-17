@@ -1,6 +1,6 @@
 import React from 'react'
 import { AlternativasDocente, CrearEvaluacionDocente, DataEstadisticas, PRDocentes, PreviewPRDocentes, User } from '../types/types'
-import { onSnapshot, addDoc, query, where, deleteDoc, doc, collection, getDocs, getFirestore, setDoc, updateDoc, getDoc, increment, orderBy } from "firebase/firestore";
+import { onSnapshot, addDoc, query, where, deleteDoc, doc, collection, getDocs, getFirestore, setDoc, updateDoc, getDoc, increment, orderBy, connectFirestoreEmulator } from "firebase/firestore";
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AppAction } from '../actions/appAction';
 import { } from 'firebase/firestore/lite';
@@ -319,6 +319,226 @@ const UseEvaluacionDocentes = () => {
     })
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
   }
+
+  const reporteUgelGlobal = async (ugel: number, idEvaluacion: string) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true })
+    const usuariosUgel = collection(db, "usuarios");
+
+    // Create a query against the collection.
+    const q = query(usuariosUgel, where("region", "==", Number(ugel)),where("rol", "==", 2));
+    const arrayDirectoresUgel: string[] = []
+    const getDirectoresPromise = new Promise<string[]>(async (resolve, reject) => {
+      let index = 0
+      try {
+        await getDocs(q)
+          .then(directores => {
+            // console.log('drec', directores)
+            // console.log('index directores', index)
+            // console.log('directores size', directores.size)
+            directores.forEach(doc => {
+              index = index + 1
+              arrayDirectoresUgel.push(doc.data().dni)
+              if (index === directores.size) {
+                resolve(arrayDirectoresUgel)
+              }
+            })
+          })
+      } catch (error) {
+        reject()
+      }
+    })
+
+    getDirectoresPromise.then(res => {
+      const getDataEvaluacion = new Promise<DataEstadisticas[]>((resolve, reject) => {
+        let arrayAcumulativoDeRespuestas: DataEstadisticas[] = [];
+        try {
+          let index = 0
+          res.forEach(async(director) => {
+            index = index + 1
+            console.log('rta', director === '49163626' && 'este es el dni 49163626')
+            const path = `/evaluaciones-docentes/${idEvaluacion}/${director}`
+            const pathRef = collection(db, path)
+            await getDocs(pathRef)
+              .then(async (resultadoDirector) => {
+                if (resultadoDirector.size > 0) {
+                  console.log('si soy del 49163626')
+                  if (arrayAcumulativoDeRespuestas.length === 0) {
+                    const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
+                    resultadoDirector.forEach((doc) => {
+                      arrayOrdenadoRespuestas.push({
+                        ...doc.data(),
+                        id: doc.id,
+                        total:
+                          doc.data().d === undefined
+                            ? Number(doc.data().a) +
+                            Number(doc.data().b) +
+                            Number(doc.data().c)
+                            : Number(doc.data().a) +
+                            Number(doc.data().b) +
+                            Number(doc.data().c) +
+                            Number(doc.data().d),
+                      })
+                    }
+                    );
+                    arrayOrdenadoRespuestas
+                      .sort((a: any, b: any) => a.id - b.id)
+                      .forEach((a) => arrayAcumulativoDeRespuestas.push(a));
+                  } else {
+                    const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
+                    resultadoDirector.forEach((doc) =>
+                      arrayOrdenadoRespuestas.push({
+                        ...doc.data(),
+                        id: doc.id,
+                        total:
+                          doc.data().d === undefined
+                            ? Number(doc.data().a) +
+                            Number(doc.data().b) +
+                            Number(doc.data().c)
+                            : Number(doc.data().a) +
+                            Number(doc.data().b) +
+                            Number(doc.data().c) +
+                            Number(doc.data().d),
+                      })
+                    );
+                    arrayOrdenadoRespuestas
+                      ?.sort((a: any, b: any) => a.id - b.id)
+                      .forEach((data) => {
+                        arrayAcumulativoDeRespuestas?.map((rta, i) => {
+                          if (rta.d === undefined) {
+                            if (rta.id === data.id) {
+                              rta.a = Number(rta.a) + Number(data.a);
+                              rta.b = Number(rta.b) + Number(data.b);
+                              rta.c = Number(rta.c) + Number(data.c);
+                              rta.total =
+                                Number(rta.total) + Number(data.total);
+                            }
+                          } else {
+                            if (rta.id === data.id) {
+                              rta.a = Number(rta.a) + Number(data.a);
+                              rta.b = Number(rta.b) + Number(data.b);
+                              rta.c = Number(rta.c) + Number(data.c);
+                              rta.d = Number(rta.d) + Number(data.d);
+                              rta.total =
+                                Number(rta.total) + Number(data.total);
+                            }
+                          }
+                        });
+                      });
+                  }
+                } 
+              })
+              if(res.length === index) {
+                // debugger
+                resolve(arrayAcumulativoDeRespuestas)
+            }
+          })
+          // getDirectoresPromise.then(async (directores) => {
+          //   let index = 0
+          //   directores.forEach(async director => {
+          //     index = index + 1
+          //     console.log('rta', director === '49163626' && 'este es el dni 49163626')
+          //     const path = `/evaluaciones-docentes/${idEvaluacion}/${director}`
+          //     const pathRef = collection(db, path)
+          //     await getDocs(pathRef)
+          //       .then(async (resultadoDirector) => {
+          //         if (resultadoDirector.size > 0) {
+          //           console.log('si soy del 49163626')
+          //           if (arrayAcumulativoDeRespuestas.length === 0) {
+          //             const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
+          //             resultadoDirector.forEach((doc) => {
+          //               arrayOrdenadoRespuestas.push({
+          //                 ...doc.data(),
+          //                 id: doc.id,
+          //                 total:
+          //                   doc.data().d === undefined
+          //                     ? Number(doc.data().a) +
+          //                     Number(doc.data().b) +
+          //                     Number(doc.data().c)
+          //                     : Number(doc.data().a) +
+          //                     Number(doc.data().b) +
+          //                     Number(doc.data().c) +
+          //                     Number(doc.data().d),
+          //               })
+          //             }
+          //             );
+          //             arrayOrdenadoRespuestas
+          //               .sort((a: any, b: any) => a.id - b.id)
+          //               .forEach((a) => arrayAcumulativoDeRespuestas.push(a));
+          //           } else {
+          //             const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
+          //             resultadoDirector.forEach((doc) =>
+          //               arrayOrdenadoRespuestas.push({
+          //                 ...doc.data(),
+          //                 id: doc.id,
+          //                 total:
+          //                   doc.data().d === undefined
+          //                     ? Number(doc.data().a) +
+          //                     Number(doc.data().b) +
+          //                     Number(doc.data().c)
+          //                     : Number(doc.data().a) +
+          //                     Number(doc.data().b) +
+          //                     Number(doc.data().c) +
+          //                     Number(doc.data().d),
+          //               })
+          //             );
+          //             arrayOrdenadoRespuestas
+          //               ?.sort((a: any, b: any) => a.id - b.id)
+          //               .forEach((data) => {
+          //                 arrayAcumulativoDeRespuestas?.map((rta, i) => {
+          //                   if (rta.d === undefined) {
+          //                     if (rta.id === data.id) {
+          //                       rta.a = Number(rta.a) + Number(data.a);
+          //                       rta.b = Number(rta.b) + Number(data.b);
+          //                       rta.c = Number(rta.c) + Number(data.c);
+          //                       rta.total =
+          //                         Number(rta.total) + Number(data.total);
+          //                     }
+          //                   } else {
+          //                     if (rta.id === data.id) {
+          //                       rta.a = Number(rta.a) + Number(data.a);
+          //                       rta.b = Number(rta.b) + Number(data.b);
+          //                       rta.c = Number(rta.c) + Number(data.c);
+          //                       rta.d = Number(rta.d) + Number(data.d);
+          //                       rta.total =
+          //                         Number(rta.total) + Number(data.total);
+          //                     }
+          //                   }
+          //                 });
+          //               });
+          //           }
+          //         } 
+          //         // else {
+          //         //   //este es la condicional del resultadoDirector.size
+          //         //   //retornamos los resultados indicando que no se encontraron resultados para dicha ugel
+          //         //   dispatch({
+          //         //     type: AppAction.LOADER_REPORTE_DIRECTOR,
+          //         //     payload: false,
+          //         //   });
+          //         // }
+          //       })
+          //     })
+          //     if(directores.length === index) {
+          //       // debugger
+          //       resolve(arrayAcumulativoDeRespuestas)
+          //   }
+          // })
+  
+        } catch (error) {
+          reject()
+        }
+      })
+  
+      getDataEvaluacion.then(data => {
+        // if(data) {
+          console.log('data', data)
+          dispatch({ type: AppAction.REPORTE_REGIONAL, payload: data })
+          dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+        // }
+      })
+    })
+    
+  }
+
   return {
     createEvaluacionesDocentes,
     getEvaluacionesDocentes,
@@ -335,7 +555,8 @@ const UseEvaluacionDocentes = () => {
     agregarObservacionDocente,
     buscarDocenteReporteDeEvaluacion,
     buscarDirector,
-    reporteEvaluacionDocenteAdmin
+    reporteEvaluacionDocenteAdmin,
+    reporteUgelGlobal
   }
 
 }

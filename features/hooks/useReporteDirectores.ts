@@ -447,7 +447,7 @@ export const useReporteDirectores = () => {
       setTimeout(() => {
         dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: false });
         dispatch({ type: AppAction.REPORTE_REGIONAL, payload: res });
-      },3000)
+      }, 3000);
     });
 
     // getDniDirectores
@@ -709,6 +709,5 @@ export const useReporteDirectores = () => {
     resetReporteRegional,
     reporteRegionalGlobal,
     resetReporteGlobal,
-
   };
 };
