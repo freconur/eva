@@ -194,7 +194,14 @@ export type DataEstadisticas = {
   d?: number;
   total?: number;
 };
-
+export type DataEstadisticasDocente = {
+  id: string;
+  a: number;
+  b: number;
+  c: number;
+  d: number;
+  total?: number;
+};
 export type Regiones = {
   codigo?: number;
   region?: string;

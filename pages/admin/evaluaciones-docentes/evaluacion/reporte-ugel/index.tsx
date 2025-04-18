@@ -119,8 +119,8 @@ const ReporteRegional = () => {
     getDataEvaluacion(`${route.query.idEvaluacion}`)
     getPreguntasRespuestasDocentes(`${route.query.idEvaluacion}`)
   },[route.query.idEvaluacion])
-  console.log('reporteRegional', reporteRegional)
-  console.log('getPreguntaRespuestaDocentes', getPreguntaRespuestaDocentes)
+  // console.log('reporteRegional', reporteRegional)
+  // console.log('getPreguntaRespuestaDocentes', getPreguntaRespuestaDocentes)
   const options = {
     plugins: {
       legend: {
