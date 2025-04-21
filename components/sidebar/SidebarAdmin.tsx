@@ -10,12 +10,18 @@ import styles from './sideBarList.module.css'
 import { MdAccountBalance, MdAccountCircle } from 'react-icons/md';
 import { FaUserGraduate, FaUserNinja, FaUserTie } from 'react-icons/fa';
 import { LuListTodo } from "react-icons/lu";
+import { useRouter } from 'next/router';
 interface Props {
   showSidebar: boolean
 }
 const SidebarAdmin = ({ showSidebar }: Props) => {
+  const router= useRouter()
   const { logout } = useUsuario()
   const { showSidebarValue } = useRolUsers()
+
+  const redirectLogion = () => {
+    router.push('/login');
+  }
   // const { showSidebar } = useGlobalContext()
   return (
 
@@ -50,6 +56,10 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                   href="/admin/agregar-especialista"
                   className={styles.anclaje}
                   id="ancla">crear usuario</Link></li>
+                  <li className={styles.containerAncla}><Link
+                  href="/admin/evaluaciones-especialistas"
+                  className={styles.anclaje}
+                  id="ancla">evaluaciones</Link></li>
               </ul>
             </li>
             <li className={styles.dropdown}>
@@ -62,6 +72,10 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 </Link>
               </div>
               <ul className={styles.dropdownContent} aria-label="submenu">
+              <li className={styles.containerAncla}><Link
+                  href="/admin/evaluaciones-directores"
+                  className={styles.anclaje}
+                  id="ancla">evaluaciones</Link></li>
                 <li className={styles.containerAncla}><Link
                   href="/admin/agregar-directores"
                   className={styles.anclaje}
@@ -107,36 +121,10 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
             </li>
           </ul>
         </div>
-        {/* <ul className='capitalize font-montserrat border-b-[1px] border-slate-200 pb-5 mb-5'>
-          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-violet-300 hover:text-violet-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/mi-cuenta" className='p-3'>
-              Mi cuenta
-            </Link>
-          </li>
-          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-green-300 hover:text-green-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/admin/evaluaciones" className='p-3'>
-              Evaluaciones
-            </Link>
-          </li>
-          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/admin/agregar-especialista" className='p-3'>
-              Agregar especilista
-            </Link>
-          </li>
-          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/admin/agregar-directores" className='p-3'>
-              Agregar director
-            </Link>
-          </li>
-          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/admin/agregar-evaluaciones" className='p-3'>
-              Agregar evaluación
-            </Link>
-          </li>
-        </ul> */}
+        
         <SidebarInfoUser showSidebar={showSidebar} />
       </div>
-      <div onClick={logout} className="relative z-[10] ml-2 border rounded-sm border-white  duration-300 hover:border-red-300 p-3 h-[50px] font-montserrat hover:text-red-300 text-white w-[200px] cursor-pointer ">
+      <div onClick={() => {logout(); redirectLogion()}} className="relative z-[10] ml-2 border rounded-sm border-white  duration-300 hover:border-red-300 p-3 h-[50px] font-montserrat hover:text-red-300 text-white w-[200px] cursor-pointer ">
         <p>cerrar sesión</p>
       </div>
     </div>

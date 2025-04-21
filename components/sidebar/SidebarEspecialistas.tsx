@@ -8,6 +8,10 @@ import SidebarRegion from './SidebarRegion';
 import Image from 'next/image';
 import sidebarImage from '../../assets/sidebar-app-ugel.png'
 import BackgroundSidebar from './background-sidebar';
+import { FaUserGraduate, FaUserTie } from 'react-icons/fa';
+import { MdAccountBalance, MdAccountCircle } from 'react-icons/md';
+import { LuListTodo } from 'react-icons/lu';
+import styles from './sideBarList.module.css'
 interface Props {
   showSidebar: boolean
 }
@@ -20,41 +24,93 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
     <div className={`z-[2000] grid-rows-gridRows p-2 justify-evenly grid fixed duration-300 drop-shadow-xl h-full w-[250px] bg-graduado-blue-2 ${showSidebar ? "left-[0px]" : "-left-[300px]"}`}>
       {/* <div onClick={() => showSidebarValue(showSidebar)} className='capitalize p-2 w-[30px] h-[30px] bg-red-400 justify-center items-center flex rounded-full text-white l-10 cursor-pointer relative'>x</div> */}
       <BackgroundSidebar/>
-      <div onClick={() => showSidebarValue(showSidebar)} className='absolute capitalize p-2 w-[30px] h-[30px] bg-red-400 justify-center items-center flex rounded-full text-white l-10 cursor-pointer left-[235px] top-[30px] shadow-md'>x</div>
+      <div onClick={() => showSidebarValue(showSidebar)} className='absolute capitalize p-2 w-[30px] h-[30px] bg-colorBrand1 justify-center items-center flex rounded-full text-white l-10 cursor-pointer left-[235px] top-[30px] shadow-md'>x</div>
       <div>
         <SidebarRegional />
-        <ul className='relative z-[10] capitalize font-montserrat border-b-[1px] border-slate-200 pb-5 mb-5'>
-          <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-violet-300 hover:text-violet-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/mi-cuenta" className='p-3'>
-              Mi cuenta
-            </Link>
-          </li>
-          <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-green-300 hover:text-green-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/especialistas/evaluaciones" className='p-3'>
-              Evaluaciones
-            </Link>
-          </li>
-          {/* <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/especialistas/agregar-especialista" className='p-3'>
-              Agregar especilista
-            </Link>
-          </li> */}
-          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/especialistas/agregar-directores" className='p-3'>
-              Agregar director
-            </Link>
-          </li>
-          <li onClick={() => showSidebarValue(showSidebar)} className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/especialistas/agregar-evaluaciones" className='p-3'>
-              Agregar evaluación
-            </Link>
-          </li>
-          {/* <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-green-300 hover:text-green-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/especialistas/evaluaciones" className='p-3'>
-              Evaluaciones
-            </Link>
-          </li> */}
-        </ul>
+        <div className="relative z-[100] flex  items-center ml-[17px] my-[10px]">
+
+          <MdAccountCircle className={styles.icons} />
+          <Link className={styles.ancla} href="/mi-cuenta" aria-haspopup="true">
+            Mi cuenta
+            {/* <label>Estudiantes</label> */}
+          </Link>
+        </div>
+        <div className={styles.containerLista}></div>
+        <div className={styles.test} role="navigation">
+          <ul className={styles.containerMenu} >
+            {/* <li className={styles.dropdown}>
+              <div className={styles.containerIcon}>
+
+                <LuListTodo className={styles.icons} />
+                <Link className={styles.ancla} href="#" aria-haspopup="true">
+                  Especialistas
+                </Link>
+              </div>
+              <ul className={styles.dropdownContent} aria-label="submenu">
+                <li className={styles.containerAncla}><Link
+                  href="/admin/agregar-especialista"
+                  className={styles.anclaje}
+                  id="ancla">crear usuario</Link></li>
+              </ul>
+            </li> */}
+            <li className={styles.dropdown}>
+              <div className={styles.containerIcon}>
+
+                <MdAccountBalance className={styles.icons} />
+                <Link className={styles.ancla} href="#" aria-haspopup="true">
+                  Directores
+                  {/* <label>Estudiantes</label> */}
+                </Link>
+              </div>
+              <ul className={styles.dropdownContent} aria-label="submenu">
+              <li className={styles.containerAncla}><Link
+                  href="/admin/evaluaciones-directores"
+                  className={styles.anclaje}
+                  id="ancla">evaluaciones</Link></li>
+                {/* <li className={styles.containerAncla}><Link
+                  href="/admin/agregar-directores"
+                  className={styles.anclaje}
+                  id="ancla">crear usuario</Link></li> */}
+                
+              </ul>
+            </li>
+            {/* <li className={styles.dropdown}>
+              <div className={styles.containerIcon}>
+
+                <FaUserTie className={styles.icons} />
+                <Link className={styles.ancla} href="#" aria-haspopup="true">
+                  Docentes
+                </Link>
+              </div>
+              <ul className={styles.dropdownContent} aria-label="submenu">
+                  <li className={styles.containerAncla}><Link
+                  href="/admin/evaluaciones-docentes"
+                  className={styles.anclaje}
+                  id="ancla">Evaluaciones</Link></li>
+              </ul>
+            </li> */}
+            <li className={styles.dropdown}>
+              <div className={styles.containerIcon}>
+
+                <FaUserGraduate className={styles.icons} />
+                <Link className={styles.ancla} href="#" aria-haspopup="true">
+                  Estudiantes
+                  {/* <label>Estudiantes</label> */}
+                </Link>
+              </div>
+              <ul className={styles.dropdownContent} aria-label="submenu">
+                <li className={styles.containerAncla}><Link
+                  href="/especialistas/evaluaciones"
+                  className={styles.anclaje}
+                  id="ancla">Evaluaciones</Link></li>
+                <li className={styles.containerAncla}><Link
+                  href="/especialistas/agregar-evaluaciones"
+                  id="ancla"
+                  className={styles.anclaje} >Agregar evaluacion</Link></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
         <SidebarInfoUser showSidebar={showSidebar} />
       </div>
       <div onClick={logout} className=" relative z-[10] ml-2 border rounded-sm   duration-300 hover:border-red-300 p-3 h-[50px] font-montserrat hover:text-red-300 text-white w-[200px] cursor-pointer ">

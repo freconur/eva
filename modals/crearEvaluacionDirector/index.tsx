@@ -14,7 +14,7 @@ interface Props {
   handleShowModalCrearEvaluacion: () => void
 }
 
-const CrearEvaluacionDocente = ({ handleShowModalCrearEvaluacion }: Props) => {
+const CrearEvaluacionDirector = ({ handleShowModalCrearEvaluacion }: Props) => {
   const { preguntasRespuestas, sizePreguntas, preguntasRespuestasEstudiante, loaderSalvarPregunta } = useGlobalContext()
   const [ordenLimitePregunta, setOrdenLimitePregunta] = useState(0)
   // const [ initialValueData, setInitialValueData] = useState([...preguntasRespuestas])
@@ -54,7 +54,7 @@ const CrearEvaluacionDocente = ({ handleShowModalCrearEvaluacion }: Props) => {
                 <div className={styles.closeModalContainer}>
                   <div className={styles.close} onClick={handleShowModalCrearEvaluacion} >cerrar</div>
                 </div>
-                <h3 className={styles.title}>Crear Evaluación Desempeño del director</h3>
+                <h3 className={styles.title}>Crear Evaluación Desempeño del docente</h3>
                 <form onSubmit={handleCreateEvaluacion}>
 
                   <div className='w-full my-2'>
@@ -74,20 +74,21 @@ const CrearEvaluacionDocente = ({ handleShowModalCrearEvaluacion }: Props) => {
                     {errors.nombre && <span className='text-red-400 text-sm'>{errors.nombre.message as string}</span>}
                   </div>
                   <div className="mb-3">
-                      <select 
+                    <select
                       {...register("categoria",
                         {
                           required: { value: true, message: "categoria es requerido" },
                         }
                       )}
                       className="w-full rounded-md outline-none p-3 mb-2"
-                      >
-                        <option value="">--CATEGORIA--</option>
-                        <option value="LECTURA">LECTURA</option>
-                        <option value="MATEMÁTICA">MATEMÁTICA</option>
-                        
-                      </select>
-                      {errors.categoria && <span className='text-red-400 text-sm'>{errors.categoria.message as string}</span>}
+                    >
+                      <option value="">--CATEGORIA--</option>
+                      <option value="MONITOREO">MONITOREO</option>
+                      <option value="FORTALECIMIENTO DOCENTE">FORTALECIMIENTO DOCENTE</option>
+                      <option value="ASESORIA PEDAGÓGIC">ASESORIA PEDAGÓGICA</option>
+                      <option value="ESTRATEGIAS INSTITUCIONALES">ESTRATEGIAS INSTITUCIONALES</option>
+                    </select>
+                    {errors.categoria && <span className='text-red-400 text-sm'>{errors.categoria.message as string}</span>}
                   </div>
                   <button
                     className={styles.buttonCrearEvaluacion}>Guardar</button>
@@ -101,4 +102,4 @@ const CrearEvaluacionDocente = ({ handleShowModalCrearEvaluacion }: Props) => {
     : null
 }
 
-export default CrearEvaluacionDocente
+export default CrearEvaluacionDirector

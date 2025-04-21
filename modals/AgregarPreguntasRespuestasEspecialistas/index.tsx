@@ -1,34 +1,27 @@
 import { createPortal } from "react-dom"
 import styles from './agregarPreguntaRespuestas.module.css'
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useGlobalContext } from "@/features/context/GlolbalContext";
-import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones";
-import UseEvaluacionDocentes from "@/features/hooks/UseEvaluacionDocentes";
 import { RiLoader4Line } from "react-icons/ri";
-import UseEvaluacionDirectores from "@/features/hooks/UseEvaluacionDirectores";
+import UseEvaluacionEspecialistas from "@/features/hooks/UseEvaluacionEspecialistas";
 
 interface Props {
   handleShowModalPreguntas: () => void,
   idEvaluacion: string
 }
 
-const AgregarPreguntasRespuestasDocentes = ({ handleShowModalPreguntas, idEvaluacion }: Props) => {
+const AgregarPreguntasRespuestasEspecialistas = ({ handleShowModalPreguntas, idEvaluacion }: Props) => {
 
   const { currentUserData, loaderModales } = useGlobalContext()
-  const [typeRol, setTypeRol] = useState("")
-  const [institucionData, setInstitucionData] = useState("")
-  const [rolesData, setRolesData] = useState<number[]>([])
-  const [cursosProfesor, setCursosProfesor] = useState<string[]>([])
 
-  const { addPreguntasEvaluacionDocente } = UseEvaluacionDocentes()
+  const { addPreguntasEvaluacionEspecialistas } = UseEvaluacionEspecialistas()
   let container;
   if (typeof window !== "undefined") {
     container = document.getElementById("portal-modal");
   }
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
   const handleSubmitform = handleSubmit(async (data) => {
-    addPreguntasEvaluacionDocente(data, idEvaluacion)
+    addPreguntasEvaluacionEspecialistas(data, idEvaluacion)
     reset()
   })
 
@@ -146,4 +139,4 @@ const AgregarPreguntasRespuestasDocentes = ({ handleShowModalPreguntas, idEvalua
     : null
 }
 
-export default AgregarPreguntasRespuestasDocentes
+export default AgregarPreguntasRespuestasEspecialistas

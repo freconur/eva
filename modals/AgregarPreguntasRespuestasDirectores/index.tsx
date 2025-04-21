@@ -13,7 +13,7 @@ interface Props {
   idEvaluacion: string
 }
 
-const AgregarPreguntasRespuestasDocentes = ({ handleShowModalPreguntas, idEvaluacion }: Props) => {
+const AgregarPreguntasRespuestasDirectores = ({ handleShowModalPreguntas, idEvaluacion }: Props) => {
 
   const { currentUserData, loaderModales } = useGlobalContext()
   const [typeRol, setTypeRol] = useState("")
@@ -21,14 +21,14 @@ const AgregarPreguntasRespuestasDocentes = ({ handleShowModalPreguntas, idEvalua
   const [rolesData, setRolesData] = useState<number[]>([])
   const [cursosProfesor, setCursosProfesor] = useState<string[]>([])
 
-  const { addPreguntasEvaluacionDocente } = UseEvaluacionDocentes()
+  const { addPreguntasEvaluacionDirectores } = UseEvaluacionDirectores()
   let container;
   if (typeof window !== "undefined") {
     container = document.getElementById("portal-modal");
   }
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
   const handleSubmitform = handleSubmit(async (data) => {
-    addPreguntasEvaluacionDocente(data, idEvaluacion)
+    addPreguntasEvaluacionDirectores(data, idEvaluacion)
     reset()
   })
 
@@ -146,4 +146,4 @@ const AgregarPreguntasRespuestasDocentes = ({ handleShowModalPreguntas, idEvalua
     : null
 }
 
-export default AgregarPreguntasRespuestasDocentes
+export default AgregarPreguntasRespuestasDirectores

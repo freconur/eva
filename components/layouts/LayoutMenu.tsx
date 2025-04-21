@@ -40,6 +40,7 @@ const LayoutMenu = ({ children }: Props) => {
             />
           </div>
           <SidebarEspecialistas showSidebar={showSidebar} />
+          {/* <SidebarAdmin showSidebar={showSidebar} /> */}
           <Navbar />
         </>
       )
