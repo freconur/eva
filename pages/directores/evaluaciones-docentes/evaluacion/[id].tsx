@@ -51,7 +51,7 @@ const EvaluacionDocente = () => {
         <div className='top-0 bottom-0 rigth-0 left-0 bg-gray-700 z-[15] absolute w-full opacity-60'></div>
 
         <Image
-          // className='absolute bottom-0 top-[-250px] right-0 left-0 z-1 opacity-1'
+         
           className="absolute object-cover h-[100%] w-full bottom-0 top-[0px] right-0 left-0 z-[10] opacity-80"
           src={header}
           alt="imagen de cabecera"
