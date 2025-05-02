@@ -1,6 +1,7 @@
 import { User } from '@/features/types/types'
 import React from 'react'
 import styles from './datos-monitor.module.css'
+import { rolTexto } from '@/fuctions/regiones'
 
 interface Props {
 	dataMonitor: User
@@ -8,8 +9,9 @@ interface Props {
 
 const DatosMonitor = ({ dataMonitor }: Props) => {
 	return (
+		<>
+		<h2 className={styles.titleMonitor}>II. datos del monitor</h2>
 		<div className={styles.container}>
-			<h2 className={styles.title}>I.datos del monitor</h2>
 			<div className={styles.borderContainer}>
 				<div className={styles.borderRow}>
 					<div className={styles.label}>nombres y apellidos:</div>
@@ -18,11 +20,12 @@ const DatosMonitor = ({ dataMonitor }: Props) => {
 				<div className={styles.row}>
 					<div className={styles.halfRow}>
 						<div className={styles.rolLabel}>rol:</div>
-						<div className={styles.value}>{dataMonitor?.rol}</div>
+						<div className={styles.value}>{rolTexto(dataMonitor?.rol || 0)}</div>
 					</div>
 				</div>
 			</div>
 		</div>
+		</>
 	)
 }
 

@@ -47,17 +47,17 @@ body {
 ejemplos
 /* Set the style for the navigation menus */
 .containerLista {
-  display:grid;
+  display: grid;
   gap: 20px;
   padding: 5px 0 5px 0;
-  position:relative;
+  position: relative;
   z-index: 100;
-  padding-top:20px;
-  border-top: 1px solid #ffff
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 .test {
   position: relative;
-  z-index: index 100;
+  z-index: 100;
   margin-bottom: 10px;
 }
 .test ul {
@@ -68,72 +68,70 @@ ejemplos
 .ancla {
   text-decoration: none;
   color: #fff;
-  display: block;
-  outline: 0;
-  width: max-content;
   font-size: 16px;
   font-family: "Montserrat";
-  padding: 10px 0 0 0;
-  margin-left:10px
-  
+  transition: all 0.3s ease;
 }
 
 .containerAncla {
   margin-left: 28px;
-  padding: 5px;
-  /* margin-bottom: 5px; */
+  padding: 8px 0;
 }
 .anclaje {
-  font-size: 16px;
+  font-size: 14px;
   text-decoration: none;
-  color: #ffff;
+  color: rgba(255, 255, 255, 0.8);
   display: block;
-  outline: 0;
-  width: max-content;
-  font-family: "Montserrat";
-  padding: 2px;
-  justify-content: center;
-  text-shadow: rgb(0, 0, 0) 1px 0 3px;
+  padding: 8px 15px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
-.anclaje::after {
-  content: "";
-  display: block;
-  width: 0;
-  height: 2px;
+.anclaje::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 3px;
   background: #0c77a0;
-  transition: width 0.3s;
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
 }
-.anclaje:hover::after {
-  width: 100%;
-  transition: width 0.3s;
+.anclaje:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transform: translateX(5px);
 }
-.ancla::after {
-  content: "";
-  display: block;
-  width: 0;
-  height: 2px;
-  background: rgb(18, 80, 161);
-  transition: width 0.3s;
-}
-.ancla:hover::after {
-  width: 100%;
-  transition: width 0.3s;
+.anclaje:hover::before {
+  transform: scaleY(1);
 }
 .dropdown {
   margin-left: 15px;
+  position: relative;
+  transition: all 0.3s ease;
 }
 .containerIcon {
-  /* justify-content: center; */
-  align-items: center;
-  margin:auto;
   display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.containerIcon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(5px);
 }
 .icons {
-  /* display: flex; */
-  justify-content: center;
-  align-items: center;
-  color: #ffff;
-  font-size:25px
+  color: #fff;
+  font-size: 20px;
+  transition: transform 0.3s ease;
+}
+.containerIcon:hover .icons {
+  transform: scale(1.1);
 }
 /* .test .ancla:hover,
 .test li:focus-within > .ancla {
@@ -144,17 +142,22 @@ ejemplos
 
 /* Make the dropdown animate. */
 .dropdownContent {
-  min-width: max-content;
-  overflow: hidden;
   max-height: 0;
-  transition: max-height 1s;
+  overflow: hidden;
+  transition: max-height 0.5s ease-in-out;
+  opacity: 0;
+  transform: translateY(-10px);
+  visibility: hidden;
 }
 
 /* The max-height should be set to something that will always be a little bit bigger than the height of the content. */
 /* .dropdown:hover .dropdownContent, */
-.dropdown:focus .dropdownContent,
-.dropdown:focus-within .dropdownContent {
-  max-height: 200px;
+.dropdown:focus-within .dropdownContent,
+.dropdown:hover .dropdownContent {
+  max-height: 500px;
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
 }
 
 /* This makes the top-level navigation horizontal on desktop, and vertical on smaller screens. */

@@ -95,7 +95,7 @@ const AnexosCurricular = ({ dataDocente }: Props) => {
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.formGroup}>
           <label htmlFor="fortalezasObservadas" className={styles.label}>
-            Fortalezas observadas
+            Fortalezas observadas:
           </label>
           <input
             type="text"
@@ -108,7 +108,7 @@ const AnexosCurricular = ({ dataDocente }: Props) => {
         </div>
         <div className={styles.formGroup}>
           <label htmlFor="oportunidadesDeMejora" className={styles.label}>
-            Oportunidades de mejora
+            Oportunidades de mejora(dificultades):
           </label>
           <input
             type="text"
@@ -121,7 +121,7 @@ const AnexosCurricular = ({ dataDocente }: Props) => {
         </div>
         <div className={styles.formGroup}>
           <label htmlFor="acuerdosYCompomisos" className={styles.label}>
-            Acuerdos y compromisos
+            Acuerdos y compromisos:
           </label>
           <input
             type="text"
@@ -134,7 +134,7 @@ const AnexosCurricular = ({ dataDocente }: Props) => {
         </div>
         <div className={styles.formGroup}>
           <label htmlFor="nivelCobertura" className={styles.label}>
-            C. Nivel de cobertura
+            C. Nivel de cobertura:
           </label>
           <div className={styles.radioGroup}>
             {nivelCobertura.alternativas.map((item) => (

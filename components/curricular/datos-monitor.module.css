@@ -11,7 +11,13 @@
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   transform: translateY(-2px);
 }
-
+.titleMonitor{
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #1a365d;
+  margin-bottom: 1.5rem;
+}
 .title {
   padding: 1rem 1.5rem;
   background-color: #f3f4f6;

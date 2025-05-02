@@ -31,7 +31,7 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
                     {/* <label>Estudiantes</label> */}
                   </Link>
                 </div>
-        <div className={styles.containerLista}>
+        <div id='menuDesplegable' className={styles.containerLista}>
           <div className={styles.test} role="navigation">
             <ul >
               <li className={styles.dropdown}>
@@ -61,6 +61,7 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
                     Docentes
                     {/* <label>Estudiantes</label> */}
                   </Link>
+
                 </div>
                 <ul className={styles.dropdownContent} aria-label="submenu">
                   <li className={styles.containerAncla}><Link

@@ -15,6 +15,12 @@ const regiones = [
   { region: "moho", id: 14 },
 ]
 
+export const rolTexto = (rol: number) => {
+  if (rol === 1) return "Especialista"
+  if (rol === 2) return "Director"
+  if (rol === 3) return "Docente"
+  if (rol === 4) return "Admin"
+}
 export const regionTexto = (id: string) => {
   let rta
   regiones.forEach(reg => {

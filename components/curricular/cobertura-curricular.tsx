@@ -41,7 +41,35 @@ const CoberturaCurricular = ({ dataDocente, paHabilidad, evaluacionCurricular, e
         showEvaluacion && <EvaluarCurriculaDocente dataDocente={dataDocente} evaluacionCurricularById={evaluacionCurricularById} paHabilidad={paHabilidad} evaluacionCurricular={evaluacionCurricular} handleShowEvaluarCurriculaDocente={handleShowEvaluarCurriculaDocente} idCurricular={idCurricular} />
       }
       <h2 className={styles.title}>iii. cobertura curricular de la competencia lee</h2>
-
+      <div>
+        <ul className={styles.list}>
+          <li className={styles.listItem + " " + styles.nunca}>
+            <p className={styles.listItemText}>
+              N = Nunca
+            </p>
+          </li>
+          <li className={styles.listItem + " " + styles.casiNunca}>
+            <p className={styles.listItemText}>
+              CN = Casi nunca
+            </p>
+          </li>
+          <li className={styles.listItem + " " + styles.aVeces}>
+            <p className={styles.listItemText}>
+              AV = A veces
+            </p>
+          </li>
+          <li className={styles.listItem + " " + styles.frecuentemente}>
+            <p className={styles.listItemText}>
+              F = Frecuentemente
+            </p>
+          </li>
+          <li className={styles.listItem + " " + styles.siempre}>
+            <p className={styles.listItemText}>
+              S = Siempre
+            </p>
+          </li>
+        </ul>
+      </div>
       <div className={styles.tableContainer}>
         <ul className={styles.skillsList}>
           <li className={styles.skillsHeader}>A. habilidad lectora</li>

@@ -16,7 +16,43 @@
   position: relative;
   padding-bottom: 0.5rem;
 }
-
+.list{
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+}
+.listItem{
+  list-style: none;
+  background-color: #fecaca;
+  padding: 0.5rem;  
+  border-radius: 0.5rem;  
+  text-align: center; 
+  font-size: 0.8em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #5d6a7c;
+}
+.nunca{
+  background-color: #fecaca;
+}
+.casiNunca{
+  background-color: #bfdbfe;
+}
+.aVeces{
+  background-color: #fef08a;
+}
+.frecuentemente{
+  background-color: #fed7aa;
+}
+.siempre{
+  background-color: #bbf7d0;
+}
+.listItemText{
+  font-size: 0.8em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #5d6a7c;
+}
 .title::after {
   content: '';
   position: absolute;
@@ -24,7 +60,7 @@
   left: 0;
   width: 60px;
   height: 3px;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  /* background: linear-gradient(90deg, #3b82f6, #60a5fa); */
   border-radius: 3px;
 }
 
