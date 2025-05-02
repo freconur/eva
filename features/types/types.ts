@@ -40,7 +40,13 @@ export type AppReducerValues = {
   warningDataDocente:string
   dataEvaluacionDocente:DataEvaluacion,
   reporteIndividualDocente: ReporteDocenteIndividual,
-  loaderModales:boolean
+  loaderModales:boolean,
+  evaluacionCurricular:EvaluacionCurricular[],
+  paHabilidad:EvaluacionHabilidad[],
+  evaluacionCurricularAlternativa:EvaluacionCurricularAlternativa[],
+  evaluacionCurricularById:EvaluacionCurricularAlternativa,
+  allEvaluacionesCurricularesDocente:EvaluacionCurricularAlternativa[],
+  caracteristicaCurricular:CaracteristicaCurricular[]
 };
 
 export type AppActions =
@@ -96,8 +102,12 @@ export type AppActions =
   | { type: AppAction.DATA_EVALUACION_DOCENTE; payload: DataEvaluacion }
   | { type: AppAction.REPORTE_INDIVIDUAL_DOCENTE; payload: ReporteDocenteIndividual }
   | { type: AppAction.LOADER_MODALES; payload: boolean }
-// | { type: AppAction.REPORTE_GLOBAL; payload: DataEstadisticas[] };
-
+  | { type: AppAction.EVALUACION_CURRICULAR; payload: EvaluacionCurricular[] }
+  | { type: AppAction.PA_HABILIDAD; payload: EvaluacionHabilidad[] }
+  | { type: AppAction.EVALUACION_CURRICULAR_ALTERNATIVA; payload: EvaluacionCurricularAlternativa[] }
+  | { type: AppAction.EVALUACION_CURRICULAR_BY_ID; payload: EvaluacionCurricularAlternativa }
+  | { type: AppAction.ALL_EVALUACIONES_CURRICULARES_DOCENTE; payload: EvaluacionCurricularAlternativa[] }
+  | { type: AppAction.CARACTERISTICA_CURRICULAR; payload: CaracteristicaCurricular[] }
 export type LoginData = {
   usuario: string;
   contrasena: string;
@@ -184,6 +194,13 @@ export type User = {
   rolDirector?: number;
   rol?: number;
   region?: number;
+  caracteristicaCurricular?:string;
+  grados?:number[] | number;
+  secciones?:number[] | number;
+  area?:number;
+  distrito?:string;
+  celular?:string;
+  observacionCurricular?:AnexosCurricular
 };
 
 export type DataEstadisticas = {
@@ -269,4 +286,46 @@ export type ReporteDocenteIndividual = {
   info?:User,
   observacion?:string,
   resultados?:PRDocentes[]
+}
+
+export type EvaluacionCurricular = {
+  id?:string,
+  name?:string,
+  order?:number,
+  nivelCurricular?:number,
+}
+
+export type EvaluacionHabilidad = {
+  id?:string,
+  habilidad?:string,
+  order?:number
+}
+export type AlternativaCurricular = {
+  id?:string,
+  name?:string,
+  order?:number,
+  acronimo?:string,
+  selected?:boolean
+}
+export type EvaluacionCurricularAlternativa = {
+  id?:string,
+  name?:string,
+  preguntasAlternativas?:PaHanilidad[]
+}
+
+export type PaHanilidad = {
+  alternativas?:AlternativaCurricular[],
+  habilidad?:string,
+  id?:string,
+  order?:number
+}
+
+export type CaracteristicaCurricular = {
+  id?:string,
+  name?:string,
+}
+export type AnexosCurricular = {
+  fortalezasObservadas?:string,
+  oportunidadesDeMejora?:string,
+  acuerdosYCompomisos?:string,
 }

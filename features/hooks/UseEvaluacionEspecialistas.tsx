@@ -120,11 +120,9 @@ const UseEvaluacionEspecialistas = () => {
     }
   }
   const buscarEspecialistaReporteDeEvaluacion = async (idEvaluacion: string, idDocente: string) => {
-    // `/usuarios/49163626/KtOATuI2gOKH80n1R6yt/88490965`
     console.log('currentUserData?.dni', currentUserData?.dni)
     if (idEvaluacion.length > 0 && idDocente.length > 0) {
       const path = doc(db, `/usuarios/${currentUserData?.dni}/${idEvaluacion}`, idDocente)
-      // const docRef = doc(db, path, `${idDocente}`);
       await getDoc(path)
         .then(response => {
           if (response.exists()) {
@@ -144,8 +142,6 @@ const UseEvaluacionEspecialistas = () => {
     dispatch({ type: AppAction.DATA_DOCENTE, payload: {} })
   }
   const guardarEvaluacionEspecialistas = async (idEvaluacion: string, data: PRDocentes[], dataDocente: User) => {
-    //AGREGANDO RESULTADOS DE LA EVALUACION DEL DOCENTE
-    `/usuarios/80039014/7pf6AVgNVNDkoRB4RPYX/11001902`
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true })
 
     let totalPuntos = 0
@@ -163,10 +159,8 @@ const UseEvaluacionEspecialistas = () => {
 
     const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}/`
     await setDoc(doc(db, path, `${dataDocente.dni}`), { observacion: "sin observaciones", resultados: data, dni: dataDocente.dni, dniDirector: currentUserData.dni, calificacion: totalPuntos, info: dataDocente });
-    //AGREGANDO RESULTADOS DE LA EVALUACION DEL DOCENTE
 
     data.forEach(async (pr) => {
-      `/evaluaciones-docentes/KtOATuI2gOKH80n1R6yt/49163626/id`
       const docRef = doc(db, `/evaluaciones-especialista/${idEvaluacion}/${currentUserData.dni}`, `${pr.order}`);
       await getDoc(docRef)
         .then(async (response) => {
@@ -223,7 +217,6 @@ const UseEvaluacionEspecialistas = () => {
               index = index + 1
               console.log('index', index)
               console.log('response.size', response.size)
-              // doc.data() is never undefined for query doc snapshots
               arrayDataEstadisticas.push({
                 ...doc.data(),
                 id: doc.id,
@@ -260,7 +253,6 @@ const UseEvaluacionEspecialistas = () => {
               index = index + 1
               console.log('index', index)
               console.log('response.size', response.size)
-              // doc.data() is never undefined for query doc snapshots
               arrayDataEstadisticas.push({
                 ...doc.data(),
                 id: doc.id,
@@ -279,7 +271,7 @@ const UseEvaluacionEspecialistas = () => {
     })
     newPromise.then(res => dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: arrayDataEstadisticas }))
   }
-  //esta funcion no se esta usando por lo que se esta condiderando borrarlo, ademas tienes unos pequeños fallos, moerarlo.
+
   const getPRDocentes = async (idEvaluacion: string) => {
     console.log('rta', idEvaluacion)
     const pethRef = collection(db, `/evaluaciones-docentes/${idEvaluacion}/preguntasRespuestas`)
@@ -308,14 +300,9 @@ const UseEvaluacionEspecialistas = () => {
       dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: res })
       dispatch({ type: AppAction.LOADER_PAGES, payload: false })
     })
-
-
   }
-  //esta funcion no se esta usando por lo que se esta condiderando borrarlo, ademas tienes unos pequeños fallos, moerarlo.
-
 
   const agregarObservacionEspecialistas = async (idEvaluacion: string, idDocente: string, valueObservacion: string) => {
-    // `/usuarios/49163626/KtOATuI2gOKH80n1R6yt/88490965`
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
     console.log('datos:', idEvaluacion, idDocente, valueObservacion)
     const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}`
@@ -332,7 +319,6 @@ const UseEvaluacionEspecialistas = () => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     const usuariosUgel = collection(db, "usuarios");
 
-    // Create a query against the collection.
     const q = query(usuariosUgel, where("region", "==", Number(ugel)), where("rol", "==", 1));
     const arrayDirectoresUgel: string[] = []
     const getDirectoresPromise = new Promise<string[]>(async (resolve, reject) => {
@@ -358,7 +344,6 @@ const UseEvaluacionEspecialistas = () => {
       }
     })
     getDirectoresPromise.then(directores => {
-      // console.log('directores', directores)
       const testPromise = directores.map(async (director) => {
         const path = `/evaluaciones-especialista/${idEvaluacion}/${director}`
         const pathRef = collection(db, path)
@@ -372,7 +357,6 @@ const UseEvaluacionEspecialistas = () => {
           })
         })
       })
-      // console.log('testPromise', testPromise)
       const respuestasDirectores: any = Promise.allSettled(testPromise)
       respuestasDirectores.then((response: DataEstadisticasDocente[]) => {
         let arrayAcumulativoDeRespuestas: DataEstadisticasDocente[] = [];
@@ -382,7 +366,6 @@ const UseEvaluacionEspecialistas = () => {
           if (resultado.value.length > 0) {
             console.log('entro')
             if (arrayAcumulativoDeRespuestas.length === 0) {
-              // console.log('cuantas v4eces entro')
               const arrayOrdenadoRespuesta: DataEstadisticasDocente[] = [];
               resultado.value.forEach((a: DataEstadisticasDocente) => {
                 arrayOrdenadoRespuesta.push({
@@ -393,7 +376,6 @@ const UseEvaluacionEspecialistas = () => {
               arrayOrdenadoRespuesta
                 .sort((a: any, b: any) => a.id - b.id)
                 .forEach((a) => arrayAcumulativoDeRespuestas.push(a));
-              // console.log('primera', arrayOrdenadoRespuesta)
             } else {
               const arrayOrdenadoRespuestas: DataEstadisticasDocente[] = [];
               resultado.value.forEach((a: any) => {
@@ -402,7 +384,6 @@ const UseEvaluacionEspecialistas = () => {
                   total: a.a + a.b + a.c + a.d
                 })
               })
-              // console.log('segunda', arrayOrdenadoRespuestas)
               arrayOrdenadoRespuestas
                 ?.sort((a: any, b: any) => a.id - b.id)
                 .forEach((data) => {
@@ -419,204 +400,12 @@ const UseEvaluacionEspecialistas = () => {
             }
           }
           if (index === response.length) {
-            // console.log('indexd', index)
-            // console.log('response.length', response.length)
-            // console.log('arrayAcumulativoDeRespuestas', arrayAcumulativoDeRespuestas)
             dispatch({ type: AppAction.REPORTE_REGIONAL, payload: arrayAcumulativoDeRespuestas })
             dispatch({ type: AppAction.LOADER_PAGES, payload: false })
           }
         })
       })
     })
-    // getDirectoresPromise.then(res => {
-    //   const getDataEvaluacion = new Promise<DataEstadisticas[]>((resolve, reject) => {
-    //     let arrayAcumulativoDeRespuestas: DataEstadisticas[] = [];
-    //     try {
-    //       let index = 0
-    //       res.forEach(async (director) => {
-    //         index = index + 1
-    //         const path = `/evaluaciones-docentes/${idEvaluacion}/${director}`
-    //         const pathRef = collection(db, path)
-    //         await getDocs(pathRef)
-    //           .then(async (resultadoDirector) => {
-    //             if (resultadoDirector.size > 0) {
-    //               if (arrayAcumulativoDeRespuestas.length === 0) {
-    //                 const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-    //                 resultadoDirector.forEach((doc) => {
-    //                   arrayOrdenadoRespuestas.push({
-    //                     ...doc.data(),
-    //                     id: doc.id,
-    //                     total:
-    //                       doc.data().d === undefined
-    //                         ? Number(doc.data().a) +
-    //                         Number(doc.data().b) +
-    //                         Number(doc.data().c)
-    //                         : Number(doc.data().a) +
-    //                         Number(doc.data().b) +
-    //                         Number(doc.data().c) +
-    //                         Number(doc.data().d),
-    //                   })
-    //                 }
-    //                 );
-    //                 arrayOrdenadoRespuestas
-    //                   .sort((a: any, b: any) => a.id - b.id)
-    //                   .forEach((a) => arrayAcumulativoDeRespuestas.push(a));
-    //               } else {
-    //                 const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-    //                 resultadoDirector.forEach((doc) =>
-    //                   arrayOrdenadoRespuestas.push({
-    //                     ...doc.data(),
-    //                     id: doc.id,
-    //                     total:
-    //                       doc.data().d === undefined
-    //                         ? Number(doc.data().a) +
-    //                         Number(doc.data().b) +
-    //                         Number(doc.data().c)
-    //                         : Number(doc.data().a) +
-    //                         Number(doc.data().b) +
-    //                         Number(doc.data().c) +
-    //                         Number(doc.data().d),
-    //                   })
-    //                 );
-    //                 arrayOrdenadoRespuestas
-    //                   ?.sort((a: any, b: any) => a.id - b.id)
-    //                   .forEach((data) => {
-    //                     arrayAcumulativoDeRespuestas?.map((rta, i) => {
-    //                       if (rta.d === undefined) {
-    //                         if (rta.id === data.id) {
-    //                           rta.a = Number(rta.a) + Number(data.a);
-    //                           rta.b = Number(rta.b) + Number(data.b);
-    //                           rta.c = Number(rta.c) + Number(data.c);
-    //                           rta.total =
-    //                             Number(rta.total) + Number(data.total);
-    //                         }
-    //                       } else {
-    //                         if (rta.id === data.id) {
-    //                           rta.a = Number(rta.a) + Number(data.a);
-    //                           rta.b = Number(rta.b) + Number(data.b);
-    //                           rta.c = Number(rta.c) + Number(data.c);
-    //                           rta.d = Number(rta.d) + Number(data.d);
-    //                           rta.total =
-    //                             Number(rta.total) + Number(data.total);
-    //                         }
-    //                       }
-    //                     });
-    //                   });
-    //               }
-    //             }
-    //           })
-    //         if (res.length === index) {
-    //           // debugger
-    //           setTimeout(() => {
-    //             resolve(arrayAcumulativoDeRespuestas)
-    //           }, 5000)
-    //         }
-    //       })
-    //       // getDirectoresPromise.then(async (directores) => {
-    //       //   let index = 0
-    //       //   directores.forEach(async director => {
-    //       //     index = index + 1
-    //       //     console.log('rta', director === '49163626' && 'este es el dni 49163626')
-    //       //     const path = `/evaluaciones-docentes/${idEvaluacion}/${director}`
-    //       //     const pathRef = collection(db, path)
-    //       //     await getDocs(pathRef)
-    //       //       .then(async (resultadoDirector) => {
-    //       //         if (resultadoDirector.size > 0) {
-    //       //           console.log('si soy del 49163626')
-    //       //           if (arrayAcumulativoDeRespuestas.length === 0) {
-    //       //             const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-    //       //             resultadoDirector.forEach((doc) => {
-    //       //               arrayOrdenadoRespuestas.push({
-    //       //                 ...doc.data(),
-    //       //                 id: doc.id,
-    //       //                 total:
-    //       //                   doc.data().d === undefined
-    //       //                     ? Number(doc.data().a) +
-    //       //                     Number(doc.data().b) +
-    //       //                     Number(doc.data().c)
-    //       //                     : Number(doc.data().a) +
-    //       //                     Number(doc.data().b) +
-    //       //                     Number(doc.data().c) +
-    //       //                     Number(doc.data().d),
-    //       //               })
-    //       //             }
-    //       //             );
-    //       //             arrayOrdenadoRespuestas
-    //       //               .sort((a: any, b: any) => a.id - b.id)
-    //       //               .forEach((a) => arrayAcumulativoDeRespuestas.push(a));
-    //       //           } else {
-    //       //             const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-    //       //             resultadoDirector.forEach((doc) =>
-    //       //               arrayOrdenadoRespuestas.push({
-    //       //                 ...doc.data(),
-    //       //                 id: doc.id,
-    //       //                 total:
-    //       //                   doc.data().d === undefined
-    //       //                     ? Number(doc.data().a) +
-    //       //                     Number(doc.data().b) +
-    //       //                     Number(doc.data().c)
-    //       //                     : Number(doc.data().a) +
-    //       //                     Number(doc.data().b) +
-    //       //                     Number(doc.data().c) +
-    //       //                     Number(doc.data().d),
-    //       //               })
-    //       //             );
-    //       //             arrayOrdenadoRespuestas
-    //       //               ?.sort((a: any, b: any) => a.id - b.id)
-    //       //               .forEach((data) => {
-    //       //                 arrayAcumulativoDeRespuestas?.map((rta, i) => {
-    //       //                   if (rta.d === undefined) {
-    //       //                     if (rta.id === data.id) {
-    //       //                       rta.a = Number(rta.a) + Number(data.a);
-    //       //                       rta.b = Number(rta.b) + Number(data.b);
-    //       //                       rta.c = Number(rta.c) + Number(data.c);
-    //       //                       rta.total =
-    //       //                         Number(rta.total) + Number(data.total);
-    //       //                     }
-    //       //                   } else {
-    //       //                     if (rta.id === data.id) {
-    //       //                       rta.a = Number(rta.a) + Number(data.a);
-    //       //                       rta.b = Number(rta.b) + Number(data.b);
-    //       //                       rta.c = Number(rta.c) + Number(data.c);
-    //       //                       rta.d = Number(rta.d) + Number(data.d);
-    //       //                       rta.total =
-    //       //                         Number(rta.total) + Number(data.total);
-    //       //                     }
-    //       //                   }
-    //       //                 });
-    //       //               });
-    //       //           }
-    //       //         } 
-    //       //         // else {
-    //       //         //   //este es la condicional del resultadoDirector.size
-    //       //         //   //retornamos los resultados indicando que no se encontraron resultados para dicha ugel
-    //       //         //   dispatch({
-    //       //         //     type: AppAction.LOADER_REPORTE_DIRECTOR,
-    //       //         //     payload: false,
-    //       //         //   });
-    //       //         // }
-    //       //       })
-    //       //     })
-    //       //     if(directores.length === index) {
-    //       //       // debugger
-    //       //       resolve(arrayAcumulativoDeRespuestas)
-    //       //   }
-    //       // })
-
-    //     } catch (error) {
-    //       reject()
-    //     }
-    //   })
-
-    //   getDataEvaluacion.then(data => {
-    //     if (data.length === totalPreguntas) {
-    //       console.log('data', data)
-    //       dispatch({ type: AppAction.REPORTE_REGIONAL, payload: data })
-    //       dispatch({ type: AppAction.LOADER_PAGES, payload: false })
-    //     }
-    //   })
-    // })
-
   }
 
   return {
@@ -640,7 +429,6 @@ const UseEvaluacionEspecialistas = () => {
     resetDirector,
     resetEspecialista
   }
-
 }
 
 export default UseEvaluacionEspecialistas

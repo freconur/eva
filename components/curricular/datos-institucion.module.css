@@ -1,0 +1,200 @@
+.container {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  /* box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); */
+  transition: all 0.3s ease;
+  background-color: white;
+  margin-bottom: 2rem;
+}
+
+.container:hover {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  transform: translateY(-2px);
+}
+
+.dataRow {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+  min-height: 3rem;
+}
+
+.dataRow:last-child {
+  border-bottom: none;
+}
+
+.dataRow:hover {
+  background-color: #f8fafc;
+}
+
+.label {
+  width: 250px;
+  padding: 0.75rem 1rem;
+  border-right: 1px solid #e5e7eb;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #374151;
+  background-color: #f9fafb;
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
+}
+
+.value {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  color: #4b5563;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.header {
+  /* background: linear-gradient(to right, #f9fafb, #f3f4f6); */
+  padding: 1rem 0;
+  /* border-bottom: 1px solid #e5e7eb; */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #374151;
+  letter-spacing: 0.025em;
+}
+
+.editButton {
+  color: #3b82f6;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+
+.editButton:hover {
+  color: #2563eb;
+  transform: scale(1.1);
+}
+
+.sectionTitle {
+  padding: 1rem 1.5rem;
+  background-color: #f3f4f6;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.95rem;
+  letter-spacing: 0.025em;
+}
+
+.gradosSeccionesContainer {
+  display: flex;
+  flex: 1;
+  gap: 1rem;
+}
+
+.gradosSeccionesItem {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  color: #4b5563;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.gradosSeccionesItem:hover {
+  background-color: #f1f5f9;
+}
+
+.gradosSeccionesLabel {
+
+  display: flex;  
+  align-items: center;
+  width: 250px;
+  padding: 0.75rem 1rem;
+  border-right: 1px solid #e5e7eb;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  background-color: #f9fafb;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+.gradosSeccionesValue {
+  color: #4b5563;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+/* Responsive design */
+@media (max-width: 768px) {
+  .container {
+    margin: 1rem;
+  }
+
+  .dataRow {
+    flex-direction: column;
+  }
+
+  .label {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .gradosSeccionesContainer {
+    flex-direction: column;
+  }
+
+  .gradosSeccionesItem {
+    width: 100%;
+  }
+}
+
+.section {
+  display: flex;
+  gap: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.leftSection {
+  width: 70%;
+}
+
+.rightSection {
+  width: 40%;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.row:hover {
+  background-color: #f9fafb;
+}
+
+.borderLeft {
+  border-left: 1px solid #e5e7eb;
+}
+
+.borderRight {
+  border-right: 1px solid #e5e7eb;
+}
+
+.halfWidth {
+  width: 50%;
+}
+
+.flex1 {
+  flex: 1;
+} 

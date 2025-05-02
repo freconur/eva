@@ -39,6 +39,14 @@ export const convertGrade = (grade: string) => {
   if (grade === "11") return "5to sec."
 }
 
+export const gradosDeColegio = [
+  { id: 1, name: "1ro grado" },
+  { id: 2, name: "2do grado" },
+  { id: 3, name: "3ro grado" },
+  { id: 4, name: "4to grado" },
+  { id: 5, name: "5to grado" },   
+  { id: 6, name: "6to grado" },   
+]
 export const sectionByGrade = [
   { id: 1, name: "a" },
   { id: 2, name: "b" },
@@ -48,11 +56,22 @@ export const sectionByGrade = [
   { id: 6, name: "f" },
   { id: 7, name: "g" },
   { id: 8, name: "h" },
-  { id: 9, name: "i" },
+  /* { id: 9, name: "i" },
   { id: 10, name: "j" },
   { id: 11, name: "k" },
   { id: 12, name: "l" },
   { id: 13, name: "m" },
   { id: 14, name: "n" },
-  { id: 15, name: "o" },
+  { id: 15, name: "o" }, */
+]
+
+export const area = [
+  { id: 1, name: "rural" },
+  { id: 2, name: "urbano" },
+]
+
+export const nivelCurricular = [
+  { id: 1, name: "nivel 1" },
+  { id: 2, name: "nivel 2" },
+  { id: 3, name: "nivel 3" },
 ]

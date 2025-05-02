@@ -71,6 +71,10 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
                     href="/directores/agregar-profesores"
                     id="ancla"
                     className={styles.anclaje} >Crear usuario</Link></li>
+                    <li className={styles.containerAncla}><Link
+                    href="/directores/cobertura-curricular"
+                    id="ancla"
+                    className={styles.anclaje} >Cobertura curricular</Link></li>
                 </ul>
               </li>
             </ul>

@@ -4,6 +4,36 @@ import { AppActions, AppReducerValues } from "../types/types";
 
 export const appReducer = (state: AppReducerValues, action: AppActions) => {
   switch (action.type) {
+    case AppAction.CARACTERISTICA_CURRICULAR:
+      return {
+        ...state,
+        caracteristicaCurricular: action.payload
+      }
+    case AppAction.ALL_EVALUACIONES_CURRICULARES_DOCENTE:
+      return {
+        ...state,
+        allEvaluacionesCurricularesDocente: action.payload
+      }
+    case AppAction.EVALUACION_CURRICULAR_BY_ID:
+      return {
+        ...state,
+        evaluacionCurricularById: action.payload
+      }
+    case AppAction.EVALUACION_CURRICULAR_ALTERNATIVA:
+      return {
+        ...state,
+        evaluacionCurricularAlternativa: action.payload
+      }
+    case AppAction.PA_HABILIDAD:
+      return {
+        ...state,
+        paHabilidad: action.payload
+      }
+    case AppAction.EVALUACION_CURRICULAR:
+      return {
+        ...state,
+        evaluacionCurricular: action.payload
+      }
     case AppAction.LOADER_MODALES:
       return {
         ...state,
