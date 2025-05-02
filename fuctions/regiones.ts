@@ -44,8 +44,8 @@ export const gradosDeColegio = [
   { id: 2, name: "2do grado" },
   { id: 3, name: "3ro grado" },
   { id: 4, name: "4to grado" },
-  { id: 5, name: "5to grado" },   
-  { id: 6, name: "6to grado" },   
+  { id: 5, name: "5to grado" },
+  { id: 6, name: "6to grado" },
 ]
 export const sectionByGrade = [
   { id: 1, name: "a" },
@@ -75,3 +75,35 @@ export const nivelCurricular = [
   { id: 2, name: "nivel 2" },
   { id: 3, name: "nivel 3" },
 ]
+
+export const nivelCobertura = 
+  {
+    id: 1,
+    order: 1,
+    alternativas: [
+      {
+        id: 1,
+        alternativa: "a",
+        cobertura: "Cobertura Selectiva Limitada: Se abordan algunas habilidades y tipos, formatos textuales, pero se omiten áreas o habilidades importantes de manera no planificada o justificada pedagógicamente (Únicamente 2 capacidades y hasta 3 tipos textuales, hasta un formato textual).",
+        selected: false,
+      },
+      {
+        id: 2,
+        alternativa: "b",
+        cobertura: "Cobertura Parcial: Se aborda una parte significativa de las habilidades, pero quedan algunos sin cubrir o con una cobertura muy superficial. (Únicamente 2 capacidades y todos los tipos textuales, todos los formatos textuales).",
+        selected: false,
+      },
+      {
+        id: 3,
+        alternativa: "c",
+        cobertura: "Cobertura Selectiva Planificada: Se priorizan y profundizan ciertas habilidadesy tipos, formatos textuales del currículo de manera intencional y justificada pedagógicamente, pudiendo dejar otros con una cobertura menor. (Las 3 capacidades y todos los tipos textuales, todos los formatos textuales).",
+        selected: false,
+      },
+      {
+        id: 4,
+        alternativa: "d",
+        cobertura: "Cobertura Total (o Amplia y Conectada): Se abordan la mayoría o la totalidad de las habilidades y tipos, géneros, formatos del currículo, buscando establecer conexiones entre ellos y con otras áreas del conocimiento. (Las 3 capacidades y todos los tipos textuales, todos los formatos textuales).",
+        selected: false,
+      },
+    ],
+  }

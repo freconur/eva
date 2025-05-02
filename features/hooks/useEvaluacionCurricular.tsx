@@ -1,7 +1,7 @@
 import React from 'react'
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore";
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
-import { AnexosCurricular, CaracteristicaCurricular, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, PaHanilidad, User } from '../types/types';
+import { AnexosCurricularType, CaracteristicaCurricular, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, PaHanilidad, User } from '../types/types';
 import { AppAction } from '../actions/appAction';
 
 const useEvaluacionCurricular = () => {
@@ -22,14 +22,15 @@ const useEvaluacionCurricular = () => {
     });
   }
   const createEvaluacionCurricular = async (data: EvaluacionCurricular) => {
-    console.log('data', data)
-    /* await getDocs(collection(db, "evaluacion-curricular"))
+    await getDocs(collection(db, "evaluacion-curricular"))
       .then(async response => {
+        console.log('data', { ...data, order: response.size + 1 })
         if (response.size === 0) {
-          await addDoc(collection(db, "evaluacion-curricular"), data);
+          await addDoc(collection(db, "evaluacion-curricular"), { ...data, order: 0 });
+        } else {
+          await addDoc(collection(db, "evaluacion-curricular"), { ...data, order: response.size + 1 });
         }
-      }) */
-    /* await addDoc(collection(db, "evaluacion-curricular"), data); */
+      })
   }
 
   const addPreguntasAlternativasCurricular = async (data: EvaluacionCurricular) => {
@@ -117,9 +118,9 @@ const useEvaluacionCurricular = () => {
         // Actualiza el estado global con las preguntas obtenidas
         dispatch({ type: AppAction.PA_HABILIDAD, payload: arrayEvaluacionHabilidad });
         // Construye la referencia a la colección de preguntas para el nivel determinado
-        
+
       }
-    } 
+    }
   }
 
   const getEvaluacionCurricularAlternativa = async () => {
@@ -224,8 +225,8 @@ const useEvaluacionCurricular = () => {
     })
   }
 
-  const guardarAnexosCurricular = async (dataDocente:User ,data: AnexosCurricular) => {
-    if(dataDocente.caracteristicaCurricular){
+  const guardarAnexosCurricular = async (dataDocente: User, data: AnexosCurricularType) => {
+    if (dataDocente.caracteristicaCurricular) {
       await setDoc(doc(db, 'usuarios', `${dataDocente.dni}`), {
         ...dataDocente,
         observacionCurricular: data

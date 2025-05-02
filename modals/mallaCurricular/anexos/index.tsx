@@ -3,7 +3,8 @@ import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import styles from './anexos.module.css'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular';
-import { User } from '@/features/types/types';
+import { AnexosCurricularType, User } from '@/features/types/types';
+import { nivelCobertura } from '@/fuctions/regiones';
 
 interface FormData {
   fortalezasObservadas: string;
@@ -16,10 +17,11 @@ interface Props {
 }
 
 const AnexosCurricular = ({ dataDocente }: Props) => {
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<AnexosCurricularType>({
     fortalezasObservadas: '',
     oportunidadesDeMejora: '',
-    acuerdosYCompomisos: ''
+    acuerdosYCompomisos: '',
+    nivelCobertura: {}
   });
 
   const { guardarAnexosCurricular } = useEvaluacionCurricular()
@@ -29,22 +31,42 @@ const AnexosCurricular = ({ dataDocente }: Props) => {
       setFormData({
         fortalezasObservadas: dataDocente.observacionCurricular.fortalezasObservadas || '',
         oportunidadesDeMejora: dataDocente.observacionCurricular.oportunidadesDeMejora || '',
-        acuerdosYCompomisos: dataDocente.observacionCurricular.acuerdosYCompomisos || ''
+        acuerdosYCompomisos: dataDocente.observacionCurricular.acuerdosYCompomisos || '',
+        nivelCobertura: dataDocente.observacionCurricular.nivelCobertura || {}
       });
     }
   }, [dataDocente.observacionCurricular]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    if (name === 'nivelCobertura') {
+      const updatedNivelCobertura = {
+        ...nivelCobertura,
+        alternativas: nivelCobertura.alternativas.map(alt => ({
+          ...alt,
+          selected: alt.alternativa === value
+        }))
+      };
+      setFormData(prev => ({
+        ...prev,
+        nivelCobertura: updatedNivelCobertura
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
+      console.log('formData', formData)
+
+      nivelCobertura.alternativas?.forEach(alternativa => {
+        alternativa.alternativa ===  formData.nivelCobertura && (alternativa.selected = true)
+      });
       await guardarAnexosCurricular(dataDocente, formData);
       toast.success('Los cambios se han guardado correctamente', {
         position: "top-right",
@@ -110,9 +132,32 @@ const AnexosCurricular = ({ dataDocente }: Props) => {
             className={styles.input}
           />
         </div>
-        <button type="submit" className={styles.button}>
-          Guardar
-        </button>
+        <div className={styles.formGroup}>
+          <label htmlFor="nivelCobertura" className={styles.label}>
+            C. Nivel de cobertura
+          </label>
+          <div className={styles.radioGroup}>
+            {nivelCobertura.alternativas.map((item) => (
+              <div key={item.id} className={styles.radioItem}>
+                <input
+                  type="radio"
+                  className={styles.radio}
+                  id={`nivelCobertura-${item.id}`}
+                  name="nivelCobertura"
+                  value={item.alternativa}
+                  checked={formData.nivelCobertura?.alternativas?.find(alternativa => alternativa.alternativa === item.alternativa)?.selected || false}
+                  onChange={handleChange}
+                />
+                <label htmlFor={`nivelCobertura-${item.id}`}>{item.cobertura}</label>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className={styles.formGroup}>
+          <button type="submit" className={styles.button}>
+            Guardar
+          </button>
+        </div>
       </form>
     </div>
   )

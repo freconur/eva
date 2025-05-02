@@ -29,12 +29,12 @@ const CoberturaCurricular = ({ dataDocente, paHabilidad, evaluacionCurricular, e
   }
   useEffect(() => {
     getEvaluacionCurricularDocente(dataDocente)
-  //el valor que retorna esta funcion es el unico que se usa para pintar la tabla, nos trae toda los resultados de las evaluaciones que tiene el docente
+    //el valor que retorna esta funcion es el unico que se usa para pintar la tabla, nos trae toda los resultados de las evaluaciones que tiene el docente
 
   }, [dataDocente])
   useEffect(() => {
     resetValuesEvaluarCurricular()
-  },[])
+  }, [])
   return (
     <div className={styles.coberturaContainer}>
       {
@@ -47,10 +47,12 @@ const CoberturaCurricular = ({ dataDocente, paHabilidad, evaluacionCurricular, e
           <li className={styles.skillsHeader}>A. habilidad lectora</li>
           {paHabilidad.map((habilidad, index) => (
             <li className={styles.skillItem} key={habilidad.id}>
-              <p className={styles.skillText}>
-                {index + 1}. {habilidad.habilidad}
-              </p>
-            </li>
+                  <p className={styles.skillText}>
+                    {index + 1}. {habilidad.habilidad}
+                  </p>
+                </li>
+           
+
           ))}
         </ul>
         <div className={styles.evaluationsContainer}>
@@ -85,7 +87,7 @@ const CoberturaCurricular = ({ dataDocente, paHabilidad, evaluacionCurricular, e
             ))}
           </div>
         </div>
-        
+
       </div>
     </div>
   )

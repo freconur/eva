@@ -200,7 +200,7 @@ export type User = {
   area?:number;
   distrito?:string;
   celular?:string;
-  observacionCurricular?:AnexosCurricular
+  observacionCurricular?:AnexosCurricularType
 };
 
 export type DataEstadisticas = {
@@ -324,8 +324,19 @@ export type CaracteristicaCurricular = {
   id?:string,
   name?:string,
 }
-export type AnexosCurricular = {
+export type AnexosCurricularType = {
   fortalezasObservadas?:string,
   oportunidadesDeMejora?:string,
   acuerdosYCompomisos?:string,
+  nivelCobertura?:NivelCobertura
+}
+
+export type NivelCobertura = {
+  cobertura?:string,
+  alternativas?: AlternativasCobertura[]
+}
+export type AlternativasCobertura = {
+  alternativa:string,
+  descripcion?:string,
+  selected?:boolean
 }
