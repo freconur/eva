@@ -1,149 +1,171 @@
 import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
-import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
-import React, { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import React, { useEffect, useCallback } from 'react'
+import { useForm, SubmitHandler } from 'react-hook-form'
 import { RiLoader4Line } from 'react-icons/ri'
+import styles from '@/styles/modules/AgregarEspecialista.module.css'
+
+// Tipos para el formulario
+type FormValues = {
+  dni: string;
+  region: number;
+  nombres: string;
+  apellidos: string;
+}
+
+// Componente de Input reutilizable
+const FormInput = ({ label, register, errors, name, type = "text", placeholder, validation }: {
+  label: string;
+  register: any;
+  errors: any;
+  name: keyof FormValues;
+  type?: string;
+  placeholder: string;
+  validation: any;
+}) => (
+  <div className={styles.formGroup}>
+    <label className={styles.label} htmlFor={name}>{label}:</label>
+    <input
+      id={name}
+      {...register(name, validation)}
+      className={styles.input}
+      type={type}
+      placeholder={placeholder}
+    />
+    {errors[name] && (
+      <span className={styles.error}>{errors[name].message as string}</span>
+    )}
+  </div>
+)
+
+// Componente de Select reutilizable
+const FormSelect = ({ label, register, errors, name, options }: {
+  label: string;
+  register: any;
+  errors: any;
+  name: keyof FormValues;
+  options: Array<{ codigo: number; region: string }>;
+}) => (
+  <div className={styles.formGroup}>
+    <label className={styles.label} htmlFor={name}>{label}:</label>
+    <select
+      id={name}
+      {...register(name, { required: { value: true, message: `${label} es requerido` } })}
+      className={styles.select}
+    >
+      <option value="">--{label.toUpperCase()}--</option>
+      {options?.map((region) => (
+        <option key={region.codigo} value={Number(region.codigo)}>
+          {region.region?.toUpperCase()}
+        </option>
+      ))}
+    </select>
+    {errors[name] && (
+      <span className={styles.error}>{errors[name].message as string}</span>
+    )}
+  </div>
+)
 
 const AgregareEspecialista = () => {
-
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>()
   const { getUserData, createNewEspecialista, getRegiones } = useUsuario()
   const { currentUserData, regiones, loaderPages } = useGlobalContext()
 
   useEffect(() => {
     getUserData()
     getRegiones()
-  }, [currentUserData.dni])
-  const handleAgregarDirector = handleSubmit(data => {
-    console.log("data", data)
-    createNewEspecialista({ ...data, perfil: { rol: 1, nombre: "especialista" } })
-    reset()
-  })
+  }, [getUserData, getRegiones])
+
+  const onSubmit: SubmitHandler<FormValues> = useCallback(async (data) => {
+    try {
+      createNewEspecialista({ 
+        ...data, 
+        perfil: { rol: 1, nombre: "especialista" } 
+      })
+      reset()
+    } catch (error) {
+      console.error('Error al crear especialista:', error)
+    }
+  }, [createNewEspecialista, reset])
+
+  if (loaderPages) {
+    return (
+      <div className={styles.loaderContainer}>
+        <div className={styles.loaderContent}>
+          <RiLoader4Line className={styles.loaderIcon} />
+          <span className={styles.loaderText}>...creando usuario especialista</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className='grid w-full p-1 place-content-center mt-5'>
+    <div className={styles.container}>
+      <div className={styles.formContainer}>
+        <h1 className={styles.title}>
+          Registrar Especialista
+        </h1>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <FormInput
+            label="DNI"
+            name="dni"
+            register={register}
+            errors={errors}
+            type="number"
+            placeholder="DNI de usuario"
+            validation={{
+              required: { value: true, message: "DNI es requerido" },
+              minLength: { value: 8, message: "DNI debe tener 8 caracteres" },
+              maxLength: { value: 8, message: "DNI debe tener 8 caracteres" },
+            }}
+          />
 
-      <div className='w-[700px] bg-white p-10 rounded-sm shadow-md '>
-        {
-          loaderPages ?
-            <div className='grid w-[600px] h-[600px] '>
-              <div className='flex justify-center items-center'>
-                <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-                <span className='text-colorTercero animate-pulse'>...creado usuario especialista</span>
-              </div>
-            </div>
-            :
-            <>
-              <h1 className='font-semibold text-center text-2xl uppercase text-slate-600'>Registrar Especialista</h1>
-              <form onClick={handleAgregarDirector} action="">
-                {/* <div className='w-full my-2'>
-                  <p className='text-slate-400 text-sm uppercase'>nombre de la i.e.:</p>
-                  <input
-                    {...register("institucion",
-                      {
-                        required: { value: true, message: "institucion es requerido" },
-                        minLength: { value: 5, message: "nombre debe tener un minimo de 5 caracteres" },
-                        maxLength: { value: 100, message: "nombre debe tener un maximo de 100 caracteres" },
-                      }
-                    )}
-                    className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
-                    type="text"
-                    placeholder="nombre de la institucion"
-                  />
-                </div>
-                {errors.institucion && <span className='text-red-400 text-sm'>{errors.institucion.message as string}</span>} */}
-                <div className='w-full my-2'>
-                  <p className='text-slate-400 text-sm uppercase'>codigo modular:</p>
-                  <input
-                    {...register("modular",
-                      {
-                        required: { value: true, message: "nombre es requerido" },
-                        minLength: { value: 8, message: "numero modular debe tener un minimo de 8 caracteres" },
-                        maxLength: { value: 8, message: "numero modular debe tener un maximo de 8 caracteres" },
-                      }
-                    )}
-                    className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
-                    type="number"
-                    placeholder="numero modular" />
-                </div>
-                {errors.modular && <span className='text-red-400 text-sm'>{errors.modular.message as string}</span>}
-                <div className='w-full my-2'>
-                  <p className='text-slate-400 text-sm uppercase'>dni:</p>
-                  <input
-                    {...register("dni",
-                      {
-                        required: { value: true, message: "dni es requerido" },
-                        minLength: { value: 8, message: "dni debe tener un minimo de 8 caracteres" },
-                        maxLength: { value: 8, message: "dni debe tener un maximo de 8 caracteres" },
-                      }
-                    )}
-                    className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
-                    type="number"
-                    placeholder="dni de usuario" />
-                </div>
-                {errors.dni && <span className='text-red-400 text-sm'>{errors.dni.message as string}</span>}
-                <div className='w-full my-2'>
-                  <p className='text-slate-400 text-sm uppercase'>region:</p>
-                  <select
-                    {...register("region",
-                      {
-                        required: { value: true, message: "region es requerido" },
-                      }
-                    )}
-                    className='w-full p-3 rounded-md bg-white text-slate-400 shadow-md'>
-                    <option>--REGIONES--</option>
+          <FormSelect
+            label="Región"
+            name="region"
+            register={register}
+            errors={errors}
+            options={regiones?.map(r => ({ codigo: r.codigo || 0, region: r.region || '' })) || []}
+          />
 
-                    {regiones?.map((region, index) => {
-                      return (
-                        <option key={index} value={Number(region.codigo)}>{region.region?.toUpperCase()}</option>
-                      )
-                    })}
-                  </select>
-                </div>
+          <FormInput
+            label="Nombres"
+            name="nombres"
+            register={register}
+            errors={errors}
+            placeholder="Nombre de usuario"
+            validation={{
+              required: { value: true, message: "Nombres son requeridos" },
+              minLength: { value: 2, message: "Nombres deben tener mínimo 2 caracteres" },
+              maxLength: { value: 40, message: "Nombres deben tener máximo 40 caracteres" },
+            }}
+          />
 
-                {errors.region && <span className='text-red-400 text-sm'>{errors.region.message as string}</span>}
-                <div className='w-full my-2'>
-                  <p className='text-slate-400 text-sm uppercase'>nombres:</p>
-                  <input
-                    {...register("nombres",
-                      {
-                        required: { value: true, message: "nombres es requerido" },
-                        minLength: { value: 2, message: "nombres debe tener un minimo de 2 caracteres" },
-                        maxLength: { value: 40, message: "nombres debe tener un maximo de 40 caracteres" },
-                      }
-                    )}
-                    className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
-                    type="text"
-                    placeholder="nombre de usuario" />
-                </div>
-                {errors.nombres && <span className='text-red-400 text-sm'>{errors.nombres.message as string}</span>}
-                <div className='w-full my-2'>
-                  <p className='text-slate-400 text-sm uppercase'>apellidos:</p>
-                  <input
-                    {...register("apellidos",
-                      {
-                        required: { value: true, message: "apellidos es requerido" },
-                        minLength: { value: 8, message: "apellidos debe tener un minimo de 2 caracteres" },
-                        maxLength: { value: 40, message: "apellidos debe tener un maximo de 40 caracteres" },
-                      }
-                    )}
-                    className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
-                    type="text"
-                    placeholder="apellido de usuario" />
-                </div>
-                {errors.apellidos && <span className='text-red-400 text-sm'>{errors.apellidos.message as string}</span>}
-                <button className='flex justify-center items-center bg-blue-500 hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase'>registrar</button>
-              </form>
-            </>
+          <FormInput
+            label="Apellidos"
+            name="apellidos"
+            register={register}
+            errors={errors}
+            placeholder="Apellido de usuario"
+            validation={{
+              required: { value: true, message: "Apellidos son requeridos" },
+              minLength: { value: 2, message: "Apellidos deben tener mínimo 2 caracteres" },
+              maxLength: { value: 40, message: "Apellidos deben tener máximo 40 caracteres" },
+            }}
+          />
 
-        }
+          <button
+            type="submit"
+            className={styles.submitButton}
+          >
+            Registrar
+          </button>
+        </form>
       </div>
     </div>
   )
 }
-
 
 export default AgregareEspecialista
 AgregareEspecialista.Auth = PrivateRouteAdmins

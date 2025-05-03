@@ -165,7 +165,6 @@ const useUsuario = () => {
   };
   const createNewEspecialista = (data: User) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
-    console.log("currentUserData.rol", currentUserData.rol);
     try {
       if (currentUserData.rol === 4) {
         axios
@@ -181,7 +180,7 @@ const useUsuario = () => {
               // institucion: `${data.institucion}`,
               perfil: data.perfil,
               rol: data.perfil?.rol,
-              modular: data.modular,
+              /* modular: data.modular, */
               nombres: data.nombres,
               apellidos: data.apellidos,
               region: Number(data.region),
@@ -367,7 +366,7 @@ const useUsuario = () => {
     idExamen: string,
     estudiantes: Estudiante[]
   ) => {
-    dispatch({type:AppAction.LOADER_SALVAR_PREGUNTA, payload:true})
+    dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true })
     const rta = estudiantes.find((es) => es.dni === id);
     console.log("primero");
     const newPRomise = new Promise<boolean>((resolve, reject) => {
@@ -398,7 +397,7 @@ const useUsuario = () => {
                 });
               } else if (al.selected === true && al.alternativa === "c") {
                 await updateDoc(pathRef, {
-                  c: Number(dataValidate.data()?.c) === 0 ? 0 :  increment(-1),
+                  c: Number(dataValidate.data()?.c) === 0 ? 0 : increment(-1),
                 });
               }
             });
@@ -437,11 +436,11 @@ const useUsuario = () => {
         console.log("tercero");
         console.log("rta estudiante", rta);
 
-        setTimeout(async() => {
-          const pathRef = doc(db,`/usuarios/${currentUserData.dni}/${idExamen}/`, id)
+        setTimeout(async () => {
+          const pathRef = doc(db, `/usuarios/${currentUserData.dni}/${idExamen}/`, id)
           await deleteDoc(pathRef);
-          dispatch({type:AppAction.LOADER_SALVAR_PREGUNTA, payload:false})
-        },5000)
+          dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+        }, 5000)
       }
     });
   };
