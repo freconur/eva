@@ -341,7 +341,12 @@ const useUsuario = () => {
     const newPromise = new Promise<boolean>((resolve, reject) => {
       try {
         axios
-          .post(`${URL_API}borrar-usuario`, { dni: idUsuario })
+          .post(`${URL_API}borrar-usuario`, { dni: idUsuario },{
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            withCredentials: true, // si usas cookies/sesiones
+          })
           .then((res) => {
             console.log("resDelete", res);
             resolve(true);
