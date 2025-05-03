@@ -14,7 +14,6 @@ interface Props {
 }
 
 const AgregarPreguntasRespuestasDocentes = ({ handleShowModalPreguntas, idEvaluacion }: Props) => {
-
   const { currentUserData, loaderModales } = useGlobalContext()
   const [typeRol, setTypeRol] = useState("")
   const [institucionData, setInstitucionData] = useState("")
@@ -32,25 +31,25 @@ const AgregarPreguntasRespuestasDocentes = ({ handleShowModalPreguntas, idEvalua
     reset()
   })
 
-
   return container
     ? createPortal(
       <div className={styles.containerModal}>
         {
           loaderModales ?
-            <div className="flex w-full mt-5 items-center m-auto justify-center">
-              <RiLoader4Line className="animate-spin text-3xl text-slate-500 " />
-              <p className="text-slate-500">guardando pregunta...</p>
+            <div className={styles.containerSale}>
+              <div className={styles.loaderContainer}>
+                <RiLoader4Line className={styles.loaderIcon} />
+                <p className={styles.loaderText}>guardando pregunta...</p>
+              </div>
             </div>
             :
-
             <div className={styles.containerSale}>
               <div className={styles.closeModalContainer}>
                 <h3 className={styles.title}>agregar preguntas y respuestas</h3>
                 <div className={styles.close} onClick={handleShowModalPreguntas}>cerrar</div>
               </div>
               <form onSubmit={handleSubmitform}>
-                <div className="my-5">
+                <div className={styles.formGroup}>
                   <p className={styles.titlePregunta}>criterio</p>
                   <input
                     type="text"
@@ -64,13 +63,13 @@ const AgregarPreguntasRespuestasDocentes = ({ handleShowModalPreguntas, idEvalua
                       }
                     )}
                   />
-                  {errors.criterio && <span className='text-red-400 text-sm'>{errors.criterio.message as string}</span>}
+                  {errors.criterio && <span className={styles.errorMessage}>{errors.criterio.message as string}</span>}
                 </div>
-                <div>
+                <div className={styles.formGroup}>
                   <h3 className={styles.titlePregunta}>niveles</h3>
-                  <div className="grid gap-3">
-                    <div className="flex gap-3">
-                      <div className="flex justify-center items-center"><p className={styles.numberAlternativas}>1.</p></div>
+                  <div className={styles.nivelesContainer}>
+                    <div className={styles.nivelItem}>
+                      <div className={styles.numberAlternativas}>1.</div>
                       <textarea
                         className={styles.textAreaPregunta}
                         placeholder="descripción del nivel"
@@ -82,11 +81,10 @@ const AgregarPreguntasRespuestasDocentes = ({ handleShowModalPreguntas, idEvalua
                           }
                         )}
                       />
-                      {errors.a && <span className='text-red-400 text-sm'>{errors.a.message as string}</span>}
-
+                      {errors.a && <span className={styles.errorMessage}>{errors.a.message as string}</span>}
                     </div>
-                    <div className="flex gap-3">
-                      <div className="flex justify-center items-center"><p className={styles.numberAlternativas}>2.</p></div>
+                    <div className={styles.nivelItem}>
+                      <div className={styles.numberAlternativas}>2.</div>
                       <textarea
                         className={styles.textAreaPregunta}
                         placeholder="descripción del nivel"
@@ -98,11 +96,10 @@ const AgregarPreguntasRespuestasDocentes = ({ handleShowModalPreguntas, idEvalua
                           }
                         )}
                       />
-                      {errors.b && <span className='text-red-400 text-sm'>{errors.b.message as string}</span>}
-
+                      {errors.b && <span className={styles.errorMessage}>{errors.b.message as string}</span>}
                     </div>
-                    <div className="flex gap-3">
-                      <div className="flex justify-center items-center"><p className={styles.numberAlternativas}>3.</p></div>
+                    <div className={styles.nivelItem}>
+                      <div className={styles.numberAlternativas}>3.</div>
                       <textarea
                         className={styles.textAreaPregunta}
                         placeholder="descripción del nivel"
@@ -114,11 +111,10 @@ const AgregarPreguntasRespuestasDocentes = ({ handleShowModalPreguntas, idEvalua
                           }
                         )}
                       />
-                      {errors.c && <span className='text-red-400 text-sm'>{errors.c.message as string}</span>}
-
+                      {errors.c && <span className={styles.errorMessage}>{errors.c.message as string}</span>}
                     </div>
-                    <div className="flex gap-3">
-                      <div className="flex justify-center items-center"><p className={styles.numberAlternativas}>4.</p></div>
+                    <div className={styles.nivelItem}>
+                      <div className={styles.numberAlternativas}>4.</div>
                       <textarea
                         className={styles.textAreaPregunta}
                         placeholder="descripción del nivel"
@@ -130,14 +126,12 @@ const AgregarPreguntasRespuestasDocentes = ({ handleShowModalPreguntas, idEvalua
                           }
                         )}
                       />
-                      {errors.d && <span className='text-red-400 text-sm'>{errors.d.message as string}</span>}
-
+                      {errors.d && <span className={styles.errorMessage}>{errors.d.message as string}</span>}
                     </div>
                   </div>
                 </div>
-                <button className='mt-5 flex justify-center items-center bg-blue-500 hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase'>guardar</button>
+                <button type="submit" className={styles.buttonSubmit}>guardar</button>
               </form>
-
             </div>
         }
       </div>,

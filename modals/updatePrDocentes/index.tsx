@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom"
-import styles from '../updateEvaluacion/updateEvaluacion.module.css'
+import styles from './updatePrDocentes.module.css'
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { AlternativasDocente, PRDocentes } from "@/features/types/types";
 import { RiLoader4Line } from "react-icons/ri";
@@ -63,16 +63,16 @@ const handleUpdatePRDocentes = () => {
         <div className={styles.containerSale}>
           {
             loaderSalvarPregunta ?
-              <div className='grid items-center justify-center'>
-                <div className='flex justify-center items-center'>
-                  <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-                  <span className='text-colorTercero animate-pulse'>...actualizando </span>
+              <div className={styles.loaderContainer}>
+                <div className={styles.loaderText}>
+                  <RiLoader4Line className="animate-spin" />
+                  <span>...actualizando</span>
                 </div>
               </div>
               :
               <>
                 <div className={styles.closeModalContainer}>
-                  <div onClick={() => handleShowUpdateModal()} className={styles.close} >cerrar</div>
+                  <div onClick={() => handleShowUpdateModal()} className={styles.close}>cerrar</div>
                 </div>
                 <h3 className={styles.title}>Editar pregunta</h3>
                 <div>
@@ -109,13 +109,10 @@ const handleUpdatePRDocentes = () => {
                     />
                   </div>
                   <p className={styles.tituloBotones}>¿Quieres actualizar esta pregunta y sus alternativas?</p>
-                  <div className='flex gap-3 justify-center items-center'>
-
+                  <div className={styles.buttonContainer}>
                     <button onClick={() => handleShowUpdateModal()} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
                     <button onClick={handleUpdatePRDocentes} className={styles.buttonDelete}>SI</button>
-
                   </div>
-
                 </div>
               </>
           }

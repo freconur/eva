@@ -2,7 +2,7 @@ import { createPortal } from "react-dom"
 import styles from '../evaluarDocente/EvaluarDocente.module.css'
 import { useForm } from "react-hook-form";
 import { useGlobalContext } from "@/features/context/GlolbalContext";
-import { PRDocentes, respuestaPsicolinguistica } from "@/features/types/types";
+import { PRDocentes } from "@/features/types/types";
 import { RiLoader4Line } from "react-icons/ri";
 import { usePsicolinguistica } from "@/features/hooks/usePsicolinguistica";
 import { useState } from "react";
@@ -122,19 +122,17 @@ const EvaluarDocente = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoce
 
           {
             loaderSalvarPregunta ?
-              <div className='grid items-center justify-center'>
-                <div className='flex justify-center items-center'>
-                  <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-                  <span className='text-colorTercero animate-pulse'>...guardando evaluación</span>
-                </div>
+              <div className={styles.loaderContainer}>
+                <RiLoader4Line className={styles.loaderIcon} />
+                <span className={styles.loaderText}>...guardando evaluación</span>
               </div>
               :
               <>
                 <div className={styles.closeModalContainer}>
-                  <div className={styles.close} onClick={handleShowEvaluarDocente} >cerrar</div>
+                  <div className={styles.close} onClick={handleShowEvaluarDocente} >x</div>
                 </div>
                 <h3 className={styles.title}>Evaluación de Docente</h3>
-                <div className='w-full my-2'>
+                <div className={styles.docenteContainer}>
                   <div className={styles.containerBuscarDocente}>
                     <input
                       name="dni"
@@ -143,19 +141,24 @@ const EvaluarDocente = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoce
                       placeholder="NÚMERO DE DNI"
                       onChange={handleChangeDocente}
                     />
-                    <button disabled={dniDocente.length === 8 ? false : true} onClick={handleBuscardDocente} className={styles.buscarDocentebutton}>Buscar</button>
+                    <button 
+                      disabled={dniDocente.length === 8 ? false : true} 
+                      onClick={handleBuscardDocente} 
+                      className={styles.buscarDocentebutton}
+                    >
+                      Buscar
+                    </button>
                   </div>
                   {
                     dataDocente.dni &&
-                    <div className="text-slate-500">
+                    <div className={styles.docenteInfo}>
                       <p>DNI: <strong>{dataDocente.dni}</strong></p>
                       <p>Nombres y Apellidos: <strong>{dataDocente.nombres?.toUpperCase()} {dataDocente.apellidos?.toUpperCase()}</strong></p>
                     </div>
-
                   }
-                  <div className="grid">
-                    {dniDocente.length !== 8 && <span className='pl-3 text-red-400 text-sm'> *dni debe tener 8 digitos</span>}
-                    {warningDataDocente?.length > 0 && <span className='pl-3 text-red-400 text-sm'>*{warningDataDocente}</span>}
+                  <div className={styles.warningContainer}>
+                    {dniDocente.length !== 8 && <span className={styles.warningText}>*dni debe tener 8 digitos</span>}
+                    {warningDataDocente?.length > 0 && <span className={styles.warningText}>*{warningDataDocente}</span>}
                   </div>
                 </div>
                 <form onSubmit={handleSalvarPreguntaDocente}>
@@ -195,7 +198,7 @@ const EvaluarDocente = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoce
                           <div onClick={() => handleFinalizar()} className={styles.buttonCrearEvaluacion}>Finalizar</div>
                           :
                           activeButtonSiguiente() &&
-                          <div onClick={() => setOrdenLimitePregunta(ordenLimitePregunta + 1)} className={styles.buttonCrearEvaluacion}>siguiente</div>
+                          <div onClick={() => setOrdenLimitePregunta(ordenLimitePregunta + 1)} className={styles.buttonCrearEvaluacion}>Siguiente</div>
                     }
 
                   </div>

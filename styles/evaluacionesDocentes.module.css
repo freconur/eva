@@ -52,11 +52,6 @@
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.headerButtons {
-  display: flex;
-  gap: 1.5rem;
-}
-
 .headerButton {
   padding: 1rem 2.5rem;
   background-color: rgba(255, 255, 255, 0.95);
@@ -81,43 +76,8 @@
 
 .tableContainer {
   padding: 2rem;
-  display: flex;
-  gap: 2rem;
-  min-width: 1000px;
+  max-width: 1400px;
   margin: 0 auto;
-}
-
-.tableSection {
-  width: 100%;
-  background: white;
-  border-radius: 1.5rem;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.tableSection:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.sectionTitle {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1e3a8a;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.sectionTitleIndicator {
-  width: 0.375rem;
-  height: 1.75rem;
-  background: linear-gradient(to bottom, #0a44e4, #3b82f6);
-  border-radius: 9999px;
 }
 
 .table {
@@ -127,6 +87,7 @@
   overflow: hidden;
   border-collapse: separate;
   border-spacing: 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .tableHeader {
@@ -187,7 +148,6 @@
   text-decoration: none;
   font-weight: 500;
   position: relative;
-  /* text-transform: uppercase; */
 }
 
 .tableLink:hover {
@@ -207,13 +167,6 @@
 
 .tableLink:hover::after {
   width: 100%;
-}
-
-.tableActions {
-  text-align: center;
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
 }
 
 .actionIcon {
@@ -279,118 +232,4 @@
   to {
     transform: rotate(360deg);
   }
-}
-
-.searchContainer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.searchInput {
-  padding: 0.75rem;
-  height: 50px;
-  outline: none;
-  border-radius: 0.375rem;
-  background-color: rgba(255, 255, 255, 0.9);
-  color: rgb(51, 65, 85);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 300px;
-}
-
-.docenteInfo {
-  padding: 0.75rem;
-  background-color: rgba(255, 255, 255, 0.9);
-  border-radius: 0.375rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s ease;
-}
-
-.docenteInfo:hover {
-  background-color: white;
-}
-
-.docenteInfoItem {
-  color: rgb(51, 65, 85);
-  font-size: 0.875rem;
-}
-
-.docenteInfoLabel {
-  font-weight: 600;
-}
-
-.preguntasContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.preguntaCard {
-  background-color: white;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s ease;
-}
-
-.preguntaCard:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-.preguntaHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.preguntaTitle {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.preguntaNumber {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: rgb(71, 85, 105);
-}
-
-.preguntaText {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: rgb(51, 65, 85);
-}
-
-.alternativasList {
-  margin-top: 1rem;
-  padding-left: 2.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.alternativaItem {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.alternativaNumber {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--azul-claro4);
-}
-
-.alternativaText {
-  font-size: 1.125rem;
-  color: rgb(71, 85, 105);
-}
-
-.editIcon {
-  font-size: 1.5rem;
-  color: var(--azul-claro4);
 } 

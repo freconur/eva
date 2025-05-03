@@ -17,7 +17,6 @@ interface Props {
 const CrearEvaluacionDocente = ({ handleShowModalCrearEvaluacion }: Props) => {
   const { preguntasRespuestas, sizePreguntas, preguntasRespuestasEstudiante, loaderSalvarPregunta } = useGlobalContext()
   const [ordenLimitePregunta, setOrdenLimitePregunta] = useState(0)
-  // const [ initialValueData, setInitialValueData] = useState([...preguntasRespuestas])
   const [activarBotonSiguiente, setActivarBotonSiguiente] = useState(false)
   const [repuestasCorrectas, setRespuestasCorrectas] = useState(0)
   const { prEstudiantes, salvarPreguntRespuestaEstudiante, getPreguntasRespuestas } = useAgregarEvaluaciones()
@@ -29,71 +28,63 @@ const CrearEvaluacionDocente = ({ handleShowModalCrearEvaluacion }: Props) => {
 
   const { createEvaluacionesDirectores } = UseEvaluacionDirectores()
 
-
   const handleCreateEvaluacion = handleSubmit((data) => {
     createEvaluacionesDirectores(data)
     reset()
   })
+
   return container
     ? createPortal(
       <div className={styles.containerModal}>
-
         <div className={styles.containerSale}>
-
-          {
-
-            loaderSalvarPregunta ?
-              <div className='grid items-center justify-center'>
-                <div className='flex justify-center items-center'>
-                  <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-                  <span className='text-colorTercero animate-pulse'>...guardando respuestas</span>
-                </div>
+          {loaderSalvarPregunta ? (
+            <div className={styles.loaderContainer}>
+              <RiLoader4Line className={styles.loaderIcon} />
+              <span>Guardando respuestas...</span>
+            </div>
+          ) : (
+            <>
+              <div className={styles.closeModalContainer}>
+                <button className={styles.close} onClick={handleShowModalCrearEvaluacion}>
+                  Cerrar
+                </button>
               </div>
-              :
-              <>
-                <div className={styles.closeModalContainer}>
-                  <div className={styles.close} onClick={handleShowModalCrearEvaluacion} >cerrar</div>
+              <h3 className={styles.title}>Crear Evaluación Desempeño del director</h3>
+              <form onSubmit={handleCreateEvaluacion}>
+                <div className="w-full my-2">
+                  <label className={styles.inputLabel}>Nombre de evaluación:</label>
+                  <input
+                    {...register("name", {
+                      required: { value: true, message: "El nombre de evaluación es requerido" },
+                      minLength: { value: 2, message: "El nombre debe tener un mínimo de 2 caracteres" },
+                      maxLength: { value: 50, message: "El nombre debe tener un máximo de 50 caracteres" },
+                    })}
+                    className={styles.inputNombresDni}
+                    type="text"
+                    placeholder="Ingrese el nombre de la evaluación"
+                  />
+                  {errors.name && <span className={styles.errorMessage}>{errors.name.message as string}</span>}
                 </div>
-                <h3 className={styles.title}>Crear Evaluación Desempeño del director</h3>
-                <form onSubmit={handleCreateEvaluacion}>
-
-                  <div className='w-full my-2'>
-                    <p className={styles.inputLabel}>Nombre de evaluación: </p>
-                    <input
-                      {...register("name",
-                        {
-                          required: { value: true, message: "nombre de evaluación es requerido" },
-                          minLength: { value: 2, message: "nombre debe tener un minimo de 2 caracteres" },
-                          maxLength: { value: 50, message: "nombre debe tener un maximo de 50 caracteres" },
-                        }
-                      )}
-                      className={styles.inputNombresDni}
-                      type="text"
-                      placeholder="nombres de evaluacion"
-                    />
-                    {errors.nombre && <span className='text-red-400 text-sm'>{errors.nombre.message as string}</span>}
-                  </div>
-                  <div className="mb-3">
-                      <select 
-                      {...register("categoria",
-                        {
-                          required: { value: true, message: "categoria es requerido" },
-                        }
-                      )}
-                      className="w-full rounded-md outline-none p-3 mb-2"
-                      >
-                        <option value="">--CATEGORIA--</option>
-                        <option value="LECTURA">LECTURA</option>
-                        <option value="MATEMÁTICA">MATEMÁTICA</option>
-                        
-                      </select>
-                      {errors.categoria && <span className='text-red-400 text-sm'>{errors.categoria.message as string}</span>}
-                  </div>
-                  <button
-                    className={styles.buttonCrearEvaluacion}>Guardar</button>
-                </form>
-              </>
-          }
+                <div className="mb-3">
+                  <label className={styles.inputLabel}>Categoría:</label>
+                  <select 
+                    {...register("categoria", {
+                      required: { value: true, message: "La categoría es requerida" },
+                    })}
+                    className={styles.inputNombresDni}
+                  >
+                    <option value="">Seleccione una categoría</option>
+                    <option value="LECTURA">LECTURA</option>
+                    <option value="MATEMÁTICA">MATEMÁTICA</option>
+                  </select>
+                  {errors.categoria && <span className={styles.errorMessage}>{errors.categoria.message as string}</span>}
+                </div>
+                <button type="submit" className={styles.buttonCrearEvaluacion}>
+                  Guardar
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </div>,
       container

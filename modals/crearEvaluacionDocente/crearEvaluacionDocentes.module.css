@@ -1,15 +1,165 @@
 .containerModal {
   position: fixed;
-  background-color: rgba(0, 0, 0, 0.23);
-  z-index: 2000;
   top: 0;
-  bottom: 0;
   left: 0;
-  right: 0;
-  display: grid;
-  place-content: center;
-  
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fadeIn 0.3s ease-out;
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.containerSale {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: center;
+}
+
+@keyframes slideUp {
+  from { 
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+  }
+  to { 
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.closeModalContainer {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.close {
+  cursor: pointer;
+  color: #666;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.close:hover {
+  color: #333;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #1F6E8C;
+  text-align: center;
+}
+
+.inputLabel {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.inputNombresDni {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid #e5e7eb;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.inputNombresDni:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.buttonCrearEvaluacion {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+}
+
+.buttonCrearEvaluacion:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.buttonCrearEvaluacion:active {
+  transform: translateY(1px);
+}
+
+/* Estilos para el select */
+.containerSale select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid #e5e7eb;
+  background-color: white;
+  font-size: 0.95rem;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 1rem;
+}
+
+.containerSale select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Estilos para mensajes de error */
+.errorMessage {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Estilos para el loader */
+.loaderContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+.loaderIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .containerPreguntasAlternativas {
   display: grid;
   gap: 5px;
@@ -35,22 +185,6 @@
 .descripcion {
   color: #344CB7;
   text-transform: uppercase;
-}
-.closeModalContainer {
-  width: 100%;
-  justify-content: flex-end;
-  display: flex;
-}
-.close {
-  font-weight: 600;
-  color: #4953f6;
-  text-decoration: underline;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-.close:hover {
-  color: #ffcf4c;
-  transition: 0.2s ease;
 }
 .closeModal {
   border-radius: 100%;
