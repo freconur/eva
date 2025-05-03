@@ -1,7 +1,7 @@
 .container {
   display: flex;
   margin: 0 auto;
-  width: 70%;
+  width: 100%;
   padding: 1rem;
   gap: 2rem;
   place-content: center;
@@ -9,7 +9,7 @@
 }
 
 .formContainer {
-  width: 40%;
+  width: 70%;
   max-width: 700px;
   background: white;
   padding: 2.5rem;
