@@ -13,23 +13,20 @@ import {
 } from "../context/GlolbalContext";
 // import { getFirestore, doc, getDoc } from "firebase/firestore/lite"
 import { AppAction } from "../actions/appAction";
-import {
-  getFirestore,
+
+import { app } from "@/firebase/firebase.config";
+import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import { onSnapshot, where,query , getFirestore,
   doc,
   getDoc,
   setDoc,
   collection,
   getDocs,
-  where,
-  query,
   orderBy,
   updateDoc,
   deleteDoc,
-  increment,
-} from "firebase/firestore/lite";
-import { app } from "@/firebase/firebase.config";
-import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
+  increment,} from "firebase/firestore";
 const useUsuario = () => {
   const URL_API = "https://api-ugel-production.up.railway.app/";
   // const URL_API = "http://localhost:3001/"
@@ -444,6 +441,24 @@ const useUsuario = () => {
       }
     });
   };
+
+  const getAllEspecialistas = async () => {
+    const pathRef = collection(db, "usuarios")
+    const q = query(pathRef, where("rol", "==", 1));
+    onSnapshot(q, (querySnapshot) => {
+      const arrayEspecialistas: User[] = []
+      querySnapshot.forEach((doc) => {
+        arrayEspecialistas.push(doc.data())
+      })
+      dispatch({ type: AppAction.ALL_ESPECIALISTAS, payload: arrayEspecialistas })
+    });
+  }
+
+  const updateEspecialista = async (dniEspecialista: string, data: User) => {
+    const pathRef = doc(db, "usuarios", `${dniEspecialista}`);
+    await updateDoc(pathRef, data);
+    getAllEspecialistas(); // Actualizamos la lista después de modificar
+  };
   return {
     getDirectorById,
     signIn,
@@ -457,6 +472,8 @@ const useUsuario = () => {
     updateDirector,
     deleteUsuarioById,
     deleteEstudianteById,
+    getAllEspecialistas,
+    updateEspecialista
   };
 };
 

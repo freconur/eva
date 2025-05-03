@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom"
-import styles from '../deleteEvaluacion/deleteEvaluacion.module.css'
+import styles from './deleteUsuario.module.css'
 import { useForm } from "react-hook-form";
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { Psicolinguistica } from "@/features/types/types";
@@ -32,49 +32,38 @@ const DeleteUsuario = ({ idUsuario, handleShowModalDelete }: Props) => {
   return container
     ? createPortal(
       <div className={styles.containerModal}>
-
         <div className={styles.containerSale}>
-
-          {
-
-            loaderSalvarPregunta ?
-              <div className='grid items-center justify-center'>
-                <div className='flex justify-center items-center'>
-                  <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-                  <span className='text-colorTercero animate-pulse'>...borrando evaluación</span>
-                </div>
+          {loaderSalvarPregunta ? (
+            <div className={styles.loaderContainer}>
+              <RiLoader4Line className={styles.loaderIcon} />
+              <span className={styles.loaderText}>...borrando evaluación</span>
+            </div>
+          ) : (
+            <>
+              <div className={styles.closeModalContainer}>
+                <div className={styles.close} onClick={() => { handleShowModalDelete(); setReValidar(false) }}>cerrar</div>
               </div>
-              :
-              <>
-                <div className={styles.closeModalContainer}>
-                  <div className={styles.close} onClick={() => { handleShowModalDelete(); setReValidar(false) }} >cerrar</div>
+              {reValidar ? (
+                <div>
+                  <p className={styles.advertenciaEliminar}>
+                    Esta acción no se puede deshacer y el usuario se eliminará para siempre. Si estas seguro, dale a continuar
+                  </p>
+                  <div className={styles.buttonContainer}>
+                    <button onClick={handleShowModalDelete} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
+                    <button onClick={() => { handleDeleteEvaluacion(); handleShowModalDelete(); setReValidar(false) }} className={styles.buttonDelete}>CONTINUAR</button>
+                  </div>
                 </div>
-                {
-                  reValidar ?
-                    <div>
-                      <p className={styles.advertenciaEliminar}>Esta acción no se puede deshacer y el usuario se eliminará para siempre. Si estas seguro, dale a continuar</p>
-                      <div className='flex gap-3 justify-center items-center'>
-                        <button onClick={handleShowModalDelete} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
-                        {/* <button onClick={() => {handleDeleteEvaluacion(); handleShowModalDelete()}} className={styles.buttonDelete}>SI</button> */}
-                        <button onClick={() => { handleDeleteEvaluacion();handleShowModalDelete(); setReValidar(false) }} className={styles.buttonDelete}>CONTINUAR</button>
-                      </div>
-                    </div>
-
-                    :
-                    <div>
-                      <h3 className={styles.title}>¿Estás seguro que quieres borrar este usuario?</h3>
-
-                      <div >
-                        <div className='flex gap-3 justify-center items-center'>
-                          <button onClick={() => {handleShowModalDelete(); setReValidar(false)}} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
-                          {/* <button onClick={() => {handleDeleteEvaluacion(); handleShowModalDelete()}} className={styles.buttonDelete}>SI</button> */}
-                          <button onClick={() => { setReValidar(!reValidar) }} className={styles.buttonDelete}>SI</button>
-                        </div>
-                      </div>
-                    </div>
-                }
-              </>
-          }
+              ) : (
+                <div>
+                  <h3 className={styles.title}>¿Estás seguro que quieres borrar este usuario?</h3>
+                  <div className={styles.buttonContainer}>
+                    <button onClick={() => { handleShowModalDelete(); setReValidar(false) }} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
+                    <button onClick={() => { setReValidar(!reValidar) }} className={styles.buttonDelete}>SI</button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>,
       container

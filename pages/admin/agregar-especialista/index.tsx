@@ -1,10 +1,12 @@
 import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect, useCallback, use, useState } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
-import { RiLoader4Line } from 'react-icons/ri'
+import { RiLoader4Line, RiEdit2Line, RiDeleteBin6Line } from 'react-icons/ri'
 import styles from '@/styles/modules/AgregarEspecialista.module.css'
+import UpdateUsuarioEspecialista from '@/modals/updateUsuarioEspecialista'
+import DeleteUsuario from '@/modals/deleteUsuario'
 
 // Tipos para el formulario
 type FormValues = {
@@ -69,19 +71,36 @@ const FormSelect = ({ label, register, errors, name, options }: {
 
 const AgregareEspecialista = () => {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>()
-  const { getUserData, createNewEspecialista, getRegiones } = useUsuario()
-  const { currentUserData, regiones, loaderPages } = useGlobalContext()
-
+  const { getUserData, createNewEspecialista, getRegiones, getAllEspecialistas } = useUsuario()
+  const [idUsuario, setIdUsuario] = useState<string>("")
+  const { regiones, loaderPages, allEspecialistas } = useGlobalContext()
+  const [showModalActualizarEspecialista, setShowModalActualizarEspecialista] = useState<boolean>(false)
+  const [showModalDeleteUsuario, setShowModalDeleteUsuario] = useState<boolean>(false)
   useEffect(() => {
     getUserData()
     getRegiones()
-  }, [getUserData, getRegiones])
+    getAllEspecialistas()
+  }, [])
 
+  const handleDelete = async (dni: string) => {
+
+  }
+
+  const handleEdit = (especialista: any) => {
+    // Aquí puedes implementar la lógica para editar
+    console.log('Editar especialista:', especialista)
+  }
+  const handleShowModal = () => {
+    setShowModalActualizarEspecialista(!showModalActualizarEspecialista)
+  }
+  const handleShowModalDelete = () => {
+    setShowModalDeleteUsuario(!showModalDeleteUsuario)
+  }
   const onSubmit: SubmitHandler<FormValues> = useCallback(async (data) => {
     try {
-      createNewEspecialista({ 
-        ...data, 
-        perfil: { rol: 1, nombre: "especialista" } 
+      createNewEspecialista({
+        ...data,
+        perfil: { rol: 1, nombre: "especialista" }
       })
       reset()
     } catch (error) {
@@ -99,9 +118,47 @@ const AgregareEspecialista = () => {
       </div>
     )
   }
-
   return (
     <div className={styles.container}>
+      {showModalActualizarEspecialista && <UpdateUsuarioEspecialista idUsuario={idUsuario} handleShowModal={handleShowModal} />}
+      {showModalDeleteUsuario && <DeleteUsuario idUsuario={idUsuario} handleShowModalDelete={handleShowModalDelete} />}
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>DNI</th>
+              <th>Nombres</th>
+              <th>Apellidos</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allEspecialistas.map((especialista) => (
+              <tr key={especialista.dni}>
+                <td className={styles.tsList}>{especialista.dni}</td>
+                <td className={styles.tsList}>{especialista.nombres}</td>
+                <td className={styles.tsList}>{especialista.apellidos}</td>
+                <td className={styles.actions}>
+                  <button
+                    onClick={() => {setIdUsuario(`${especialista.dni}`); handleShowModal()}}
+                    className={styles.iconButton}
+                    title="Editar"
+                  >
+                    <RiEdit2Line />
+                  </button>
+                  <button
+                    onClick={handleShowModalDelete}
+                    className={styles.iconButton}
+                    title="Borrar"
+                  >
+                    <RiDeleteBin6Line />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <div className={styles.formContainer}>
         <h1 className={styles.title}>
           Registrar Especialista
@@ -122,7 +179,7 @@ const AgregareEspecialista = () => {
           />
 
           <FormSelect
-            label="Región"
+            label="ugel"
             name="region"
             register={register}
             errors={errors}

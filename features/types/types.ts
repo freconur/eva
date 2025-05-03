@@ -46,7 +46,8 @@ export type AppReducerValues = {
   evaluacionCurricularAlternativa:EvaluacionCurricularAlternativa[],
   evaluacionCurricularById:EvaluacionCurricularAlternativa,
   allEvaluacionesCurricularesDocente:EvaluacionCurricularAlternativa[],
-  caracteristicaCurricular:CaracteristicaCurricular[]
+  caracteristicaCurricular:CaracteristicaCurricular[],
+  allEspecialistas:User[]
 };
 
 export type AppActions =
@@ -108,6 +109,7 @@ export type AppActions =
   | { type: AppAction.EVALUACION_CURRICULAR_BY_ID; payload: EvaluacionCurricularAlternativa }
   | { type: AppAction.ALL_EVALUACIONES_CURRICULARES_DOCENTE; payload: EvaluacionCurricularAlternativa[] }
   | { type: AppAction.CARACTERISTICA_CURRICULAR; payload: CaracteristicaCurricular[] }
+  | { type: AppAction.ALL_ESPECIALISTAS; payload: User[] }
 export type LoginData = {
   usuario: string;
   contrasena: string;
