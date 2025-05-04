@@ -67,10 +67,10 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                   href="/admin/evaluaciones-directores"
                   className={styles.anclaje}
                   id="ancla">evaluaciones</Link></li>
-                {/* <li className={styles.containerAncla}><Link
-                  href="/admin/agregar-directores"
+                <li className={styles.containerAncla}><Link
+                  href="/especialistas/agregar-directores"
                   className={styles.anclaje}
-                  id="ancla">crear usuario</Link></li> */}
+                  id="ancla">crear usuario</Link></li>
                 
               </ul>
             </li>

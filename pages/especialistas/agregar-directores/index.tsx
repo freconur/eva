@@ -166,107 +166,138 @@ const AgregarDirectores = () => {
 
               <h1 className='text-colorTercero font-semibold text-3xl font-mono mb-10 capitalize'>Registrar Director</h1>
               <div className='bg-white p-5 w-[400px]'>
-                <form onClick={handleAgregarDirector}>
+                <form onSubmit={handleAgregarDirector}>
                   <div className='w-full my-2'>
-                    <p className='text-slate-400 text-sm uppercase'>nombre de la i.e.:</p>
+                    <label className='text-slate-400 text-sm uppercase block mb-1'>nombre de la i.e.:</label>
                     <input
                       {...register("institucion",
                         {
-                          required: { value: true, message: "institucion es requerido" },
-                          minLength: { value: 5, message: "nombre debe tener un minimo de 5 caracteres" },
-                          maxLength: { value: 100, message: "nombre debe tener un maximo de 100 caracteres" },
+                          required: { value: true, message: "El nombre de la institución es requerido" },
+                          minLength: { value: 5, message: "El nombre debe tener mínimo 5 caracteres" },
+                          maxLength: { value: 100, message: "El nombre debe tener máximo 100 caracteres" },
                         }
                       )}
                       className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
                       type="text"
-                      placeholder="nombre de la institucion"
+                      placeholder="Nombre de la institución"
                     />
+                    {errors.institucion && <span className='text-red-400 text-sm block mt-1'>{errors.institucion.message as string}</span>}
                   </div>
-                  {errors.institucion && <span className='text-red-400 text-sm'>{errors.institucion.message as string}</span>}
                   <div className='w-full my-2'>
-                    <p className='text-slate-400 text-sm uppercase'>codigo modular:</p>
+                    <label className='text-slate-400 text-sm uppercase block mb-1'>código modular:</label>
                     <input
                       {...register("modular",
                         {
-                          required: { value: true, message: "nombre es requerido" },
-                          minLength: { value: 8, message: "numero modular debe tener un minimo de 8 caracteres" },
-                          maxLength: { value: 8, message: "numero modular debe tener un maximo de 8 caracteres" },
+                          required: { value: true, message: "El código modular es requerido" },
+                          minLength: { value: 8, message: "El código modular debe tener 8 caracteres" },
+                          maxLength: { value: 8, message: "El código modular debe tener 8 caracteres" },
+                          pattern: {
+                            value: /^[0-9]{8}$/,
+                            message: "El código modular debe contener solo números"
+                          }
                         }
                       )}
                       className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
-                      type="number"
-                      placeholder="numero modular" />
+                      type="text"
+                      placeholder="Número modular"
+                    />
+                    {errors.modular && <span className='text-red-400 text-sm block mt-1'>{errors.modular.message as string}</span>}
                   </div>
-                  {errors.modular && <span className='text-red-400 text-sm'>{errors.modular.message as string}</span>}
                   <div className='w-full my-2'>
-                    <p className='text-slate-400 text-sm uppercase'>dni:</p>
+                    <label className='text-slate-400 text-sm uppercase block mb-1'>dni:</label>
                     <input
                       {...register("dni",
                         {
-                          required: { value: true, message: "dni es requerido" },
-                          minLength: { value: 8, message: "dni debe tener un minimo de 8 caracteres" },
-                          maxLength: { value: 8, message: "dni debe tener un maximo de 8 caracteres" },
+                          required: { value: true, message: "El DNI es requerido" },
+                          minLength: { value: 8, message: "El DNI debe tener 8 caracteres" },
+                          maxLength: { value: 8, message: "El DNI debe tener 8 caracteres" },
+                          pattern: {
+                            value: /^[0-9]{8}$/,
+                            message: "El DNI debe contener solo números"
+                          }
                         }
                       )}
                       className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
-                      type="number"
-                      placeholder="nombre de usuario" />
+                      type="text"
+                      placeholder="Número de DNI"
+                    />
+                    {errors.dni && <span className='text-red-400 text-sm block mt-1'>{errors.dni.message as string}</span>}
                   </div>
-                  {errors.dni && <span className='text-red-400 text-sm'>{errors.dni.message as string}</span>}
                   <div className='w-full my-2'>
-                    <p className='text-slate-400 text-sm uppercase'>ugel:</p>
+                    <label className='text-slate-400 text-sm uppercase block mb-1'>ugel:</label>
                     <select
                       {...register("region",
                         {
-                          required: { value: true, message: "region es requerido" },
+                          required: { value: true, message: "La UGEL es requerida" },
                         }
                       )}
-                      className='w-full p-3 rounded-md bg-white text-slate-400 shadow-md'>
-                      <option>--UGEL--</option>
-
-                      {regiones?.map((region, index) => {
-                        return (
-                          <option key={index} value={Number(region.codigo)}>{region.region?.toUpperCase()}</option>
-                        )
-                      })}
+                      className='w-full p-3 rounded-md bg-white text-slate-400 shadow-md outline-none'
+                    >
+                      <option value="">--SELECCIONE UGEL--</option>
+                      {regiones?.map((region, index) => (
+                        <option key={index} value={Number(region.codigo)}>{region.region?.toUpperCase()}</option>
+                      ))}
                     </select>
+                    {errors.region && <span className='text-red-400 text-sm block mt-1'>{errors.region.message as string}</span>}
                   </div>
-
-                  {errors.region && <span className='text-red-400 text-sm'>{errors.region.message as string}</span>}
                   <div className='w-full my-2'>
-                    <p className='text-slate-400 text-sm uppercase'>nombres:</p>
+                    <label className='text-slate-400 text-sm uppercase block mb-1'>nombres:</label>
                     <input
                       {...register("nombres",
                         {
-                          required: { value: true, message: "nombres es requerido" },
-                          minLength: { value: 2, message: "nombres debe tener un minimo de 2 caracteres" },
-                          maxLength: { value: 40, message: "nombres debe tener un maximo de 40 caracteres" },
+                          required: { value: true, message: "Los nombres son requeridos" },
+                          minLength: { value: 2, message: "Los nombres deben tener mínimo 2 caracteres" },
+                          maxLength: { value: 40, message: "Los nombres deben tener máximo 40 caracteres" },
+                          pattern: {
+                            value: /^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/,
+                            message: "Los nombres solo pueden contener letras"
+                          }
                         }
                       )}
                       className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
                       type="text"
-                      placeholder="nombre de usuario" />
+                      placeholder="Nombres del director"
+                    />
+                    {errors.nombres && <span className='text-red-400 text-sm block mt-1'>{errors.nombres.message as string}</span>}
                   </div>
-                  {errors.nombres && <span className='text-red-400 text-sm'>{errors.nombres.message as string}</span>}
                   <div className='w-full my-2'>
-                    <p className='text-slate-400 text-sm uppercase'>apellidos:</p>
+                    <label className='text-slate-400 text-sm uppercase block mb-1'>apellidos:</label>
                     <input
                       {...register("apellidos",
                         {
-                          required: { value: true, message: "apellidos es requerido" },
-                          minLength: { value: 8, message: "apellidos debe tener un minimo de 2 caracteres" },
-                          maxLength: { value: 40, message: "apellidos debe tener un maximo de 40 caracteres" },
+                          required: { value: true, message: "Los apellidos son requeridos" },
+                          minLength: { value: 2, message: "Los apellidos deben tener mínimo 2 caracteres" },
+                          maxLength: { value: 40, message: "Los apellidos deben tener máximo 40 caracteres" },
+                          pattern: {
+                            value: /^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/,
+                            message: "Los apellidos solo pueden contener letras"
+                          }
                         }
                       )}
                       className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
                       type="text"
-                      placeholder="nombre de usuario" />
+                      placeholder="Apellidos del director"
+                    />
+                    {errors.apellidos && <span className='text-red-400 text-sm block mt-1'>{errors.apellidos.message as string}</span>}
                   </div>
-                  {errors.apellidos && <span className='text-red-400 text-sm'>{errors.apellidos.message as string}</span>}
-                  <div className='justify-center flex items-center'>
-                    {warningUsuarioExiste?.length > 0 && <p className='text-teal-700 font-semibold'>{warningUsuarioExiste}</p>}
-                  </div>
-                  <button className='flex justify-center items-center bg-blue-500 hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase'>registrar</button>
+                  {warningUsuarioExiste?.length > 0 && (
+                    <div className='my-2 p-2 bg-yellow-100 rounded-md'>
+                      <p className='text-yellow-700 font-semibold text-center'>{warningUsuarioExiste}</p>
+                    </div>
+                  )}
+                  <button 
+                    type="submit"
+                    className='flex justify-center items-center bg-blue-500 hover:bg-blue-600 duration-300 p-3 rounded-md w-full text-white hover:text-white uppercase font-semibold mt-4'
+                  >
+                    {loaderPages ? (
+                      <div className="flex items-center">
+                        <RiLoader4Line className="animate-spin mr-2" />
+                        <span>Registrando...</span>
+                      </div>
+                    ) : (
+                      "Registrar Director"
+                    )}
+                  </button>
                 </form>
               </div>
             </div>
