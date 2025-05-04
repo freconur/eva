@@ -147,7 +147,7 @@ const AgregareEspecialista = () => {
                     <RiEdit2Line />
                   </button>
                   <button
-                    onClick={handleShowModalDelete}
+                    onClick={() => {setIdUsuario(`${especialista.dni}`); handleShowModalDelete()}}
                     className={styles.iconButton}
                     title="Borrar"
                   >

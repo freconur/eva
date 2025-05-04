@@ -338,6 +338,7 @@ const useUsuario = () => {
     }
   };
   const deleteUsuarioById = (idUsuario: string) => {
+    console.log("idUsuario", idUsuario)
     const newPromise = new Promise<boolean>((resolve, reject) => {
       try {
         axios
