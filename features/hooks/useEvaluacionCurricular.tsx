@@ -1,7 +1,7 @@
 import React from 'react'
-import { addDoc, collection, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, getDocs, getFirestore, increment, onSnapshot, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore";
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
-import { AnexosCurricularType, CaracteristicaCurricular, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, PaHanilidad, User } from '../types/types';
+import { AnexosCurricularType, CaracteristicaCurricular, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, PaHanilidad, ReporteCurricularDirector, ReporteDataEstadisticasCD, User } from '../types/types';
 import { AppAction } from '../actions/appAction';
 
 const useEvaluacionCurricular = () => {
@@ -171,13 +171,117 @@ const useEvaluacionCurricular = () => {
     }
   }
 
-  const salvarEvaluacionCurricular = async (idCurricular: string, dataDocente: string, data: PaHanilidad[]) => {
-    console.log(`/usuarios/${dataDocente}/evaluacion-curricular/${idCurricular}`)
+  const salvarEvaluacionCurricular = async (idCurricular: string, dataDocente: User, data: PaHanilidad[]) => {
+    /* console.log(`/usuarios/${dataDocente}/evaluacion-curricular/${idCurricular}`) */
     //tengo que traerme todas las evaluaciones curriculares de un docente por lo que usare collection
 
-    /* const pathRef = collection(db, `/usuarios/${dataDocente}/evaluacion-curricular`) */
-    const evaluacionesCurriculares: PaHanilidad[] = []
-    await setDoc(doc(db, `/usuarios/${dataDocente}/evaluacion-curricular`, idCurricular), { preguntasAlternativas: data });
+console.log('data', data)
+console.log('idCurricular', idCurricular)
+    await setDoc(doc(db, `/usuarios/${dataDocente.dni}/evaluacion-curricular`, idCurricular), {
+      preguntasAlternativas: data,
+    });
+
+    dataDocente.grados?.forEach(async (grado) => {
+      if (grado === 1 || grado === 2) {
+        data.forEach(async (eva) => {
+          const docRef = doc(db, `/reporte-curricular/${idCurricular}/${currentUserData.dni}/nivel1/nivel1`, `${eva.order}`)
+          await setDoc(docRef, {
+            n: 0,
+            cn: 0,
+            av: 0,
+            f: 0,
+            s: 0
+          })
+            .then(response => {
+              if (eva.alternativas?.length === 5) {
+                eva.alternativas?.map(async (alt) => {
+                  if (alt.selected === true && alt.acronimo === "n") {
+                    await updateDoc(docRef, { n: increment(1) })
+                  }
+                  if (alt.selected === true && alt.acronimo === "cn") {
+                    await updateDoc(docRef, { cn: increment(1) })
+                  }
+                  if (alt.selected === true && alt.acronimo === "av") {
+                    await updateDoc(docRef, { av: increment(1) })
+                  }
+                  if (alt.selected === true && alt.acronimo === "f") {
+                    await updateDoc(docRef, { f: increment(1) })
+                  }
+                  if (alt.selected === true && alt.acronimo === "s") {
+                    await updateDoc(docRef, { s: increment(1) })
+                  }
+                })
+              }
+            })
+        })
+      }
+      if(grado === 3 || grado === 4){
+        data.forEach(async (eva) => {
+          const docRef = doc(db, `/reporte-curricular/${idCurricular}/${currentUserData.dni}/nivel2/nivel2`, `${eva.order}`)
+          await setDoc(docRef, {
+            n: 0,
+            cn: 0,
+            av: 0,
+            f: 0,
+            s: 0
+          })
+          .then(response => {
+            if (eva.alternativas?.length === 5) {
+              eva.alternativas?.map(async (alt) => {
+                if (alt.selected === true && alt.acronimo === "n") {
+                  await updateDoc(docRef, { n: increment(1) })
+                }
+                if (alt.selected === true && alt.acronimo === "cn") {
+                  await updateDoc(docRef, { cn: increment(1) })
+                }
+                if (alt.selected === true && alt.acronimo === "av") {
+                  await updateDoc(docRef, { av: increment(1) })
+                }
+                if (alt.selected === true && alt.acronimo === "f") {
+                  await updateDoc(docRef, { f: increment(1) })
+                }
+                if (alt.selected === true && alt.acronimo === "s") {
+                  await updateDoc(docRef, { s: increment(1) })
+                }
+              })
+            }
+          })
+        })
+      }
+      if(grado === 5 || grado === 6){
+        data.forEach(async (eva) => {
+          const docRef = doc(db, `/reporte-curricular/${idCurricular}/${currentUserData.dni}/nivel3/nivel3`, `${eva.order}`)
+          await setDoc(docRef, {
+            n: 0,
+            cn: 0,
+            av: 0,
+            f: 0,
+            s: 0
+          })
+          .then(response => {
+            if (eva.alternativas?.length === 5) {
+              eva.alternativas?.map(async (alt) => {
+                if (alt.selected === true && alt.acronimo === "n") {
+                  await updateDoc(docRef, { n: increment(1) })
+                }
+                if (alt.selected === true && alt.acronimo === "cn") {
+                  await updateDoc(docRef, { cn: increment(1) })
+                }
+                if (alt.selected === true && alt.acronimo === "av") {
+                  await updateDoc(docRef, { av: increment(1) })
+                }
+                if (alt.selected === true && alt.acronimo === "f") {
+                  await updateDoc(docRef, { f: increment(1) })
+                }
+                if (alt.selected === true && alt.acronimo === "s") {
+                  await updateDoc(docRef, { s: increment(1) })
+                }
+              })
+            }
+          })
+        })
+      }
+    })
   }
   const getEvaluacionCurricularDocente = async (dataDocente: string) => {
     console.log(`/usuarios/${dataDocente}/evaluacion-curricular`)
@@ -239,6 +343,53 @@ const useEvaluacionCurricular = () => {
     dispatch({ type: AppAction.EVALUACION_CURRICULAR, payload: [] })
     dispatch({ type: AppAction.EVALUACION_CURRICULAR_ALTERNATIVA, payload: [] })
   }
+
+  const reporteCD = async (idCurricular: string, dniDirector: string, nivel: string) => {
+    const pathRef = collection(db, `/reporte-curricular/${idCurricular}/${dniDirector}/nivel${nivel}/nivel${nivel}`)
+    const arrayReporteCurricularDirector: ReporteDataEstadisticasCD[] = []
+
+    const newPromise = new Promise<ReporteDataEstadisticasCD[]>(async (resolve, reject) => {
+      try {
+
+        //traer los datos de las preguntas de habilidad
+        const pathRefHabilidad = collection(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`)
+        const arrayEvaluacionHabilidad: EvaluacionHabilidad[] = []
+        await getDocs(pathRefHabilidad)
+          .then(response => {
+            response.forEach(doc => {
+              arrayEvaluacionHabilidad.push(doc.data())
+            })
+            dispatch({ type: AppAction.REPORT_PREGUNTA_HABILIDAD, payload: arrayEvaluacionHabilidad })
+          })
+        
+        
+        await getDocs(pathRef)
+          .then(response => {
+            let index = 0
+            response.forEach(doc => {
+              index = index + 1
+              arrayReporteCurricularDirector.push({
+                data: doc.data(),
+                id: doc.id,
+                order: Number(doc.id),
+                total: doc.data().n + doc.data().cn + doc.data().av + doc.data().f + doc.data().s
+              })
+            })
+            if (response.size === arrayReporteCurricularDirector.length) {
+              arrayReporteCurricularDirector.sort((a: any, b: any) => a.id - b.id)
+              resolve(arrayReporteCurricularDirector)
+            }
+          })
+      } catch (error) {
+        console.log('error', error)
+        reject()
+      }
+    })
+
+    newPromise.then(res => {
+      dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: arrayReporteCurricularDirector })
+    })
+  }
   return {
     createEvaluacionCurricular,
     getEvaluacionCurricular,
@@ -254,7 +405,8 @@ const useEvaluacionCurricular = () => {
     getCaracteristicasCurricular,
     updateDocenteParaCoberturaCurricular,
     guardarAnexosCurricular,
-    resetValuesEvaluarCurricular
+    resetValuesEvaluarCurricular,
+    reporteCD
   }
 }
 export default useEvaluacionCurricular

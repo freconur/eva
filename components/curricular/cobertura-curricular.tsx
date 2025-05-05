@@ -10,7 +10,7 @@ interface Props {
   paHabilidad: EvaluacionHabilidad[],
   evaluacionCurricular: EvaluacionCurricular[],
   evaluacionCurricularAlternativa: EvaluacionCurricularAlternativa[],
-  dataDocente: string
+  dataDocente: User
 }
 const CoberturaCurricular = ({ dataDocente, paHabilidad, evaluacionCurricular, evaluacionCurricularAlternativa }: Props) => {
 
@@ -28,7 +28,7 @@ const CoberturaCurricular = ({ dataDocente, paHabilidad, evaluacionCurricular, e
     setShowEvaluacion(!showEvaluacion)
   }
   useEffect(() => {
-    getEvaluacionCurricularDocente(dataDocente)
+    getEvaluacionCurricularDocente(`${dataDocente.dni}`)
     //el valor que retorna esta funcion es el unico que se usa para pintar la tabla, nos trae toda los resultados de las evaluaciones que tiene el docente
 
   }, [dataDocente])

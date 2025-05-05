@@ -70,6 +70,10 @@ export const sectionByGrade = [
   { id: 14, name: "n" },
   { id: 15, name: "o" }, */
 ]
+export const genero = [
+  { id: 1, name: "masculino" },
+  { id: 2, name: "femenino" },
+]
 
 export const area = [
   { id: 1, name: "rural" },
@@ -113,3 +117,20 @@ export const nivelCobertura =
       },
     ],
   }
+ export const nivelCurricularPreguntas = [
+    {
+      id:1,
+      selected: false,
+      description:"nivel 1"
+    },
+    {
+      id:2,
+      selected: false,
+      description:"nivel 2"
+    },  
+    {
+      id:3,
+      selected: false,
+      description:"nivel 3"
+    },
+  ]

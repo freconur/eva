@@ -47,7 +47,9 @@ export type AppReducerValues = {
   evaluacionCurricularById:EvaluacionCurricularAlternativa,
   allEvaluacionesCurricularesDocente:EvaluacionCurricularAlternativa[],
   caracteristicaCurricular:CaracteristicaCurricular[],
-  allEspecialistas:User[]
+  allEspecialistas:User[],
+  reporteCurricularDirector:ReporteDataEstadisticasCD[],
+  reportePreguntaHabilidad:EvaluacionHabilidad[]
 };
 
 export type AppActions =
@@ -110,6 +112,8 @@ export type AppActions =
   | { type: AppAction.ALL_EVALUACIONES_CURRICULARES_DOCENTE; payload: EvaluacionCurricularAlternativa[] }
   | { type: AppAction.CARACTERISTICA_CURRICULAR; payload: CaracteristicaCurricular[] }
   | { type: AppAction.ALL_ESPECIALISTAS; payload: User[] }
+  | { type: AppAction.REPORT_CURRICULAR_DIRECTOR; payload: ReporteDataEstadisticasCD[] }
+  | { type: AppAction.REPORT_PREGUNTA_HABILIDAD; payload: EvaluacionHabilidad[] }
 export type LoginData = {
   usuario: string;
   contrasena: string;
@@ -174,6 +178,9 @@ export type UserEstudiante = {
   dniDocente?: string;
   respuestasCorrectas?: string;
   totalPreguntas?: string;
+  grado?: number;
+  seccion?: string;
+  genero?: string;
 };
 
 export type Estudiante = {
@@ -197,7 +204,7 @@ export type User = {
   rol?: number;
   region?: number;
   caracteristicaCurricular?:string;
-  grados?:number[] | number;
+  grados?:number[];
   secciones?:number[] | number;
   area?:number;
   distrito?:string;
@@ -341,4 +348,17 @@ export type AlternativasCobertura = {
   alternativa:string,
   descripcion?:string,
   selected?:boolean
+}
+export type ReporteCurricularDirector = {
+  n?:number,
+  cn?:number,
+  av?:number,
+  f?:number,
+  s?:number,
+}
+export type ReporteDataEstadisticasCD = {
+  order?:number,
+  id?:string,
+  data?:ReporteCurricularDirector,
+  total?:number
 }

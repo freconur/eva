@@ -14,13 +14,13 @@ interface Props {
   evaluacionCurricular: EvaluacionCurricularAlternativa[],
   idCurricular: string,
   evaluacionCurricularById: EvaluacionCurricularAlternativa,
-  dataDocente:string,
+  dataDocente:User,
   paHabilidad:PaHanilidad[]
   /*  id: string
    getPreguntaRespuestaDocentes: PRDocentes[] */
 }
 
-const EvaluarCurriculaDocente = ({ paHabilidad,dataDocente,handleShowEvaluarCurriculaDocente, evaluacionCurricular, idCurricular, evaluacionCurricularById }: Props) => {
+const EvaluarCurriculaDocente = ({ paHabilidad,dataDocente,handleShowEvaluarCurriculaDocente, idCurricular }: Props) => {
 
   const { loaderSalvarPregunta } = useGlobalContext()
   const [updatedEvaluacion, setUpdatedEvaluacion] = useState<PaHanilidad[]>([])
@@ -63,7 +63,6 @@ const EvaluarCurriculaDocente = ({ paHabilidad,dataDocente,handleShowEvaluarCurr
   }
   const handleGuardarEvaluacion = () => {
     salvarEvaluacionCurricular(idCurricular, dataDocente, updatedEvaluacion)
-    console.log('paHabilidad', paHabilidad)
   }
   console.log('updatedEvaluacion', updatedEvaluacion)
   return container

@@ -31,7 +31,6 @@ const Evaluacion = () => {
     }
   }, [route.query.idExamen])
 
-  console.log('preguntasRespuestas', preguntasRespuestas)
   return (
     <>
       

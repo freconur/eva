@@ -190,6 +190,9 @@ export const useAgregarEvaluaciones = () => {
       nombresApellidos: data.nombresApellidos,
       dni: data.dni,
       dniDocente: currentUserData.dni,
+      grado: data.grado,
+      seccion: data.seccion,
+      genero: data.genero,
       respuestasCorrectas: respuestasCorrectas,
       totalPreguntas: sizePreguntas,
       respuestas:pq

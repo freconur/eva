@@ -94,6 +94,7 @@ const CoberturaCurricular = () => {
                       <th>#</th>
                       <th>Nombre de evaluación</th>
                       <th>Acciones</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody className={styles.tableBody}>
@@ -110,6 +111,9 @@ const CoberturaCurricular = () => {
                               <Link href="" className={styles.tableLink}>
                                 {evaluacion.name?.toUpperCase()}
                               </Link>
+                            </td>
+                            <td>
+                              <Link href={`/directores/cobertura-curricular/reporte?idCurricular=${evaluacion.id}`} className={styles.tableLink}>reporte</Link>
                             </td>
                             <td className={styles.tableCell}>
                               <div className={styles.tableActions}>

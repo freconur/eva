@@ -51,7 +51,9 @@ const initialState: AppReducerValues = {
   evaluacionCurricularById:{},
   allEvaluacionesCurricularesDocente:[],
   caracteristicaCurricular:[],
-  allEspecialistas:[]
+  allEspecialistas:[],
+  reporteCurricularDirector:[],
+  reportePreguntaHabilidad:[]
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

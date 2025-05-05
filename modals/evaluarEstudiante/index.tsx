@@ -6,7 +6,7 @@ import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones";
 import { Alternativa, Alternativas, Evaluaciones, PreguntasRespuestas } from "@/features/types/types";
 import { RiLoader4Line } from "react-icons/ri";
-
+import { gradosDeColegio, sectionByGrade, genero } from '../../fuctions/regiones'
 interface Props {
   id: string,
   handleShowModalEstudiante: () => void,
@@ -41,25 +41,31 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
     })
   }
   const validateUltimaRespuesta = (data: PreguntasRespuestas[], dataForm:any) => {
+    let respuestaCorrecta = false;
+    
     data.forEach(pq => {
-      // if (preguntasRespuestasEstudiante[ordenLimitePregunta]?.id === pq.id) {
       if (preguntasRespuestasEstudiante[ordenLimitePregunta]?.order === pq.order) {
         pq.alternativas?.forEach(a => {
-          if (a.selected === true) {
-            if (a.alternativa?.toLowerCase() === pq.respuesta?.toLowerCase()) {
-              // setRespuestasCorrectas(repuestasCorrectas + 1)
-              salvarPreguntRespuestaEstudiante(dataForm, id, preguntasRespuestasEstudiante, repuestasCorrectas + 1, sizePreguntas)
-            }
+          if (a.selected === true && a.alternativa?.toLowerCase() === pq.respuesta?.toLowerCase()) {
+            respuestaCorrecta = true;
           }
-        })
+        });
       }
-    })
+    });
+
+    if (respuestaCorrecta) {
+      salvarPreguntRespuestaEstudiante(dataForm, id, preguntasRespuestasEstudiante, repuestasCorrectas + 1, sizePreguntas);
+    } else {
+      salvarPreguntRespuestaEstudiante(dataForm, id, preguntasRespuestasEstudiante, repuestasCorrectas, sizePreguntas);
+    }
   }
   const handleSubmitform = handleSubmit(async (data) => {
     // setOrdenLimitePregunta(ordenLimitePregunta + 1)
     // validateRespuests(preguntasRespuestasEstudiante)
     validateUltimaRespuesta(preguntasRespuestasEstudiante, data)
       // salvarPreguntRespuestaEstudiante(data, id, preguntasRespuestasEstudiante, repuestasCorrectas, sizePreguntas)
+
+      
       getPreguntasRespuestas(id)
       setOrdenLimitePregunta(0)
       setRespuestasCorrectas(0)
@@ -105,7 +111,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
         })
       }
     })
-    console.log('preguntasRespuestasEstudiante', preguntasRespuestasEstudiante)
+   /*  console.log('preguntasRespuestasEstudiante', preguntasRespuestasEstudiante) */
     prEstudiantes(preguntasRespuestasEstudiante)
     
   }
@@ -120,10 +126,10 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
 
 
   // console.log('preguntasRespuestas', preguntasRespuestas)
-console.log('sizePreguntas', sizePreguntas)
+/* console.log('sizePreguntas', sizePreguntas)
 console.log('repuestasCorrectas', repuestasCorrectas)
 
-console.log('ordenLimitePregunta', ordenLimitePregunta)
+console.log('ordenLimitePregunta', ordenLimitePregunta) */
 
   return container
     ? createPortal(
@@ -178,6 +184,64 @@ console.log('ordenLimitePregunta', ordenLimitePregunta)
                       placeholder="NOMBRES Y APELLIDOS DE ESTUDIANTES"
                     />
                     {errors.nombresApellidos && <span className='text-red-400 text-sm'>{errors.nombresApellidos.message as string}</span>}
+                  </div>
+
+                  <div className={styles.containerGradoSeccionGenero}>
+                  <div className='w-full my-2'>
+                    <select
+                      {...register("grado",
+                        {
+                          required: { value: true, message: "El grado es requerido" }
+                        }
+                      )}
+                      className={styles.inputNombresDni}
+                    >
+                      <option value="">--GRADO--</option>
+                      {gradosDeColegio.map((grado) => (
+                        <option key={grado.id} value={grado.id}>
+                          {grado.name}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.grado && <span className='text-red-400 text-sm'>{errors.grado.message as string}</span>}
+                  </div>
+                  <div className='w-full my-2'>
+                    <select
+                      {...register("seccion",
+                        {
+                          required: { value: true, message: "La sección es requerida" }
+                        }
+                      )}
+                      className={styles.inputNombresDni}
+                    >
+                      <option value="">--SECCIÓN--</option>
+                      {sectionByGrade.map((seccion) => (
+                        <option key={seccion.id} value={seccion.id}>
+                          {seccion.name.toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.seccion && <span className='text-red-400 text-sm'>{errors.seccion.message as string}</span>}
+                  </div>
+                  <div className='w-full my-2'>
+                    <select
+                      {...register("genero",
+                        {
+                          required: { value: true, message: "El género es requerido" }
+                        }
+                      )}
+                      className={styles.inputNombresDni}
+                    >
+                      <option value="">--GÉNERO--</option>
+                      {genero.map((gen) => (
+                        <option key={gen.id} value={gen.id}>
+                          {gen.name.toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.genero && <span className='text-red-400 text-sm'>{errors.genero.message as string}</span>}
+                  </div>
+
                   </div>
                   {/* <p className={styles.tituloPreguntasRespuestas}>preguntas</p> */}
                   <div className={styles.preguntasContainer}>

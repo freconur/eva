@@ -43,7 +43,7 @@ const EvaluarCurricula = () => {
         </div>
         <DatosInstitucion dataDocente={dataDocente} />
         <DatosMonitor dataMonitor={currentUserData}/>
-        <CoberturaCurricular dataDocente={`${router.query.idDocente}`} evaluacionCurricularAlternativa={evaluacionCurricularAlternativa} paHabilidad={paHabilidad} evaluacionCurricular={evaluacionCurricular}/>
+        <CoberturaCurricular dataDocente={dataDocente} evaluacionCurricularAlternativa={evaluacionCurricularAlternativa} paHabilidad={paHabilidad} evaluacionCurricular={evaluacionCurricular}/>
         <AnexosCurricular dataDocente={dataDocente}/>
       </div>
 

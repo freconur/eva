@@ -90,10 +90,10 @@ const Reportes = () => {
     )
   }
 
-  useEffect(() => { 
+  useEffect(() => {
     getDataEvaluacion(`${route.query.idEvaluacion}`);
-    reporteEvaluacionDocentes(`${route.query.idEvaluacion}`); 
-    getPreguntasRespuestasDocentes(`${route.query.idEvaluacion}`) 
+    reporteEvaluacionDocentes(`${route.query.idEvaluacion}`);
+    getPreguntasRespuestasDocentes(`${route.query.idEvaluacion}`)
   }, [route.query.idEvaluacion, currentUserData.dni])
 
   return (
@@ -108,14 +108,14 @@ const Reportes = () => {
           <div className='grid relative z-10'>
             <div className={styles.header}>
               <div className={styles.headerOverlay}></div>
-              
+
               <Image
                 className={styles.headerImage}
                 src={header}
                 alt="imagen de cabecera"
                 priority
               />
-              
+
               <div className={styles.headerContent}>
                 <h1 className={styles.headerTitle}>
                   Reporte de {dataEvaluacionDocente?.name}

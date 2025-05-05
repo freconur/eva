@@ -88,7 +88,7 @@ const ReporteRegional = () => {
     if (route.query.idEvaluacion) {
       if (regionValue.length > 0 && route.query.idEvaluacion.length > 0) {
         console.log('cumplo')
-        reporteUgelGlobal(Number(regionValue), `${route.query.idEvaluacion}`,getPreguntaRespuestaDocentes.length )
+        reporteUgelGlobal(Number(regionValue), `${route.query.idEvaluacion}`, getPreguntaRespuestaDocentes.length)
       }
     }
   }, [regionValue, route.query.idEvaluacion])
@@ -120,7 +120,7 @@ const ReporteRegional = () => {
   useEffect(() => {
     getDataEvaluacion(`${route.query.idEvaluacion}`)
     getPreguntasRespuestasDirectores(`${route.query.idEvaluacion}`)
-  },[route.query.idEvaluacion])
+  }, [route.query.idEvaluacion])
   // console.log('reporteRegional', reporteRegional)
   // console.log('getPreguntaRespuestaDocentes', getPreguntaRespuestaDocentes)
   const options = {
