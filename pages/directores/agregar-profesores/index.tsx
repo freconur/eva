@@ -4,95 +4,209 @@ import useUsuario from '@/features/hooks/useUsuario'
 import React, { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { RiLoader4Line } from 'react-icons/ri'
+import { gradosDeColegio, sectionByGrade, genero } from '@/fuctions/regiones'
+import styles from './styles.module.css'
+
+interface FormData {
+  nombres: string;
+  apellidos: string;
+  dni: string;
+  grados: number[];
+  secciones: number[];
+  genero: string;
+}
 
 const AgregarDirectores = () => {
-
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
-  const { getUserData, createNewDirector, crearNuevoDocente } = useUsuario()
+  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>()
+  const { getUserData, crearNuevoDocente } = useUsuario()
   const { currentUserData, loaderPages, warningUsuarioExiste } = useGlobalContext()
 
   useEffect(() => {
     getUserData()
   }, [currentUserData.dni])
-  const handleAgregarDirector = handleSubmit(data => {
 
-    crearNuevoDocente({ ...data, perfil: { rol: 3, nombre: "docente" } })
+  const handleAgregarDirector = handleSubmit((data) => {
+    console.log("data", data)
+    crearNuevoDocente({ 
+      ...data, 
+      perfil: { rol: 3, nombre: "docente" } 
+    })
     reset()
   })
 
   return (
-    <div className='grid h-login w-full p-1 place-content-center'>
-      <div className='w-[700px] bg-hoverTableSale p-10 shadow-lg'>
-        {
-          loaderPages ?
-            <div className='grid w-[600px] h-[600px] '>
-              <div className='flex justify-center items-center'>
-                <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-                <span className='text-colorTercero animate-pulse'>...creado usuario director</span>
-              </div>
+    <div className={styles.container}>
+      <div className={styles.formContainer}>
+        {loaderPages ? (
+          <div className={styles.loaderContainer}>
+            <div className={styles.loader}>
+              <RiLoader4Line className="animate-spin text-3xl" />
+              <span className={styles.loaderText}>...creando usuario docente</span>
             </div>
-            :
-            <>
-              <h1 className='font-semibold text-center text-2xl uppercase text-colorPrincipal font-montserrat' >Registrar Profesor</h1>
-              <form onClick={handleAgregarDirector} action="">
-                <div className='w-full  my-5'>
-                  <p className='text-slate-400 text-sm uppercase font-montserrat mb-2'>nombres de docente:</p>
-                  <input
-                    {...register("nombres",
-                      {
-                        required: { value: true, message: "institucion es requerido" },
-                        minLength: { value: 5, message: "nombre debe tener un minimo de 5 caracteres" },
-                        maxLength: { value: 100, message: "nombre debe tener un maximo de 100 caracteres" },
-                      }
-                    )}
-                    className='p-3 outline-none rounded-md shadow-md w-full text-slate-500'
-                    type="text"
-                    placeholder="nombre de docente"
-                  />
-                  {errors.nombres && <span className='text-red-400 text-sm'>{errors.nombres.message as string}</span>}
+          </div>
+        ) : (
+          <>
+            <h1 className={styles.title}>
+              Registrar Profesor
+            </h1>
+            <form onSubmit={handleAgregarDirector} className={styles.form}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Nombres del docente:
+                </label>
+                <input
+                  {...register("nombres", {
+                    required: { value: true, message: "Los nombres son requeridos" },
+                    minLength: { value: 5, message: "El nombre debe tener un mínimo de 5 caracteres" },
+                    maxLength: { value: 100, message: "El nombre debe tener un máximo de 100 caracteres" },
+                    pattern: { value: /^[A-Za-zÁáÉéÍíÓóÚúÑñ\s]+$/, message: "Solo se permiten letras y espacios" }
+                  })}
+                  className={styles.input}
+                  type="text"
+                  placeholder="Ingrese los nombres del docente"
+                />
+                {errors.nombres && (
+                  <span className={styles.error}>{errors.nombres.message}</span>
+                )}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Apellidos del docente:
+                </label>
+                <input
+                  {...register("apellidos", {
+                    required: { value: true, message: "Los apellidos son requeridos" },
+                    minLength: { value: 3, message: "Los apellidos deben tener un mínimo de 3 caracteres" },
+                    maxLength: { value: 40, message: "Los apellidos deben tener un máximo de 40 caracteres" },
+                    pattern: { value: /^[A-Za-zÁáÉéÍíÓóÚúÑñ\s]+$/, message: "Solo se permiten letras y espacios" }
+                  })}
+                  className={styles.input}
+                  type="text"
+                  placeholder="Ingrese los apellidos del docente"
+                />
+                {errors.apellidos && (
+                  <span className={styles.error}>{errors.apellidos.message}</span>
+                )}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  DNI:
+                </label>
+                <input
+                  {...register("dni", {
+                    required: { value: true, message: "El DNI es requerido" },
+                    minLength: { value: 8, message: "El DNI debe tener 8 caracteres" },
+                    maxLength: { value: 8, message: "El DNI debe tener 8 caracteres" },
+                    pattern: { value: /^[0-9]+$/, message: "Solo se permiten números" }
+                  })}
+                  className={styles.input}
+                  type="text"
+                  placeholder="Ingrese el DNI del docente"
+                />
+                {errors.dni && (
+                  <span className={styles.error}>{errors.dni.message}</span>
+                )}
+              </div>
+
+              <div className={styles.formRow}>
+                <div className={styles.formColumn}>
+                  <label className={styles.label}>
+                    Grado:
+                  </label>
+                  <div className={styles.checkboxGroup}>
+                    {gradosDeColegio.map((grado) => (
+                      <div key={grado.id} className={styles.checkboxItem}>
+                        <input
+                          type="checkbox"
+                          id={`grado-${grado.id}`}
+                          value={Number(grado.id)}
+                          {...register("grados", { 
+                            required: { value: true, message: "El grado es requerido" }
+                          })}
+                          className={styles.checkbox}
+                        />
+                        <label htmlFor={`grado-${grado.id}`} className={styles.checkboxLabel}>
+                          {grado.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {errors.grados && (
+                    <span className={styles.error}>{errors.grados.message}</span>
+                  )}
                 </div>
-                <div className='w-full my-5'>
-                  <p className='text-slate-400 text-sm uppercase mb-2'>apellidos de docente:</p>
-                  <input
-                    {...register("apellidos",
-                      {
-                        required: { value: true, message: "nombre es requerido" },
-                        minLength: { value: 3, message: "numero modular debe tener un minimo de 3 caracteres" },
-                        maxLength: { value: 40, message: "numero modular debe tener un maximo de 40 caracteres" },
-                      }
-                    )}
-                    className='p-3 outline-none rounded-md shadow-md w-full text-slate-500'
-                    type="text"
-                    placeholder="apellidos de docente" />
-                  {errors.apellidos && <span className='text-red-400 text-sm'>{errors.apellidos.message as string}</span>}
+
+                <div className={styles.formColumn}>
+                  <label className={styles.label}>
+                    Sección:
+                  </label>
+                  <div className={styles.checkboxGroup}>
+                    {sectionByGrade.map((seccion) => (
+                      <div key={seccion.id} className={styles.checkboxItem}>
+                        <input
+                          type="checkbox"
+                          id={`seccion-${seccion.id}`}
+                          value={Number(seccion.id)}
+                          {...register("secciones", { 
+                            required: { value: true, message: "La sección es requerida" }
+                          })}
+                          className={styles.checkbox}
+                        />
+                        <label htmlFor={`seccion-${seccion.id}`} className={styles.checkboxLabel}>
+                          {seccion.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {errors.secciones && (
+                    <span className={styles.error}>{errors.secciones.message}</span>
+                  )}
                 </div>
-                <div className='w-full my-5 '>
-                  <p className='text-slate-400 text-sm uppercase mb-2'>dni:</p>
-                  <input
-                    {...register("dni",
-                      {
-                        required: { value: true, message: "dni es requerido" },
-                        minLength: { value: 8, message: "dni debe tener un minimo de 8 caracteres" },
-                        maxLength: { value: 8, message: "dni debe tener un maximo de 8 caracteres" },
-                      }
-                    )}
-                    className='p-3 outline-none rounded-md shadow-md w-full text-slate-500'
-                    type="number"
-                    placeholder="dni de docente" />
-                  {errors.dni && <span className='text-red-400 text-sm'>{errors.dni.message as string}</span>}
+
+                <div className={styles.formColumn}>
+                  <label className={styles.label}>
+                    Género:
+                  </label>
+                  <select
+                    {...register("genero", { 
+                      required: { value: true, message: "El género es requerido" }
+                    })}
+                    className={styles.select}
+                  >
+                    <option value="">Seleccione género</option>
+                    {genero.map((gen) => (
+                      <option key={gen.id} value={gen.id}>
+                        {gen.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.genero && (
+                    <span className={styles.error}>{errors.genero.message}</span>
+                  )}
                 </div>
-                <div className='justify-center flex items-center'>
-                  {warningUsuarioExiste?.length > 0 && <p className='text-teal-700 '>{warningUsuarioExiste}</p>}
+              </div>
+
+              {warningUsuarioExiste?.length > 0 && (
+                <div className={styles.warning}>
+                  <p>{warningUsuarioExiste}</p>
                 </div>
-                <button className='flex justify-center items-center bg-colorSegundo hover:opacity-80 duration-300 p-3 rounded-md w-full text-white hover:text-white uppercase font-semibold font-comfortaa'>registrar</button>
-              </form>
-            </>
-        }
+              )}
+
+              <button 
+                type="submit"
+                className={styles.button}
+              >
+                Registrar
+              </button>
+            </form>
+          </>
+        )}
       </div>
     </div>
   )
 }
-
 
 export default AgregarDirectores
 AgregarDirectores.Auth = PrivateRouteDirectores

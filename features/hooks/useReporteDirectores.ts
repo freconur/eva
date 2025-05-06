@@ -6,8 +6,8 @@ import {
   query,
   setDoc,
   where,
-} from "firebase/firestore/lite";
-import { DataEstadisticas, Region } from "../types/types";
+} from "firebase/firestore";
+import { DataEstadisticas, Region, UserEstudiante } from "../types/types";
 import {
   useGlobalContext,
   useGlobalContextDispatch,
@@ -23,31 +23,46 @@ export const useReporteDirectores = () => {
     idDirector: string,
     idEvaluacion: string
   ) => {
+
+    //1.-traer a todos los docentes que estan acargo del director
+    //2.-comenzar a iterar en el array de docentes y hacer get de las evaluaciones de cada docente
+    //3.-hacer acumulado de las evaluaciones de cada docente
+    //4.-hacer set de los datos en la collection de evaluaciones-directores
     const docentesDelDirector: string[] = [];
-    dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: true });
+    /* dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: true }); */
     const getDocenterIdRef = query(
       collection(db, "usuarios"),
       where("dniDirector", "==", `${idDirector}`)
-    );
+    );//me traigo a todos los docentes que estan acargo del director
+
     //aqui debemos de validar si existe evaluaciones de los docentes de dicha evalucion
+
+    //1.-traer a todos los docentes que estan acargo del director
     const getDniDocentesDeDirectores = new Promise<string[]>(
       async (resolve, reject) => {
+        let index = 0
         try {
-          await getDocs(getDocenterIdRef).then((res) => {
-            if (res.size === 0) {
-              //obtengo todos los dni de los docentes que estan acargo del director si no tiene no devuelve resultados
-              console.log("res.size", res.size);
+          await getDocs(getDocenterIdRef).then((docente) => {
+            //obtengo todos los dni de los docentes que estan acargo del director si no tiene no devuelve reultados
+            if (docente.size === 0) {
+              //entro aqui si no hay docentes que han evaluado a sus estudiantes
+              console.log("docente.size", docente.size);
               dispatch({
                 type: AppAction.LOADER_REPORTE_DIRECTOR,
                 payload: false,
               });
               reject();
             } else {
-              res.forEach((doc) => {
+              console.log("entro aqui si hay docentes que han evaluado a sus estudiantes");
+              //entro aqui si hay docentes que han evaluado a sus estudiantes
+              docente.forEach((doc) => {
+                index = index + 1
                 //obtengo todos los dni de los docentes que estan acargo del director
                 docentesDelDirector.push(doc.id);
+                if (index === docente.size) {
+                  resolve(docentesDelDirector)
+                }
               });
-              resolve(docentesDelDirector);
             }
           });
         } catch (error) {
@@ -56,186 +71,140 @@ export const useReporteDirectores = () => {
         }
       }
     );
+
+    //2.-comenzar a iterar en el array de docentes y hacer get de las evaluaciones de cada docente
     //con esta promesa una vez tenga los dni de todo los docentes comienzo hacer get del acumulativo del examen hecho por el profesor
-    const reporteDirectorColegio = new Promise<DataEstadisticas[]>(
-      async (resolve, reject) => {
-        let arrayAcumulativoDeRespuestas: DataEstadisticas[] = [];
+
+    getDniDocentesDeDirectores.then(async (docentes) => {
+      console.log("docentes", docentes)
+      const promesaEstudiantes = docentes.map(async (docente) => {
         try {
-          await getDniDocentesDeDirectores.then((arrayDocentes) => {
-            arrayDocentes.forEach(async (dni, index) => {
-              const pathRef = collection(
-                db,
-                `/evaluaciones/${idEvaluacion}/${dni}`
-              );
-              await getDocs(pathRef).then((evaluaciones) => {
-                if (evaluaciones.size > 0) {
-                  if (arrayAcumulativoDeRespuestas.length === 0) {
-                    const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-                    evaluaciones.forEach((doc) =>
-                      arrayOrdenadoRespuestas.push({
-                        ...doc.data(),
-                        id: doc.id,
-                        total:
-                          doc.data().d === undefined
-                            ? Number(doc.data().a) +
-                              Number(doc.data().b) +
-                              Number(doc.data().c)
-                            : Number(doc.data().a) +
-                              Number(doc.data().b) +
-                              Number(doc.data().c) +
-                              Number(doc.data().d),
-                      })
-                    );
-                    console.log("array vacio agregando datos first time");
-                    arrayOrdenadoRespuestas
-                      .sort((a: any, b: any) => a.id - b.id)
-                      .forEach((a) => arrayAcumulativoDeRespuestas.push(a));
-                  } else if (arrayAcumulativoDeRespuestas.length > 0) {
-                    const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-                    evaluaciones.forEach((doc) =>
-                      arrayOrdenadoRespuestas.push({
-                        ...doc.data(),
-                        id: doc.id,
-                        total:
-                          doc.data().d === undefined
-                            ? Number(doc.data().a) +
-                              Number(doc.data().b) +
-                              Number(doc.data().c)
-                            : Number(doc.data().a) +
-                              Number(doc.data().b) +
-                              Number(doc.data().c) +
-                              Number(doc.data().d),
-                      })
-                    );
-                    // if(doc.data().d === undefined)
-                    arrayOrdenadoRespuestas
-                      ?.sort((a: any, b: any) => a.id - b.id)
-                      .forEach((data) => {
-                        arrayAcumulativoDeRespuestas?.map((rta, i) => {
-                          if (rta.d === undefined) {
-                            if (rta.id === data.id) {
-                              rta.a = Number(rta.a) + Number(data.a);
-                              rta.b = Number(rta.b) + Number(data.b);
-                              rta.c = Number(rta.c) + Number(data.c);
-                              rta.total =
-                                Number(rta.total) + Number(data.total);
-                            }
-                          } else {
-                            if (rta.id === data.id) {
-                              rta.a = Number(rta.a) + Number(data.a);
-                              rta.b = Number(rta.b) + Number(data.b);
-                              rta.c = Number(rta.c) + Number(data.c);
-                              rta.d = Number(rta.d) + Number(data.d);
-                              rta.total =
-                                Number(rta.total) + Number(data.total);
-                            }
-                          }
-                        });
-                      });
-                  }
-                } else {
-                  dispatch({
-                    type: AppAction.LOADER_REPORTE_DIRECTOR,
-                    payload: false,
-                  });
-                }
-                if (arrayDocentes.length === index + 1) {
-                  resolve(arrayAcumulativoDeRespuestas);
-                }
-              });
-            });
+          const path = `/usuarios/${docente}/${idEvaluacion}/`;
+          const pathRefEstudiantes = collection(db, path);
+
+          const snapshot = await getDocs(pathRefEstudiantes);
+          const arrayEstudiantes: UserEstudiante[] = [];
+
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data) {
+              arrayEstudiantes.push({
+                ...data,
+                id: doc.id
+              } as UserEstudiante);
+            }
           });
+          return arrayEstudiantes;
         } catch (error) {
-          console.log("error", error);
-          reject(error);
+          console.error(`Error al obtener datos del docente ${docente}:`, error);
+          return [] as UserEstudiante[];
+        }
+      });
+
+      const dataDeTodosLosEstudiantes = Promise.allSettled(promesaEstudiantes)
+      dataDeTodosLosEstudiantes.then((res) => {
+        const estudiantesExitosos = res
+          .filter((result): result is PromiseFulfilledResult<UserEstudiante[]> =>
+            result.status === 'fulfilled')
+          .map(result => result.value)
+          .flat();
+        //en este dispatch guardare la data de todos los estudiantes que pertenecen a la institucion
+        dispatch({ type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR, payload: estudiantesExitosos })
+        const dataEstadisticasEstudiantes = estudiantesExitosos.reduce((acc, estudiante) => {
+          estudiante.respuestas?.forEach(respuesta => {
+            if (respuesta.order === undefined) return;
+
+            const orderId = respuesta.order.toString();
+            let estadistica = acc.find(stat => stat.id === orderId);
+
+            if (!estadistica) {
+              // Inicializamos con todas las propiedades posibles
+              estadistica = {
+                id: orderId,
+                a: 0,
+                b: 0,
+                c: 0,
+                d: 0,
+                total: 0
+              };
+              acc.push(estadistica);
+            }
+
+            respuesta.alternativas?.forEach(alternativa => {
+              if (!alternativa.selected) return;
+
+              switch (alternativa.alternativa) {
+                case 'a': estadistica!.a = (estadistica!.a || 0) + 1; break;
+                case 'b': estadistica!.b = (estadistica!.b || 0) + 1; break;
+                case 'c': estadistica!.c = (estadistica!.c || 0) + 1; break;
+                case 'd': estadistica!.d = (estadistica!.d || 0) + 1; break;
+              }
+            });
+
+            // Calculamos el total basado en las alternativas presentes
+            const alternativasPresentes = respuesta.alternativas?.some(alt => alt.alternativa === 'd');
+            if (alternativasPresentes) {
+              estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0) + (estadistica!.d || 0);
+            } else {
+              estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0);
+              // Si no hay alternativa 'd', la establecemos como undefined
+              estadistica!.d = undefined;
+            }
+          });
+
+          return acc;
+        }, [] as DataEstadisticas[]);
+
+        dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: dataEstadisticasEstudiantes });
+      })
+    })
+  }
+
+
+  const reporteToTableDirector = (data: UserEstudiante[], { grado, seccion, orden }: { grado: string, seccion: string, orden: string }, idDirector: string, idEvaluacion: string) => {
+    console.log("orden", orden)
+    const dataFiltrada = data?.reduce((acc, estudiante) => {
+      // Si no hay filtros, retornar todos los datos
+      if (!grado && !seccion) {
+        return data;
+      }
+
+      // Filtrar por grado si está presente
+      if (grado && estudiante.grado?.toString() === grado) {
+        // Si también hay sección, filtrar por ambas
+        if (seccion && estudiante.seccion?.toString() === seccion) {
+          acc.push(estudiante);
+        }
+        // Si no hay sección, incluir todos los del grado
+        else if (!seccion) {
+          acc.push(estudiante);
         }
       }
-    );
-    reporteDirectorColegio.then((res) => {
-      console.log("llegamos al final antes del setime");
-      agregarDatosEstadisticosDirector(res, idEvaluacion);
+      // Si solo hay sección y no grado
+      else if (!grado && seccion && estudiante.seccion?.toString() === seccion) {
+        acc.push(estudiante);
+      }
+      return acc; 
+    }, [] as UserEstudiante[]);
 
-      setTimeout(() => {
-        //eszta funcion es la que genera el acumulado en la collection de evaluaciones-directores
-      }, 5000);
-    });
-    // const newPromise = new Promise<DataEstadisticas[]>((resolve, reject) => {
-    //   try {
-    //     docentesDelDirector?.forEach(async (resDocente: string) => {
-    //       // const arrayOrdenadoRespuestas: DataEstadisticas[] = []
-    //       const pathRef = collection(db, `/evaluaciones/${idEvaluacion}/${resDocente}`)
-    //       const getData = await getDocs(pathRef)
-    //       //aqui deberia de ordnar las preguntas que obtengo de cada peticion y darle el valor del id
-    //       // console.log('resDocente', resDocente) // esto es solo el dni
+    // Ordenar los datos según el parámetro orden
+    let dataOrdenada = [...dataFiltrada];
+    if (orden) {
+      switch (orden) {
+        case 'asc':
+          dataOrdenada.sort((a, b) => Number(a.respuestasCorrectas || 0) - Number(b.respuestasCorrectas || 0));
+          break;
+        case 'desc':
+          dataOrdenada.sort((a, b) => Number(b.respuestasCorrectas || 0) - Number(a.respuestasCorrectas || 0));
+          break;
+        default:
+          break;
+      }
+    }
 
-    //       if (getData.empty === false) {
-    //         getData.forEach((data) => {
-    //           // if(getData.empty) return console.log('no hay nada')
-    //           arrayOrdenadoRespuestas.push({ ...data.data(), id: data.id })
-    //         })
-    //         // console.log('arrayOrdenadoRespuestasd', arrayOrdenadoRespuestas)
-    //         // const acumulativoDeRespuestas: DataEstadisticas = { a: Number(0), b: Number(0), c: Number(0) }
-
-    //         if (arrayAcumulativoDeRespuestas.length === 0) {
-    //           // arrayAcumulativoDeRespuestas = [...arrayOrdenadoRespuestas]
-    //           console.log('deberia aparecer una sola vewz')
-    //           arrayOrdenadoRespuestas.sort((a: any, b: any) => a.id - b.id).forEach(a => {
-    //             arrayAcumulativoDeRespuestas.push(a)
-    //           })
-    //           // console.log('arrayAcumulativoDeRespuestas', arrayAcumulativoDeRespuestas)
-    //           // {id= 1} {id= 2 }{id=3}                        data: 2
-    //         } else if (arrayAcumulativoDeRespuestas.length > 0) {
-    //           console.log('segundo nuevo')
-    //           arrayOrdenadoRespuestas.sort((a: any, b: any) => a.id - b.id).forEach(data => {
-    //             arrayAcumulativoDeRespuestas.map(rta => {
-    //               if (rta.id === data.id) {
-    //                 rta.a = Number(data.a) > 0 ? Number(rta.a) + Number(data.a) : Number(rta.a)
-    //                 rta.b = Number(data.b) > 0 ? Number(rta.b) + Number(data.b) : Number(rta.b)
-    //                 rta.c = Number(data.c) > 0 ? Number(rta.c) + Number(data.c) : Number(rta.c)
-
-    //               }
-    //             })
-    //             // console.log('arrayAcumulativoDeRespuestas',arrayAcumulativoDeRespuestas)
-    //           })
-    //         }
-    //       }
-    //     })
-    //     setTimeout(() => {
-    //       resolve(arrayAcumulativoDeRespuestas)
-    //     }, 10000)
-    //     // dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: arrayAcumulativoDeRespuestas })
-    //     // console.log('arrayAcumulativoDeRespuestas', arrayAcumulativoDeRespuestas)
-    //   } catch (error) {
-    //     console.log('error', error)
-    //     reject(false)
-    //   }
-    // })
-    // newPromise.then(response => {
-    //   // console.log('response esperando')
-    //   const newPromiseDos = new Promise<DataEstadisticas[]>((resolve, reject) => {
-    //     try {
-    //       response.map((a, index) => {
-    //         a.total = Number(a.a) + Number(a.b) + Number(a.c)
-    //       })
-    //       resolve(response)
-    //     } catch (error) {
-    //       console.log(error)
-    //       reject(false)
-    //     }
-    //   })
-
-    //   newPromiseDos.then(newArray => {
-    //     dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: newArray })
-    //     dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: false })
-    //     return newArray
-    //   })
-    //     // return response
-    //     .then(res => {
-    //       console.log('res promesados', res)
-    //       agregarDatosEstadisticosDirector(res, idEvaluacion)
-    //     })
-    // })
-  };
+    dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, payload: dataOrdenada });
+    return dataOrdenada;
+  }
 
   const agregarDatosEstadisticosDirector = async (
     data: DataEstadisticas[],
@@ -289,11 +258,7 @@ export const useReporteDirectores = () => {
         });
       }
     });
-    //   } catch (error) {
-    //     console.log("error", error);
-    //     reject(error);
-    //   }
-    // });
+
   };
 
   const resetReporteRegional = () => {
@@ -363,12 +328,12 @@ export const useReporteDirectores = () => {
                           total:
                             doc.data().d === undefined
                               ? Number(doc.data().a) +
-                                Number(doc.data().b) +
-                                Number(doc.data().c)
+                              Number(doc.data().b) +
+                              Number(doc.data().c)
                               : Number(doc.data().a) +
-                                Number(doc.data().b) +
-                                Number(doc.data().c) +
-                                Number(doc.data().d),
+                              Number(doc.data().b) +
+                              Number(doc.data().c) +
+                              Number(doc.data().d),
                         })
                       );
 
@@ -389,12 +354,12 @@ export const useReporteDirectores = () => {
                           total:
                             doc.data().d === undefined
                               ? Number(doc.data().a) +
-                                Number(doc.data().b) +
-                                Number(doc.data().c)
+                              Number(doc.data().b) +
+                              Number(doc.data().c)
                               : Number(doc.data().a) +
-                                Number(doc.data().b) +
-                                Number(doc.data().c) +
-                                Number(doc.data().d),
+                              Number(doc.data().b) +
+                              Number(doc.data().c) +
+                              Number(doc.data().d),
                         })
                       );
                       // if(doc.data().d === undefined)
@@ -607,12 +572,12 @@ export const useReporteDirectores = () => {
                           total:
                             doc.data().d === undefined
                               ? Number(doc.data().a) +
-                                Number(doc.data().b) +
-                                Number(doc.data().c)
+                              Number(doc.data().b) +
+                              Number(doc.data().c)
                               : Number(doc.data().a) +
-                                Number(doc.data().b) +
-                                Number(doc.data().c) +
-                                Number(doc.data().d),
+                              Number(doc.data().b) +
+                              Number(doc.data().c) +
+                              Number(doc.data().d),
                         })
                       );
                       console.log(
@@ -635,12 +600,12 @@ export const useReporteDirectores = () => {
                           total:
                             doc.data().d === undefined
                               ? Number(doc.data().a) +
-                                Number(doc.data().b) +
-                                Number(doc.data().c)
+                              Number(doc.data().b) +
+                              Number(doc.data().c)
                               : Number(doc.data().a) +
-                                Number(doc.data().b) +
-                                Number(doc.data().c) +
-                                Number(doc.data().d),
+                              Number(doc.data().b) +
+                              Number(doc.data().c) +
+                              Number(doc.data().d),
                         })
                       );
                       dataEstadisticasRegionales
@@ -709,5 +674,6 @@ export const useReporteDirectores = () => {
     resetReporteRegional,
     reporteRegionalGlobal,
     resetReporteGlobal,
+    reporteToTableDirector,
   };
 };

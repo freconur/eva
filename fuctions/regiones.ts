@@ -45,6 +45,16 @@ export const convertGrade = (grade: string) => {
   if (grade === "11") return "5to sec."
 }
 
+export const converSeccion = (seccion: number) => {
+  if (seccion === 1) return "a"
+  if (seccion === 2) return "b"
+  if (seccion === 3) return "c"
+  if (seccion === 4) return "d"
+  if (seccion === 5) return "e"
+  if (seccion === 6) return "f"
+  if (seccion === 7) return "g"
+  if (seccion === 8) return "h"
+}
 export const gradosDeColegio = [
   { id: 1, name: "1ro grado" },
   { id: 2, name: "2do grado" },
@@ -52,6 +62,10 @@ export const gradosDeColegio = [
   { id: 4, name: "4to grado" },
   { id: 5, name: "5to grado" },
   { id: 6, name: "6to grado" },
+]
+export const ordernarAscDsc = [
+  { id: 1, name: "asc" },
+  { id: 2, name: "desc" },
 ]
 export const sectionByGrade = [
   { id: 1, name: "a" },

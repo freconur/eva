@@ -95,10 +95,10 @@ const ReporteDocenteIndividual = () => {
                 </tr>
               </tbody>
             </table>
-            <div className='my-10'>
+            {/* <div className='my-10'>
               <h4 className='text-left text-xl text-slate-600 font-montserrat font-semibold'>Observaciones:</h4>
-              <p className='text-left text-lg text-slate-500 font-montserrat ml-3'>{reporteIndividualDocente.observacion}</p>
-            </div>
+              <p className='text-left text-lg text-slate-500 font-montserrat ml-3'>{reporteIndividualDocente.observacionesMonitoreo?.}</p>
+            </div> */}
             {/* {
               reporteIndividualDocente.dni &&
               <ReporteDocentePdf reporteIndividualDocente={reporteIndividualDocente} />

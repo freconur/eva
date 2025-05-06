@@ -12,7 +12,10 @@
   z-index: 1000;
   animation: fadeIn 0.3s ease-in-out;
 }
-
+.infoDocente {
+  display: flex;
+  gap: 1rem;
+}
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -212,6 +215,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 2rem;
 }
 
 .buttonCrearEvaluacion {

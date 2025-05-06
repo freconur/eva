@@ -46,15 +46,15 @@ const EvaluacionesDesempeñoDocentes = () => {
         
         <div className={styles.headerContent}>
           <h1 className={styles.headerTitle}>
-            Evaluaciones de seguimiento de desempeño del docente
+            Monitoreo a la mediación didáctica del docente
           </h1>
           
-          <button 
+         {/*  <button 
             onClick={handleShowModalCrearEvaluacion} 
             className={styles.headerButton}
           >
             Crear Evaluación
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -94,7 +94,7 @@ const EvaluacionesDesempeñoDocentes = () => {
                             href={`/directores/evaluaciones-docentes/evaluacion/${evaluacion.id}`}
                             className={styles.tableLink}
                           >
-                            {evaluacion.name}
+                            {evaluacion.name?.toUpperCase()}
                           </Link>
                         </td>
                         <td className={styles.tableCell}>
@@ -105,7 +105,7 @@ const EvaluacionesDesempeñoDocentes = () => {
                             {evaluacion.categoria}
                           </Link>
                         </td>
-                        <td className={styles.tableCell}>
+                       {/*  <td className={styles.tableCell}>
                           <MdEditSquare 
                             onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setIdEva(`${evaluacion.id}`) }} 
                             className={`${styles.actionIcon} ${styles.editIcon}`}
@@ -116,7 +116,7 @@ const EvaluacionesDesempeñoDocentes = () => {
                             onClick={() => { handleShowModalDelete(); setIdEva(`${evaluacion.id}`) }} 
                             className={`${styles.actionIcon} ${styles.deleteIcon}`}
                           />
-                        </td>
+                        </td> */}
                       </tr>
                     )
                   })

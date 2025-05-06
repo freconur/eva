@@ -58,18 +58,18 @@ const CoberturaCurricular = () => {
           </h1>
           
           <div className={styles.headerButtons}>
-            <button 
+            {/* <button 
               onClick={handleShowModalCrearEvaluacion} 
               className={styles.headerButton}
             >
               Crear instrumento de monitoreo
-            </button>
-            <button 
+            </button> */}
+            {/* <button 
               onClick={handleShowModalPreguntasAlternativas} 
               className={styles.headerButton}
             >
               Agregar
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -115,7 +115,7 @@ const CoberturaCurricular = () => {
                             <td>
                               <Link href={`/directores/cobertura-curricular/reporte?idCurricular=${evaluacion.id}`} className={styles.tableLink}>reporte</Link>
                             </td>
-                            <td className={styles.tableCell}>
+                           {/*  <td className={styles.tableCell}>
                               <div className={styles.tableActions}>
                                 <MdEditSquare 
                                   onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setIdEva(`${evaluacion.id}`) }} 
@@ -126,7 +126,7 @@ const CoberturaCurricular = () => {
                                   className={`${styles.actionIcon} ${styles.deleteIcon}`}
                                 />
                               </div>
-                            </td>
+                            </td> */}
                           </tr>
                         )
                       })

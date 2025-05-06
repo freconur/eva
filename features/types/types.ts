@@ -49,7 +49,10 @@ export type AppReducerValues = {
   caracteristicaCurricular:CaracteristicaCurricular[],
   allEspecialistas:User[],
   reporteCurricularDirector:ReporteDataEstadisticasCD[],
-  reportePreguntaHabilidad:EvaluacionHabilidad[]
+  reportePreguntaHabilidad:EvaluacionHabilidad[],
+  testReporteDirector:UserEstudiante[],
+  allRespuestasEstudiantesDirector:UserEstudiante[],
+  dataFiltradaDirectorTabla:UserEstudiante[]
 };
 
 export type AppActions =
@@ -114,6 +117,9 @@ export type AppActions =
   | { type: AppAction.ALL_ESPECIALISTAS; payload: User[] }
   | { type: AppAction.REPORT_CURRICULAR_DIRECTOR; payload: ReporteDataEstadisticasCD[] }
   | { type: AppAction.REPORT_PREGUNTA_HABILIDAD; payload: EvaluacionHabilidad[] }
+  | { type: AppAction.TEST_REPORTE_DIRECTOR; payload: UserEstudiante[] }
+  | { type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR; payload: UserEstudiante[] }
+  | { type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA; payload: UserEstudiante[] }
 export type LoginData = {
   usuario: string;
   contrasena: string;
@@ -181,6 +187,13 @@ export type UserEstudiante = {
   grado?: number;
   seccion?: string;
   genero?: string;
+  respuestas?: {
+    id?: string;
+    order?: number;
+    pregunta?: string;
+    respuesta?: string;
+    alternativas?: Alternativa[];
+  }[];
 };
 
 export type Estudiante = {
@@ -208,6 +221,7 @@ export type User = {
   secciones?:number[] | number;
   area?:number;
   distrito?:string;
+  genero?:string;
   celular?:string;
   observacionCurricular?:AnexosCurricularType
 };
@@ -293,10 +307,14 @@ export type ReporteDocenteIndividual = {
   dni?:string,
   dniDirector?:string,
   info?:User,
-  observacion?:string,
+  observacionesMonitoreo?:ObservacionMonitoreoDocente,
   resultados?:PRDocentes[]
 }
-
+export type ObservacionMonitoreoDocente ={
+  fortalezasObservadas?:string,
+  oportunidadesDeMejora?:string, 
+  acuerdosYCompomisos?:string,
+}
 export type EvaluacionCurricular = {
   id?:string,
   name?:string,
@@ -362,3 +380,6 @@ export type ReporteDataEstadisticasCD = {
   data?:ReporteCurricularDirector,
   total?:number
 }
+
+
+

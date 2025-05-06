@@ -69,7 +69,7 @@ const EvaluacionDocente = () => {
         
         <div className={styles.headerContent}>
           <h1 className={styles.headerTitle}>
-            Evaluación {dataEvaluacionDocente?.name}
+            Monitoreo a la mediación didáctica de la competencia {dataEvaluacionDocente?.name}
           </h1>
           
           <div className={styles.searchContainer}>
@@ -95,12 +95,12 @@ const EvaluacionDocente = () => {
           </div>
 
           <div className={styles.headerButtons}>
-            <button 
+           {/*  <button 
               onClick={handleShowModalPreguntas}
               className={styles.headerButton}
             >
               Agregar preguntas
-            </button>
+            </button> */}
             <button 
               onClick={handleShowEvaluarDocente}
               className={styles.headerButton}
@@ -138,12 +138,12 @@ const EvaluacionDocente = () => {
                       <span className={styles.preguntaNumber}>{index + 1}.</span>
                       <h3 className={styles.preguntaText}>{pq.criterio}</h3>
                     </div>
-                    <button 
+                    {/* <button 
                       onClick={() => { handleShowUpdateModal(); setDataUpdate(pq) }}
                       className={`${styles.actionIcon} ${styles.editIcon}`}
                     >
                       <MdEditSquare className={styles.editIcon} />
-                    </button>
+                    </button> */}
                   </div>
                   
                   <ul className={styles.alternativasList}>

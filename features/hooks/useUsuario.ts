@@ -327,6 +327,9 @@ const useUsuario = () => {
               nombres: `${data.nombres}`,
               apellidos: `${data.apellidos}`,
               region: currentUserData.region,
+              grados: data.grados,
+              secciones: data.secciones,    
+              genero: data.genero,
             }).then((res) => {
               dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: "" });
               dispatch({ type: AppAction.LOADER_PAGES, payload: false });

@@ -1,5 +1,5 @@
 import React from 'react'
-import { AlternativasDocente, CrearEvaluacionDocente, DataEstadisticas, DataEstadisticasDocente, PRDocentes, PreviewPRDocentes, User } from '../types/types'
+import { AlternativasDocente, CrearEvaluacionDocente, DataEstadisticas, DataEstadisticasDocente, ObservacionMonitoreoDocente, PRDocentes, PreviewPRDocentes, ReporteDocenteIndividual, User } from '../types/types'
 import { onSnapshot, addDoc, query, where, deleteDoc, doc, collection, getDocs, getFirestore, setDoc, updateDoc, getDoc, increment, orderBy, connectFirestoreEmulator } from "firebase/firestore";
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AppAction } from '../actions/appAction';
@@ -137,6 +137,12 @@ const UseEvaluacionDocentes = () => {
   const resetDocente = () => {
     dispatch({ type: AppAction.DATA_DOCENTE, payload: {} })
   }
+
+  const guardarObservacionDocente = async (idEvaluacion: string, data: ObservacionMonitoreoDocente, dataDocente:ReporteDocenteIndividual) => {
+
+    const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}/`
+    await setDoc(doc(db, path, `${dataDocente.dni}`), { ...dataDocente,observacionesMonitoreo: data })
+  }
   const guardarEvaluacionDocente = async (idEvaluacion: string, data: PRDocentes[], dataDocente: User) => {
     //AGREGANDO RESULTADOS DE LA EVALUACION DEL DOCENTE
     `/usuarios/80039014/7pf6AVgNVNDkoRB4RPYX/11001902`
@@ -156,11 +162,16 @@ const UseEvaluacionDocentes = () => {
     }
 
     const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}/`
-    await setDoc(doc(db, path, `${dataDocente.dni}`), { observacion: "sin observaciones", resultados: data, dni: dataDocente.dni, dniDirector: currentUserData.dni, calificacion: totalPuntos, info: dataDocente });
+    await setDoc(doc(db, path, `${dataDocente.dni}`), { observacionesMonitoreo: {}, resultados: data, dni: dataDocente.dni, dniDirector: currentUserData.dni, calificacion: totalPuntos, info: dataDocente })
+    dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
     //AGREGANDO RESULTADOS DE LA EVALUACION DEL DOCENTE
 
-    data.forEach(async (pr) => {
-      `/evaluaciones-docentes/KtOATuI2gOKH80n1R6yt/49163626/id`
+
+
+
+    //esta funcion hace los calulos para agregar estadisticos al reporte de evaluacion
+    /* data.forEach(async (pr) => {
+      //`/evaluaciones-docentes/KtOATuI2gOKH80n1R6yt/49163626/id`
       const docRef = doc(db, `/evaluaciones-docentes/${idEvaluacion}/${currentUserData.dni}`, `${pr.order}`);
       await getDoc(docRef)
         .then(async (response) => {
@@ -199,7 +210,7 @@ const UseEvaluacionDocentes = () => {
           }
         })
         .then(response => dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false }))
-    })
+    }) */
   }
   const reporteEvaluacionDocenteAdmin = (idEvaluacion: string, dniDirector: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
@@ -367,6 +378,7 @@ const UseEvaluacionDocentes = () => {
       // console.log('testPromise', testPromise)
       const respuestasDirectores: any = Promise.allSettled(testPromise)
       respuestasDirectores.then((response: DataEstadisticasDocente[]) => {
+        console.log('response', response)
         let arrayAcumulativoDeRespuestas: DataEstadisticasDocente[] = [];
         let index = 0
         response.forEach((resultado: any) => {
@@ -420,194 +432,7 @@ const UseEvaluacionDocentes = () => {
         })
       })
     })
-    // getDirectoresPromise.then(res => {
-    //   const getDataEvaluacion = new Promise<DataEstadisticas[]>((resolve, reject) => {
-    //     let arrayAcumulativoDeRespuestas: DataEstadisticas[] = [];
-    //     try {
-    //       let index = 0
-    //       res.forEach(async (director) => {
-    //         index = index + 1
-    //         const path = `/evaluaciones-docentes/${idEvaluacion}/${director}`
-    //         const pathRef = collection(db, path)
-    //         await getDocs(pathRef)
-    //           .then(async (resultadoDirector) => {
-    //             if (resultadoDirector.size > 0) {
-    //               if (arrayAcumulativoDeRespuestas.length === 0) {
-    //                 const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-    //                 resultadoDirector.forEach((doc) => {
-    //                   arrayOrdenadoRespuestas.push({
-    //                     ...doc.data(),
-    //                     id: doc.id,
-    //                     total:
-    //                       doc.data().d === undefined
-    //                         ? Number(doc.data().a) +
-    //                         Number(doc.data().b) +
-    //                         Number(doc.data().c)
-    //                         : Number(doc.data().a) +
-    //                         Number(doc.data().b) +
-    //                         Number(doc.data().c) +
-    //                         Number(doc.data().d),
-    //                   })
-    //                 }
-    //                 );
-    //                 arrayOrdenadoRespuestas
-    //                   .sort((a: any, b: any) => a.id - b.id)
-    //                   .forEach((a) => arrayAcumulativoDeRespuestas.push(a));
-    //               } else {
-    //                 const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-    //                 resultadoDirector.forEach((doc) =>
-    //                   arrayOrdenadoRespuestas.push({
-    //                     ...doc.data(),
-    //                     id: doc.id,
-    //                     total:
-    //                       doc.data().d === undefined
-    //                         ? Number(doc.data().a) +
-    //                         Number(doc.data().b) +
-    //                         Number(doc.data().c)
-    //                         : Number(doc.data().a) +
-    //                         Number(doc.data().b) +
-    //                         Number(doc.data().c) +
-    //                         Number(doc.data().d),
-    //                   })
-    //                 );
-    //                 arrayOrdenadoRespuestas
-    //                   ?.sort((a: any, b: any) => a.id - b.id)
-    //                   .forEach((data) => {
-    //                     arrayAcumulativoDeRespuestas?.map((rta, i) => {
-    //                       if (rta.d === undefined) {
-    //                         if (rta.id === data.id) {
-    //                           rta.a = Number(rta.a) + Number(data.a);
-    //                           rta.b = Number(rta.b) + Number(data.b);
-    //                           rta.c = Number(rta.c) + Number(data.c);
-    //                           rta.total =
-    //                             Number(rta.total) + Number(data.total);
-    //                         }
-    //                       } else {
-    //                         if (rta.id === data.id) {
-    //                           rta.a = Number(rta.a) + Number(data.a);
-    //                           rta.b = Number(rta.b) + Number(data.b);
-    //                           rta.c = Number(rta.c) + Number(data.c);
-    //                           rta.d = Number(rta.d) + Number(data.d);
-    //                           rta.total =
-    //                             Number(rta.total) + Number(data.total);
-    //                         }
-    //                       }
-    //                     });
-    //                   });
-    //               }
-    //             }
-    //           })
-    //         if (res.length === index) {
-    //           // debugger
-    //           setTimeout(() => {
-    //             resolve(arrayAcumulativoDeRespuestas)
-    //           }, 5000)
-    //         }
-    //       })
-    //       // getDirectoresPromise.then(async (directores) => {
-    //       //   let index = 0
-    //       //   directores.forEach(async director => {
-    //       //     index = index + 1
-    //       //     console.log('rta', director === '49163626' && 'este es el dni 49163626')
-    //       //     const path = `/evaluaciones-docentes/${idEvaluacion}/${director}`
-    //       //     const pathRef = collection(db, path)
-    //       //     await getDocs(pathRef)
-    //       //       .then(async (resultadoDirector) => {
-    //       //         if (resultadoDirector.size > 0) {
-    //       //           console.log('si soy del 49163626')
-    //       //           if (arrayAcumulativoDeRespuestas.length === 0) {
-    //       //             const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-    //       //             resultadoDirector.forEach((doc) => {
-    //       //               arrayOrdenadoRespuestas.push({
-    //       //                 ...doc.data(),
-    //       //                 id: doc.id,
-    //       //                 total:
-    //       //                   doc.data().d === undefined
-    //       //                     ? Number(doc.data().a) +
-    //       //                     Number(doc.data().b) +
-    //       //                     Number(doc.data().c)
-    //       //                     : Number(doc.data().a) +
-    //       //                     Number(doc.data().b) +
-    //       //                     Number(doc.data().c) +
-    //       //                     Number(doc.data().d),
-    //       //               })
-    //       //             }
-    //       //             );
-    //       //             arrayOrdenadoRespuestas
-    //       //               .sort((a: any, b: any) => a.id - b.id)
-    //       //               .forEach((a) => arrayAcumulativoDeRespuestas.push(a));
-    //       //           } else {
-    //       //             const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-    //       //             resultadoDirector.forEach((doc) =>
-    //       //               arrayOrdenadoRespuestas.push({
-    //       //                 ...doc.data(),
-    //       //                 id: doc.id,
-    //       //                 total:
-    //       //                   doc.data().d === undefined
-    //       //                     ? Number(doc.data().a) +
-    //       //                     Number(doc.data().b) +
-    //       //                     Number(doc.data().c)
-    //       //                     : Number(doc.data().a) +
-    //       //                     Number(doc.data().b) +
-    //       //                     Number(doc.data().c) +
-    //       //                     Number(doc.data().d),
-    //       //               })
-    //       //             );
-    //       //             arrayOrdenadoRespuestas
-    //       //               ?.sort((a: any, b: any) => a.id - b.id)
-    //       //               .forEach((data) => {
-    //       //                 arrayAcumulativoDeRespuestas?.map((rta, i) => {
-    //       //                   if (rta.d === undefined) {
-    //       //                     if (rta.id === data.id) {
-    //       //                       rta.a = Number(rta.a) + Number(data.a);
-    //       //                       rta.b = Number(rta.b) + Number(data.b);
-    //       //                       rta.c = Number(rta.c) + Number(data.c);
-    //       //                       rta.total =
-    //       //                         Number(rta.total) + Number(data.total);
-    //       //                     }
-    //       //                   } else {
-    //       //                     if (rta.id === data.id) {
-    //       //                       rta.a = Number(rta.a) + Number(data.a);
-    //       //                       rta.b = Number(rta.b) + Number(data.b);
-    //       //                       rta.c = Number(rta.c) + Number(data.c);
-    //       //                       rta.d = Number(rta.d) + Number(data.d);
-    //       //                       rta.total =
-    //       //                         Number(rta.total) + Number(data.total);
-    //       //                     }
-    //       //                   }
-    //       //                 });
-    //       //               });
-    //       //           }
-    //       //         } 
-    //       //         // else {
-    //       //         //   //este es la condicional del resultadoDirector.size
-    //       //         //   //retornamos los resultados indicando que no se encontraron resultados para dicha ugel
-    //       //         //   dispatch({
-    //       //         //     type: AppAction.LOADER_REPORTE_DIRECTOR,
-    //       //         //     payload: false,
-    //       //         //   });
-    //       //         // }
-    //       //       })
-    //       //     })
-    //       //     if(directores.length === index) {
-    //       //       // debugger
-    //       //       resolve(arrayAcumulativoDeRespuestas)
-    //       //   }
-    //       // })
-
-    //     } catch (error) {
-    //       reject()
-    //     }
-    //   })
-
-    //   getDataEvaluacion.then(data => {
-    //     if (data.length === totalPreguntas) {
-    //       console.log('data', data)
-    //       dispatch({ type: AppAction.REPORTE_REGIONAL, payload: data })
-    //       dispatch({ type: AppAction.LOADER_PAGES, payload: false })
-    //     }
-    //   })
-    // })
+    
 
   }
 
@@ -628,7 +453,8 @@ const UseEvaluacionDocentes = () => {
     buscarDocenteReporteDeEvaluacion,
     buscarDirector,
     reporteEvaluacionDocenteAdmin,
-    reporteUgelGlobal
+    reporteUgelGlobal,
+    guardarObservacionDocente
   }
 
 }

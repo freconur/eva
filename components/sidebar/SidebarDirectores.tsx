@@ -50,7 +50,7 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
                   <li className={styles.containerAncla}><Link
                     href="/directores/evaluaciones"
                     className={styles.anclaje}
-                    id="ancla">Evaluaciones</Link></li>
+                    id="ancla">Seguimiento de aprendizaje</Link></li>
                 </ul>
               </li>
               <li className={styles.dropdown}>
@@ -67,7 +67,7 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
                   <li className={styles.containerAncla}><Link
                     href="/directores/evaluaciones-docentes"
                     className={styles.anclaje}
-                    id="ancla">Evaluaciones</Link></li>
+                    id="ancla">Mediacion didactica</Link></li>
                   <li className={styles.containerAncla}><Link
                     href="/directores/agregar-profesores"
                     id="ancla"

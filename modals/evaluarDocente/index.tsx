@@ -7,7 +7,7 @@ import { RiLoader4Line } from "react-icons/ri";
 import { usePsicolinguistica } from "@/features/hooks/usePsicolinguistica";
 import { useState } from "react";
 import UseEvaluacionDocentes from "@/features/hooks/UseEvaluacionDocentes";
-
+import { convertGrade,  converSeccion} from "@/fuctions/regiones";
 interface Props {
   handleShowEvaluarDocente: () => void,
   id: string
@@ -38,12 +38,10 @@ const EvaluarDocente = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoce
     if (copyPR[ordenLimitePregunta].alternativas)
       copyPR[ordenLimitePregunta] = {
         ...copyPR[ordenLimitePregunta],
-        alternativas: [
-          { alternativa: 'a', value: copyPR[ordenLimitePregunta].alternativas[0].value, descripcion: copyPR[ordenLimitePregunta].alternativas[0].descripcion, selected: e.target.value === 'a' ? true : false },
-          { alternativa: 'b', value: copyPR[ordenLimitePregunta].alternativas[1].value, descripcion: copyPR[ordenLimitePregunta].alternativas[1].descripcion, selected: e.target.value === 'b' ? true : false },
-          { alternativa: 'c', value: copyPR[ordenLimitePregunta].alternativas[2].value, descripcion: copyPR[ordenLimitePregunta].alternativas[2].descripcion, selected: e.target.value === 'c' ? true : false },
-          { alternativa: 'd', value: copyPR[ordenLimitePregunta].alternativas[3].value, descripcion: copyPR[ordenLimitePregunta].alternativas[3].descripcion, selected: e.target.value === 'd' ? true : false },
-        ]
+        alternativas: copyPR[ordenLimitePregunta].alternativas.map(alt => ({
+          ...alt,
+          selected: e.target.value === alt.alternativa
+        }))
       }
     actualizarPreguntasPsicolinguistica(preguntasPsicolinguistica)
   }
@@ -90,21 +88,21 @@ const EvaluarDocente = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoce
     setValueObservacion(e.target.value)
   }
   //USEFFECT PARA ACTUALIZACION DE LOS DATOS AL DAR CHECKED
-  const handleFinalizar = () => {
+  /* const handleFinalizar = () => {
     if(dataDocente.dni) {
       agregarObservacionDocente(id, dataDocente.dni, valueObservacion)
       setObservacion(!observacion)
       setCopyPR([...originalPR])
-      resetDocente()
     }
-  }
+  } */
   const handleSalvarPreguntaDocente = (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (dataDocente.dni) {
       guardarEvaluacionDocente(id, copyPR, dataDocente)
       setCopyPR([...originalPR])
       setOrdenLimitePregunta(0)
-      setObservacion(!observacion)
+      /* setObservacion(!observacion) */
+      resetDocente()
     }
   }
   const handleChangeDocente = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,7 +129,7 @@ const EvaluarDocente = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoce
                 <div className={styles.closeModalContainer}>
                   <div className={styles.close} onClick={handleShowEvaluarDocente} >x</div>
                 </div>
-                <h3 className={styles.title}>Evaluación de Docente</h3>
+                <h3 className={styles.title}>Monitorear de Docente</h3>
                 <div className={styles.docenteContainer}>
                   <div className={styles.containerBuscarDocente}>
                     <input
@@ -154,6 +152,11 @@ const EvaluarDocente = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoce
                     <div className={styles.docenteInfo}>
                       <p>DNI: <strong>{dataDocente.dni}</strong></p>
                       <p>Nombres y Apellidos: <strong>{dataDocente.nombres?.toUpperCase()} {dataDocente.apellidos?.toUpperCase()}</strong></p>
+                      <div className={styles.infoDocente}>
+                      <p>Grado: <strong>{dataDocente.grados?.map(grado => convertGrade(grado.toString())).join(', ')}</strong></p>
+                      <p>Sección: <strong>{Array.isArray(dataDocente.secciones) ? dataDocente.secciones.map((seccion: number) => converSeccion(seccion)?.toUpperCase()).join(', ') : dataDocente.secciones}</strong></p>
+                      <p>Genero: <strong>{dataDocente.genero}</strong></p>
+                      </div>
                     </div>
                   }
                   <div className={styles.warningContainer}>
@@ -164,7 +167,7 @@ const EvaluarDocente = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoce
                 <form onSubmit={handleSalvarPreguntaDocente}>
 
 
-                  {
+                  {/* {
                     observacion ?
                       <div>
                         <textarea
@@ -175,14 +178,14 @@ const EvaluarDocente = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoce
                       </div>
                       :
                       <>
+                      </>
+                  } */}
                         <div className={styles.containerPregunta}>
                           <h3 className={styles.tituloPregunta}>{`${ordenLimitePregunta + 1})`}{copyPR[ordenLimitePregunta]?.criterio}</h3>
                         </div>
                         <div className={styles.containerPreguntasAlternativas}>
                           {preguntaRespuestaFunction(copyPR)}
                         </div>
-                      </>
-                  }
                   <div className={ordenLimitePregunta === 0 ? styles.buttonsContainer : styles.buttonsContainerSiguiente}>
                     {
                       ordenLimitePregunta === 0 ? null :
@@ -194,9 +197,9 @@ const EvaluarDocente = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoce
                         activeButtonSiguiente() &&
                         <button className={styles.buttonCrearEvaluacion}>Guardar</button>
                         :
-                        observacion ?
+                        /* observacion ?
                           <div onClick={() => handleFinalizar()} className={styles.buttonCrearEvaluacion}>Finalizar</div>
-                          :
+                          : */
                           activeButtonSiguiente() &&
                           <div onClick={() => setOrdenLimitePregunta(ordenLimitePregunta + 1)} className={styles.buttonCrearEvaluacion}>Siguiente</div>
                     }

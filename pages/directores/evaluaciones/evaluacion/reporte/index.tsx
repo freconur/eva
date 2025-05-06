@@ -1,7 +1,7 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useReporteDirectores } from '@/features/hooks/useReporteDirectores'
 import { useRouter } from 'next/router'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,10 +14,13 @@ import {
   Legend,
   ChartData,
 } from 'chart.js';
+import { gradosDeColegio, sectionByGrade, ordernarAscDsc } from '@/fuctions/regiones'
 import { Bar } from "react-chartjs-2"
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
-import { DataEstadisticas } from '@/features/types/types';
+import { Alternativa, DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
 import { RiLoader4Line } from 'react-icons/ri';
+import { MdDeleteForever } from 'react-icons/md';
+import styles from './Reporte.module.css';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -31,6 +34,18 @@ ChartJS.register(
 
 
 const Reporte = () => {
+  const [filtros, setFiltros] = useState({
+    grado: '',
+    seccion: '',
+    orden: ''
+  });
+
+  const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFiltros({
+      ...filtros,
+      [e.target.name]: e.target.value
+    });
+  };
 
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
     return {
@@ -67,19 +82,26 @@ const Reporte = () => {
       ]
     }
   }
-  const { reporteDirectorData, agregarDatosEstadisticosDirector } = useReporteDirectores()
-  const { currentUserData, reporteDirector, preguntasRespuestas, loaderReporteDirector } = useGlobalContext()
+  const { reporteDirectorData,reporteToTableDirector ,agregarDatosEstadisticosDirector } = useReporteDirectores()
+  const { currentUserData, reporteDirector, preguntasRespuestas, loaderReporteDirector, allRespuestasEstudiantesDirector, dataFiltradaDirectorTabla } = useGlobalContext()
   const { getPreguntasRespuestas } = useAgregarEvaluaciones()
+  const [showTable, setShowTable] = useState(false)
   const route = useRouter()
   useEffect(() => {
 
     getPreguntasRespuestas(`${route.query.idEvaluacion}`)
   }, [currentUserData.dni, route.query.idEvaluacion])
 
-
+  const handleShowTable = () => {
+    setShowTable(!showTable)
+  }
+  const handleFiltrar = () => {
+    reporteToTableDirector(allRespuestasEstudiantesDirector,{grado: filtros.grado, seccion: filtros.seccion, orden: filtros.orden}, `${route.query.id}`, `${route.query.idEvaluacion}`)
+  }
   useEffect(() => {
-    reporteDirectorData(`${currentUserData.dni}`, `${route.query.idEvaluacion}`)
-  }, [])
+    reporteDirectorData(`${route.query.id}`, `${route.query.idEvaluacion}`)
+  }, [route.query.id])
+
   const iterarPregunta = (index: string) => {
     return (
       <div className='grid gap-1'>
@@ -88,6 +110,29 @@ const Reporte = () => {
       </div>
     )
   }
+  const handleValidateRespuesta = (data: PreguntasRespuestas) => {
+    const rta: Alternativa | undefined = data.alternativas?.find(
+      (r) => r.selected === true
+    );
+    if (rta?.alternativa) {
+      if (rta.alternativa.toLowerCase() === data.respuesta?.toLowerCase()) {
+        return (
+          <div className={styles.correctAnswer}>
+            si
+          </div>
+        );
+      } else {
+        return (
+          <div className={styles.incorrectAnswer}>
+            no
+          </div>
+        );
+      }
+    }
+  };
+  console.log('preguntasRespuestas', preguntasRespuestas)
+  console.log('dataFiltradaDirectorTabla', dataFiltradaDirectorTabla)
+  console.log('allRespuestasEstudiantesDirector', allRespuestasEstudiantesDirector)
   const options = {
     plugins: {
       legend: {
@@ -99,37 +144,157 @@ const Reporte = () => {
       },
     },
   };
-  console.log('reporteDirector', reporteDirector)
+  /*  console.log('reporteDirector', reporteDirector) */
   return (
 
     <>
       {
         loaderReporteDirector ?
-          <div className='grid grid-rows-loader'>
-            <div className='flex justify-center items-center'>
-              <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-              <span className='text-colorTercero animate-pulse'>...cargando</span>
+          <div className={styles.loaderContainer}>
+            <div className={styles.loaderContent}>
+              <RiLoader4Line className={styles.loaderIcon} />
+              <span className={styles.loaderText}>...cargando</span>
             </div>
           </div>
           :
-          <div className='grid justify-center items-center relative z-10'>
-            <div className='w-[1024px] bg-white grid justify-center items-center p-20'>
-              <h1 className='text-2xl text-center text-cyan-700 font-semibold uppercase mb-20'>reporte de evaluación</h1>
+          <div className={styles.mainContainer}>
+            <button className={styles.button} onClick={handleShowTable}>ver tabla</button>
+            {
+              showTable &&
+              <div>
+                <div className={styles.filtersContainer}>
+                  <select
+                    name="grado"
+                    value={filtros.grado}
+                    onChange={handleChangeFiltros}
+                    className={styles.select}
+                  >
+                    <option value="">Seleccione un grado</option>
+                    {gradosDeColegio.map((grado) => (
+                      <option key={grado.id} value={grado.id}>
+                        {grado.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    name="seccion"
+                    value={filtros.seccion}
+                    onChange={handleChangeFiltros}
+                    className={styles.select}
+                  >
+                    <option value="">Seleccione una sección</option>
+                    {sectionByGrade.map((seccion) => (
+                      <option key={seccion.id} value={seccion.id}>
+                        {seccion.name.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                  <select 
+                  className={styles.select} 
+                  onChange={handleChangeFiltros}
+                  name="orden" 
+                  id="">
+                  <option value="">ordernar por</option>
+                    {ordernarAscDsc.map((orden) => (
+                      <option key={orden.id} value={orden.name}>
+                        {orden.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button className={styles.filterButton} onClick={handleFiltrar}>Filtrar</button>
+                </div>
+                <div className={styles.tableContainer}>
+                  <table className={styles.table}>
+                    <thead className={styles.tableHeader}>
+                      <tr>
+                        <th className={styles.tableHeaderCell}>#</th>
+                        <th className={styles.tableHeaderCell}>Nombre y apellidos</th>
+                        <th className={styles.tableHeaderCell}>R.C</th>
+                        <th className={styles.tableHeaderCell}>T.P</th>
+                        {preguntasRespuestas.map((pr) => {
+                          return (
+                            <th key={pr.order} className={styles.tableHeaderCell}>
+                              <button
+                                className={styles.popoverButton}
+                                popoverTarget={`${pr.order}`}
+                              >
+                                {pr.order}
+                              </button>
+                              <div
+                                className={styles.popoverContent}
+                                popover="auto"
+                                id={`${pr.order}`}
+                              >
+                                <div className="w-full">
+                                  <span className={styles.popoverTitle}>
+                                    {pr.order}. Actuación:
+                                  </span>
+                                  <span className={styles.popoverText}>
+                                    {pr.preguntaDocente}
+                                  </span>
+                                </div>
+                              </div>
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dataFiltradaDirectorTabla?.map((dir, index) => {
+                        return (
+                          <tr
+                            key={index}
+                            className={styles.tableRow}
+                          >
+                            <td className={styles.tableCell}>
+                              {index + 1}
+                            </td>
+                            <td className={`${styles.tableCell} ${styles.tableCellName}`}>
+                              {dir.nombresApellidos}
+                            </td>
+                            <td className={styles.tableCell}>
+                              {dir.respuestasCorrectas}
+                            </td>
+                            <td className={styles.tableCell}>
+                              {dir.totalPreguntas}
+                            </td>
+                            {dir.respuestas?.map((res) => {
+                              return (
+                                <td
+                                  key={res.order}
+                                  className={styles.tableCell}
+                                >
+                                  {handleValidateRespuesta(res)}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
+
+            <div className={styles.reportContainer}>
+              <h1 className={styles.reportTitle}>reporte de evaluación</h1>
               <div>
                 <div>
                   {
                     reporteDirector?.map((dat, index) => {
                       return (
-                        <div key={index} className="w-[800px]  p-2 rounded-lg">
+                        <div key={index} className={styles.questionContainer}>
                           {iterarPregunta(`${dat.id}`)}
-                          <div className='bg-white rounded-md grid justify-center items-center place-content-center'>
-                            <div className='grid justify-center m-auto items-center w-[500px]'>
-                              <Bar className="m-auto w-[500px]"
+                          <div className={styles.chartContainer}>
+                            <div className={styles.chartWrapper}>
+                              <Bar className={styles.chart}
                                 options={options}
                                 data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
                               />
                             </div>
-                            <div className='text-sm  flex gap-[90px] items-center justify-center ml-[30px] text-slate-500'>
+                            <div className={styles.statsContainer}>
                               <p>{dat.a} | {dat.total === 0 ? 0 : ((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)} %</p>
                               <p>{dat.b} |{dat.total === 0 ? 0 : ((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
                               <p>{dat.c} | {dat.total === 0 ? 0 : ((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
@@ -138,7 +303,9 @@ const Reporte = () => {
                                 <p>{dat.d} | {dat.total === 0 ? `${0}%` : ((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
                               }
                             </div>
-                            <div className='text-center text-md  w-[150px] text-colorTercero p-2  rounded-md mt-5 border border-colorTercero'>respuesta:<span className='text-colorTercero font-semibold ml-2'>{preguntasRespuestas[Number(index)]?.respuesta}</span> </div>
+                            <div className={styles.answerContainer}>
+                              respuesta:<span className={styles.answerText}>{preguntasRespuestas[Number(index)]?.respuesta}</span>
+                            </div>
                           </div>
                         </div>
                       )

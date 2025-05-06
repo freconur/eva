@@ -3,10 +3,11 @@ import DatosInstitucion from '@/components/curricular/datos-institucion'
 import DatosMonitor from '@/components/curricular/datos-monitor'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
+import { ObservacionMonitoreoDocente } from '@/features/types/types'
 import { regionTexto } from '@/fuctions/regiones'
 import AnexosCurricular from '@/modals/mallaCurricular/anexos'
 import { useRouter } from 'next/router'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 
 const EvaluarCurricula = () => {
 
@@ -14,6 +15,7 @@ const EvaluarCurricula = () => {
   
   const { getDocente, getPreguntaAlternativaCurricular,getEvaluacionCurricular, getEvaluacionCurricularAlternativa, resetValuesEvaluarCurricular } = useEvaluacionCurricular()
   const { dataDocente, currentUserData, paHabilidad ,evaluacionCurricular, evaluacionCurricularAlternativa,} = useGlobalContext()
+  
   useEffect(() => {
     getDocente(`${router.query.idDocente}`)
     getEvaluacionCurricular()
