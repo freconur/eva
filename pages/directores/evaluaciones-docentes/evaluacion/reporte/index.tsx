@@ -1,7 +1,7 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { DataEstadisticas } from '@/features/types/types'
 import { useRouter } from 'next/router'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import header from '../../../../../assets/evaluacion-docente.jpg'
 import {
   Chart as ChartJS,
@@ -20,8 +20,8 @@ import { RiLoader4Line } from 'react-icons/ri'
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores'
 import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes'
 import Image from 'next/image'
-import styles from '@/styles/coberturaCurricular.module.css'
-
+import styles from './styles.module.css'
+import { gradosDeColegio, sectionByGrade, ordernarAscDsc, niveles } from '@/fuctions/regiones'
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -35,8 +35,23 @@ ChartJS.register(
 
 const Reportes = () => {
   const route = useRouter()
-  const { estudiantes, currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages, loaderReporteDirector, getPreguntaRespuestaDocentes, dataEvaluacionDocente } = useGlobalContext()
-  const { reporteEvaluacionDocentes, getPreguntasRespuestasDocentes, getDataEvaluacion } = UseEvaluacionDocentes()
+  const { estudiantes, currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages, loaderReporteDirector, getPreguntaRespuestaDocentes, dataEvaluacionDocente, allEvaluacionesDirectorDocente, dataFiltradaDirectorDocenteTabla } = useGlobalContext()
+  const { reporteEvaluacionDocentes, getPreguntasRespuestasDocentes, getDataEvaluacion, reporteTablaEvaluacionDirectorDocente } = UseEvaluacionDocentes()
+
+  const [filtros, setFiltros] = useState({
+    grado: '',
+    seccion: '',
+    orden: ''
+  });
+
+  const [activePopover, setActivePopover] = useState<string | null>(null);
+
+  const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFiltros({
+      ...filtros,
+      [e.target.name]: e.target.value
+    });
+  };
 
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
     return {
@@ -89,12 +104,36 @@ const Reportes = () => {
       </h3>
     )
   }
-
+  const handleFiltros = () => {
+    console.log('test')
+    reporteTablaEvaluacionDirectorDocente(allEvaluacionesDirectorDocente, filtros)
+  }
   useEffect(() => {
     getDataEvaluacion(`${route.query.idEvaluacion}`);
     reporteEvaluacionDocentes(`${route.query.idEvaluacion}`);
     getPreguntasRespuestasDocentes(`${route.query.idEvaluacion}`)
   }, [route.query.idEvaluacion, currentUserData.dni])
+
+  useEffect(() => {
+    if (filtros.grado || filtros.seccion || filtros.orden) {
+      console.log('Filtros aplicados:', filtros);
+    }
+  }, [filtros]);
+
+  const getBackgroundColor = (value: number) => {
+    switch (value) {
+      case 1:
+        return styles.bgGray;
+      case 2:
+        return styles.bgOrange;
+      case 3:
+        return styles.bgGreen;
+      case 4:
+        return styles.bgCyan;
+      default:
+        return '';
+    }
+  };
 
   return (
     <>
@@ -105,7 +144,7 @@ const Reportes = () => {
             <p className={styles.loaderText}>buscando resultados...</p>
           </div>
           :
-          <div className='grid relative z-10'>
+          <div className={styles.container}>
             <div className={styles.header}>
               <div className={styles.headerOverlay}></div>
 
@@ -126,26 +165,110 @@ const Reportes = () => {
             <div className={styles.tableContainer}>
               <div className={styles.tableSection}>
                 <div>
+                  <div className={styles.filtersContainer}>
+                    <select
+                      name="grado"
+                      className={styles.select}
+                      onChange={handleChangeFiltros}
+                      value={filtros.grado}
+                    >
+                      <option value="">Seleccionar Grado</option>
+                      {gradosDeColegio.map((grado, index) => (
+                        <option key={index} value={grado.id}>{grado.name}</option>
+                      ))}
+                    </select>
+
+                    <select
+                      name="seccion"
+                      className={styles.select}
+                      onChange={handleChangeFiltros}
+                      value={filtros.seccion}
+                    >
+                      <option value="">Seleccionar Sección</option>
+                      {sectionByGrade.map((seccion, index) => (
+                        <option key={index} value={seccion.id}>{seccion.name}</option>
+                      ))}
+                    </select>
+
+                    <select
+                      name="orden"
+                      className={styles.select}
+                      onChange={handleChangeFiltros}
+                      value={filtros.orden}
+                    >
+                      <option value="">Ordenar por</option>
+                      {ordernarAscDsc.map((opcion, index) => (
+                        <option key={index} value={opcion.id}>{opcion.name}</option>
+                      ))}
+                    </select>
+                    <button className={styles.filterButton} onClick={handleFiltros}>Filtrar</button>
+                  </div>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Nombre y apellidos</th>
+                        <th>puntaje</th>
+                        {
+                          getPreguntaRespuestaDocentes.map((pregunta, index) => (
+                            <th 
+                              key={index}
+                              onClick={() => setActivePopover(activePopover === pregunta.id ? null : pregunta.id || null)}
+                            >
+                              {pregunta.id}
+                              {activePopover === pregunta.id && (
+                                <div className={styles.popover}>
+                                  {pregunta.criterio}
+                                </div>
+                              )}
+                            </th>
+                          ))
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                        {
+                          dataFiltradaDirectorDocenteTabla.map((docente, index) => (
+                            <tr key={index}>
+                              <td>{index + 1}</td>
+                              <td>{docente.info?.nombres} {docente.info?.apellidos}</td>
+                              <td>{docente.calificacion}</td>
+                              {
+                                docente.resultados?.map((respuesta, index) => (
+                                  <td key={index} className={getBackgroundColor(Number(respuesta.alternativas?.find(a => a.selected)?.value))}>
+                                    {niveles(Number(respuesta.alternativas?.find(a => a.selected)?.value)) || '-'}
+                                  </td>
+                                ))
+                              }
+                            </tr>
+                          ))
+                        }
+                    </tbody>
+                  </table>
+                </div>
+                <div>
                   {
                     dataEstadisticas?.map((dat, index) => {
                       return (
-                        <div key={index} className="w-full p-6 rounded-lg">
-                          {iterarPregunta(`${dat.id}`)}
-                          <div className='bg-white rounded-md grid justify-center items-center place-content-center'>
-                            <div className='grid justify-center m-auto items-center w-[500px]'>
-                              <Bar className="m-auto w-[500px]"
-                                options={options}
-                                data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
-                              />
-                            </div>
-                            <div className='text-sm flex gap-[90px] items-center justify-center ml-[30px] text-slate-500'>
-                              <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
-                              <p>{dat.b} | {((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
-                              <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
-                              {dat.d &&
-                                <p>{dat.d} | {((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
-                              }
-                            </div>
+                        <div key={index} className={styles.chartContainer}>
+                          <h3 className={styles.sectionTitle}>
+                            <span className={styles.sectionTitleIndicator}></span>
+                            <span>{getPreguntaRespuestaDocentes[Number(index)]?.subOrden}.</span>
+                            <span>{getPreguntaRespuestaDocentes[Number(index)]?.criterio}</span>
+                          </h3>
+                          <div className={styles.chartWrapper}>
+                            <Bar
+                              options={options}
+                              data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
+                            />
+                          </div>
+                          <div className={styles.statsContainer}>
+                            <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
+                            <p>{dat.b} | {((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
+                            <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
+                            {dat.d &&
+                              <p>{dat.d} | {((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
+                            }
                           </div>
                         </div>
                       )

@@ -1,13 +1,15 @@
 // import { ReporteDocentePdf } from '@/components/invoce'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes'
-import { AlternativasDocente, ObservacionMonitoreoDocente } from '@/features/types/types'
+import { AlternativasDocente, ObservacionMonitoreoDocente, User } from '@/features/types/types'
 import { regionTexto } from '@/fuctions/regiones'
 import { useRouter } from 'next/router'
 import React, { useEffect, useRef, useState } from 'react'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import styles from './reporteDocente.module.css'
+import DatosInstitucion from '@/components/curricular/datos-institucion'
+import DatosMonitor from '@/components/curricular/datos-monitor'
 
 const ReporteDocenteIndividual = () => {
 
@@ -27,20 +29,46 @@ const ReporteDocenteIndividual = () => {
     if (!element) {
       return;
     }
-    const canvas = await html2canvas(element, { scale: 2 })
-    const imgData = canvas.toDataURL('image/png')
+
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "px",
       format: "A4"
     });
 
-    const imgProperties = pdf.getImageProperties(imgData)
-    const pdfWidth = pdf.internal.pageSize.getWidth()
-    const pdfHeight = (imgProperties.height * pdfWidth) / imgProperties.width
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 20; // margen en píxeles
 
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight)
-    pdf.save('docente_resultado')
+    const canvas = await html2canvas(element, { 
+      scale: 2,
+      useCORS: true,
+      logging: false
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const imgWidth = pageWidth - (2 * margin);
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    
+    let heightLeft = imgHeight;
+    let position = margin;
+    let page = 1;
+
+    // Primera página
+    pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+    heightLeft -= pageHeight - (2 * margin);
+
+    // Páginas adicionales si es necesario
+    while (heightLeft > 0) {
+      pdf.addPage();
+      // Calculamos la posición Y para la siguiente página
+      const yPosition = margin - (pageHeight - (2 * margin)) * page;
+      pdf.addImage(imgData, 'PNG', margin, yPosition, imgWidth, imgHeight);
+      heightLeft -= pageHeight - (2 * margin);
+      page++;
+    }
+
+    pdf.save('docente_resultado.pdf');
   }
 
 
@@ -78,12 +106,14 @@ const ReporteDocenteIndividual = () => {
             <div className={styles.title}>
               <h3>Resultado de Evaluación de desempeño del docente</h3>
             </div>
-            <div className={styles.infoSection}>
+            <DatosInstitucion dataDocente={reporteIndividualDocente.info ?? {} as User}/>
+            <DatosMonitor dataMonitor={currentUserData}/>
+            {/* <div className={styles.infoSection}>
               <h4>Profesor: <strong>{reporteIndividualDocente.info?.nombres} {reporteIndividualDocente.info?.apellidos}</strong></h4>
               <h4>Institución: <strong>{reporteIndividualDocente.info?.institucion}</strong></h4>
               <h4>Región: <strong>{regionTexto(`${reporteIndividualDocente.info?.region}`)}</strong></h4>
               <h4>Rol: <strong>{reporteIndividualDocente.info?.perfil?.nombre}</strong></h4>
-            </div>
+            </div> */}
 
             <div className={styles.sectionTitle}>
               <h5>Detalle de evaluación y calificación</h5>
@@ -104,8 +134,8 @@ const ReporteDocenteIndividual = () => {
                       <tr key={index} className={styles.tableRow}>
                         <td className={styles.tableCell}>{index + 1}</td>
                         <td className={styles.tableCellLeft}>{al.criterio}</td>
-                        <td className={styles.tableCell}>Nivel {al.alternativas && al.alternativas[index + 1]?.value}</td>
-                        <td className={styles.tableCell}>{al.alternativas && al.alternativas[index + 1]?.value}</td>
+                        <td className={styles.tableCell}>Nivel {al.alternativas?.map(select => select.selected ? select.value : null).filter(Boolean)[0]}</td>
+                        <td className={styles.tableCell}>{al.alternativas?.map(select => select.selected ? select.value : null).filter(Boolean)[0]}</td>
                       </tr>
                     )
                   })

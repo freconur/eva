@@ -181,7 +181,7 @@ const EvaluarDocente = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoce
                       </>
                   } */}
                         <div className={styles.containerPregunta}>
-                          <h3 className={styles.tituloPregunta}>{`${ordenLimitePregunta + 1})`}{copyPR[ordenLimitePregunta]?.criterio}</h3>
+                          <h3 className={styles.tituloPregunta}>{copyPR[ordenLimitePregunta]?.subOrden  || copyPR[ordenLimitePregunta]?.id}. {copyPR[ordenLimitePregunta]?.criterio}</h3>
                         </div>
                         <div className={styles.containerPreguntasAlternativas}>
                           {preguntaRespuestaFunction(copyPR)}

@@ -1,0 +1,138 @@
+.containerModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.containerSale {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+  animation: modalAppear 0.3s ease-out;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.closeModalContainer {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.close {
+  color: #666;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.close:hover {
+  color: #333;
+}
+
+.title {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.advertenciaEliminar {
+  color: #666;
+  margin-bottom: 2rem;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.buttonCrearEvaluacion,
+.buttonDelete {
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: 0.9rem;
+}
+
+.buttonCrearEvaluacion {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.buttonCrearEvaluacion:hover {
+  background-color: #e5e7eb;
+}
+
+.buttonDelete {
+  background-color: #ef4444;
+  color: white;
+}
+
+.buttonDelete:hover {
+  background-color: #dc2626;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.loadingContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loadingIcon {
+  font-size: 2rem;
+  color: #3b82f6;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingText {
+  color: #4b5563;
+  font-size: 0.9rem;
+}

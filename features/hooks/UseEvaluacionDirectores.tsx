@@ -43,6 +43,9 @@ const UseEvaluacionDirectores = () => {
   const deleteEvaluacionDirectores = async (id: string) => {
     await deleteDoc(doc(db, "evaluaciones-director", id));
   }
+  const deleteEvaluacionDirectorCurricular = async (id: string) => {
+    await deleteDoc(doc(db, "/evaluacion-curricular", id));
+  }
   const addPreguntasEvaluacionDirectores = async (data: PreviewPRDocentes, idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_MODALES, payload: true })
     const path = `/evaluaciones-director/${idEvaluacion}/preguntasRespuestas`
@@ -437,7 +440,8 @@ const UseEvaluacionDirectores = () => {
     buscarDirector,
     reporteEvaluacionDocenteAdmin,
     reporteUgelGlobal,
-    resetDirector
+    resetDirector,
+    deleteEvaluacionDirectorCurricular
   }
 
 }

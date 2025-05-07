@@ -26,10 +26,10 @@ const CrearEvaluacionDocente = ({ handleShowModalCrearEvaluacion }: Props) => {
   }
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
 
-  const { createEvaluacionesDirectores } = UseEvaluacionDirectores()
+  const { createEvaluacionesDocentes } = UseEvaluacionDocentes()
 
   const handleCreateEvaluacion = handleSubmit((data) => {
-    createEvaluacionesDirectores(data)
+    createEvaluacionesDocentes(data)
     reset()
   })
 
@@ -57,7 +57,7 @@ const CrearEvaluacionDocente = ({ handleShowModalCrearEvaluacion }: Props) => {
                     {...register("name", {
                       required: { value: true, message: "El nombre de evaluación es requerido" },
                       minLength: { value: 2, message: "El nombre debe tener un mínimo de 2 caracteres" },
-                      maxLength: { value: 50, message: "El nombre debe tener un máximo de 50 caracteres" },
+                      maxLength: { value: 200, message: "El nombre debe tener un máximo de 200 caracteres" },
                     })}
                     className={styles.inputNombresDni}
                     type="text"

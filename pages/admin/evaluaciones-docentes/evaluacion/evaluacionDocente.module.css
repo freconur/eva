@@ -1,0 +1,308 @@
+.header {
+  position: relative;
+  display: grid;
+  gap: 2rem;
+  justify-content: space-between;
+  padding: 4rem 6rem;
+  background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+  overflow: hidden;
+  border-bottom-left-radius: 2rem;
+  border-bottom-right-radius: 2rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.headerOverlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.1));
+  backdrop-filter: blur(8px);
+  z-index: 15;
+  width: 100%;
+}
+
+.headerImage {
+  position: absolute;
+  object-fit: cover;
+  height: 100%;
+  width: 100%;
+  bottom: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 10;
+  opacity: 0.2;
+  transform: scale(1.1);
+  transition: transform 0.5s ease;
+}
+
+.header:hover .headerImage {
+  transform: scale(1.15);
+}
+
+.headerContent {
+  position: relative;
+  z-index: 20;
+  max-width: 48rem;
+}
+
+.headerTitle {
+  font-size: 2.5rem;
+  font-weight: 800;
+  font-family: 'Martian Mono', monospace;
+  text-align: left;
+  color: white;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin-bottom: 2rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.searchContainer {
+  position: relative;
+  z-index: 100;
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.searchInput {
+  padding: 0.75rem 1.25rem;
+  height: 50px;
+  outline: none;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  width: 300px;
+}
+
+.searchInput::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.searchInput:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+}
+
+.docenteInfo {
+  padding: 1rem 1.5rem;
+  border: 2px solid rgba(34, 197, 94, 0.3);
+  border-radius: 1rem;
+  background: rgba(34, 197, 94, 0.1);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.docenteInfo:hover {
+  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(34, 197, 94, 0.15);
+  transform: translateY(-2px);
+}
+
+.docenteInfoText {
+  color: white;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.docenteInfoStrong {
+  font-weight: 600;
+  color: #4ade80;
+}
+
+.buttonContainer {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.button {
+  height: 50px;
+  position: relative;
+  z-index: 30;
+  padding: 0 1.5rem;
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+}
+
+.buttonPrimary {
+  background: linear-gradient(to right, #0a44e4, #3b82f6);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.buttonPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.buttonSecondary {
+  background: linear-gradient(to right, #f59e0b, #fbbf24);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.buttonSecondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.buttonLink {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+}
+
+.content {
+  padding: 4rem 6rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.loaderContainer {
+  display: flex;
+  width: 100%;
+  margin-top: 2rem;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.loaderIcon {
+  animation: spin 1s linear infinite;
+  font-size: 2rem;
+  color: #3b82f6;
+}
+
+.loaderText {
+  color: #64748b;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.preguntasList {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.preguntaItem {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.preguntaItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.preguntaHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.preguntaNumber {
+  font-weight: 700;
+  color: #3b82f6;
+  font-size: 1.25rem;
+  font-family: 'Martian Mono', monospace;
+}
+
+.preguntaTitle {
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.editButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #f59e0b;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.editButton:hover {
+  transform: scale(1.1);
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.alternativasList {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.alternativaItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.alternativaItem:hover {
+  background: #f1f5f9;
+  transform: translateX(4px);
+}
+
+.alternativaNumber {
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: 'Martian Mono', monospace;
+  color: #3b82f6;
+  min-width: 2rem;
+  text-align: center;
+}
+
+.alternativaText {
+  font-size: 1rem;
+  font-family: 'Montserrat', sans-serif;
+  color: #475569;
+  line-height: 1.5;
+} 

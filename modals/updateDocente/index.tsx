@@ -1,11 +1,10 @@
 import { User } from '@/features/types/types';
 import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom';
-import { regionTexto, gradosDeColegio, sectionByGrade } from '@/fuctions/regiones';
+import { regionTexto, gradosDeColegio, sectionByGrade,genero,area } from '@/fuctions/regiones';
 import styles from './styles.module.css';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular';
-import { area } from '@/fuctions/regiones';
 
 interface Props {
   dataDocente: User;
@@ -60,6 +59,7 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('formData',formData);
     updateDocenteParaCoberturaCurricular(`${dataDocente.dni}`, formData, dataDocente);
     onClose();
   };
@@ -145,7 +145,7 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
                       type="radio"
                       name="area"
                       value={item.id}
-                      checked={formData.area === item.id}
+                      checked={`${formData.area}` === `${item.id}`}
                       onChange={handleChange}
                       className={styles.radio}
                     />
@@ -155,6 +155,42 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
               </div>
             </div>
             <div className={styles.formGroup}>
+              <label className={styles.label}>Género</label>
+              <div className={styles.radioGroup}>
+                {genero.map((item) => (
+                  <label key={item.id} className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="genero"
+                      value={item.id}
+                      checked={formData.genero === `${item.id}`}
+                      onChange={handleChange}
+                      className={styles.radio}
+                    />
+                    {item.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Celular</label>
+              <input
+                type="number"
+                name="celular"
+                value={formData.celular || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.length <= 9) {
+                    handleChange(e);
+                  }
+                }}
+                className={styles.input}
+                placeholder="Ingrese el número de celular"
+                maxLength={9}
+                minLength={9}
+              />
+            </div>
+            <div className={styles.formGroup}>
               <label className={styles.label}>Característica Curricular</label>
               <select
                 name="caracteristicaCurricular"
@@ -162,7 +198,7 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
                 onChange={handleChange}
                 className={styles.input}
               >
-                <option value="">Seleccione una característica</option>
+                <option key={0} value={0}>Seleccione una característica</option>
                 {caracteristicaCurricular?.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}

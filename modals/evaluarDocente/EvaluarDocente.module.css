@@ -11,6 +11,8 @@
   align-items: center;
   z-index: 1000;
   animation: fadeIn 0.3s ease-in-out;
+  padding: 1rem;
+  overflow-y: auto;
 }
 .infoDocente {
   display: flex;
@@ -31,8 +33,11 @@
   padding: 2rem;
   width: 90%;
   max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   animation: slideUp 0.3s ease-out;
+  position: relative;
 }
 
 @keyframes slideUp {
@@ -281,17 +286,62 @@
   .containerSale {
     width: 95%;
     padding: 1.5rem;
+    max-height: 95vh;
   }
 
   .containerBuscarDocente {
     flex-direction: column;
+    gap: 0.5rem;
   }
 
-  .buttonsContainer {
+  .buttonsContainer, .buttonsContainerSiguiente {
     flex-direction: column;
+    gap: 0.5rem;
   }
 
   .buttonCrearEvaluacion {
     width: 100%;
+  }
+
+  .infoDocente {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .containerAlternativas {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .respuestas {
+    padding: 0.8rem;
+  }
+
+  .title {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .tituloPregunta {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .containerSale {
+    padding: 1rem;
+  }
+
+  .docenteInfo {
+    padding: 0.8rem;
+  }
+
+  .inputNombresDni {
+    padding: 0.6rem;
+  }
+
+  .buscarDocentebutton {
+    padding: 0.6rem 1rem;
   }
 }

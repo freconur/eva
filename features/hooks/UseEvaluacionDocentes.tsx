@@ -14,6 +14,7 @@ const UseEvaluacionDocentes = () => {
   }
 
   const getDataEvaluacion = (idEvaluacion: string) => {
+    const q = query(collection(db, "/evaluaciones-docentes"), orderBy("order","asc"))
     onSnapshot(doc(db, "/evaluaciones-docentes", idEvaluacion), (doc) => {
       if (doc.exists()) {
         dispatch({ type: AppAction.DATA_EVALUACION_DOCENTE, payload: doc.data() })
@@ -66,7 +67,8 @@ const UseEvaluacionDocentes = () => {
   const getPreguntasRespuestasDocentes = async (idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     const path = `/evaluaciones-docentes/${idEvaluacion}/preguntasRespuestas`
-    onSnapshot(collection(db, path), (querySnapshot) => {
+    const q = query(collection(db, path), orderBy("order","asc"))
+    onSnapshot(q, (querySnapshot) => {
       const arrayPreguntaRespuestaDocentes: PreviewPRDocentes[] = []
       querySnapshot.forEach((doc) => {
         arrayPreguntaRespuestaDocentes.push({ ...doc.data(), id: doc.id });
@@ -138,10 +140,10 @@ const UseEvaluacionDocentes = () => {
     dispatch({ type: AppAction.DATA_DOCENTE, payload: {} })
   }
 
-  const guardarObservacionDocente = async (idEvaluacion: string, data: ObservacionMonitoreoDocente, dataDocente:ReporteDocenteIndividual) => {
+  const guardarObservacionDocente = async (idEvaluacion: string, data: ObservacionMonitoreoDocente, dataDocente: ReporteDocenteIndividual) => {
 
     const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}/`
-    await setDoc(doc(db, path, `${dataDocente.dni}`), { ...dataDocente,observacionesMonitoreo: data })
+    await setDoc(doc(db, path, `${dataDocente.dni}`), { ...dataDocente, observacionesMonitoreo: data })
   }
   const guardarEvaluacionDocente = async (idEvaluacion: string, data: PRDocentes[], dataDocente: User) => {
     //AGREGANDO RESULTADOS DE LA EVALUACION DEL DOCENTE
@@ -251,38 +253,135 @@ const UseEvaluacionDocentes = () => {
     }
     )
   }
+
+  const reporteTablaEvaluacionDirectorDocente = (data: ReporteDocenteIndividual[], { grado, seccion, orden }: { grado: string, seccion: string, orden: string }) => {
+    
+    const dataFiltrada = data?.reduce((acc, docente) => {
+      console.log('estoy dentro del reduce')
+      // Si no hay filtros, retornar todos los datos
+      if (!grado && !seccion) {
+        return data;
+      }
+
+      // Filtrar por grado si está presente
+      if (grado && Array.isArray(docente.info?.grados)) {
+        const tieneGrado = docente.info.grados.some(g => g.toString() === grado);
+        if (tieneGrado) {
+          // Si también hay sección, filtrar por ambas
+          if (seccion && Array.isArray(docente.info?.secciones)) {
+            const tieneSeccion = docente.info.secciones.some(s => s.toString() === seccion);
+            if (tieneSeccion) {
+              acc.push(docente);
+            }
+          }
+          // Si no hay sección, incluir todos los del grado
+          else if (!seccion) {
+            acc.push(docente);
+          }
+        }
+      }
+      // Si solo hay sección y no grado
+      else if (!grado && seccion && Array.isArray(docente.info?.secciones)) {
+        const tieneSeccion = docente.info.secciones.some(s => s.toString() === seccion);
+        if (tieneSeccion) {
+          acc.push(docente);
+        }
+      }
+      return acc; 
+    }, [] as ReporteDocenteIndividual[]);
+
+    
+    console.log('dataFiltrada',dataFiltrada)
+    dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA, payload: dataFiltrada })
+    
+  }
   const reporteEvaluacionDocentes = (idEvaluacion: string) => {
     const path = `/evaluaciones-docentes/${idEvaluacion}/${currentUserData.dni}/`
     const refData = collection(db, path)
-    const arrayDataEstadisticas: DataEstadisticas[] = []
 
-    const newPromise = new Promise<DataEstadisticas[]>(async (resolve, reject) => {
-      try {
-        await getDocs(refData)
-          .then(response => {
-            let index = 0
-            response.forEach((doc) => {
-              index = index + 1
-              console.log('index', index)
-              console.log('response.size', response.size)
-              // doc.data() is never undefined for query doc snapshots
-              arrayDataEstadisticas.push({
-                ...doc.data(),
-                id: doc.id,
-                total: doc.data().d === undefined ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) : Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) + Number(doc.data().d)
-              })
-            })
-            if (response.size === index) {
-              arrayDataEstadisticas.sort((a: any, b: any) => a.id - b.id)
-              resolve(arrayDataEstadisticas)
-            }
-          })
-      } catch (error) {
-        console.log('error', error)
-        reject()
+    const docentesDelDirector: ReporteDocenteIndividual[] = []
+    const getDocenterIdRef = collection(db, `usuarios/${currentUserData.dni}/${idEvaluacion}`)
+    //me traigo a todos los docentes que estan acargo del director
+
+    //aqui debemos de validar si existe evaluaciones de los docentes de dicha evalucion
+
+    const getDniDocentesDeDirectores = new Promise<ReporteDocenteIndividual[]>(
+      async (resolve, reject) => {
+        try {
+          const docenteSnapshot = await getDocs(getDocenterIdRef);
+          
+          if (docenteSnapshot.size === 0) {
+            dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+            /* reject(new Error('No se encontraron docentes')); */
+            return;
+          }
+
+          const procesarDocentes = docenteSnapshot.docs.map(doc => {
+            return new Promise<void>((resolveDocente) => {
+              docentesDelDirector.push(doc.data());
+              resolveDocente();
+            });
+          });
+
+          await Promise.all(procesarDocentes);
+          resolve(docentesDelDirector);
+        } catch (error) {
+          console.error('Error al obtener docentes:', error);
+          reject(error);
+        }
       }
+    );
+
+    getDniDocentesDeDirectores.then(async (docentes) => {
+      console.log('docentes', docentes)
+      //aqui debo de lanzar un dispatch para tener los datos que van a tener filtros para manejo de la data que se usara en la tabla
+      dispatch({ type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE, payload: docentes })
+      const dataEstadisticasEstudiantes = docentes.reduce((acc, docente) => {
+        docente.resultados?.forEach(respuesta => {
+          if (respuesta.order === undefined) return;
+
+          const orderId = respuesta.order.toString();
+          let estadistica = acc.find(stat => stat.id === orderId);
+
+          if (!estadistica) {
+            // Inicializamos con todas las propiedades posibles
+            estadistica = {
+              id: orderId,
+              a: 0,
+              b: 0,
+              c: 0,
+              d: 0,
+              total: 0
+            };
+            acc.push(estadistica);
+          }
+
+          respuesta.alternativas?.forEach(alternativa => {
+            if (!alternativa.selected) return;
+
+            switch (alternativa.alternativa) {
+              case 'a': estadistica!.a = (estadistica!.a || 0) + 1; break;
+              case 'b': estadistica!.b = (estadistica!.b || 0) + 1; break;
+              case 'c': estadistica!.c = (estadistica!.c || 0) + 1; break;
+              case 'd': estadistica!.d = (estadistica!.d || 0) + 1; break;
+            }
+          });
+
+          // Calculamos el total basado en las alternativas presentes
+          const alternativasPresentes = respuesta.alternativas?.some(alt => alt.alternativa === 'd');
+          if (alternativasPresentes) {
+            estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0) + (estadistica!.d || 0);
+          } else {
+            estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0);
+            // Si no hay alternativa 'd', la establecemos como undefined
+            estadistica!.d = undefined;
+          }
+        });
+        dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: acc })
+        return acc;
+      }, [] as DataEstadisticas[]);
+
     })
-    newPromise.then(res => dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: arrayDataEstadisticas }))
   }
   //esta funcion no se esta usando por lo que se esta condiderando borrarlo, ademas tienes unos pequeños fallos, moerarlo.
   const getPRDocentes = async (idEvaluacion: string) => {
@@ -432,7 +531,7 @@ const UseEvaluacionDocentes = () => {
         })
       })
     })
-    
+
 
   }
 
@@ -454,7 +553,8 @@ const UseEvaluacionDocentes = () => {
     buscarDirector,
     reporteEvaluacionDocenteAdmin,
     reporteUgelGlobal,
-    guardarObservacionDocente
+    guardarObservacionDocente,
+    reporteTablaEvaluacionDirectorDocente
   }
 
 }

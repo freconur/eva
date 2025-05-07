@@ -21,7 +21,7 @@ import { ReporteCurricularDirector, ReporteDataEstadisticasCD } from '@/features
 import styles from '@/styles/coberturaCurricular.module.css'
 import { nivelCurricularPreguntas } from '@/fuctions/regiones'
 import header from '../../../../assets/evaluacion-docente.jpg'
-
+import {gradosDeColegio,ordernarAscDsc, sectionByGrade  } from '@/fuctions/regiones'
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -36,9 +36,14 @@ ChartJS.register(
 const ReporteCurricular = () => {
   const router = useRouter()
   const [nivel, setNivel] = useState("")
-  const { currentUserData, reporteCurricularDirector, reportePreguntaHabilidad } = useGlobalContext()
+  const [ filter, setFilter ] = useState({
+    grado: "",
+    orden: "",
+    seccion: ""
+  })
+  const { currentUserData, reporteCurricularDirector, reportePreguntaHabilidad, reporteCurricularDirectorData, curricularDirectorDataFilter } = useGlobalContext()
   const { idCurricular } = router.query
-  const { reporteCD } = useEvaluacionCurricular()
+  const { reporteCD , reporteCurricularDirectorFilter} = useEvaluacionCurricular()
 
   const iterateData = (data: ReporteCurricularDirector) => {
     return {
@@ -85,30 +90,31 @@ const ReporteCurricular = () => {
     return (
       <h3 className={styles.sectionTitle}>
         <span className={styles.sectionTitleIndicator}></span>
-        <span className='text-cyan-500 font-martianMono text-md'>{reportePreguntaHabilidad[Number(index) - 1]?.id}.</span>
+        <span className='text-cyan-500 font-martianMono text-md'>{reportePreguntaHabilidad[Number(index) - 1]?.order}.</span>
         <span className='text-slate-500 font-montserrat text-md font-regular'>{reportePreguntaHabilidad[Number(index) - 1]?.habilidad}</span>
       </h3>
     )
   }
+
+
   const handleChangeNivel = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setNivel(e.target.value)
   }
-
-  useEffect(() => {
-    if (!idCurricular || !currentUserData?.dni) return;
-
-    const fetchReporte = async () => {
-      await reporteCD(String(idCurricular), String(currentUserData.dni), String(nivel));
-    };
-
-    fetchReporte();
-  }, [idCurricular, currentUserData?.dni]);
-
+  const handleChangeFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFilter({
+      ...filter,
+      [e.target.name]: e.target.value
+    })
+  }
+  const handleFilter = () => {
+    console.log('filter', filter)
+    reporteCurricularDirectorFilter(reporteCurricularDirectorData, filter)
+  }
   useEffect(() => {
     if (!nivel) return;
     reporteCD(String(idCurricular), String(currentUserData.dni), String(nivel));
   }, [nivel]);
-
+  console.log('curricularDirectorDataFilter', curricularDirectorDataFilter)
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -135,7 +141,80 @@ const ReporteCurricular = () => {
           </div>
         </div>
       </div>
+      <div className={styles.filterContainer}>
+        <select 
+          onChange={handleChangeFilter}
+          className={styles.filterSelect}
+          name='grado'
+        >
+          <option value="">Seleccione un grado</option>
+          {gradosDeColegio.map((grado) => (
+            <option key={grado.id} value={grado.id}>
+              {grado.name}
+            </option>
+          ))}
+        </select>
 
+        <select 
+          onChange={handleChangeFilter}
+          className={styles.filterSelect}
+          name='orden'
+        >
+          <option value="">Seleccione orden</option>
+          {ordernarAscDsc.map((orden) => (
+            <option key={orden.id} value={orden.id}>
+              {orden.name}
+            </option>
+          ))}
+        </select>
+
+        <select 
+          onChange={handleChangeFilter}
+          className={styles.filterSelect}
+          name='seccion'
+        >
+          <option value="">Seleccione una sección</option>
+          {sectionByGrade.map((seccion) => (
+            <option key={seccion.id} value={seccion.id}>
+              {seccion.name}
+            </option>
+          ))}
+        </select>
+        <button onClick={handleFilter} className={styles.filterButton}>
+          Filtrar
+        </button>
+      </div>
+
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead className={styles.tableHeader}>
+            <tr>
+              <th className={styles.tableHeaderCell}>#</th>
+              <th className={styles.tableHeaderCell}>Nombre y apellidos</th>
+              {
+                reportePreguntaHabilidad.map((pregunta) => (
+                  <th key={pregunta.id} className={styles.tableHeaderCell}>{pregunta.order}</th>
+                ))
+              }
+            </tr>
+          </thead>
+          <tbody>
+            {
+              curricularDirectorDataFilter.map((dat, index) => (
+                <tr key={index} className={styles.tableRow}>
+                  <td className={styles.tableCell}>{index + 1}</td>
+                  <td className={`${styles.tableCell} ${styles.tableCellName}`}>{dat.nombres} {dat.apellidos}</td>
+                  {
+                    dat.preguntasAlternativas?.map((pregunta) => (
+                      <td key={pregunta.id} className={styles.tableCell}>{pregunta.alternativas?.find(alternativa => alternativa.selected)?.acronimo}</td>
+                    ))
+                  }
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
       <div className={styles.tableContainer}>
         <div className={styles.containerGrafico}>
           {reporteCurricularDirector?.map((dat, index) => (
@@ -144,31 +223,25 @@ const ReporteCurricular = () => {
               <div className={styles.chartContainer}>
                 <Bar
                   options={options}
-                  data={iterateData(dat.data ? dat.data : {})}
+                  data={iterateData(dat as ReporteCurricularDirector)}
                   className={styles.chart}
                 />
               </div>
               <div className={styles.statsContainer}>
-                <div className={styles.statItem}>
-                  <span className={styles.statLabel}>N:</span>
-                  <span className={styles.statValue}>{dat.data?.n} | {((100 * Number(dat.data?.n)) / Number(dat.total)).toFixed(0)}%</span>
-                </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statLabel}>CN:</span>
-                  <span className={styles.statValue}>{dat.data?.cn} | {((100 * Number(dat.data?.cn)) / Number(dat.total)).toFixed(0)}%</span>
-                </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statLabel}>AV:</span>
-                  <span className={styles.statValue}>{dat.data?.av} | {((100 * Number(dat.data?.av)) / Number(dat.total)).toFixed(0)}%</span>
-                </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statLabel}>F:</span>
-                  <span className={styles.statValue}>{dat.data?.f} | {((100 * Number(dat.data?.f)) / Number(dat.total)).toFixed(0)}%</span>
-                </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statLabel}>S:</span>
-                  <span className={styles.statValue}>{dat.data?.s} | {((100 * Number(dat.data?.s)) / Number(dat.total)).toFixed(0)}%</span>
-                </div>
+                {[
+                  { label: 'N', value: dat.n },
+                  { label: 'CN', value: dat.cn },
+                  { label: 'AV', value: dat.av },
+                  { label: 'F', value: dat.f },
+                  { label: 'S', value: dat.s }
+                ].map(({ label, value }) => (
+                  <div key={label} className={styles.statItem}>
+                    <span className={styles.statLabel}>{label}:</span>
+                    <span className={styles.statValue}>
+                      {value} | {((100 * Number(value)) / Number(dat.total)).toFixed(0)}%
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           ))}

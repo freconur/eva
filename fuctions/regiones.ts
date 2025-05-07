@@ -15,6 +15,13 @@ const regiones = [
   { region: "moho", id: 14 },
 ]
 
+export const niveles = (value: number) => {
+  if (value === 1) return "N1"
+  if (value === 2) return "N2"
+  if (value === 3) return "N3"
+  if (value === 4) return "N4"
+}
+  
 export const rolTexto = (rol: number) => {
   if (rol === 1) return "Especialista"
   if (rol === 2) return "Director"
@@ -54,6 +61,10 @@ export const converSeccion = (seccion: number) => {
   if (seccion === 6) return "f"
   if (seccion === 7) return "g"
   if (seccion === 8) return "h"
+}
+export const converGenero = (genero: string) => {
+  if (genero === "1") return "masculino"
+  if (genero === "2") return "femenino"
 }
 export const gradosDeColegio = [
   { id: 1, name: "1ro grado" },
@@ -95,9 +106,9 @@ export const area = [
 ]
 
 export const nivelCurricular = [
-  { id: 1, name: "nivel 1" },
-  { id: 2, name: "nivel 2" },
-  { id: 3, name: "nivel 3" },
+  { id: 1, name: "estandar III" },
+  { id: 2, name: "estandar IV" },
+  { id: 3, name: "estandar V" },
 ]
 
 export const nivelCobertura = 
@@ -135,16 +146,16 @@ export const nivelCobertura =
     {
       id:1,
       selected: false,
-      description:"nivel 1"
+      description:"estandar III"
     },
     {
       id:2,
       selected: false,
-      description:"nivel 2"
+      description:"estandar IV"
     },  
     {
       id:3,
       selected: false,
-      description:"nivel 3"
+      description:"estandar V"
     },
   ]

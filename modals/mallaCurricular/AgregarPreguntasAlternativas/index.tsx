@@ -49,12 +49,12 @@ const AgregarPreguntasAlternativasCurricular = ({ handleShowModalPreguntasAltern
             :
             <div className={styles.containerSale}>
               <div className={styles.closeModalContainer}>
-                <h3 className={styles.title}>agregar habilidades lectoras</h3>
+                <h3 className={styles.title}>Agregar habilidades lectoras</h3>
                 <div className={styles.close} onClick={handleShowModalPreguntasAlternativas}>cerrar</div>
               </div>
               <form onSubmit={handleSubmitform}>
                 <div className={styles.formGroup}>
-                  <p className={styles.titlePregunta}>Nivel Curricular</p>
+                  <p className={styles.titlePregunta}>Estandar curricular</p>
                   <div className={styles.containerRadio}>
                     {nivelCurricular.map((nivel) => (
                       <div key={nivel.id} className={styles.radioOption}>

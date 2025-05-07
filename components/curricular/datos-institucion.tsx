@@ -1,14 +1,14 @@
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import { User } from '@/features/types/types'
-import { regionTexto } from '@/fuctions/regiones'
+import { converGenero, regionTexto } from '@/fuctions/regiones'
 import UpdateDataDocente from '@/modals/updateDocente'
 import React, { useState } from 'react'
 import { MdEditSquare } from 'react-icons/md'
-import { gradosDeColegio, sectionByGrade, area } from '../../fuctions/regiones'
+import { gradosDeColegio, sectionByGrade, area,genero } from '../../fuctions/regiones'
 import styles from './datos-institucion.module.css'
 
 interface Props {
-	dataDocente: User
+	dataDocente: User 
 }
 
 const DatosInstitucion = ({ dataDocente }: Props) => {
@@ -31,7 +31,7 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 		const areaEncontrada = area.find(a => a.id === Number(areaId))
 		return areaEncontrada?.name ?? '-'
 	}
-
+	console.log(dataDocente)
 	return (
 		<div className="bg-white">
 			{showUpdateDataDocente && (
@@ -71,6 +71,14 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 				<div className={styles.dataRow}>
 					<div className={styles.label}>Nombres y Apellidos</div>
 					<div className={styles.value}>{`${dataDocente?.nombres ?? '-'} ${dataDocente?.apellidos ?? '-'}`}</div>
+				</div>
+				<div className={styles.dataRow}>
+					<div className={styles.label}>Celular</div>
+					<div className={styles.value}>{`${dataDocente?.celular ?? '-'}`}</div>
+				</div>
+				<div className={styles.dataRow}>
+					<div className={styles.label}>genero</div>
+					<div className={styles.value}>{`${converGenero(`${dataDocente?.genero}`) ?? '-'}`}</div>
 				</div>
 				<div className={styles.dataRow}>
 					<div className={styles.gradosSeccionesContainer}>

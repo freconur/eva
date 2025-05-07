@@ -96,7 +96,12 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                   <li className={styles.containerAncla}><Link
                   href="/admin/evaluaciones-docentes"
                   className={styles.anclaje}
-                  id="ancla">Evaluaciones</Link></li>
+                  id="ancla">Mediación didáctica</Link></li>
+                  <li className={styles.containerAncla}><Link
+                  href="/admin/cobertura-curricular"
+                  className={styles.anclaje}
+                  id="ancla">Cobertura curricular</Link></li>
+                  
               </ul>
             </li>
             <li className={styles.dropdown}>
@@ -112,7 +117,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 <li className={styles.containerAncla}><Link
                   href="/admin/evaluaciones"
                   className={styles.anclaje}
-                  id="ancla">Evaluaciones</Link></li>
+                  id="ancla">Seguimiento de Aprendizaje</Link></li>
                 <li className={styles.containerAncla}><Link
                   href="/admin/agregar-evaluaciones"
                   id="ancla"

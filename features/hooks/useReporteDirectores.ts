@@ -151,7 +151,7 @@ export const useReporteDirectores = () => {
               estadistica!.d = undefined;
             }
           });
-
+          console.log('acc', acc)
           return acc;
         }, [] as DataEstadisticas[]);
 

@@ -69,7 +69,7 @@ const EvaluacionDocente = () => {
         
         <div className={styles.headerContent}>
           <h1 className={styles.headerTitle}>
-            Monitoreo a la mediación didáctica de la competencia {dataEvaluacionDocente?.name}
+            Monitoreo {dataEvaluacionDocente?.name?.toLocaleLowerCase()}
           </h1>
           
           <div className={styles.searchContainer}>
@@ -95,7 +95,7 @@ const EvaluacionDocente = () => {
           </div>
 
           <div className={styles.headerButtons}>
-           {/*  <button 
+            {/* <button 
               onClick={handleShowModalPreguntas}
               className={styles.headerButton}
             >
@@ -135,7 +135,7 @@ const EvaluacionDocente = () => {
                 <div key={index} className={styles.preguntaCard}>
                   <div className={styles.preguntaHeader}>
                     <div className={styles.preguntaTitle}>
-                      <span className={styles.preguntaNumber}>{index + 1}.</span>
+                      <span className={styles.preguntaNumber}>{pq.subOrden || pq.id}.</span>
                       <h3 className={styles.preguntaText}>{pq.criterio}</h3>
                     </div>
                     {/* <button 

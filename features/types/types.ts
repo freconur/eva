@@ -48,11 +48,15 @@ export type AppReducerValues = {
   allEvaluacionesCurricularesDocente:EvaluacionCurricularAlternativa[],
   caracteristicaCurricular:CaracteristicaCurricular[],
   allEspecialistas:User[],
-  reporteCurricularDirector:ReporteDataEstadisticasCD[],
+  reporteCurricularDirector:DataEstadisticasCurricular[],
   reportePreguntaHabilidad:EvaluacionHabilidad[],
   testReporteDirector:UserEstudiante[],
   allRespuestasEstudiantesDirector:UserEstudiante[],
-  dataFiltradaDirectorTabla:UserEstudiante[]
+  dataFiltradaDirectorTabla:UserEstudiante[],
+  allEvaluacionesDirectorDocente:ReporteDocenteIndividual[],
+  dataFiltradaDirectorDocenteTabla:ReporteDocenteIndividual[],
+  reporteCurricularDirectorData:User[],
+  curricularDirectorDataFilter:User[]
 };
 
 export type AppActions =
@@ -115,11 +119,15 @@ export type AppActions =
   | { type: AppAction.ALL_EVALUACIONES_CURRICULARES_DOCENTE; payload: EvaluacionCurricularAlternativa[] }
   | { type: AppAction.CARACTERISTICA_CURRICULAR; payload: CaracteristicaCurricular[] }
   | { type: AppAction.ALL_ESPECIALISTAS; payload: User[] }
-  | { type: AppAction.REPORT_CURRICULAR_DIRECTOR; payload: ReporteDataEstadisticasCD[] }
+  | { type: AppAction.REPORT_CURRICULAR_DIRECTOR; payload: DataEstadisticasCurricular[] }
   | { type: AppAction.REPORT_PREGUNTA_HABILIDAD; payload: EvaluacionHabilidad[] }
   | { type: AppAction.TEST_REPORTE_DIRECTOR; payload: UserEstudiante[] }
   | { type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR; payload: UserEstudiante[] }
   | { type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA; payload: UserEstudiante[] }
+  | { type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE; payload: ReporteDocenteIndividual[] }
+  | { type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA; payload: ReporteDocenteIndividual[] }
+  | { type: AppAction.REPORT_CURRICULAR_DIRECTOR_DATA; payload: User[] }
+  | { type: AppAction.CURRICULAR_DIRECTOR_DATA_FILTER; payload: User[] }
 export type LoginData = {
   usuario: string;
   contrasena: string;
@@ -223,7 +231,9 @@ export type User = {
   distrito?:string;
   genero?:string;
   celular?:string;
-  observacionCurricular?:AnexosCurricularType
+  nivel?:number;
+  observacionCurricular?:AnexosCurricularType;
+  preguntasAlternativas?:PaHanilidad[]
 };
 
 export type DataEstadisticas = {
@@ -232,6 +242,15 @@ export type DataEstadisticas = {
   b?: number;
   c?: number;
   d?: number;
+  total?: number;
+};
+export type DataEstadisticasCurricular = {
+  id?: string;
+  n?: number;
+  cn?: number;
+  av?: number;
+  f?: number;
+  s?: number;
   total?: number;
 };
 export type DataEstadisticasDocente = {
@@ -286,7 +305,8 @@ export type PRDocentes = {
   alternativas?: AlternativasDocente[];
   order?: number;
   id?: string;
-  calificacion?:number
+  calificacion?:number,
+  subOrden?:string
 };
 
 export interface AlternativasDocente {
