@@ -5,6 +5,7 @@ import { regionTexto, gradosDeColegio, sectionByGrade,genero,area } from '@/fuct
 import styles from './styles.module.css';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular';
+import { distritosPuno } from '@/fuctions/provinciasPuno';
 
 interface Props {
   dataDocente: User;
@@ -16,6 +17,7 @@ interface UserWithCaracteristica extends User {
   grados?: number[];
   secciones?: number[];
   area?: number;
+  distrito?: string;
 }
 
 const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
@@ -24,6 +26,18 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
     grados: Array.isArray(dataDocente.grados) ? dataDocente.grados : [],
     secciones: Array.isArray(dataDocente.secciones) ? dataDocente.secciones : []
   });
+
+  const [distritosDisponibles, setDistritosDisponibles] = useState<string[]>([]);
+
+  useEffect(() => {
+    const provinciaEncontrada = distritosPuno.find(p => p.id === Number(formData.region));
+    if (provinciaEncontrada) {
+      setDistritosDisponibles(provinciaEncontrada.distritos);
+    } else {
+      setDistritosDisponibles([]);
+    }
+  }, [formData.region]);
+
   let container;
   if (typeof window !== "undefined") {
     container = document.getElementById("portal-modal");
@@ -63,6 +77,7 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
     updateDocenteParaCoberturaCurricular(`${dataDocente.dni}`, formData, dataDocente);
     onClose();
   };
+  console.log('dataDocente',dataDocente)
   useEffect(() => {
     getCaracteristicasCurricular();
   }, []);
@@ -136,6 +151,24 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
                 className={`${styles.input} ${styles.inputDisabled}`}
               />
             </div>
+            {distritosDisponibles.length > 0 && (
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Distrito</label>
+                <select
+                  name="distrito"
+                  value={formData.distrito || ''}
+                  onChange={handleChange}
+                  className={styles.input}
+                >
+                  <option value="">Seleccione un distrito</option>
+                  {distritosDisponibles.map((distrito) => (
+                    <option key={distrito} value={distrito}>
+                      {distrito}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className={styles.formGroup}>
               <label className={styles.label}>Área</label>
               <div className={styles.radioGroup}>
