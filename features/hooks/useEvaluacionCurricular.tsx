@@ -323,22 +323,24 @@ const useEvaluacionCurricular = () => {
     })
   }
   const updateDocenteParaCoberturaCurricular = async (dataDocente: string, data: User, docente: User) => {
+    console.log('data', data)
+    
     await setDoc(doc(db, "usuarios", dataDocente), {
       nombres: data.nombres,
       apellidos: data.apellidos,
       dni: data.dni,
       institucion: data.institucion,
       region: data.region,
-      area: data.area,
-      grados: data.grados,
-      secciones: data.secciones,
-      caracteristicaCurricular: data.caracteristicaCurricular,
+      area: data.area || '',
+      grados: data.grados || [],
+      secciones: data.secciones || [],
+      caracteristicaCurricular: data.caracteristicaCurricular || '',
       distrito: data.distrito || '',
       celular: data.celular || '',
-      dniDirector: docente.dniDirector,
-      rol: docente.rol,
-      perfil: docente.perfil,
-      genero: data.genero,
+      dniDirector: docente.dniDirector || '',
+      rol: docente.rol || '',
+      perfil: docente.perfil || '',
+      genero: data.genero || '',
     })
   }
 

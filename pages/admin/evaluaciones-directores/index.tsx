@@ -50,7 +50,7 @@ const EvaluacionesDesempeñoDocentes = () => {
             objectFit='fill'
             priority
           />
-          <h1 className="text-textTitulos relative z-[20]  text-3xl font-bold font-martianMono capitalize text-left">Evaluaciones de seguimiento de desempeño del director</h1>
+          <h1 className="text-textTitulos relative z-[20]  text-3xl font-bold font-martianMono capitalize text-left">seguimiento y retroalimentacion al desempeño del directivo</h1>
           <button onClick={handleShowModalCrearEvaluacion} className="relative z-[50] p-3 rounded-sm bg-green-400 text-textTitulos w-[150px] h-[50px]">Crear Evaluación</button>
         </div>
 

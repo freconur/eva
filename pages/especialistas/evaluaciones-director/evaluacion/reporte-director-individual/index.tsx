@@ -11,6 +11,7 @@ import styles from './reporteDocente.module.css'
 import DatosInstitucion from '@/components/curricular/datos-institucion'
 import DatosMonitor from '@/components/curricular/datos-monitor'
 import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas'
+import DatosInstitucionDirector from '@/components/curricular/datos-institucion-director'
 
 const ReporteDirectorIndividual = () => {
 
@@ -106,11 +107,12 @@ const ReporteDirectorIndividual = () => {
         reporteIndividualDocente?.dni ?
           <div ref={printRef} className={styles.reporteContainer}>
             <div className={styles.title}>
-              <h3>Resultado de Evaluación de desempeño del docente</h3>
+              <h3>Resultado de Evaluación de desempeño del directivo</h3>
             </div>
         
             
-            <DatosInstitucion dataDocente={reporteIndividualDocente.info ?? {} as User}/>
+            {/* <DatosInstitucion dataDocente={reporteIndividualDocente.info ?? {} as User}/> */}
+            <DatosInstitucionDirector dataDocente={reporteIndividualDocente.info ?? {} as User}/>
             
             <DatosMonitor dataMonitor={currentUserData}/>
             {/* <div className={styles.infoSection}>

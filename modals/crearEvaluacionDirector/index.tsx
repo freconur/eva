@@ -54,7 +54,7 @@ const CrearEvaluacionDirector = ({ handleShowModalCrearEvaluacion }: Props) => {
                 <div className={styles.closeModalContainer}>
                   <div className={styles.close} onClick={handleShowModalCrearEvaluacion} >cerrar</div>
                 </div>
-                <h3 className={styles.title}>Crear Evaluación Desempeño del docente</h3>
+                <h3 className={styles.title}>Crear evaluación desempeño del docente</h3>
                 <form onSubmit={handleCreateEvaluacion}>
 
                   <div className='w-full my-2'>

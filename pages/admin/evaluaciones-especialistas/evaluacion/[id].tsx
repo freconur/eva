@@ -61,7 +61,7 @@ console.log('dataDirector', dataDirector)
 					priority
 				/>
 				<div className='grid gap-[5px]'>
-					<h1 className="text-textTitulos relative z-[20]  text-3xl font-bold font-martianMono capitalize text-left">Evaluación {dataEvaluacionDocente?.name}</h1>
+					<h1 className="text-textTitulos relative z-[20]  text-3xl font-bold font-martianMono capitalize text-left">Evaluación {dataEvaluacionDocente?.name?.toLocaleLowerCase()}</h1>
 					<div className='relative z-[100] flex gap-5'>
 						<input
 							type="number"

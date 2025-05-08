@@ -11,7 +11,7 @@ interface Props {
 	dataDocente: User 
 }
 
-const DatosInstitucion = ({ dataDocente }: Props) => {
+const DatosInstitucionDirector = ({ dataDocente }: Props) => {
 	const [showUpdateDataDocente, setShowUpdateDataDocente] = useState(false)
 
 	const getGradoTexto = (grado: string | number | undefined) => {
@@ -31,7 +31,7 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 		const areaEncontrada = area.find(a => a.id === Number(areaId))
 		return areaEncontrada?.name ?? '-'
 	}
-	
+	console.log('tikiki',dataDocente)
 	return (
 		<div className="bg-white">
 			{showUpdateDataDocente && (
@@ -41,7 +41,7 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 				/>
 			)}
 			<div className={styles.header}>
-				<h2>I. Datos de la institución educativa y del profesor</h2>
+				<h2>I. Datos de la institución educativa y del director</h2>
 				<MdEditSquare
 					onClick={() => setShowUpdateDataDocente(!showUpdateDataDocente)}
 					className={styles.editButton}
@@ -124,4 +124,4 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 	)
 }
 
-export default DatosInstitucion
+export default DatosInstitucionDirector

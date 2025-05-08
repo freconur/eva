@@ -473,6 +473,9 @@ const useUsuario = () => {
     await updateDoc(pathRef, data);
     getAllEspecialistas(); // Actualizamos la lista después de modificar
   };
+
+
+
   return {
     getDirectorById,
     signIn,

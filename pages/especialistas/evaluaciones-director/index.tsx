@@ -55,7 +55,7 @@ const EvaluacionesDesempeñoDirectores = () => {
             priority
           />
           <h1 className="text-textTitulos relative z-[20]  text-3xl font-bold font-martianMono text-left">Seguimiento y retroalimentación al desempeño del directivo</h1>
-          <button onClick={handleShowModalCrearEvaluacion} className="relative z-[50] p-3 rounded-sm bg-green-400 text-textTitulos w-[150px] h-[50px]">Crear Evaluación</button>
+          {/* <button onClick={handleShowModalCrearEvaluacion} className="relative z-[50] p-3 rounded-sm bg-green-400 text-textTitulos w-[150px] h-[50px]">Crear Evaluación</button> */}
         </div>
 
         {
@@ -97,12 +97,12 @@ const EvaluacionesDesempeñoDirectores = () => {
                               {evaluacion.categoria}
                             </Link>
                           </td>
-                          <td>
+                          {/* <td>
                             {<MdEditSquare onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setEva(evaluacion)}} className='text-xl text-yellow-500 cursor-pointer' />}
                           </td>
                           <td>
                             <MdDeleteForever onClick={() => { handleShowModalDelete(); setIdEva(`${evaluacion.id}`) }} className='text-xl text-red-500 cursor-pointer' />
-                          </td>
+                          </td> */}
                         </tr>
                       )
                     })

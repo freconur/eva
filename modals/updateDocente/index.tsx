@@ -70,7 +70,7 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
     <div className={styles.modalOverlay}>
       <div className={styles.modalContainer}>
         <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>Actualizar Datos del Docente</h2>
+          <h2 className={styles.modalTitle}>Actualizar Datos</h2>
           <button
             onClick={onClose}
             className={styles.closeButton}
