@@ -69,8 +69,8 @@ const Login = () => {
         />
       </div>
       <div className='grid gap-1 relative z-[50]'>
-        <h1 className='text-center text-4xl uppercase text-white font-semibold font-martianMono [text-shadow:_0_2px_4px_rgba(0,0,0,0.5)] '>sistema de evaluación formativa</h1>
-        <h2 className='text-center text-4xl uppercase text-white font-semibold font-martianMono mb-10 [text-shadow:_0_2px_4px_rgba(0,0,0,0.5)] '>e-formativa</h2>
+        <h1 className='text-center text-4xl uppercase text-white font-semibold font-martianMono [text-shadow:_0_2px_4px_rgba(0,0,0,0.5)] '>Sistema de seguimiento del desarrollo</h1>
+        <h2 className='text-center text-4xl uppercase text-white font-semibold font-martianMono mb-10 [text-shadow:_0_2px_4px_rgba(0,0,0,0.5)] '>de competencias</h2>
       </div>
       <div className='min-w-[350px] bg-white shadow-xl m-auto rounded-md overflow-hidden relative z-[50]'>
         <div className='bg-yellow-400 py-7'>
