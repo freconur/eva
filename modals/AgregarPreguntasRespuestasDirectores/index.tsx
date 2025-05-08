@@ -60,7 +60,7 @@ const AgregarPreguntasRespuestasDirectores = ({ handleShowModalPreguntas, idEval
                       {
                         required: { value: true, message: "criterio es requerido" },
                         minLength: { value: 1, message: "criterio debe tener un minimo de 1 caracteres" },
-                        maxLength: { value: 150, message: "criterio debe tener un maximo de 150 caracteres" },
+                        maxLength: { value: 300, message: "criterio debe tener un maximo de 300 caracteres" },
                       }
                     )}
                   />
@@ -78,7 +78,7 @@ const AgregarPreguntasRespuestasDirectores = ({ handleShowModalPreguntas, idEval
                           {
                             required: { value: true, message: "criterio es requerido" },
                             minLength: { value: 1, message: "criterio debe tener un minimo de 1 caracteres" },
-                            maxLength: { value: 150, message: "criterio debe tener un maximo de 150 caracteres" },
+                            maxLength: { value: 300, message: "criterio debe tener un maximo de 300 caracteres" },
                           }
                         )}
                       />
@@ -94,7 +94,7 @@ const AgregarPreguntasRespuestasDirectores = ({ handleShowModalPreguntas, idEval
                           {
                             required: { value: true, message: "criterio es requerido" },
                             minLength: { value: 1, message: "criterio debe tener un minimo de 1 caracteres" },
-                            maxLength: { value: 150, message: "criterio debe tener un maximo de 150 caracteres" },
+                            maxLength: { value: 300, message: "criterio debe tener un maximo de 300 caracteres" },
                           }
                         )}
                       />
@@ -110,7 +110,7 @@ const AgregarPreguntasRespuestasDirectores = ({ handleShowModalPreguntas, idEval
                           {
                             required: { value: true, message: "criterio es requerido" },
                             minLength: { value: 1, message: "criterio debe tener un minimo de 1 caracteres" },
-                            maxLength: { value: 150, message: "criterio debe tener un maximo de 150 caracteres" },
+                            maxLength: { value: 300, message: "criterio debe tener un maximo de 300 caracteres" },
                           }
                         )}
                       />
@@ -126,7 +126,7 @@ const AgregarPreguntasRespuestasDirectores = ({ handleShowModalPreguntas, idEval
                           {
                             required: { value: true, message: "criterio es requerido" },
                             minLength: { value: 1, message: "criterio debe tener un minimo de 1 caracteres" },
-                            maxLength: { value: 200, message: "criterio debe tener un maximo de 150 caracteres" },
+                            maxLength: { value: 300, message: "criterio debe tener un maximo de 300 caracteres" },
                           }
                         )}
                       />

@@ -1,3 +1,193 @@
+export const distritosPuno = [
+  {
+    provincia: "Azángaro",
+    distritos: [
+      "Achaya",
+      "Arapa",
+      "Asillo",
+      "Azangaro",
+      "Caminaca",
+      "Chupa",
+      "Jose Domingo Choquehuanca",
+      "Muñani",
+      "Potoni",
+      "Saman",
+      "San Anton",
+      "San Jose", 
+      "San Juan De Salinas",
+      "Santiago De Pupuja",
+      "Tirapata"
+    ],
+    id: 13
+  },
+  {
+    provincia: "Carabaya",
+    distritos: [
+      "Ajoyani",
+      "Ayapata",
+      "Coasa",
+      "Corani",
+      "Crucero",
+      "Ituata",
+      "Macusani",
+      "Ollachea",
+      "San Gaban",
+      "Usicayos"
+    ],
+    id: 10
+  },
+  {
+    provincia: "Chucuito-juli",
+    distritos: [
+      "Desaguadero",
+      "Huacullani",
+      "Juli",
+      "Kelluyo",
+      "Pisacoma",
+      "Pomata",
+      "Zepita"
+    ],
+    id: 3
+  },
+  {
+    provincia: "El Collao",
+    distritos: [
+      "Capazo",
+      "Conduriri",
+      "Ilave",
+      "Pilcuyo",
+      "Santa Rosa"
+    ],
+    id: 5
+  },
+  {
+    provincia: "Huancané",
+    distritos: [
+      "Cojata",
+      "Huancane",
+      "Huatasani",
+      "Inchupalla",
+      "Pusi",
+      "Rosaspata",
+      "Taraco",
+      "Vilque Chico"    
+    ],
+    id: 7
+  },
+  {
+    provincia: "Lampa",
+    distritos: [
+      "Cabanilla",
+      "Calapuja",
+      "Lampa",
+      "Nicasio",
+      "Ocuviri",
+      "Palca",
+      "Paratia",
+      "Pucara",
+      "Santa Lucia",
+      "Vilavila"
+    ],
+    id: 11
+  },
+  {
+    provincia: "Melgar",
+    distritos: [
+      "Antauta",
+      "Ayaviri",
+      "Cupi",
+      "Llalli",
+      "Macari",
+      "Nuñoa",
+      "Orurillo",
+      "Santa Rosa",
+      "Umachiri"
+    ],
+    id: 12
+  },
+  {
+    provincia: "Moho",
+    distritos: [
+      "Conima",
+      "Huayrapata",
+      "Moho",
+      "Tilali"
+    ],
+    id: 14
+  },
+  {
+    provincia: "Puno",
+    distritos: [
+      "Acora",
+      "Amantani",
+      "Atuncolla",
+      "Capachica",
+      "Chucuito",
+      "Coata",
+      "Huata",
+      "Mañazo",
+      "Paucarcolla",
+      "Pichacani",
+      "Plateria",
+      "Puno",
+      "San Antonio",
+      "Tiquillaca",
+      "Vilque"
+    ],
+    id: 1
+  },
+  {
+    provincia: "Putina",
+    distritos: [
+      "Ananea",
+      "Pedro Vilca Apaza",
+      "Putina",
+      "Quilcapuncu",
+      "Sina"
+    ],
+    id: 6
+  },
+  {
+    provincia: "San Román",
+    distritos: [
+      "Cabana",
+      "Cabanillas",
+      "Caracoto",
+      "Juliaca",
+      "San Pedro De Putina Punco"
+    ],
+    id: 2
+  },
+  {
+    provincia: "Sandia",
+    distritos: [
+      "Alto Inambari",
+      "Cuyocuyo",
+      "Limbani",
+      "Patambuco",
+      "Phara",
+      "Quiaca",
+      "San Juan Del Oro",
+      "San Pedro De Putina Punco",
+      "Sandia",
+      "Yanahuaya"
+    ],
+    id: 8
+  },
+  {
+    provincia: "Yunguyo", 
+    distritos: [
+      "Anapia",
+      "Copani",
+      "Cuturapi",
+      "Ollaraya",
+      "Tinicachi",
+      "Unicachi",
+      "Yunguyo"
+    ],
+    id: 4
+  }
+]   
 export const provinciasPuno = {
     "Azángaro": {
       "Achaya": "210202",
@@ -28,7 +218,7 @@ export const provinciasPuno = {
       "San Gaban": "210309",
       "Usicayos": "210310"
     },
-    "Chucuito": {
+    "Chucuito-juli": {
       "Desaguadero": "210402",
       "Huacullani": "210403",
       "Juli": "210401",
@@ -100,7 +290,7 @@ export const provinciasPuno = {
       "Tiquillaca": "210114",
       "Vilque": "210115"
     },
-    "San Antonio De Putina": {
+    "Putina": {
       "Ananea": "211002",
       "Pedro Vilca Apaza": "211003",
       "Putina": "211001",

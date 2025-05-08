@@ -58,19 +58,19 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
 
                 <MdAccountBalance className={styles.icons} />
                 <Link className={styles.ancla} href="#" aria-haspopup="true">
-                  Directores
+                  Directivos
                   {/* <label>Estudiantes</label> */}
                 </Link>
               </div>
               <ul className={styles.dropdownContent} aria-label="submenu">
               <li className={styles.containerAncla}><Link
-                  href="/admin/evaluaciones-directores"
+                  href="/especialistas/evaluaciones-director"
                   className={styles.anclaje}
-                  id="ancla">evaluaciones</Link></li>
+                  id="ancla">Seguimiento y retroalimentación</Link></li>
                 <li className={styles.containerAncla}><Link
                   href="/especialistas/agregar-directores"
                   className={styles.anclaje}
-                  id="ancla">crear usuario</Link></li>
+                  id="ancla">Crear directivo</Link></li>
                 
               </ul>
             </li>
@@ -102,11 +102,11 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                 <li className={styles.containerAncla}><Link
                   href="/especialistas/evaluaciones"
                   className={styles.anclaje}
-                  id="ancla">Evaluaciones</Link></li>
-                <li className={styles.containerAncla}><Link
+                  id="ancla">Seguimiento de aprendizaje</Link></li>
+                {/* <li className={styles.containerAncla}><Link
                   href="/especialistas/agregar-evaluaciones"
                   id="ancla"
-                  className={styles.anclaje} >Agregar evaluacion</Link></li>
+                  className={styles.anclaje} >Agregar evaluacion</Link></li> */}
               </ul>
             </li>
           </ul>

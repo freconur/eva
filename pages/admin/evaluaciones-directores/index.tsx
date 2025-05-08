@@ -68,7 +68,7 @@ const EvaluacionesDesempeñoDocentes = () => {
                   <tr className='text-white capitalize font-nunito '>
                     <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
                     <th className="py-3 md:p-2  text-left">nombre de evaluación</th>
-                    <th className="py-3 md:p-2  text-left">categoria</th>
+                    <th className="py-3 md:p-2  text-left">categorias</th>
                     <th className="py-3 md:p-2  text-left"></th>
                     <th className="py-3 md:p-2  text-left"></th>
                   </tr>
@@ -94,7 +94,7 @@ const EvaluacionesDesempeñoDocentes = () => {
                             </Link>
                           </td>
                           <td>
-                            {/* <MdEditSquare onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setIdEva(`${evaluacion.id}`) }} className='text-xl text-yellow-500 cursor-pointer' /> */}
+                            {<MdEditSquare onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setIdEva(`${evaluacion.id}`) }} className='text-xl text-yellow-500 cursor-pointer' />}
                           </td>
                           <td>
                             <MdDeleteForever onClick={() => { handleShowModalDelete(); setIdEva(`${evaluacion.id}`) }} className='text-xl text-red-500 cursor-pointer' />

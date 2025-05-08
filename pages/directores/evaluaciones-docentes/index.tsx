@@ -36,20 +36,20 @@ const EvaluacionesDesempeñoDocentes = () => {
 
       <div className={styles.header}>
         <div className={styles.headerOverlay}></div>
-        
+
         <Image
           className={styles.headerImage}
           src={header}
           alt="imagen de cabecera"
           priority
         />
-        
+
         <div className={styles.headerContent}>
           <h1 className={styles.headerTitle}>
             Monitoreo a la mediación didáctica del docente
           </h1>
-          
-         {/*  <button 
+
+          {/*  <button 
             onClick={handleShowModalCrearEvaluacion} 
             className={styles.headerButton}
           >
@@ -82,7 +82,7 @@ const EvaluacionesDesempeñoDocentes = () => {
                     return (
                       <tr key={index} className={styles.tableRow}>
                         <td className={styles.tableCell}>
-                          <Link 
+                          <Link
                             href={`/directores/evaluaciones-docentes/evaluacion/${evaluacion.id}`}
                             className={styles.tableLink}
                           >
@@ -90,7 +90,7 @@ const EvaluacionesDesempeñoDocentes = () => {
                           </Link>
                         </td>
                         <td className={styles.tableCell}>
-                          <Link 
+                          <Link
                             href={`/directores/evaluaciones-docentes/evaluacion/${evaluacion.id}`}
                             className={styles.tableLink}
                           >
@@ -98,14 +98,14 @@ const EvaluacionesDesempeñoDocentes = () => {
                           </Link>
                         </td>
                         <td className={styles.tableCell}>
-                          <Link 
+                          <Link
                             href={`/directores/evaluaciones-docentes/evaluacion/${evaluacion.id}`}
                             className={styles.tableLink}
                           >
                             {evaluacion.categoria}
                           </Link>
                         </td>
-                       {/*  <td className={styles.tableCell}>
+                        {/*  <td className={styles.tableCell}>
                           <MdEditSquare 
                             onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setIdEva(`${evaluacion.id}`) }} 
                             className={`${styles.actionIcon} ${styles.editIcon}`}

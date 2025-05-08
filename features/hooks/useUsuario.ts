@@ -29,16 +29,18 @@ import { onSnapshot, where,query , getFirestore,
   increment,} from "firebase/firestore";
 const useUsuario = () => {
   const URL_API = "https://api-ugel-production.up.railway.app/";
-  // const URL_API = "http://localhost:3001/"
+  /* const URL_API = "http://localhost:3001/" */
   const auth = getAuth(app);
   const db = getFirestore(app);
   const { currentUserData } = useGlobalContext();
   const dispatch = useGlobalContextDispatch();
 
   const getUsersDirectores = async () => {
+    console.log('currentUserData', currentUserData)
     const pathRef = query(
       collection(db, "usuarios"),
       where("rol", "==", 2),
+      where("region", "==", Number(currentUserData.region)),
       orderBy("rol", "asc")
     );
     await getDocs(pathRef).then((res) => {
@@ -166,7 +168,7 @@ const useUsuario = () => {
       if (currentUserData.rol === 4) {
         axios
           .post(`${URL_API}crear-director`, {
-            email: `${data.dni}@formativa.com`,
+            email: `${data.dni}@competencelab.com`,
             password: `${data.dni}`,
             dni: `${data.dni}`,
           })
@@ -181,6 +183,8 @@ const useUsuario = () => {
               nombres: data.nombres,
               apellidos: data.apellidos,
               region: Number(data.region),
+              tipoEspecialista: data.tipoEspecialista,
+              genero: data.genero,
             });
           })
           .then((res) => {
@@ -199,12 +203,11 @@ const useUsuario = () => {
         try {
           axios
             .post(`${URL_API}crear-director`, {
-              email: `${data.dni}@formativa.com`,
+              email: `${data.dni}@competencelab.com`,
               password: `${data.dni}`,
               dni: `${data.dni}`,
               rol: currentUserData.perfil?.rol,
               institucion: `${data.institucion}`,
-              modular: `${data.modular}`,
               perfil: data.perfil,
               nombres: `${data.nombres}`,
               apellidos: `${data.apellidos}`,
@@ -224,10 +227,12 @@ const useUsuario = () => {
                   institucion: `${data.institucion}`,
                   perfil: data.perfil,
                   rol: data.perfil?.rol,
-                  modular: data.modular,
                   nombres: data.nombres,
                   apellidos: data.apellidos,
                   region: Number(data.region),
+                  genero: data.genero,
+                  distrito: data.distrito,
+                  rolDirectivo: data.rolDirectivo,
                 }).then((res) => {
                   dispatch({
                     type: AppAction.WARNING_USUARIO_EXISTE,
@@ -245,7 +250,7 @@ const useUsuario = () => {
         try {
           axios
             .post(`${URL_API}crear-director`, {
-              email: `${data.dni}@formativa.com`,
+              email: `${data.dni}@competencelab.com`,
               password: `${data.dni}`,
               dni: `${data.dni}`,
               rol: currentUserData.perfil?.rol,

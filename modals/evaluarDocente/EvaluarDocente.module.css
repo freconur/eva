@@ -68,7 +68,7 @@
 
 .close:hover {
   color: #e74c3c;
-  transform: rotate(90deg);
+  /* transform: rotate(90deg); */
 }
 
 .title {

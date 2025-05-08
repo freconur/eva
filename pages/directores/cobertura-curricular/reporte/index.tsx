@@ -33,9 +33,27 @@ ChartJS.register(
   Legend
 );
 
+const getBackgroundColor = (acronimo: string | undefined) => {
+  switch (acronimo) {
+    case 'n':
+      return 'bg-red-200 text-red-800 font-semibold';
+    case 'cn':
+      return 'bg-gray-200 text-gray-800 font-semibold';
+    case 'av':
+      return 'bg-yellow-200 text-yellow-800 font-semibold';
+    case 'f':
+      return 'bg-orange-200 text-orange-800 font-semibold';
+    case 's':
+      return 'bg-green-200 text-green-800 font-semibold';
+    default:
+      return '';
+  }
+}
+
 const ReporteCurricular = () => {
   const router = useRouter()
   const [nivel, setNivel] = useState("")
+  const [activePopover, setActivePopover] = useState<string | null>(null)
   const [ filter, setFilter ] = useState({
     grado: "",
     orden: "",
@@ -193,7 +211,13 @@ const ReporteCurricular = () => {
               <th className={styles.tableHeaderCell}>Nombre y apellidos</th>
               {
                 reportePreguntaHabilidad.map((pregunta) => (
-                  <th key={pregunta.id} className={styles.tableHeaderCell}>{pregunta.order}</th>
+                  <th 
+                    key={pregunta.id} 
+                    className={styles.tableHeaderCell}
+                    onClick={() => setActivePopover(activePopover === String(pregunta.order) ? null : String(pregunta.order))}
+                  >
+                    {pregunta.order}
+                  </th>
                 ))
               }
             </tr>
@@ -206,7 +230,12 @@ const ReporteCurricular = () => {
                   <td className={`${styles.tableCell} ${styles.tableCellName}`}>{dat.nombres} {dat.apellidos}</td>
                   {
                     dat.preguntasAlternativas?.map((pregunta) => (
-                      <td key={pregunta.id} className={styles.tableCell}>{pregunta.alternativas?.find(alternativa => alternativa.selected)?.acronimo}</td>
+                      <td 
+                        key={pregunta.id} 
+                        className={`${styles.tableCell} ${getBackgroundColor(pregunta.alternativas?.find(alternativa => alternativa.selected)?.acronimo)}`}
+                      >
+                        {pregunta.alternativas?.find(alternativa => alternativa.selected)?.acronimo?.toLocaleUpperCase()}
+                      </td>
                     ))
                   }
                 </tr>
@@ -214,6 +243,11 @@ const ReporteCurricular = () => {
             }
           </tbody>
         </table>
+        {activePopover && (
+          <div className={styles.popover}>
+            {reportePreguntaHabilidad.find(p => String(p.order) === activePopover)?.habilidad}
+          </div>
+        )}
       </div>
       <div className={styles.tableContainer}>
         <div className={styles.containerGrafico}>

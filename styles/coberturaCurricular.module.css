@@ -85,8 +85,9 @@
   border-radius: 0.5rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   background-color: white;
-  margin: auto;
-  margin-bottom: 2.5rem;
+  margin: 0 auto 2rem auto;
+  padding: 4rem 0 0 0;
+  position: relative;
 }
 
 .tableSection {
@@ -149,6 +150,8 @@
   text-transform: uppercase;
   color: white;
   letter-spacing: 0.05em;
+  position: relative;
+  cursor: pointer;
 }
 
 .tableBody {
@@ -156,6 +159,7 @@
 }
 
 .tableRow {
+  height: 40px;
   transition: background-color 0.2s;
 }
 
@@ -165,7 +169,7 @@
 
 .tableCell {
   white-space: nowrap;
-  font-size: 0.875rem;
+  font-size: 0.7rem;
   color: #6b7280;
   text-align: center;
 }
@@ -532,4 +536,28 @@
 .filterButton:active {
   transform: translateY(0);
   box-shadow: 0 2px 4px -1px rgba(14, 165, 233, 0.2);
+}
+
+.popover {
+  position: absolute;
+  z-index: 9999;
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  white-space: normal;
+  max-width: 300px;
+  top: 19%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: normal;
+  text-transform: none;
+  letter-spacing: normal;
+  border: 1px solid #e5e7eb;
+}
+
+.tableHeaderCell:hover .popover {
+  pointer-events: auto;
 } 

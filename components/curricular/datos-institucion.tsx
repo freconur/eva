@@ -67,7 +67,6 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 					<div className={styles.value}>{dataDocente?.caracteristicaCurricular ?? '-'}</div>
 				</div>
 
-				<div className={styles.sectionTitle}>Datos del Docente</div>
 				<div className={styles.dataRow}>
 					<div className={styles.label}>Nombres y Apellidos</div>
 					<div className={styles.value}>{`${dataDocente?.nombres ?? '-'} ${dataDocente?.apellidos ?? '-'}`}</div>

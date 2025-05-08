@@ -8,7 +8,7 @@ const SidebarRegional = () => {
   const { currentUserData } = useGlobalContext()
   return (
     <div className='z-relative z-[10] border-b-[1px] border-slate-200 pb-2 '>
-      <h1 className='uppercase text-lg text-center font-dmMono text-white'>planificación curricular</h1>
+      <h1 className='uppercase text-lg text-center font-dmMono text-white'>Competencee-Lab</h1>
       <div className='flex justify-center items-center'>
         <Image
           alt="foto de perfil"

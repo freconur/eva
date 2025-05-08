@@ -12,7 +12,7 @@ import { RiLoader4Line } from 'react-icons/ri'
 import CrearEvaluacionCurricular from '@/modals/mallaCurricular/crearEvaluacion'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import AgregarPreguntasAlternativasCurricular from '@/modals/mallaCurricular/AgregarPreguntasAlternativas'
-import styles from '@/styles/coberturaCurricular.module.css'
+import styles from './index.module.css'
 
 const CoberturaCurricular = () => {
   const { evaluacionCurricular, loaderPages, docentesDeDirectores, currentUserData } = useGlobalContext()

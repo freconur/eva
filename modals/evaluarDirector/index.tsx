@@ -192,11 +192,11 @@ const EvaluarDirector = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoc
                         activeButtonSiguiente() &&
                         <button className={styles.buttonCrearEvaluacion}>Guardar</button>
                         :
-                        observacion ?
+                        /* observacion ?
                           <div onClick={() => handleFinalizar()} className={styles.buttonCrearEvaluacion}>Finalizar</div>
-                          :
+                          : */
                           activeButtonSiguiente() &&
-                          <div onClick={() => setOrdenLimitePregunta(ordenLimitePregunta + 1)} className={styles.buttonCrearEvaluacion}>siguiente</div>
+                          <div onClick={() => setOrdenLimitePregunta(ordenLimitePregunta + 1)} className={styles.buttonCrearEvaluacion}>Siguiente</div>
                     }
 
                   </div>

@@ -1,18 +1,18 @@
 const regiones = [
-  { region: "puno", id: 1 },
-  { region: "san román", id: 2 },
-  { region: "chucuito-juli", id: 3 },
-  { region: "yunguyo", id: 4 },
-  { region: "el collao", id: 5 },
-  { region: "putina", id: 6 },
-  { region: "huancané", id: 7 },
-  { region: "sandia", id: 8 },
+  { region: "Puno", id: 1 },
+  { region: "San Román", id: 2 },
+  { region: "Chucuito-juli", id: 3 },
+  { region: "Yunguyo", id: 4 },
+  { region: "El Collao", id: 5 },
+  { region: "Putina", id: 6 },
+  { region: "Huancané", id: 7 },
+  { region: "Sandia", id: 8 },
   { region: "crucero", id: 9 },
-  { region: "carabaya", id: 10 },
-  { region: "lampa", id: 11 },
-  { region: "melgar", id: 12 },
-  { region: "azángaro", id: 13 },
-  { region: "moho", id: 14 },
+  { region: "Carabaya", id: 10 },
+  { region: "Lampa", id: 11 },
+  { region: "Melgar", id: 12 },
+  { region: "Azángaro", id: 13 },
+  { region: "Moho", id: 14 },
 ]
 
 export const niveles = (value: number) => {
@@ -37,6 +37,11 @@ export const regionTexto = (id: string) => {
   })
   return rta
 }
+
+export const rolDirectivo = [
+  { id: 1, name: "Director" },
+  { id: 2, name: "Sub-director" },
+]
 
 export const convertGrade = (grade: string) => {
   if (grade === "1") return "1ro grado"
@@ -74,6 +79,11 @@ export const gradosDeColegio = [
   { id: 5, name: "5to grado" },
   { id: 6, name: "6to grado" },
 ]
+export const caracteristicasDirectivo = [
+  { id: 1, name: "polidocente completa" },
+  { id: 2, name: "multigrado" },
+  { id: 3, name: "unidocente" },
+]
 export const ordernarAscDsc = [
   { id: 1, name: "asc" },
   { id: 2, name: "desc" },
@@ -100,6 +110,10 @@ export const genero = [
   { id: 2, name: "femenino" },
 ]
 
+export const tipoEspecialista = [
+  { id: 1, name: "primaria" },
+  { id: 2, name: "eib" },
+]
 export const area = [
   { id: 1, name: "rural" },
   { id: 2, name: "urbano" },

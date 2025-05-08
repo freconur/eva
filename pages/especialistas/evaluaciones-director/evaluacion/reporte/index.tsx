@@ -1,3 +1,4 @@
+import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { DataEstadisticas } from '@/features/types/types'
 import { useRouter } from 'next/router'
@@ -21,7 +22,9 @@ import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores
 import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes'
 import Image from 'next/image'
 import styles from './styles.module.css'
-import { gradosDeColegio, sectionByGrade, ordernarAscDsc, niveles } from '@/fuctions/regiones'
+import {distritosPuno} from '@/fuctions/provinciasPuno'
+import { gradosDeColegio, niveles } from '@/fuctions/regiones'
+import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas'
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -32,16 +35,13 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-
-const Reportes = () => {
+const ReporteDirectorDesempeño = () => {
   const route = useRouter()
-  const { currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages,  getPreguntaRespuestaDocentes, dataEvaluacionDocente, allEvaluacionesDirectorDocente, dataFiltradaDirectorDocenteTabla } = useGlobalContext()
+  const { estudiantes, currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages, loaderReporteDirector, getPreguntaRespuestaDocentes, dataEvaluacionDocente, allEvaluacionesDirectorDocente, dataFiltradaDirectorDocenteTabla, allEvaluacionesEspecialistaDirector, dataFiltradaEspecialistaDirectorTabla } = useGlobalContext()
   const { reporteEvaluacionDocentes, getPreguntasRespuestasDocentes, getDataEvaluacion, reporteTablaEvaluacionDirectorDocente } = UseEvaluacionDocentes()
-
+  const { reporteEvaluacionesDirectores, getPreguntasRespuestasDesempeñoDirectivo,filtrarDataEspecialistaDirectorTabla } = UseEvaluacionEspecialistas()
   const [filtros, setFiltros] = useState({
-    grado: '',
-    seccion: '',
-    orden: ''
+    provincia: ""
   });
 
   const [activePopover, setActivePopover] = useState<string | null>(null);
@@ -99,26 +99,21 @@ const Reportes = () => {
     return (
       <h3 className={styles.sectionTitle}>
         <span className={styles.sectionTitleIndicator}></span>
-        <span className='text-cyan-500 font-martianMono text-md'>{getPreguntaRespuestaDocentes[Number(index) - 1]?.id}.</span>
+        <span className='text-cyan-500 font-martianMono text-md'>{getPreguntaRespuestaDocentes[Number(index) - 1]?.order}.</span>
         <span className='text-slate-500 font-montserrat text-md font-regular'>{getPreguntaRespuestaDocentes[Number(index) - 1]?.criterio}</span>
       </h3>
     )
   }
   const handleFiltros = () => {
-    console.log('test')
-    reporteTablaEvaluacionDirectorDocente(allEvaluacionesDirectorDocente, filtros)
+    filtrarDataEspecialistaDirectorTabla(allEvaluacionesEspecialistaDirector, filtros)
   }
+  console.log('allEvaluacionesEspecialistaDirector',allEvaluacionesEspecialistaDirector)
   useEffect(() => {
     getDataEvaluacion(`${route.query.idEvaluacion}`);
-    reporteEvaluacionDocentes(`${route.query.idEvaluacion}`);
-    getPreguntasRespuestasDocentes(`${route.query.idEvaluacion}`)
+    reporteEvaluacionesDirectores(`${route.query.idEvaluacion}`);
+    getPreguntasRespuestasDesempeñoDirectivo(`${route.query.idEvaluacion}`)
   }, [route.query.idEvaluacion, currentUserData.dni])
 
-  useEffect(() => {
-    if (filtros.grado || filtros.seccion || filtros.orden) {
-      console.log('Filtros aplicados:', filtros);
-    }
-  }, [filtros]);
 
   const getBackgroundColor = (value: number) => {
     switch (value) {
@@ -157,7 +152,7 @@ const Reportes = () => {
 
               <div className={styles.headerContent}>
                 <h1 className={styles.headerTitle}>
-                  Reporte de {dataEvaluacionDocente?.name}
+                  Reporte de monitoreo al desempeño directivo: <br /> {dataEvaluacionDocente?.name?.toLocaleLowerCase()}
                 </h1>
               </div>
             </div>
@@ -167,38 +162,14 @@ const Reportes = () => {
                 <div>
                   <div className={styles.filtersContainer}>
                     <select
-                      name="grado"
+                      name="provincia"
                       className={styles.select}
                       onChange={handleChangeFiltros}
-                      value={filtros.grado}
+                      value={filtros.provincia}
                     >
                       <option value="">Seleccionar Grado</option>
-                      {gradosDeColegio.map((grado, index) => (
-                        <option key={index} value={grado.id}>{grado.name}</option>
-                      ))}
-                    </select>
-
-                    <select
-                      name="seccion"
-                      className={styles.select}
-                      onChange={handleChangeFiltros}
-                      value={filtros.seccion}
-                    >
-                      <option value="">Seleccionar Sección</option>
-                      {sectionByGrade.map((seccion, index) => (
-                        <option key={index} value={seccion.id}>{seccion.name}</option>
-                      ))}
-                    </select>
-
-                    <select
-                      name="orden"
-                      className={styles.select}
-                      onChange={handleChangeFiltros}
-                      value={filtros.orden}
-                    >
-                      <option value="">Ordenar por</option>
-                      {ordernarAscDsc.map((opcion, index) => (
-                        <option key={index} value={opcion.id}>{opcion.name}</option>
+                      {distritosPuno.find(dis => dis.id === currentUserData.region)?.distritos.map((distri, index) => (
+                        <option key={index} value={distri}>{distri}</option>
                       ))}
                     </select>
                     <button className={styles.filterButton} onClick={handleFiltros}>Filtrar</button>
@@ -211,9 +182,10 @@ const Reportes = () => {
                         <th>puntaje</th>
                         {
                           getPreguntaRespuestaDocentes.map((pregunta, index) => (
-                            <th 
+                            <th
                               key={index}
                               onClick={() => setActivePopover(activePopover === pregunta.id ? null : pregunta.id || null)}
+                              className={styles.celda}
                             >
                               {pregunta.id}
                               {activePopover === pregunta.id && (
@@ -227,22 +199,22 @@ const Reportes = () => {
                       </tr>
                     </thead>
                     <tbody>
-                        {
-                          dataFiltradaDirectorDocenteTabla.map((docente, index) => (
-                            <tr key={index}>
-                              <td>{index + 1}</td>
-                              <td>{docente.info?.nombres} {docente.info?.apellidos}</td>
-                              <td>{docente.calificacion}</td>
-                              {
-                                docente.resultados?.map((respuesta, index) => (
-                                  <td key={index} className={getBackgroundColor(Number(respuesta.alternativas?.find(a => a.selected)?.value))}>
-                                    {niveles(Number(respuesta.alternativas?.find(a => a.selected)?.value)) || '-'}
-                                  </td>
-                                ))
-                              }
-                            </tr>
-                          ))
-                        }
+                      {
+                        dataFiltradaEspecialistaDirectorTabla.map((docente, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>{docente.info?.nombres} {docente.info?.apellidos}</td>
+                            <td>{docente.calificacion}</td>
+                            {
+                              docente.resultados?.map((respuesta, index) => (
+                                <td key={index} className={`${getBackgroundColor(Number(respuesta.alternativas?.find(a => a.selected)?.value))} ${styles.celda}`}>
+                                  {niveles(Number(respuesta.alternativas?.find(a => a.selected)?.value)) || '-'}
+                                </td>
+                              ))
+                            }
+                          </tr>
+                        ))
+                      }
                     </tbody>
                   </table>
                 </div>
@@ -253,7 +225,7 @@ const Reportes = () => {
                         <div key={index} className={styles.chartContainer}>
                           <h3 className={styles.sectionTitle}>
                             <span className={styles.sectionTitleIndicator}></span>
-                            <span>{getPreguntaRespuestaDocentes[Number(index)]?.subOrden}.</span>
+                            <span>{getPreguntaRespuestaDocentes[Number(index)]?.subOrden || getPreguntaRespuestaDocentes[Number(index)]?.order}.</span>
                             <span>{getPreguntaRespuestaDocentes[Number(index)]?.criterio}</span>
                           </h3>
                           <div className={styles.chartWrapper}>
@@ -283,5 +255,5 @@ const Reportes = () => {
   )
 }
 
-export default Reportes
-Reportes.Auth = PrivateRouteDirectores
+export default ReporteDirectorDesempeño
+ReporteDirectorDesempeño.Auth = PrivateRouteEspecialista

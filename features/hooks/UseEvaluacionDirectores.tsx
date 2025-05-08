@@ -162,10 +162,13 @@ const UseEvaluacionDirectores = () => {
     }
 
     const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}/`
-    await setDoc(doc(db, path, `${dataDocente.dni}`), { observacion: "sin observaciones", resultados: data, dni: dataDocente.dni, dniDirector: currentUserData.dni, calificacion: totalPuntos, info: dataDocente });
+    await setDoc(doc(db, path, `${dataDocente.dni}`), { observacionesMonitoreo: {}, resultados: data, dni: dataDocente.dni, dniDirector: currentUserData.dni, calificacion: totalPuntos, info: dataDocente })
+      .then(rta => {
+        dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+      })
     //AGREGANDO RESULTADOS DE LA EVALUACION DEL DOCENTE
 
-    data.forEach(async (pr) => {
+    /* data.forEach(async (pr) => {
       `/evaluaciones-docentes/KtOATuI2gOKH80n1R6yt/49163626/id`
       const docRef = doc(db, `/evaluaciones-director/${idEvaluacion}/${currentUserData.dni}`, `${pr.order}`);
       await getDoc(docRef)
@@ -205,7 +208,7 @@ const UseEvaluacionDirectores = () => {
           }
         })
         .then(response => dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false }))
-    })
+    }) */
   }
   const reporteEvaluacionDocenteAdmin = (idEvaluacion: string, dniDirector: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })

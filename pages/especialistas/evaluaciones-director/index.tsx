@@ -1,20 +1,28 @@
+import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores'
 import Image from 'next/image'
 import React, { useEffect, useState } from 'react'
 import header from '../../../assets/evaluacion-docente.jpg'
+import CrearEvaluacionDocente from '@/modals/crearEvaluacionDocente'
+import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { MdDeleteForever, MdEditSquare } from 'react-icons/md'
+import DeleteEvaluacionDocente from '@/modals/DeleteEvaluacionDocente'
 import Link from 'next/link'
 import { RiLoader4Line } from 'react-icons/ri'
-import CrearEvaluacionEspecialista from '@/modals/crearEvaluacionEspecialista'
-import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas'
-import DeleteEvaluacionEspecialista from '@/modals/DeleteEvaluacionEscpecialista'
+import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
+import UseEvaluacionDirectores from '@/features/hooks/UseEvaluacionDirectores'
+import DeleteEvaluacionDirector from '@/modals/DeleteEvaluacionDirector'
+import CrearEvaluacionDirector from '@/modals/crearEvaluacionDirector'
+import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista'
+import UpdateEvaluacionDesempeñoDirectivo from '@/modals/updateEvaluacionDesempeñoDirectivo'
 
-const EvaluacionesDesempeñoDocentes = () => {
-  const { getEvaluacionesEspecialistas } = UseEvaluacionEspecialistas()
+const EvaluacionesDesempeñoDirectores = () => {
+  const { getEvaluacionesDirectores } = UseEvaluacionDirectores()
   const { evaluacionDesempeñoDocente, getPreguntaRespuestaDocentes, loaderPages } = useGlobalContext()
   const [showModalCrearEvaluacion, setShowCrearEvaluacion] = useState<boolean>(false)
   const [idEva, setIdEva] = useState<string>("")
   const [nameEva, setNameEva] = useState<string>("")
+  const [eva, setEva] = useState({})
   const [showDelete, setShowDelete] = useState<boolean>(false)
   const [inputUpdate, setInputUpdate] = useState<boolean>(false)
   const handleShowInputUpdate = () => { setInputUpdate(!inputUpdate) }
@@ -24,13 +32,14 @@ const EvaluacionesDesempeñoDocentes = () => {
   }
 
   useEffect(() => {
-    getEvaluacionesEspecialistas()
+    getEvaluacionesDirectores()
   }, [])
 
   return (
     <div className=''>
-      {showDelete && <DeleteEvaluacionEspecialista handleShowModalDelete={handleShowModalDelete} idEva={idEva} />}
-      {showModalCrearEvaluacion && <CrearEvaluacionEspecialista handleShowModalCrearEvaluacion={handleShowModalCrearEvaluacion} />}
+      {showDelete && <DeleteEvaluacionDirector handleShowModalDelete={handleShowModalDelete} idEva={idEva} />}
+      {inputUpdate && <UpdateEvaluacionDesempeñoDirectivo  evaluacion={eva} handleShowInputUpdate={handleShowInputUpdate} />}
+      {showModalCrearEvaluacion && <CrearEvaluacionDirector handleShowModalCrearEvaluacion={handleShowModalCrearEvaluacion} />}
 
       {/* <h1 className='font-martianMono uppercase text-xl font-semibold text-slate-600'>Seguimiento del desempeño del docente</h1> */}
       <div className=''>
@@ -45,7 +54,7 @@ const EvaluacionesDesempeñoDocentes = () => {
             objectFit='fill'
             priority
           />
-          <h1 className="text-textTitulos relative z-[20]  text-3xl font-bold font-martianMono capitalize text-left">Evaluaciones de seguimiento de desempeño del director</h1>
+          <h1 className="text-textTitulos relative z-[20]  text-3xl font-bold font-martianMono text-left">Seguimiento y retroalimentación al desempeño del directivo</h1>
           <button onClick={handleShowModalCrearEvaluacion} className="relative z-[50] p-3 rounded-sm bg-green-400 text-textTitulos w-[150px] h-[50px]">Crear Evaluación</button>
         </div>
 
@@ -74,22 +83,22 @@ const EvaluacionesDesempeñoDocentes = () => {
                       return (
                         <tr key={index} className='h-[60px] hover:bg-blue-100 duration-300 cursor-pointer'>
                           <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>
-                            <Link href={`/admin/evaluaciones-especialistas/evaluacion/${evaluacion.id}`}>
+                            <Link href={`/especialistas/evaluaciones-director/evaluacion/${evaluacion.id}`}>
                               {index + 1}
                             </Link>
                           </td>
                           <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>
-                            <Link href={`/admin/evaluaciones-especialistas/evaluacion/${evaluacion.id}`}>
+                            <Link href={`/especialistas/evaluaciones-director/evaluacion/${evaluacion.id}`}>
                               {evaluacion.name}
                             </Link>
                           </td>
                           <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>
-                            <Link href={`/admin/evaluaciones-especialistas/evaluacion/${evaluacion.id}`}>
+                            <Link href={`/especialistas/evaluaciones-director/evaluacion/${evaluacion.id}`}>
                               {evaluacion.categoria}
                             </Link>
                           </td>
                           <td>
-                            {/* <MdEditSquare onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setIdEva(`${evaluacion.id}`) }} className='text-xl text-yellow-500 cursor-pointer' /> */}
+                            {<MdEditSquare onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setEva(evaluacion)}} className='text-xl text-yellow-500 cursor-pointer' />}
                           </td>
                           <td>
                             <MdDeleteForever onClick={() => { handleShowModalDelete(); setIdEva(`${evaluacion.id}`) }} className='text-xl text-red-500 cursor-pointer' />
@@ -108,5 +117,5 @@ const EvaluacionesDesempeñoDocentes = () => {
   )
 }
 
-export default EvaluacionesDesempeñoDocentes
-// EvaluacionesDesempeñoDocentes.Auth = PrivateRouteAdmins
+export default EvaluacionesDesempeñoDirectores
+EvaluacionesDesempeñoDirectores.Auth = PrivateRouteEspecialista

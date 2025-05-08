@@ -7,13 +7,15 @@ import { RiLoader4Line, RiEdit2Line, RiDeleteBin6Line } from 'react-icons/ri'
 import styles from '@/styles/modules/AgregarEspecialista.module.css'
 import UpdateUsuarioEspecialista from '@/modals/updateUsuarioEspecialista'
 import DeleteUsuario from '@/modals/deleteUsuario'
-
+import { genero, tipoEspecialista } from '@/fuctions/regiones'
 // Tipos para el formulario
 type FormValues = {
   dni: string;
   region: number;
   nombres: string;
   apellidos: string;
+  genero: string;
+  tipoEspecialista: number;
 }
 
 // Componente de Input reutilizable
@@ -97,6 +99,7 @@ const AgregareEspecialista = () => {
     setShowModalDeleteUsuario(!showModalDeleteUsuario)
   }
   const onSubmit: SubmitHandler<FormValues> = useCallback(async (data) => {
+  console.log(data)
     try {
       createNewEspecialista({
         ...data,
@@ -210,6 +213,22 @@ const AgregareEspecialista = () => {
               minLength: { value: 2, message: "Apellidos deben tener mínimo 2 caracteres" },
               maxLength: { value: 40, message: "Apellidos deben tener máximo 40 caracteres" },
             }}
+          />
+
+          <FormSelect
+            label="Género"
+            name="genero"
+            register={register}
+            errors={errors}
+            options={genero?.map(g => ({ codigo: g.id, region: g.name })) || []}
+          />
+
+          <FormSelect
+            label="Tipo de Especialista"
+            name="tipoEspecialista"
+            register={register}
+            errors={errors}
+            options={tipoEspecialista?.map(t => ({ codigo: t.id, region: t.name })) || []}
           />
 
           <button
