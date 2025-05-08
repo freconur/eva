@@ -303,7 +303,7 @@ const useUsuario = () => {
     try {
       axios
         .post(`${URL_API}crear-docente`, {
-          email: `${data.dni}@formativa.com`,
+          email: `${data.dni}@competencelab.com`,
           password: `${data.dni}`,
           dni: `${data.dni}`,
           rol: currentUserData.perfil?.rol,
