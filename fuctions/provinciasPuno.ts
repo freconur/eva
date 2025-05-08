@@ -21,6 +21,17 @@ export const distritosPuno = [
     id: 13
   },
   {
+    provincia:"Crucero",
+    distritos:[
+      "Potoni",
+      "Usicayos",
+      "Crucero",
+      "Phara",
+      "Limbani"
+    ],
+    id:9
+  },
+  {
     provincia: "Carabaya",
     distritos: [
       "Ajoyani",

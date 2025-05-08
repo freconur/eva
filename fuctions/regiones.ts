@@ -7,7 +7,7 @@ const regiones = [
   { region: "Putina", id: 6 },
   { region: "Huancané", id: 7 },
   { region: "Sandia", id: 8 },
-  { region: "crucero", id: 9 },
+  { region: "Crucero", id: 9 },
   { region: "Carabaya", id: 10 },
   { region: "Lampa", id: 11 },
   { region: "Melgar", id: 12 },

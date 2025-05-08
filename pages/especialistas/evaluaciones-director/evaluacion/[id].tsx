@@ -125,7 +125,7 @@ const EvaluacionDirector = () => {
                           <h3 className='text-slate-600 text-[20px] font-semibold'>{pq.criterio}</h3>
                         </div>
                         <div className='flex items-center justify-center'>
-                          <MdEditSquare onClick={() => { handleShowUpdateModal(); setDataUpdate(pq) }} className='text-xl text-yellow-500 cursor-pointer' />
+                          {/* <MdEditSquare onClick={() => { handleShowUpdateModal(); setDataUpdate(pq) }} className='text-xl text-yellow-500 cursor-pointer' /> */}
                         </div>
                       </div>
                       <ul className='grid gap-3'>
