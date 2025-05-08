@@ -31,14 +31,14 @@ const LayoutMenu = ({ children }: Props) => {
     if (currentUserData.perfil?.rol === 1) {
       return (
         <>
-          <div className='absolute grid justify-center z-[900] items-center bg-white w-[99px] h-[99px] right-[10px] top-[70px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
+          {/* <div className='absolute grid justify-center z-[900] items-center bg-white w-[99px] h-[99px] right-[10px] top-[70px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
             <Image
               alt="logo formativa"
               src={logo}
               width={80}
               height={80}
             />
-          </div>
+          </div> */}
           <SidebarEspecialistas showSidebar={showSidebar} />
           {/* <SidebarAdmin showSidebar={showSidebar} /> */}
           <Navbar />
