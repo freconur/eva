@@ -6,6 +6,8 @@ import { useForm } from 'react-hook-form'
 import { RiLoader4Line } from 'react-icons/ri'
 import { gradosDeColegio, sectionByGrade, genero } from '@/fuctions/regiones'
 import styles from './styles.module.css'
+import { useDirectores } from '@/features/hooks/useDirectores'
+import UsuariosByRol from '@/components/usuariosByRol'
 
 interface FormData {
   nombres: string;
@@ -19,7 +21,7 @@ interface FormData {
 const AgregarDirectores = () => {
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>()
   const { getUserData, crearNuevoDocente } = useUsuario()
-  const { currentUserData, loaderPages, warningUsuarioExiste } = useGlobalContext()
+  const { currentUserData, loaderPages, warningUsuarioExiste, usuariosByRol } = useGlobalContext()
 
   useEffect(() => {
     getUserData()
@@ -33,9 +35,15 @@ const AgregarDirectores = () => {
     })
     reset()
   })
+const { getDocentesByDniDirector } = useDirectores()
+  useEffect(() => {
+    getDocentesByDniDirector(`${currentUserData.dni}`)
+  },[currentUserData.dni])
 
+  console.log("usuariosByRol", usuariosByRol)
   return (
     <div className={styles.container}>
+      <UsuariosByRol  usuariosByRol={usuariosByRol}/>
       <div className={styles.formContainer}>
         {loaderPages ? (
           <div className={styles.loaderContainer}>

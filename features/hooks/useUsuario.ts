@@ -17,7 +17,8 @@ import { AppAction } from "../actions/appAction";
 import { app } from "@/firebase/firebase.config";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
-import { onSnapshot, where,query , getFirestore,
+import {
+  onSnapshot, where, query, getFirestore,
   doc,
   getDoc,
   setDoc,
@@ -26,7 +27,8 @@ import { onSnapshot, where,query , getFirestore,
   orderBy,
   updateDoc,
   deleteDoc,
-  increment,} from "firebase/firestore";
+  increment,
+} from "firebase/firestore";
 const useUsuario = () => {
   const URL_API = "https://api-ugel-production.up.railway.app/";
   /* const URL_API = "http://localhost:3001/" */
@@ -37,13 +39,23 @@ const useUsuario = () => {
 
   const getUsersDirectores = async () => {
     console.log('currentUserData', currentUserData)
-    const pathRef = query(
+    const q = query(
       collection(db, "usuarios"),
       where("rol", "==", 2),
       where("region", "==", Number(currentUserData.region)),
       orderBy("rol", "asc")
     );
-    await getDocs(pathRef).then((res) => {
+    onSnapshot(q, (querysanpshot) => {
+      const arryaDirectores: User[] = [];
+      querysanpshot.forEach((doc) => {
+        arryaDirectores.push(doc.data());
+      });
+      dispatch({
+        type: AppAction.USUARIOS_DIRECTORES,
+        payload: arryaDirectores,
+      });
+    });
+    /* await getDocs(pathRef).then((res) => {
       const arryaDirectores: User[] = [];
       res.forEach((doc) => {
         arryaDirectores.push(doc.data());
@@ -52,8 +64,8 @@ const useUsuario = () => {
         type: AppAction.USUARIOS_DIRECTORES,
         payload: arryaDirectores,
       });
-    });
-  };
+    }); */
+  }
   const getDirectorById = async (dni: string) => {
     dispatch({ type: AppAction.WARNING_USUARIO_NO_ENCONTRADO, payload: "" });
     const pathRef = doc(db, "usuarios", `${dni}`);
@@ -333,7 +345,7 @@ const useUsuario = () => {
               apellidos: `${data.apellidos}`,
               region: currentUserData.region,
               grados: data.grados,
-              secciones: data.secciones,    
+              secciones: data.secciones,
               genero: data.genero,
             }).then((res) => {
               dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: "" });
@@ -350,7 +362,7 @@ const useUsuario = () => {
     const newPromise = new Promise<boolean>((resolve, reject) => {
       try {
         axios
-          .post(`${URL_API}borrar-usuario`, { dni: idUsuario },{
+          .post(`${URL_API}borrar-usuario`, { dni: idUsuario }, {
             headers: {
               'Content-Type': 'application/json',
             },

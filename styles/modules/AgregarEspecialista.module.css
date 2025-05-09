@@ -10,6 +10,7 @@
 
 .formContainer {
   width: 70%;
+  height: fit-content;
   max-width: 700px;
   background: white;
   padding: 2.5rem;

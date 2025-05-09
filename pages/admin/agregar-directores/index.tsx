@@ -1,6 +1,7 @@
 import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import SearchUsuarios from '@/components/searchUsuarios'
+import UsuariosByRol from '@/components/usuariosByRol'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
 import DeleteUsuario from '@/modals/deleteUsuario'
@@ -50,7 +51,8 @@ const AgregarDirectores = () => {
       <div className='p-5'>
         <div className='w-ful w-[500px] '>
           <h1 className='text-colorTercero font-semibold text-3xl font-mono mb-10 capitalize'>Usuarios de directores</h1>
-          <SearchUsuarios />
+          <UsuariosByRol usuariosByRol={usuariosDirectores}/>
+          {/* <SearchUsuarios />
           {
             warningUsuarioNoEncontrado.length > 0 ?
               <table className='w-full  bg-white  rounded-md shadow-md mb-5'>
@@ -102,8 +104,8 @@ const AgregarDirectores = () => {
                 </table>
                 :
                 null
-          }
-          <table className='w-full  bg-white  rounded-md shadow-md'>
+          } */}
+          {/* <table className='w-full  bg-white  rounded-md shadow-md'>
             <thead className='bg-azul-claro4 border-b-2 border-blue-300 '>
               <tr className='text-white capitalize font-nunito '>
                 <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
@@ -148,10 +150,10 @@ const AgregarDirectores = () => {
                   null
               }
             </tbody>
-          </table>
+          </table> */}
         </div>
       </div>
-      <div className='w-[700px] p-5 rounded-sm shadow-md '>
+      <div className='w-[700px] p-5 rounded-sm '>
         {
           loaderPages ?
             <div className='grid w-[600px] h-[600px] '>
@@ -164,108 +166,185 @@ const AgregarDirectores = () => {
             <div>
 
               <h1 className='text-colorTercero font-semibold text-3xl font-mono mb-10 capitalize'>Registrar Director</h1>
-              <div className='bg-white p-5 w-[400px]'>
-                <form onClick={handleAgregarDirector}>
+              <div className='bg-white p-5'>
+                <form onSubmit={handleAgregarDirector} className="space-y-4 bg-white rounded-md shadow-md p-3" >
                   <div className='w-full my-2'>
-                    <p className='text-slate-400 text-sm uppercase'>nombre de la i.e.:</p>
+                    <label htmlFor="institucion" className='text-slate-400 text-sm uppercase block mb-1'>
+                      nombre de la i.e.: <span className="text-red-500">*</span>
+                    </label>
                     <input
+                      id="institucion"
                       {...register("institucion",
                         {
-                          required: { value: true, message: "institucion es requerido" },
-                          minLength: { value: 5, message: "nombre debe tener un minimo de 5 caracteres" },
-                          maxLength: { value: 100, message: "nombre debe tener un maximo de 100 caracteres" },
+                          required: { value: true, message: "La institución es requerida" },
+                          minLength: { value: 5, message: "El nombre debe tener un mínimo de 5 caracteres" },
+                          maxLength: { value: 100, message: "El nombre debe tener un máximo de 100 caracteres" },
                         }
                       )}
-                      className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
+                      className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all'
                       type="text"
-                      placeholder="nombre de la institucion"
+                      placeholder="Nombre de la institución"
+                      aria-invalid={errors.institucion ? "true" : "false"}
+                      aria-describedby={errors.institucion ? "institucion-error" : undefined}
                     />
+                    {errors.institucion && (
+                      <span id="institucion-error" className='text-red-400 text-sm block mt-1' role="alert">
+                        {errors.institucion.message as string}
+                      </span>
+                    )}
                   </div>
-                  {errors.institucion && <span className='text-red-400 text-sm'>{errors.institucion.message as string}</span>}
+
                   <div className='w-full my-2'>
-                    <p className='text-slate-400 text-sm uppercase'>codigo modular:</p>
+                    <label htmlFor="modular" className='text-slate-400 text-sm uppercase block mb-1'>
+                      código modular: <span className="text-red-500">*</span>
+                    </label>
                     <input
+                      id="modular"
                       {...register("modular",
                         {
-                          required: { value: true, message: "nombre es requerido" },
-                          minLength: { value: 8, message: "numero modular debe tener un minimo de 8 caracteres" },
-                          maxLength: { value: 8, message: "numero modular debe tener un maximo de 8 caracteres" },
+                          required: { value: true, message: "El código modular es requerido" },
+                          minLength: { value: 8, message: "El código modular debe tener 8 caracteres" },
+                          maxLength: { value: 8, message: "El código modular debe tener 8 caracteres" },
                         }
                       )}
-                      className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
+                      className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all'
                       type="number"
-                      placeholder="numero modular" />
+                      placeholder="Número modular"
+                      aria-invalid={errors.modular ? "true" : "false"}
+                      aria-describedby={errors.modular ? "modular-error" : undefined}
+                    />
+                    {errors.modular && (
+                      <span id="modular-error" className='text-red-400 text-sm block mt-1' role="alert">
+                        {errors.modular.message as string}
+                      </span>
+                    )}
                   </div>
-                  {errors.modular && <span className='text-red-400 text-sm'>{errors.modular.message as string}</span>}
+
                   <div className='w-full my-2'>
-                    <p className='text-slate-400 text-sm uppercase'>dni:</p>
+                    <label htmlFor="dni" className='text-slate-400 text-sm uppercase block mb-1'>
+                      dni: <span className="text-red-500">*</span>
+                    </label>
                     <input
+                      id="dni"
                       {...register("dni",
                         {
-                          required: { value: true, message: "dni es requerido" },
-                          minLength: { value: 8, message: "dni debe tener un minimo de 8 caracteres" },
-                          maxLength: { value: 8, message: "dni debe tener un maximo de 8 caracteres" },
+                          required: { value: true, message: "El DNI es requerido" },
+                          minLength: { value: 8, message: "El DNI debe tener 8 caracteres" },
+                          maxLength: { value: 8, message: "El DNI debe tener 8 caracteres" },
                         }
                       )}
-                      className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
+                      className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all'
                       type="number"
-                      placeholder="nombre de usuario" />
+                      placeholder="Ingrese su DNI"
+                      aria-invalid={errors.dni ? "true" : "false"}
+                      aria-describedby={errors.dni ? "dni-error" : undefined}
+                    />
+                    {errors.dni && (
+                      <span id="dni-error" className='text-red-400 text-sm block mt-1' role="alert">
+                        {errors.dni.message as string}
+                      </span>
+                    )}
                   </div>
-                  {errors.dni && <span className='text-red-400 text-sm'>{errors.dni.message as string}</span>}
+
                   <div className='w-full my-2'>
-                    <p className='text-slate-400 text-sm uppercase'>ugel:</p>
+                    <label htmlFor="region" className='text-slate-400 text-sm uppercase block mb-1'>
+                      ugel: <span className="text-red-500">*</span>
+                    </label>
                     <select
+                      id="region"
                       {...register("region",
                         {
-                          required: { value: true, message: "region es requerido" },
+                          required: { value: true, message: "La UGEL es requerida" },
                         }
                       )}
-                      className='w-full p-3 rounded-md bg-white text-slate-400 shadow-md'>
-                      <option>--UGEL--</option>
-
-                      {regiones?.map((region, index) => {
-                        return (
-                          <option key={index} value={Number(region.codigo)}>{region.region?.toUpperCase()}</option>
-                        )
-                      })}
+                      className='w-full p-3 rounded-md bg-white text-slate-400 shadow-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all'
+                      aria-invalid={errors.region ? "true" : "false"}
+                      aria-describedby={errors.region ? "region-error" : undefined}
+                    >
+                      <option value="">--Seleccione UGEL--</option>
+                      {regiones?.map((region, index) => (
+                        <option key={index} value={Number(region.codigo)}>{region.region?.toUpperCase()}</option>
+                      ))}
                     </select>
+                    {errors.region && (
+                      <span id="region-error" className='text-red-400 text-sm block mt-1' role="alert">
+                        {errors.region.message as string}
+                      </span>
+                    )}
                   </div>
 
-                  {errors.region && <span className='text-red-400 text-sm'>{errors.region.message as string}</span>}
                   <div className='w-full my-2'>
-                    <p className='text-slate-400 text-sm uppercase'>nombres:</p>
+                    <label htmlFor="nombres" className='text-slate-400 text-sm uppercase block mb-1'>
+                      nombres: <span className="text-red-500">*</span>
+                    </label>
                     <input
+                      id="nombres"
                       {...register("nombres",
                         {
-                          required: { value: true, message: "nombres es requerido" },
-                          minLength: { value: 2, message: "nombres debe tener un minimo de 2 caracteres" },
-                          maxLength: { value: 40, message: "nombres debe tener un maximo de 40 caracteres" },
+                          required: { value: true, message: "Los nombres son requeridos" },
+                          minLength: { value: 2, message: "Los nombres deben tener un mínimo de 2 caracteres" },
+                          maxLength: { value: 40, message: "Los nombres deben tener un máximo de 40 caracteres" },
                         }
                       )}
-                      className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
+                      className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all'
                       type="text"
-                      placeholder="nombre de usuario" />
+                      placeholder="Ingrese sus nombres"
+                      aria-invalid={errors.nombres ? "true" : "false"}
+                      aria-describedby={errors.nombres ? "nombres-error" : undefined}
+                    />
+                    {errors.nombres && (
+                      <span id="nombres-error" className='text-red-400 text-sm block mt-1' role="alert">
+                        {errors.nombres.message as string}
+                      </span>
+                    )}
                   </div>
-                  {errors.nombres && <span className='text-red-400 text-sm'>{errors.nombres.message as string}</span>}
+
                   <div className='w-full my-2'>
-                    <p className='text-slate-400 text-sm uppercase'>apellidos:</p>
+                    <label htmlFor="apellidos" className='text-slate-400 text-sm uppercase block mb-1'>
+                      apellidos: <span className="text-red-500">*</span>
+                    </label>
                     <input
+                      id="apellidos"
                       {...register("apellidos",
                         {
-                          required: { value: true, message: "apellidos es requerido" },
-                          minLength: { value: 8, message: "apellidos debe tener un minimo de 2 caracteres" },
-                          maxLength: { value: 40, message: "apellidos debe tener un maximo de 40 caracteres" },
+                          required: { value: true, message: "Los apellidos son requeridos" },
+                          minLength: { value: 2, message: "Los apellidos deben tener un mínimo de 2 caracteres" },
+                          maxLength: { value: 40, message: "Los apellidos deben tener un máximo de 40 caracteres" },
                         }
                       )}
-                      className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400'
+                      className='p-3 outline-none rounded-md shadow-md w-full uppercase text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all'
                       type="text"
-                      placeholder="nombre de usuario" />
+                      placeholder="Ingrese sus apellidos"
+                      aria-invalid={errors.apellidos ? "true" : "false"}
+                      aria-describedby={errors.apellidos ? "apellidos-error" : undefined}
+                    />
+                    {errors.apellidos && (
+                      <span id="apellidos-error" className='text-red-400 text-sm block mt-1' role="alert">
+                        {errors.apellidos.message as string}
+                      </span>
+                    )}
                   </div>
-                  {errors.apellidos && <span className='text-red-400 text-sm'>{errors.apellidos.message as string}</span>}
+
                   <div className='justify-center flex items-center'>
-                    {warningUsuarioExiste?.length > 0 && <p className='text-teal-700 font-semibold'>{warningUsuarioExiste}</p>}
+                    {warningUsuarioExiste?.length > 0 && (
+                      <p className='text-teal-700 font-semibold' role="alert">{warningUsuarioExiste}</p>
+                    )}
                   </div>
-                  <button className='flex justify-center items-center bg-blue-500 hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase'>registrar</button>
+
+                  <button 
+                    type="submit"
+                    className='flex justify-center items-center bg-blue-500 hover:bg-blue-300 duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase disabled:opacity-50 disabled:cursor-not-allowed'
+                    disabled={loaderPages}
+                  >
+                    {loaderPages ? (
+                      <>
+                        <RiLoader4Line className="animate-spin mr-2" />
+                        Registrando...
+                      </>
+                    ) : (
+                      'Registrar'
+                    )}
+                  </button>
                 </form>
               </div>
             </div>

@@ -8,6 +8,7 @@ import styles from '@/styles/modules/AgregarEspecialista.module.css'
 import UpdateUsuarioEspecialista from '@/modals/updateUsuarioEspecialista'
 import DeleteUsuario from '@/modals/deleteUsuario'
 import { genero, tipoEspecialista } from '@/fuctions/regiones'
+import UsuariosByRol from '@/components/usuariosByRol'
 // Tipos para el formulario
 type FormValues = {
   dni: string;
@@ -125,7 +126,8 @@ const AgregareEspecialista = () => {
     <div className={styles.container}>
       {showModalActualizarEspecialista && <UpdateUsuarioEspecialista idUsuario={idUsuario} handleShowModal={handleShowModal} />}
       {showModalDeleteUsuario && <DeleteUsuario idUsuario={idUsuario} handleShowModalDelete={handleShowModalDelete} />}
-      <div className={styles.tableContainer}>
+      <UsuariosByRol usuariosByRol={allEspecialistas}/>
+      {/* <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -161,7 +163,7 @@ const AgregareEspecialista = () => {
             ))}
           </tbody>
         </table>
-      </div>
+      </div> */}
       <div className={styles.formContainer}>
         <h1 className={styles.title}>
           Registrar Especialista

@@ -13,6 +13,7 @@ import { RiLoader4Line } from 'react-icons/ri'
 import { ToastContainer, toast } from 'react-toastify';
 import { rolDirectivo, genero,caracteristicasDirectivo } from '@/fuctions/regiones'
 import {provinciasPuno, distritosPuno} from '@/fuctions/provinciasPuno'
+import UsuariosByRol from '@/components/usuariosByRol'
 const AgregarDirectores = () => {
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
@@ -58,7 +59,7 @@ const AgregarDirectores = () => {
   return (
     <>
       <ToastContainer />
-    <div className='grid grid-cols-2 w-[1100px] p-1 place-content-center mt-5 m-auto'>
+    <div className='flex p-1 place-content-center mt-5 m-auto'>
       {
         showModal &&
         <UpdateUsuarioDirector idUsuario={idUsuario} handleShowModal={handleShowModal} />
@@ -68,10 +69,11 @@ const AgregarDirectores = () => {
         <DeleteUsuario idUsuario={idUsuario} handleShowModalDelete={handleShowModalDelete}/>
       }
       <div className='p-5'>
-        <div className='w-ful w-[500px] '>
+        <div className='w-full '>
           <h1 className='text-colorTercero font-semibold text-3xl font-mono mb-10 capitalize'>Directivos</h1>
-          <SearchUsuarios />
-          {
+          {/* <SearchUsuarios /> */}
+          <UsuariosByRol usuariosByRol={usuariosDirectores}/>
+          {/* {
             warningUsuarioNoEncontrado.length > 0 ?
               <table className='w-full  bg-white  rounded-md shadow-md mb-5'>
                 <thead className='bg-azul-claro4 border-b-2 border-blue-300 '>
@@ -122,8 +124,8 @@ const AgregarDirectores = () => {
                 </table>
                 :
                 null
-          }
-          <table className='w-full  bg-white  rounded-md shadow-md'>
+          } */}
+          {/* <table className='w-full  bg-white  rounded-md shadow-md'>
             <thead className='bg-azul-claro4 border-b-2 border-blue-300 '>
               <tr className='text-white capitalize font-nunito '>
                 <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
@@ -168,10 +170,10 @@ const AgregarDirectores = () => {
                   null
               }
             </tbody>
-          </table>
+          </table> */}
         </div>
       </div>
-      <div className='w-[700px] p-5 rounded-sm shadow-md '>
+      <div className=' p-5 rounded-sm shadow-md '>
         {
           loaderPages ?
             <div className='grid w-[600px] h-[600px] '>

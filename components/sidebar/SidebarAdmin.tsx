@@ -55,11 +55,11 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 <li className={styles.containerAncla}><Link
                   href="/admin/agregar-especialista"
                   className={styles.anclaje}
-                  id="ancla">crear usuario</Link></li>
+                  id="ancla">Crear usuario</Link></li>
                   <li className={styles.containerAncla}><Link
                   href="/admin/evaluaciones-especialistas"
                   className={styles.anclaje}
-                  id="ancla">evaluaciones</Link></li>
+                  id="ancla">Seguimiento y retroalimentacion</Link></li>
               </ul>
             </li>
             <li className={styles.dropdown}>
@@ -75,11 +75,11 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
               <li className={styles.containerAncla}><Link
                   href="/admin/evaluaciones-directores"
                   className={styles.anclaje}
-                  id="ancla">evaluaciones</Link></li>
+                  id="ancla">Seguimiento y retroalimentacion</Link></li>
                 <li className={styles.containerAncla}><Link
                   href="/admin/agregar-directores"
                   className={styles.anclaje}
-                  id="ancla">crear usuario</Link></li>
+                  id="ancla">Crear usuario</Link></li>
                 
               </ul>
             </li>
