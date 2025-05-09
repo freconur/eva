@@ -65,7 +65,7 @@ const ReporteCurricular = () => {
 
   const iterateData = (data: ReporteCurricularDirector) => {
     return {
-      labels: ['n', 'cn', 'av', 'f', 's'],
+      labels: ['N', 'CN', 'AV', 'F', 'S'],
       datasets: [
         {
           label: "estadisticas de evaluación",

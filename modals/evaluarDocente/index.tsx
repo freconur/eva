@@ -135,7 +135,7 @@ const EvaluarDocente = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoce
                     <input
                       name="dni"
                       className={styles.inputNombresDni}
-                      type="number"
+                      type="text"
                       placeholder="NÚMERO DE DNI"
                       onChange={handleChangeDocente}
                     />

@@ -4,16 +4,19 @@ import { onSnapshot, addDoc, query, where, deleteDoc, doc, collection, getDocs, 
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AppAction } from '../actions/appAction';
 import { } from 'firebase/firestore/lite';
+import { useRouter } from 'next/router';
 
 const UseEvaluacionDocentes = () => {
   const dispatch = useGlobalContextDispatch()
   const { currentUserData } = useGlobalContext()
   const db = getFirestore()
+  const router = useRouter()
   const createEvaluacionesDocentes = async (data: CrearEvaluacionDocente) => {
     await addDoc(collection(db, "evaluaciones-docentes"), data);
   }
 
   const getDataEvaluacion = (idEvaluacion: string) => {
+    dispatch({ type: AppAction.EVALUACIONES_DOCENTES, payload: [] })
     const q = query(collection(db, "/evaluaciones-docentes"), orderBy("order","asc"))
     onSnapshot(doc(db, "/evaluaciones-docentes", idEvaluacion), (doc) => {
       if (doc.exists()) {
@@ -65,6 +68,7 @@ const UseEvaluacionDocentes = () => {
   }
 
   const getPreguntasRespuestasDocentes = async (idEvaluacion: string) => {
+    dispatch({ type: AppAction.GET_PREGUNTA_RESPUESTA_DOCENTE, payload: [] })
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     const path = `/evaluaciones-docentes/${idEvaluacion}/preguntasRespuestas`
     const q = query(collection(db, path), orderBy("order","asc"))
@@ -165,7 +169,10 @@ const UseEvaluacionDocentes = () => {
 
     const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}/`
     await setDoc(doc(db, path, `${dataDocente.dni}`), { observacionesMonitoreo: {}, resultados: data, dni: dataDocente.dni, dniDirector: currentUserData.dni, calificacion: totalPuntos, info: dataDocente })
-    dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+    .then(() => {
+      dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+      router.push(`/directores/evaluaciones-docentes/evaluacion/reporte-docente-individual?idDocente=${dataDocente.dni}&idEvaluacion=${idEvaluacion}`)
+    })
     //AGREGANDO RESULTADOS DE LA EVALUACION DEL DOCENTE
 
 
@@ -253,7 +260,9 @@ const UseEvaluacionDocentes = () => {
     }
     )
   }
-
+  const resetReporteTabla = () => {
+    dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA, payload: [] })
+  }
   const reporteTablaEvaluacionDirectorDocente = (data: ReporteDocenteIndividual[], { grado, seccion, orden }: { grado: string, seccion: string, orden: string }) => {
     
     const dataFiltrada = data?.reduce((acc, docente) => {
@@ -296,6 +305,7 @@ const UseEvaluacionDocentes = () => {
     
   }
   const reporteEvaluacionDocentes = (idEvaluacion: string) => {
+    dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: [] })
     const path = `/evaluaciones-docentes/${idEvaluacion}/${currentUserData.dni}/`
     const refData = collection(db, path)
 
@@ -554,7 +564,8 @@ const UseEvaluacionDocentes = () => {
     reporteEvaluacionDocenteAdmin,
     reporteUgelGlobal,
     guardarObservacionDocente,
-    reporteTablaEvaluacionDirectorDocente
+    reporteTablaEvaluacionDirectorDocente,
+    resetReporteTabla
   }
 
 }

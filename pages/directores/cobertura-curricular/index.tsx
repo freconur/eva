@@ -64,12 +64,12 @@ const CoberturaCurricular = () => {
             >
               Crear instrumento de monitoreo
             </button> */}
-            {/* <button 
+            <button 
               onClick={handleShowModalPreguntasAlternativas} 
               className={styles.headerButton}
             >
               Agregar
-            </button> */}
+            </button>
           </div>
         </div>
       </div>

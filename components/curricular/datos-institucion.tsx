@@ -6,14 +6,19 @@ import React, { useState } from 'react'
 import { MdEditSquare } from 'react-icons/md'
 import { gradosDeColegio, sectionByGrade, area,genero } from '../../fuctions/regiones'
 import styles from './datos-institucion.module.css'
-
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import {	DesktopDatePicker} from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
 interface Props {
 	dataDocente: User 
 }
 
 const DatosInstitucion = ({ dataDocente }: Props) => {
+	const [minDate, setMinDate] = useState(dayjs(new Date().setFullYear(2023)));
 	const [showUpdateDataDocente, setShowUpdateDataDocente] = useState(false)
-
+	const [startDate, setStartDate] = useState(dayjs());
 	const getGradoTexto = (grado: string | number | undefined) => {
 		if (!grado) return '-'
 		const gradoEncontrado = gradosDeColegio.find(g => g.id === Number(grado))
@@ -70,6 +75,16 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 				<div className={styles.dataRow}>
 					<div className={styles.label}>Nombres y Apellidos</div>
 					<div className={styles.value}>{`${dataDocente?.nombres ?? '-'} ${dataDocente?.apellidos ?? '-'}`}</div>
+				</div>
+				<div className={styles.dataRow}>
+				<div className={`${styles.label}`}>Fecha</div>
+				<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+              <DesktopDatePicker
+                minDate={minDate}
+                value={startDate}
+                onChange={(newValue: any) => setStartDate(newValue)}
+              />
+            </LocalizationProvider>
 				</div>
 				<div className={styles.dataRow}>
 					<div className={styles.label}>Celular</div>

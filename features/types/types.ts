@@ -232,7 +232,7 @@ export type User = {
   region?: number;
   caracteristicaCurricular?:string;
   grados?:number[];
-  secciones?:number[] | number;
+  secciones?:number[];
   area?:number;
   distrito?:string;
   genero?:string;

@@ -36,7 +36,7 @@ ChartJS.register(
 const Reportes = () => {
   const route = useRouter()
   const { currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages,  getPreguntaRespuestaDocentes, dataEvaluacionDocente, allEvaluacionesDirectorDocente, dataFiltradaDirectorDocenteTabla } = useGlobalContext()
-  const { reporteEvaluacionDocentes, getPreguntasRespuestasDocentes, getDataEvaluacion, reporteTablaEvaluacionDirectorDocente } = UseEvaluacionDocentes()
+  const { reporteEvaluacionDocentes, getPreguntasRespuestasDocentes, getDataEvaluacion, reporteTablaEvaluacionDirectorDocente, resetReporteTabla } = UseEvaluacionDocentes()
 
   const [filtros, setFiltros] = useState({
     grado: '',
@@ -55,7 +55,7 @@ const Reportes = () => {
 
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
     return {
-      labels: ['a', 'b', 'c', 'd'],
+      labels: ['nivel 1', 'nivel 2', 'nivel 3', 'nivel 4'],
       datasets: [
         {
           label: "estadisticas de evaluación",
@@ -119,7 +119,9 @@ const Reportes = () => {
       console.log('Filtros aplicados:', filtros);
     }
   }, [filtros]);
-
+useEffect(() => {
+  resetReporteTabla()
+},[])
   const getBackgroundColor = (value: number) => {
     switch (value) {
       case 1:

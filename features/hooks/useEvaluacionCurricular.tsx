@@ -85,6 +85,7 @@ const useEvaluacionCurricular = () => {
     });
   }
 
+  
   const getPreguntaAlternativaCurricular = async (dataDocente: User) => {
     // Este código obtiene las preguntas alternativas curriculares basadas en el grado del docente
     if (Array.isArray(dataDocente?.grados)) {
@@ -103,7 +104,7 @@ const useEvaluacionCurricular = () => {
           break;
         }
       }
-
+      console.log('nivel', nivel)
       if (nivel) {
         const pathRef = collection(db, `evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`);
         const q = query(pathRef, orderBy("order", "asc"));
@@ -129,7 +130,6 @@ const useEvaluacionCurricular = () => {
     const arrayEvaluacionCurricularAlternativa: EvaluacionCurricularAlternativa[] = []
     await getDocs(q)
       .then(response => {
-        console.log('response.size', response.size)
         response.forEach(doc => {
           arrayEvaluacionCurricularAlternativa.push({ ...doc.data() })
         })
@@ -324,7 +324,7 @@ const useEvaluacionCurricular = () => {
   }
   const updateDocenteParaCoberturaCurricular = async (dataDocente: string, data: User, docente: User) => {
     console.log('data', data)
-    
+
     await setDoc(doc(db, "usuarios", dataDocente), {
       nombres: data.nombres,
       apellidos: data.apellidos,
@@ -359,17 +359,17 @@ const useEvaluacionCurricular = () => {
     dispatch({ type: AppAction.EVALUACION_CURRICULAR_ALTERNATIVA, payload: [] })
   }
 
-  const reporteCurricularDirectorFilter = (data:User[], {grado, orden, seccion}:{grado:string, orden:string, seccion:string}) => {
+  const reporteCurricularDirectorFilter = (data: User[], { grado, orden, seccion }: { grado: string, orden: string, seccion: string }) => {
     const filteredData = data.reduce((acc: User[], docente) => {
       // Verificar si el docente tiene los grados y secciones necesarios
       const hasGrado = grado ? Array.isArray(docente.grados) && docente.grados.includes(Number(grado)) : true;
       const hasSeccion = seccion ? Array.isArray(docente.secciones) && docente.secciones.includes(Number(seccion)) : true;
-      
+
       // Si el docente cumple con los filtros, lo agregamos al acumulador
       if (hasGrado && hasSeccion) {
         acc.push(docente);
       }
-      
+
       return acc;
     }, []);
 
@@ -378,7 +378,7 @@ const useEvaluacionCurricular = () => {
       filteredData.sort((a, b) => {
         const nombreA = a.nombres || '';
         const nombreB = b.nombres || '';
-        
+
         if (orden === 'asc') {
           return nombreA.localeCompare(nombreB);
         } else {
@@ -413,7 +413,7 @@ const useEvaluacionCurricular = () => {
       dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR_DATA, payload: docentesEvaluados })
     })
 
-    const rta =docentesEvaluados.reduce((acc, docente) => {
+    const rta = docentesEvaluados.reduce((acc, docente) => {
       docente.preguntasAlternativas?.forEach(respuesta => {
         if (respuesta.order === undefined) return;
 
@@ -455,7 +455,7 @@ const useEvaluacionCurricular = () => {
             (estadistica.s || 0);
         }
       });
-      dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: acc.sort((a: any, b: any) => a.id - b.id)})
+      dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: acc.sort((a: any, b: any) => a.id - b.id) })
       return acc;
     }, [] as DataEstadisticasCurricular[]);
   }

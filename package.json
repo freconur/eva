@@ -9,10 +9,14 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@firebase/auth": "^1.9.0",
+    "@mui/x-date-pickers": "^8.3.0",
     "@react-pdf/renderer": "^4.3.0",
     "axios": "^1.7.9",
     "chart.js": "^4.4.7",
+    "dayjs": "^1.11.13",
     "dotenv": "^16.4.7",
     "firebase": "^10.7.2",
     "firebase-admin": "^13.1.0",

@@ -8,6 +8,7 @@ import { gradosDeColegio, sectionByGrade, genero } from '@/fuctions/regiones'
 import styles from './styles.module.css'
 import { useDirectores } from '@/features/hooks/useDirectores'
 import UsuariosByRol from '@/components/usuariosByRol'
+import { User } from '@/features/types/types'
 
 interface FormData {
   nombres: string;
@@ -28,21 +29,38 @@ const AgregarDirectores = () => {
   }, [currentUserData.dni])
 
   const handleAgregarDirector = handleSubmit((data) => {
-    console.log("data", data)
+    const dataConvertida = {
+      ...data,
+      grados: data.grados.map(grado => Number(grado)),
+      secciones: data.secciones.map(seccion => Number(seccion))
+    }
+    console.log("data", dataConvertida)
     crearNuevoDocente({ 
-      ...data, 
+      ...dataConvertida,
       perfil: { rol: 3, nombre: "docente" } 
     })
     reset()
   })
-const { getDocentesByDniDirector } = useDirectores()
+const { getDocentesByDniDirector, gettAllProfesores, fixedgrado } = useDirectores()
   useEffect(() => {
     getDocentesByDniDirector(`${currentUserData.dni}`)
   },[currentUserData.dni])
 
+  /* const handleAllProfesores = () => {
+    gettAllProfesores()
+  }
+  const handleFixedGrado = () => {00290190
+    fixedgrado(usuariosByRol)
+  } */
   console.log("usuariosByRol", usuariosByRol)
   return (
     <div className={styles.container}>
+      {/* <div 
+      className='p-3 cursor-pointer h-[60px] bg-blue-400 text-white rounded-md' onClick={handleAllProfesores}
+      >Agregar todos los profesores</div>
+      <div 
+      className='p-3 cursor-pointer h-[60px] bg-blue-400 text-white rounded-md' onClick={handleFixedGrado}
+      >fixed</div> */}
       <UsuariosByRol  usuariosByRol={usuariosByRol}/>
       <div className={styles.formContainer}>
         {loaderPages ? (
@@ -65,7 +83,7 @@ const { getDocentesByDniDirector } = useDirectores()
                 <input
                   {...register("nombres", {
                     required: { value: true, message: "Los nombres son requeridos" },
-                    minLength: { value: 5, message: "El nombre debe tener un mínimo de 5 caracteres" },
+                    minLength: { value: 2, message: "El nombre debe tener un mínimo de 2 caracteres" },
                     maxLength: { value: 100, message: "El nombre debe tener un máximo de 100 caracteres" },
                     pattern: { value: /^[A-Za-zÁáÉéÍíÓóÚúÑñ\s]+$/, message: "Solo se permiten letras y espacios" }
                   })}

@@ -165,7 +165,7 @@ export const distritosPuno = [
       "Cabanillas",
       "Caracoto",
       "Juliaca",
-      "San Pedro De Putina Punco"
+      "San Miguel"
     ],
     id: 2
   },

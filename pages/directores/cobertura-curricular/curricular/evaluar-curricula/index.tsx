@@ -29,6 +29,10 @@ const EvaluarCurricula = () => {
     }
   }, [dataDocente])
 
+  console.log('paHabilidad', paHabilidad)
+  console.log('dataDocente', dataDocente)
+ /*  console.log('evaluacionCurricular', evaluacionCurricular)
+  console.log('evaluacionCurricularAlternativa', evaluacionCurricularAlternativa) */
   
   return (
     <div className='m-auto w-[1000px] p-10'>

@@ -104,7 +104,8 @@ const ReporteDocenteIndividual = () => {
         reporteIndividualDocente?.dni ?
           <div ref={printRef} className={styles.reporteContainer}>
             <div className={styles.title}>
-              <h3>Resultado de Evaluación de desempeño del docente</h3>
+              <h3>Rúbrica de la mediacion didáctica de la resolución de problemas</h3>
+              <h2 className="text-3xl text-slate-500">(Director evalúa al docente)</h2>
             </div>
             <DatosInstitucion dataDocente={reporteIndividualDocente.info ?? {} as User}/>
             <DatosMonitor dataMonitor={currentUserData}/>
