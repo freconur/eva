@@ -4,8 +4,10 @@ import { onSnapshot, addDoc, query, where, deleteDoc, doc, collection, getDocs, 
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AppAction } from '../actions/appAction';
 import { } from 'firebase/firestore/lite';
+import { useRouter } from 'next/router';
 
 const UseEvaluacionDirectores = () => {
+  const router = useRouter()
   const dispatch = useGlobalContextDispatch()
   const { currentUserData } = useGlobalContext()
   const db = getFirestore()
@@ -163,9 +165,10 @@ const UseEvaluacionDirectores = () => {
 
     const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}/`
     await setDoc(doc(db, path, `${dataDocente.dni}`), { observacionesMonitoreo: {}, resultados: data, dni: dataDocente.dni, dniDirector: currentUserData.dni, calificacion: totalPuntos, info: dataDocente })
-      .then(rta => {
-        dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
-      })
+    .then(() => {
+      dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+      router.push(`/especialistas/evaluaciones-director/evaluacion/reporte-director-individual?idDirector=${dataDocente.dni}&idEvaluacion=${idEvaluacion}`)
+    })
     //AGREGANDO RESULTADOS DE LA EVALUACION DEL DOCENTE
 
     /* data.forEach(async (pr) => {

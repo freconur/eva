@@ -12,6 +12,7 @@ import styles from './evaluacion.module.css'
 import AgregarPreguntasRespuestasDirectores from '@/modals/AgregarPreguntasRespuestasDirectores'
 import UpdatePreguntaRespuestaDirector from '@/modals/updatePrDirectores'
 import EvaluarDirector from '@/modals/evaluarDirector'
+import RubricaMonitoreo from '@/components/rubrica-monitoreo'
 const EvaluacionDirector = () => {
   const [showAgregarPreguntas, setShowAgregarPreguntas] = useState<boolean>(false)
   const router = useRouter()
@@ -66,7 +67,7 @@ const EvaluacionDirector = () => {
             <input
               type="number"
               className={styles.searchInput}
-              placeholder="DNI DE DOCENTE"
+              placeholder="DNI DE DIRECTOR"
               onChange={handleChangeDniDocente}
             />
             {
@@ -113,42 +114,8 @@ const EvaluacionDirector = () => {
               <p className="text-slate-500">buscando resultados...</p>
             </div>
             :
-
-            <ul>
-              {
-                getPreguntaRespuestaDocentes?.map((pq, index) => {
-                  return (
-                    <li key={index} className="p-3 border-b-[2px] border-blue-200">
-                      <div className='flex items-center gap-3'>
-                        <div className='flex  items-center gap-3'>
-                          <p className='font-semibold text-slate-600 text-[20px]'>{index + 1}.</p>
-                          <h3 className='text-slate-600 text-[20px] font-semibold'>{pq.criterio}</h3>
-                        </div>
-                        <div className='flex items-center justify-center'>
-                          {/* <MdEditSquare onClick={() => { handleShowUpdateModal(); setDataUpdate(pq) }} className='text-xl text-yellow-500 cursor-pointer' /> */}
-                        </div>
-                      </div>
-                      <ul className='grid gap-3'>
-                        {
-                          pq.alternativas?.map((alt, index) => {
-                            return (
-                              <li key={index}>
-                                <div className='flex items-center'>
-                                  <span className='text-[18px] font-semibold font-martianMono text-azul-claro4'>{alt.alternativa}.</span>
-                                  <p className='text-[18px] font-montserrat text-slate-400'>{alt.descripcion}</p>
-
-                                </div>
-
-                              </li>
-                            )
-                          })
-                        }
-                      </ul>
-                    </li>
-                  )
-                })
-              }
-            </ul>
+            <RubricaMonitoreo getPreguntaRespuestaDocentes={getPreguntaRespuestaDocentes} />
+            
         }
       </div>
     </div>

@@ -1,0 +1,65 @@
+.rubricaContainer {
+  padding: 2rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.criterioList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.criterioItem {
+  padding: 1.5rem;
+  border-bottom: 2px solid #E2E8F0;
+  transition: all 0.3s ease;
+}
+
+.criterioItem:hover {
+  background-color: #F8FAFC;
+}
+
+.criterioHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.numeroCriterio {
+  font-weight: 600;
+  color: #475569;
+  font-size: 1.25rem;
+}
+
+.tituloCriterio {
+  color: #475569;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.alternativasList {
+  display: grid;
+  gap: 1rem;
+  padding-left: 2.5rem;
+}
+
+.alternativaItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.numeroAlternativa {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: #3B82F6;
+  font-size: 1.125rem;
+}
+
+.descripcionAlternativa {
+  font-size: 1.125rem;
+  color: #94A3B8;
+  font-weight: 400;
+  line-height: 1.5;
+} 

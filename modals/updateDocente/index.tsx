@@ -232,8 +232,8 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
                 className={styles.input}
               >
                 <option key={0} value={0}>Seleccione una característica</option>
-                {caracteristicaCurricular?.map((item) => (
-                  <option key={item.id} value={item.id}>
+                {caracteristicaCurricular?.map((item, index) => (
+                  <option key={index+1} value={item.id}>
                     {item.name}
                   </option>
                 ))}

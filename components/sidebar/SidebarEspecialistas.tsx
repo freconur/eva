@@ -68,7 +68,7 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                   className={styles.anclaje}
                   id="ancla">Seguimiento y retroalimentación</Link></li>
                   <li className={styles.containerAncla}><Link
-                  href="/especialistas/evaluaciones-director"
+                  href="/especialistas/cobertura-curricular"
                   className={styles.anclaje}
                   id="ancla">Cobertura curricular</Link></li>
                 <li className={styles.containerAncla}><Link

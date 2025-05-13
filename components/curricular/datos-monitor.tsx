@@ -15,7 +15,7 @@ const DatosMonitor = ({ dataMonitor }: Props) => {
 			<div className={styles.borderContainer}>
 				<div className={styles.borderRow}>
 					<div className={styles.label}>nombres y apellidos:</div>
-					<div className={styles.value}>{dataMonitor?.nombres} {dataMonitor?.apellidos}</div>
+					<div className={styles.value}>{dataMonitor?.nombres?.toUpperCase()} {dataMonitor?.apellidos?.toUpperCase()}</div>
 				</div>
 				<div className={styles.row}>
 					<div className={styles.halfRow}>

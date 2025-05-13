@@ -1,17 +1,14 @@
-import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
-import { CreaEvaluacion } from '@/features/types/types'
 import { especialidad } from '@/fuctions/categorias'
+import AgregarPreguntasRespuestas from '@/modals/agregarPreguntasYRespuestas'
 import React, { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
 import { RiLoader4Line } from 'react-icons/ri'
 
 const AgregarEvaluaciones = () => {
   const initialValues = { evaluacion: "" }
   const initialValuesForData = { grado: 0, categoria: "", nombreEvaluacion: "" }
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
   const [showModal, setShowModal] = useState(false)
   const [selectValues, setSelectValues] = useState(initialValuesForData)
   // 

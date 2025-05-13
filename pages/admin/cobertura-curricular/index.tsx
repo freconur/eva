@@ -37,7 +37,7 @@ const CoberturaCurricular = () => {
 
   useEffect(() => {
     getEvaluacionCurricular()
-    getDocentesFromDirectores(`${currentUserData.dniDirector}`)
+    getDocentesFromDirectores(0,`${currentUserData.dniDirector}`)
   }, [currentUserData.dni])
   return (
     <div>

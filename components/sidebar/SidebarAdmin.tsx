@@ -53,13 +53,21 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
               </div>
               <ul className={styles.dropdownContent} aria-label="submenu">
                 <li className={styles.containerAncla}><Link
-                  href="/admin/agregar-especialista"
+                  href="/admin/especialistas/agregar-especialista"
                   className={styles.anclaje}
                   id="ancla">Crear usuario</Link></li>
+                  {/* <li className={styles.containerAncla}><Link
+                  href="/admin/especialistas/seguimiento-retroalimentacion"
+                  className={styles.anclaje}
+                  id="ancla">Seguimiento y retroalimentacion</Link></li> */}
                   <li className={styles.containerAncla}><Link
-                  href="/admin/evaluaciones-especialistas"
+                  href="/admin/especialistas/evaluaciones-especialistas"
                   className={styles.anclaje}
                   id="ancla">Seguimiento y retroalimentacion</Link></li>
+                  <li className={styles.containerAncla}><Link
+                  href="/admin/especialistas/cobertura-curricular"
+                  className={styles.anclaje}
+                  id="ancla">Cobertura curricular</Link></li>
               </ul>
             </li>
             <li className={styles.dropdown}>
@@ -72,15 +80,18 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 </Link>
               </div>
               <ul className={styles.dropdownContent} aria-label="submenu">
+                <li className={styles.containerAncla}><Link
+                  href="/especialistas/agregar-directores"
+                  className={styles.anclaje}
+                  id="ancla">Crear usuario</Link></li>
               <li className={styles.containerAncla}><Link
-                  href="/admin/evaluaciones-directores"
+                  href="/especialistas/evaluaciones-director"
                   className={styles.anclaje}
                   id="ancla">Seguimiento y retroalimentacion</Link></li>
                 <li className={styles.containerAncla}><Link
-                  href="/admin/agregar-directores"
+                  href="/especialistas/cobertura-curricular"
                   className={styles.anclaje}
-                  id="ancla">Crear usuario</Link></li>
-                
+                  id="ancla">Cobertura curricular</Link></li>
               </ul>
             </li>
             <li className={styles.dropdown}>
@@ -94,11 +105,11 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
               </div>
               <ul className={styles.dropdownContent} aria-label="submenu">
                   <li className={styles.containerAncla}><Link
-                  href="/admin/evaluaciones-docentes"
+                  href="/directores/evaluaciones-docentes"
                   className={styles.anclaje}
-                  id="ancla">Mediación didáctica</Link></li>
+                  id="ancla">Seguimiento y retroalimentacion</Link></li>
                   <li className={styles.containerAncla}><Link
-                  href="/admin/cobertura-curricular"
+                  href="/directores/cobertura-curricular"
                   className={styles.anclaje}
                   id="ancla">Cobertura curricular</Link></li>
                   

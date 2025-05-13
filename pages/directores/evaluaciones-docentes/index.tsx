@@ -13,7 +13,7 @@ import styles from '@/styles/evaluacionesDocentes.module.css'
 
 const EvaluacionesDesempeñoDocentes = () => {
   const { getEvaluacionesDocentes } = UseEvaluacionDocentes()
-  const { evaluacionDesempeñoDocente, getPreguntaRespuestaDocentes, loaderPages } = useGlobalContext()
+  const { evaluacionDesempeñoDocente, loaderPages, currentUserData } = useGlobalContext()
   const [showModalCrearEvaluacion, setShowCrearEvaluacion] = useState<boolean>(false)
   const [idEva, setIdEva] = useState<string>("")
   const [nameEva, setNameEva] = useState<string>("")
@@ -49,12 +49,20 @@ const EvaluacionesDesempeñoDocentes = () => {
             Monitoreo a la mediación didáctica del docente
           </h1>
 
-          {/*  <button 
-            onClick={handleShowModalCrearEvaluacion} 
-            className={styles.headerButton}
-          >
-            Crear Evaluación
-          </button> */}
+          {
+            currentUserData.perfil?.rol === 4 ?
+              <>
+                {
+                  <button
+                    onClick={handleShowModalCrearEvaluacion}
+                    className={styles.headerButton}
+                  >
+                    Crear Evaluación
+                  </button>}
+              </>
+              :
+              null
+          }
         </div>
       </div>
 
@@ -105,18 +113,25 @@ const EvaluacionesDesempeñoDocentes = () => {
                             {evaluacion.categoria}
                           </Link>
                         </td>
-                        {/*  <td className={styles.tableCell}>
-                          <MdEditSquare 
-                            onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setIdEva(`${evaluacion.id}`) }} 
-                            className={`${styles.actionIcon} ${styles.editIcon}`}
-                          />
-                        </td>
-                        <td className={styles.tableCell}>
-                          <MdDeleteForever 
-                            onClick={() => { handleShowModalDelete(); setIdEva(`${evaluacion.id}`) }} 
-                            className={`${styles.actionIcon} ${styles.deleteIcon}`}
-                          />
-                        </td> */}
+                        {
+                          currentUserData.perfil?.rol === 4 ?
+                            <>
+                              <td className={styles.tableCell}>
+                                <MdEditSquare
+                                  onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setIdEva(`${evaluacion.id}`) }}
+                                  className={`${styles.actionIcon} ${styles.editIcon}`}
+                                />
+                              </td>
+                              <td className={styles.tableCell}>
+                                <MdDeleteForever
+                                  onClick={() => { handleShowModalDelete(); setIdEva(`${evaluacion.id}`) }}
+                                  className={`${styles.actionIcon} ${styles.deleteIcon}`}
+                                />
+                              </td>
+                            </>
+                            :
+                            null
+                        }
                       </tr>
                     )
                   })

@@ -1,0 +1,87 @@
+.tableSection {
+    width: -webkit-fill-available;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: auto;
+}.sectionTitle {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.sectionTitleIndicator {
+    width: 4px;
+    height: 24px;
+    background-color: #2563eb;
+    border-radius: 2px;
+}
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tableHeader {
+    background-color: #f3f4f6;
+}
+
+.tableHeader th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #4b5563;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.tableBody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: background-color 0.2s ease;
+}
+
+.tableBody tr:hover {
+    background-color: #f9fafb;
+}
+
+.tableCell {
+    padding: 1rem;
+}
+
+.tableLink {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.tableLink:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+.tableActions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+}
+
+.actionIcon {
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.actionIcon:hover {
+    transform: scale(1.1);
+}
+
+.editIcon {
+    color: #2563eb;
+}
+
+.deleteIcon {
+    color: #dc2626;
+}

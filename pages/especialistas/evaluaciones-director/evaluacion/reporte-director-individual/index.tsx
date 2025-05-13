@@ -12,13 +12,15 @@ import DatosInstitucion from '@/components/curricular/datos-institucion'
 import DatosMonitor from '@/components/curricular/datos-monitor'
 import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas'
 import DatosInstitucionDirector from '@/components/curricular/datos-institucion-director'
+import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 
 const ReporteDirectorIndividual = () => {
 
   const route = useRouter()
   const { buscarDocenteReporteDeEvaluacion, guardarObservacionDocente } = UseEvaluacionDocentes()
   const { buscarDirectorReporteDeEvaluacion } = UseEvaluacionEspecialistas()
-  const { reporteIndividualDocente, currentUserData } = useGlobalContext()
+  const { getDocente } = useEvaluacionCurricular()
+  const { reporteIndividualDocente, currentUserData, dataDocente } = useGlobalContext()
   const [formData, setFormData] = useState<ObservacionMonitoreoDocente>({
     fortalezasObservadas: '',
     oportunidadesDeMejora: '',
@@ -85,9 +87,11 @@ const ReporteDirectorIndividual = () => {
     }
   }, [reporteIndividualDocente.observacionesMonitoreo])
   useEffect(() => {
+    getDocente(`${route.query.idDirector}`)
     if (route.query.idEvaluacion && route.query.idDirector)
       buscarDirectorReporteDeEvaluacion(`${route.query.idEvaluacion}`, `${route.query.idDirector}`)
   }, [`${route.query.idEvaluacion}`, `${route.query.idDirector}`, currentUserData.dni])
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     guardarObservacionDocente(`${route.query.idEvaluacion}`, formData, reporteIndividualDocente)
@@ -111,8 +115,8 @@ const ReporteDirectorIndividual = () => {
             </div>
         
             
-            {/* <DatosInstitucion dataDocente={reporteIndividualDocente.info ?? {} as User}/> */}
-            <DatosInstitucionDirector dataDocente={reporteIndividualDocente.info ?? {} as User}/>
+            <DatosInstitucion dataDocente={dataDocente ?? {} as User}/>
+            {/* <DatosInstitucionDirector dataDocente={reporteIndividualDocente.info ?? {} as User}/> */}
             
             <DatosMonitor dataMonitor={currentUserData}/>
             {/* <div className={styles.infoSection}>

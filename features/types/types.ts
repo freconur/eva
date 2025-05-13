@@ -59,7 +59,9 @@ export type AppReducerValues = {
   curricularDirectorDataFilter:User[],
   allEvaluacionesEspecialistaDirector:ReporteDocenteIndividual[],
   dataFiltradaEspecialistaDirectorTabla:ReporteDocenteIndividual[],
-  usuariosByRol:User[]
+  usuariosByRol:User[],
+  resultadoBusquedaUsuario:User,
+  lastVisible:any
 };
 
 export type AppActions =
@@ -134,6 +136,8 @@ export type AppActions =
   | { type: AppAction.ALL_EVALUACIONES_ESPECIALISTA_DIRECTOR; payload: ReporteDocenteIndividual[] }
   | { type: AppAction.DATA_FILTRADA_ESPECIALISTA_DIRECTOR_TABLA; payload: ReporteDocenteIndividual[] }
   | { type: AppAction.USUARIOS_BY_ROL; payload: User[] }
+  | { type: AppAction.RESULTADO_BUSQUEDA_USUARIO; payload: User }
+  | { type: AppAction.LAST_VISIBLE; payload: any }
 export type LoginData = {
   usuario: string;
   contrasena: string;
@@ -239,6 +243,7 @@ export type User = {
   celular?:string;
   nivel?:number;
   observacionCurricular?:AnexosCurricularType;
+  observacionSeguimientoRetroalimentacion?:AnexosCurricularType;
   preguntasAlternativas?:PaHanilidad[],
   rolDirectivo?:number,
   tipoEspecialista?:number

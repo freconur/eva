@@ -18,7 +18,7 @@ import UpdateEvaluacionDesempeñoDirectivo from '@/modals/updateEvaluacionDesemp
 
 const EvaluacionesDesempeñoDirectores = () => {
   const { getEvaluacionesDirectores } = UseEvaluacionDirectores()
-  const { evaluacionDesempeñoDocente, getPreguntaRespuestaDocentes, loaderPages } = useGlobalContext()
+  const { evaluacionDesempeñoDocente, getPreguntaRespuestaDocentes, loaderPages, currentUserData } = useGlobalContext()
   const [showModalCrearEvaluacion, setShowCrearEvaluacion] = useState<boolean>(false)
   const [idEva, setIdEva] = useState<string>("")
   const [nameEva, setNameEva] = useState<string>("")
@@ -38,7 +38,7 @@ const EvaluacionesDesempeñoDirectores = () => {
   return (
     <div className=''>
       {showDelete && <DeleteEvaluacionDirector handleShowModalDelete={handleShowModalDelete} idEva={idEva} />}
-      {inputUpdate && <UpdateEvaluacionDesempeñoDirectivo  evaluacion={eva} handleShowInputUpdate={handleShowInputUpdate} />}
+      {inputUpdate && <UpdateEvaluacionDesempeñoDirectivo evaluacion={eva} handleShowInputUpdate={handleShowInputUpdate} />}
       {showModalCrearEvaluacion && <CrearEvaluacionDirector handleShowModalCrearEvaluacion={handleShowModalCrearEvaluacion} />}
 
       {/* <h1 className='font-martianMono uppercase text-xl font-semibold text-slate-600'>Seguimiento del desempeño del docente</h1> */}
@@ -97,12 +97,19 @@ const EvaluacionesDesempeñoDirectores = () => {
                               {evaluacion.categoria}
                             </Link>
                           </td>
-                          {/* <td>
-                            {<MdEditSquare onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setEva(evaluacion)}} className='text-xl text-yellow-500 cursor-pointer' />}
-                          </td>
-                          <td>
-                            <MdDeleteForever onClick={() => { handleShowModalDelete(); setIdEva(`${evaluacion.id}`) }} className='text-xl text-red-500 cursor-pointer' />
-                          </td> */}
+                          {
+                            currentUserData.perfil?.rol === 4 ?
+                              <>
+                                <td>
+                                  {<MdEditSquare onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setEva(evaluacion) }} className='text-xl text-yellow-500 cursor-pointer' />}
+                                </td>
+                                <td>
+                                  <MdDeleteForever onClick={() => { handleShowModalDelete(); setIdEva(`${evaluacion.id}`) }} className='text-xl text-red-500 cursor-pointer' />
+                                </td>
+                              </>
+                              :
+                              null
+                          }
                         </tr>
                       )
                     })

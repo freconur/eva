@@ -32,7 +32,7 @@ const CoberturaCurricular = () => {
 
   useEffect(() => {
     getEvaluacionCurricular()
-    getDocentesFromDirectores(`${currentUserData.dniDirector}`)
+    getDocentesFromDirectores(0,`${currentUserData.dni}`)
   }, [currentUserData.dni])
   return (
     <div>
@@ -58,12 +58,12 @@ const CoberturaCurricular = () => {
           </h1>
           
           <div className={styles.headerButtons}>
-            {/* <button 
+            <button 
               onClick={handleShowModalCrearEvaluacion} 
               className={styles.headerButton}
             >
               Crear instrumento de monitoreo
-            </button> */}
+            </button>
             <button 
               onClick={handleShowModalPreguntasAlternativas} 
               className={styles.headerButton}
@@ -115,7 +115,10 @@ const CoberturaCurricular = () => {
                             <td>
                               <Link href={`/directores/cobertura-curricular/reporte?idCurricular=${evaluacion.id}`} className={styles.tableLink}>reporte</Link>
                             </td>
-                           {/*  <td className={styles.tableCell}>
+                            {
+                              currentUserData.perfil?.rol === 4 ? 
+                              <>
+                            <td className={styles.tableCell}>
                               <div className={styles.tableActions}>
                                 <MdEditSquare 
                                   onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setIdEva(`${evaluacion.id}`) }} 
@@ -126,7 +129,11 @@ const CoberturaCurricular = () => {
                                   className={`${styles.actionIcon} ${styles.deleteIcon}`}
                                 />
                               </div>
-                            </td> */}
+                            </td>
+                              </>
+                            :
+                            null
+                            }
                           </tr>
                         )
                       })

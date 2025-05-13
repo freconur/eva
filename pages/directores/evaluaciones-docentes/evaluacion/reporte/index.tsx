@@ -159,7 +159,7 @@ useEffect(() => {
 
               <div className={styles.headerContent}>
                 <h1 className={styles.headerTitle}>
-                  Reporte de {dataEvaluacionDocente?.name}
+                  Reporte des {dataEvaluacionDocente?.name}
                 </h1>
               </div>
             </div>

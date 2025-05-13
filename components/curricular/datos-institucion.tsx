@@ -1,18 +1,18 @@
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import { User } from '@/features/types/types'
-import { converGenero, regionTexto } from '@/fuctions/regiones'
+import { converGenero, convertRolToTitle, regionTexto } from '@/fuctions/regiones'
 import UpdateDataDocente from '@/modals/updateDocente'
 import React, { useState } from 'react'
 import { MdEditSquare } from 'react-icons/md'
-import { gradosDeColegio, sectionByGrade, area,genero } from '../../fuctions/regiones'
+import { gradosDeColegio, sectionByGrade, area, genero } from '../../fuctions/regiones'
 import styles from './datos-institucion.module.css'
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import {	DesktopDatePicker} from "@mui/x-date-pickers";
+import { DesktopDatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
 interface Props {
-	dataDocente: User 
+	dataDocente: User
 }
 
 const DatosInstitucion = ({ dataDocente }: Props) => {
@@ -36,7 +36,7 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 		const areaEncontrada = area.find(a => a.id === Number(areaId))
 		return areaEncontrada?.name ?? '-'
 	}
-	
+
 	return (
 		<div className="bg-white">
 			{showUpdateDataDocente && (
@@ -46,7 +46,7 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 				/>
 			)}
 			<div className={styles.header}>
-				<h2>I. Datos de la institución educativa y del profesor</h2>
+				<h2>I. Datos de la {dataDocente.rol === 1 ? "ugel" : "institución educativa"} y del {convertRolToTitle(Number(dataDocente.rol))}</h2>
 				<MdEditSquare
 					onClick={() => setShowUpdateDataDocente(!showUpdateDataDocente)}
 					className={styles.editButton}
@@ -59,65 +59,80 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 					<div className={styles.label}>UGEL</div>
 					<div className={styles.value}>{regionTexto(`${dataDocente?.region}`) ?? '-'}</div>
 				</div>
-				<div className={styles.dataRow}>
-					<div className={styles.label}>Institución Educativa</div>
-					<div className={styles.value}>{dataDocente?.institucion ?? '-'}</div>
-				</div>
-				<div className={styles.dataRow}>
-					<div className={styles.label}>Distrito</div>
-					<div className={styles.value}>{dataDocente?.distrito ?? '-'}</div>
-				</div>
-				<div className={styles.dataRow}>
-					<div className={styles.label}>Característica</div>
-					<div className={styles.value}>{dataDocente?.caracteristicaCurricular ?? '-'}</div>
-				</div>
+				{
+					dataDocente?.rol === 1 ? null :
+						<div className={styles.dataRow}>
+							<div className={styles.label}>Institución Educativa</div>
+							<div className={styles.value}>{dataDocente?.institucion ?? '-'}</div>
+						</div>
+
+				}
+				{
+					dataDocente?.rol === 1 ? null :
+						<div className={styles.dataRow}>
+							<div className={styles.label}>Distrito</div>
+							<div className={styles.value}>{dataDocente?.distrito ?? '-'}</div>
+						</div>
+				}
+				{
+					dataDocente?.rol === 1 ? null :
+						<div className={styles.dataRow}>
+							<div className={styles.label}>Característica</div>
+							<div className={styles.value}>{dataDocente?.caracteristicaCurricular ?? '-'}</div>
+						</div>
+				}
 
 				<div className={styles.dataRow}>
 					<div className={styles.label}>Nombres y Apellidos</div>
 					<div className={styles.value}>{`${dataDocente?.nombres ?? '-'} ${dataDocente?.apellidos ?? '-'}`}</div>
 				</div>
 				<div className={styles.dataRow}>
-				<div className={`${styles.label}`}>Fecha</div>
-				<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-              <DesktopDatePicker
-                minDate={minDate}
-                value={startDate}
-                onChange={(newValue: any) => setStartDate(newValue)}
-              />
-            </LocalizationProvider>
+					<div className={`${styles.label}`}>Fecha</div>
+					<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+						<DesktopDatePicker
+							minDate={minDate}
+							value={startDate}
+							onChange={(newValue: any) => setStartDate(newValue)}
+						/>
+					</LocalizationProvider>
 				</div>
 				<div className={styles.dataRow}>
 					<div className={styles.label}>Celular</div>
 					<div className={styles.value}>{`${dataDocente?.celular ?? '-'}`}</div>
 				</div>
-				<div className={styles.dataRow}>
-					<div className={styles.label}>genero</div>
-					<div className={styles.value}>{`${converGenero(`${dataDocente?.genero}`) ?? '-'}`}</div>
-				</div>
-				<div className={styles.dataRow}>
-					<div className={styles.gradosSeccionesContainer}>
-						<div className={styles.gradosSeccionesItem}>
-							<div className={styles.gradosSeccionesLabel}>Grados</div>
-							<div className={styles.gradosSeccionesValue}>
-								{Array.isArray(dataDocente?.grados)
-									? dataDocente.grados.map(g => getGradoTexto(g)).join(', ')
-									: getGradoTexto(dataDocente?.grados) ?? '-'}
+				{
+					dataDocente?.rol === 1 ? null :
+						<>
+							<div className={styles.dataRow}>
+								<div className={styles.label}>genero</div>
+								<div className={styles.value}>{`${converGenero(`${dataDocente?.genero}`) ?? '-'}`}</div>
 							</div>
-						</div>
-						<div className={styles.gradosSeccionesItem}>
-							<div className={styles.gradosSeccionesLabel}>Secciones</div>
-							<div className={styles.gradosSeccionesValue}>
-								{Array.isArray(dataDocente?.secciones)
-									? dataDocente.secciones.map(s => getSeccionTexto(s)).join(', ')
-									: getSeccionTexto(dataDocente?.secciones) ?? '-'}
+							<div className={styles.dataRow}>
+								<div className={styles.gradosSeccionesContainer}>
+									<div className={styles.gradosSeccionesItem}>
+										<div className={styles.gradosSeccionesLabel}>Grados</div>
+										<div className={styles.gradosSeccionesValue}>
+											{Array.isArray(dataDocente?.grados)
+												? dataDocente.grados.map(g => getGradoTexto(g)).join(', ')
+												: getGradoTexto(dataDocente?.grados) ?? '-'}
+										</div>
+									</div>
+									<div className={styles.gradosSeccionesItem}>
+										<div className={styles.gradosSeccionesLabel}>Secciones</div>
+										<div className={styles.gradosSeccionesValue}>
+											{Array.isArray(dataDocente?.secciones)
+												? dataDocente.secciones.map(s => getSeccionTexto(s)).join(', ')
+												: getSeccionTexto(dataDocente?.secciones) ?? '-'}
+										</div>
+									</div>
+								</div>
 							</div>
-						</div>
-					</div>
-				</div>
 				<div className={styles.dataRow}>
 					<div className={styles.label}>Área</div>
 					<div className={styles.value}>{getAreaTexto(dataDocente?.area) ?? '-'}</div>
 				</div>
+						</>
+				}
 				<div className={styles.dataRow}>
 					<div className={styles.gradosSeccionesContainer}>
 						<div className={styles.gradosSeccionesItem}>

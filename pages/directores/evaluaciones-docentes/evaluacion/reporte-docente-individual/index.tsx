@@ -10,12 +10,15 @@ import html2canvas from 'html2canvas'
 import styles from './reporteDocente.module.css'
 import DatosInstitucion from '@/components/curricular/datos-institucion'
 import DatosMonitor from '@/components/curricular/datos-monitor'
+import AnexosSeguimientoRetroalimentacion from '@/modals/anexosSeguimientoRetroalimentacion'
+import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 
 const ReporteDocenteIndividual = () => {
 
   const route = useRouter()
   const { buscarDocenteReporteDeEvaluacion, guardarObservacionDocente } = UseEvaluacionDocentes()
-  const { reporteIndividualDocente, currentUserData } = useGlobalContext()
+  const {  getDocente} = useEvaluacionCurricular()
+  const { reporteIndividualDocente, currentUserData, dataDocente } = useGlobalContext()
   const [formData, setFormData] = useState<ObservacionMonitoreoDocente>({
     fortalezasObservadas: '',
     oportunidadesDeMejora: '',
@@ -85,10 +88,9 @@ const ReporteDocenteIndividual = () => {
     if (route.query.idEvaluacion && route.query.idDocente)
       buscarDocenteReporteDeEvaluacion(`${route.query.idEvaluacion}`, `${route.query.idDocente}`)
   }, [`${route.query.idEvaluacion}`, `${route.query.idDocente}`, currentUserData.dni])
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    guardarObservacionDocente(`${route.query.idEvaluacion}`, formData, reporteIndividualDocente)
-  }
+  useEffect(() => {
+    getDocente(`${route.query.idDocente}`)
+  },[route.query.idDocente])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -107,7 +109,7 @@ const ReporteDocenteIndividual = () => {
               <h3>Rúbrica de la mediacion didáctica de la resolución de problemas</h3>
               <h2 className="text-3xl text-slate-500">(Director evalúa al docente)</h2>
             </div>
-            <DatosInstitucion dataDocente={reporteIndividualDocente.info ?? {} as User}/>
+            <DatosInstitucion dataDocente={dataDocente}/>
             <DatosMonitor dataMonitor={currentUserData}/>
             {/* <div className={styles.infoSection}>
               <h4>Profesor: <strong>{reporteIndividualDocente.info?.nombres} {reporteIndividualDocente.info?.apellidos}</strong></h4>
@@ -133,9 +135,9 @@ const ReporteDocenteIndividual = () => {
                   reporteIndividualDocente.resultados?.map((al, index) => {
                     return (
                       <tr key={index} className={styles.tableRow}>
-                        <td className={styles.tableCell}>{index + 1}</td>
+                        <td className={styles.tableCell}>{al.subOrden || al.order}</td>
                         <td className={styles.tableCellLeft}>{al.criterio}</td>
-                        <td className={styles.tableCell}>Nivel {al.alternativas?.map(select => select.selected ? select.value : null).filter(Boolean)[0]}</td>
+                        <td className={styles.tableCell}>{al.alternativas?.map(select => select.selected ? select.value : null).filter(Boolean)[0]}</td>
                         <td className={styles.tableCell}>{al.alternativas?.map(select => select.selected ? select.value : null).filter(Boolean)[0]}</td>
                       </tr>
                     )
@@ -149,54 +151,8 @@ const ReporteDocenteIndividual = () => {
                 </tr>
               </tbody>
             </table>
-            
-            <form onSubmit={handleSubmit} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label htmlFor="fortalezasObservadas" className={styles.formLabel}>
-                  Fortalezas observadas:
-                </label>
-                <input
-                  type="text"
-                  id="fortalezasObservadas"
-                  name="fortalezasObservadas"
-                  value={formData.fortalezasObservadas}
-                  onChange={handleChange}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label htmlFor="oportunidadesDeMejora" className={styles.formLabel}>
-                  Oportunidades de mejora(dificultades):
-                </label>
-                <input
-                  type="text"
-                  id="oportunidadesDeMejora"
-                  name="oportunidadesDeMejora"
-                  value={formData.oportunidadesDeMejora}
-                  onChange={handleChange}
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label htmlFor="acuerdosYCompomisos" className={styles.formLabel}>
-                  Acuerdos y compromisos:
-                </label>
-                <input
-                  type="text"
-                  id="acuerdosYCompomisos"
-                  name="acuerdosYCompomisos"
-                  value={formData.acuerdosYCompomisos}
-                  onChange={handleChange}
-                  className={styles.formInput}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <button type="submit" className={styles.submitButton}>
-                  Guardar
-                </button>
-              </div>
-            </form>
+            <AnexosSeguimientoRetroalimentacion dataDocente={dataDocente}/>
+           
           </div>
           :
           null

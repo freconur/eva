@@ -37,7 +37,7 @@ const UpdateEvaluacionDesempeñoDirectivo = ({evaluacion, handleShowInputUpdate}
           cerrar
         </div>
         <div className={styles.modalHeader}>
-          <h1 className={styles.modalTitle}>Actualizar evaluación de desempeño</h1>
+          <h1 className={styles.modalTitle}>Actualizar evaluación de desempeñoss</h1>
         </div>
         <div className={styles.modalBody}>
           <div className={styles.inputContainer}>

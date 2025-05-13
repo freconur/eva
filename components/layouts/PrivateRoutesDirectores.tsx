@@ -27,12 +27,15 @@ const PrivateRouteDirectores = ({ children }: Props) => {
   }, [])
 
   useEffect(() => {
-    console.log('userData de especialista', currentUserData)
+    console.log('se habilita para director y admin')
     if (currentUserData.dni) {
       if (currentUserData.perfil?.rol !== undefined) {
-        if (Number(currentUserData?.perfil.rol) !== 2) {
+        const rol = Number(currentUserData?.perfil.rol);
+        if (rol !== 2 && rol !== 4) {
           router.push('/login')
         }
+      } else {
+        router.push('/login')
       }
     }
   }, [currentUserData.dni]);

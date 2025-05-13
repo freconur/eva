@@ -1,6 +1,5 @@
-import React from 'react'
 import { AlternativasDocente, CrearEvaluacionDocente, DataEstadisticas, DataEstadisticasDocente, PRDocentes, PreviewPRDocentes, ReporteDocenteIndividual, User } from '../types/types'
-import { onSnapshot, addDoc, query, where, deleteDoc, doc, collection, getDocs, getFirestore, setDoc, updateDoc, getDoc, increment, orderBy, connectFirestoreEmulator } from "firebase/firestore";
+import { onSnapshot, addDoc, query, where, deleteDoc, doc, collection, getDocs, getFirestore, setDoc, updateDoc, getDoc, increment, orderBy } from "firebase/firestore";
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AppAction } from '../actions/appAction';
 import { } from 'firebase/firestore/lite';
@@ -13,6 +12,19 @@ const UseEvaluacionEspecialistas = () => {
     await addDoc(collection(db, "evaluaciones-especialista"), data);
   }
 
+  const updateEvaluacionDesempeñoDirectivo = async (idEvaluacion: string, name: string) => {
+
+    console.log('idEvaluacion', idEvaluacion)
+    console.log('name', name)
+    const pathRef = doc(db, `/evaluaciones-director`, `${idEvaluacion}`)
+    await updateDoc(pathRef, { name: name })
+
+    /* const washingtonRef = doc(db, "cities", "DC");
+
+await updateDoc(washingtonRef, {
+  capital: true
+}); */
+  }
   const getDataEvaluacion = (idEvaluacion: string) => {
     onSnapshot(doc(db, "/evaluaciones-especialista", idEvaluacion), (doc) => {
       if (doc.exists()) {
@@ -66,7 +78,8 @@ const UseEvaluacionEspecialistas = () => {
   const getPreguntasRespuestasEspecialistas = async (idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     const path = `/evaluaciones-especialista/${idEvaluacion}/preguntasRespuestas`
-    onSnapshot(collection(db, path), (querySnapshot) => {
+    const q  = query(collection(db, path), orderBy("order","asc"))
+    onSnapshot(q, (querySnapshot) => {
       const arrayPreguntaRespuestaDocentes: PreviewPRDocentes[] = []
       querySnapshot.forEach((doc) => {
         arrayPreguntaRespuestaDocentes.push({ ...doc.data(), id: doc.id });
@@ -243,8 +256,8 @@ const UseEvaluacionEspecialistas = () => {
   const reporteEvaluacionesDirectores = (idEvaluacion: string) => {
     const directoresDelEspecialista: ReporteDocenteIndividual[] = []
     const getDirectorIdRef = collection(db, `usuarios/${currentUserData.dni}/${idEvaluacion}`)
-    const getDniDirectoresDeEspecialistas = new Promise<ReporteDocenteIndividual[]>(async(resolve, reject) => {
-      try{
+    const getDniDirectoresDeEspecialistas = new Promise<ReporteDocenteIndividual[]>(async (resolve, reject) => {
+      try {
         const docenteSnapshot = await getDocs(getDirectorIdRef);
         if (docenteSnapshot.size === 0) {
           dispatch({ type: AppAction.LOADER_PAGES, payload: false });
@@ -261,7 +274,7 @@ const UseEvaluacionEspecialistas = () => {
 
         await Promise.all(procesarDocentes);
         resolve(directoresDelEspecialista);
-      }catch(error){
+      } catch (error) {
         console.log('error', error)
         reject()
       }
@@ -321,7 +334,7 @@ const UseEvaluacionEspecialistas = () => {
     console.log('filtros', filtros)
     const dataFiltrada = data.filter(doc => doc.info?.distrito === filtros.provincia)
 
-    
+
 
 
     console.log('dataFiltrada', dataFiltrada)
@@ -330,7 +343,7 @@ const UseEvaluacionEspecialistas = () => {
   const getPreguntasRespuestasDesempeñoDirectivo = async (idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     const path = `/evaluaciones-director/${idEvaluacion}/preguntasRespuestas`
-    const q = query(collection(db, path), orderBy("order","asc"))
+    const q = query(collection(db, path), orderBy("order", "asc"))
     onSnapshot(q, (querySnapshot) => {
       const arrayPreguntaRespuestaDocentes: PreviewPRDocentes[] = []
       querySnapshot.forEach((doc) => {
@@ -339,8 +352,8 @@ const UseEvaluacionEspecialistas = () => {
       dispatch({ type: AppAction.GET_PREGUNTA_RESPUESTA_DOCENTE, payload: arrayPreguntaRespuestaDocentes })
       dispatch({ type: AppAction.LOADER_PAGES, payload: false })
     });
-    
-    
+
+
   }
 
   /* const reporteEvaluacionDocentes = (idEvaluacion: string) => {
@@ -511,10 +524,10 @@ const UseEvaluacionEspecialistas = () => {
       })
     })
   }
-  const updateEvaluacionDesempeñoDirectivo = async (idCurricular: string, name: string) => {
+  const updateEvaluacionEspecialista = async (idCurricular: string, name: string) => {
     console.log('idCurricular', idCurricular)
     console.log('name', name)
-    await updateDoc(doc(db, "/evaluaciones-director", idCurricular), {
+    await updateDoc(doc(db, "/evaluaciones-especialista", idCurricular), {
       name: name
     })
   }
@@ -533,8 +546,133 @@ const UseEvaluacionEspecialistas = () => {
       })
       .catch(error => console.log('error', error))
   }
+
+  const reporteTablaEvaluacionEspecialista = (data: ReporteDocenteIndividual[], { region, orden }: { region: string, orden: string }) => {
+
+    console.log('entre en la funcion')
+    console.log('region', region)
+    console.log('orden', orden)
+    const dataFiltrada = data?.reduce((acc, docente) => {
+      // Si no hay filtros, retornar todos los datos
+      if (!region) {
+        return data;
+      }
+
+      // Filtrar por región si está presente
+      if (region && docente.info?.region) {
+        if (docente.info.region.toString() === region) {
+          acc.push(docente);
+        }
+      }
+      return acc;
+    }, [] as ReporteDocenteIndividual[]);
+    
+    // Ordenar por calificación si se especifica
+    if (orden) {
+      dataFiltrada.sort((a, b) => {
+        if (orden === 'asc') {
+          return (a.calificacion || 0) - (b.calificacion || 0);
+        } else {
+          return (b.calificacion || 0) - (a.calificacion || 0);
+        }
+      });
+    }
+    console.log('dataFiltrada', dataFiltrada)
+    dispatch({ type: AppAction.DATA_FILTRADA_ESPECIALISTA_DIRECTOR_TABLA, payload: dataFiltrada });
+  }
+  const reporteEvaluacionEspecialistas = (idEvaluacion: string) => {
+    dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: [] })
+    const path = `/evaluaciones-especialista/${idEvaluacion}/${currentUserData.dni}/`
+    const refData = collection(db, path)
+
+    const docentesDelDirector: ReporteDocenteIndividual[] = []
+    const getDocenterIdRef = collection(db, `usuarios/${currentUserData.dni}/${idEvaluacion}`)
+    //me traigo a todos los docentes que estan acargo del director
+
+    //aqui debemos de validar si existe evaluaciones de los docentes de dicha evalucion
+
+    const getDniDocentesDeDirectores = new Promise<ReporteDocenteIndividual[]>(
+      async (resolve, reject) => {
+        try {
+          const docenteSnapshot = await getDocs(getDocenterIdRef);
+
+          if (docenteSnapshot.size === 0) {
+            dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+            /* reject(new Error('No se encontraron docentes')); */
+            return;
+          }
+
+          const procesarDocentes = docenteSnapshot.docs.map(doc => {
+            return new Promise<void>((resolveDocente) => {
+              docentesDelDirector.push(doc.data());
+              resolveDocente();
+            });
+          });
+
+          await Promise.all(procesarDocentes);
+          resolve(docentesDelDirector);
+        } catch (error) {
+          console.error('Error al obtener docentes:', error);
+          reject(error);
+        }
+      }
+    );
+
+    getDniDocentesDeDirectores.then(async (docentes) => {
+      console.log('docentes', docentes)
+      //aqui debo de lanzar un dispatch para tener los datos que van a tener filtros para manejo de la data que se usara en la tabla
+      dispatch({ type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE, payload: docentes })
+      const dataEstadisticasEstudiantes = docentes.reduce((acc, docente) => {
+        docente.resultados?.forEach(respuesta => {
+          if (respuesta.order === undefined) return;
+
+          const orderId = respuesta.order.toString();
+          let estadistica = acc.find(stat => stat.id === orderId);
+
+          if (!estadistica) {
+            // Inicializamos con todas las propiedades posibles
+            estadistica = {
+              id: orderId,
+              a: 0,
+              b: 0,
+              c: 0,
+              d: 0,
+              total: 0
+            };
+            acc.push(estadistica);
+          }
+
+          respuesta.alternativas?.forEach(alternativa => {
+            if (!alternativa.selected) return;
+
+            switch (alternativa.alternativa) {
+              case 'a': estadistica!.a = (estadistica!.a || 0) + 1; break;
+              case 'b': estadistica!.b = (estadistica!.b || 0) + 1; break;
+              case 'c': estadistica!.c = (estadistica!.c || 0) + 1; break;
+              case 'd': estadistica!.d = (estadistica!.d || 0) + 1; break;
+            }
+          });
+
+          // Calculamos el total basado en las alternativas presentes
+          const alternativasPresentes = respuesta.alternativas?.some(alt => alt.alternativa === 'd');
+          if (alternativasPresentes) {
+            estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0) + (estadistica!.d || 0);
+          } else {
+            estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0);
+            // Si no hay alternativa 'd', la establecemos como undefined
+            estadistica!.d = undefined;
+          }
+        });
+        dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: acc })
+        return acc;
+      }, [] as DataEstadisticas[]);
+
+    })
+  }
+  
   return {
-    createEvaluacionesEspecialistas,
+    createEvaluacionesEspecialistas,  
+    reporteEvaluacionEspecialistas,
     getEvaluacionesEspecialistas,
     deleteEvaluacionEspecilistas,
     addPreguntasEvaluacionEspecialistas,
@@ -553,11 +691,13 @@ const UseEvaluacionEspecialistas = () => {
     reporteUgelGlobal,
     resetDirector,
     resetEspecialista,
-    updateEvaluacionDesempeñoDirectivo,
+    updateEvaluacionEspecialista,
     reporteEvaluacionesDirectores,
     getPreguntasRespuestasDesempeñoDirectivo,
     filtrarDataEspecialistaDirectorTabla,
-    buscarDirectorReporteDeEvaluacion
+    buscarDirectorReporteDeEvaluacion,
+    reporteTablaEvaluacionEspecialista,
+    updateEvaluacionDesempeñoDirectivo
   }
 }
 

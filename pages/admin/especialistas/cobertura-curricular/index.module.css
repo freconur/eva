@@ -1,0 +1,207 @@
+.header {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 4rem 3rem;
+    background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+    overflow: hidden;
+    margin-bottom: 3rem;
+    border-bottom-left-radius: 2rem;
+    border-bottom-right-radius: 2rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.headerOverlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.1));
+    backdrop-filter: blur(8px);
+}
+
+.headerImage {
+    position: absolute;
+    object-fit: cover;
+    height: 100%;
+    width: 100%;
+    opacity: 0.2;
+    transform: scale(1.1);
+    transition: transform 0.5s ease;
+}
+
+.header:hover .headerImage {
+    transform: scale(1.15);
+}
+
+.headerContent {
+    position: relative;
+    z-index: 20;
+    text-align: left;
+    max-width: 48rem;
+}
+
+.headerTitle {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: white;
+    font-family: 'Poppins', sans-serif;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    margin-bottom: 2rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.headerButtons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.headerButton {
+    padding: 0.75rem 1.5rem;
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.headerButton:hover {
+    background-color: #1d4ed8;
+    transform: translateY(-2px);
+}
+
+.loaderContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    gap: 1rem;
+}
+
+.loaderIcon {
+    font-size: 2.5rem;
+    color: #2563eb;
+    animation: spin 1s linear infinite;
+}
+
+.loaderText {
+    color: #4b5563;
+    font-size: 1.1rem;
+}
+
+.tableContainer {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: center;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.tableSection {
+    width: -webkit-fill-available;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.sectionTitle {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sectionTitleIndicator {
+    width: 4px;
+    height: 24px;
+    background-color: #2563eb;
+    border-radius: 2px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tableHeader {
+    background-color: #f3f4f6;
+}
+
+.tableHeader th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #4b5563;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.tableBody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: background-color 0.2s ease;
+}
+
+.tableBody tr:hover {
+    background-color: #f9fafb;
+}
+
+.tableCell {
+    padding: 1rem;
+}
+
+.tableLink {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.tableLink:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+.tableActions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+}
+
+.actionIcon {
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.actionIcon:hover {
+    transform: scale(1.1);
+}
+
+.editIcon {
+    color: #2563eb;
+}
+
+.deleteIcon {
+    color: #dc2626;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
