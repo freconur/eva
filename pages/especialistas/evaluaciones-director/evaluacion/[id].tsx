@@ -16,7 +16,7 @@ import RubricaMonitoreo from '@/components/rubrica-monitoreo'
 const EvaluacionDirector = () => {
   const [showAgregarPreguntas, setShowAgregarPreguntas] = useState<boolean>(false)
   const router = useRouter()
-  const { getPreguntaRespuestaDocentes, dataEvaluacionDocente, dataDocente, loaderPages, dataDirector, warningDataDocente } = useGlobalContext()
+  const { getPreguntaRespuestaDocentes, dataEvaluacionDocente, currentUserData, loaderPages, dataDirector, warningDataDocente } = useGlobalContext()
   const { getPreguntasRespuestasDirectores, getDataEvaluacion, buscarDirector } = UseEvaluacionDirectores()
   const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false)
   const [valueDni, setValueDni] = useState<string>("")
@@ -87,10 +87,15 @@ const EvaluacionDirector = () => {
           </div>
         </div>
         <div className={styles.headerButtons}>
-          {/* <button
-            onClick={() => handleShowModalPreguntas()}
-            className={styles.headerButton}
-          >Agregar preguntas</button> */}
+          {
+            currentUserData.rol === 4 ?
+            <button
+              onClick={() => handleShowModalPreguntas()}
+              className={styles.headerButton}
+            >Agregar preguntas</button>
+            :
+            null
+          }
           <button
             onClick={handleShowEvaluarDocente}
             className={styles.headerButton}
@@ -114,7 +119,7 @@ const EvaluacionDirector = () => {
               <p className="text-slate-500">buscando resultados...</p>
             </div>
             :
-            <RubricaMonitoreo getPreguntaRespuestaDocentes={getPreguntaRespuestaDocentes} />
+            <RubricaMonitoreo rol={currentUserData?.rol || 0} handleShowUpdateModal={handleShowUpdateModal} setDataUpdate={setDataUpdate} getPreguntaRespuestaDocentes={getPreguntaRespuestaDocentes} />
             
         }
       </div>

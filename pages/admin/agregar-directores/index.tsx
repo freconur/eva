@@ -1,3 +1,4 @@
+import TablaUsuarios from '@/components/curricular/tablas/tablaUsuarios'
 import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import SearchUsuarios from '@/components/searchUsuarios'
@@ -15,7 +16,7 @@ const AgregarDirectores = () => {
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
   const { getUserData, createNewDirector, getRegiones, getUsersDirectores } = useUsuario()
-  const { currentUserData, regiones, loaderPages, usuariosDirectores, warningUsuarioExiste, dataDirector, warningUsuarioNoEncontrado } = useGlobalContext()
+  const { currentUserData, regiones, loaderPages, usuariosDirectores, warningUsuarioExiste, dataDirector, warningUsuarioNoEncontrado, docentesDeDirectores } = useGlobalContext()
   const [showModal, setShowModal] = useState<boolean>(false)
   const [idUsuario, setIdUsuario] = useState<string>("")
   const[showDeleteUsuario, setShowDeleteUsuario] = useState<boolean>(false)
@@ -51,7 +52,8 @@ const AgregarDirectores = () => {
       <div className='p-5'>
         <div className='w-ful w-[500px] '>
           <h1 className='text-colorTercero font-semibold text-3xl font-mono mb-10 capitalize'>Usuarios de directores</h1>
-          <UsuariosByRol usuariosByRol={usuariosDirectores}/>
+          {/* <UsuariosByRol usuariosByRol={usuariosDirectores}/> */}
+          <TablaUsuarios rol={2} docentesDeDirectores={docentesDeDirectores}/>
           {/* <SearchUsuarios />
           {
             warningUsuarioNoEncontrado.length > 0 ?

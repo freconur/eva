@@ -1,10 +1,9 @@
 import { createPortal } from "react-dom"
-import styles from '../updateEvaluacion/updateEvaluacion.module.css'
+import styles from './updateEvaluacion.module.css'
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { AlternativasDocente, PRDocentes } from "@/features/types/types";
 import { RiLoader4Line } from "react-icons/ri";
 import { useEffect, useState } from "react";
-import UseEvaluacionDocentes from "@/features/hooks/UseEvaluacionDocentes";
 import UseEvaluacionDirectores from "@/features/hooks/UseEvaluacionDirectores";
 
 interface Props {
@@ -60,63 +59,60 @@ const handleUpdatePRDirector = () => {
   }, [dataUpdate])
   return container
     ? createPortal(
-      <div className={styles.containerModal}>
-        <div className={styles.containerSale}>
+      <div className={styles.modalOverlay}>
+        <div className={styles.modalContainer}>
           {
             loaderSalvarPregunta ?
-              <div className='grid items-center justify-center'>
-                <div className='flex justify-center items-center'>
-                  <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-                  <span className='text-colorTercero animate-pulse'>...actualizando </span>
+              <div className={styles.loaderContainer}>
+                <div className={styles.loaderContent}>
+                  <RiLoader4Line className={styles.loaderIcon} />
+                  <span className={styles.loaderText}>...actualizando</span>
                 </div>
               </div>
               :
               <>
-                <div className={styles.closeModalContainer}>
-                  <div onClick={() => handleShowUpdateModal()} className={styles.close} >cerrar</div>
+                <div className={styles.modalHeader}>
+                  <div onClick={() => handleShowUpdateModal()} className={styles.closeButton}>cerrar</div>
                 </div>
-                <h3 className={styles.title}>Editar pregunta</h3>
-                <div>
+                <h3 className={styles.modalTitle}>Editar pregunta</h3>
+                <div className={styles.modalContent}>
                   <textarea
-                    className={styles.inputNombresDni}
+                    className={styles.inputField}
                     name="criterio"
                     value={inputValue.criterio}
                     onChange={handleOnChange}
                   />
-                  <div>
+                  <div className={styles.alternativesContainer}>
                     <textarea
-                      className={styles.inputNombresDni}
+                      className={styles.inputField}
                       name="descripcion"
                       value={dataA.descripcion}
                       onChange={handleOnChangeA}
                     />
                     <textarea
-                      className={styles.inputNombresDni}
+                      className={styles.inputField}
                       name="descripcion"
                       value={dataB.descripcion}
                       onChange={handleOnChangeB}
                     />
                     <textarea
-                      className={styles.inputNombresDni}
+                      className={styles.inputField}
                       name="descripcion"
                       value={dataC.descripcion}
                       onChange={handleOnChangeC}
                     />
                     <textarea
-                      className={styles.inputNombresDni}
+                      className={styles.inputField}
                       name="descripcion"
                       value={dataD.descripcion}
                       onChange={handleOnChangeD}
                     />
                   </div>
-                  <p className={styles.tituloBotones}>¿Quieres actualizar esta pregunta y sus alternativas?</p>
-                  <div className='flex gap-3 justify-center items-center'>
-
-                    <button onClick={() => handleShowUpdateModal()} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
-                    <button onClick={handleUpdatePRDirector} className={styles.buttonDelete}>SI</button>
-
+                  <p className={styles.confirmationText}>¿Quieres actualizar esta pregunta y sus alternativas?</p>
+                  <div className={styles.buttonContainer}>
+                    <button onClick={() => handleShowUpdateModal()} className={styles.cancelButton}>CANCELAR</button>
+                    <button onClick={handleUpdatePRDirector} className={styles.confirmButton}>SI</button>
                   </div>
-
                 </div>
               </>
           }

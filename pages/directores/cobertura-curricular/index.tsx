@@ -13,6 +13,8 @@ import CrearEvaluacionCurricular from '@/modals/mallaCurricular/crearEvaluacion'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import AgregarPreguntasAlternativasCurricular from '@/modals/mallaCurricular/AgregarPreguntasAlternativas'
 import styles from './index.module.css'
+import TablasEvaluaciones from '@/components/curricular/tablas/tablas-evaluaciones-curricular/tablasEvaluaciones'
+import TablaUsuarios from '@/components/curricular/tablas/tablaUsuarios'
 
 const CoberturaCurricular = () => {
   const { evaluacionCurricular, loaderPages, docentesDeDirectores, currentUserData } = useGlobalContext()
@@ -83,7 +85,14 @@ const CoberturaCurricular = () => {
           :
           <>
             <div className={styles.tableContainer}>
-              <div className={styles.tableSection}>
+            <TablasEvaluaciones evaluacionCurricular={evaluacionCurricular}/>
+            {
+              currentUserData.perfil?.rol === 4 ?
+              null
+              :
+              <TablaUsuarios rol={3} docentesDeDirectores={docentesDeDirectores}/>
+            }
+              {/* <div className={styles.tableSection}>
                 <h2 className={styles.sectionTitle}>
                   <span className={styles.sectionTitleIndicator}></span>
                   Unidades didácticas
@@ -175,7 +184,7 @@ const CoberturaCurricular = () => {
                     }
                   </tbody>
                 </table>
-              </div>
+              </div> */}
             </div>
           </>
       }

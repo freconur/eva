@@ -11,7 +11,7 @@ interface TablaUsuariosProps {
 	docentesDeDirectores: User[],
 	rol:number
 }
-const TablaUsuarios = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
+const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 	const { currentUserData,resultadoBusquedaUsuario,lastVisible,warningDataDocente } = useGlobalContext()
 	const [dniUsuario, setDniUsuario] = useState<string>("")
 	const [error, setError] = useState<string>("")
@@ -24,7 +24,7 @@ const TablaUsuarios = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 			return
 		}else {
 			//aqui va la funcion que va a buscar al director
-			getDirectorFromEspecialistaCurricular(Number(currentUserData.region), dniUsuario)
+			getDirectorFromEspecialistaCurricular(rol, dniUsuario)
 			console.log(dniUsuario)
 			setError("")
 		}
@@ -43,7 +43,7 @@ const TablaUsuarios = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 	const handleNext = async () => {
 		setIsLoading(true)
 		try {
-			const hasMore = getNextUsuarios(lastVisible, Number(currentUserData.region))
+			const hasMore = getNextUsuariosAdmin(lastVisible, rol)
 			if (!hasMore) {
 				// Aquí podrías mostrar un mensaje de que no hay más registros
 			}
@@ -57,7 +57,7 @@ const TablaUsuarios = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 	const handlePrevious = async () => {
 		setIsLoading(true)
 		try {
-			const hasPrevious = await getPreviousUsuarios(lastVisible, Number(currentUserData.region))
+			const hasPrevious = await getPreviousUsuariosAdmin(lastVisible, rol)
 			if (!hasPrevious) {
 				// Aquí podrías mostrar un mensaje de que no hay registros anteriores
 			}
@@ -72,7 +72,7 @@ const TablaUsuarios = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 		<div className={styles.tableSection}>
 			<h2 className={styles.sectionTitle}>
 				<span className={styles.sectionTitleIndicator}></span>
-				{convertRolToTitle(rol)?.toUpperCase()}
+				{convertRolToTitle(rol)}
 			</h2>
 
 			<div>
@@ -110,7 +110,7 @@ const TablaUsuarios = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 				<thead className={styles.tableHeader}>
 					<tr>
 						<th>#</th>
-						<th>Nombres y apellidos</th>
+						<th>{convertRolToTitle(currentUserData.rol || 0)}</th>
 					</tr>
 				</thead>
 				<tbody className={styles.tableBody}>
@@ -154,4 +154,4 @@ const TablaUsuarios = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 	)
 }
 
-export default TablaUsuarios
+export default TablaUsuariosAdminEspecialistas

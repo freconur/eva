@@ -85,6 +85,7 @@ const EvaluacionDocente = () => {
 					</div>
 				</div>
 				<div className={styles.buttonContainer}>
+					<button onClick={() => handleShowModalPreguntas()} className={`${styles.button} ${styles.buttonPrimary}`}>Agregar</button>
 					<button onClick={() => handleShowModalPreguntas()} className={`${styles.button} ${styles.buttonPrimary}`}>Agregar preguntas</button>
 					<button onClick={handleShowEvaluarDocente} className={`${styles.button} ${styles.buttonSecondary}`}>Evaluar especialista</button>
 					<div className={`${styles.button} ${styles.buttonPrimary}`}>

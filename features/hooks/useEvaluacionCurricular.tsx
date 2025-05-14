@@ -58,7 +58,76 @@ const useEvaluacionCurricular = () => {
           })
       })
   }
+  const getUsuariosToAdmin = async (rol:number) => {
+    let lastVisible:any = 0
+    const arrayUsuarios: User[] = []
+    const pathRef = collection(db, 'usuarios')
+    const q = query(pathRef,where("rol","==", rol), limit(5));
+    const documentSnapshots = await getDocs(q);
+    documentSnapshots.forEach(doc => {
+      arrayUsuarios.push({ ...doc.data() })
+    });
+    dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
+    lastVisible = documentSnapshots.docs[documentSnapshots.docs.length - 1]
+    dispatch({ type: AppAction.LAST_VISIBLE, payload: lastVisible })
+    setDocumentSnapshots([lastVisible])
+    setCurrentPage(0)
+  }
+  const getNextUsuariosAdmin = async(lastVisible:any,rol:number) => {
+    console.log('next usuarios')
+      const arrayUsuarios: User[] = []
+      const pathRef = collection(db, 'usuarios')
+      const nextUsuarios = query(pathRef, where("rol", "==", rol), limit(5), startAfter(lastVisible))
+      const documentSnapshots = await getDocs(nextUsuarios);
+  
+      if (documentSnapshots.empty) {
+        return false
+      }
+  
+      documentSnapshots.forEach(doc => {
+        arrayUsuarios.push({ ...doc.data() })
+      });
+  
+      const newLastVisible = documentSnapshots.docs[documentSnapshots.docs.length - 1]
+      dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
+      dispatch({ type: AppAction.LAST_VISIBLE, payload: newLastVisible })
+  
+      // Guardar el nuevo snapshot
+      setDocumentSnapshots(prev => [...prev, newLastVisible])
+      setCurrentPage(prev => prev + 1)
+      return true
+  }
+  const getPreviousUsuariosAdmin = async (lastVisible: any, rol: number) => {
+    console.log('previous usuarios')
+    if (currentPage <= 0) {
+      return false
+    }
 
+    const arrayUsuarios: User[] = []
+    const pathRef = collection(db, 'usuarios')
+
+    // Obtenemos el snapshot anterior
+    const previousSnapshot = documentSnapshots[currentPage - 1]
+
+    // Construimos la consulta para obtener los registros anteriores
+    const previousUsuarios = query(
+      pathRef,
+      where("region", "==", rol),
+      limit(5),
+      startAfter(previousSnapshot)
+    )
+
+    const newDocumentSnapshots = await getDocs(previousUsuarios)
+    newDocumentSnapshots.forEach(doc => {
+      arrayUsuarios.push({ ...doc.data() })
+    })
+
+    dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
+    dispatch({ type: AppAction.LAST_VISIBLE, payload: previousSnapshot })
+
+    setCurrentPage(prev => prev - 1)
+    return true
+  }
   const getDocentesFromDirectores = async (region: number, dniDirector: string) => {
     //esta funcion tiene que ser dinamica para que pueda recibir datos del director como del espcialista
 
@@ -100,7 +169,7 @@ const useEvaluacionCurricular = () => {
 
     //si el usuario es admin
 
-    if(currentUserData.rol === 4){
+    if (currentUserData.rol === 4) {
       const arrayUsuarios: User[] = []
       const pathRef = collection(db, 'usuarios')
       const q = query(pathRef, where("rol", "==", 1), limit(5));
@@ -177,16 +246,16 @@ const useEvaluacionCurricular = () => {
     return true
   }
 
-  const getDirectorFromEspecialistaCurricular = async (region: number, dniDirector: string) => {
+  const getDirectorFromEspecialistaCurricular = async (rol: number, dniDirector: string) => {
     const pathRef = collection(db, 'usuarios')
-    const q = query(pathRef, where("region", "==", region), where("dni", "==", dniDirector));
+    const q = query(pathRef, where("rol", "==", rol), where("dni", "==", dniDirector));
     await getDocs(q)
       .then(async (response) => {
         response.size > 0 ?
           dispatch({ type: AppAction.RESULTADO_BUSQUEDA_USUARIO, payload: response.docs[0]?.data() })
-        :
+          :
           dispatch({ type: AppAction.RESULTADO_BUSQUEDA_USUARIO, payload: {} })
-          dispatch({type:AppAction.WARNING_DATA_DOCENTE, payload: 'No se encontró ningún resultado'})
+        dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: 'No se encontró ningún resultado' })
       })
   }
 
@@ -370,19 +439,19 @@ const useEvaluacionCurricular = () => {
   }
 
   const guardarAnexosCurricular = async (dataDocente: User, data: AnexosCurricularType) => {
-   /*  if (dataDocente.caracteristicaCurricular) { */
-      await setDoc(doc(db, 'usuarios', `${dataDocente.dni}`), {
-        ...dataDocente,
-        observacionCurricular: data
-      })
+    /*  if (dataDocente.caracteristicaCurricular) { */
+    await setDoc(doc(db, 'usuarios', `${dataDocente.dni}`), {
+      ...dataDocente,
+      observacionCurricular: data
+    })
     /* } */
   }
 
   const guardarAnexosSeguimientoRetroalimentacion = async (dataDocente: User, data: AnexosCurricularType) => {
-      await setDoc(doc(db, 'usuarios', `${dataDocente.dni}`), {
-        ...dataDocente,
-        observacionSeguimientoRetroalimentacion: data
-      })
+    await setDoc(doc(db, 'usuarios', `${dataDocente.dni}`), {
+      ...dataDocente,
+      observacionSeguimientoRetroalimentacion: data
+    })
   }
   const resetValuesEvaluarCurricular = () => {
     dispatch({ type: AppAction.PA_HABILIDAD, payload: [] })
@@ -426,99 +495,102 @@ const useEvaluacionCurricular = () => {
     dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: [] })
     dispatch({ type: AppAction.CURRICULAR_DIRECTOR_DATA_FILTER, payload: [] })
   }
-    const reporteCD = async (idCurricular: string, dniDirector: string, nivel: string) => {
-      dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: [] })
-      const path = `usuarios/${dniDirector}/${idCurricular}`
-      const pathRef = collection(db, path)
-      const q = query(pathRef, where("nivel", "==", Number(nivel)))
-      const docentesEvaluados: User[] = []
+  const reporteCD = async (idCurricular: string, dniDirector: string, nivel: string) => {
+    dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: [] })
+    const path = `usuarios/${dniDirector}/${idCurricular}`
+    const pathRef = collection(db, path)
+    const q = query(pathRef, where("nivel", "==", Number(nivel)))
+    const docentesEvaluados: User[] = []
 
-      const pathRefHabilidad = collection(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`)
-      const arrayEvaluacionHabilidad: EvaluacionHabilidad[] = []
-      await getDocs(pathRefHabilidad)
-        .then(response => {
-          response.forEach(doc => {
-            arrayEvaluacionHabilidad.push(doc.data())
-          })
-          dispatch({ type: AppAction.REPORT_PREGUNTA_HABILIDAD, payload: arrayEvaluacionHabilidad.sort((a: any, b: any) => a.order - b.order) })
+    const pathRefHabilidad = collection(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`)
+    const arrayEvaluacionHabilidad: EvaluacionHabilidad[] = []
+    await getDocs(pathRefHabilidad)
+      .then(response => {
+        response.forEach(doc => {
+          arrayEvaluacionHabilidad.push(doc.data())
         })
-      const querySnapshot = await getDocs(q);
-      const promises = querySnapshot.docs.map(doc => Promise.resolve(doc.data()));
-      await Promise.all(promises).then(rta => {
-        docentesEvaluados.push(...rta)
-        dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR_DATA, payload: docentesEvaluados })
+        dispatch({ type: AppAction.REPORT_PREGUNTA_HABILIDAD, payload: arrayEvaluacionHabilidad.sort((a: any, b: any) => a.order - b.order) })
       })
+    const querySnapshot = await getDocs(q);
+    const promises = querySnapshot.docs.map(doc => Promise.resolve(doc.data()));
+    await Promise.all(promises).then(rta => {
+      docentesEvaluados.push(...rta)
+      dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR_DATA, payload: docentesEvaluados })
+    })
 
-      const rta = docentesEvaluados.reduce((acc, docente) => {
-        docente.preguntasAlternativas?.forEach(respuesta => {
-          if (respuesta.order === undefined) return;
+    const rta = docentesEvaluados.reduce((acc, docente) => {
+      docente.preguntasAlternativas?.forEach(respuesta => {
+        if (respuesta.order === undefined) return;
 
-          const orderId = respuesta.order.toString();
-          let estadistica = acc.find(stat => stat.id === orderId);
+        const orderId = respuesta.order.toString();
+        let estadistica = acc.find(stat => stat.id === orderId);
 
-          if (!estadistica) {
-            // Inicializamos con todas las propiedades posibles
-            estadistica = {
-              id: orderId,
-              n: 0,
-              cn: 0,
-              av: 0,
-              f: 0,
-              s: 0,
-              total: 0
-            };
-            acc.push(estadistica);
-          }
+        if (!estadistica) {
+          // Inicializamos con todas las propiedades posibles
+          estadistica = {
+            id: orderId,
+            n: 0,
+            cn: 0,
+            av: 0,
+            f: 0,
+            s: 0,
+            total: 0
+          };
+          acc.push(estadistica);
+        }
 
-          respuesta.alternativas?.forEach(alternativa => {
-            if (!alternativa.selected) return;
+        respuesta.alternativas?.forEach(alternativa => {
+          if (!alternativa.selected) return;
 
-            switch (alternativa.acronimo) {
-              case 'n': estadistica!.n = (estadistica!.n || 0) + 1; break;
-              case 'cn': estadistica!.cn = (estadistica!.cn || 0) + 1; break;
-              case 'av': estadistica!.av = (estadistica!.av || 0) + 1; break;
-              case 'f': estadistica!.f = (estadistica!.f || 0) + 1; break;
-              case 's': estadistica!.s = (estadistica!.s || 0) + 1; break;
-            }
-          });
-
-          // Calculamos el total sumando todas las alternativas seleccionadas
-          if (estadistica) {
-            estadistica.total = (estadistica.n || 0) +
-              (estadistica.cn || 0) +
-              (estadistica.av || 0) +
-              (estadistica.f || 0) +
-              (estadistica.s || 0);
+          switch (alternativa.acronimo) {
+            case 'n': estadistica!.n = (estadistica!.n || 0) + 1; break;
+            case 'cn': estadistica!.cn = (estadistica!.cn || 0) + 1; break;
+            case 'av': estadistica!.av = (estadistica!.av || 0) + 1; break;
+            case 'f': estadistica!.f = (estadistica!.f || 0) + 1; break;
+            case 's': estadistica!.s = (estadistica!.s || 0) + 1; break;
           }
         });
-        dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: acc.sort((a: any, b: any) => a.id - b.id) })
-        return acc;
-      }, [] as DataEstadisticasCurricular[]);
-    }
-    return {
-      createEvaluacionCurricular,
-      getEvaluacionCurricular,
-      addPreguntasAlternativasCurricular,
-      getDocentesFromDirectores,
-      getDocente,
-      getPreguntaAlternativaCurricular,
-      generateEvaluacionCurricular,
-      getEvaluacionCurricularAlternativa,
-      getEvaluacionByIdCurricular,
-      salvarEvaluacionCurricular,
-      getEvaluacionCurricularDocente,
-      getCaracteristicasCurricular,
-      updateDocenteParaCoberturaCurricular,
-      guardarAnexosCurricular,
-      resetValuesEvaluarCurricular,
-      reporteCD,
-      updateEvaluacionCurricular,
-      reporteCurricularDirectorFilter,
-      getDirectorFromEspecialistaCurricular,
-      getNextUsuarios,
-      getPreviousUsuarios,
-      resetReporteCurricularDirector,
-      guardarAnexosSeguimientoRetroalimentacion
-    }
+
+        // Calculamos el total sumando todas las alternativas seleccionadas
+        if (estadistica) {
+          estadistica.total = (estadistica.n || 0) +
+            (estadistica.cn || 0) +
+            (estadistica.av || 0) +
+            (estadistica.f || 0) +
+            (estadistica.s || 0);
+        }
+      });
+      dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: acc.sort((a: any, b: any) => a.id - b.id) })
+      return acc;
+    }, [] as DataEstadisticasCurricular[]);
   }
-  export default useEvaluacionCurricular
+  return {
+    createEvaluacionCurricular,
+    getEvaluacionCurricular,
+    addPreguntasAlternativasCurricular,
+    getDocentesFromDirectores,
+    getDocente,
+    getPreguntaAlternativaCurricular,
+    generateEvaluacionCurricular,
+    getEvaluacionCurricularAlternativa,
+    getEvaluacionByIdCurricular,
+    salvarEvaluacionCurricular,
+    getEvaluacionCurricularDocente,
+    getCaracteristicasCurricular,
+    updateDocenteParaCoberturaCurricular,
+    guardarAnexosCurricular,
+    resetValuesEvaluarCurricular,
+    reporteCD,
+    updateEvaluacionCurricular,
+    reporteCurricularDirectorFilter,
+    getDirectorFromEspecialistaCurricular,
+    getNextUsuarios,
+    getPreviousUsuarios,
+    resetReporteCurricularDirector,
+    guardarAnexosSeguimientoRetroalimentacion,
+    getUsuariosToAdmin,
+    getNextUsuariosAdmin,
+    getPreviousUsuariosAdmin
+  }
+}
+export default useEvaluacionCurricular

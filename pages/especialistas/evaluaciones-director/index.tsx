@@ -15,6 +15,7 @@ import DeleteEvaluacionDirector from '@/modals/DeleteEvaluacionDirector'
 import CrearEvaluacionDirector from '@/modals/crearEvaluacionDirector'
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista'
 import UpdateEvaluacionDesempeñoDirectivo from '@/modals/updateEvaluacionDesempeñoDirectivo'
+import styles from './evaluaciones-director.module.css'
 
 const EvaluacionesDesempeñoDirectores = () => {
   const { getEvaluacionesDirectores } = UseEvaluacionDirectores()
@@ -36,90 +37,87 @@ const EvaluacionesDesempeñoDirectores = () => {
   }, [])
 
   return (
-    <div className=''>
+    <div>
       {showDelete && <DeleteEvaluacionDirector handleShowModalDelete={handleShowModalDelete} idEva={idEva} />}
       {inputUpdate && <UpdateEvaluacionDesempeñoDirectivo evaluacion={eva} handleShowInputUpdate={handleShowInputUpdate} />}
       {showModalCrearEvaluacion && <CrearEvaluacionDirector handleShowModalCrearEvaluacion={handleShowModalCrearEvaluacion} />}
 
-      {/* <h1 className='font-martianMono uppercase text-xl font-semibold text-slate-600'>Seguimiento del desempeño del docente</h1> */}
-      <div className=''>
-        <div className='grid relative xxl:flex gap-[20px] justify-between p-20 bg-headerPsicolinguistica overflow-hidden mb-5 '>
-          <div className='top-0 bottom-0 rigth-0 left-0 bg-blue-600 z-[15] absolute w-full opacity-30'></div>
-
-          <Image
-            // className='absolute object-cover bottom-0 top-[-250px] right-0 left-0 z-1 opacity-1'
-            className="absolute object-cover h-[100%] w-full bottom-0 top-[0px] right-0 left-0 z-[10] opacity-80"
-            src={header}
-            alt="imagen de cabecera"
-            objectFit='fill'
-            priority
-          />
-          <h1 className="text-textTitulos relative z-[20]  text-3xl font-bold font-martianMono text-left">Seguimiento y retroalimentación al desempeño del directivo</h1>
-          {/* <button onClick={handleShowModalCrearEvaluacion} className="relative z-[50] p-3 rounded-sm bg-green-400 text-textTitulos w-[150px] h-[50px]">Crear Evaluación</button> */}
-        </div>
-
-        {
-          loaderPages ?
-            <div className="flex w-full mt-5 items-center m-auto justify-center">
-              <RiLoader4Line className="animate-spin text-3xl text-slate-500 " />
-              <p className="text-slate-500">buscando resultados...</p>
-            </div>
-            :
-
-            <div className='p-5'>
-              <table className='w-full  bg-white  rounded-md drop-shadow-lg overflow-hidden'>
-                <thead className='bg-colorSegundo border-b-2 border-blue-300 '>
-                  <tr className='text-white capitalize font-nunito '>
-                    <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
-                    <th className="py-3 md:p-2  text-left">nombre de evaluación</th>
-                    <th className="py-3 md:p-2  text-left">categorias</th>
-                    <th className="py-3 md:p-2  text-left"></th>
-                    <th className="py-3 md:p-2  text-left"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {
-                    evaluacionDesempeñoDocente?.map((evaluacion, index) => {
-                      return (
-                        <tr key={index} className='h-[60px] hover:bg-blue-100 duration-300 cursor-pointer'>
-                          <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>
-                            <Link href={`/especialistas/evaluaciones-director/evaluacion/${evaluacion.id}`}>
-                              {index + 1}
-                            </Link>
-                          </td>
-                          <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>
-                            <Link href={`/especialistas/evaluaciones-director/evaluacion/${evaluacion.id}`}>
-                              {evaluacion.name}
-                            </Link>
-                          </td>
-                          <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>
-                            <Link href={`/especialistas/evaluaciones-director/evaluacion/${evaluacion.id}`}>
-                              {evaluacion.categoria}
-                            </Link>
-                          </td>
-                          {
-                            currentUserData.perfil?.rol === 4 ?
-                              <>
-                                <td>
-                                  {<MdEditSquare onClick={() => { setNameEva(`${evaluacion.name}`); handleShowInputUpdate(); setEva(evaluacion) }} className='text-xl text-yellow-500 cursor-pointer' />}
-                                </td>
-                                <td>
-                                  <MdDeleteForever onClick={() => { handleShowModalDelete(); setIdEva(`${evaluacion.id}`) }} className='text-xl text-red-500 cursor-pointer' />
-                                </td>
-                              </>
-                              :
-                              null
-                          }
-                        </tr>
-                      )
-                    })
-                  }
-                </tbody>
-              </table>
-            </div>
-        }
-
+      <div className={styles.header}>
+        <div className={styles.headerOverlay}></div>
+        <Image
+          className={styles.headerImage}
+          src={header}
+          alt="imagen de cabecera"
+          priority
+        />
+        <h1 className={styles.headerTitle}>Seguimiento y retroalimentación al desempeño del directivo</h1>
+        <button onClick={handleShowModalCrearEvaluacion} className={styles.createButton}>Crear Evaluación</button>
       </div>
+
+      {loaderPages ? (
+        <div className={styles.loaderContainer}>
+          <RiLoader4Line className={styles.loaderIcon} />
+          <p className={styles.loaderText}>buscando resultados...</p>
+        </div>
+      ) : (
+        <div className={styles.tableContainer}>
+          <table className={styles.table}>
+            <thead className={styles.tableHeader}>
+              <tr className={styles.tableHeaderRow}>
+                <th className={`${styles.tableHeaderCell} ${styles.tableHeaderCellNumber}`}>#</th>
+                <th className={styles.tableHeaderCell}>nombre de evaluación</th>
+                <th className={styles.tableHeaderCell}>categorias</th>
+                <th className={styles.tableHeaderCell}></th>
+                <th className={styles.tableHeaderCell}></th>
+              </tr>
+            </thead>
+            <tbody className={styles.tableBody}>
+              {evaluacionDesempeñoDocente?.map((evaluacion, index) => (
+                <tr key={index} className={styles.tableRow}>
+                  <td className={`${styles.tableCell} ${styles.tableCellNumber}`}>
+                    <Link href={`/especialistas/evaluaciones-director/evaluacion/${evaluacion.id}`} className={styles.tableCellLink}>
+                      {index + 1}
+                    </Link>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <Link href={`/especialistas/evaluaciones-director/evaluacion/${evaluacion.id}`} className={styles.tableCellLink}>
+                      {evaluacion.name}
+                    </Link>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <Link href={`/especialistas/evaluaciones-director/evaluacion/${evaluacion.id}`} className={styles.tableCellLink}>
+                      {evaluacion.categoria}
+                    </Link>
+                  </td>
+                  {currentUserData.perfil?.rol === 4 && (
+                    <>
+                      <td className={styles.tableCell}>
+                        <MdEditSquare 
+                          onClick={() => { 
+                            setNameEva(`${evaluacion.name}`); 
+                            handleShowInputUpdate(); 
+                            setEva(evaluacion) 
+                          }} 
+                          className={styles.editIcon} 
+                        />
+                      </td>
+                      <td className={styles.tableCell}>
+                        <MdDeleteForever 
+                          onClick={() => { 
+                            handleShowModalDelete(); 
+                            setIdEva(`${evaluacion.id}`) 
+                          }} 
+                          className={styles.deleteIcon} 
+                        />
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

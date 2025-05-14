@@ -88,7 +88,7 @@ const CoberturaCurricular = () => {
           <>
             <div className={styles.tableContainer}>
               <TablasEvaluaciones evaluacionCurricular={evaluacionCurricular}/>
-              <TablaUsuarios docentesDeDirectores={docentesDeDirectores}/>
+              <TablaUsuarios rol={1} docentesDeDirectores={docentesDeDirectores}/>
             </div>
           </>
       }

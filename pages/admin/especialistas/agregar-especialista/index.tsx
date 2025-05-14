@@ -9,6 +9,9 @@ import UpdateUsuarioEspecialista from '@/modals/updateUsuarioEspecialista'
 import DeleteUsuario from '@/modals/deleteUsuario'
 import { genero, tipoEspecialista } from '@/fuctions/regiones'
 import UsuariosByRol from '@/components/usuariosByRol'
+import TablaUsuarios from '@/components/curricular/tablas/tablaUsuarios'
+import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
+import TablaUsuariosAdminEspecialistas from '@/components/curricular/tablas/tablaUsuariosAdmin'
 // Tipos para el formulario
 type FormValues = {
   dni: string;
@@ -76,13 +79,15 @@ const AgregareEspecialista = () => {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>()
   const { getUserData, createNewEspecialista, getRegiones, getAllEspecialistas } = useUsuario()
   const [idUsuario, setIdUsuario] = useState<string>("")
-  const { regiones, loaderPages, allEspecialistas } = useGlobalContext()
+  const { regiones, loaderPages, allEspecialistas, docentesDeDirectores } = useGlobalContext()
   const [showModalActualizarEspecialista, setShowModalActualizarEspecialista] = useState<boolean>(false)
+  const { getUsuariosToAdmin } = useEvaluacionCurricular()
   const [showModalDeleteUsuario, setShowModalDeleteUsuario] = useState<boolean>(false)
   useEffect(() => {
     getUserData()
     getRegiones()
-    getAllEspecialistas()
+    /* getAllEspecialistas() */
+    getUsuariosToAdmin(1)
   }, [])
 
   const handleDelete = async (dni: string) => {
@@ -122,48 +127,12 @@ const AgregareEspecialista = () => {
       </div>
     )
   }
+  console.log('docentesDeDirectores', docentesDeDirectores)
   return (
     <div className={styles.container}>
       {showModalActualizarEspecialista && <UpdateUsuarioEspecialista idUsuario={idUsuario} handleShowModal={handleShowModal} />}
       {showModalDeleteUsuario && <DeleteUsuario idUsuario={idUsuario} handleShowModalDelete={handleShowModalDelete} />}
-      <UsuariosByRol usuariosByRol={allEspecialistas}/>
-      {/* <div className={styles.tableContainer}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>DNI</th>
-              <th>Nombres</th>
-              <th>Apellidos</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {allEspecialistas.map((especialista) => (
-              <tr key={especialista.dni}>
-                <td className={styles.tsList}>{especialista.dni}</td>
-                <td className={styles.tsList}>{especialista.nombres}</td>
-                <td className={styles.tsList}>{especialista.apellidos}</td>
-                <td className={styles.actions}>
-                  <button
-                    onClick={() => {setIdUsuario(`${especialista.dni}`); handleShowModal()}}
-                    className={styles.iconButton}
-                    title="Editar"
-                  >
-                    <RiEdit2Line />
-                  </button>
-                  <button
-                    onClick={() => {setIdUsuario(`${especialista.dni}`); handleShowModalDelete()}}
-                    className={styles.iconButton}
-                    title="Borrar"
-                  >
-                    <RiDeleteBin6Line />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div> */}
+      <TablaUsuariosAdminEspecialistas rol={1} docentesDeDirectores={docentesDeDirectores}/>
       <div className={styles.formContainer}>
         <h1 className={styles.title}>
           Registrar Especialista

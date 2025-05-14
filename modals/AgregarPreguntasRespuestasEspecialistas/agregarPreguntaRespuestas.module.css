@@ -1,6 +1,7 @@
 .containerModal {
   position: fixed;
-  background-color: rgba(0, 0, 0, 0.23);
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
   z-index: 2000;
   top: 0;
   bottom: 0;
@@ -8,24 +9,148 @@
   right: 0;
   display: grid;
   place-content: center;
+  animation: fadeIn 0.3s ease-in-out;
+
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.containerSale {
+  background-color: #ffffff;
+  overflow-y: scroll;
+  width: 90%;
+  max-width: 800px;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .closeModalContainer {
   width: 100%;
-  justify-content: space-between;
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
 }
-.close {
+
+.title {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.5rem;
   font-weight: 600;
-  color: #ee7c78;
-  text-decoration: underline;
+  color: #2d3748;
+  text-transform: capitalize;
+}
+
+.close {
+  font-weight: 500;
+  color: #718096;
   cursor: pointer;
-  transition: 0.2s ease;
+  transition: all 0.2s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
 }
-.close:hover{
-  color: #ff1e00;
-  transition: 0.2s ease;
+
+.close:hover {
+  background-color: #f7fafc;
+  color: #4a5568;
 }
+
+.titlePregunta {
+  font-size: 1rem;
+  color: #4a5568;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+}
+
+.alternativaInput {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  color: #4a5568;
+  transition: all 0.2s ease;
+  margin-bottom: 1rem;
+}
+
+.alternativaInput:focus {
+  outline: none;
+  border-color: #90cdf4;
+  box-shadow: 0 0 0 3px rgba(144, 205, 244, 0.2);
+}
+
+.textAreaPregunta {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  color: #4a5568;
+  transition: all 0.2s ease;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.textAreaPregunta:focus {
+  outline: none;
+  border-color: #90cdf4;
+  box-shadow: 0 0 0 3px rgba(144, 205, 244, 0.2);
+}
+
+.numberAlternativas {
+  font-weight: 500;
+  color: #718096;
+  min-width: 24px;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  margin-top: 2rem;
+}
+
+.submitButton:hover {
+  background-color: #3182ce;
+  transform: translateY(-1px);
+}
+
+.error {
+  color: #e53e3e;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
 .closeModal {
   border-radius: 100%;
   background-color: red;
@@ -37,24 +162,11 @@
   justify-content: center;
   align-items: center;
 }
+
 .formulario {
   display:grid
 }
-.containerSale {
-  background-color: #f3f3f3;
-  /* background-color: red; */
-  width: 1000px;
-  display: grid;
-  /* justify-content: center; */
-  /* width: 400px; */
-  /* background-color: #f6fdff; */
-  border-radius: 5px;
-  margin-bottom: 10px;
-  /* cursor: pointer; */
-  padding: 20px;
-  margin: 0px;
-  /* height:500px */
-}
+
 @media (min-width: 400px) {
   .containerSale {
     width: 390px;
@@ -75,19 +187,7 @@
     width: 1200px;
   }
 }
-.numberAlternativas {
-  font-weight: 600;
-  color:rgba(129, 140, 248);
-}
-.title {
-  font-family: "Montserrat";
-  font-size: medium;
-  font-weight: 600;
-  text-align: center;
-  /* color: #182c18; */
-  text-transform: capitalize;
-  color: rgba(129, 140, 248);
-}
+
 .options {
   display: flex;
   justify-content: center;
@@ -105,7 +205,6 @@
   border-radius: 5px;
   width: 100px;
   height: 40px;
-  /* background: linear-gradient(90deg, rgba(103,226,207,1) 0%, rgba(62,188,191,1) 48%, rgba(49,154,138,1) 100%); */
   background-color: #7777dd;
   color: white;
   font-family: "DM Mono";
@@ -188,23 +287,6 @@
   background-color: #fff;
   box-shadow: 0 0 0 5px rgb(129 140 248 / 30%);
 }
-.buttonSubmit {
-  color: rgba(129, 140, 248) !important;
-  width: 100%;
-  text-transform: uppercase;
-  background: #ffffff;
-  padding: 10px;
-  border: 4px solid rgba(129, 140, 248) !important;
-  border-radius: 6px;
-  display: inline-block;
-  transition: all 0.3s ease 0s;
-}
-.buttonSubmit:hover {
-  color: #20bf6b !important;
-  border-radius: 50px;
-  border-color: #20bf6b !important;
-  transition: all 0.3s ease 0s;
-}
 
 .cursosList {
   display: flex;
@@ -222,8 +304,6 @@
 }
 .labelLista:hover {
   position: relative;
-  /* top: -50px; */
-  /* left: 50%; */
 }
 .lista {
   display: flex;
@@ -241,14 +321,10 @@
 }
 
 .lista:hover {
-  /* background-color:#c1ffff; */
   border-color: rgb(3, 78, 218);
   color:rgb(3, 78, 218);
-  /* color:white; */
-  /* font-weight: 600; */
   transition: all 0.3s ease 0s;
   box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.1);
-  /* box-shadow: 11px 11px 39px -13px rgba(0,0,0,0.71); */
   cursor: pointer;
 }
 
@@ -272,43 +348,55 @@
   margin-bottom: 20px;
 }
 
-.titlePregunta {
-  font-size: 17px;
-  text-transform: uppercase;
-  color: #007074;
-  margin-bottom: 10px;
-  font-weight: 600;
-  font-family: 'Courier New', Courier, monospace;
-}
-.textAreaPregunta {
-  padding:10px;
-  outline: none;
-  border-radius: 10px;
-  box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.1);
-  width: 100%;
-  color: #72717e;
-  height: 60px;
+.loaderContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-.alternativa{
-  text-transform: uppercase;
-  color: #ff1e00;
-  /* margin-right: 5x; */
+.loaderIcon {
+  font-size: 1.5rem;
+  color: #718096;
+  animation: spin 1s linear infinite;
 }
-.alternativaInput {
-  color: #72717e;
-  outline: none;
-  width:100%;
-  border-radius: 10px;
-  height: 40px;
-  padding: 10px;
-  box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.1);
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
-.inputAlternativa {
-  width:100%;
-  border-radius: 10px;
-  height: 40px;
-  padding: 10px;
-  box-shadow: 0px 10px 15px -3px rgba(0,0,0,0.1);
-  margin-bottom: 10px;
+
+.loaderText {
+  color: #718096;
+  font-size: 1rem;
+}
+
+.formGroup {
+  margin-bottom: 2rem;
+}
+
+.levelsContainer {
+  display: grid;
+  gap: 1rem;
+}
+
+.levelItem {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.numberContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 24px;
 }

@@ -1,12 +1,16 @@
 import { PRDocentes } from '@/features/types/types'
 import React from 'react'
 import styles from './rubrica.module.css'
+import { MdEditSquare } from 'react-icons/md'
 
 interface Props {
-  getPreguntaRespuestaDocentes: PRDocentes[]
+  getPreguntaRespuestaDocentes: PRDocentes[],
+  handleShowUpdateModal: () => void,
+  setDataUpdate: (data: PRDocentes) => void,
+  rol: number
 }
 
-const RubricaMonitoreo = ({ getPreguntaRespuestaDocentes }: Props) => {
+const RubricaMonitoreo = ({ getPreguntaRespuestaDocentes, handleShowUpdateModal, setDataUpdate, rol }: Props) => {
   return (
     <div className={styles.rubricaContainer}>
       <ul className={styles.criterioList}>
@@ -20,7 +24,7 @@ const RubricaMonitoreo = ({ getPreguntaRespuestaDocentes }: Props) => {
                     <h3 className={styles.tituloCriterio}>{pq.criterio}</h3>
                   </div>
                   <div>
-                    {/* <MdEditSquare onClick={() => { handleShowUpdateModal(); setDataUpdate(pq) }} className='text-xl text-yellow-500 cursor-pointer' /> */}
+                    {rol === 4 ? <MdEditSquare onClick={() => { handleShowUpdateModal(); setDataUpdate(pq) }} className='text-xl text-yellow-500 cursor-pointer' /> : null}
                   </div>
                 </div>
                 <ul className={styles.alternativasList}>

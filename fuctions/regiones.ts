@@ -179,7 +179,7 @@ export const convertRolToPath = (rol: number) => {
   if (rol === 4) return "admin/especialistas"
 }
 export const convertRolToTitle = (rol: number) => {
-  if (rol === 1) return "especialista"
+  if (rol === 1) return "especialista ugel"
   if (rol === 2) return "Director"
   if (rol === 3) return "docente"
   if (rol === 4) return "especiliasta drep"

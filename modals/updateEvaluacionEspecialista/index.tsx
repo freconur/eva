@@ -12,7 +12,7 @@ interface Props {
 const UpdateEvaluacionEspecialista = ({evaluacion, handleShowInputUpdate}:Props) => { 
   const [name, setName] = useState(evaluacion.name || '');
   const { updateEvaluacionEspecialista } = UseEvaluacionEspecialistas()
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setName(e.target.value);
   };
 
@@ -42,8 +42,7 @@ const UpdateEvaluacionEspecialista = ({evaluacion, handleShowInputUpdate}:Props)
         <div className={styles.modalBody}>
           <div className={styles.inputContainer}>
             <label className={styles.modalText}>Nombre:</label>
-            <input 
-              type="text" 
+            <textarea 
               value={name}
               onChange={handleChange}
               className={styles.modalInput}
