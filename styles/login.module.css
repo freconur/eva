@@ -1,0 +1,208 @@
+.container {
+  position: relative;
+  display: grid;
+  height: 100vh;
+  width: 100%;
+  padding: 0.25rem;
+  place-content: center;
+  background-color: #042354;
+  background-image: url('../assets/evaluacion-docente.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.inputContainer {
+  display:grid;
+  gap: 1rem;
+}
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #042354;
+  opacity: 0.8;
+  z-index: 1;
+}
+
+.logoContainer {
+  position: absolute;
+  display: grid;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  width: 150px;
+  height: 150px;
+  left: 10px;
+  top: 10px;
+  border-radius: 9999px;
+  border: 5px solid #facc15;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+.backgroundImage {
+  position: absolute;
+  z-index: 30;
+  bottom: 0;
+  right: 0;
+}
+
+.titleContainer {
+  display: grid;
+  gap: 0.25rem;
+  position: relative;
+  z-index: 50;
+}
+
+.title {
+  text-align: center;
+  font-size: 2.25rem;
+  text-transform: uppercase;
+  color: white;
+  font-weight: 600;
+  font-family: "Raleway", monospace;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  color: white;
+  font-weight: 600;
+  font-family: "Work Sans", monospace;
+  margin-bottom: 2.5rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.loginCard {
+  min-width: 350px;
+  background-color: white;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  margin: auto;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  position: relative;
+  z-index: 50;
+}
+
+.cardHeader {
+  background-color: #f26e27;
+  padding: 1.75rem 0;
+}
+
+.cardTitle {
+  /* color: var(--color-boton); */
+  color: white;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.cardSubtitle {
+  font-size: 0.875rem;
+  font-family: 'Montserrat', sans-serif;
+  color: var(--color-boton);
+  text-align: center;
+}
+
+.form {
+  padding: 2.5rem;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.inputGroup {
+  width: 100%;
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  background-color: #f8fafc;
+  color: #334155;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #f26e27;
+  box-shadow: 0 0 0 3px rgba(242, 110, 39, 0.1);
+  background-color: white;
+}
+
+.input::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.button {
+  transition: all 0.3s ease;
+  padding: 1rem;
+  background-color: #f26e27;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  color: white;
+  width: 100%;
+  border: none;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+}
+
+.button:hover {
+  background-color: #e05a1a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(242, 110, 39, 0.2);
+}
+
+.warning {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.loaderContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+}
+
+.loaderIcon {
+  animation: spin 1s linear infinite;
+  font-size: 1.5rem;
+  color: #f26e27;
+}
+
+.loaderText {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+} 

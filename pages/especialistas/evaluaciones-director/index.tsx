@@ -51,7 +51,10 @@ const EvaluacionesDesempeñoDirectores = () => {
           priority
         />
         <h1 className={styles.headerTitle}>Seguimiento y retroalimentación al desempeño del directivo</h1>
-        <button onClick={handleShowModalCrearEvaluacion} className={styles.createButton}>Crear Evaluación</button>
+        {
+          currentUserData.perfil?.rol === 4 &&
+          <button onClick={handleShowModalCrearEvaluacion} className={styles.createButton}>Crear Evaluación</button>
+        }
       </div>
 
       {loaderPages ? (
@@ -92,22 +95,22 @@ const EvaluacionesDesempeñoDirectores = () => {
                   {currentUserData.perfil?.rol === 4 && (
                     <>
                       <td className={styles.tableCell}>
-                        <MdEditSquare 
-                          onClick={() => { 
-                            setNameEva(`${evaluacion.name}`); 
-                            handleShowInputUpdate(); 
-                            setEva(evaluacion) 
-                          }} 
-                          className={styles.editIcon} 
+                        <MdEditSquare
+                          onClick={() => {
+                            setNameEva(`${evaluacion.name}`);
+                            handleShowInputUpdate();
+                            setEva(evaluacion)
+                          }}
+                          className={styles.editIcon}
                         />
                       </td>
                       <td className={styles.tableCell}>
-                        <MdDeleteForever 
-                          onClick={() => { 
-                            handleShowModalDelete(); 
-                            setIdEva(`${evaluacion.id}`) 
-                          }} 
-                          className={styles.deleteIcon} 
+                        <MdDeleteForever
+                          onClick={() => {
+                            handleShowModalDelete();
+                            setIdEva(`${evaluacion.id}`)
+                          }}
+                          className={styles.deleteIcon}
                         />
                       </td>
                     </>

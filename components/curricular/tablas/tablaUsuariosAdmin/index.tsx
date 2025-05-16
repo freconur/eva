@@ -16,7 +16,7 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores, rol }: TablaUsu
 	const [dniUsuario, setDniUsuario] = useState<string>("")
 	const [error, setError] = useState<string>("")
 	const [isLoading, setIsLoading] = useState<boolean>(false)
-	const { getDirectorFromEspecialistaCurricular,getNextUsuarios,getPreviousUsuarios,getNextUsuariosAdmin, getPreviousUsuariosAdmin } = useEvaluacionCurricular()
+	const { getDirectorFromEspecialistaCurricular,getNextUsuarios,getPreviousUsuarios,getNextUsuariosEspecialista, getPreviousUsuariosEspecialista } = useEvaluacionCurricular()
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
 		if (dniUsuario.length !== 8) {
@@ -43,7 +43,7 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores, rol }: TablaUsu
 	const handleNext = async () => {
 		setIsLoading(true)
 		try {
-			const hasMore = getNextUsuariosAdmin(lastVisible, rol)
+			const hasMore = getNextUsuariosEspecialista(lastVisible, rol)
 			if (!hasMore) {
 				// Aquí podrías mostrar un mensaje de que no hay más registros
 			}
@@ -57,7 +57,7 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores, rol }: TablaUsu
 	const handlePrevious = async () => {
 		setIsLoading(true)
 		try {
-			const hasPrevious = await getPreviousUsuariosAdmin(lastVisible, rol)
+			const hasPrevious = await getPreviousUsuariosEspecialista(lastVisible, rol)
 			if (!hasPrevious) {
 				// Aquí podrías mostrar un mensaje de que no hay registros anteriores
 			}

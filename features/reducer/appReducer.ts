@@ -3,7 +3,17 @@ import { AppActions, AppReducerValues } from "../types/types";
 
 
 export const appReducer = (state: AppReducerValues, action: AppActions) => {
-  switch (action.type) {
+  switch (action.type) {  
+    case AppAction.DATA_EVALUACION_MEDIACION_DIRECTOR:
+      return {
+        ...state,
+        dataEvaluacionMediacionDirector: action.payload
+      }
+    case AppAction.DATA_DOCENTE_MASTER:
+      return {
+        ...state,
+        dataDocenteMaster: action.payload
+      }
     case AppAction.LAST_VISIBLE:
       return {
         ...state,

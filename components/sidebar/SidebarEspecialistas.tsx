@@ -78,7 +78,7 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                 
               </ul>
             </li>
-            {/* <li className={styles.dropdown}>
+            <li className={styles.dropdown}>
               <div className={styles.containerIcon}>
 
                 <FaUserTie className={styles.icons} />
@@ -88,11 +88,15 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
               </div>
               <ul className={styles.dropdownContent} aria-label="submenu">
                   <li className={styles.containerAncla}><Link
-                  href="/admin/evaluaciones-docentes"
+                  href="/especialistas/evaluaciones-docentes"
                   className={styles.anclaje}
-                  id="ancla">Evaluaciones</Link></li>
+                  id="ancla">Seguimiento y retroalimentación</Link></li>
+                  <li className={styles.containerAncla}><Link
+                  href="/especialistas/cobertura-curricular-master"
+                  className={styles.anclaje}
+                  id="ancla">Cobertura curricular</Link></li>
               </ul>
-            </li> */}
+            </li>
             <li className={styles.dropdown}>
               <div className={styles.containerIcon}>
 

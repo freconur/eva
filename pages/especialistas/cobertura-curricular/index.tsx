@@ -13,6 +13,7 @@ import styles from './index.module.css'
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista'
 import TablasEvaluaciones from '@/components/curricular/tablas/tablas-evaluaciones-curricular/tablasEvaluaciones'
 import TablaUsuarios from '@/components/curricular/tablas/tablaUsuarios'
+import TablasEvaluacionesDirectores from '@/components/curricular/tablas/tec-directores/tablasEvaluaciones'
 
 const CoberturaCurricular = () => {
   const { evaluacionCurricular, loaderPages, docentesDeDirectores, currentUserData } = useGlobalContext()
@@ -47,32 +48,39 @@ const CoberturaCurricular = () => {
 
       <div className={styles.header}>
         <div className={styles.headerOverlay}></div>
-        
+
         <Image
           className={styles.headerImage}
           src={header}
           alt="imagen de cabecera"
           priority
         />
-        
+
         <div className={styles.headerContent}>
           <h1 className={styles.headerTitle}>
             Monitoreo a las prácticas pedagógicas
           </h1>
-          
+
           <div className={styles.headerButtons}>
-            {/* <button 
-              onClick={handleShowModalCrearEvaluacion} 
-              className={styles.headerButton}
-            >
-              Crear instrumento de monitoreo
-            </button> */}
-            <button 
-              onClick={handleShowModalPreguntasAlternativas} 
-              className={styles.headerButton}
-            >
-              Agregar
-            </button>
+            {
+              currentUserData.rol === 4 ?
+                <>
+                  <button
+                    onClick={handleShowModalCrearEvaluacion}
+                    className={styles.headerButton}
+                  >
+                    Crear instrumento de monitoreo
+                  </button>
+                  <button
+                    onClick={handleShowModalPreguntasAlternativas}
+                    className={styles.headerButton}
+                  >
+                    Agregar
+                  </button>
+                </>
+                :
+                null
+            }
           </div>
         </div>
       </div>
@@ -86,12 +94,12 @@ const CoberturaCurricular = () => {
           :
           <>
             <div className={styles.tableContainer}>
-              <TablasEvaluaciones evaluacionCurricular={evaluacionCurricular}/>
+              <TablasEvaluacionesDirectores evaluacionCurricular={evaluacionCurricular} />
               {
                 currentUserData.rol === 4 ?
-                null
-                :
-                <TablaUsuarios rol={2} docentesDeDirectores={docentesDeDirectores}/>
+                  null
+                  :
+                  <TablaUsuarios rol={2} docentesDeDirectores={docentesDeDirectores} />
               }
             </div>
           </>

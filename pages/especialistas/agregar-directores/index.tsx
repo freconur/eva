@@ -17,12 +17,14 @@ import UsuariosByRol from '@/components/usuariosByRol'
 import TablaUsuarios from '@/components/curricular/tablas/tablaUsuarios'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import TablaUsuariosAdminEspecialistas from '@/components/curricular/tablas/tablaUsuariosAdmin'
+import TablaUsuariosAdminDirectores from '@/components/curricular/tablas/tablaUsuariosEspecialistas'
+import TablaDirectores from '@/components/curricular/tablas/tablaDirectores'
 const AgregarDirectores = () => {
 
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
   const { getUserData, createNewDirector, getRegiones, getUsersDirectores } = useUsuario()
   const { currentUserData, regiones, loaderPages, usuariosDirectores, warningUsuarioExiste, dataDirector, warningUsuarioNoEncontrado, docentesDeDirectores } = useGlobalContext()
-  const {  getDocentesFromDirectores, getUsuariosToAdmin} = useEvaluacionCurricular()
+  const {  getDocentesFromDirectores, getDirectoresTabla} = useEvaluacionCurricular()
   const [showModal, setShowModal] = useState<boolean>(false)
   const [idUsuario, setIdUsuario] = useState<string>("")
   const [showDeleteUsuario, setShowDeleteUsuario] = useState<boolean>(false)
@@ -33,11 +35,8 @@ const AgregarDirectores = () => {
   useEffect(() => {
     getUserData()
     getRegiones()
-    if(currentUserData.rol === 4){
-      getUsuariosToAdmin(2)
-    } else {
-      getDocentesFromDirectores(Number(currentUserData.region), `${currentUserData.dni}`)
-    }
+    currentUserData.dni &&
+    getDirectoresTabla(currentUserData)
     /* getUsersDirectores() */
   }, [currentUserData.dni])
 
@@ -80,7 +79,8 @@ const AgregarDirectores = () => {
       <div className='p-5'>
         <div className='w-full '>
           <h1 className='text-colorTercero font-semibold text-3xl font-mono mb-10 capitalize'>Directivos</h1>
-          <TablaUsuariosAdminEspecialistas rol={2} docentesDeDirectores={docentesDeDirectores}/>
+          <TablaDirectores rol={2} docentesDeDirectores={docentesDeDirectores}/>
+          {/* <TablaUsuariosAdminDirectores rol={2} docentesDeDirectores={docentesDeDirectores}/> */}
         </div>
       </div>
       <div className=' p-5 rounded-sm shadow-md '>

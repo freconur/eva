@@ -16,9 +16,9 @@ import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 const ReporteDocenteIndividual = () => {
 
   const route = useRouter()
-  const { buscarDocenteReporteDeEvaluacion, guardarObservacionDocente } = UseEvaluacionDocentes()
-  const {  getDocente} = useEvaluacionCurricular()
-  const { reporteIndividualDocente, currentUserData, dataDocente } = useGlobalContext()
+  const { buscarDocenteReporteDeEvaluacion, getDataEvaluacionMediacionDirector } = UseEvaluacionDocentes()
+  const { getDocente } = useEvaluacionCurricular()
+  const { reporteIndividualDocente, currentUserData, dataEvaluacionMediacionDirector, dataDocente } = useGlobalContext()
   const [formData, setFormData] = useState<ObservacionMonitoreoDocente>({
     fortalezasObservadas: '',
     oportunidadesDeMejora: '',
@@ -43,7 +43,7 @@ const ReporteDocenteIndividual = () => {
     const pageWidth = pdf.internal.pageSize.getWidth();
     const margin = 20; // margen en píxeles
 
-    const canvas = await html2canvas(element, { 
+    const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
       logging: false
@@ -52,7 +52,7 @@ const ReporteDocenteIndividual = () => {
     const imgData = canvas.toDataURL('image/png');
     const imgWidth = pageWidth - (2 * margin);
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    
+
     let heightLeft = imgHeight;
     let position = margin;
     let page = 1;
@@ -85,12 +85,13 @@ const ReporteDocenteIndividual = () => {
     }
   }, [reporteIndividualDocente.observacionesMonitoreo])
   useEffect(() => {
-    if (route.query.idEvaluacion && route.query.idDocente)
+    if (route.query.idEvaluacion && route.query.idDocente) {
       buscarDocenteReporteDeEvaluacion(`${route.query.idEvaluacion}`, `${route.query.idDocente}`)
+      getDocente(`${route.query.idDocente}`)
+      getDataEvaluacionMediacionDirector(`${route.query.idEvaluacion}`)
+    }
   }, [`${route.query.idEvaluacion}`, `${route.query.idDocente}`, currentUserData.dni])
-  useEffect(() => {
-    getDocente(`${route.query.idDocente}`)
-  },[route.query.idDocente])
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -99,6 +100,52 @@ const ReporteDocenteIndividual = () => {
       [name]: value
     }));
   }
+
+  /*  useEffect(() => {
+     calculoProgreso()
+   },[reporteIndividualDocente?.calificacion]) */
+  const calculoProgreso = () => {
+    const numeroDePreguntas = reporteIndividualDocente?.resultados?.length
+    if (!numeroDePreguntas || !reporteIndividualDocente?.calificacion) return null;
+
+    const niveles = {
+      destacado: numeroDePreguntas * 4,
+      satisfactorio: numeroDePreguntas * 3,
+      enDesarrollo: numeroDePreguntas * 2,
+      inicio: numeroDePreguntas * 1
+    };
+
+    const calificacion = reporteIndividualDocente.calificacion;
+    let nivelActual = '';
+
+    if (calificacion <= niveles.destacado && calificacion > niveles.satisfactorio) {
+      nivelActual = 'Destacado';
+    } else if (calificacion <= niveles.satisfactorio && calificacion > niveles.enDesarrollo) {
+      nivelActual = 'Satisfactorio';
+    } else if (calificacion <= niveles.enDesarrollo && calificacion > niveles.inicio) {
+      nivelActual = 'En desarrollo';
+    } else if (calificacion <= niveles.inicio) {
+      nivelActual = 'Inicio';
+    }
+
+    return (
+      <div className={styles.progresoContainer}>
+        <h3 className={styles.progresoTitle}>Progreso en la {dataEvaluacionMediacionDirector?.name?.toLowerCase()}</h3>
+        <div className={styles.progresoContainerInfo}>
+          <div>
+            <p className={styles.progresoItem}>Inicio: 0 - {niveles.inicio}</p>
+            <p className={styles.progresoItem}>En desarrollo: {niveles.inicio + 1} - {niveles.enDesarrollo}</p>
+            <p className={styles.progresoItem}>Satisfactorio: {niveles.enDesarrollo + 1} - {niveles.satisfactorio}</p>
+            <p className={styles.progresoItem}>Destacado: {niveles.satisfactorio + 1} - {niveles.destacado}</p>
+          </div>
+          <div>
+            <p className={styles.nivelProgreso}>nivel de progreso: <strong>{nivelActual} </strong></p>
+            <p className={styles.nivelProgreso}>puntaje: <strong>{calificacion}</strong></p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={styles.container}>
       <button onClick={handleDownloadPdf} className={styles.downloadButton}>descargar pdf</button>
@@ -106,11 +153,11 @@ const ReporteDocenteIndividual = () => {
         reporteIndividualDocente?.dni ?
           <div ref={printRef} className={styles.reporteContainer}>
             <div className={styles.title}>
-              <h3>Rúbrica de la mediacion didáctica de la resolución de problemas</h3>
+              <h3>Rúbrica de la mediación didáctica de la {dataEvaluacionMediacionDirector?.name}</h3>
               <h2 className="text-3xl text-slate-500">(Director evalúa al docente)</h2>
             </div>
-            <DatosInstitucion dataDocente={dataDocente}/>
-            <DatosMonitor dataMonitor={currentUserData}/>
+            <DatosInstitucion dataDocente={dataDocente} />
+            <DatosMonitor dataMonitor={currentUserData} />
             {/* <div className={styles.infoSection}>
               <h4>Profesor: <strong>{reporteIndividualDocente.info?.nombres} {reporteIndividualDocente.info?.apellidos}</strong></h4>
               <h4>Institución: <strong>{reporteIndividualDocente.info?.institucion}</strong></h4>
@@ -151,8 +198,11 @@ const ReporteDocenteIndividual = () => {
                 </tr>
               </tbody>
             </table>
-            <AnexosSeguimientoRetroalimentacion dataDocente={dataDocente}/>
-           
+            <div>
+              {calculoProgreso()}
+            </div>
+            <AnexosSeguimientoRetroalimentacion idEvaluacion={`${route.query.idEvaluacion}`} dataDocente={dataDocente} />
+
           </div>
           :
           null

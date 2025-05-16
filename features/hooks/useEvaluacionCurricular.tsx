@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, limit, onSnapshot, orderBy, query, setDoc, startAfter, updateDoc, where, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
-import { AnexosCurricularType, CaracteristicaCurricular, DataEstadisticas, DataEstadisticasCurricular, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, PaHanilidad, ReporteCurricularDirector, ReporteDataEstadisticasCD, User } from '../types/types';
+import { AnexosCurricularType, CaracteristicaCurricular, DataEstadisticas, DataEstadisticasCurricular, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, PaHanilidad, User } from '../types/types';
 import { AppAction } from '../actions/appAction';
 
 const useEvaluacionCurricular = () => {
@@ -73,31 +73,77 @@ const useEvaluacionCurricular = () => {
     setDocumentSnapshots([lastVisible])
     setCurrentPage(0)
   }
-  const getNextUsuariosAdmin = async(lastVisible:any,rol:number) => {
-    console.log('next usuarios')
+  const getDocentesToTable = async (dniDirector:string) => {
+    console.log('dniDirector', dniDirector)
       const arrayUsuarios: User[] = []
       const pathRef = collection(db, 'usuarios')
-      const nextUsuarios = query(pathRef, where("rol", "==", rol), limit(5), startAfter(lastVisible))
-      const documentSnapshots = await getDocs(nextUsuarios);
-  
-      if (documentSnapshots.empty) {
-        return false
-      }
-  
+      const q = query(pathRef, where("dniDirector", "==", dniDirector),limit(5));
+      const documentSnapshots = await getDocs(q);
       documentSnapshots.forEach(doc => {
         arrayUsuarios.push({ ...doc.data() })
       });
-  
-      const newLastVisible = documentSnapshots.docs[documentSnapshots.docs.length - 1]
       dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
-      dispatch({ type: AppAction.LAST_VISIBLE, payload: newLastVisible })
-  
-      // Guardar el nuevo snapshot
-      setDocumentSnapshots(prev => [...prev, newLastVisible])
-      setCurrentPage(prev => prev + 1)
-      return true
+
+      const lastVisible = documentSnapshots.docs[documentSnapshots.docs.length - 1]
+      dispatch({ type: AppAction.LAST_VISIBLE, payload: lastVisible })
+
+      // Guardar el primer snapshot
+      setDocumentSnapshots([lastVisible])
+      setCurrentPage(0)
   }
-  const getPreviousUsuariosAdmin = async (lastVisible: any, rol: number) => {
+  const getNextUsuariosDocentes = async(lastVisible:any) => {
+    console.log('next usuarios')
+    const arrayUsuarios: User[] = []
+    const pathRef = collection(db, 'usuarios')
+    const nextUsuarios = query(pathRef, where("dniDirector", "==", currentUserData.dni), limit(5), startAfter(lastVisible))
+    const documentSnapshots = await getDocs(nextUsuarios);
+
+    if (documentSnapshots.empty) {
+      return false
+    }
+
+    documentSnapshots.forEach(doc => {
+      arrayUsuarios.push({ ...doc.data() })
+    });
+
+    const newLastVisible = documentSnapshots.docs[documentSnapshots.docs.length - 1]
+    dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
+    dispatch({ type: AppAction.LAST_VISIBLE, payload: newLastVisible })
+
+    // Guardar el nuevo snapshot
+    setDocumentSnapshots(prev => [...prev, newLastVisible])
+    setCurrentPage(prev => prev + 1)
+    /* return true */
+  }
+  const getNextUsuariosEspecialista = async(lastVisible:any,rol:number) => {
+    const arrayUsuarios: User[] = []
+    const pathRef = collection(db, 'usuarios')
+    const nextUsuarios = query(
+      pathRef, 
+      where("rol", "==", rol),
+      where("region", "==", currentUserData.region), 
+      limit(5), 
+      startAfter(lastVisible)
+    )
+
+    const unsubscribe = onSnapshot(nextUsuarios, (querySnapshot) => {
+      const usuarios: User[] = []
+      querySnapshot.forEach(doc => {
+        usuarios.push({ ...doc.data() })
+      })
+
+      if (usuarios.length > 0) {
+        const newLastVisible = querySnapshot.docs[querySnapshot.docs.length - 1]
+        dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: usuarios })
+        dispatch({ type: AppAction.LAST_VISIBLE, payload: newLastVisible })
+        setDocumentSnapshots(prev => [...prev, newLastVisible])
+        setCurrentPage(prev => prev + 1)
+      }
+    })
+
+    return unsubscribe
+  }
+  const getPreviousUsuariosDocentes = async (lastVisible: any, rol: number) => {
     console.log('previous usuarios')
     if (currentPage <= 0) {
       return false
@@ -106,13 +152,13 @@ const useEvaluacionCurricular = () => {
     const arrayUsuarios: User[] = []
     const pathRef = collection(db, 'usuarios')
 
-    // Obtenemos el snapshot anterior
+    // Obtenemos el snapshot anterior del array de snapshots
     const previousSnapshot = documentSnapshots[currentPage - 1]
 
     // Construimos la consulta para obtener los registros anteriores
     const previousUsuarios = query(
       pathRef,
-      where("region", "==", rol),
+      where("dniDirector", "==", currentUserData.dni),
       limit(5),
       startAfter(previousSnapshot)
     )
@@ -128,14 +174,67 @@ const useEvaluacionCurricular = () => {
     setCurrentPage(prev => prev - 1)
     return true
   }
+  const getPreviousUsuariosEspecialista = async (lastVisible: any, rol: number) => {
+    if (currentPage <= 0) {
+      return false
+    }
+
+    const pathRef = collection(db, 'usuarios')
+    const previousSnapshot = documentSnapshots[currentPage - 1]
+
+    const previousUsuarios = query(
+      pathRef,
+      where("rol", "==", rol),
+      where("region", "==", currentUserData.region),
+      limit(5),
+      startAfter(previousSnapshot)
+    )
+
+    const unsubscribe = onSnapshot(previousUsuarios, (querySnapshot) => {
+      const usuarios: User[] = []
+      querySnapshot.forEach(doc => {
+        usuarios.push({ ...doc.data() })
+      })
+
+      if (usuarios.length > 0) {
+        dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: usuarios })
+        dispatch({ type: AppAction.LAST_VISIBLE, payload: previousSnapshot })
+        setCurrentPage(prev => prev - 1)
+      }
+    })
+
+    return unsubscribe
+  }
+ 
+  const getDirectoresTabla = async (usuario:User) => {
+    const arrayUsuarios: User[] = []
+    const pathRef = collection(db, 'usuarios')
+    const q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2), limit(5));
+
+    onSnapshot(q, (querySnapshot) => {
+      const usuarios: User[] = [];
+      querySnapshot.forEach(doc => {
+        usuarios.push({ ...doc.data() });
+      });
+      
+      dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: usuarios });
+
+      if (querySnapshot.docs.length > 0) {
+        const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+        dispatch({ type: AppAction.LAST_VISIBLE, payload: lastVisible });
+        setDocumentSnapshots([lastVisible]);
+        setCurrentPage(0);
+      }
+    });
+  }
   const getDocentesFromDirectores = async (region: number, dniDirector: string) => {
     //esta funcion tiene que ser dinamica para que pueda recibir datos del director como del espcialista
 
     //si es especialista
-    if (currentUserData.rol === 1) {
+    if (currentUserData.rol === 1) {// el rol 1 es el especialista
       const arrayUsuarios: User[] = []
       const pathRef = collection(db, 'usuarios')
-      const q = query(pathRef, where("region", "==", region), limit(5));
+      const q = query(pathRef, where("region", "==", region),where("rol", "==", 2), limit(5));
 
       const documentSnapshots = await getDocs(q);
       documentSnapshots.forEach(doc => {
@@ -156,7 +255,7 @@ const useEvaluacionCurricular = () => {
       console.log('entre a directores')
       const arrayUsuarios: User[] = []
       const pathRef = collection(db, 'usuarios')
-      const q = query(pathRef, where("dniDirector", "==", dniDirector));
+      const q = query(pathRef, where("dniDirector", "==", dniDirector),limit(1));
       await getDocs(q)
         .then(async (response) => {
           console.log(response.size)
@@ -248,17 +347,25 @@ const useEvaluacionCurricular = () => {
 
   const getDirectorFromEspecialistaCurricular = async (rol: number, dniDirector: string) => {
     const pathRef = collection(db, 'usuarios')
-    const q = query(pathRef, where("rol", "==", rol), where("dni", "==", dniDirector));
-    await getDocs(q)
-      .then(async (response) => {
-        response.size > 0 ?
-          dispatch({ type: AppAction.RESULTADO_BUSQUEDA_USUARIO, payload: response.docs[0]?.data() })
-          :
-          dispatch({ type: AppAction.RESULTADO_BUSQUEDA_USUARIO, payload: {} })
+    const q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector));
+    
+    onSnapshot(q, (querySnapshot) => {
+      if (querySnapshot.size > 0) {
+        dispatch({ type: AppAction.RESULTADO_BUSQUEDA_USUARIO, payload: querySnapshot.docs[0]?.data() })
+      } else {
+        dispatch({ type: AppAction.RESULTADO_BUSQUEDA_USUARIO, payload: {} })
         dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: 'No se encontró ningún resultado' })
-      })
+      }
+    })
   }
-
+const getUsuarioMaster = (dni: string) => {
+  const pathRef = doc(db, 'usuarios', dni)
+  onSnapshot(pathRef, (querySnapshot) => {
+    if (querySnapshot.exists()) {
+      dispatch({ type: AppAction.DATA_DOCENTE_MASTER, payload: querySnapshot.data() })
+    }
+  })
+}
   const getUsuarioTablasLimit = async (region: number) => {
     const first = query(collection(db, "usuarios"), where("region", "==", region), limit(10));
     const documentSnapshots = await getDocs(first);
@@ -378,11 +485,29 @@ const useEvaluacionCurricular = () => {
     });
 
     //esto es para guardar la evaluacion curricular de un docente o director pero para los datos estadísticos
-    await setDoc(doc(db, `/usuarios/${currentUserData.dni}/${idCurricular}`, `${dataDocente.dni}`), {
-      ...dataDocente,
-      preguntasAlternativas: data,
-      nivel: dataDocente.grados?.find(grado => grado === 1 || grado === 2) ? 1 : dataDocente.grados?.find(grado => grado === 3 || grado === 4) ? 2 : 3
-    });
+
+    //si es un usuario de director
+    if(currentUserData.rol ===2) {
+      await setDoc(doc(db, `/usuarios/${currentUserData.dni}/${idCurricular}`, `${dataDocente.dni}`), {
+        ...dataDocente,
+        preguntasAlternativas: data,
+        nivel: dataDocente.grados?.find(grado => grado === 1 || grado === 2) ? 1 : dataDocente.grados?.find(grado => grado === 3 || grado === 4) ? 2 : 3
+      });
+    } else if(currentUserData.rol ===1) {//si el usuario es especialista
+      if(dataDocente.rol === 2) {
+        await setDoc(doc(db, `/usuarios/${dataDocente.dni}/${idCurricular}`, `${dataDocente.dni}`), {
+          ...dataDocente,
+          preguntasAlternativas: data,
+          nivel: dataDocente.grados?.find(grado => grado === 1 || grado === 2) ? 1 : dataDocente.grados?.find(grado => grado === 3 || grado === 4) ? 2 : 3
+        });
+      }else if(dataDocente.rol === 3) {
+        await setDoc(doc(db, `/usuarios/${dataDocente.dniDirector}/${idCurricular}`, `${dataDocente.dni}`), {
+          ...dataDocente,
+          preguntasAlternativas: data,
+          nivel: dataDocente.grados?.find(grado => grado === 1 || grado === 2) ? 1 : dataDocente.grados?.find(grado => grado === 3 || grado === 4) ? 2 : 3
+        });
+      }
+    }
   }
   const getEvaluacionCurricularDocente = async (dataDocente: string) => {
     console.log(`/usuarios/${dataDocente}/evaluacion-curricular`)
@@ -447,10 +572,13 @@ const useEvaluacionCurricular = () => {
     /* } */
   }
 
-  const guardarAnexosSeguimientoRetroalimentacion = async (dataDocente: User, data: AnexosCurricularType) => {
+  const guardarAnexosSeguimientoRetroalimentacion = async (dataDocente: User, data: AnexosCurricularType, idEvaluacion: string) => {
     await setDoc(doc(db, 'usuarios', `${dataDocente.dni}`), {
       ...dataDocente,
-      observacionSeguimientoRetroalimentacion: data
+      observacionSeguimientoRetroalimentacion: {
+        ...dataDocente.observacionSeguimientoRetroalimentacion,
+        [idEvaluacion]: data
+      }
     })
   }
   const resetValuesEvaluarCurricular = () => {
@@ -589,8 +717,13 @@ const useEvaluacionCurricular = () => {
     resetReporteCurricularDirector,
     guardarAnexosSeguimientoRetroalimentacion,
     getUsuariosToAdmin,
-    getNextUsuariosAdmin,
-    getPreviousUsuariosAdmin
+    getNextUsuariosEspecialista,
+    getPreviousUsuariosEspecialista,
+    getNextUsuariosDocentes,
+    getPreviousUsuariosDocentes,
+    getDocentesToTable,
+    getDirectoresTabla,
+    getUsuarioMaster
   }
 }
 export default useEvaluacionCurricular

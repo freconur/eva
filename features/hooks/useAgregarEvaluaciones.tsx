@@ -184,7 +184,7 @@ export const useAgregarEvaluaciones = () => {
   const salvarPreguntRespuestaEstudiante = async (data: UserEstudiante, id: string, pq: PreguntasRespuestas[], respuestasCorrectas: number, sizePreguntas: number) => {
     console.log('tiene que salir la respuesta', respuestasCorrectas)
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true })
-
+//guarda la informacion para el propio docente
     const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`);
     await setDoc(rutaRef, {
       nombresApellidos: data.nombresApellidos,
@@ -198,6 +198,7 @@ export const useAgregarEvaluaciones = () => {
       respuestas:pq
     })
 
+    //y aqui guarda la informacion en datos para el director
     const promiseGuardarData = new Promise<boolean>((resolve, reject) => {
       try {
         pq.forEach(async (a) => {

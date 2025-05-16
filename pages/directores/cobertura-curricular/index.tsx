@@ -2,19 +2,15 @@ import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores
 import Image from 'next/image'
 import React, { useEffect, useState } from 'react'
 import header from '../../../assets/evaluacion-docente.jpg'
-import CrearEvaluacionDocente from '@/modals/crearEvaluacionDocente'
-import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
-import { MdDeleteForever, MdEditSquare } from 'react-icons/md'
 import DeleteEvaluacionDocente from '@/modals/DeleteEvaluacionDocente'
-import Link from 'next/link'
 import { RiLoader4Line } from 'react-icons/ri'
 import CrearEvaluacionCurricular from '@/modals/mallaCurricular/crearEvaluacion'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import AgregarPreguntasAlternativasCurricular from '@/modals/mallaCurricular/AgregarPreguntasAlternativas'
 import styles from './index.module.css'
-import TablasEvaluaciones from '@/components/curricular/tablas/tablas-evaluaciones-curricular/tablasEvaluaciones'
 import TablaUsuarios from '@/components/curricular/tablas/tablaUsuarios'
+import TablasEvaluacionesDocentes from '@/components/curricular/tablas/tec-docentes/tablasEvaluaciones'
 
 const CoberturaCurricular = () => {
   const { evaluacionCurricular, loaderPages, docentesDeDirectores, currentUserData } = useGlobalContext()
@@ -27,14 +23,14 @@ const CoberturaCurricular = () => {
   const handleShowInputUpdate = () => { setInputUpdate(!inputUpdate) }
   const handleShowModalDelete = () => { setShowDelete(!showDelete) }
   const handleShowModalPreguntasAlternativas = () => { setShowPreguntasAlternativas(!showPreguntasAlternativas) }
-  const { getEvaluacionCurricular, getDocentesFromDirectores } = useEvaluacionCurricular()
+  const { getEvaluacionCurricular, getDocentesFromDirectores, getDocentesToTable } = useEvaluacionCurricular()
   const handleShowModalCrearEvaluacion = () => {
     setShowCrearEvaluacion(!showModalCrearEvaluacion)
   }
 
   useEffect(() => {
     getEvaluacionCurricular()
-    getDocentesFromDirectores(0,`${currentUserData.dni}`)
+    getDocentesToTable(`${currentUserData.dni}`)
   }, [currentUserData.dni])
   return (
     <div>
@@ -85,7 +81,7 @@ const CoberturaCurricular = () => {
           :
           <>
             <div className={styles.tableContainer}>
-            <TablasEvaluaciones evaluacionCurricular={evaluacionCurricular}/>
+            <TablasEvaluacionesDocentes evaluacionCurricular={evaluacionCurricular}/>
             {
               currentUserData.perfil?.rol === 4 ?
               null

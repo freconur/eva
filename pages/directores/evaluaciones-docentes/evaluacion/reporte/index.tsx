@@ -159,7 +159,7 @@ useEffect(() => {
 
               <div className={styles.headerContent}>
                 <h1 className={styles.headerTitle}>
-                  Reporte des {dataEvaluacionDocente?.name}
+                  Reporte de la rúbrica de la mediación didáctica de la {dataEvaluacionDocente?.name}
                 </h1>
               </div>
             </div>
@@ -255,7 +255,7 @@ useEffect(() => {
                         <div key={index} className={styles.chartContainer}>
                           <h3 className={styles.sectionTitle}>
                             <span className={styles.sectionTitleIndicator}></span>
-                            <span>{getPreguntaRespuestaDocentes[Number(index)]?.subOrden}.</span>
+                            <span>{getPreguntaRespuestaDocentes[Number(index)]?.subOrden || getPreguntaRespuestaDocentes[Number(index)]?.order}.</span>
                             <span>{getPreguntaRespuestaDocentes[Number(index)]?.criterio}</span>
                           </h3>
                           <div className={styles.chartWrapper}>

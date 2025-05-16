@@ -68,8 +68,8 @@ export const converSeccion = (seccion: number) => {
   if (seccion === 8) return "h"
 }
 export const converGenero = (genero: string) => {
-  if (genero === "1") return "masculino"
-  if (genero === "2") return "femenino"
+  if (genero === "1") return "Masculino"
+  if (genero === "2") return "Femenino"
 }
 export const gradosDeColegio = [
   { id: 1, name: "1ro grado" },
@@ -160,19 +160,24 @@ export const nivelCurricularPreguntas = [
   {
     id: 1,
     selected: false,
-    description: "estandar III"
+    description: "Estandar III"
   },
   {
     id: 2,
     selected: false,
-    description: "estandar IV"
+    description: "Estandar IV"
   },
   {
     id: 3,
     selected: false,
-    description: "estandar V"
+    description: "Estandar V"
   },
 ]
+export const converNivelCurricularPreguntas = (grado: number) => {
+  if (grado === 1 || grado === 2) return "Estandar III"
+  if (grado === 3 || grado === 4) return "Estandar IV"
+  if (grado === 5 || grado === 6) return "Estandar V"
+}
 export const convertRolToPath = (rol: number) => {
   if (rol === 1) return "especialistas"
   if (rol === 2) return "directores"

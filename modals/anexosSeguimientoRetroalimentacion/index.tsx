@@ -13,10 +13,11 @@ interface FormData {
 }
 
 interface Props {
-  dataDocente: User
+  dataDocente: User,
+  idEvaluacion: string
 }
 
-const AnexosSeguimientoRetroalimentacion = ({ dataDocente }: Props) => {
+const AnexosSeguimientoRetroalimentacion = ({ dataDocente, idEvaluacion }: Props) => {
   const [formData, setFormData] = useState<AnexosCurricularType>({
     fortalezasObservadas: '',
     oportunidadesDeMejora: '',
@@ -26,13 +27,17 @@ const AnexosSeguimientoRetroalimentacion = ({ dataDocente }: Props) => {
 
   const { guardarAnexosSeguimientoRetroalimentacion } = useEvaluacionCurricular()
 
+  const searchKey = () => {
+    return dataDocente.observacionSeguimientoRetroalimentacion?.[idEvaluacion] as AnexosCurricularType | undefined
+  }
   useEffect(() => {
     if (dataDocente.observacionSeguimientoRetroalimentacion) {
+      
       setFormData({
-        fortalezasObservadas: dataDocente.observacionSeguimientoRetroalimentacion.fortalezasObservadas || '',
-        oportunidadesDeMejora: dataDocente.observacionSeguimientoRetroalimentacion.oportunidadesDeMejora || '',
-        acuerdosYCompomisos: dataDocente.observacionSeguimientoRetroalimentacion.acuerdosYCompomisos || '',
-        nivelCobertura: dataDocente.observacionSeguimientoRetroalimentacion.nivelCobertura || {}
+        fortalezasObservadas: dataDocente.observacionSeguimientoRetroalimentacion?.[idEvaluacion]?.fortalezasObservadas || '',
+        oportunidadesDeMejora: dataDocente.observacionSeguimientoRetroalimentacion?.[idEvaluacion]?.oportunidadesDeMejora || '',
+        acuerdosYCompomisos: dataDocente.observacionSeguimientoRetroalimentacion?.[idEvaluacion]?.acuerdosYCompomisos || '',
+        nivelCobertura: dataDocente.observacionSeguimientoRetroalimentacion?.[idEvaluacion]?.nivelCobertura || {}
       });
     }
   }, [dataDocente.observacionSeguimientoRetroalimentacion]);
@@ -67,7 +72,7 @@ const AnexosSeguimientoRetroalimentacion = ({ dataDocente }: Props) => {
       nivelCobertura.alternativas?.forEach(alternativa => {
         alternativa.alternativa ===  formData.nivelCobertura && (alternativa.selected = true)
       });
-      await guardarAnexosSeguimientoRetroalimentacion(dataDocente, formData);
+      await guardarAnexosSeguimientoRetroalimentacion(dataDocente, formData, idEvaluacion);
       toast.success('Los cambios se han guardado correctamente', {
         position: "top-right",
         autoClose: 3000,
@@ -132,7 +137,7 @@ const AnexosSeguimientoRetroalimentacion = ({ dataDocente }: Props) => {
             className={styles.input}
           />
         </div>
-        <div className={styles.formGroup}>
+        {/* <div className={styles.formGroup}>
           <label htmlFor="nivelCobertura" className={styles.label}>
             C. Nivel de cobertura:
           </label>
@@ -152,7 +157,7 @@ const AnexosSeguimientoRetroalimentacion = ({ dataDocente }: Props) => {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
         <div className={styles.formGroup}>
           <button type="submit" className={styles.button}>
             Guardar

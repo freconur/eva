@@ -2,9 +2,12 @@ import { EvaluacionCurricular } from '@/features/types/types'
 import React from 'react'
 import Link from 'next/link'
 import styles from './tablasEvaluaciones.module.css'
+import { convertRolToPath } from '@/fuctions/regiones'
+import { useGlobalContext } from '@/features/context/GlolbalContext'
 
 interface TablasEvaluacionesProps {
-  evaluacionCurricular: EvaluacionCurricular[]
+  evaluacionCurricular: EvaluacionCurricular[],
+  
 }
 
 const TablasEvaluaciones = ({ evaluacionCurricular }: TablasEvaluacionesProps) => {
@@ -38,8 +41,11 @@ const TablasEvaluaciones = ({ evaluacionCurricular }: TablasEvaluacionesProps) =
                       {evaluacion.name?.toUpperCase()}
                     </Link>
                   </td>
+                  {/* <td>
+                    <Link href={`/${convertRolToPath(rol)}/cobertura-curricular/reporte?idCurricular=${evaluacion.id}`} className={styles.tableLink}>reporte</Link>
+                  </td> */}
                   <td>
-                    <Link href={`/especialistas/cobertura-curricular/reporte?idCurricular=${evaluacion.id}`} className={styles.tableLink}>reporte</Link>
+                    <Link href={`/admin/especialistas/cobertura-curricular/reporte?idCurricular=${evaluacion.id}`} className={styles.tableLink}>reporte</Link>
                   </td>
                   {/*  <td className={styles.tableCell}>
                               <div className={styles.tableActions}>

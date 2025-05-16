@@ -107,6 +107,19 @@ const UseEvaluacionDocentes = () => {
     }
   }
 
+  const buscarDocenteToEspecialista = async (dni: string) => {
+    dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: "" })
+    const docRef = doc(db, "usuarios", `${dni}`);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      dispatch({ type: AppAction.DATA_DOCENTE, payload: docSnap.data() })
+    } else {
+      dispatch({ type: AppAction.DATA_DOCENTE, payload: {} })
+      dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: "no se encontro docente con el numero de dni" })
+    }
+    
+  }
   const buscarDirector = async (dni: string) => {
     dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: "" })
     const docRef = doc(db, "usuarios", `${dni}`);
@@ -140,6 +153,31 @@ const UseEvaluacionDocentes = () => {
         })
     }
   }
+
+  const buscarDocenteReporteEvaluacionToEspecilista = async (idEvaluacion: string, dataDocente:User) => {
+    console.log('dataDocente', dataDocente)
+   /*  if (idEvaluacion.length > 0 && dataDocente.dni.length > 0) { */
+      console.log('cumplimos condicion')
+      const path = doc(db, `/usuarios/${dataDocente.dniDirector}/${idEvaluacion}`, `${dataDocente.dni}`)
+      // const docRef = doc(db, path, `${idDocente}`);
+      await getDoc(path)
+        .then(response => {
+          if (response.exists()) {
+            console.log('response.data()', response.data())
+            dispatch({ type: AppAction.REPORTE_INDIVIDUAL_DOCENTE, payload: response.data() })
+          }
+        })
+    /* } */
+  }
+  const getDataEvaluacionMediacionDirector = async (idEvaluacion:string) => {
+    const path = doc(db, `/evaluaciones-docentes`, idEvaluacion)
+    await getDoc(path)
+      .then(response => {
+        if (response.exists()) {
+          dispatch({ type: AppAction.DATA_EVALUACION_MEDIACION_DIRECTOR, payload: response.data() })
+        }
+      })
+  }
   const resetDocente = () => {
     dispatch({ type: AppAction.DATA_DOCENTE, payload: {} })
   }
@@ -167,59 +205,49 @@ const UseEvaluacionDocentes = () => {
       })
     }
 
-    const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}/`
-    await setDoc(doc(db, path, `${dataDocente.dni}`), { observacionesMonitoreo: {}, resultados: data, dni: dataDocente.dni, dniDirector: currentUserData.dni, calificacion: totalPuntos, info: dataDocente })
+    const path = `/usuarios/${dataDocente.dniDirector}/${idEvaluacion}/`
+    await setDoc(doc(db, path, `${dataDocente.dni}`), { 
+      observacionesMonitoreo: {}, 
+      resultados: data, 
+      dni: dataDocente.dni, 
+      dniDirector: currentUserData.dni, 
+      calificacion: totalPuntos, 
+      info: dataDocente })
     .then(() => {
       dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
       router.push(`/directores/evaluaciones-docentes/evaluacion/reporte-docente-individual?idDocente=${dataDocente.dni}&idEvaluacion=${idEvaluacion}`)
     })
     //AGREGANDO RESULTADOS DE LA EVALUACION DEL DOCENTE
+  }
 
+  const guardarEvaluacionDocenteToEspecialista = async (idEvaluacion: string, data: PRDocentes[], dataDocente: User) => {
+    dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true })
 
-
-
-    //esta funcion hace los calulos para agregar estadisticos al reporte de evaluacion
-    /* data.forEach(async (pr) => {
-      //`/evaluaciones-docentes/KtOATuI2gOKH80n1R6yt/49163626/id`
-      const docRef = doc(db, `/evaluaciones-docentes/${idEvaluacion}/${currentUserData.dni}`, `${pr.order}`);
-      await getDoc(docRef)
-        .then(async (response) => {
-          if (!response.exists()) {
-            const docPathRef = doc(db, `/evaluaciones-docentes/${idEvaluacion}/${currentUserData.dni}/${pr.order}`);
-            await setDoc(docPathRef, {
-              a: 0,
-              b: 0,
-              c: 0,
-              d: 0
-            })
+    let totalPuntos = 0
+    if (data) {
+      data.map(pr => {
+        pr?.alternativas?.map(p => {
+          if (p.selected === true) {
+            if (p.value) {
+              totalPuntos = totalPuntos + p.value
+            }
           }
         })
-        .then(res => {
-          const docPathRef = doc(db, `/evaluaciones-docentes/${idEvaluacion}/${currentUserData.dni}/${pr.order}`);
-          if (pr.alternativas?.length === 4) {
-            pr.alternativas?.map(async al => {
-              if (al.selected === true && al.alternativa === "a") {
-                await updateDoc(docPathRef, {
-                  a: increment(1)
-                })
-              } else if (al.selected === true && al.alternativa === "b") {
-                await updateDoc(docPathRef, {
-                  b: increment(1)
-                })
-              } else if (al.selected === true && al.alternativa === "c") {
-                await updateDoc(docPathRef, {
-                  c: increment(1)
-                })
-              } else if (al.selected === true && al.alternativa === "d") {
-                await updateDoc(docPathRef, {
-                  d: increment(1)
-                })
-              }
-            })
-          }
-        })
-        .then(response => dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false }))
-    }) */
+      })
+    }
+
+    const path = `/usuarios/${dataDocente.dniDirector}/${idEvaluacion}/`
+    await setDoc(doc(db, path, `${dataDocente.dni}`), { 
+      observacionesMonitoreo: {}, 
+      resultados: data, 
+      dni: dataDocente.dni, 
+      dniDirector: dataDocente.dniDirector, 
+      calificacion: totalPuntos, 
+      info: dataDocente })
+    .then(() => {
+      router.push(`/especialistas/evaluaciones-docentes/evaluacion/reporte-docente-individual?idDocente=${dataDocente.dni}&idEvaluacion=${idEvaluacion}`)
+      dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+    })
   }
   const reporteEvaluacionDocenteAdmin = (idEvaluacion: string, dniDirector: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
@@ -565,7 +593,11 @@ const UseEvaluacionDocentes = () => {
     reporteUgelGlobal,
     guardarObservacionDocente,
     reporteTablaEvaluacionDirectorDocente,
-    resetReporteTabla
+    resetReporteTabla,
+    getDataEvaluacionMediacionDirector,
+    buscarDocenteToEspecialista,
+    buscarDocenteReporteEvaluacionToEspecilista,
+    guardarEvaluacionDocenteToEspecialista
   }
 
 }

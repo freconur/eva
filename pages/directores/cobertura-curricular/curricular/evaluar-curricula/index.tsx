@@ -3,11 +3,10 @@ import DatosInstitucion from '@/components/curricular/datos-institucion'
 import DatosMonitor from '@/components/curricular/datos-monitor'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
-import { ObservacionMonitoreoDocente } from '@/features/types/types'
-import { regionTexto } from '@/fuctions/regiones'
+import { converNivelCurricularPreguntas, nivelCurricularPreguntas } from '@/fuctions/regiones'
 import AnexosCurricular from '@/modals/mallaCurricular/anexos'
 import { useRouter } from 'next/router'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 
 const EvaluarCurricula = () => {
 
@@ -43,7 +42,7 @@ const EvaluarCurricula = () => {
               Cobertura Curricular
             </span>
             <span className='block text-xl text-gray-500 font-light tracking-wide'>
-              de la competencia Lee-Estándar III
+              de la competencia Lee-{dataDocente?.grados?.[0] ? converNivelCurricularPreguntas(Number(dataDocente.grados[0])) : ''}
             </span>
           </h1>
         </div>

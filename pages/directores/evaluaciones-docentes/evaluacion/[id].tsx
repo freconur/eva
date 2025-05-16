@@ -69,7 +69,7 @@ const EvaluacionDocente = () => {
         
         <div className={styles.headerContent}>
           <h1 className={styles.headerTitle}>
-            Monitoreo {dataEvaluacionDocente?.name?.toLocaleLowerCase()}
+          Rúbrica de la mediación didáctica de la {dataEvaluacionDocente?.name?.toLocaleLowerCase()}
           </h1>
           
           <div className={styles.searchContainer}>
@@ -105,7 +105,7 @@ const EvaluacionDocente = () => {
               onClick={handleShowEvaluarDocente}
               className={styles.headerButton}
             >
-              Evaluar docente
+              Monitorear docente
             </button>
             <Link 
               href={`reporte?idEvaluacion=${router.query.id}`}

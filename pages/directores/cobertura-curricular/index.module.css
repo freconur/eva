@@ -5,7 +5,7 @@
     align-items: flex-start;
     justify-content: center;
     padding: 4rem 3rem;
-    background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+    background: linear-gradient(135deg, #1e3a8a, #042354);
     overflow: hidden;
     margin-bottom: 3rem;
     border-bottom-left-radius: 2rem;
@@ -55,12 +55,12 @@
 .headerButtons {
     display: flex;
     gap: 1rem;
-    justify-content: center;
+    justify-content: start;
 }
 
 .headerButton {
     padding: 0.75rem 1.5rem;
-    background-color: #2563eb;
+    background-color: #f26e27;
     color: white;
     border: none;
     border-radius: 0.5rem;
@@ -70,7 +70,7 @@
 }
 
 .headerButton:hover {
-    background-color: #1d4ed8;
+    background-color: #d86120;
     transform: translateY(-2px);
 }
 

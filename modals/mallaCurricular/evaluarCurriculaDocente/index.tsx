@@ -63,6 +63,7 @@ const EvaluarCurriculaDocente = ({ paHabilidad,dataDocente,handleShowEvaluarCurr
   }
   const handleGuardarEvaluacion = () => {
     salvarEvaluacionCurricular(idCurricular, dataDocente, updatedEvaluacion)
+    handleShowEvaluarCurriculaDocente()
   }
   console.log('updatedEvaluacion', updatedEvaluacion)
   return container

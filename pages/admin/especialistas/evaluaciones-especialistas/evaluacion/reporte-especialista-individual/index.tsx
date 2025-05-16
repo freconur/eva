@@ -102,7 +102,7 @@ const ReporteDocenteIndividual = () => {
                 </tr>
               </tbody>
             </table>
-            <AnexosSeguimientoRetroalimentacion dataDocente={dataDocente}/>
+            <AnexosSeguimientoRetroalimentacion dataDocente={dataDocente} idEvaluacion={`${route.query.idEvaluacion}`}/>
           </div>
           :
           null

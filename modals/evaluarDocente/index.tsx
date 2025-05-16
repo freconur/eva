@@ -7,7 +7,7 @@ import { RiLoader4Line } from "react-icons/ri";
 import { usePsicolinguistica } from "@/features/hooks/usePsicolinguistica";
 import { useState } from "react";
 import UseEvaluacionDocentes from "@/features/hooks/UseEvaluacionDocentes";
-import { convertGrade,  converSeccion} from "@/fuctions/regiones";
+import { convertGrade,  converSeccion, converGenero} from "@/fuctions/regiones";
 interface Props {
   handleShowEvaluarDocente: () => void,
   id: string
@@ -155,7 +155,7 @@ const EvaluarDocente = ({ handleShowEvaluarDocente, id, getPreguntaRespuestaDoce
                       <div className={styles.infoDocente}>
                       <p>Grado: <strong>{dataDocente.grados?.map(grado => convertGrade(grado.toString())).join(', ')}</strong></p>
                       <p>Sección: <strong>{Array.isArray(dataDocente.secciones) ? dataDocente.secciones.map((seccion: number) => converSeccion(seccion)?.toUpperCase()).join(', ') : dataDocente.secciones}</strong></p>
-                      <p>Genero: <strong>{dataDocente.genero}</strong></p>
+                      <p>Genero: <strong>{converGenero(`${dataDocente.genero}`)}</strong></p>
                       </div>
                     </div>
                   }

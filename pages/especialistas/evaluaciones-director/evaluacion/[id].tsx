@@ -62,10 +62,11 @@ const EvaluacionDirector = () => {
           priority
         />
         <div className={styles.headerContent}>
-          <h1 className={styles.headerTitle}>Evaluación {dataEvaluacionDocente?.name?.toLocaleLowerCase()}</h1>
+          {/* //RÚBRICA DE MONITOREO DE LA PRÁCTICA PEDAGÓGICA DE LA MEDIACIÓN DIDÁCTICA DE LA LECTURA Y MATEMÁTICA */}
+          <h1 className={styles.headerTitle}>Rúbrica de monitoreo de la práctica pedagógica de la mediación didáctica de la {dataEvaluacionDocente?.name?.toLocaleLowerCase()}</h1>
           <div className={styles.searchContainer}>
             <input
-              type="number"
+              type="text"
               className={styles.searchInput}
               placeholder="DNI DE DIRECTOR"
               onChange={handleChangeDniDocente}
