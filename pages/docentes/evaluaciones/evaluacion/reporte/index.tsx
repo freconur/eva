@@ -85,7 +85,7 @@ const Reportes = () => {
   }
 
   useEffect(() => {
-    estudiantesQueDieronExamen(`${route.query.idExamen}`, `${currentUserData.dni}`)
+   /*  estudiantesQueDieronExamen(`${route.query.idExamen}`, `${currentUserData.dni}`) */
     getPreguntasRespuestas(`${route.query.idExamen}`)
   }, [route.query.idExamen, currentUserData.dni])
   const options = {

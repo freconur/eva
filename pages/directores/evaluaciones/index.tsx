@@ -18,60 +18,46 @@ const Evaluaciones = () => {
 
   console.log('evaluaciones', evaluaciones)
   return (
-    // <div className='grid grid-cols-2'>
-    <div className='flex gap-5 p-5 justify-center'>
-      {
-        loaderPages ?
-          <div className='grid grid-rows-loader'>
-            <div className='flex justify-center items-center'>
-              <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-              <span className='text-colorTercero animate-pulse'>...cargando</span>
-            </div>
+    <div className={styles.container}>
+      {loaderPages ? (
+        <div className={styles.loaderContainer}>
+          <div className={styles.loaderWrapper}>
+            <RiLoader4Line className={styles.loader} />
+            <span className={styles.loaderText}>...cargando</span>
           </div>
-
-          :
-          <div className='grid justify-center items-center relative mt-3'>
-            {/* <div className='w-[1024px] bg-white  p-20'> */}
-            <div className='w-full'>
-              <h1 className='text-colorTercero font-semibold text-3xl font-mono mb-10 capitalize'>evaluaciones</h1>
-              <table className='w-full  bg-white  rounded-md shadow-md'>
-                <thead className='bg-colorSegundo border-b-2 border-blue-300 '>
-                  <tr className='text-white capitalize font-nunito '>
-                    <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
-                    <th className="py-3 md:p-2  text-left">nombre de evaluación</th>
-                    <th className="py-3 md:p-2  text-left"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {
-                    evaluaciones.length > 0 ?
-                      evaluaciones?.map((eva, index) => {
-                        return (
-                          <tr key={index} className='h-[60px] hover:bg-blue-100 duration-300 cursor-pointer'>
-                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>
-                              <Link href={`/directores/evaluaciones/evaluacion/${eva.id}`}>
-                                {index + 1}
-                              </Link>
-                            </td>
-                            <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>
-                              <Link href={`/directores/evaluaciones/evaluacion/${eva.id}`}>
-                                {eva.nombre}
-                              </Link>
-                            </td>
-                            
-                          </tr>
-                        )
-                      })
-                      :
-                      null
-                  }
-                </tbody>
-              </table>
-            </div>
+        </div>
+      ) : (
+        <div className={styles.contentContainer}>
+          <div>
+            <h1 className={styles.title}>evaluaciones</h1>
+            <table className={styles.table}>
+              <thead className={styles.tableHeader}>
+                <tr className={styles.tableHeaderRow}>
+                  <th className={styles.tableHeaderCell}>#</th>
+                  <th className={styles.tableHeaderCell}>nombre de evaluación</th>
+                </tr>
+              </thead>
+              <tbody className={styles.tableBody}>
+                {evaluaciones.length > 0 &&
+                  evaluaciones?.map((eva, index) => (
+                    <tr key={index} className={styles.tableRow}>
+                      <td className={styles.tableCell}>
+                        <Link href={`/directores/evaluaciones/evaluacion/${eva.id}`} className={styles.link}>
+                          {index + 1}
+                        </Link>
+                      </td>
+                      <td className={styles.tableCell}>
+                        <Link href={`/directores/evaluaciones/evaluacion/${eva.id}`} className={styles.link}>
+                          {eva.nombre}
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
           </div>
-
-      }
-      <EvaluacionesDirector/>
+        </div>
+      )}
     </div>
   )
 }

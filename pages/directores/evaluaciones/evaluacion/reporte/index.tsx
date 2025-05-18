@@ -14,13 +14,14 @@ import {
   Legend,
   ChartData,
 } from 'chart.js';
-import { gradosDeColegio, sectionByGrade, ordernarAscDsc } from '@/fuctions/regiones'
+import { gradosDeColegio, sectionByGrade, ordernarAscDsc, genero } from '@/fuctions/regiones'
 import { Bar } from "react-chartjs-2"
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { Alternativa, DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
 import { RiLoader4Line } from 'react-icons/ri';
-import { MdDeleteForever } from 'react-icons/md';
 import styles from './Reporte.module.css';
+import { currentMonth, getAllMonths } from '@/fuctions/dates';
+import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -37,7 +38,8 @@ const Reporte = () => {
   const [filtros, setFiltros] = useState({
     grado: '',
     seccion: '',
-    orden: ''
+    orden: '',
+    genero:''
   });
 
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -82,13 +84,14 @@ const Reporte = () => {
       ]
     }
   }
-  const { reporteDirectorData,reporteToTableDirector ,agregarDatosEstadisticosDirector } = useReporteDirectores()
+  const { reporteDirectorData,reporteToTableDirector ,reporteDirectorEstudiantes,agregarDatosEstadisticosDirector } = useReporteDirectores()
   const { currentUserData, reporteDirector, preguntasRespuestas, loaderReporteDirector, allRespuestasEstudiantesDirector, dataFiltradaDirectorTabla } = useGlobalContext()
   const { getPreguntasRespuestas } = useAgregarEvaluaciones()
   const [showTable, setShowTable] = useState(false)
   const route = useRouter()
+  const [monthSelected, setMonthSelected] = useState(currentMonth)
   useEffect(() => {
-
+//me trae las preguntas y respuestas para los graficos
     getPreguntasRespuestas(`${route.query.idEvaluacion}`)
   }, [currentUserData.dni, route.query.idEvaluacion])
 
@@ -96,11 +99,12 @@ const Reporte = () => {
     setShowTable(!showTable)
   }
   const handleFiltrar = () => {
-    reporteToTableDirector(allRespuestasEstudiantesDirector,{grado: filtros.grado, seccion: filtros.seccion, orden: filtros.orden}, `${route.query.id}`, `${route.query.idEvaluacion}`)
+    reporteToTableDirector(allRespuestasEstudiantesDirector,{grado: filtros.grado, seccion: filtros.seccion, orden: filtros.orden, genero: filtros.genero}, `${route.query.id}`, `${route.query.idEvaluacion}`)
   }
   useEffect(() => {
-    reporteDirectorData(`${route.query.id}`, `${route.query.idEvaluacion}`)
-  }, [route.query.id])
+    currentUserData.dni &&reporteDirectorEstudiantes(`${route.query.idEvaluacion}`,monthSelected,currentUserData)
+    /* reporteDirectorData(`${route.query.id}`, `${route.query.idEvaluacion}`) */
+  }, [route.query.id, route.query.idEvaluacion, currentUserData.dni])
 
   const iterarPregunta = (index: string) => {
     return (
@@ -130,9 +134,7 @@ const Reporte = () => {
       }
     }
   };
-  console.log('preguntasRespuestas', preguntasRespuestas)
-  console.log('dataFiltradaDirectorTabla', dataFiltradaDirectorTabla)
-  console.log('allRespuestasEstudiantesDirector', allRespuestasEstudiantesDirector)
+ 
   const options = {
     plugins: {
       legend: {
@@ -144,7 +146,15 @@ const Reporte = () => {
       },
     },
   };
-  /*  console.log('reporteDirector', reporteDirector) */
+  const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedMonth = getAllMonths.find(mes => mes.name === e.target.value);
+    setMonthSelected(selectedMonth ? selectedMonth.id : currentMonth);
+  }
+
+  useEffect(() => {
+    reporteDirectorEstudiantes(`${route.query.idEvaluacion}`,monthSelected,currentUserData)
+  },[monthSelected])
+   console.log('monthSelected', monthSelected)
   return (
 
     <>
@@ -162,6 +172,20 @@ const Reporte = () => {
             {
               showTable &&
               <div>
+                <div className={styles.selectContainer}>
+                <select 
+                  className={styles.select} 
+                  onChange={handleChangeMonth}
+                  value={getAllMonths[monthSelected]?.name || ''}
+                  id="">
+                  <option value="">Mes</option>
+                    {getAllMonths.slice(0,currentMonth+1).map((mes) => (
+                      <option key={mes.id} value={mes.name}>
+                        {mes.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className={styles.filtersContainer}>
                   <select
                     name="grado"
@@ -169,7 +193,7 @@ const Reporte = () => {
                     onChange={handleChangeFiltros}
                     className={styles.select}
                   >
-                    <option value="">Seleccione un grado</option>
+                    <option value="">Grado</option>
                     {gradosDeColegio.map((grado) => (
                       <option key={grado.id} value={grado.id}>
                         {grado.name}
@@ -183,10 +207,23 @@ const Reporte = () => {
                     onChange={handleChangeFiltros}
                     className={styles.select}
                   >
-                    <option value="">Seleccione una sección</option>
+                    <option value="">Sección</option>
                     {sectionByGrade.map((seccion) => (
                       <option key={seccion.id} value={seccion.id}>
                         {seccion.name.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    name="genero"
+                    value={filtros.genero}
+                    onChange={handleChangeFiltros}
+                    className={styles.select}
+                  >
+                    <option value="">Género</option>
+                    {genero.map((gen) => (
+                      <option key={gen.id} value={gen.id}>
+                        {gen.name.toUpperCase()}
                       </option>
                     ))}
                   </select>
@@ -203,6 +240,7 @@ const Reporte = () => {
                     ))}
                   </select>
                   <button className={styles.filterButton} onClick={handleFiltrar}>Filtrar</button>
+                  
                 </div>
                 <div className={styles.tableContainer}>
                   <table className={styles.table}>
@@ -321,3 +359,4 @@ const Reporte = () => {
 }
 
 export default Reporte
+Reporte.Auth = PrivateRouteDirectores

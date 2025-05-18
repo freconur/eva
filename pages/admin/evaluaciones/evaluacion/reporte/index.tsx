@@ -1,7 +1,7 @@
-import { useGlobalContext } from "@/features/context/GlolbalContext";
-import { useReporteDirectores } from "@/features/hooks/useReporteDirectores";
-import { useRouter } from "next/router";
-import React, { useEffect, useState } from "react";
+import { useGlobalContext } from '@/features/context/GlolbalContext'
+import { useReporteDirectores } from '@/features/hooks/useReporteDirectores'
+import { useRouter } from 'next/router'
+import React, { useEffect, useState } from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,11 +13,17 @@ import {
   Tooltip,
   Legend,
   ChartData,
-} from "chart.js";
-import { Bar } from "react-chartjs-2";
-import { DataEstadisticas } from "@/features/types/types";
-import { RiLoader4Line } from "react-icons/ri";
-import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones";
+} from 'chart.js';
+import { gradosDeColegio, sectionByGrade, ordernarAscDsc, genero, regiones, area } from '@/fuctions/regiones'
+import { Bar } from "react-chartjs-2"
+import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
+import { Alternativa, DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
+import { RiLoader4Line } from 'react-icons/ri';
+import styles from './Reporte.module.css';
+import { currentMonth, getAllMonths } from '@/fuctions/dates';
+import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
+import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista';
+import { useReporteEspecialistas } from '@/features/hooks/useReporteEspecialistas';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -28,21 +34,24 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-const ReporteRegional = () => {
-  const data = {
-    labels: ["a", "b", "c"],
-    datasets: [
-      {
-        axis: "y",
-        label: "My First Dataset",
-        // data: dataEstadisticas,
-        data: [65, 59, 80],
-        fill: false,
 
-        borderWidth: 1,
-      },
-    ],
+
+const Reporte = () => {
+  const [filtros, setFiltros] = useState({
+    region: '',
+    distrito: '',
+    caracteristicaCurricular: '',
+    genero: '',
+    area: '',
+  });
+
+  const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFiltros({
+      ...filtros,
+      [e.target.name]: e.target.value
+    });
   };
+
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
     return {
       labels: data.d === undefined ? ['a', 'b', 'c'] : ['a', 'b', 'c', 'd'],
@@ -51,195 +60,310 @@ const ReporteRegional = () => {
           label: "total",
           data: [data.a, data.b, data.c, data.d !== 0 && data.d],
           backgroundColor: [
-            "rgba(255, 99, 132, 0.2)",
-            "rgba(255, 159, 64, 0.2)",
-            "rgba(153, 102, 255, 0.2)",
+            'rgba(255, 99, 132, 0.2)',
+            'rgba(255, 159, 64, 0.2)',
+            'rgba(153, 102, 255, 0.2)',
             // respuesta === "a" ? 'rgba(255, 99, 132, 0.2)' : 'rgb(0, 153, 0)',
             // respuesta === "b" ? 'rgba(255, 159, 64, 0.2)' : 'rgb(0, 153, 0)',
             // respuesta === "c" ? 'rgba(153, 102, 255, 0.2)' : 'rgb(0, 153, 0)',
-            "rgba(255, 159, 64, 0.2)",
-            "rgba(255, 205, 86, 0.2)",
-            "rgba(75, 192, 192, 0.2)",
-            "rgba(54, 162, 235, 0.2)",
-            "rgba(153, 102, 255, 0.2)",
-            "rgba(201, 203, 207, 0.2)",
+            'rgba(255, 159, 64, 0.2)',
+            'rgba(255, 205, 86, 0.2)',
+            'rgba(75, 192, 192, 0.2)',
+            'rgba(54, 162, 235, 0.2)',
+            'rgba(153, 102, 255, 0.2)',
+            'rgba(201, 203, 207, 0.2)'
           ],
           borderColor: [
-            "rgb(255, 99, 132)",
-            "rgb(255, 159, 64)",
-            "rgb(255, 205, 86)",
-            "rgb(75, 192, 192)",
-            "rgb(54, 162, 235)",
-            "rgb(153, 102, 255)",
-            "rgb(201, 203, 207)",
+            'rgb(255, 99, 132)',
+            'rgb(255, 159, 64)',
+            'rgb(255, 205, 86)',
+            'rgb(75, 192, 192)',
+            'rgb(54, 162, 235)',
+            'rgb(153, 102, 255)',
+            'rgb(201, 203, 207)'
           ],
-          borderWidth: 1,
-        },
-      ],
-    };
-  };
-  const route = useRouter();
-  const [loaderReporteDirector, setLoaderReporteDirector] = useState(false);
-  const {
-    reporteRegionales,
-    getRegiones,
-    resetReporteRegional,
-    reporteRegionalGlobal,
-    resetReporteGlobal
-  } = useReporteDirectores();
-  const {
-    regiones,
-    reporteRegional,
-    preguntasRespuestas,
-    loaderReporteRegional,
-  } = useGlobalContext();
-  const { getPreguntasRespuestas } = useAgregarEvaluaciones();
-  const [regionValue, setRegionValue] = useState({ region: 0 });
-
-  useEffect(() => {
-    getRegiones();
-  }, []);
-
-  useEffect(() => {
-    resetReporteRegional();
-    resetReporteGlobal()
-  }, []);
-  useEffect(() => {
-    if (regionValue.region !== 0 && regionValue.region !== 15) {
-      reporteRegionales(
-        Number(regionValue.region),
-        `${route.query.idEvaluacion}`
-      );
-      getPreguntasRespuestas(`${route.query.idEvaluacion}`);
+          borderWidth: 1
+        }
+      ]
     }
-  }, [regionValue.region]);
-  const handleRegion = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setRegionValue({ region: Number(e.target.value) });
-  };
+  }
+  const { reporteDirectorData, reporteToTableDirector, reporteDirectorEstudiantes, agregarDatosEstadisticosDirector } = useReporteDirectores()
+  const { getAllReporteDeDirectores, reporteParaTablaDeEspecialista, reporteEspecialistaDeEstudiantes } = useReporteEspecialistas()
+  const { currentUserData, reporteDirector, preguntasRespuestas, loaderReporteDirector, allRespuestasEstudiantesDirector, dataFiltradaDirectorTabla,allEvaluacionesEstudiantes } = useGlobalContext()
+  const { getPreguntasRespuestas } = useAgregarEvaluaciones()
+  const [showTable, setShowTable] = useState(false)
+  const route = useRouter()
+  const [monthSelected, setMonthSelected] = useState(currentMonth)
+  useEffect(() => {
+    //me trae las preguntas y respuestas para los graficos
+    getPreguntasRespuestas(`${route.query.idEvaluacion}`)
+  }, [currentUserData.dni, route.query.idEvaluacion])
+
+  const handleShowTable = () => {
+    setShowTable(!showTable)
+  }
+  const handleFiltrar = () => {
+    /* reporteToTableDirector() */
+    reporteParaTablaDeEspecialista(allEvaluacionesEstudiantes,{region: filtros.region, area: filtros.area, genero: filtros.genero, caracteristicaCurricular: filtros.caracteristicaCurricular, distrito: filtros.distrito}, `${route.query.id}`, `${route.query.idEvaluacion}`)
+  }
+  useEffect(() => {
+    reporteEspecialistaDeEstudiantes(`${route.query.idEvaluacion}`, monthSelected, currentUserData)
+    /* currentUserData.dni && reporteDirectorEstudiantes(`${route.query.idEvaluacion}`,monthSelected,currentUserData) */
+    /* reporteDirectorData(`${route.query.id}`, `${route.query.idEvaluacion}`) */
+  }, [route.query.id, route.query.idEvaluacion, currentUserData.dni])
+
   const iterarPregunta = (index: string) => {
     return (
-      <div className="grid gap-1">
-        <h3 className="text-slate-500 mr-2">
-          <span className="text-colorSegundo mr-2 font-semibold">{index}.</span>{" "}
-          {preguntasRespuestas[Number(index) - 1]?.pregunta}
-        </h3>
-        <h3 className="text-slate-500 ml-8">
-          <strong>Actuación:</strong>{" "}
-          {preguntasRespuestas[Number(index) - 1]?.preguntaDocente}
-        </h3>
+      <div className='grid gap-1'>
+        <h3 className='text-slate-500 mr-2'><span className='text-colorSegundo mr-2 font-semibold'>{index}.</span>{preguntasRespuestas[Number(index) - 1]?.pregunta}</h3>
+        <h3 className='text-slate-500 mr-2'><span className='text-colorSegundo mr-2 font-semibold'>Actuación:</span> {preguntasRespuestas[Number(index) - 1]?.preguntaDocente}</h3>
       </div>
+    )
+  }
+  const handleValidateRespuesta = (data: PreguntasRespuestas) => {
+    const rta: Alternativa | undefined = data.alternativas?.find(
+      (r) => r.selected === true
     );
+    if (rta?.alternativa) {
+      if (rta.alternativa.toLowerCase() === data.respuesta?.toLowerCase()) {
+        return (
+          <div className={styles.correctAnswer}>
+            si
+          </div>
+        );
+      } else {
+        return (
+          <div className={styles.incorrectAnswer}>
+            no
+          </div>
+        );
+      }
+    }
   };
-  useEffect(() => {
-    regionValue.region === 15 &&
-      reporteRegionalGlobal(`${route.query.idEvaluacion}`);
-  }, [regionValue.region]);
+
   const options = {
     plugins: {
       legend: {
-        position: "center" as const,
+        position: 'center' as const,
       },
       title: {
         display: true,
-        text: "estadistica de respuestas",
+        text: 'estadistica de respuestas',
       },
     },
   };
-  // console.log("region", regionValue.region);
-  console.log("reporteDirector", reporteRegional);
-  //tengo que traerme toda la informacion de la cada director que corresponda a la region.
+  const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedMonth = getAllMonths.find(mes => mes.name === e.target.value);
+    setMonthSelected(selectedMonth ? selectedMonth.id : currentMonth);
+  }
+
+  useEffect(() => {
+    reporteEspecialistaDeEstudiantes(`${route.query.idEvaluacion}`,monthSelected,currentUserData)
+    /* reporteDirectorEstudiantes(`${route.query.idEvaluacion}`, monthSelected, currentUserData) */
+  }, [monthSelected])
   return (
-    <div className="grid justify-center items-center relative mt-3">
-      <div className="w-[1024px] bg-white  p-20">
-        <h1 className="uppercase text-2xl  font-montserrat font-semibold text-colorSexto mb-5">
-          Reporte UGEL
-        </h1>
-        <div>
-          {/* <p className='text-xl text-slate-600 mb-2 capitalize'>selecciona una región:</p> */}
-          <select
-            onChange={handleRegion}
-            className=" text-slate-500 p-3 rounded-md shadow-lg w-full mb-10"
-          >
-            <option>---UGEL---</option>
-            <option value={15}>GLOBAL</option>
-            {regiones?.map((region, index) => {
-              return (
-                <option key={index} value={region.codigo}>
-                  {region.region?.toUpperCase()}
-                </option>
-              );
-            })}
-          </select>
-          {loaderReporteRegional ? (
-            <div className="grid ">
-              <div className="flex justify-center items-center">
-                <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-                <span className="text-colorTercero animate-pulse">
-                  ...buscando resultados
-                </span>
-              </div>
+
+    <>
+      {
+        loaderReporteDirector ?
+          <div className={styles.loaderContainer}>
+            <div className={styles.loaderContent}>
+              <RiLoader4Line className={styles.loaderIcon} />
+              <span className={styles.loaderText}>...cargando</span>
             </div>
-          ) : reporteRegional.length > 0 ? (
-            <div className="grid justify-center items-center relative z-10">
-              <div className="w-[1024px] grid justify-center items-center p-20">
-                <h1 className="text-2xl text-center text-cyan-700 font-semibold uppercase mb-20">
-                  reporte de evaluación
-                </h1>
+          </div>
+          :
+          <div className={styles.mainContainer}>
+            {/* <button className={styles.button} onClick={handleShowTable}>ver tabla</button> */}
+            <div className={styles.selectContainer}>
+                  <select
+                    className={styles.select}
+                    onChange={handleChangeMonth}
+                    value={getAllMonths[monthSelected]?.name || ''}
+                    id="">
+                    <option value="">Mes</option>
+                    {getAllMonths.slice(0, currentMonth + 1).map((mes) => (
+                      <option key={mes.id} value={mes.name}>
+                        {mes.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.filtersContainer}>
+                  <select
+                    name="region"
+                    value={filtros.region}
+                    onChange={handleChangeFiltros}
+                    className={styles.select}
+                  >
+                    <option value="">Ugel</option>
+                    {regiones.map((region) => (
+                      <option key={region.id} value={region.id}>
+                        {region.region}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    name="area"
+                    value={filtros.area}
+                    onChange={handleChangeFiltros}
+                    className={styles.select}
+                  >
+                    <option value="">Area</option>
+                    {area.map((are) => (
+                      <option key={are.id} value={are.id}>
+                        {are.name.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    name="genero"
+                    value={filtros.genero}
+                    onChange={handleChangeFiltros}
+                    className={styles.select}
+                  >
+                    <option value="">Género</option>
+                    {genero.map((gen) => (
+                      <option key={gen.id} value={gen.id}>
+                        {gen.name.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                  {/* <select
+                    className={styles.select}
+                    onChange={handleChangeFiltros}
+                    name="orden"
+                    id="">
+                    <option value="">ordernar por</option>
+                    {ordernarAscDsc.map((orden) => (
+                      <option key={orden.id} value={orden.name}>
+                        {orden.name}
+                      </option>
+                    ))}
+                  </select> */}
+                  <button className={styles.filterButton} onClick={handleFiltrar}>Filtrar</button>
+
+                </div>
+            {/* {
+              showTable &&
+              <div>
+                
+                <div className={styles.tableContainer}>
+                  <table className={styles.table}>
+                    <thead className={styles.tableHeader}>
+                      <tr>
+                        <th className={styles.tableHeaderCell}>#</th>
+                        <th className={styles.tableHeaderCell}>Nombre y apellidos</th>
+                        <th className={styles.tableHeaderCell}>R.C</th>
+                        <th className={styles.tableHeaderCell}>T.P</th>
+                        {preguntasRespuestas.map((pr) => {
+                          return (
+                            <th key={pr.order} className={styles.tableHeaderCell}>
+                              <button
+                                className={styles.popoverButton}
+                                popoverTarget={`${pr.order}`}
+                              >
+                                {pr.order}
+                              </button>
+                              <div
+                                className={styles.popoverContent}
+                                popover="auto"
+                                id={`${pr.order}`}
+                              >
+                                <div className="w-full">
+                                  <span className={styles.popoverTitle}>
+                                    {pr.order}. Actuación:
+                                  </span>
+                                  <span className={styles.popoverText}>
+                                    {pr.preguntaDocente}
+                                  </span>
+                                </div>
+                              </div>
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dataFiltradaDirectorTabla?.map((dir, index) => {
+                        return (
+                          <tr
+                            key={index}
+                            className={styles.tableRow}
+                          >
+                            <td className={styles.tableCell}>
+                              {index + 1}
+                            </td>
+                            <td className={`${styles.tableCell} ${styles.tableCellName}`}>
+                              {dir.nombresApellidos}
+                            </td>
+                            <td className={styles.tableCell}>
+                              {dir.respuestasCorrectas}
+                            </td>
+                            <td className={styles.tableCell}>
+                              {dir.totalPreguntas}
+                            </td>
+                            {dir.respuestas?.map((res) => {
+                              return (
+                                <td
+                                  key={res.order}
+                                  className={styles.tableCell}
+                                >
+                                  {handleValidateRespuesta(res)}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            } */}
+
+            <div className={styles.reportContainer}>
+              <h1 className={styles.reportTitle}>reporte de evaluación</h1>
+              <div>
                 <div>
-                  <div>
-                    {reporteRegional?.map((dat, index) => {
+                  {
+                    reporteDirector?.map((dat, index) => {
                       return (
-                        <div key={index} className="w-[800px]  p-2 rounded-lg">
+                        <div key={index} className={styles.questionContainer}>
                           {iterarPregunta(`${dat.id}`)}
-                          <div className="bg-white rounded-md grid justify-center items-center place-content-center">
-                            <div className="grid justify-center m-auto items-center w-[500px]">
-                              <Bar
-                                className="m-auto w-[500px]"
-                                // data={data}
+                          <div className={styles.chartContainer}>
+                            <div className={styles.chartWrapper}>
+                              <Bar className={styles.chart}
                                 options={options}
-                                data={iterateData(
-                                  dat,
-                                  `${
-                                    preguntasRespuestas[Number(index) - 1]
-                                      ?.respuesta
-                                  }`
-                                )}
+                                data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
                               />
                             </div>
-                            <div className="text-sm  flex gap-[90px] items-center justify-center ml-[30px] text-slate-500">
-                            <p>{dat.a} | {dat.total === 0 ? 0 : ((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)} %</p>
+                            <div className={styles.statsContainer}>
+                              <p>{dat.a} | {dat.total === 0 ? 0 : ((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)} %</p>
                               <p>{dat.b} |{dat.total === 0 ? 0 : ((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
                               <p>{dat.c} | {dat.total === 0 ? 0 : ((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
                               {
                                 dat.d &&
-                                <p>{dat.d} | {dat.total === 0 ? 0 : ((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
+                                <p>{dat.d} | {dat.total === 0 ? `${0}%` : ((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
                               }
                             </div>
-                            <div className="text-center text-md  w-[150px] text-colorTercero p-2  rounded-md mt-5 border border-colorTercero">
-                              respuesta:
-                              <span className="text-colorTercero font-semibold ml-2">
-                                {preguntasRespuestas[Number(index)]?.respuesta}
-                              </span>{" "}
+                            <div className={styles.answerContainer}>
+                              respuesta:<span className={styles.answerText}>{preguntasRespuestas[Number(index)]?.respuesta}</span>
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                      )
+                    })
+                  }
                 </div>
               </div>
             </div>
-          ) : (
-            <>
-              <div className="w-full flex justify-center items-center">
-                <p className="text-slate-500">No hay resultados</p>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
+          </div>
+      }
+    </>
+  )
+}
 
-export default ReporteRegional;
+export default Reporte
+Reporte.Auth = PrivateRouteEspecialista

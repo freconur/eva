@@ -4,6 +4,16 @@ import { AppActions, AppReducerValues } from "../types/types";
 
 export const appReducer = (state: AppReducerValues, action: AppActions) => {
   switch (action.type) {  
+    case AppAction.ALL_EVALUACIONES_ESTUDIANTES:
+      return {
+        ...state,
+        allEvaluacionesEstudiantes: action.payload
+      }
+    case AppAction.WARNING_EVA_ESTUDIANTE_SIN_REGISTRO:
+      return {
+        ...state,
+        warningEvaEstudianteSinRegistro: action.payload
+      }
     case AppAction.DATA_EVALUACION_MEDIACION_DIRECTOR:
       return {
         ...state,

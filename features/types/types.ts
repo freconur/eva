@@ -63,7 +63,9 @@ export type AppReducerValues = {
   resultadoBusquedaUsuario:User,
   lastVisible:any,
   dataEvaluacionMediacionDirector:DataEvaluacion,
-  dataDocenteMaster:User
+  dataDocenteMaster:User,
+  warningEvaEstudianteSinRegistro:string | null,
+  allEvaluacionesEstudiantes:User[]
 };
 
 export type AppActions =
@@ -142,6 +144,8 @@ export type AppActions =
   | { type: AppAction.LAST_VISIBLE; payload: any }
   | { type: AppAction.DATA_EVALUACION_MEDIACION_DIRECTOR; payload: DataEvaluacion }
   | { type: AppAction.DATA_DOCENTE_MASTER; payload: User }
+  | { type: AppAction.WARNING_EVA_ESTUDIANTE_SIN_REGISTRO; payload: string  | null}
+  | { type: AppAction.ALL_EVALUACIONES_ESTUDIANTES; payload: User[] }
 export type LoginData = {
   usuario: string;
   contrasena: string;
@@ -252,7 +256,8 @@ export type User = {
   };
   preguntasAlternativas?:PaHanilidad[],
   rolDirectivo?:number,
-  tipoEspecialista?:number
+  tipoEspecialista?:number,
+  reporteEstudiantes?: DataEstadisticas[]
 };
 
 export type DataEstadisticas = {

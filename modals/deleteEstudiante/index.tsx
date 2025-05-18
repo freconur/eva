@@ -14,6 +14,8 @@ interface Props {
   idEstudiante: string;
   idExamen: string;
   estudiantes: Estudiante[];
+  monthSelected:number
+
 }
 
 const DeleteEstudiante = ({
@@ -21,11 +23,12 @@ const DeleteEstudiante = ({
   estudiantes,
   handleShowModalDelete,
   idExamen,
+  monthSelected
 }: Props) => {
   const { loaderSalvarPregunta } = useGlobalContext();
   const [reValidar, setReValidar] = useState(false);
   const [exito, setExito] = useState(false);
-  const { deleteEstudianteById } = useUsuario();
+  const { deleteEstudianteById, deleteEvaluacionEstudiante } = useUsuario();
   const { deleteEvaluacion } = useAgregarEvaluaciones();
   let container;
   if (typeof window !== "undefined") {
@@ -33,9 +36,9 @@ const DeleteEstudiante = ({
   }
 
   const handleDeleteEvaluacion = () => {
-    deleteEstudianteById(idEstudiante, idExamen, estudiantes);
+    deleteEvaluacionEstudiante(idExamen, idEstudiante, monthSelected);
+    /* deleteEstudianteById(idEstudiante, idExamen, estudiantes); */
   };
-  console.log("estudiantes", estudiantes);
   return container
     ? createPortal(
         <div className={styles.containerModal}>

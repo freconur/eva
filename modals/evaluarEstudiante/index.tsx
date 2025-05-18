@@ -7,6 +7,7 @@ import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones"
 import { Alternativa, Alternativas, Evaluaciones, PreguntasRespuestas } from "@/features/types/types";
 import { RiLoader4Line } from "react-icons/ri";
 import { gradosDeColegio, sectionByGrade, genero } from '../../fuctions/regiones'
+import { currentYear } from "@/fuctions/dates";
 interface Props {
   id: string,
   handleShowModalEstudiante: () => void,
@@ -124,12 +125,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
   useEffect(() => { prEstudiantes(preguntasRespuestas) }, [preguntasRespuestas])
 
 
-
-  // console.log('preguntasRespuestas', preguntasRespuestas)
-/* console.log('sizePreguntas', sizePreguntas)
-console.log('repuestasCorrectas', repuestasCorrectas)
-
-console.log('ordenLimitePregunta', ordenLimitePregunta) */
+console.log('currentYear',currentYear)  
 
   return container
     ? createPortal(
@@ -164,7 +160,7 @@ console.log('ordenLimitePregunta', ordenLimitePregunta) */
                         }
                       )}
                       className={styles.inputNombresDni}
-                      type="number"
+                      type="text"
                       placeholder="DNI DE ESTUDIANTE"
                     />
                     {errors.dni && <span className='text-red-400 text-sm'>{errors.dni.message as string}</span>}

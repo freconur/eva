@@ -2,6 +2,7 @@ import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, incr
 import { AppAction } from "../actions/appAction"
 import { useGlobalContext, useGlobalContextDispatch } from "../context/GlolbalContext"
 import { Alternativa, CreaEvaluacion, Evaluaciones, Grades, PreguntasRespuestas, User, UserEstudiante } from "../types/types"
+import { currentMonth, currentYear } from "@/fuctions/dates"
 
 
 
@@ -181,11 +182,12 @@ export const useAgregarEvaluaciones = () => {
       order: count + 1 //modificacion para poder ordenar las preguntas en caso se falle y no querer volver a agregarlas desde cero
     });
   }
-  const salvarPreguntRespuestaEstudiante = async (data: UserEstudiante, id: string, pq: PreguntasRespuestas[], respuestasCorrectas: number, sizePreguntas: number) => {
+  const salvarPreguntRespuestaEstudiante = async (data: UserEstudiante, idEvaluacion: string, pq: PreguntasRespuestas[], respuestasCorrectas: number, sizePreguntas: number) => {
     console.log('tiene que salir la respuesta', respuestasCorrectas)
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true })
 //guarda la informacion para el propio docente
-    const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`);
+/* const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`); */
+const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${currentMonth}/${data.dni}`);
     await setDoc(rutaRef, {
       nombresApellidos: data.nombresApellidos,
       dni: data.dni,
@@ -209,18 +211,18 @@ export const useAgregarEvaluaciones = () => {
               // console.log('rta', rta)
             }
           })
-          const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}/${data.dni}/${a.id}`);
+          const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${idEvaluacion}/${data.dni}/${data.dni}/${a.id}`);
           await setDoc(rutaRef, {
             pregunta: a.pregunta,
             respuesta: a.respuesta,
             respuestaEstudiante: rta.length > 0 && rta,
             preguntaDocente: a.preguntaDocente
           })
-          const docRef = doc(db, `/evaluaciones/${id}/${currentUserData.dni}`, `${a.id}`);
+          const docRef = doc(db, `/evaluaciones/${idEvaluacion}/${currentUserData.dni}`, `${a.id}`);
           const querySnapshot = await getDoc(docRef);
           // const docSnap = await getDoc(docRef);
           if (!querySnapshot.exists()) {
-            const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.id}`)
+            const dataGraficos = doc(db, `/evaluaciones/${idEvaluacion}/${currentUserData.dni}/${a.id}`)
             if (a.alternativas?.length === 3) {
               await setDoc(dataGraficos, {
                 a: 0,
@@ -238,7 +240,7 @@ export const useAgregarEvaluaciones = () => {
               })
             }
           }
-          const dataGraficos = doc(db, `/evaluaciones/${id}/${currentUserData.dni}/${a.order}`)
+          const dataGraficos = doc(db, `/evaluaciones/${idEvaluacion}/${currentUserData.dni}/${a.order}`)
           if (a.alternativas?.length === 3) {
             a.alternativas?.map(async al => {
               if (al.selected === true && al.alternativa === "a") {

@@ -29,6 +29,7 @@ import {
   deleteDoc,
   increment,
 } from "firebase/firestore";
+import { currentYear } from "@/fuctions/dates";
 const useUsuario = () => {
   const URL_API = "https://api-ugel-production.up.railway.app/";
   /* const URL_API = "http://localhost:3001/" */
@@ -384,6 +385,13 @@ const useUsuario = () => {
     });
   };
 
+  const deleteEvaluacionEstudiante = async (idEvaluacion: string, idEstudiante: string, monthSelected: number) => {
+    console.log("idEvaluacion", idEvaluacion) 
+    console.log("idEstudiante", idEstudiante)
+    console.log("monthSelected", monthSelected)
+    const pathRef = doc(db, `/usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${monthSelected}`, idEstudiante)
+    await deleteDoc(pathRef)
+  }
   const deleteEstudianteById = async (
     id: string,
     idExamen: string,
@@ -502,7 +510,8 @@ const useUsuario = () => {
     deleteUsuarioById,
     deleteEstudianteById,
     getAllEspecialistas,
-    updateEspecialista
+    updateEspecialista,
+    deleteEvaluacionEstudiante
   };
 };
 

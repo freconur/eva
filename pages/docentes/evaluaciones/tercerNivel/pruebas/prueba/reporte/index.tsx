@@ -27,7 +27,8 @@ import * as XLSX from "xlsx";
 import { MdDeleteForever } from "react-icons/md";
 import DeleteEstudiante from "@/modals/deleteEstudiante";
 import styles from "./reporte.module.css";
-
+import { currentMonth, getAllMonths, getMonthName } from "@/fuctions/dates";
+import { ordernarAscDsc } from "@/fuctions/regiones";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -51,11 +52,13 @@ const Reportes = () => {
     preguntasRespuestas,
     loaderPages,
     loaderReporteDirector,
+    warningEvaEstudianteSinRegistro
   } = useGlobalContext();
-  const { estudiantesQueDieronExamen } = useReporteDocente();
+  const { estudiantesQueDieronExamen, filtroEstudiantes, estadisticasEstudiantesDelDocente } = useReporteDocente();
   const { getPreguntasRespuestas } = useAgregarEvaluaciones();
   const [idEstudiante, setIdEstudiante] = useState<string>("");
-
+  const [monthSelected, setMonthSelected] = useState<number>(currentMonth);
+  const [order, setOrder] = useState<number>(0);
   const handleShowTable = () => {
     setShowtable(!showTable);
   };
@@ -106,12 +109,14 @@ const Reportes = () => {
   };
 
   useEffect(() => {
-    estudiantesQueDieronExamen(
-      `${route.query.idExamen}`,
-      `${currentUserData.dni}`
-    );
+    estadisticasEstudiantesDelDocente(`${route.query.idExamen}`, monthSelected)
     getPreguntasRespuestas(`${route.query.idExamen}`);
+    setMonthSelected(currentMonth);
   }, [route.query.idExamen, currentUserData.dni]);
+
+  useEffect(() => {
+    estadisticasEstudiantesDelDocente(`${route.query.idExamen}`, monthSelected)
+  }, [monthSelected]);
 
   const options = {
     plugins: {
@@ -158,7 +163,17 @@ const Reportes = () => {
   const handleShowModalDelete = () => {
     setShowDeleteEstudiante(!showDeleteEstudiante);
   };
-
+  const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setMonthSelected(Number(e.target.value));
+  }
+  const handleChangeOrder = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setOrder(Number(e.target.value));
+  }
+  const handleOrder = () => {
+    console.log('order', order)
+    filtroEstudiantes(estudiantes, order)
+  }
+  console.log('monthSelected', monthSelected)
   return (
     <>
       {showDeleteEstudiante && (
@@ -166,6 +181,7 @@ const Reportes = () => {
           estudiantes={estudiantes}
           idExamen={`${route.query.idExamen}`}
           idEstudiante={idEstudiante}
+          monthSelected={monthSelected}
           handleShowModalDelete={handleShowModalDelete}
         />
       )}
@@ -189,12 +205,62 @@ const Reportes = () => {
             </div>
             {showTable ? (
               <>
-                <button
-                  className={styles.exportButton}
-                  onClick={handleDownload}
-                >
-                  exportar excel
-                </button>
+                <div className={styles.exportContainer}>
+                  <div className={styles.selectContainer}>
+                    <label htmlFor="monthSelect" className={styles.selectLabel}>
+                      Exportar:
+                    </label>
+                    <button
+                      className={styles.exportButton}
+                      onClick={handleDownload}
+                    >
+                      exportar excel
+                    </button>
+                  </div>
+
+                  <div className={styles.selectContainer}>
+                    <label htmlFor="monthSelect" className={styles.selectLabel}>
+                      Ordernar por:
+                    </label>
+                    <div>
+                      <select
+                        onChange={handleChangeOrder}
+                        className={styles.exportSelect}>
+                        <option>--order por--</option>
+                        {
+                          ordernarAscDsc.map((order) => (
+                            <option key={order.id} value={order.id}>
+                              {order.name}
+                            </option>
+                          ))
+                        }
+                      </select>
+                      <button className={styles.buttonOrdenar} onClick={handleOrder}>
+                        ordenar
+                      </button>
+                    </div>
+                  </div>
+                  <div className={styles.selectContainer}>
+                    <label htmlFor="monthSelect" className={styles.selectLabel}>
+                      Seleccionar mes:
+                    </label>
+                    <select
+                      id="monthSelect"
+                      onChange={handleChangeMonth}
+                      value={monthSelected}
+                      className={styles.exportSelect}
+                      aria-label="Seleccionar mes para el reporte">
+                      <option value={currentMonth}>{getMonthName(currentMonth)}</option>
+                      {
+                        getAllMonths.slice(0, currentMonth + 1).map((month) => (
+                          <option key={month.id} value={month.id}>
+                            {month.name}
+                          </option>
+                        ))
+                      }
+                    </select>
+                  </div>
+                </div>
 
                 <table className={styles.table}>
                   <thead className={styles.tableHeader}>
@@ -233,34 +299,43 @@ const Reportes = () => {
                     </tr>
                   </thead>
                   <tbody className={styles.tableBody}>
-                    {dataEstadisticas.length >= 0
-                      ? estudiantes?.map((dir, index) => {
-                          return (
-                            <tr key={index}>
-                              <td>
-                                <MdDeleteForever
-                                  onClick={() => {
-                                    handleShowModalDelete();
-                                    setIdEstudiante(`${dir.dni}`);
-                                  }}
-                                  className={styles.deleteIcon}
-                                />
-                              </td>
-                              <td>{index + 1}</td>
-                              <td>{dir.nombresApellidos}</td>
-                              <td>{dir.respuestasCorrectas}</td>
-                              <td>{dir.totalPreguntas}</td>
-                              {dir.respuestas?.map((res) => {
-                                return (
-                                  <td key={res.order}>
-                                    {handleValidateRespuesta(res)}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })
-                      : null}
+                    {!warningEvaEstudianteSinRegistro
+                      ?
+                      estudiantes?.map((dir, index) => {
+                        return (
+                          <tr key={index}>
+                            <td>
+                              <MdDeleteForever
+                                onClick={() => {
+                                  handleShowModalDelete();
+                                  setIdEstudiante(`${dir.dni}`);
+                                }}
+                                className={styles.deleteIcon}
+                              />
+                            </td>
+                            <td>{index + 1}</td>
+                            <td>{dir.nombresApellidos}</td>
+                            <td>{dir.respuestasCorrectas}</td>
+                            <td>{dir.totalPreguntas}</td>
+                            {dir.respuestas?.map((res) => {
+                              return (
+                                <td key={res.order}>
+                                  {handleValidateRespuesta(res)}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })
+                      :
+                      <tr>
+                        <th></th>
+                        <th className={styles.warningContainer}>
+                          {warningEvaEstudianteSinRegistro}
+                        </th>
+                      </tr>
+
+                    }
                   </tbody>
                 </table>
               </>
@@ -270,77 +345,84 @@ const Reportes = () => {
             </h1>
             <div>
               <div>
-                {dataEstadisticas?.map((dat, index) => {
-                  return (
-                    <div key={index} className={styles.questionContainer}>
-                      {iterarPregunta(`${dat.id}`)}
-                      <div className={styles.chartContainer}>
-                        <div className={styles.chartWrapper}>
-                          <Bar
-                            options={options}
-                            data={iterateData(
-                              dat,
-                              `${
-                                preguntasRespuestas[Number(index) - 1]
-                                  ?.respuesta
-                              }`
-                            )}
-                          />
-                        </div>
-                        <div className={styles.statsContainer}>
-                          <p>
-                            {dat.a} |{" "}
-                            {dat.total === 0
-                              ? 0
-                              : (
-                                  (100 * Number(dat.a)) /
-                                  Number(dat.total)
-                                ).toFixed(0)}{" "}
-                            %
-                          </p>
-                          <p>
-                            {dat.b} |
-                            {dat.total === 0
-                              ? 0
-                              : (
-                                  (100 * Number(dat.b)) /
-                                  Number(dat.total)
-                                ).toFixed(0)}
-                            %
-                          </p>
-                          <p>
-                            {dat.c} |{" "}
-                            {dat.total === 0
-                              ? 0
-                              : (
-                                  (100 * Number(dat.c)) /
-                                  Number(dat.total)
-                                ).toFixed(0)}
-                            %
-                          </p>
-                          {dat.d && (
-                            <p>
-                              {dat.d} |{" "}
-                              {dat.total === 0
-                                ? 0
-                                : (
-                                    (100 * Number(dat.d)) /
+                {
+                  warningEvaEstudianteSinRegistro ?
+                    <div className={styles.warningContainer}>
+                      {warningEvaEstudianteSinRegistro}
+                    </div>
+                    :
+                    dataEstadisticas?.map((dat, index) => {
+                      return (
+                        <div key={index} className={styles.questionContainer}>
+                          {iterarPregunta(`${dat.id}`)}
+                          <div className={styles.chartContainer}>
+                            <div className={styles.chartWrapper}>
+                              <Bar
+                                options={options}
+                                data={iterateData(
+                                  dat,
+                                  `${preguntasRespuestas[Number(index) - 1]
+                                    ?.respuesta
+                                  }`
+                                )}
+                              />
+                            </div>
+                            <div className={styles.statsContainer}>
+                              <p>
+                                {dat.a} |{" "}
+                                {dat.total === 0
+                                  ? 0
+                                  : (
+                                    (100 * Number(dat.a)) /
+                                    Number(dat.total)
+                                  ).toFixed(0)}{" "}
+                                %
+                              </p>
+                              <p>
+                                {dat.b} |
+                                {dat.total === 0
+                                  ? 0
+                                  : (
+                                    (100 * Number(dat.b)) /
                                     Number(dat.total)
                                   ).toFixed(0)}
-                              %
-                            </p>
-                          )}
+                                %
+                              </p>
+                              <p>
+                                {dat.c} |{" "}
+                                {dat.total === 0
+                                  ? 0
+                                  : (
+                                    (100 * Number(dat.c)) /
+                                    Number(dat.total)
+                                  ).toFixed(0)}
+                                %
+                              </p>
+                              {dat.d && (
+                                <p>
+                                  {dat.d} |{" "}
+                                  {dat.total === 0
+                                    ? 0
+                                    : (
+                                      (100 * Number(dat.d)) /
+                                      Number(dat.total)
+                                    ).toFixed(0)}
+                                  %
+                                </p>
+                              )}
+                            </div>
+                            <div className={styles.answerContainer}>
+                              respuesta:
+                              <span className={styles.answerText}>
+                                {preguntasRespuestas[Number(index)]?.respuesta}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className={styles.answerContainer}>
-                          respuesta:
-                          <span className={styles.answerText}>
-                            {preguntasRespuestas[Number(index)]?.respuesta}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })
+
+                }
               </div>
             </div>
           </div>

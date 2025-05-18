@@ -107,10 +107,10 @@ const Reportes = () => {
   };
 
   useEffect(() => {
-    estudiantesQueDieronExamen(
+    /* estudiantesQueDieronExamen(
       `${route.query.idExamen}`,
       `${currentUserData.dni}`
-    );
+    ); */
     getPreguntasRespuestas(`${route.query.idExamen}`);
   }, [route.query.idExamen, currentUserData.dni]);
   const options = {
@@ -169,14 +169,14 @@ const Reportes = () => {
   console.log('estudiantes', estudiantes)
   return (
     <>
-      {showDeleteEstudiante && (
+      {/* {showDeleteEstudiante && (
         <DeleteEstudiante
           estudiantes={estudiantes}
           idExamen={`${route.query.idExamen}`}
           idEstudiante={idEstudiante}
           handleShowModalDelete={handleShowModalDelete}
         />
-      )}
+      )} */}
       {loaderReporteDirector ? (
         <div className="grid grid-rows-loader">
           <div className="flex justify-center items-center">

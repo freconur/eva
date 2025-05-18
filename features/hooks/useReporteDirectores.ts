@@ -1,23 +1,153 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   getFirestore,
   query,
   setDoc,
   where,
 } from "firebase/firestore";
-import { DataEstadisticas, Region, UserEstudiante } from "../types/types";
+import { DataEstadisticas, Region, User, UserEstudiante } from "../types/types";
 import {
   useGlobalContext,
   useGlobalContextDispatch,
 } from "../context/GlolbalContext";
 import { AppAction } from "../actions/appAction";
-
+import { currentMonth, currentYear, } from "@/fuctions/dates";
 export const useReporteDirectores = () => {
   const dispatch = useGlobalContextDispatch();
   const { currentUserData } = useGlobalContext();
   const db = getFirestore();
+
+
+  //dataFiltradaDirectorTabla, esta es la constate que contiene los datos de los estudiantes que se van a mostrar en la tabla
+
+  const getAllEvaluacionesDeEstudiantes = async (idEvaluacion: string, month: number) => {
+    try {
+      console.log('month', month)
+      const q = query(collection(db, "usuarios"), where("dniDirector", "==", `${currentUserData.dni}`));
+      const querySnapshot = await getDocs(q);
+
+      const docentesDelDirector: string[] = [];
+      querySnapshot.forEach((doc) => {
+        docentesDelDirector.push(doc.id);
+      });
+      // Convertimos el forEach en un array de promesas
+      const promesasEvaluaciones = docentesDelDirector.map(async (docente) => {
+        const pathRefEstudiantes = collection(db, `/usuarios/${docente}/${idEvaluacion}/${currentYear}/${month}`);
+        const snapshot = await getDocs(pathRefEstudiantes);
+        const evaluacionesDocente: UserEstudiante[] = [];
+
+        snapshot.forEach(doc => {
+          evaluacionesDocente.push(doc.data() as UserEstudiante);
+        });
+
+        return evaluacionesDocente;
+      });
+
+      // Esperamos a que todas las promesas se resuelvan
+      const resultadosEvaluaciones = await Promise.all(promesasEvaluaciones);
+
+      // Aplanamos el array de arrays en un solo array
+      const todasLasEvaluaciones = resultadosEvaluaciones.flat();
+      console.log('todasLasEvaluaciones', todasLasEvaluaciones)
+      if (todasLasEvaluaciones.length === 0) {
+        dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, payload: [] });
+        dispatch({ type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR, payload: [] });
+        return [];
+      }
+
+      dispatch({ type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR, payload: todasLasEvaluaciones });
+      return todasLasEvaluaciones;
+    } catch (error) {
+      console.error("Error en reporteDirectorEstudiantes:", error);
+      throw error;
+    }
+  }
+
+  const reporteDirectorEstudiantes = async (idEvaluacion: string, month: number, currentUserData: User) => {
+    const estudiantes = await getAllEvaluacionesDeEstudiantes(idEvaluacion, month)
+    const acumuladoPorPregunta: Record<string, { id: string, a: number, b: number, c: number, d?: number, total: number }> = {}
+    console.log('estudiantes', estudiantes.length)
+    estudiantes.forEach(estudiante => {
+      if (estudiante.respuestas && Array.isArray(estudiante.respuestas)) {
+        estudiante.respuestas.forEach(respuesta => {
+          const idPregunta = String(respuesta.id)
+          if (!idPregunta) return
+          // Detectar si la alternativa 'd' existe en esta pregunta
+          let tieneD = false
+          if (respuesta.alternativas && Array.isArray(respuesta.alternativas)) {
+            tieneD = respuesta.alternativas.some(alt => alt.alternativa === 'd')
+          }
+          if (!acumuladoPorPregunta[idPregunta]) {
+            acumuladoPorPregunta[idPregunta] = tieneD
+              ? { id: idPregunta, a: 0, b: 0, c: 0, d: 0, total: 0 }
+              : { id: idPregunta, a: 0, b: 0, c: 0, total: 0 }
+          }
+          if (respuesta.alternativas && Array.isArray(respuesta.alternativas)) {
+            respuesta.alternativas.forEach(alternativa => {
+              if (alternativa.selected) {
+                switch (alternativa.alternativa) {
+                  case 'a':
+                    acumuladoPorPregunta[idPregunta].a += 1
+                    break
+                  case 'b':
+                    acumuladoPorPregunta[idPregunta].b += 1
+                    break
+                  case 'c':
+                    acumuladoPorPregunta[idPregunta].c += 1
+                    break
+                  case 'd':
+                    if (typeof acumuladoPorPregunta[idPregunta].d === 'number') {
+                      acumuladoPorPregunta[idPregunta].d! += 1
+                    }
+                    break
+                  default:
+                    break
+                }
+              }
+            })
+          }
+        })
+      }
+    })
+    Object.values(acumuladoPorPregunta).forEach(obj => {
+      obj.total = obj.a + obj.b + obj.c + (typeof obj.d === 'number' ? obj.d : 0)
+    })
+    const resultado = Object.values(acumuladoPorPregunta)
+    console.log('acumulado por pregunta', resultado)
+    /* dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: resultado }) */
+    dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: resultado });
+
+
+    //enviaremos el valor de resultado a la base de datos de los directores
+    //collection    /    documento     /    subcollection  /    documento  /    subcollection  /    documento
+    //evaluaciones  /id de la evaluacion/    año y mes     / todos los directores
+    console.log('currentUserData', currentUserData)
+    const myDirector = await getDoc(doc(db, `usuarios`, `${currentUserData.dni}`))
+    myDirector.exists() && await setDoc(doc(db, `evaluaciones/${idEvaluacion}/${currentYear}-${month}`, `${currentUserData.dni}`), {
+      ...myDirector.data(),
+      reporteEstudiantes: resultado
+    })
+    /* if (currentUserData.dni) {
+      try {
+        // Filtrar propiedades undefined de currentUserData
+        const userDataToSave = Object.fromEntries(
+          Object.entries(currentUserData).filter(([_, value]) => value !== undefined)
+        );
+
+        await setDoc(doc(db, `evaluaciones/${idEvaluacion}/${currentYear}-${month}`, `${currentUserData.dni}`), {
+          ...userDataToSave,
+          reporteEstudiantes: resultado || []
+        });
+      } catch (error) {
+        console.error("Error al guardar el reporte:", error);
+        throw error;
+      }
+    } */
+    return resultado
+  }
 
   const reporteDirectorData = async (
     idDirector: string,
@@ -161,31 +291,21 @@ export const useReporteDirectores = () => {
   }
 
 
-  const reporteToTableDirector = (data: UserEstudiante[], { grado, seccion, orden }: { grado: string, seccion: string, orden: string }, idDirector: string, idEvaluacion: string) => {
-    console.log("orden", orden)
-    const dataFiltrada = data?.reduce((acc, estudiante) => {
-      // Si no hay filtros, retornar todos los datos
-      if (!grado && !seccion) {
-        return data;
+  const reporteToTableDirector = (data: UserEstudiante[], { grado, seccion, orden, genero }: { grado: string, seccion: string, orden: string, genero: string }, idDirector: string, idEvaluacion: string) => {
+    const dataFiltrada = data?.filter(estudiante => {
+      // Si no hay filtros, incluir todos los datos
+      if (!grado && !seccion && !genero) {
+        return true;
       }
 
-      // Filtrar por grado si está presente
-      if (grado && estudiante.grado?.toString() === grado) {
-        // Si también hay sección, filtrar por ambas
-        if (seccion && estudiante.seccion?.toString() === seccion) {
-          acc.push(estudiante);
-        }
-        // Si no hay sección, incluir todos los del grado
-        else if (!seccion) {
-          acc.push(estudiante);
-        }
-      }
-      // Si solo hay sección y no grado
-      else if (!grado && seccion && estudiante.seccion?.toString() === seccion) {
-        acc.push(estudiante);
-      }
-      return acc; 
-    }, [] as UserEstudiante[]);
+      // Verificar cada filtro individualmente
+      const cumpleGrado = !grado || estudiante.grado?.toString() === grado;
+      const cumpleSeccion = !seccion || estudiante.seccion?.toString() === seccion;
+      const cumpleGenero = !genero || estudiante.genero?.toString() === genero;
+
+      // El estudiante debe cumplir con todos los filtros activos
+      return cumpleGrado && cumpleSeccion && cumpleGenero;
+    });
 
     // Ordenar los datos según el parámetro orden
     let dataOrdenada = [...dataFiltrada];
@@ -675,5 +795,6 @@ export const useReporteDirectores = () => {
     reporteRegionalGlobal,
     resetReporteGlobal,
     reporteToTableDirector,
+    reporteDirectorEstudiantes
   };
 };
