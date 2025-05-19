@@ -21,8 +21,11 @@ import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores
 import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes'
 import Image from 'next/image'
 import styles from './styles.module.css'
-import { gradosDeColegio, sectionByGrade, ordernarAscDsc, niveles } from '@/fuctions/regiones'
+import { gradosDeColegio, sectionByGrade, ordernarAscDsc, niveles, area, caracteristicasDirectivo, genero } from '@/fuctions/regiones'
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista'
+import { useReporteEspecialistas } from '@/features/hooks/useReporteEspecialistas'
+import { currentMonth, getAllMonths } from '@/fuctions/dates'
+import { distritosPuno } from '@/fuctions/provinciasPuno'
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -38,15 +41,17 @@ const Reportes = () => {
   const route = useRouter()
   const { currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages,  getPreguntaRespuestaDocentes, dataEvaluacionDocente, allEvaluacionesDirectorDocente, dataFiltradaDirectorDocenteTabla } = useGlobalContext()
   const { reporteEvaluacionDocentes, getPreguntasRespuestasDocentes, getDataEvaluacion, reporteTablaEvaluacionDirectorDocente, resetReporteTabla } = UseEvaluacionDocentes()
-
+ const { reporteEspecialistaDeDocente, reporteFiltrosEspecialistaDirectores } = useReporteEspecialistas()
   const [filtros, setFiltros] = useState({
-    grado: '',
-    seccion: '',
-    orden: ''
+    area: '',
+    distrito: '',
+    orden: '',
+    genero: '',
+    caracteristicaCurricular: ''
   });
 
   const [activePopover, setActivePopover] = useState<string | null>(null);
-
+  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth)
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFiltros({
       ...filtros,
@@ -107,22 +112,21 @@ const Reportes = () => {
   }
   const handleFiltros = () => {
     console.log('test')
-    reporteTablaEvaluacionDirectorDocente(allEvaluacionesDirectorDocente, filtros)
+    reporteFiltrosEspecialistaDirectores(allEvaluacionesDirectorDocente, filtros)
   }
+ const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  setSelectedMonth(Number(e.target.value))
+ }
   useEffect(() => {
     getDataEvaluacion(`${route.query.idEvaluacion}`);
-    reporteEvaluacionDocentes(`${route.query.idEvaluacion}`);
+    reporteEspecialistaDeDocente(`${route.query.idEvaluacion}`,currentMonth);
     getPreguntasRespuestasDocentes(`${route.query.idEvaluacion}`)
   }, [route.query.idEvaluacion, currentUserData.dni])
 
-  useEffect(() => {
-    if (filtros.grado || filtros.seccion || filtros.orden) {
-      console.log('Filtros aplicados:', filtros);
-    }
-  }, [filtros]);
+ 
 useEffect(() => {
-  resetReporteTabla()
-},[])
+  reporteEspecialistaDeDocente(`${route.query.idEvaluacion}`, selectedMonth)
+},[selectedMonth])
   const getBackgroundColor = (value: number) => {
     switch (value) {
       case 1:
@@ -169,38 +173,62 @@ useEffect(() => {
               <div className={styles.tableSection}>
                 <div>
                   <div className={styles.filtersContainer}>
-                    <select
-                      name="grado"
+                    <select 
+                    onChange={handleChangeMonth}
+                    className={styles.select}>
+                      <option value="">Mes</option>
+                      {
+                        getAllMonths.slice(0, currentMonth + 1).map((mes, index) => (
+                          <option key={index} value={mes.id}>{mes.name}</option>
+                        ))
+                      }
+                    </select>
+                  </div>
+                  <div className={styles.filtersContainer}>
+                  <select
+                      name="distrito"
                       className={styles.select}
                       onChange={handleChangeFiltros}
-                      value={filtros.grado}
+                      value={filtros.distrito}
                     >
-                      <option value="">Seleccionar Grado</option>
-                      {gradosDeColegio.map((grado, index) => (
-                        <option key={index} value={grado.id}>{grado.name}</option>
-                      ))}
+                      <option value="">Distrito</option>
+                      {
+                      distritosPuno.find((distrito) => distrito?.id === currentUserData.region)?.distritos.map((distrito, index) => (
+                        <option key={index} value={distrito}>{distrito}</option>
+                      ))
+                      }
                     </select>
 
                     <select
-                      name="seccion"
+                      name="area"
                       className={styles.select}
                       onChange={handleChangeFiltros}
-                      value={filtros.seccion}
+                      value={filtros.area}
                     >
-                      <option value="">Seleccionar Sección</option>
-                      {sectionByGrade.map((seccion, index) => (
-                        <option key={index} value={seccion.id}>{seccion.name}</option>
+                      <option value="">área</option>
+                      {area.map((opcion, index) => (
+                        <option key={index} value={opcion.id}>{opcion.name}</option>
                       ))}
                     </select>
-
                     <select
-                      name="orden"
+                      name="caracteristicaCurricular"
                       className={styles.select}
                       onChange={handleChangeFiltros}
-                      value={filtros.orden}
+                      value={filtros.caracteristicaCurricular}
                     >
-                      <option value="">Ordenar por</option>
-                      {ordernarAscDsc.map((opcion, index) => (
+                      <option value="">Caracteristica</option>
+                      {caracteristicasDirectivo.map((opcion, index) => (
+                        <option key={index} value={opcion.name}>{opcion.name}</option>
+                      ))}
+                    </select>
+                    <select
+                      name="genero"
+                      className={styles.select}
+                      onChange={handleChangeFiltros}
+                      value={filtros.genero}
+                    >
+                      <option value="">Genero</option>
+                      {genero.map((opcion, index) => (
                         <option key={index} value={opcion.id}>{opcion.name}</option>
                       ))}
                     </select>

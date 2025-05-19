@@ -258,6 +258,7 @@ export type User = {
   rolDirectivo?:number,
   tipoEspecialista?:number,
   reporteEstudiantes?: DataEstadisticas[]
+  resultados?:DataEstadisticas[]
 };
 
 export type DataEstadisticas = {

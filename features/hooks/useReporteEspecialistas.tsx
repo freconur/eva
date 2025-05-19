@@ -33,7 +33,64 @@ export const useReporteEspecialistas = () => {
     dispatch({ type: AppAction.ALL_EVALUACIONES_ESTUDIANTES, payload: docentesDelDirector });
     return docentesDelDirector;
   }
+  const getAllReporteDeDirectoresToDocentes = async (idEvaluacion: string,month:number) => {
+    const pathRef = collection(db, `/evaluaciones-docentes/${idEvaluacion}/${currentYear}-${month}`)
+    const querySnapshot = await getDocs(pathRef)
 
+    const docentesDelDirector: User[] = [];
+    querySnapshot.forEach((doc) => {
+      docentesDelDirector.push(doc.data() as User);
+    });
+    dispatch({ type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE, payload: docentesDelDirector });
+    console.log('docentesDelDirector', docentesDelDirector)
+    return docentesDelDirector;
+  }
+  const reporteEspecialistaDeDocente = async (idEvaluacion: string, month: number) => {
+    const reporteDeEvaluacionesDocentes = await getAllReporteDeDirectoresToDocentes(idEvaluacion, month)
+    const acumuladoPorPregunta: Record<string, { id: string, a: number, b: number, c: number, d?: number, total: number }> = {}
+    
+    // Si no hay datos, inicializar con valores en cero
+    if (!reporteDeEvaluacionesDocentes || reporteDeEvaluacionesDocentes.length === 0) {
+      dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: [] });
+      return;
+    }
+
+    reporteDeEvaluacionesDocentes.forEach(director => {
+      if (director.resultados && Array.isArray(director.resultados)) {
+        director.resultados.forEach(reporte => {
+          const idPregunta = String(reporte.id)
+          if (!idPregunta) return
+  
+          // Detectar si la alternativa 'd' existe en esta pregunta
+          let tieneD = typeof reporte.d === 'number'
+  
+          if (!acumuladoPorPregunta[idPregunta]) {
+            acumuladoPorPregunta[idPregunta] = tieneD
+              ? { id: idPregunta, a: 0, b: 0, c: 0, d: 0, total: 0 }
+              : { id: idPregunta, a: 0, b: 0, c: 0, total: 0 }
+          }
+  
+          // Acumular valores
+          acumuladoPorPregunta[idPregunta].a += reporte.a || 0
+          acumuladoPorPregunta[idPregunta].b += reporte.b || 0
+          acumuladoPorPregunta[idPregunta].c += reporte.c || 0
+          if (tieneD) {
+            acumuladoPorPregunta[idPregunta].d! += reporte.d || 0
+          }
+        })
+      }
+    })
+  
+    // Calcular totales
+    Object.values(acumuladoPorPregunta).forEach(obj => {
+      obj.total = obj.a + obj.b + obj.c + (typeof obj.d === 'number' ? obj.d : 0)
+    })
+  
+    const resultado = Object.values(acumuladoPorPregunta)
+    console.log('acumulado por pregunta', resultado)
+    
+    dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: resultado });
+  }
   const reporteParaTablaDeEspecialista = (data: User[], { region, area, genero, caracteristicaCurricular, distrito }: { region: string, area: string, genero: string, caracteristicaCurricular: string, distrito: string }, idDirector: string, idEvaluacion: string) => {    
     console.log('data', data)
     
@@ -91,8 +148,65 @@ export const useReporteEspecialistas = () => {
     return dataFiltrada;
   }
   
+  const reporteFiltrosEspecialistaDirectores = (data: User[], { area, genero, caracteristicaCurricular, distrito }: { area: string, genero: string, caracteristicaCurricular: string, distrito: string }) => {
+    console.log('data', data)
+    
+    const dataFiltrada = data?.filter(estudiante => {
+      // Crear un objeto con los filtros que tienen valor
+      const filtrosActivos = {
+        ...(area && { area: String(estudiante.area) === area }),
+        ...(genero && { genero: estudiante.genero === genero }),
+        ...(caracteristicaCurricular && { caracteristicaCurricular: estudiante.caracteristicaCurricular === caracteristicaCurricular }),
+        ...(distrito && { distrito: estudiante.distrito === distrito })
+      };
+
+      // Si no hay filtros activos, retornar true para incluir todos los estudiantes
+      if (Object.keys(filtrosActivos).length === 0) return true;
+
+      // Verificar que todos los filtros activos sean verdaderos
+      return Object.values(filtrosActivos).every(filtro => filtro === true);
+    });
+
+    const acumuladoPorPregunta: Record<string, { id: string, a: number, b: number, c: number, d?: number, total: number }> = {}
+    
+    dataFiltrada.forEach(director => {
+      if (director.resultados && Array.isArray(director.resultados)) {
+        director.resultados.forEach(reporte => {
+          const idPregunta = String(reporte.id)
+          if (!idPregunta) return
+  
+          // Detectar si la alternativa 'd' existe en esta pregunta
+          let tieneD = typeof reporte.d === 'number'
+  
+          if (!acumuladoPorPregunta[idPregunta]) {
+            acumuladoPorPregunta[idPregunta] = tieneD
+              ? { id: idPregunta, a: 0, b: 0, c: 0, d: 0, total: 0 }
+              : { id: idPregunta, a: 0, b: 0, c: 0, total: 0 }
+          }
+  
+          // Acumular valores
+          acumuladoPorPregunta[idPregunta].a += reporte.a || 0
+          acumuladoPorPregunta[idPregunta].b += reporte.b || 0
+          acumuladoPorPregunta[idPregunta].c += reporte.c || 0
+          if (tieneD) {
+            acumuladoPorPregunta[idPregunta].d! += reporte.d || 0
+          }
+        })
+      }
+    })
+  
+    // Calcular totales
+    Object.values(acumuladoPorPregunta).forEach(obj => {
+      obj.total = obj.a + obj.b + obj.c + (typeof obj.d === 'number' ? obj.d : 0)
+    })
+  
+    const resultado = Object.values(acumuladoPorPregunta)
+    console.log('acumulado por pregunta', resultado)
+    dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: resultado });
+    return dataFiltrada;
+  }
 const reporteEspecialistaDeEstudiantes = async (idEvaluacion: string, month: number, currentUserData: User) => {
-  const reporteDeEstudiantes = await getAllReporteDeDirectores(idEvaluacion, month)
+  const reporteDeEstudiantes = await getAllReporteDeDirectoresToDocentes(idEvaluacion, month)
   console.log('reporteDeEstudiantes', reporteDeEstudiantes)
 
   const acumuladoPorPregunta: Record<string, { id: string, a: number, b: number, c: number, d?: number, total: number }> = {}
@@ -131,24 +245,14 @@ const reporteEspecialistaDeEstudiantes = async (idEvaluacion: string, month: num
   const resultado = Object.values(acumuladoPorPregunta)
   console.log('acumulado por pregunta', resultado)
   dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: resultado });
-  // Guardar el resultado en la base de datos
-  /* if (currentUserData.dni) {
-    try {
-      await setDoc(doc(db, `evaluaciones/${idEvaluacion}/${currentYear}-${month}`, `${currentUserData.dni}`), {
-        ...currentUserData,
-        reporteEstudiantes: resultado
-      })
-    } catch (error) {
-      console.error("Error al guardar el reporte:", error)
-      throw error
-    }
-  } */
-
   return resultado
 }
   return {
     getAllReporteDeDirectores,
     reporteParaTablaDeEspecialista,
-    reporteEspecialistaDeEstudiantes
+    reporteEspecialistaDeEstudiantes,
+    getAllReporteDeDirectoresToDocentes,
+    reporteEspecialistaDeDocente,
+    reporteFiltrosEspecialistaDirectores
   }
 }

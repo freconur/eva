@@ -98,7 +98,11 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   margin-bottom: 1.5rem;
 }
-
+.selectMonthContainer {
+  display:flex;
+  gap:1rem;;
+  justify-content: end;
+}
 .select {
   padding: 0.75rem 1rem;
   border: 1px solid #e2e8f0;
@@ -209,11 +213,23 @@
 }
 
 .chartWrapper {
-  display: grid;
-  justify-content: center;
-  align-items: center;
-  width: 500px;
-  margin: 0 auto;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 20px 0;
+  transition: all 0.3s ease;
+}
+
+.chartWrapper:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 768px) {
+  .chartWrapper {
+    padding: 10px;
+    margin: 10px 0;
+  }
 }
 
 .statsContainer {

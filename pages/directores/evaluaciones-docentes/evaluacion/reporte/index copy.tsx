@@ -42,14 +42,14 @@ const Reportes = () => {
 
   const [filtros, setFiltros] = useState({
     genero: '',
-    grado: '',
-    seccion: '',
-    orden: ''
+    distrito: '',
+    region: '',
+    caracteristicaCurricular: '',
+    area: ''
   });
 
   const [activePopover, setActivePopover] = useState<string | null>(null);
   const [monthSelected, setMonthSelected] = useState<number>(currentMonth)
-  const [order, setOrder] = useState<string>('')
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFiltros({
       ...filtros,
@@ -155,7 +155,6 @@ const Reportes = () => {
     }
   };
 
-  
   const iterarPregunta = (index: string) => {
     return (
       <h3 className={styles.sectionTitle}>
@@ -167,7 +166,7 @@ const Reportes = () => {
   }
   const handleFiltros = () => {
     console.log('test')
-    reporteTablaEvaluacionDirectorDocente(allEvaluacionesDirectorDocente, filtros)
+    /* reporteTablaEvaluacionDirectorDocente(allEvaluacionesDirectorDocente, filtros) */
   }
   useEffect(() => {
     getDataEvaluacion(`${route.query.idEvaluacion}`);
@@ -178,7 +177,7 @@ const Reportes = () => {
 
   useEffect(() => {
     /* if (filtros.grado || filtros.seccion || filtros.orden) { */
-      if (filtros.genero || filtros.grado || filtros.seccion ) {
+      if (filtros.genero || filtros.distrito || filtros.region || filtros.caracteristicaCurricular || filtros.area) {
       console.log('Filtros aplicados:', filtros);
     }
   }, [filtros]);
@@ -205,8 +204,6 @@ const handleMonthSelected = (e: React.ChangeEvent<HTMLSelectElement>) => {
 useEffect(() => {
   reporteEvaluacionDocentesTest(`${route.query.idEvaluacion}`,monthSelected)
 },[monthSelected])
-
-
   return (
     <>
       {
@@ -238,7 +235,6 @@ useEffect(() => {
               <div className={styles.tableSection}>
                 <div>
                   <div className={styles.selectMonthContainer}>
-                    
                     <select 
                     onChange={handleMonthSelected}
                     className={`${styles.select} ${styles.selectMonth}`}
@@ -263,31 +259,31 @@ useEffect(() => {
                     </select> */}
 
                     <select
-                      name="grado"
+                      name="distrito"
                       className={styles.select}
                       onChange={handleChangeFiltros}
-                      value={filtros.grado}
+                      value={filtros.distrito}
                     >
-                      <option value="">Grado</option>
+                      <option value="">Distrito</option>
                       {
-                      gradosDeColegio.map((grado, index) => (
-                        <option key={index} value={grado.id}>{grado.name}</option>
+                      distritosPuno.find((distrito) => distrito?.id === currentUserData.region)?.distritos.map((distrito, index) => (
+                        <option key={index} value={distrito}>{distrito}</option>
                       ))
                       }
                     </select>
 
                     <select
-                      name="seccion"
+                      name="area"
                       className={styles.select}
                       onChange={handleChangeFiltros}
-                      value={filtros.seccion}
+                      value={filtros.area}
                     >
-                      <option value="">Sección</option>
-                      {sectionByGrade.map((seccion, index) => (
-                        <option key={index} value={seccion.id}>{seccion.name}</option>
+                      <option value="">área</option>
+                      {area.map((opcion, index) => (
+                        <option key={index} value={opcion.id}>{opcion.name}</option>
                       ))}
                     </select>
-                   {/*  <select
+                    <select
                       name="caracteristicaCurricular"
                       className={styles.select}
                       onChange={handleChangeFiltros}
@@ -297,7 +293,7 @@ useEffect(() => {
                       {caracteristicasDirectivo.map((opcion, index) => (
                         <option key={index} value={opcion.id}>{opcion.name}</option>
                       ))}
-                    </select> */}
+                    </select>
                     <select
                       name="genero"
                       className={styles.select}
@@ -308,19 +304,6 @@ useEffect(() => {
                       {genero.map((opcion, index) => (
                         <option key={index} value={opcion.id}>{opcion.name}</option>
                       ))}
-                    </select>
-                    <select 
-                    name="orden"
-                    onChange={handleChangeFiltros}
-                    className={`${styles.select} ${styles.selectMonth}`}
-                    value={filtros.orden}
-                    >
-                      <option value="">Ordenar por puntaje</option>
-                      {
-                        ordernarAscDsc.map((order, index) => (
-                          <option key={index} value={order.id}>{order.name}</option>
-                        ))
-                      }
                     </select>
                     <button className={styles.filterButton} onClick={handleFiltros}>Filtrar</button>
                   </div>

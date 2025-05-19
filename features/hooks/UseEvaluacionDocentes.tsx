@@ -5,6 +5,7 @@ import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalCo
 import { AppAction } from '../actions/appAction';
 import { } from 'firebase/firestore/lite';
 import { useRouter } from 'next/router';
+import { currentMonth, currentYear } from '@/fuctions/dates';
 
 const UseEvaluacionDocentes = () => {
   const dispatch = useGlobalContextDispatch()
@@ -17,7 +18,7 @@ const UseEvaluacionDocentes = () => {
 
   const getDataEvaluacion = (idEvaluacion: string) => {
     dispatch({ type: AppAction.EVALUACIONES_DOCENTES, payload: [] })
-    const q = query(collection(db, "/evaluaciones-docentes"), orderBy("order","asc"))
+    const q = query(collection(db, "/evaluaciones-docentes"), orderBy("order", "asc"))
     onSnapshot(doc(db, "/evaluaciones-docentes", idEvaluacion), (doc) => {
       if (doc.exists()) {
         dispatch({ type: AppAction.DATA_EVALUACION_DOCENTE, payload: doc.data() })
@@ -36,7 +37,6 @@ const UseEvaluacionDocentes = () => {
     onSnapshot(collection(db, "/evaluaciones-docentes"), (querySnapshot) => {
       const arrayEvaluaciones: CrearEvaluacionDocente[] = [];
       querySnapshot.forEach((doc) => {
-        console.log(doc.data())
         arrayEvaluaciones.push({ ...doc.data(), id: doc.id });
       });
       dispatch({ type: AppAction.EVALUACIONES_DOCENTES, payload: arrayEvaluaciones })
@@ -71,7 +71,7 @@ const UseEvaluacionDocentes = () => {
     dispatch({ type: AppAction.GET_PREGUNTA_RESPUESTA_DOCENTE, payload: [] })
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     const path = `/evaluaciones-docentes/${idEvaluacion}/preguntasRespuestas`
-    const q = query(collection(db, path), orderBy("order","asc"))
+    const q = query(collection(db, path), orderBy("order", "asc"))
     onSnapshot(q, (querySnapshot) => {
       const arrayPreguntaRespuestaDocentes: PreviewPRDocentes[] = []
       querySnapshot.forEach((doc) => {
@@ -95,7 +95,6 @@ const UseEvaluacionDocentes = () => {
 
     if (docSnap.exists()) {
       if (docSnap.data().dniDirector === currentUserData.dni) {
-        console.log('pertenece a la institucion')
         dispatch({ type: AppAction.DATA_DOCENTE, payload: docSnap.data() })
       } else {
         dispatch({ type: AppAction.DATA_DOCENTE, payload: {} })
@@ -118,7 +117,7 @@ const UseEvaluacionDocentes = () => {
       dispatch({ type: AppAction.DATA_DOCENTE, payload: {} })
       dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: "no se encontro docente con el numero de dni" })
     }
-    
+
   }
   const buscarDirector = async (dni: string) => {
     dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: "" })
@@ -127,7 +126,6 @@ const UseEvaluacionDocentes = () => {
 
     if (docSnap.exists()) {
       if (docSnap.data().rol === 2) {
-        console.log('es un director')
         dispatch({ type: AppAction.DATA_DIRECTOR, payload: docSnap.data() })
       } else {
         dispatch({ type: AppAction.DATA_DIRECTOR, payload: {} })
@@ -141,35 +139,30 @@ const UseEvaluacionDocentes = () => {
   const buscarDocenteReporteDeEvaluacion = async (idEvaluacion: string, idDocente: string) => {
     `/usuarios/49163626/KtOATuI2gOKH80n1R6yt/88490965`
     if (idEvaluacion.length > 0 && idDocente.length > 0) {
-      console.log('cumplimos condicion')
-      const path = doc(db, `/usuarios/${currentUserData?.dni}/${idEvaluacion}`, idDocente)
+      const path = doc(db, `/usuarios/${currentUserData?.dni}/${idEvaluacion}/${currentYear}/${currentMonth}`, idDocente)
       // const docRef = doc(db, path, `${idDocente}`);
       await getDoc(path)
         .then(response => {
           if (response.exists()) {
-            console.log('response.data()', response.data())
             dispatch({ type: AppAction.REPORTE_INDIVIDUAL_DOCENTE, payload: response.data() })
           }
         })
     }
   }
 
-  const buscarDocenteReporteEvaluacionToEspecilista = async (idEvaluacion: string, dataDocente:User) => {
-    console.log('dataDocente', dataDocente)
-   /*  if (idEvaluacion.length > 0 && dataDocente.dni.length > 0) { */
-      console.log('cumplimos condicion')
-      const path = doc(db, `/usuarios/${dataDocente.dniDirector}/${idEvaluacion}`, `${dataDocente.dni}`)
-      // const docRef = doc(db, path, `${idDocente}`);
-      await getDoc(path)
-        .then(response => {
-          if (response.exists()) {
-            console.log('response.data()', response.data())
-            dispatch({ type: AppAction.REPORTE_INDIVIDUAL_DOCENTE, payload: response.data() })
-          }
-        })
+  const buscarDocenteReporteEvaluacionToEspecilista = async (idEvaluacion: string, dataDocente: User) => {
+    /*  if (idEvaluacion.length > 0 && dataDocente.dni.length > 0) { */
+    const path = doc(db, `/usuarios/${dataDocente.dniDirector}/${idEvaluacion}`, `${dataDocente.dni}`)
+    // const docRef = doc(db, path, `${idDocente}`);
+    await getDoc(path)
+      .then(response => {
+        if (response.exists()) {
+          dispatch({ type: AppAction.REPORTE_INDIVIDUAL_DOCENTE, payload: response.data() })
+        }
+      })
     /* } */
   }
-  const getDataEvaluacionMediacionDirector = async (idEvaluacion:string) => {
+  const getDataEvaluacionMediacionDirector = async (idEvaluacion: string) => {
     const path = doc(db, `/evaluaciones-docentes`, idEvaluacion)
     await getDoc(path)
       .then(response => {
@@ -205,18 +198,19 @@ const UseEvaluacionDocentes = () => {
       })
     }
 
-    const path = `/usuarios/${dataDocente.dniDirector}/${idEvaluacion}/`
-    await setDoc(doc(db, path, `${dataDocente.dni}`), { 
-      observacionesMonitoreo: {}, 
-      resultados: data, 
-      dni: dataDocente.dni, 
-      dniDirector: currentUserData.dni, 
-      calificacion: totalPuntos, 
-      info: dataDocente })
-    .then(() => {
-      dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
-      router.push(`/directores/evaluaciones-docentes/evaluacion/reporte-docente-individual?idDocente=${dataDocente.dni}&idEvaluacion=${idEvaluacion}`)
+    const path = `/usuarios/${dataDocente.dniDirector}/${idEvaluacion}/${currentYear}/${currentMonth}`
+    await setDoc(doc(db, path, `${dataDocente.dni}`), {
+      observacionesMonitoreo: {},
+      resultados: data,
+      dni: dataDocente.dni,
+      dniDirector: currentUserData.dni,
+      calificacion: totalPuntos,
+      info: dataDocente
     })
+      .then(() => {
+        dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+        router.push(`/directores/evaluaciones-docentes/evaluacion/reporte-docente-individual?idDocente=${dataDocente.dni}&idEvaluacion=${idEvaluacion}`)
+      })
     //AGREGANDO RESULTADOS DE LA EVALUACION DEL DOCENTE
   }
 
@@ -236,18 +230,19 @@ const UseEvaluacionDocentes = () => {
       })
     }
 
-    const path = `/usuarios/${dataDocente.dniDirector}/${idEvaluacion}/`
-    await setDoc(doc(db, path, `${dataDocente.dni}`), { 
-      observacionesMonitoreo: {}, 
-      resultados: data, 
-      dni: dataDocente.dni, 
-      dniDirector: dataDocente.dniDirector, 
-      calificacion: totalPuntos, 
-      info: dataDocente })
-    .then(() => {
-      router.push(`/especialistas/evaluaciones-docentes/evaluacion/reporte-docente-individual?idDocente=${dataDocente.dni}&idEvaluacion=${idEvaluacion}`)
-      dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+    const path = `/usuarios/${dataDocente.dniDirector}/${idEvaluacion}`
+    await setDoc(doc(db, path, `${dataDocente.dni}`), {
+      observacionesMonitoreo: {},
+      resultados: data,
+      dni: dataDocente.dni,
+      dniDirector: dataDocente.dniDirector,
+      calificacion: totalPuntos,
+      info: dataDocente
     })
+      .then(() => {
+        router.push(`/especialistas/evaluaciones-docentes/evaluacion/reporte-docente-individual?idDocente=${dataDocente.dni}&idEvaluacion=${idEvaluacion}`)
+        dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+      })
   }
   const reporteEvaluacionDocenteAdmin = (idEvaluacion: string, dniDirector: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
@@ -263,9 +258,6 @@ const UseEvaluacionDocentes = () => {
             let index = 0
             response.forEach((doc) => {
               index = index + 1
-              console.log('index', index)
-              console.log('response.size', response.size)
-              // doc.data() is never undefined for query doc snapshots
               arrayDataEstadisticas.push({
                 ...doc.data(),
                 id: doc.id,
@@ -291,46 +283,222 @@ const UseEvaluacionDocentes = () => {
   const resetReporteTabla = () => {
     dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA, payload: [] })
   }
-  const reporteTablaEvaluacionDirectorDocente = (data: ReporteDocenteIndividual[], { grado, seccion, orden }: { grado: string, seccion: string, orden: string }) => {
-    
-    const dataFiltrada = data?.reduce((acc, docente) => {
-      console.log('estoy dentro del reduce')
-      // Si no hay filtros, retornar todos los datos
+  const getDocentesDelDirector = async (idEvaluacion: string, month: number) => {
+    const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${month}`
+    const docentesDelDirectorarray: ReporteDocenteIndividual[] = []
+    const getDocenterIdRef = collection(db, path)
+    const docentesDelDirector = await getDocs(getDocenterIdRef)
+    docentesDelDirector.forEach(doc => {
+      docentesDelDirectorarray.push(doc.data())
+    })
+    return docentesDelDirectorarray
+  }
+  const reporteTablaEvaluacionEspecialistaDocente = (data: ReporteDocenteIndividual[], { genero, grado, seccion, order }: { genero: string, grado: string, seccion: string, order: string }) => {
+    console.log('Filtros recibidos:', { genero, grado, seccion, order });
+
+    const dataFiltrada = data?.filter(docente => {
+      // Si no hay filtros activos, incluir todos los docentes
+      if (!genero && !grado && !seccion) {
+        return true;
+      }
+
+      // Aplicar filtros solo si están definidos
+      const cumpleGenero = !genero || docente.info?.genero?.toString() === genero;
+
+      // Verificar si el docente tiene los arrays de grados y secciones
+      const tieneGrados = Array.isArray(docente.info?.grados);
+      const tieneSecciones = Array.isArray(docente.info?.secciones);
+
+      // Filtrar por grado y sección solo si existen los arrays
+      const cumpleGrado = !grado || (tieneGrados && docente.info?.grados?.includes(Number(grado)));
+      const cumpleSeccion = !seccion || (tieneSecciones && docente.info?.secciones?.includes(Number(seccion)));
+
+      // El docente debe cumplir todos los filtros activos
+      const cumpleFiltros = cumpleGenero && cumpleGrado && cumpleSeccion;
+
+      if (cumpleFiltros) {
+        console.log('Docente cumple filtros:', {
+          nombre: docente.info?.nombres,
+          grados: docente.info?.grados,
+          secciones: docente.info?.secciones
+        });
+      }
+
+      return cumpleFiltros;
+    });
+
+    // Aplicar ordenamiento si se especifica
+    let dataOrdenada = [...dataFiltrada];
+    if (order) {
+      dataOrdenada.sort((a, b) => {
+        const calificacionA = Number(a.calificacion) || 0;
+        const calificacionB = Number(b.calificacion) || 0;
+
+        if (order === "1") { // Ascendente
+          return calificacionA - calificacionB;
+        } else if (order === "2") { // Descendente
+          return calificacionB - calificacionA;
+        }
+        return 0;
+      });
+    }
+
+    console.log('Datos ordenados:', dataOrdenada.map(d => ({ nombre: d.info?.nombres, calificacion: d.calificacion })));
+    dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA, payload: dataOrdenada });
+    convertDataEstadisticasYGraficos(dataOrdenada);
+  }
+  const reporteTablaEvaluacionDirectorDocente = (data: ReporteDocenteIndividual[], { grado, seccion, orden, genero }: { grado: string, seccion: string, orden: string, genero: string }) => {
+    console.log('Filtros recibidos:', { grado, seccion, orden, genero });
+
+    const dataFiltrada = data?.filter(docente => {
+      // Si no hay filtros activos, incluir todos los docentes
       if (!grado && !seccion) {
-        return data;
+        return true;
       }
 
-      // Filtrar por grado si está presente
-      if (grado && Array.isArray(docente.info?.grados)) {
-        const tieneGrado = docente.info.grados.some(g => g.toString() === grado);
-        if (tieneGrado) {
-          // Si también hay sección, filtrar por ambas
-          if (seccion && Array.isArray(docente.info?.secciones)) {
-            const tieneSeccion = docente.info.secciones.some(s => s.toString() === seccion);
-            if (tieneSeccion) {
-              acc.push(docente);
-            }
-          }
-          // Si no hay sección, incluir todos los del grado
-          else if (!seccion) {
-            acc.push(docente);
-          }
-        }
-      }
-      // Si solo hay sección y no grado
-      else if (!grado && seccion && Array.isArray(docente.info?.secciones)) {
-        const tieneSeccion = docente.info.secciones.some(s => s.toString() === seccion);
-        if (tieneSeccion) {
-          acc.push(docente);
-        }
-      }
-      return acc; 
-    }, [] as ReporteDocenteIndividual[]);
+      // Verificar si el docente tiene los arrays de grados y secciones
+      const tieneGrados = Array.isArray(docente.info?.grados);
+      const tieneSecciones = Array.isArray(docente.info?.secciones);
 
-    
-    console.log('dataFiltrada',dataFiltrada)
-    dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA, payload: dataFiltrada })
-    
+      // Filtrar por grado y sección solo si existen los arrays
+      const cumpleGrado = !grado || (tieneGrados && docente.info?.grados?.includes(Number(grado)));
+      const cumpleSeccion = !seccion || (tieneSecciones && docente.info?.secciones?.includes(Number(seccion)));
+
+      // El docente debe cumplir todos los filtros activos
+      const cumpleFiltros = cumpleGrado && cumpleSeccion;
+
+      if (cumpleFiltros) {
+        console.log('Docente cumple filtros:', {
+          nombre: docente.info?.nombres,
+          grados: docente.info?.grados,
+          secciones: docente.info?.secciones
+        });
+      }
+
+      return cumpleFiltros;
+    });
+
+    // Aplicar ordenamiento si se especifica
+    let dataOrdenada = [...dataFiltrada];
+    if (orden) {
+      dataOrdenada.sort((a, b) => {
+        const calificacionA = Number(a.calificacion) || 0;
+        const calificacionB = Number(b.calificacion) || 0;
+
+        if (orden === "1") { // Ascendente
+          return calificacionA - calificacionB;
+        } else if (orden === "2") { // Descendente
+          return calificacionB - calificacionA;
+        }
+        return 0;
+      });
+    }
+
+    console.log('Datos ordenados:', dataOrdenada.map(d => ({ nombre: d.info?.nombres, calificacion: d.calificacion })));
+    dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA, payload: dataOrdenada });
+    convertDataEstadisticasYGraficos(dataOrdenada);
+  }
+
+
+  const reporteEvaluacionDocentesTest = async (idEvaluacion: string, month: number) => {
+    dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA, payload: [] });
+    const resultadosDocentes = await getDocentesDelDirector(idEvaluacion, month)
+    dispatch({ type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE, payload: resultadosDocentes });
+
+    const estadisticas = resultadosDocentes.reduce((acc, docente) => {
+      docente.resultados?.forEach(respuesta => {
+        if (respuesta.order === undefined) return;
+
+        const orderId = respuesta.order.toString();
+        let estadistica = acc.find(stat => stat.id === orderId);
+
+        if (!estadistica) {
+          estadistica = {
+            id: orderId,
+            a: 0,
+            b: 0,
+            c: 0,
+            d: 0,
+            total: 0
+          };
+          acc.push(estadistica);
+        }
+
+        respuesta.alternativas?.forEach(alternativa => {
+          if (!alternativa.selected) return;
+
+          switch (alternativa.alternativa) {
+            case 'a': estadistica!.a = (estadistica!.a || 0) + 1; break;
+            case 'b': estadistica!.b = (estadistica!.b || 0) + 1; break;
+            case 'c': estadistica!.c = (estadistica!.c || 0) + 1; break;
+            case 'd': estadistica!.d = (estadistica!.d || 0) + 1; break;
+          }
+        });
+
+        const alternativasPresentes = respuesta.alternativas?.some(alt => alt.alternativa === 'd');
+        if (alternativasPresentes) {
+          estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0) + (estadistica!.d || 0);
+        } else {
+          estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0);
+          estadistica!.d = undefined;
+        }
+      });
+      return acc;
+    }, [] as DataEstadisticas[]);
+
+    const refUser = doc(db, "usuarios", `${currentUserData.dni}`);
+    const user = await getDoc(refUser);
+    const path = `evaluaciones-docentes/${idEvaluacion}/${currentYear}-${month}`
+    user.data() && await setDoc(doc(db, path, `${currentUserData.dni}`), {
+      ...user.data(),
+      resultados: estadisticas
+    })
+    dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: estadisticas });
+  }
+  const convertDataEstadisticasYGraficos = (data: ReporteDocenteIndividual[]) => {
+    const estadisticas = data.reduce((acc, docente) => {
+      docente.resultados?.forEach(respuesta => {
+        if (respuesta.order === undefined) return;
+
+        const orderId = respuesta.order.toString();
+        let estadistica = acc.find(stat => stat.id === orderId);
+
+        if (!estadistica) {
+          estadistica = {
+            id: orderId,
+            a: 0,
+            b: 0,
+            c: 0,
+            d: 0,
+            total: 0
+          };
+          acc.push(estadistica);
+        }
+
+        respuesta.alternativas?.forEach(alternativa => {
+          if (!alternativa.selected) return;
+
+          switch (alternativa.alternativa) {
+            case 'a': estadistica!.a = (estadistica!.a || 0) + 1; break;
+            case 'b': estadistica!.b = (estadistica!.b || 0) + 1; break;
+            case 'c': estadistica!.c = (estadistica!.c || 0) + 1; break;
+            case 'd': estadistica!.d = (estadistica!.d || 0) + 1; break;
+          }
+        });
+
+        const alternativasPresentes = respuesta.alternativas?.some(alt => alt.alternativa === 'd');
+        if (alternativasPresentes) {
+          estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0) + (estadistica!.d || 0);
+        } else {
+          estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0);
+          estadistica!.d = undefined;
+        }
+      });
+      return acc;
+    }, [] as DataEstadisticas[]);
+
+    /* dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA, payload: resultadosDocentes }) */
+    dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: estadisticas });
   }
   const reporteEvaluacionDocentes = (idEvaluacion: string) => {
     dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: [] })
@@ -338,7 +506,9 @@ const UseEvaluacionDocentes = () => {
     const refData = collection(db, path)
 
     const docentesDelDirector: ReporteDocenteIndividual[] = []
-    const getDocenterIdRef = collection(db, `usuarios/${currentUserData.dni}/${idEvaluacion}`)
+    const getDocenterIdRef = collection(db, `usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${currentMonth}`)
+
+
     //me traigo a todos los docentes que estan acargo del director
 
     //aqui debemos de validar si existe evaluaciones de los docentes de dicha evalucion
@@ -347,7 +517,7 @@ const UseEvaluacionDocentes = () => {
       async (resolve, reject) => {
         try {
           const docenteSnapshot = await getDocs(getDocenterIdRef);
-          
+
           if (docenteSnapshot.size === 0) {
             dispatch({ type: AppAction.LOADER_PAGES, payload: false });
             /* reject(new Error('No se encontraron docentes')); */
@@ -371,7 +541,6 @@ const UseEvaluacionDocentes = () => {
     );
 
     getDniDocentesDeDirectores.then(async (docentes) => {
-      console.log('docentes', docentes)
       //aqui debo de lanzar un dispatch para tener los datos que van a tener filtros para manejo de la data que se usara en la tabla
       dispatch({ type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE, payload: docentes })
       const dataEstadisticasEstudiantes = docentes.reduce((acc, docente) => {
@@ -423,7 +592,6 @@ const UseEvaluacionDocentes = () => {
   }
   //esta funcion no se esta usando por lo que se esta condiderando borrarlo, ademas tienes unos pequeños fallos, moerarlo.
   const getPRDocentes = async (idEvaluacion: string) => {
-    console.log('rta', idEvaluacion)
     const pethRef = collection(db, `/evaluaciones-docentes/${idEvaluacion}/preguntasRespuestas`)
     const q = query(pethRef, orderBy("order", "asc"));
 
@@ -459,7 +627,6 @@ const UseEvaluacionDocentes = () => {
   const agregarObservacionDocente = async (idEvaluacion: string, idDocente: string, valueObservacion: string) => {
     // `/usuarios/49163626/KtOATuI2gOKH80n1R6yt/88490965`
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
-    console.log('datos:', idEvaluacion, idDocente, valueObservacion)
     const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}`
     const pathRef = doc(db, path, `${idDocente}`)
     await updateDoc(pathRef, {
@@ -512,18 +679,14 @@ const UseEvaluacionDocentes = () => {
           })
         })
       })
-      // console.log('testPromise', testPromise)
       const respuestasDirectores: any = Promise.allSettled(testPromise)
       respuestasDirectores.then((response: DataEstadisticasDocente[]) => {
-        console.log('response', response)
         let arrayAcumulativoDeRespuestas: DataEstadisticasDocente[] = [];
         let index = 0
         response.forEach((resultado: any) => {
           index = index + 1
           if (resultado.value.length > 0) {
-            console.log('entro')
             if (arrayAcumulativoDeRespuestas.length === 0) {
-              // console.log('cuantas v4eces entro')
               const arrayOrdenadoRespuesta: DataEstadisticasDocente[] = [];
               resultado.value.forEach((a: DataEstadisticasDocente) => {
                 arrayOrdenadoRespuesta.push({
@@ -534,7 +697,6 @@ const UseEvaluacionDocentes = () => {
               arrayOrdenadoRespuesta
                 .sort((a: any, b: any) => a.id - b.id)
                 .forEach((a) => arrayAcumulativoDeRespuestas.push(a));
-              // console.log('primera', arrayOrdenadoRespuesta)
             } else {
               const arrayOrdenadoRespuestas: DataEstadisticasDocente[] = [];
               resultado.value.forEach((a: any) => {
@@ -543,7 +705,6 @@ const UseEvaluacionDocentes = () => {
                   total: a.a + a.b + a.c + a.d
                 })
               })
-              // console.log('segunda', arrayOrdenadoRespuestas)
               arrayOrdenadoRespuestas
                 ?.sort((a: any, b: any) => a.id - b.id)
                 .forEach((data) => {
@@ -560,9 +721,6 @@ const UseEvaluacionDocentes = () => {
             }
           }
           if (index === response.length) {
-            // console.log('indexd', index)
-            // console.log('response.length', response.length)
-            // console.log('arrayAcumulativoDeRespuestas', arrayAcumulativoDeRespuestas)
             dispatch({ type: AppAction.REPORTE_REGIONAL, payload: arrayAcumulativoDeRespuestas })
             dispatch({ type: AppAction.LOADER_PAGES, payload: false })
           }
@@ -597,7 +755,10 @@ const UseEvaluacionDocentes = () => {
     getDataEvaluacionMediacionDirector,
     buscarDocenteToEspecialista,
     buscarDocenteReporteEvaluacionToEspecilista,
-    guardarEvaluacionDocenteToEspecialista
+    guardarEvaluacionDocenteToEspecialista,
+    getDocentesDelDirector,
+    reporteEvaluacionDocentesTest,
+    reporteTablaEvaluacionEspecialistaDocente
   }
 
 }
