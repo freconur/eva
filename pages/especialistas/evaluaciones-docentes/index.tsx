@@ -31,7 +31,7 @@ const EvaluacionesDesempeñoDocentes = () => {
   }, [])
 
   return (
-    <div>
+    <div className="animate-fade-in">
       {showDelete && <DeleteEvaluacionDocente handleShowModalDelete={handleShowModalDelete} idEva={idEva} />}
       {showModalCrearEvaluacion && <CrearEvaluacionDocente handleShowModalCrearEvaluacion={handleShowModalCrearEvaluacion} />}
 
@@ -143,6 +143,29 @@ const EvaluacionesDesempeñoDocentes = () => {
       }
     </div>
   )
+}
+
+const animationStyles = `
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+`
+
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style')
+  styleSheet.textContent = animationStyles
+  document.head.appendChild(styleSheet)
 }
 
 export default EvaluacionesDesempeñoDocentes

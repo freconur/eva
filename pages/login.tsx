@@ -11,7 +11,6 @@ import styles from '@/styles/login.module.css'
 
 const initialValue = { usuario: "", contrasena: "" }
 const Login = () => {
-
   const auth = getAuth(app)
   const router = useRouter()
   const { signIn } = useUsuario()
@@ -49,23 +48,17 @@ const Login = () => {
   }
   return (
     <div className={styles.container}>
-      {/* <div className={styles.logoContainer}>
-        <Image
-          alt="logo formativa"
-          src={logo}
-          width={130}
-          height={130}
-        />
-      </div> */}
-     {/*  <div className={styles.backgroundImage}>
-        <Image
-        
-          alt="logo formativa"
-          src={fondoLogin}
-          width={500}
-          height={500}
-        />
-      </div> */}
+      <div className={styles.backgroundShapes}>
+        <div className={`${styles.shape} ${styles.shape1}`}></div>
+        <div className={`${styles.shape} ${styles.shape2}`}></div>
+        <div className={`${styles.shape} ${styles.shape3}`}></div>
+        <div className={`${styles.shape} ${styles.shape4}`}></div>
+        <div className={`${styles.shape} ${styles.shape5}`}></div>
+        <div className={`${styles.outlineShape} ${styles.outlineShape1}`}></div>
+        <div className={`${styles.outlineShape} ${styles.outlineShape2}`}></div>
+        <div className={`${styles.outlineShape} ${styles.outlineShape3}`}></div>
+        <div className={`${styles.outlineShape} ${styles.outlineShape4}`}></div>
+      </div>
       <div className={styles.titleContainer}>
         <h1 className={styles.title}>Competence</h1>
         <h2 className={styles.subtitle}>Sistema de seguimiento del desarrollo de competencias</h2>
