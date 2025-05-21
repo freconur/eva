@@ -17,11 +17,15 @@ import {
 } from 'chart.js';
 import { Bar } from "react-chartjs-2"
 import { RiLoader4Line } from 'react-icons/ri'
+import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores'
 import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes'
 import Image from 'next/image'
-import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
-import { regionTexto } from '@/fuctions/regiones'
-
+import styles from './styles.module.css'
+import { gradosDeColegio, sectionByGrade, ordernarAscDsc, niveles, area, caracteristicasDirectivo, genero, regiones } from '@/fuctions/regiones'
+import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista'
+import { useReporteEspecialistas } from '@/features/hooks/useReporteEspecialistas'
+import { currentMonth, getAllMonths } from '@/fuctions/dates'
+import { distritosPuno } from '@/fuctions/provinciasPuno'
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -32,13 +36,33 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+
 const Reportes = () => {
   const route = useRouter()
-  const { currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages, loaderReporteDirector, getPreguntaRespuestaDocentes, dataEvaluacionDocente, dataDirector } = useGlobalContext()
-  const { reporteEvaluacionDocentes, getPreguntasRespuestasDocentes, getDataEvaluacion, reporteEvaluacionDocenteAdmin } = UseEvaluacionDocentes()
+  const { currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages, getPreguntaRespuestaDocentes, dataEvaluacionDocente, allEvaluacionesDirectorDocente, dataFiltradaDirectorDocenteTabla } = useGlobalContext()
+  const { reporteEvaluacionDocentes, getPreguntasRespuestasDocentes, getDataEvaluacion, reporteTablaEvaluacionDirectorDocente, resetReporteTabla } = UseEvaluacionDocentes()
+  const { reporteEspecialistaDeDocente, reporteFiltrosEspecialistaDirectores } = useReporteEspecialistas()
+  const [filtros, setFiltros] = useState({
+    area: '',
+    region: '',
+    distrito: '',
+    orden: '',
+    genero: '',
+    caracteristicaCurricular: ''
+  });
+  const [distritosDisponibles, setDistritosDisponibles] = useState<string[]>([]);
+  const [activePopover, setActivePopover] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth)
+  const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFiltros({
+      ...filtros,
+      [e.target.name]: e.target.value
+    });
+  };
+
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
     return {
-      labels: ['a', 'b', 'c', 'd'],
+      labels: ['Nivel 1', 'Nivel 2', 'Nivel 3', 'Nivel 4'],
       datasets: [
         {
           label: "estadisticas de evaluación",
@@ -80,75 +104,192 @@ const Reportes = () => {
 
   const iterarPregunta = (index: string) => {
     return (
-      <h3>
+      <h3 className={styles.sectionTitle}>
+        <span className={styles.sectionTitleIndicator}></span>
         <span className='text-cyan-500 font-martianMono text-md'>{getPreguntaRespuestaDocentes[Number(index) - 1]?.id}.</span>
         <span className='text-slate-500 font-montserrat text-md font-regular'>{getPreguntaRespuestaDocentes[Number(index) - 1]?.criterio}</span>
-
       </h3>
     )
   }
   useEffect(() => {
+    if (filtros.region) {
+      const provinciaEncontrada = distritosPuno.find(p => p.id === Number(filtros.region));
+      if (provinciaEncontrada) {
+        setDistritosDisponibles(provinciaEncontrada.distritos);
+      } else {
+        setDistritosDisponibles([]);
+      }
+    } else {
+      setDistritosDisponibles([]);
+    }
+  }, [filtros.region]);
+  const handleFiltrar = () => {
+    console.log('test')
+    reporteFiltrosEspecialistaDirectores(allEvaluacionesDirectorDocente, filtros)
+  }
+  const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedMonth(Number(e.target.value))
+  }
+  useEffect(() => {
     getDataEvaluacion(`${route.query.idEvaluacion}`);
-    reporteEvaluacionDocenteAdmin(`${route.query.idEvaluacion}`, `${route.query.idDirector}`);
+    reporteEspecialistaDeDocente(`${route.query.idEvaluacion}`, currentMonth);
     getPreguntasRespuestasDocentes(`${route.query.idEvaluacion}`)
-  }, [route.query.idEvaluacion, route.query.idDirector])
+  }, [route.query.idEvaluacion, currentUserData.dni])
+
+
+  useEffect(() => {
+    reporteEspecialistaDeDocente(`${route.query.idEvaluacion}`, selectedMonth)
+  }, [selectedMonth])
+  const getBackgroundColor = (value: number) => {
+    switch (value) {
+      case 1:
+        return styles.bgGray;
+      case 2:
+        return styles.bgOrange;
+      case 3:
+        return styles.bgGreen;
+      case 4:
+        return styles.bgCyan;
+      default:
+        return '';
+    }
+  };
+
   return (
     <>
       {
         loaderPages ?
-          <div className='grid grid-rows-loader'>
-            <div className='flex justify-center items-center'>
-              <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-              <span className='text-colorTercero animate-pulse'>...cargando</span>
-            </div>
+          <div className={styles.loaderContainer}>
+            <RiLoader4Line className={styles.loaderIcon} />
+            <p className={styles.loaderText}>buscando resultados...</p>
           </div>
           :
-          <div className='grid  relative z-10'>
-            <div className='grid relative xxl:flex gap-[20px] justify-between p-20 bg-headerPsicolinguistica overflow-hidden'>
-              <div className='top-0 bottom-0 rigth-0 left-0 bg-gray-600 z-[15] absolute w-full opacity-50'></div>
+          <div className={styles.container}>
+            <div className={styles.header}>
+              <div className={styles.headerOverlay}></div>
 
               <Image
-                className="absolute object-cover h-[100%] w-full bottom-0 top-[0px] right-0 left-0 z-[10] opacity-80"
+                className={styles.headerImage}
                 src={header}
                 alt="imagen de cabecera"
-                objectFit='fill'
                 priority
               />
-              <h1 className="text-textTitulos relative z-[20]  text-3xl font-bold font-martianMono capitalize text-left">Reporte de {dataEvaluacionDocente?.name}</h1>
-              <div>
-              <h3  className="text-pastel1 relative z-[20]  text-xl font-bold font-martianMono uppercase text-left">{dataDirector.nombres} {dataDirector.apellidos}</h3>
-              <h3  className="text-pastel1 relative z-[20]  text-lg font-bold font-martianMono uppercase text-left">{dataDirector.dni}</h3>
-              <h3  className="text-amarilloLogo relative z-[20]  text-lg font-bold font-martianMono uppercase text-left">{dataDirector.perfil?.nombre}</h3>
-              <h3  className="text-amarilloLogo relative z-[20]  text-lg font-bold font-martianMono uppercase text-left">{dataDirector.institucion}</h3>
-              <h3  className="text-amarilloLogo relative z-[20]  text-lg font-bold font-martianMono uppercase text-left">{regionTexto(`${dataDirector.region}`)}</h3>
+
+              <div className={styles.headerContent}>
+                <h1 className={styles.headerTitle}>
+                  Reporte de la rúbrica de la mediación didáctica de la {dataEvaluacionDocente?.name}
+                </h1>
               </div>
-              
-              
             </div>
-            <div className='w-full lg:w-[1024px] bg-white grid justify-center items-center p-20'>
+            <div className={styles.filtersContainer}>
+              <div className={styles.filtersContainerMonth}>
+                <select
+                  onChange={handleChangeMonth}
+                  className={styles.select}>
+                  <option value="">Mes</option>
+                  {
+                    getAllMonths.slice(0, currentMonth + 1).map((mes, index) => (
+                      <option key={index} value={mes.id}>{mes.name}</option>
+                    ))
+                  }
+                </select>
+              </div>
               <div>
+                <select
+                  name="region"
+                  className={styles.select}
+                  onChange={handleChangeFiltros}
+                  value={filtros.region}
+                >
+                  <option value="">Seleccionar Región</option>
+                  {regiones.map((region, index) => (
+                    <option key={index} value={region.id}>{region.region}</option>
+                  ))}
+                </select>
+
+                <select
+                  name="distrito"
+                  className={styles.select}
+                  onChange={handleChangeFiltros}
+                  value={filtros.distrito}
+                  disabled={!filtros.region}
+                >
+                  <option value="">Seleccionar Distrito</option>
+                  {distritosDisponibles.map((distrito, index) => (
+                    <option key={index} value={distrito}>{distrito}</option>
+                  ))}
+                </select>
+
+                <select
+                  name="area"
+                  value={filtros.area}
+                  onChange={handleChangeFiltros}
+                  className={styles.select}
+                >
+                  <option value="">Area</option>
+                  {area.map((are) => (
+                    <option key={are.id} value={are.id}>
+                      {are.name.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  name="caracteristicaCurricular"
+                  value={filtros.caracteristicaCurricular}
+                  onChange={handleChangeFiltros}
+                  className={styles.select}
+                >
+                  <option value="">Característica Curricular</option>
+                  {caracteristicasDirectivo.map((are) => (
+                    <option key={are.id} value={are.name}>
+                      {are.name.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  name="genero"
+                  value={filtros.genero}
+                  onChange={handleChangeFiltros}
+                  className={styles.select}
+                >
+                  <option value="">Género</option>
+                  {genero.map((gen) => (
+                    <option key={gen.id} value={gen.id}>
+                      {gen.name.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+                <button className={styles.filterButton} onClick={handleFiltrar}>Filtrar</button>
+              </div>
+            </div>
+            <div className={styles.tableContainer}>
+              <div className={styles.tableSection}>
+
                 <div>
                   {
                     dataEstadisticas?.map((dat, index) => {
                       return (
-                        <div key={index} className="w-full lg:w-[800px]  p-2 rounded-lg">
+                        <div key={index} className={styles.questionContainer}>
                           {iterarPregunta(`${dat.id}`)}
-                          <div className='bg-white rounded-md grid justify-center items-center place-content-center'>
-                            <div className='grid justify-center m-auto items-center w-[500px]'>
-                              <Bar className="m-auto w-[500px] "
+                          <div className={styles.chartContainer}>
+                            <div className={styles.chartWrapper}>
+                              <Bar className={styles.chart}
                                 options={options}
                                 data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
                               />
                             </div>
-                            <div className='text-sm  flex gap-[90px] items-center justify-center ml-[30px] text-slate-500'>
-                              <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
-                              <p>{dat.b} |{((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
-                              <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
-                              {dat.d &&
-                                <p>{dat.d} | {((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
-
-                              }
+                            <div className={styles.statsContainer}>
+                              {Object.entries(dat)
+                                .filter(([key]) => key !== 'id' && key !== 'total')
+                                .map(([key, value]) => (
+                                  <p key={key}>
+                                    {key}: {value} | {dat.total === 0 ? 0 : ((100 * Number(value)) / Number(dat.total)).toFixed(0)}%
+                                  </p>
+                                ))}
                             </div>
+                            {/* <div className={styles.answerContainer}>
+                              respuesta:<span className={styles.answerText}>{preguntasRespuestas[Number(index)]?.respuesta}</span>
+                            </div> */}
                           </div>
                         </div>
                       )
@@ -164,4 +305,4 @@ const Reportes = () => {
 }
 
 export default Reportes
-Reportes.Auth = PrivateRouteAdmins
+Reportes.Auth = PrivateRouteEspecialista

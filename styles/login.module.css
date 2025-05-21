@@ -12,7 +12,37 @@
   background-repeat: no-repeat;
   overflow: hidden;
 }
+.container {
+  position: relative;
+}
 
+.logoContainer {
+  position: relative;
+  display: grid;
+  justify-content: center;
+  z-index: 900;
+  align-items: center;
+  /* background-color: white; */
+  width: 99px;
+  height: 99px;
+  margin:auto;
+  border-radius: 9999px;
+  /* border: 5px solid #facc15;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); */
+}
+
+.logoContainer img {
+  filter: drop-shadow(0 0 10px rgba(250, 250, 250, 0.4));
+}
+
+.loader {
+  display: grid;
+  height: 100%;
+  place-content: center;
+  justify-content: center;
+  align-items: center;
+  margin: auto;
+}
 .backgroundShapes {
   position: fixed;
   top: 0;
@@ -142,20 +172,7 @@
   z-index: 1;
 }
 
-.logoContainer {
-  position: absolute;
-  display: grid;
-  justify-content: center;
-  align-items: center;
-  background-color: white;
-  width: 150px;
-  height: 150px;
-  left: 10px;
-  top: 10px;
-  border-radius: 9999px;
-  border: 5px solid #facc15;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-}
+
 
 .backgroundImage {
   position: absolute;

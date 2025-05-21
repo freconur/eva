@@ -4,7 +4,7 @@ import useUsuario from '@/features/hooks/useUsuario'
 import React, { useEffect, useCallback, use, useState } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { RiLoader4Line, RiEdit2Line, RiDeleteBin6Line } from 'react-icons/ri'
-import styles from '@/styles/modules/AgregarEspecialista.module.css'
+import styles from './agregarEspecialista.module.css'
 import UpdateUsuarioEspecialista from '@/modals/updateUsuarioEspecialista'
 import DeleteUsuario from '@/modals/deleteUsuario'
 import { genero, tipoEspecialista } from '@/fuctions/regiones'
@@ -139,7 +139,7 @@ const AgregareEspecialista = () => {
         </h1>
         <form onSubmit={handleSubmit(onSubmit)}>
           <FormInput
-            label="DNI"
+            label="Dni"
             name="dni"
             register={register}
             errors={errors}
@@ -153,7 +153,7 @@ const AgregareEspecialista = () => {
           />
 
           <FormSelect
-            label="ugel"
+            label="Ugel"
             name="region"
             register={register}
             errors={errors}

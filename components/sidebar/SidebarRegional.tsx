@@ -2,14 +2,14 @@ import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { regionTexto } from '@/fuctions/regiones'
 import Image from 'next/image'
 import React from 'react'
-import logo from '../../assets/formativa-logo.png'
-
+import logo from '@/assets/cl-logo.png'
+import styles from './layout.module.css'
 const SidebarRegional = () => {
   const { currentUserData } = useGlobalContext()
   return (
     <div className='z-relative z-[10] border-b-[1px] border-slate-200 pb-2 '>
       <h1 className='uppercase text-lg text-center font-dmMono text-white'>Competence-Lab</h1>
-      <div className='flex justify-center items-center'>
+      <div className={styles.logoContainer}>
         <Image
           alt="foto de perfil"
           src={logo}

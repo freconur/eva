@@ -162,7 +162,7 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
                     maxLength: { value: 1, message: "nombre debe tener un maximo de 1 caracteres" },
                   }
                 )}
-                className={styles.inputAlternativa}
+                className={styles.alternativaInput}
                 type="text"
                 placeholder="escribe la alternativa correcta"
               />

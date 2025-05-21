@@ -6,7 +6,7 @@ import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { app } from '@/firebase/firebase.config'
 import { RiLoader4Line } from 'react-icons/ri'
 import Image from 'next/image'
-import logo from '../assets/formativa-logo.png'
+import logo from '../assets/cl-logo.png'
 import styles from '@/styles/login.module.css'
 
 const initialValue = { usuario: "", contrasena: "" }
@@ -48,6 +48,14 @@ const Login = () => {
   }
   return (
     <div className={styles.container}>
+      <div className={styles.logoContainer}>
+            <Image
+              alt="logo formativa"
+              src={logo}
+              width={100}
+              height={100}
+            />
+          </div>
       <div className={styles.backgroundShapes}>
         <div className={`${styles.shape} ${styles.shape1}`}></div>
         <div className={`${styles.shape} ${styles.shape2}`}></div>

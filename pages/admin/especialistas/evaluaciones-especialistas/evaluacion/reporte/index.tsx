@@ -20,10 +20,11 @@ import { RiLoader4Line } from 'react-icons/ri'
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores'
 import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes'
 import Image from 'next/image'
-import styles from './index.module.css'
-import { sectionByGrade, ordernarAscDsc, niveles,regiones } from '@/fuctions/regiones'
+import styles from './styles.module.css'
+import { sectionByGrade, ordernarAscDsc, niveles,regiones, area, caracteristicasDirectivo, genero } from '@/fuctions/regiones'
 import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas'
+import { currentMonth, getAllMonths } from '@/fuctions/dates'
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -39,12 +40,16 @@ const Reportes = () => {
   const route = useRouter()
   const { currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages,  getPreguntaRespuestaDocentes, dataEvaluacionDocente, allEvaluacionesDirectorDocente,dataFiltradaEspecialistaDirectorTabla } = useGlobalContext()
   const { reporteEvaluacionDocentes  } = UseEvaluacionDocentes()
-
+  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth)
   const { reporteTablaEvaluacionEspecialista,getPreguntasRespuestasEspecialistas, getDataEvaluacion } = UseEvaluacionEspecialistas()
-
+  const [distritosDisponibles, setDistritosDisponibles] = useState<string[]>([]);
   const [filtros, setFiltros] = useState({
+    area: '',
     region: '',
-    orden: ''
+    distrito: '',
+    orden: '',
+    genero: '',
+    caracteristicaCurricular: ''
   });
 
   const [activePopover, setActivePopover] = useState<string | null>(null);
@@ -98,8 +103,10 @@ const Reportes = () => {
     },
   };
 
-  
-  const handleFiltros = () => {
+  const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedMonth(Number(e.target.value))
+  }
+  const handleFiltrar = () => {
     console.log('test')
     console.log('filtros', filtros)
     reporteTablaEvaluacionEspecialista(allEvaluacionesDirectorDocente, filtros)
@@ -129,136 +136,178 @@ const Reportes = () => {
   console.log('getPreguntaRespuestaDocentes', getPreguntaRespuestaDocentes)
   return (
     <>
-      {
-        loaderPages ?
-          <div className={styles.loaderContainer}>
-            <RiLoader4Line className={styles.loaderIcon} />
-            <p className={styles.loaderText}>buscando resultados...</p>
-          </div>
-          :
-          <div className={styles.container}>
-            <div className={styles.header}>
-              <div className={styles.headerOverlay}></div>
+      {loaderPages ? (
+        <div className={styles.loaderContainer}>
+          <RiLoader4Line className={styles.loaderIcon} />
+          <p className={styles.loaderText}>buscando resultados...</p>
+        </div>
+      ) : (
+        <div className={styles.container}>
+          <div className={styles.header}>
+            <div className={styles.headerOverlay}></div>
 
-              <Image
-                className={styles.headerImage}
-                src={header}
-                alt="imagen de cabecera"
-                priority
-              />
+            <Image
+              className={styles.headerImage}
+              src={header}
+              alt="imagen de cabecera"
+              priority
+            />
 
-              <div className={styles.headerContent}>
-                <h1 className={styles.headerTitle}>
-                  Reporte de {dataEvaluacionDocente?.name?.toLocaleLowerCase()}
-                </h1>
-              </div>
+            <div className={styles.headerContent}>
+              <h1 className={styles.headerTitle}>
+                Reporte de {dataEvaluacionDocente?.name?.toLocaleLowerCase()}
+              </h1>
             </div>
+          </div>
 
-            <div className={styles.tableContainer}>
-              <div className={styles.tableSection}>
-                <div>
-                  <div className={styles.filtersContainer}>
+          <div className={styles.tableContainer}>
+            <div className={styles.tableSection}>
+              <div>
+                <div className={styles.filtersContainer}>
+                  <div className={styles.filtersContainerMonth}>
+                    <select
+                      onChange={handleChangeMonth}
+                      className={styles.select}>
+                      <option value="">Mes</option>
+                      {getAllMonths.slice(0, currentMonth + 1).map((mes, index) => (
+                        <option key={index} value={mes.id}>{mes.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
                     <select
                       name="region"
                       className={styles.select}
                       onChange={handleChangeFiltros}
                       value={filtros.region}
                     >
-                      <option value="">Seleccionar region</option>
-                      {regiones?.map((region, index) => (
+                      <option value="">Seleccionar Región</option>
+                      {regiones.map((region, index) => (
                         <option key={index} value={region.id}>{region.region}</option>
                       ))}
                     </select>
 
                     <select
-                      name="orden"
+                      name="distrito"
                       className={styles.select}
                       onChange={handleChangeFiltros}
-                      value={filtros.orden}
+                      value={filtros.distrito}
+                      disabled={!filtros.region}
                     >
-                      <option value="">Ordenar por</option>
-                      {ordernarAscDsc.map((opcion, index) => (
-                        <option key={index} value={opcion.id}>{opcion.name}</option>
+                      <option value="">Seleccionar Distrito</option>
+                      {distritosDisponibles.map((distrito, index) => (
+                        <option key={index} value={distrito}>{distrito}</option>
                       ))}
                     </select>
-                    <button className={styles.filterButton} onClick={handleFiltros}>Filtrar</button>
+
+                    <select
+                      name="area"
+                      value={filtros.area}
+                      onChange={handleChangeFiltros}
+                      className={styles.select}
+                    >
+                      <option value="">Area</option>
+                      {area.map((are) => (
+                        <option key={are.id} value={are.id}>
+                          {are.name.toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      name="caracteristicaCurricular"
+                      value={filtros.caracteristicaCurricular}
+                      onChange={handleChangeFiltros}
+                      className={styles.select}
+                    >
+                      <option value="">Característica Curricular</option>
+                      {caracteristicasDirectivo.map((are) => (
+                        <option key={are.id} value={are.name}>
+                          {are.name.toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      name="genero"
+                      value={filtros.genero}
+                      onChange={handleChangeFiltros}
+                      className={styles.select}
+                    >
+                      <option value="">Género</option>
+                      {genero.map((gen) => (
+                        <option key={gen.id} value={gen.id}>
+                          {gen.name.toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
+                    <button className={styles.filterButton} onClick={handleFiltrar}>Filtrar</button>
                   </div>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Nombre y apellidos</th>
-                        <th>puntaje</th>
-                        {
-                          getPreguntaRespuestaDocentes.map((pregunta, index) => (
-                            <th 
-                              key={index}
-                              onClick={() => setActivePopover(activePopover === pregunta.id ? null : pregunta.id || null)}
-                            >
-                              {pregunta.id}
-                              {activePopover === pregunta.id && (
-                                <div className={styles.popover}>
-                                  {pregunta.criterio}
-                                </div>
-                              )}
-                            </th>
-                          ))
-                        }
+                </div>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Nombre y apellidos</th>
+                      <th>puntaje</th>
+                      {getPreguntaRespuestaDocentes.map((pregunta, index) => (
+                        <th 
+                          key={index}
+                          onClick={() => setActivePopover(activePopover === pregunta.id ? null : pregunta.id || null)}
+                        >
+                          {pregunta.id}
+                          {activePopover === pregunta.id && (
+                            <div className={styles.popover}>
+                              {pregunta.criterio}
+                            </div>
+                          )}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dataFiltradaEspecialistaDirectorTabla.map((docente, index) => (
+                      <tr key={index}>
+                        <td>{index + 1}</td>
+                        <td>{docente.info?.nombres} {docente.info?.apellidos}</td>
+                        <td>{docente.calificacion}</td>
+                        {docente.resultados?.map((respuesta, index) => (
+                          <td key={index} className={getBackgroundColor(Number(respuesta.alternativas?.find(a => a.selected)?.value))}>
+                            {niveles(Number(respuesta.alternativas?.find(a => a.selected)?.value)) || '-'}
+                          </td>
+                        ))}
                       </tr>
-                    </thead>
-                    <tbody>
-                        {
-                          dataFiltradaEspecialistaDirectorTabla.map((docente, index) => (
-                            <tr key={index}>
-                              <td>{index + 1}</td>
-                              <td>{docente.info?.nombres} {docente.info?.apellidos}</td>
-                              <td>{docente.calificacion}</td>
-                              {
-                                docente.resultados?.map((respuesta, index) => (
-                                  <td key={index} className={getBackgroundColor(Number(respuesta.alternativas?.find(a => a.selected)?.value))}>
-                                    {niveles(Number(respuesta.alternativas?.find(a => a.selected)?.value)) || '-'}
-                                  </td>
-                                ))
-                              }
-                            </tr>
-                          ))
-                        }
-                    </tbody>
-                  </table>
-                </div>
-                <div>
-                  {
-                    dataEstadisticas?.map((dat, index) => {
-                      return (
-                        <div key={index} className={styles.chartContainer}>
-                          <h3 className={styles.sectionTitle}>
-                            <span className={styles.sectionTitleIndicator}></span>
-                            <span>{getPreguntaRespuestaDocentes[Number(index)]?.subOrden || getPreguntaRespuestaDocentes[Number(index)]?.order}.</span>
-                            <span>{getPreguntaRespuestaDocentes[Number(index)]?.criterio}</span>
-                          </h3>
-                          <div className={styles.chartWrapper}>
-                            <Bar
-                              options={options}
-                              data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
-                            />
-                          </div>
-                          <div className={styles.statsContainer}>
-                            <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
-                            <p>{dat.b} | {((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
-                            <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
-                            {dat.d &&
-                              <p>{dat.d} | {((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
-                            }
-                          </div>
-                        </div>
-                      )
-                    })
-                  }
-                </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div>
+                {dataEstadisticas?.map((dat, index) => (
+                  <div key={index} className={styles.chartContainer}>
+                    <h3 className={styles.sectionTitle}>
+                      <span className={styles.sectionTitleIndicator}></span>
+                      <span>{getPreguntaRespuestaDocentes[Number(index)]?.subOrden || getPreguntaRespuestaDocentes[Number(index)]?.order}.</span>
+                      <span>{getPreguntaRespuestaDocentes[Number(index)]?.criterio}</span>
+                    </h3>
+                    <div className={styles.chartWrapper}>
+                      <Bar
+                        options={options}
+                        data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
+                      />
+                    </div>
+                    <div className={styles.statsContainer}>
+                      <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
+                      <p>{dat.b} | {((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
+                      <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
+                      {dat.d && (
+                        <p>{dat.d} | {((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-      }
+        </div>
+      )}
     </>
   )
 }

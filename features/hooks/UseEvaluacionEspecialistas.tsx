@@ -88,7 +88,19 @@ await updateDoc(washingtonRef, {
       dispatch({ type: AppAction.LOADER_PAGES, payload: false })
     });
   }
-
+  const getPREspecialistaDirector = async (idEvaluacion: string) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true })
+    const path = `/evaluaciones-director/${idEvaluacion}/preguntasRespuestas`
+    const q  = query(collection(db, path), orderBy("order","asc"))
+    onSnapshot(q, (querySnapshot) => {
+      const arrayPreguntaRespuestaDocentes: PreviewPRDocentes[] = []
+      querySnapshot.forEach((doc) => {
+        arrayPreguntaRespuestaDocentes.push({ ...doc.data(), id: doc.id });
+      });
+      dispatch({ type: AppAction.GET_PREGUNTA_RESPUESTA_DOCENTE, payload: arrayPreguntaRespuestaDocentes })
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+    });
+  }
   const updatePreResEspecialistas = async (data: PRDocentes, idEvaluacion: string) => {
     const path = `/evaluaciones-especialista/${idEvaluacion}/preguntasRespuestas`
     const pathRef = doc(db, path, `${data.id}`);
@@ -697,7 +709,8 @@ await updateDoc(washingtonRef, {
     filtrarDataEspecialistaDirectorTabla,
     buscarDirectorReporteDeEvaluacion,
     reporteTablaEvaluacionEspecialista,
-    updateEvaluacionDesempeñoDirectivo
+    updateEvaluacionDesempeñoDirectivo,
+    getPREspecialistaDirector
   }
 }
 

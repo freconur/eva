@@ -45,6 +45,7 @@ export const useReporteEspecialistas = () => {
     console.log('docentesDelDirector', docentesDelDirector)
     return docentesDelDirector;
   }
+  
   const reporteEspecialistaDeDocente = async (idEvaluacion: string, month: number) => {
     const reporteDeEvaluacionesDocentes = await getAllReporteDeDirectoresToDocentes(idEvaluacion, month)
     const acumuladoPorPregunta: Record<string, { id: string, a: number, b: number, c: number, d?: number, total: number }> = {}
@@ -99,9 +100,9 @@ export const useReporteEspecialistas = () => {
       const filtrosActivos = {
         ...(region && { region: String(estudiante.region) === region }),
         ...(area && { area: String(estudiante.area) === area }),
-        ...(genero && { genero: estudiante.genero === genero }),
-        ...(caracteristicaCurricular && { caracteristicaCurricular: estudiante.caracteristicaCurricular === caracteristicaCurricular }),
-        ...(distrito && { distrito: estudiante.distrito === distrito })
+        ...(genero && { genero: String(estudiante.genero) === String(genero) }),
+        ...(caracteristicaCurricular && { caracteristicaCurricular: String(estudiante.caracteristicaCurricular) === String(caracteristicaCurricular) }),
+        ...(distrito && { distrito: String(estudiante.distrito) === String(distrito) })
       };
 
       // Si no hay filtros activos, retornar true para incluir todos los estudiantes
@@ -205,8 +206,23 @@ export const useReporteEspecialistas = () => {
     dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: resultado });
     return dataFiltrada;
   }
+  const getAllReporteDeDirectoreToAdmin = async (idEvaluacion: string,month:number) => {
+    const pathRef = collection(db, `/evaluaciones/${idEvaluacion}/${currentYear}-${month}`)
+    const querySnapshot = await getDocs(pathRef)
+
+    const docentesDelDirector: User[] = [];
+    querySnapshot.forEach((doc) => {
+      docentesDelDirector.push(doc.data() as User);
+    });
+    
+    console.log('docentesDelDirector', docentesDelDirector)
+    dispatch({ type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE, payload: docentesDelDirector });
+    return docentesDelDirector;
+  }
+  //creo que esta funcion se esta usando para el especialista y directores, tengo que verificar en caso alguna pagina comienze a fallar y comienze a dar error
 const reporteEspecialistaDeEstudiantes = async (idEvaluacion: string, month: number, currentUserData: User) => {
-  const reporteDeEstudiantes = await getAllReporteDeDirectoresToDocentes(idEvaluacion, month)
+  /* const reporteDeEstudiantes = await getAllReporteDeDirectoresToDocentes(idEvaluacion, month) */
+  const reporteDeEstudiantes = await getAllReporteDeDirectoreToAdmin(idEvaluacion, month)
   console.log('reporteDeEstudiantes', reporteDeEstudiantes)
 
   const acumuladoPorPregunta: Record<string, { id: string, a: number, b: number, c: number, d?: number, total: number }> = {}
@@ -243,7 +259,6 @@ const reporteEspecialistaDeEstudiantes = async (idEvaluacion: string, month: num
   })
 
   const resultado = Object.values(acumuladoPorPregunta)
-  console.log('acumulado por pregunta', resultado)
   dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: resultado });
   return resultado
 }

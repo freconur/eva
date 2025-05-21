@@ -14,7 +14,7 @@ import {
   Legend,
   ChartData,
 } from 'chart.js';
-import { gradosDeColegio, sectionByGrade, ordernarAscDsc, genero, regiones, area } from '@/fuctions/regiones'
+import { gradosDeColegio, sectionByGrade, ordernarAscDsc, genero, regiones, area, caracteristicasDirectivo } from '@/fuctions/regiones'
 import { Bar } from "react-chartjs-2"
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { Alternativa, DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
@@ -24,6 +24,7 @@ import { currentMonth, getAllMonths } from '@/fuctions/dates';
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista';
 import { useReporteEspecialistas } from '@/features/hooks/useReporteEspecialistas';
+import { distritosPuno } from '@/fuctions/provinciasPuno';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -44,6 +45,21 @@ const Reporte = () => {
     genero: '',
     area: '',
   });
+
+  const [distritosDisponibles, setDistritosDisponibles] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (filtros.region) {
+      const provinciaEncontrada = distritosPuno.find(p => p.id === Number(filtros.region));
+      if (provinciaEncontrada) {
+        setDistritosDisponibles(provinciaEncontrada.distritos);
+      } else {
+        setDistritosDisponibles([]);
+      }
+    } else {
+      setDistritosDisponibles([]);
+    }
+  }, [filtros.region]);
 
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFiltros({
@@ -89,7 +105,7 @@ const Reporte = () => {
   }
   const { reporteDirectorData, reporteToTableDirector, reporteDirectorEstudiantes, agregarDatosEstadisticosDirector } = useReporteDirectores()
   const { getAllReporteDeDirectores, reporteParaTablaDeEspecialista, reporteEspecialistaDeEstudiantes } = useReporteEspecialistas()
-  const { currentUserData, reporteDirector, preguntasRespuestas, loaderReporteDirector, allRespuestasEstudiantesDirector, dataFiltradaDirectorTabla,allEvaluacionesEstudiantes } = useGlobalContext()
+  const { currentUserData, reporteDirector, preguntasRespuestas, loaderReporteDirector, allRespuestasEstudiantesDirector, dataFiltradaDirectorTabla, allEvaluacionesEstudiantes, allEvaluacionesDirectorDocente } = useGlobalContext()
   const { getPreguntasRespuestas } = useAgregarEvaluaciones()
   const [showTable, setShowTable] = useState(false)
   const route = useRouter()
@@ -104,7 +120,7 @@ const Reporte = () => {
   }
   const handleFiltrar = () => {
     /* reporteToTableDirector() */
-    reporteParaTablaDeEspecialista(allEvaluacionesEstudiantes,{region: filtros.region, area: filtros.area, genero: filtros.genero, caracteristicaCurricular: filtros.caracteristicaCurricular, distrito: filtros.distrito}, `${route.query.id}`, `${route.query.idEvaluacion}`)
+    reporteParaTablaDeEspecialista(allEvaluacionesDirectorDocente, { region: filtros.region, area: filtros.area, genero: filtros.genero, caracteristicaCurricular: filtros.caracteristicaCurricular, distrito: filtros.distrito }, `${route.query.id}`, `${route.query.idEvaluacion}`)
   }
   useEffect(() => {
     reporteEspecialistaDeEstudiantes(`${route.query.idEvaluacion}`, monthSelected, currentUserData)
@@ -158,9 +174,11 @@ const Reporte = () => {
   }
 
   useEffect(() => {
-    reporteEspecialistaDeEstudiantes(`${route.query.idEvaluacion}`,monthSelected,currentUserData)
+    reporteEspecialistaDeEstudiantes(`${route.query.idEvaluacion}`, monthSelected, currentUserData)
     /* reporteDirectorEstudiantes(`${route.query.idEvaluacion}`, monthSelected, currentUserData) */
   }, [monthSelected])
+
+  console.log('reporteDirector', reporteDirector)
   return (
 
     <>
@@ -176,61 +194,85 @@ const Reporte = () => {
           <div className={styles.mainContainer}>
             {/* <button className={styles.button} onClick={handleShowTable}>ver tabla</button> */}
             <div className={styles.selectContainer}>
-                  <select
-                    className={styles.select}
-                    onChange={handleChangeMonth}
-                    value={getAllMonths[monthSelected]?.name || ''}
-                    id="">
-                    <option value="">Mes</option>
-                    {getAllMonths.slice(0, currentMonth + 1).map((mes) => (
-                      <option key={mes.id} value={mes.name}>
-                        {mes.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className={styles.filtersContainer}>
-                  <select
-                    name="region"
-                    value={filtros.region}
-                    onChange={handleChangeFiltros}
-                    className={styles.select}
-                  >
-                    <option value="">Ugel</option>
-                    {regiones.map((region) => (
-                      <option key={region.id} value={region.id}>
-                        {region.region}
-                      </option>
-                    ))}
-                  </select>
+              <select
+                className={styles.select}
+                onChange={handleChangeMonth}
+                value={getAllMonths[monthSelected]?.name || ''}
+                id="">
+                <option value="">Mes</option>
+                {getAllMonths.slice(0, currentMonth + 1).map((mes) => (
+                  <option key={mes.id} value={mes.name}>
+                    {mes.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={styles.filtersContainer}>
+              <select
+                name="region"
+                className={styles.select}
+                onChange={handleChangeFiltros}
+                value={filtros.region}
+              >
+                <option value="">Seleccionar Región</option>
+                {regiones.map((region, index) => (
+                  <option key={index} value={region.id}>{region.region}</option>
+                ))}
+              </select>
 
-                  <select
-                    name="area"
-                    value={filtros.area}
-                    onChange={handleChangeFiltros}
-                    className={styles.select}
-                  >
-                    <option value="">Area</option>
-                    {area.map((are) => (
-                      <option key={are.id} value={are.id}>
-                        {are.name.toUpperCase()}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    name="genero"
-                    value={filtros.genero}
-                    onChange={handleChangeFiltros}
-                    className={styles.select}
-                  >
-                    <option value="">Género</option>
-                    {genero.map((gen) => (
-                      <option key={gen.id} value={gen.id}>
-                        {gen.name.toUpperCase()}
-                      </option>
-                    ))}
-                  </select>
-                  {/* <select
+              <select
+                name="distrito"
+                className={styles.select}
+                onChange={handleChangeFiltros}
+                value={filtros.distrito}
+                disabled={!filtros.region}
+              >
+                <option value="">Seleccionar Distrito</option>
+                {distritosDisponibles.map((distrito, index) => (
+                  <option key={index} value={distrito}>{distrito}</option>
+                ))}
+              </select>
+
+              <select
+                name="area"
+                value={filtros.area}
+                onChange={handleChangeFiltros}
+                className={styles.select}
+              >
+                <option value="">Area</option>
+                {area.map((are) => (
+                  <option key={are.id} value={are.id}>
+                    {are.name.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+              <select
+                name="caracteristicaCurricular"
+                value={filtros.caracteristicaCurricular}
+                onChange={handleChangeFiltros}
+                className={styles.select}
+              >
+                <option value="">Característica Curricular</option>
+                {caracteristicasDirectivo.map((are) => (
+                  <option key={are.id} value={are.name}>
+                    {are.name.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+              <select
+                name="genero"
+                value={filtros.genero}
+                onChange={handleChangeFiltros}
+                className={styles.select}
+              >
+                <option value="">Género</option>
+                {genero.map((gen) => (
+                  <option key={gen.id} value={gen.id}>
+                    {gen.name.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+              {/* <select
                     className={styles.select}
                     onChange={handleChangeFiltros}
                     name="orden"
@@ -242,86 +284,9 @@ const Reporte = () => {
                       </option>
                     ))}
                   </select> */}
-                  <button className={styles.filterButton} onClick={handleFiltrar}>Filtrar</button>
+              <button className={styles.filterButton} onClick={handleFiltrar}>Filtrar</button>
 
-                </div>
-            {/* {
-              showTable &&
-              <div>
-                
-                <div className={styles.tableContainer}>
-                  <table className={styles.table}>
-                    <thead className={styles.tableHeader}>
-                      <tr>
-                        <th className={styles.tableHeaderCell}>#</th>
-                        <th className={styles.tableHeaderCell}>Nombre y apellidos</th>
-                        <th className={styles.tableHeaderCell}>R.C</th>
-                        <th className={styles.tableHeaderCell}>T.P</th>
-                        {preguntasRespuestas.map((pr) => {
-                          return (
-                            <th key={pr.order} className={styles.tableHeaderCell}>
-                              <button
-                                className={styles.popoverButton}
-                                popoverTarget={`${pr.order}`}
-                              >
-                                {pr.order}
-                              </button>
-                              <div
-                                className={styles.popoverContent}
-                                popover="auto"
-                                id={`${pr.order}`}
-                              >
-                                <div className="w-full">
-                                  <span className={styles.popoverTitle}>
-                                    {pr.order}. Actuación:
-                                  </span>
-                                  <span className={styles.popoverText}>
-                                    {pr.preguntaDocente}
-                                  </span>
-                                </div>
-                              </div>
-                            </th>
-                          );
-                        })}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dataFiltradaDirectorTabla?.map((dir, index) => {
-                        return (
-                          <tr
-                            key={index}
-                            className={styles.tableRow}
-                          >
-                            <td className={styles.tableCell}>
-                              {index + 1}
-                            </td>
-                            <td className={`${styles.tableCell} ${styles.tableCellName}`}>
-                              {dir.nombresApellidos}
-                            </td>
-                            <td className={styles.tableCell}>
-                              {dir.respuestasCorrectas}
-                            </td>
-                            <td className={styles.tableCell}>
-                              {dir.totalPreguntas}
-                            </td>
-                            {dir.respuestas?.map((res) => {
-                              return (
-                                <td
-                                  key={res.order}
-                                  className={styles.tableCell}
-                                >
-                                  {handleValidateRespuesta(res)}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            } */}
+            </div>
 
             <div className={styles.reportContainer}>
               <h1 className={styles.reportTitle}>reporte de evaluación</h1>
@@ -340,13 +305,13 @@ const Reporte = () => {
                               />
                             </div>
                             <div className={styles.statsContainer}>
-                              <p>{dat.a} | {dat.total === 0 ? 0 : ((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)} %</p>
-                              <p>{dat.b} |{dat.total === 0 ? 0 : ((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
-                              <p>{dat.c} | {dat.total === 0 ? 0 : ((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
-                              {
-                                dat.d &&
-                                <p>{dat.d} | {dat.total === 0 ? `${0}%` : ((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
-                              }
+                              {Object.entries(dat)
+                                .filter(([key]) => key !== 'id' && key !== 'total')
+                                .map(([key, value]) => (
+                                  <p key={key}>
+                                    {key}: {value} | {dat.total === 0 ? 0 : ((100 * Number(value)) / Number(dat.total)).toFixed(0)}%
+                                  </p>
+                                ))}
                             </div>
                             <div className={styles.answerContainer}>
                               respuesta:<span className={styles.answerText}>{preguntasRespuestas[Number(index)]?.respuesta}</span>

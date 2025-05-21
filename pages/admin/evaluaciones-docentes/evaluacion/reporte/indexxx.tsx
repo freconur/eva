@@ -17,11 +17,10 @@ import {
 } from 'chart.js';
 import { Bar } from "react-chartjs-2"
 import { RiLoader4Line } from 'react-icons/ri'
-import styles from './styles.module.css'
+import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes'
 import Image from 'next/image'
 import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import { regionTexto } from '@/fuctions/regiones'
-import UseEvaluacionDirectores from '@/features/hooks/UseEvaluacionDirectores'
 
 ChartJS.register(
   CategoryScale,
@@ -36,7 +35,7 @@ ChartJS.register(
 const Reportes = () => {
   const route = useRouter()
   const { currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages, loaderReporteDirector, getPreguntaRespuestaDocentes, dataEvaluacionDocente, dataDirector } = useGlobalContext()
-  const { reporteEvaluacionDocentes, getPreguntasRespuestasDirectores, getDataEvaluacion, reporteEvaluacionDocenteAdmin } = UseEvaluacionDirectores()
+  const { reporteEvaluacionDocentes, getPreguntasRespuestasDocentes, getDataEvaluacion, reporteEvaluacionDocenteAdmin } = UseEvaluacionDocentes()
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
     return {
       labels: ['a', 'b', 'c', 'd'],
@@ -91,7 +90,7 @@ const Reportes = () => {
   useEffect(() => {
     getDataEvaluacion(`${route.query.idEvaluacion}`);
     reporteEvaluacionDocenteAdmin(`${route.query.idEvaluacion}`, `${route.query.idDirector}`);
-    getPreguntasRespuestasDirectores(`${route.query.idEvaluacion}`)
+    getPreguntasRespuestasDocentes(`${route.query.idEvaluacion}`)
   }, [route.query.idEvaluacion, route.query.idDirector])
   return (
     <>

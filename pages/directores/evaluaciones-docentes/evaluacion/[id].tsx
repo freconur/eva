@@ -17,7 +17,7 @@ import styles from '@/styles/coberturaCurricular.module.css'
 const EvaluacionDocente = () => {
   const [showAgregarPreguntas, setShowAgregarPreguntas] = useState<boolean>(false)
   const router = useRouter()
-  const { getPreguntaRespuestaDocentes, dataEvaluacionDocente, dataDocente, loaderPages } = useGlobalContext()
+  const { getPreguntaRespuestaDocentes, dataEvaluacionDocente, dataDocente, loaderPages,currentUserData } = useGlobalContext()
   const { getPreguntasRespuestasDocentes, getDataEvaluacion, buscarDocente } = UseEvaluacionDocentes()
   const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false)
   const [valueDni, setValueDni] = useState("")
@@ -108,7 +108,9 @@ const EvaluacionDocente = () => {
               Monitorear docente
             </button>
             <Link 
-              href={`reporte?idEvaluacion=${router.query.id}`}
+              href={`${currentUserData?.rol === 4 ? 
+                `/admin/evaluaciones-docentes/evaluacion/reporte?idEvaluacion=${router.query.id}` : 
+                `reporte?idEvaluacion=${router.query.id}`}`}
               className={styles.headerButton}
             >
               Reporte

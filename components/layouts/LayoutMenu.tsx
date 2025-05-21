@@ -8,11 +8,13 @@ import SidebarDirectores from '../sidebar/SidebarDirectores'
 import SidebarDocentes from '../sidebar/SidebarDocentes'
 import SidebarAdmin from '../sidebar/SidebarAdmin'
 import Image from 'next/image'
-import logo from '../../assets/formativa-logo.png'
+import logo from '@/assets/cl-logo.png'
+import styles from './layout.module.css'
 
 interface Props {
   children: JSX.Element | JSX.Element[]
 }
+
 const LayoutMenu = ({ children }: Props) => {
   const { showSidebar, currentUserData } = useGlobalContext()
   const { getUserData } = useUsuario()
@@ -21,24 +23,21 @@ const LayoutMenu = ({ children }: Props) => {
     getUserData()
   }, [currentUserData.dni])
 
-
-
   const siderbarSegunPerfil = () => {
-
     if (router.pathname === "/login") {
       return (null)
     }
     if (currentUserData.perfil?.rol === 1) {
       return (
         <>
-          {/* <div className='absolute grid justify-center z-[900] items-center bg-white w-[99px] h-[99px] right-[10px] top-[70px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
+          <div className={styles.logoContainer}>
             <Image
               alt="logo formativa"
               src={logo}
               width={80}
               height={80}
             />
-          </div> */}
+          </div>
           <SidebarEspecialistas showSidebar={showSidebar} />
           {/* <SidebarAdmin showSidebar={showSidebar} /> */}
           <Navbar />
@@ -47,14 +46,14 @@ const LayoutMenu = ({ children }: Props) => {
     } else if (currentUserData.perfil?.rol === 2) {
       return (
         <>
-          {/* <div className='absolute grid justify-center z-[900] items-center bg-white w-[99px] h-[99px] right-[10px] top-[70px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
+          <div className={styles.logoContainer}>
             <Image
               alt="logo formativa"
               src={logo}
               width={80}
               height={80}
             />
-          </div> */}
+          </div>
           <SidebarDirectores showSidebar={showSidebar} />
           <Navbar />
         </>
@@ -62,14 +61,14 @@ const LayoutMenu = ({ children }: Props) => {
     } else if (currentUserData.perfil?.rol === 3) {
       return (
         <>
-         {/*  <div className='absolute grid justify-center z-[900] items-center bg-white w-[99px] h-[99px] right-[10px] top-[70px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
+          <div className={styles.logoContainer}>
             <Image
               alt="logo formativa"
               src={logo}
               width={80}
               height={80}
             />
-          </div> */}
+          </div>
           <SidebarDocentes showSidebar={showSidebar} />
           <Navbar />
         </>
@@ -77,7 +76,7 @@ const LayoutMenu = ({ children }: Props) => {
     } else if (currentUserData.perfil?.rol === 4) {
       return (
         <>
-          {/* <div className='absolute grid justify-center z-[900] items-center bg-white w-[99px] h-[99px] right-[10px] top-[70px] rounded-full border-[5px] border-yellow-400 drop-shadow-lg '>
+          <div className={styles.logoContainer}>
             <Image
               priority
               alt="logo formativa"
@@ -85,7 +84,7 @@ const LayoutMenu = ({ children }: Props) => {
               width={80}
               height={80}
             />
-          </div> */}
+          </div>
           <SidebarAdmin showSidebar={showSidebar} />
           <Navbar />
         </>
@@ -93,8 +92,7 @@ const LayoutMenu = ({ children }: Props) => {
     }
   }
   return (
-    <div className='relative'>
-
+    <div className={styles.container}>
       {currentUserData.perfil?.rol &&
         siderbarSegunPerfil()
         // <div className='grid h-loader place-content-center justify-center items-center m-auto'>cargando .....</div>

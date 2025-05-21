@@ -25,3 +25,35 @@ body {
   background-color: #ffffff;
   /* background-color: #121f3d; */
 }
+
+/* Estilos para el scroll de la barra lateral */
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: #4a5568 #2d3748;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: #2d3748;
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: #4a5568;
+  border-radius: 4px;
+  border: 2px solid #2d3748;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background-color: #718096;
+}
+
+/* Asegurar que el contenido de la barra lateral sea scrolleable */
+.sidebarContent {
+  height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding-right: 8px;
+}

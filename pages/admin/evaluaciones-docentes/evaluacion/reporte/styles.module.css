@@ -104,8 +104,8 @@
   margin-bottom: 1.5rem;
 }
 .filtersContainer {
-  width: 100%;
-  /* margin: auto; */
+  width: 80%;
+  margin: 0 auto 2rem;
   /* padding: 2rem; */
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
