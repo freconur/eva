@@ -21,7 +21,7 @@ import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores
 import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes'
 import Image from 'next/image'
 import styles from './styles.module.css'
-import { sectionByGrade, ordernarAscDsc, niveles,regiones, area, caracteristicasDirectivo, genero, convertAlternativaToNivel } from '@/fuctions/regiones'
+import { sectionByGrade, ordernarAscDsc, niveles, regiones, area, caracteristicasDirectivo, genero, convertAlternativaToNivel } from '@/fuctions/regiones'
 import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas'
 import { currentMonth, getAllMonths } from '@/fuctions/dates'
@@ -41,11 +41,11 @@ ChartJS.register(
 
 const Reportes = () => {
   const route = useRouter()
-  const { currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages,  getPreguntaRespuestaDocentes, dataEvaluacionDocente, allEvaluacionesDirectorDocente,dataFiltradaEspecialistaDirectorTabla } = useGlobalContext()
-  const { reporteEvaluacionDocentes  } = UseEvaluacionDocentes()
+  const { currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages, getPreguntaRespuestaDocentes, dataEvaluacionDocente, allEvaluacionesDirectorDocente, dataFiltradaEspecialistaDirectorTabla } = useGlobalContext()
+  const { reporteEvaluacionDocentes } = UseEvaluacionDocentes()
   const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth)
-  const { reporteTablaEvaluacionEspecialista,getPreguntasRespuestasEspecialistas, getDataEvaluacion, getPREspecialistaDirector, reporteDeEspecialistaToDirectore, getReporteDeDirectoresToEspecialistaTabla } = UseEvaluacionEspecialistas()
-  const {  } = useReporteEspecialistas()
+  const { reporteTablaEvaluacionEspecialista, getPreguntasRespuestasEspecialistas, getDataEvaluacion, getPREspecialistaDirector, reporteDeEspecialistaToDirectore, getReporteDeDirectoresToEspecialistaTabla } = UseEvaluacionEspecialistas()
+  const { } = useReporteEspecialistas()
   const [distritosDisponibles, setDistritosDisponibles] = useState<string[]>([]);
   const [filtros, setFiltros] = useState({
     area: '',
@@ -57,7 +57,18 @@ const Reportes = () => {
   });
 
   const [activePopover, setActivePopover] = useState<string | null>(null);
-
+  useEffect(() => {
+    if (filtros.region) {
+      const provinciaEncontrada = distritosPuno.find(p => p.id === Number(filtros.region));
+      if (provinciaEncontrada) {
+        setDistritosDisponibles(provinciaEncontrada.distritos);
+      } else {
+        setDistritosDisponibles([]);
+      }
+    } else {
+      setDistritosDisponibles([]);
+    }
+  }, [filtros.region]);
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFiltros({
       ...filtros,
@@ -117,7 +128,7 @@ const Reportes = () => {
     /* reporteTablaEvaluacionEspecialista(allEvaluacionesDirectorDocente, filtros) */
   }
   useEffect(() => {
-    if(route.query.idEvaluacion && currentUserData.region){
+    if (route.query.idEvaluacion && currentUserData.region) {
       getDataEvaluacion(`${route.query.idEvaluacion}`);
       reporteDeEspecialistaToDirectore(`${route.query.idEvaluacion}`, currentMonth, currentUserData);
       getPREspecialistaDirector(`${route.query.idEvaluacion}`)
@@ -140,10 +151,10 @@ const Reportes = () => {
   };
 
   useEffect(() => {
-    if(route.query.idEvaluacion && currentUserData.region){
+    if (route.query.idEvaluacion && currentUserData.region) {
       reporteDeEspecialistaToDirectore(`${route.query.idEvaluacion}`, selectedMonth, currentUserData);
     }
-  },[selectedMonth])
+  }, [selectedMonth])
   const iterarPregunta = (index: string) => {
     return (
       <h3 className={styles.sectionTitle}>
@@ -174,7 +185,7 @@ const Reportes = () => {
 
             <div className={styles.headerContent}>
               <h1 className={styles.headerTitle}>
-                Reporte de {dataEvaluacionDocente?.name?.toLocaleLowerCase()}
+                Reporte de rúbrica de mediacion didactica de la resolucion de {dataEvaluacionDocente?.name?.toLocaleLowerCase()} del directivo
               </h1>
             </div>
           </div>
@@ -194,7 +205,7 @@ const Reportes = () => {
                     </select>
                   </div>
                   <div className={styles.filtersContainerDistrito}>
-                    {/* <select
+                    <select
                       name="region"
                       className={styles.select}
                       onChange={handleChangeFiltros}
@@ -204,16 +215,17 @@ const Reportes = () => {
                       {regiones.map((region, index) => (
                         <option key={index} value={region.id}>{region.region}</option>
                       ))}
-                    </select> */}
+                    </select>
 
                     <select
                       name="distrito"
                       className={styles.select}
                       onChange={handleChangeFiltros}
                       value={filtros.distrito}
+                      disabled={!filtros.region}
                     >
                       <option value="">Seleccionar Distrito</option>
-                      {distritosPuno.find(distrito => Number(distrito.id) === Number(currentUserData?.region))?.distritos.map((distrito, index) => (
+                      {distritosDisponibles.map((distrito, index) => (
                         <option key={index} value={distrito}>{distrito}</option>
                       ))}
                     </select>
@@ -280,7 +292,7 @@ const Reportes = () => {
                       <th>Nombre y apellidos</th>
                       <th>puntaje</th>
                       {getPreguntaRespuestaDocentes.map((pregunta, index) => (
-                        <th 
+                        <th
                           key={index}
                           onClick={() => setActivePopover(activePopover === pregunta.id ? null : pregunta.id || null)}
                         >
@@ -311,35 +323,35 @@ const Reportes = () => {
                 </table>
               </div>
               <div className={styles.containerChart}>
-              {
-                    dataEstadisticas?.map((dat, index) => {
-                      return (
-                        <div key={index} className={styles.questionContainer}>
-                          {iterarPregunta(`${dat.id}`)}
-                          <div className={styles.chartContainer}>
-                            <div className={styles.chartWrapper}>
-                              <Bar className={styles.chart}
-                                options={options}
-                                data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
-                              />
-                            </div>
-                            <div className={styles.statsContainer}>
-                              {Object.entries(dat)
-                                .filter(([key]) => key !== 'id' && key !== 'total')
-                                .map(([key, value]) => (
-                                  <p key={key}>
-                                    {convertAlternativaToNivel(key)}: {value} | {dat.total === 0 ? 0 : ((100 * Number(value)) / Number(dat.total)).toFixed(0)}%
-                                  </p>
-                                ))}
-                            </div>
-                            {/* <div className={styles.answerContainer}>
+                {
+                  dataEstadisticas?.map((dat, index) => {
+                    return (
+                      <div key={index} className={styles.questionContainer}>
+                        {iterarPregunta(`${dat.id}`)}
+                        <div className={styles.chartContainer}>
+                          <div className={styles.chartWrapper}>
+                            <Bar className={styles.chart}
+                              options={options}
+                              data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
+                            />
+                          </div>
+                          <div className={styles.statsContainer}>
+                            {Object.entries(dat)
+                              .filter(([key]) => key !== 'id' && key !== 'total')
+                              .map(([key, value]) => (
+                                <p key={key}>
+                                  {convertAlternativaToNivel(key)}: {value} | {dat.total === 0 ? 0 : ((100 * Number(value)) / Number(dat.total)).toFixed(0)}%
+                                </p>
+                              ))}
+                          </div>
+                          {/* <div className={styles.answerContainer}>
                               respuesta:<span className={styles.answerText}>{preguntasRespuestas[Number(index)]?.respuesta}</span>
                             </div> */}
-                          </div>
                         </div>
-                      )
-                    })
-                  }
+                      </div>
+                    )
+                  })
+                }
               </div>
             </div>
           </div>

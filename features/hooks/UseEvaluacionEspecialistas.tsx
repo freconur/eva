@@ -3,6 +3,7 @@ import { onSnapshot, addDoc, query, where, deleteDoc, doc, collection, getDocs, 
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AppAction } from '../actions/appAction';
 import { } from 'firebase/firestore/lite';
+import { currentMonth, currentYear } from '@/fuctions/dates';
 
 const UseEvaluacionEspecialistas = () => {
   const dispatch = useGlobalContextDispatch()
@@ -19,14 +20,186 @@ const UseEvaluacionEspecialistas = () => {
     const pathRef = doc(db, `/evaluaciones-director`, `${idEvaluacion}`)
     await updateDoc(pathRef, { name: name })
 
-    /* const washingtonRef = doc(db, "cities", "DC");
-
-await updateDoc(washingtonRef, {
-  capital: true
-}); */
   }
+
+
+  const getAllReporteDeDirectoreToEspecialistas = async (idEvaluacion: string, month: number, currentUserData: User) => {
+   const directoresDelEspecialista: ReporteDocenteIndividual[] = [];
+  const pathRef = collection(db, `/reporte-directores/${idEvaluacion}/${currentYear}-${month}`)
+  const q = query(pathRef, where("info.region", "==", currentUserData.region))
+  /* const pathAdmin = collection(db, `/reporte-directores/${idEvaluacion}/${currentYear}-${month}`) */
+  const querySnapshot = await getDocs(currentUserData.rol === 4 ? pathRef : q )
+
+  querySnapshot.forEach((doc) => {
+    directoresDelEspecialista.push(doc.data() as User);
+  });
+
+  dispatch({ type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE, payload: directoresDelEspecialista });
+    return directoresDelEspecialista
+  }
+
+  const getReporteDeDirectoresToEspecialistaTabla = async (data: ReporteDocenteIndividual[], filtros: { region: string, orden: string, genero: string, distrito: string, area: string, caracteristicaCurricular: string}) => {
+    const dataFiltrada = data?.reduce((acc, docente) => {
+      // Si no hay filtros, retornar todos los datos
+      if (!filtros.region && !filtros.genero && !filtros.distrito && !filtros.area && !filtros.caracteristicaCurricular) {
+        return data;
+      }
+
+      let cumpleFiltros = true;
+
+      // Filtrar por región si está presente
+      if (filtros.region && docente.info?.region) {
+        if (docente.info.region.toString() !== filtros.region) {
+          cumpleFiltros = false;
+        }
+      }
+
+      // Filtrar por género si está presente
+      if (filtros.genero && docente.info?.genero) {
+        if (docente.info.genero.toString() !== filtros.genero) {
+          cumpleFiltros = false;
+        }
+      }
+
+      // Filtrar por distrito si está presente
+      if (filtros.distrito && docente.info?.distrito) {
+        if (docente.info.distrito !== filtros.distrito) {
+          cumpleFiltros = false;
+        }
+      }
+
+      // Filtrar por área si está presente
+      if (filtros.area && docente.info?.area) {
+        if (docente.info.area.toString() !== filtros.area) {
+          cumpleFiltros = false;
+        }
+      }
+
+      // Filtrar por característica curricular si está presente
+      if (filtros.caracteristicaCurricular && docente.info?.caracteristicaCurricular) {
+        if (docente.info.caracteristicaCurricular !== filtros.caracteristicaCurricular) {
+          cumpleFiltros = false;
+        }
+      }
+
+      if (cumpleFiltros) {
+        acc.push(docente);
+      }
+      return acc;
+    }, [] as ReporteDocenteIndividual[]);
+
+    // Ordenar por calificación si se especifica
+    if (filtros.orden) {
+      dataFiltrada.sort((a, b) => {
+        if (filtros.orden === '1') {
+          return (a.calificacion || 0) - (b.calificacion || 0);
+        } else {
+          return (b.calificacion || 0) - (a.calificacion || 0);
+        }
+      });
+    }
+   /*  dispatch({ type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE, payload: dataFiltrada }) */
+    dispatch({ type: AppAction.DATA_FILTRADA_ESPECIALISTA_DIRECTOR_TABLA, payload: dataFiltrada })
+    convertDataEstadisticasYGraficos(dataFiltrada)
+    return dataFiltrada;
+  }
+  const convertDataEstadisticasYGraficos = (data: ReporteDocenteIndividual[]) => {
+    const estadisticas = data.reduce((acc, docente) => {
+      docente.resultados?.forEach(respuesta => {
+        if (respuesta.order === undefined) return;
+
+        const orderId = respuesta.order.toString();
+        let estadistica = acc.find(stat => stat.id === orderId);
+
+        if (!estadistica) {
+          estadistica = {
+            id: orderId,
+            a: 0,
+            b: 0,
+            c: 0,
+            d: 0,
+            total: 0
+          };
+          acc.push(estadistica);
+        }
+
+        respuesta.alternativas?.forEach(alternativa => {
+          if (!alternativa.selected) return;
+
+          switch (alternativa.alternativa) {
+            case 'a': estadistica!.a = (estadistica!.a || 0) + 1; break;
+            case 'b': estadistica!.b = (estadistica!.b || 0) + 1; break;
+            case 'c': estadistica!.c = (estadistica!.c || 0) + 1; break;
+            case 'd': estadistica!.d = (estadistica!.d || 0) + 1; break;
+          }
+        });
+
+        const alternativasPresentes = respuesta.alternativas?.some(alt => alt.alternativa === 'd');
+        if (alternativasPresentes) {
+          estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0) + (estadistica!.d || 0);
+        } else {
+          estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0);
+          estadistica!.d = undefined;
+        }
+      });
+      return acc;
+    }, [] as DataEstadisticas[]);
+
+    /* dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA, payload: resultadosDocentes }) */
+    dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: estadisticas });
+  }
+  const reporteDeEspecialistaToDirectore = async (idEvaluacion: string, month: number, currentUserData: User) => {
+   /*  currentUserData.rol === 4  */
+    const reporteEspecialistaDirectores = await getAllReporteDeDirectoreToEspecialistas(idEvaluacion, month,currentUserData)
+    console.log('reporteEspecialistaDirectores', reporteEspecialistaDirectores)
+    const estadisticas = reporteEspecialistaDirectores.reduce((acc, docente) => {
+      docente.resultados?.forEach(respuesta => {
+        if (respuesta.order === undefined) return;
+
+        const orderId = respuesta.order.toString();
+        let estadistica = acc.find(stat => stat.id === orderId);
+
+        if (!estadistica) {
+          estadistica = {
+            id: orderId,
+            a: 0,
+            b: 0,
+            c: 0,
+            d: 0,
+            total: 0
+          };
+          acc.push(estadistica);
+        }
+
+        respuesta.alternativas?.forEach(alternativa => {
+          if (!alternativa.selected) return;
+
+          switch (alternativa.alternativa) {
+            case 'a': estadistica!.a = (estadistica!.a || 0) + 1; break;
+            case 'b': estadistica!.b = (estadistica!.b || 0) + 1; break;
+            case 'c': estadistica!.c = (estadistica!.c || 0) + 1; break;
+            case 'd': estadistica!.d = (estadistica!.d || 0) + 1; break;
+          }
+        });
+
+        const alternativasPresentes = respuesta.alternativas?.some(alt => alt.alternativa === 'd');
+        if (alternativasPresentes) {
+          estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0) + (estadistica!.d || 0);
+        } else {
+          estadistica!.total = (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0);
+          estadistica!.d = undefined;
+        }
+      });
+      return acc;
+    }, [] as DataEstadisticas[]);
+    console.log('estadisticas', estadisticas)
+   return  dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: estadisticas })
+  }
+
+
+
   const getDataEvaluacion = (idEvaluacion: string) => {
-    onSnapshot(doc(db, "/evaluaciones-especialista", idEvaluacion), (doc) => {
+    onSnapshot(doc(db, "/evaluaciones-director", idEvaluacion), (doc) => {
       if (doc.exists()) {
         dispatch({ type: AppAction.DATA_EVALUACION_DOCENTE, payload: doc.data() })
       }
@@ -78,7 +251,7 @@ await updateDoc(washingtonRef, {
   const getPreguntasRespuestasEspecialistas = async (idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     const path = `/evaluaciones-especialista/${idEvaluacion}/preguntasRespuestas`
-    const q  = query(collection(db, path), orderBy("order","asc"))
+    const q = query(collection(db, path), orderBy("order", "asc"))
     onSnapshot(q, (querySnapshot) => {
       const arrayPreguntaRespuestaDocentes: PreviewPRDocentes[] = []
       querySnapshot.forEach((doc) => {
@@ -91,7 +264,7 @@ await updateDoc(washingtonRef, {
   const getPREspecialistaDirector = async (idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     const path = `/evaluaciones-director/${idEvaluacion}/preguntasRespuestas`
-    const q  = query(collection(db, path), orderBy("order","asc"))
+    const q = query(collection(db, path), orderBy("order", "asc"))
     onSnapshot(q, (querySnapshot) => {
       const arrayPreguntaRespuestaDocentes: PreviewPRDocentes[] = []
       querySnapshot.forEach((doc) => {
@@ -368,38 +541,7 @@ await updateDoc(washingtonRef, {
 
   }
 
-  /* const reporteEvaluacionDocentes = (idEvaluacion: string) => {
-    const path = `/evaluaciones-docentes/${idEvaluacion}/${currentUserData.dni}/`
-    const refData = collection(db, path)
-    const arrayDataEstadisticas: DataEstadisticas[] = []
 
-    const newPromise = new Promise<DataEstadisticas[]>(async (resolve, reject) => {
-      try {
-        await getDocs(refData)
-          .then(response => {
-            let index = 0
-            response.forEach((doc) => {
-              index = index + 1
-              console.log('index', index)
-              console.log('response.size', response.size)
-              arrayDataEstadisticas.push({
-                ...doc.data(),
-                id: doc.id,
-                total: doc.data().d === undefined ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) : Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) + Number(doc.data().d)
-              })
-            })
-            if (response.size === index) {
-              arrayDataEstadisticas.sort((a: any, b: any) => a.id - b.id)
-              resolve(arrayDataEstadisticas)
-            }
-          })
-      } catch (error) {
-        console.log('error', error)
-        reject()
-      }
-    })
-    newPromise.then(res => dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: arrayDataEstadisticas }))
-  } */
 
   const getPRDocentes = async (idEvaluacion: string) => {
     console.log('rta', idEvaluacion)
@@ -544,10 +686,9 @@ await updateDoc(washingtonRef, {
     })
   }
   const buscarDirectorReporteDeEvaluacion = (idEvaluacion: string, idDirector: string) => {
-    console.log('idEvaluacion', idEvaluacion)
-    console.log('idDirector', idDirector)
-    const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}/${idDirector}`
-    const docRef = doc(db, path)
+    /* const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}/${idDirector}` */
+    const path = `/reporte-directores/${idEvaluacion}/${currentYear}-${currentMonth}/`
+    const docRef = doc(db, path, `${idDirector}`)
     getDoc(docRef)
       .then(response => {
         console.log('response', response.data())
@@ -578,7 +719,7 @@ await updateDoc(washingtonRef, {
       }
       return acc;
     }, [] as ReporteDocenteIndividual[]);
-    
+
     // Ordenar por calificación si se especifica
     if (orden) {
       dataFiltrada.sort((a, b) => {
@@ -681,9 +822,9 @@ await updateDoc(washingtonRef, {
 
     })
   }
-  
+
   return {
-    createEvaluacionesEspecialistas,  
+    createEvaluacionesEspecialistas,
     reporteEvaluacionEspecialistas,
     getEvaluacionesEspecialistas,
     deleteEvaluacionEspecilistas,
@@ -692,7 +833,6 @@ await updateDoc(washingtonRef, {
     updatePreResEspecialistas,
     buscarDocente,
     guardarEvaluacionEspecialistas,
-    /* reporteEvaluacionDocentes, */
     getPRDocentes,
     getDataEvaluacion,
     resetDocente,
@@ -710,7 +850,9 @@ await updateDoc(washingtonRef, {
     buscarDirectorReporteDeEvaluacion,
     reporteTablaEvaluacionEspecialista,
     updateEvaluacionDesempeñoDirectivo,
-    getPREspecialistaDirector
+    getPREspecialistaDirector,
+    reporteDeEspecialistaToDirectore,
+    getReporteDeDirectoresToEspecialistaTabla
   }
 }
 

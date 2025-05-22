@@ -5,6 +5,7 @@ import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalCo
 import { AppAction } from '../actions/appAction';
 import { } from 'firebase/firestore/lite';
 import { useRouter } from 'next/router';
+import { currentMonth, currentYear } from '@/fuctions/dates';
 
 const UseEvaluacionDirectores = () => {
   const router = useRouter()
@@ -163,7 +164,7 @@ const UseEvaluacionDirectores = () => {
       })
     }
 
-    const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}/`
+    const path = `/reporte-directores/${idEvaluacion}/${currentYear}-${currentMonth}/`
     await setDoc(doc(db, path, `${dataDocente.dni}`), { observacionesMonitoreo: {}, resultados: data, dni: dataDocente.dni, dniDirector: currentUserData.dni, calificacion: totalPuntos, info: dataDocente })
     .then(() => {
       dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })

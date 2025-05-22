@@ -103,7 +103,7 @@ const EvaluacionDirector = () => {
           >Evaluar director</button>
           {/* <button onClick={() => handleShowModalPreguntas()} className='h-[50px] relative z-[30] p-3 bg-gradient-to-r from-tere to-gg-3  text-textTitulos  rounded-sm drop-shadow-lg '>Reporte ugel</button> */}
           {/* <button className='h-[50px] relative z-[30] p-3 bg-gradient-to-r from-amarilloLogo to-tableEstandares4  text-textTitulos  rounded-sm drop-shadow-lg '>Reporte ugel</button> */}
-          <Link className={styles.headerButton} href={`reporte?idEvaluacion=${router.query.id}`}>
+          <Link className={styles.headerButton} href={`${currentUserData.rol === 4 ? `/admin/directores/reporte?idEvaluacion=${router.query.id}` :`reporte?idEvaluacion=${router.query.id}`} `}>
             Reporte
           </Link>
           {/* //estes boton me tendria que llevar a la pagina de reportes ya no abre un modal */}

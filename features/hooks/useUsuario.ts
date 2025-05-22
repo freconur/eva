@@ -98,15 +98,15 @@ const useUsuario = () => {
       dispatch({
         type: AppAction.CURRENT_USER_DATA,
         payload: {
-          nombres: user.data().nombres,
-          apellidos: user.data().apellidos,
-          dni: user.data().dni,
-          institucion: user.data().institucion,
-          dniDirector: user.data().dniDirector,
+          nombres: user.data().nombres || '',
+          apellidos: user.data().apellidos || '',
+          dni: user.data().dni || '',
+          institucion: user.data().institucion || '',
+          dniDirector: user.data().dniDirector || '',
           modular: user.data().modular || '',
-          perfil: user.data().perfil,
-          region: user.data().region,
-          rol: user.data().rol,
+          perfil: user.data().perfil || {},
+          region: user.data().region || 0,
+          rol: user.data().rol || 0,
         },
       });
     } else {

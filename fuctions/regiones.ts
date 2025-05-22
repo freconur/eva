@@ -22,6 +22,12 @@ export const niveles = (value: number) => {
   if (value === 4) return "N4"
 }
 
+export const convertAlternativaToNivel = (alternativa: string) => {
+  if (alternativa === "a") return "Nivel 1"
+  if (alternativa === "b") return "Nivel 2"
+  if (alternativa === "c") return "Nivel 3"
+  if (alternativa === "d") return "Nivel 4"
+}
 export const rolTexto = (rol: number) => {
   if (rol === 1) return "Especialista UGEL"
   if (rol === 2) return "Director"

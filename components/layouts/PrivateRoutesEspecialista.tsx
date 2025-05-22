@@ -32,6 +32,7 @@ const PrivateRouteEspecialista = ({ children }: Props) => {
       if (currentUserData.perfil?.rol !== undefined) {
         const rol = Number(currentUserData?.perfil.rol);
         if (rol !== 1 && rol !== 4) {
+         /*  if (rol !== 1) { */
           router.push('/login')
         }
       } else {
