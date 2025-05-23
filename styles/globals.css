@@ -7,6 +7,25 @@
   --primary: rgb(234, 239, 248);
   --secondary: rgba(187, 241, 255, 0.4);
   --tertiary: rgba(233, 251, 255, 0.6);
+  /* Colores principales */
+  --color-azul-claro4: #3674B5;
+  --color-azul-claro3: #578FCA;
+  --color-azul-claro2: #A1E3F9;
+  --color-azul-claro: #D1F8EF;
+  --color-tercero: #3ABEF9;
+  --color-quinto: #1D24CA;
+  --color-secundario: #0a47c4;
+  --color-cuarto: #A7E6FF;
+  --color-graduado-blue-1: rgb(5,100,245);
+  --color-pastel13: #d7ff61;
+  --color-pastel2: #cafde6;
+  --color-pastel5: #e1fdca;
+  --color-beneficios: #77f9e2;
+  --color-azul-oscuro: #002060;
+
+  /* Gradiente */
+  --gradient-start: #19246f;
+  --gradient-end: #3572EF;
 }
 
 #__next {

@@ -9,6 +9,18 @@ import secundaria from "../../../assets/secundaria.png";
 import inicial from "../../../assets/inicial.png";
 import logo from "../../../assets/formativa-logo.png";
 import { RiLoader4Line } from "react-icons/ri";
+import styles from "./evaluaciones.module.css";
+
+const getRandomPosition = () => {
+  const circlePositions = ['circleTopRight', 'circleTopLeft', 'circleBottomRight', 'circleBottomLeft'];
+  const shapePositions = ['shapeTopRight', 'shapeTopLeft', 'shapeBottomRight', 'shapeBottomLeft'];
+  
+  const randomCircle = circlePositions[Math.floor(Math.random() * circlePositions.length)];
+  const randomShape = shapePositions[Math.floor(Math.random() * shapePositions.length)];
+  
+  return `${styles[randomCircle]} ${styles[randomShape]}`;
+};
+
 const Evaluaciones = () => {
   const { getEvaluaciones } = useAgregarEvaluaciones();
   const { evaluaciones, currentUserData, loaderPages } = useGlobalContext();
@@ -19,18 +31,15 @@ const Evaluaciones = () => {
 
   console.log("evaluaciones", evaluaciones);
   return (
-    <div className="relative h-full p-10">
-      <h1 className="font-martianMono uppercase text-3xl text-white text-center mb-10">
+    <div className={styles.container}>
+      <h1 className={styles.title}>
         evaluaciones por niveles
       </h1>
-      <div className="grid gap-10 justify-center items-center">
-        <div className="grid grid-cols-3 h-[200px] w-[75%] bg-ggw-1 overflow-hidden rounded-md drop-shadow-2xl">
-          <div className="relative h-full grid justify-center items-center uppercase  p-3 font-semibold">
-            <Link
-              href="/docentes/evaluaciones/secundaria"
-              className="relative h-full grid justify-center items-center uppercase  p-3 font-semibold"
-            >
-              <div className="absolute z-[10] right-[10px] bottom-[-10px] opacity-70">
+      <div className={styles.gridContainer}>
+        <div className={styles.secundariaContainer}>
+          <div className={styles.levelTitle}>
+            <Link href="/docentes/evaluaciones/secundaria" className={styles.levelTitle}>
+              <div className={styles.levelImage}>
                 <Image
                   alt="logo formativa"
                   src={secundaria}
@@ -38,46 +47,42 @@ const Evaluaciones = () => {
                   height={300}
                 />
               </div>
-              <h3 className="relative z-[30] text-2xl text-white font-bold font-montserrat text-center">
+              <h3>
                 educación secundaria
               </h3>
             </Link>
           </div>
-          <Link href="/docentes/evaluaciones/secundaria" className="relative grid grid-rows-tablaEstandar bg-tableEstandares4 cursor-pointer hover:opacity-80">
-            <div className="absolute z-[50] top-[-20px] right-[105px]">
-              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
-                6
-              </p>
+          <Link href="/docentes/evaluaciones/secundaria" className={`${styles.levelCard} ${styles.secundaria6} ${getRandomPosition()}`}>
+            <div className={styles.overlay}></div>
+            <div className={styles.levelNumber}>
+              <p>6</p>
             </div>
-            <div className="relative z-[40] bg-tableEstandares4 flex justify-center items-center text-2xl p-3 break-all ">
-              <p className="break-all text-tableEstandares6">
+            <div className={styles.levelContent}>
+              <p className={styles.textTableEstandares6}>
                 Estándar de aprendizaje
               </p>
             </div>
-            <div className="relative z-[40] bg-white text-center opacity-90 grid justify-center items-center rounded-t-md">
-              <p className="font-martianMono uppercase">nivel 6</p>
-            </div>
+            {/* <div className={styles.levelFooter}>
+              <p>nivel 6</p>
+            </div> */}
           </Link>
-          <Link href="/docentes/evaluaciones/secundaria" className="grid relative grid-rows-tablaEstandar bg-tableEstandares3 cursor-pointer hover:opacity-80">
-            <div className="absolute z-[50] top-[-20px] right-[105px]">
-              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
-                7
-              </p>
+          <Link href="/docentes/evaluaciones/secundaria" className={`${styles.levelCard} ${styles.secundaria7} ${getRandomPosition()}`}>
+            <div className={styles.overlay}></div>
+            <div className={styles.levelNumber}>
+              <p>7</p>
             </div>
-            <div className="bg-tableEstandares3 flex justify-center items-center text-2xl p-3 break-all ">
-              <p className="break-all text-white">Estándar de aprendizaje</p>
+            <div className={styles.levelContent}>
+              <p className={styles.textWhite}>Estándar de aprendizaje</p>
             </div>
-            <div className="bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md">
-              <p className="font-martianMono uppercase">nivel 7</p>
-            </div>
+            {/* <div className={styles.levelFooter}>
+              <p>nivel 7</p>
+            </div> */}
           </Link>
         </div>
-        <div className="grid grid-cols-4 h-[200px] bg-gos-1 overflow-hidden rounded-md drop-shadow-2xl">
-          <Link
-            href="/docentes/evaluaciones/tercerNivel"
-            className="relative h-full grid justify-center items-center uppercase  p-3 font-semibold"
-          >
-            <div className="absolute z-[10] right-[-5px] bottom-[-10px] opacity-80">
+
+        <div className={styles.primariaContainer}>
+          <Link href="/docentes/evaluaciones/tercerNivel" className={styles.levelTitle}>
+            <div className={styles.levelImage}>
               <Image
                 alt="logo formativa"
                 src={primaria}
@@ -85,68 +90,55 @@ const Evaluaciones = () => {
                 height={200}
               />
             </div>
-            <h3 className="relative z-[30] text-2xl text-white font-bold font-montserrat text-center">
+            <h3>
               educación primaria
             </h3>
           </Link>
-          {/* <div className='grid relative grid-rows-tablaEstandar bg-colorCuarto cursor-pointer hover:opacity-80'> */}
-          <Link
-            href="/docentes/evaluaciones/tercerNivel"
-            className="grid relative grid-rows-tablaEstandar bg-colorCuarto cursor-pointer hover:opacity-80"
-          >
-            <div className="absolute z-[50] top-[-20px] right-[105px]">
-              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
-                3
-              </p>
+          <Link href="/docentes/evaluaciones/tercerNivel" className={`${styles.levelCard} ${styles.primaria3} ${getRandomPosition()}`}>
+            <div className={styles.overlay}></div>
+            <div className={styles.levelNumber}>
+              <p>3</p>
             </div>
-            <div className="bg-colorCuarto flex justify-center items-center text-2xl p-3 break-all ">
-              <p className="break-all text-tableEstandares6">
+            <div className={styles.levelContent}>
+              <p className={styles.textTableEstandares6}>
                 Estándar de aprendizaje
               </p>
             </div>
-            <div className="bg-white text-center opacity-90 grid justify-center items-center rounded-t-md">
-              <p className="font-martianMono uppercase">nivel 3</p>
-            </div>
+            {/* <div className={styles.levelFooter}>
+              <p>nivel 3</p>
+            </div> */}
           </Link>
-          {/* </div> */}
-          <Link
-            href="/docentes/evaluaciones/tercerNivel"
-            className="grid grid-rows-tablaEstandar bg-graduado-blue-1 cursor-pointer hover:opacity-80 relative"
-          >
-            <div className="absolute z-[50] top-[-20px] right-[105px]">
-              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
-                4
-              </p>
+          <Link href="/docentes/evaluaciones/tercerNivel" className={`${styles.levelCard} ${styles.primaria4} ${getRandomPosition()}`}>
+            <div className={styles.overlay}></div>
+            <div className={styles.levelNumber}>
+              <p>4</p>
             </div>
-            <div className="bg-graduado-blue-1 flex justify-center items-center text-2xl p-3 break-all ">
-              <p className="break-all text-white ">Estándar de aprendizaje</p>
+            <div className={styles.levelContent}>
+              <p className={styles.textWhite}>Estándar de aprendizaje</p>
             </div>
-            <div className="bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md">
-              <p className="font-martianMono uppercase">nivel 4</p>
-            </div>
+           {/*  <div className={styles.levelFooter}>
+              <p>nivel 4</p>
+            </div> */}
           </Link>
-          <Link
-            href="/docentes/evaluaciones/tercerNivel"
-            className="grid grid-rows-tablaEstandar bg-pastel13 cursor-pointer hover:opacity-80 relative"
-          >
-            <div className="absolute z-[50] top-[-20px] right-[105px]">
-              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
-                5
-              </p>
+          <Link href="/docentes/evaluaciones/tercerNivel" className={`${styles.levelCard} ${styles.primaria5} ${getRandomPosition()}`}>
+            <div className={styles.overlay}></div>
+            <div className={styles.levelNumber}>
+              <p>5</p>
             </div>
-            <div className="bg-pastel13 flex justify-center items-center text-2xl p-3 break-all ">
-              <p className="break-all text-tableEstandares6">
+            <div className={styles.levelContent}>
+              <p className={styles.textTableEstandares6}>
                 Estándar de aprendizaje
               </p>
             </div>
-            <div className="bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md">
-              <p className="font-martianMono uppercase">nivel 5</p>
-            </div>
+            {/* <div className={styles.levelFooter}>
+              <p>nivel 5</p>
+            </div> */}
           </Link>
         </div>
-        <div className="grid grid-cols-3 h-[200px]  w-[75%] bg-pastel14 overflow-hidden rounded-md  drop-shadow-2xl">
-          <div className="relative h-full grid justify-center items-center uppercase text-tableEstandares6 p-3 font-semibold">
-            <div className="absolute z-[10] right-[0px] bottom-[-10px] opacity-80">
+
+        <div className={styles.inicialContainer}>
+          <div className={styles.levelTitle}>
+            <div className={styles.levelImage}>
               <Image
                 alt="logo formativa"
                 src={inicial}
@@ -154,38 +146,36 @@ const Evaluaciones = () => {
                 height={200}
               />
             </div>
-            <h3 className="relative z-[30] text-2xl text-white font-bold font-montserrat text-center">
+            <h3>
               educación inicial
             </h3>
           </div>
-          <div className="grid grid-rows-tablaEstandar bg-tere cursor-pointer hover:opacity-80 relative">
-            <div className="absolute z-[50] top-[-20px] right-[105px]">
-              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
-                1
-              </p>
+          <Link href="" className={`${styles.levelCard} ${styles.inicial1} ${getRandomPosition()}`}>
+            <div className={styles.overlay}></div>
+            <div className={styles.levelNumber}>
+              <p>1</p>
             </div>
-            <div className="bg-tere flex justify-center items-center text-2xl p-3 break-all ">
-              <p className="break-all text-white">Estándar de aprendizaje</p>
+            <div className={styles.levelContent}>
+              <p className={styles.textWhite}>Estándar de aprendizaje</p>
             </div>
-            <div className="bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md">
-              <p className="font-martianMono uppercase">nivel 1</p>
+            {/* <div className={styles.levelFooter}>
+              <p>nivel 1</p>
+            </div> */}
+          </Link>
+          <Link href="" className={`${styles.levelCard} ${styles.inicial2} ${getRandomPosition()}`}>
+            <div className={styles.overlay}></div>
+            <div className={styles.levelNumber}>
+              <p>2</p>
             </div>
-          </div>
-          <div className="grid grid-rows-tablaEstandar bg-iconColor cursor-pointer hover:opacity-80 relative">
-            <div className="absolute z-[50] top-[-20px] right-[105px]">
-              <p className="font-martianMono font-semibold text-[120px] text-white opacity-50 ">
-                2
-              </p>
-            </div>
-            <div className="bg-headerTable flex justify-center items-center text-2xl p-3 break-all ">
-              <p className="break-all text-tableEstandares6 ">
+            <div className={styles.levelContent}>
+              <p className={styles.textTableEstandares6}>
                 Estándar de aprendizaje
               </p>
             </div>
-            <div className="bg-tableEstandares5 opacity-60 text-center grid justify-center items-center rounded-t-md">
-              <p className="font-martianMono uppercase">nivel 2</p>
-            </div>
-          </div>
+            {/* <div className={styles.levelFooter}>
+              <p>nivel 2</p>
+            </div> */}
+          </Link>
         </div>
       </div>
     </div>
