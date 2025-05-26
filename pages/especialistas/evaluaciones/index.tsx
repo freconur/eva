@@ -78,12 +78,12 @@ const Evaluaciones = () => {
                                 {eva.nombre}
                               </Link>
                             </td>
-                            <td>
+                            {/* <td>
                               <MdEditSquare onClick={() => { setNameEva(`${eva.nombre}`); handleShowInputUpdate(); setIdEva(`${eva.id}`) }} className='text-xl text-yellow-500 cursor-pointer' />
                             </td>
                             <td>
                               <MdDeleteForever onClick={() => { handleShowModalDelete(); setIdEva(`${eva.id}`) }} className='text-xl text-red-500 cursor-pointer' />
-                            </td>
+                            </td> */}
                           </tr>
                         )
                       })
