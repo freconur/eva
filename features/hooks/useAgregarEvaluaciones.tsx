@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, increment, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore/lite"
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, increment, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch, onSnapshot, QuerySnapshot, DocumentData } from "firebase/firestore"
 import { AppAction } from "../actions/appAction"
 import { useGlobalContext, useGlobalContextDispatch } from "../context/GlolbalContext"
 import { Alternativa, CreaEvaluacion, Evaluaciones, Grades, PreguntasRespuestas, User, UserEstudiante } from "../types/types"
@@ -136,34 +136,22 @@ export const useAgregarEvaluaciones = () => {
     if (id.length > 0) {
       const pethRef = collection(db, `/evaluaciones/${id}/preguntasRespuestas`)
       const q = query(pethRef, orderBy("order", "asc"));
-      const querySnapshot = await getDocs(q);
-      const count = querySnapshot.size
-      let preguntasrespuestas: PreguntasRespuestas[] = []
+      
+      return onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
+        const count = querySnapshot.size
+        let preguntasrespuestas: PreguntasRespuestas[] = []
 
-      const newPromise = new Promise<boolean>((resolve, reject) => {
-        try {
-          querySnapshot.forEach((doc) => {
-            preguntasrespuestas.push({ ...doc.data(), id: doc.id })
-          });
-          // preguntasrespuestas.sort((a: any, b: any) => Number(a.order) - Number(b.order))
-          // console.log('rta 2', preguntasrespuestas)
-          // preguntasrespuestas.sort((a: any, b: any) => a.id - b.id)
-          resolve(true)
-        } catch (error) {
-          console.log('error', error)
-          dispatch({ type: AppAction.LOADER_PAGES, payload: false })
-          reject(false)
-        }
-      })
+        querySnapshot.forEach((doc) => {
+          preguntasrespuestas.push({ ...doc.data(), id: doc.id })
+        });
 
-      newPromise.then(response => {
-        if (response === true) {
-          dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: preguntasrespuestas })
-          dispatch({ type: AppAction.SIZE_PREGUNTAS, payload: count })
-          dispatch({ type: AppAction.LOADER_PAGES, payload: false })
-          return preguntasrespuestas
-        }
-      })
+        dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: preguntasrespuestas })
+        dispatch({ type: AppAction.SIZE_PREGUNTAS, payload: count })
+        dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+      }, (error: Error) => {
+        console.log('error', error)
+        dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+      });
     }
   }
 
@@ -405,6 +393,40 @@ const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${idEvaluacion}/${curr
         dispatch({ type: AppAction.EVALUACIONES_DIRECTOR, payload: arrayEvaluacionesDirector })
       })
   }
+
+  const deletePreguntaRespuesta = async (idEvaluacion: string, idPregunta: string, order: number) => {
+    dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true })
+    
+    try {
+      // Borrar la pregunta
+      await deleteDoc(doc(db, `/evaluaciones/${idEvaluacion}/preguntasRespuestas`, idPregunta))
+      
+      // Obtener todas las preguntas restantes
+      const preguntasRef = collection(db, `/evaluaciones/${idEvaluacion}/preguntasRespuestas`)
+      const q = query(preguntasRef, orderBy("order", "asc"))
+      const querySnapshot = await getDocs(q)
+      
+      // Actualizar el orden de las preguntas restantes
+      const batch = writeBatch(db)
+      querySnapshot.forEach((doc) => {
+        const pregunta = doc.data()
+        if (pregunta.order > order) {
+          batch.update(doc.ref, { order: pregunta.order - 1 })
+        }
+      })
+      
+      await batch.commit()
+      
+      // Recargar las preguntas
+      await getPreguntasRespuestas(idEvaluacion)
+      
+      dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+    } catch (error) {
+      console.error('Error al borrar la pregunta:', error)
+      dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+    }
+  }
+
   return {
     guardarPreguntasRespuestas,
     crearEvaluacion,
@@ -419,6 +441,7 @@ const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${idEvaluacion}/${curr
     deleteEvaluacion,
     updateEvaluacion,
     updatePreguntaRespuesta,
-    getEvaluacionesDirector
+    getEvaluacionesDirector,
+    deletePreguntaRespuesta
   }
 }
