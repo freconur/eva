@@ -60,18 +60,26 @@ const useEvaluacionCurricular = () => {
   }
   const getUsuariosToAdmin = async (rol:number) => {
     let lastVisible:any = 0
-    const arrayUsuarios: User[] = []
     const pathRef = collection(db, 'usuarios')
-    const q = query(pathRef,where("rol","==", rol), limit(5));
-    const documentSnapshots = await getDocs(q);
+    /* const q = query(pathRef,where("rol","==", rol), limit(5)); */
+    const q = query(pathRef,where("rol","==", rol));
+    onSnapshot(q, (querySnapshot) => {
+      const arrayUsuarios: User[] = []
+      querySnapshot.forEach(doc => {
+        arrayUsuarios.push({ ...doc.data() })
+      })
+      dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
+    })
+    /* const documentSnapshots = await getDocs(q);
     documentSnapshots.forEach(doc => {
       arrayUsuarios.push({ ...doc.data() })
-    });
-    dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
+    }); */
+
+    /* 
     lastVisible = documentSnapshots.docs[documentSnapshots.docs.length - 1]
     dispatch({ type: AppAction.LAST_VISIBLE, payload: lastVisible })
     setDocumentSnapshots([lastVisible])
-    setCurrentPage(0)
+    setCurrentPage(0) */
   }
   const getDocentesToTable = async (dniDirector:string) => {
     console.log('dniDirector', dniDirector)
@@ -354,6 +362,23 @@ const useEvaluacionCurricular = () => {
         dispatch({ type: AppAction.RESULTADO_BUSQUEDA_USUARIO, payload: querySnapshot.docs[0]?.data() })
       } else {
         dispatch({ type: AppAction.RESULTADO_BUSQUEDA_USUARIO, payload: {} })
+        dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: 'No se encontró ningún resultado' })
+      }
+    })
+  }
+
+  const getEspecialistaToAdmin = async (rol: number, dniDirector: string) => {
+    console.log('rol', rol)
+    console.log('dniDirector', dniDirector)
+    const pathRef = collection(db, 'usuarios')
+    const q = query(pathRef, where("rol", "==", rol), where("dni", "==", dniDirector));
+
+    onSnapshot(q, (querySnapshot) => {
+      console.log('querySnapshot', querySnapshot.size)
+      if (querySnapshot.size > 0) {
+        console.log('querySnapshot.docs[0]?.data()', querySnapshot.docs[0]?.data())
+        dispatch({ type: AppAction.RESULTADO_BUSQUEDA_USUARIO, payload: querySnapshot.docs[0]?.data() })
+      }else {
         dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: 'No se encontró ningún resultado' })
       }
     })
@@ -723,7 +748,8 @@ const getUsuarioMaster = (dni: string) => {
     getPreviousUsuariosDocentes,
     getDocentesToTable,
     getDirectoresTabla,
-    getUsuarioMaster
+    getUsuarioMaster,
+    getEspecialistaToAdmin
   }
 }
 export default useEvaluacionCurricular

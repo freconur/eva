@@ -127,7 +127,7 @@ const AgregareEspecialista = () => {
       </div>
     )
   }
-  console.log('docentesDeDirectores', docentesDeDirectores)
+ /*  console.log('docentesDeDirectores', docentesDeDirectores) */
   return (
     <div className={styles.container}>
       {showModalActualizarEspecialista && <UpdateUsuarioEspecialista idUsuario={idUsuario} handleShowModal={handleShowModal} />}

@@ -28,11 +28,34 @@
     border-spacing: 0;
     margin: 1.5rem 0;
 }
-
+.resultadoBusquedaHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 .tableHeader {
     background: #f7fafc;
 }
-
+.actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    padding: 1rem;
+    background-color: #f9fafb; 
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    width: fit-content;
+    height: fit-content;
+    position: relative;
+    top: 0;
+    left: 0;
+}
+.editButton {
+    color: #2563eb;
+}
+.deleteButton {
+    color: #dc2626;
+}
 .tableHeader th {
     padding: 1rem;
     text-align: left;
@@ -202,29 +225,34 @@
 .paginationButtons {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 1rem;
-    margin-top: 2rem;
+    margin-top: 1rem;
+    padding: 1rem;
 }
 
 .paginationButton {
-    padding: 0.75rem 1.5rem;
-    background: #f7fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    color: #4a5568;
-    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    background-color: #007bff;
+    color: white;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.3s ease;
 }
 
 .paginationButton:hover:not(:disabled) {
-    background: #edf2f7;
-    transform: translateY(-1px);
+    background-color: #0056b3;
 }
 
 .paginationButton:disabled {
-    opacity: 0.5;
+    background-color: #cccccc;
     cursor: not-allowed;
+}
+
+.pageInfo {
+    font-size: 0.9rem;
+    color: #666;
 }
 
 @media (max-width: 640px) {
