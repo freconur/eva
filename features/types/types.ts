@@ -65,7 +65,8 @@ export type AppReducerValues = {
   dataEvaluacionMediacionDirector:DataEvaluacion,
   dataDocenteMaster:User,
   warningEvaEstudianteSinRegistro:string | null,
-  allEvaluacionesEstudiantes:User[]
+  allEvaluacionesEstudiantes:User[],
+  preguntasEstandar:PaHanilidad[]
 };
 
 export type AppActions =
@@ -146,6 +147,7 @@ export type AppActions =
   | { type: AppAction.DATA_DOCENTE_MASTER; payload: User }
   | { type: AppAction.WARNING_EVA_ESTUDIANTE_SIN_REGISTRO; payload: string  | null}
   | { type: AppAction.ALL_EVALUACIONES_ESTUDIANTES; payload: User[] }
+  | { type: AppAction.PREGUNTAS_ESTANDAR; payload: PaHanilidad[] }
 export type LoginData = {
   usuario: string;
   contrasena: string;

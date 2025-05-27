@@ -71,12 +71,19 @@ const CoberturaCurricular = () => {
                   >
                     Crear instrumento de monitoreo
                   </button>
-                  <button
+                  {/* <button
                     onClick={handleShowModalPreguntasAlternativas}
                     className={styles.headerButton}
                   >
                     Agregar
-                  </button>
+                  </button> */}
+                  <Link
+                    href="/admin/estandares"
+                    /* onClick={handleShowModalPreguntasAlternativas}  */
+                    className={styles.headerButton}
+                  >
+                    Estandares
+                  </Link>
                 </>
                 :
                 null

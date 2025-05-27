@@ -55,7 +55,7 @@
 .headerButtons {
     display: flex;
     gap: 1rem;
-    justify-content: center;
+    justify-content: start;
 }
 
 .headerButton {

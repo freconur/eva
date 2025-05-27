@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { addDoc, collection, doc, getDoc, getDocs, getFirestore, limit, onSnapshot, orderBy, query, setDoc, startAfter, updateDoc, where, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, getDocs, getFirestore, limit, onSnapshot, orderBy, query, setDoc, startAfter, updateDoc, where, QueryDocumentSnapshot, DocumentData, writeBatch } from "firebase/firestore";
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AnexosCurricularType, CaracteristicaCurricular, DataEstadisticas, DataEstadisticasCurricular, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, PaHanilidad, User } from '../types/types';
 import { AppAction } from '../actions/appAction';
@@ -717,8 +717,105 @@ const getUsuarioMaster = (dni: string) => {
       return acc;
     }, [] as DataEstadisticasCurricular[]);
   }
+
+  const getEstandaresCurriculares = async (nivel:string) => {
+    `/evaluacion-curricular-preguntas-alternativas`
+    const pathRef = collection(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`)
+    const q = query(pathRef, orderBy('order', 'asc'))
+    onSnapshot(q, (querySnapshot) => {
+      const arrayPreguntaEstandar: PaHanilidad[] = []
+      querySnapshot.forEach(doc => {
+        arrayPreguntaEstandar.push(doc.data())
+      })
+      dispatch({ type: AppAction.PREGUNTAS_ESTANDAR, payload: arrayPreguntaEstandar })
+    })
+  }
+
+  const updatePreguntaEstandar = async (nivel: string, id: string, data: { habilidad: string }) => {
+    try {
+      const docRef = doc(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`, id)
+      await updateDoc(docRef, data)
+      // Actualizar la lista después de actualizar
+      getEstandaresCurriculares(nivel)
+    } catch (error) {
+      console.error('Error al actualizar la pregunta:', error)
+    }
+  }
+
+  const createPreguntaEstandar = async (nivel: string, habilidad: string) => {
+    try {
+      const pathRef = collection(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`)
+      const q = query(pathRef)
+      const querySnapshot = await getDocs(q)
+      const newOrder = querySnapshot.size + 1
+      await setDoc(doc(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`, `${newOrder}`), {
+        habilidad,
+        order: newOrder,
+        id: `${newOrder}`
+      });
+      
+      // Actualizar la lista después de crear
+      getEstandaresCurriculares(nivel)
+    } catch (error) {
+      console.error('Error al crear la pregunta:', error)
+    }
+  }
+
+  const reorderPreguntaEstandar = async (nivel: string, preguntaId: string, newOrder: number) => {
+    try {
+      const pathRef = collection(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`)
+      const q = query(pathRef, orderBy('order', 'asc'))
+      const querySnapshot = await getDocs(q)
+      const preguntas: Array<{id: string, order: number, habilidad: string}> = querySnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      } as {id: string, order: number, habilidad: string}))
+      
+      console.log('preguntas', preguntas)
+      // Encontrar la pregunta que se está moviendo
+      const preguntaActual = preguntas.find(p => p.id === preguntaId)
+      if (!preguntaActual) return
+
+      const oldOrder = preguntaActual.order
+      if (oldOrder === newOrder) return
+
+      // Actualizar el orden de todas las preguntas afectadas
+      const batch = writeBatch(db)
+      
+      if (oldOrder < newOrder) {
+        // Mover hacia abajo: decrementar el orden de las preguntas entre oldOrder y newOrder
+        preguntas.forEach((pregunta: {id: string, order: number, habilidad: string}) => {
+          if (pregunta.order > oldOrder && pregunta.order <= newOrder) {
+            const docRef = doc(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`, pregunta.id)
+            batch.update(docRef, { order: pregunta.order - 1 })
+          }
+        })
+      } else {
+        // Mover hacia arriba: incrementar el orden de las preguntas entre newOrder y oldOrder
+        preguntas.forEach((pregunta: {id: string, order: number, habilidad: string}) => {
+          if (pregunta.order >= newOrder && pregunta.order < oldOrder) {
+            const docRef = doc(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`, pregunta.id)
+            batch.update(docRef, { order: pregunta.order + 1 })
+          }
+        })
+      }
+
+      // Actualizar el orden de la pregunta que se está moviendo
+      const docRef = doc(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`, preguntaId)
+      batch.update(docRef, { order: newOrder })
+
+      // Ejecutar todas las actualizaciones
+      await batch.commit()
+      
+      // Actualizar la lista después de reordenar
+      getEstandaresCurriculares(nivel)
+    } catch (error) {
+      console.error('Error al reordenar la pregunta:', error)
+    }
+  }
+
   return {
-    createEvaluacionCurricular,
+    createEvaluacionCurricular, 
     getEvaluacionCurricular,
     addPreguntasAlternativasCurricular,
     getDocentesFromDirectores,
@@ -749,7 +846,11 @@ const getUsuarioMaster = (dni: string) => {
     getDocentesToTable,
     getDirectoresTabla,
     getUsuarioMaster,
-    getEspecialistaToAdmin
+    getEspecialistaToAdmin,
+    getEstandaresCurriculares,
+    updatePreguntaEstandar,
+    createPreguntaEstandar,
+    reorderPreguntaEstandar
   }
 }
 export default useEvaluacionCurricular

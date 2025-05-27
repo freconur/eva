@@ -11,6 +11,7 @@ import AgregarPreguntasAlternativasCurricular from '@/modals/mallaCurricular/Agr
 import styles from './index.module.css'
 import TablaUsuarios from '@/components/curricular/tablas/tablaUsuarios'
 import TablasEvaluacionesDocentes from '@/components/curricular/tablas/tec-docentes/tablasEvaluaciones'
+import Link from 'next/link'
 
 const CoberturaCurricular = () => {
   const { evaluacionCurricular, loaderPages, docentesDeDirectores, currentUserData } = useGlobalContext()
@@ -62,12 +63,19 @@ const CoberturaCurricular = () => {
             >
               Crear instrumento de monitoreo
             </button>
-            <button 
+            {/* <button 
               onClick={handleShowModalPreguntasAlternativas} 
               className={styles.headerButton}
             >
               Agregar
-            </button>
+            </button> */}
+            <Link
+            href="/admin/estandares"
+              /* onClick={handleShowModalPreguntasAlternativas}  */
+              className={styles.headerButton}
+            >
+              Estandares
+            </Link>
           </div>
         </div>
       </div>
