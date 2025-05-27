@@ -15,12 +15,13 @@ interface Props {
   idCurricular: string,
   evaluacionCurricularById: EvaluacionCurricularAlternativa,
   dataDocente:User,
-  paHabilidad:PaHanilidad[]
+  paHabilidad:PaHanilidad[],
+  selectedEstandar:string
   /*  id: string
    getPreguntaRespuestaDocentes: PRDocentes[] */
 }
 
-const EvaluarCurriculaDocente = ({ paHabilidad,dataDocente,handleShowEvaluarCurriculaDocente, idCurricular }: Props) => {
+const EvaluarCurriculaDocente = ({ paHabilidad,dataDocente,handleShowEvaluarCurriculaDocente, idCurricular,selectedEstandar }: Props) => {
 
   const { loaderSalvarPregunta } = useGlobalContext()
   const [updatedEvaluacion, setUpdatedEvaluacion] = useState<PaHanilidad[]>([])
@@ -62,10 +63,11 @@ const EvaluarCurriculaDocente = ({ paHabilidad,dataDocente,handleShowEvaluarCurr
     
   }
   const handleGuardarEvaluacion = () => {
-    salvarEvaluacionCurricular(idCurricular, dataDocente, updatedEvaluacion)
+    salvarEvaluacionCurricular(idCurricular, dataDocente, updatedEvaluacion,selectedEstandar)
     handleShowEvaluarCurriculaDocente()
   }
-  console.log('updatedEvaluacion', updatedEvaluacion)
+  console.log('petetete', selectedEstandar)
+  console.log('idCurricular', idCurricular) 
   return container
     ? createPortal(
       <div className={styles.containerModal}>

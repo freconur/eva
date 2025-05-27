@@ -1,6 +1,6 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
-import { EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, User } from '@/features/types/types'
+import { EstandaresCurriculares, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, User } from '@/features/types/types'
 import EvaluarCurriculaDocente from '@/modals/mallaCurricular/evaluarCurriculaDocente'
 import React, { useEffect, useState } from 'react'
 import styles from './cobertura-curricular.module.css'
@@ -16,29 +16,51 @@ const CoberturaCurricular = ({ dataDocente, paHabilidad, evaluacionCurricular, e
 
   const [showEvaluacion, setShowEvaluacion] = useState<boolean>(false)
   const [idCurricular, setIdCurricular] = useState<string>("")
-  const { generateEvaluacionCurricular, getEvaluacionCurricularDocente, resetValuesEvaluarCurricular } = useEvaluacionCurricular()
-  const { evaluacionCurricularById, allEvaluacionesCurricularesDocente } = useGlobalContext()
-
+  const { generateEvaluacionCurricular, getEvaluacionCurricularDocente, getInstrumentos, getEstandaresCurriculares, tituloCoberturaCurricular } = useEvaluacionCurricular()
+  const [selectedEstandar, setSelectedEstandar] = useState<string>('1')
+  const { evaluacionCurricularById, allEvaluacionesCurricularesDocente, preguntasEstandar,estandaresCurriculares } = useGlobalContext()
   const handleEvaluarDocenteCurricular = (id: string) => {
     setShowEvaluacion(!showEvaluacion)
     //aqui es donde se genera la evaluacion curricular vuando se abre el modal de evaluacion
-    generateEvaluacionCurricular(evaluacionCurricularAlternativa, paHabilidad, id)
+    generateEvaluacionCurricular(evaluacionCurricularAlternativa, preguntasEstandar, id)
+    /* generateEvaluacionCurricular(evaluacionCurricularAlternativa, paHabilidad, id) */
   }
+  const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    console.log('tipi', estandaresCurriculares)
+		setSelectedEstandar(e.target.value)
+    /* estandaresCurriculares. */
+    const estandar = estandaresCurriculares.find(estandar => Number(estandar.nivel) === Number(e.target.value))
+    estandar && tituloCoberturaCurricular(estandar)
+    
+		/* setIsLoading(true) */
+		/* await getEstandaresCurriculares(e.target.value) */
+		/* setIsLoading(false) */
+	}
   const handleShowEvaluarCurriculaDocente = () => {
     setShowEvaluacion(!showEvaluacion)
   }
-  useEffect(() => {
-    getEvaluacionCurricularDocente(`${dataDocente.dni}`)
+  /* useEffect(() => {
+    getEvaluacionCurricularDocente(`${dataDocente.dni}`, selectedEstandar)//esto me lo trae segun los grados del docente
     //el valor que retorna esta funcion es el unico que se usa para pintar la tabla, nos trae toda los resultados de las evaluaciones que tiene el docente
+    
+  }, [dataDocente]) */
 
-  }, [dataDocente])
+
   useEffect(() => {
-    resetValuesEvaluarCurricular()
+    getEvaluacionCurricularDocente(`${dataDocente.dni}`, selectedEstandar)
+    getEstandaresCurriculares(selectedEstandar)
+  },[selectedEstandar, dataDocente.dni])
+  useEffect(() => {
+    /* resetValuesEvaluarCurricular() */
+    getInstrumentos()
   }, [])
+  /* console.log('evaluacionCurricular', evaluacionCurricular)
+  console.log('allEvaluacionesCurricularesDocente', allEvaluacionesCurricularesDocente)
+  console.log('paHabilidad', paHabilidad) */
   return (
     <div className={styles.coberturaContainer}>
       {
-        showEvaluacion && <EvaluarCurriculaDocente dataDocente={dataDocente} evaluacionCurricularById={evaluacionCurricularById} paHabilidad={paHabilidad} evaluacionCurricular={evaluacionCurricular} handleShowEvaluarCurriculaDocente={handleShowEvaluarCurriculaDocente} idCurricular={idCurricular} />
+        showEvaluacion && <EvaluarCurriculaDocente selectedEstandar={selectedEstandar} dataDocente={dataDocente} evaluacionCurricularById={evaluacionCurricularById} paHabilidad={paHabilidad} evaluacionCurricular={evaluacionCurricular} handleShowEvaluarCurriculaDocente={handleShowEvaluarCurriculaDocente} idCurricular={idCurricular} />
       }
       <h2 className={styles.title}>iii. cobertura curricular de la competencia lee</h2>
       <div>
@@ -70,10 +92,24 @@ const CoberturaCurricular = ({ dataDocente, paHabilidad, evaluacionCurricular, e
           </li>
         </ul>
       </div>
+      <div>
+      <select
+					className={styles.select}
+					value={selectedEstandar}
+					onChange={handleChange}
+				>
+					<option value="">Seleccione un estándar</option>
+					{
+						estandaresCurriculares.map((nivel) => (
+							<option key={nivel.nivel} value={nivel.nivel}>{nivel.name?.toUpperCase()}</option>
+						))
+					}
+				</select>
+      </div>
       <div className={styles.tableContainer}>
         <ul className={styles.skillsList}>
           <li className={styles.skillsHeader}>A. habilidad lectora</li>
-          {paHabilidad.map((habilidad, index) => (
+          {preguntasEstandar.map((habilidad, index) => (
             <li className={styles.skillItem} key={habilidad.id}>
                   <p className={styles.skillText}>
                     {index + 1}. {habilidad.habilidad}

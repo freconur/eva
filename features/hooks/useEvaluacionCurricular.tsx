@@ -482,7 +482,12 @@ const getUsuarioMaster = (dni: string) => {
     }
   }
 
-
+const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
+  console.log('estandar', estandar)
+  if (estandar.nivel && estandar.name) {
+    dispatch({ type: AppAction.TITULO_COBERTURA_CURRICULAR, payload: estandar.name })
+  }
+}
   const getEvaluacionByIdCurricular = async (idCurricular: string) => {
     const docRef = doc(db, "/evaluacion-curricular", idCurricular);
     const docSnap = await getDoc(docRef);
@@ -495,15 +500,30 @@ const getUsuarioMaster = (dni: string) => {
       console.log("No such document!");
     }
   }
-
-  const salvarEvaluacionCurricular = async (idCurricular: string, dataDocente: User, data: PaHanilidad[]) => {
+  const getEvaluacionCurricularDocente = async (dataDocente: string, nivel: string) => {
+    console.log(`/usuarios/${dataDocente}/evaluacion-curricular`)
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true })
+    onSnapshot(collection(db, `/usuarios/${dataDocente}/evaluacion-curricular/${nivel}/${nivel}`), (querySnapshot) => {
+      /* onSnapshot(collection(db, `/usuarios/${dataDocente}/evaluacion-curricular`), (querySnapshot) => { */
+      const arrayEvaluaciones: EvaluacionCurricularAlternativa[] = [];
+      querySnapshot.forEach((doc) => {
+        console.log(doc.data())
+        arrayEvaluaciones.push(doc.data());
+      });
+      console.log('arrayEvaluaciones', arrayEvaluaciones)
+      dispatch({ type: AppAction.ALL_EVALUACIONES_CURRICULARES_DOCENTE, payload: arrayEvaluaciones })
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+    });
+  }
+  const salvarEvaluacionCurricular = async (idCurricular: string, dataDocente: User, data: PaHanilidad[], nivel: string) => {
+    console.log('id',idCurricular, 'nivel',nivel)
     /* console.log(`/usuarios/${dataDocente}/evaluacion-curricular/${idCurricular}`) */
     //tengo que traerme todas las evaluaciones curriculares de un docente por lo que usare collection
 
     /* console.log('dataDocente', dataDocente.grados?.find(grado => grado === 1 || grado === 2) ? 1 : dataDocente.grados?.find(grado => grado === 3 || grado === 4) ? 2 : 3) */
 
     //esto es para guardar la evaluacion curricular de un docente o director
-    await setDoc(doc(db, `/usuarios/${dataDocente.dni}/evaluacion-curricular`, idCurricular), {
+    await setDoc(doc(db, `/usuarios/${dataDocente.dni}/evaluacion-curricular/${nivel}/${nivel}`, `${idCurricular}`), {
       dataDocente,
       preguntasAlternativas: data,
       nivel: dataDocente.grados?.find(grado => grado === 1 || grado === 2) ? 1 : dataDocente.grados?.find(grado => grado === 3 || grado === 4) ? 2 : 3
@@ -534,19 +554,7 @@ const getUsuarioMaster = (dni: string) => {
       }
     }
   }
-  const getEvaluacionCurricularDocente = async (dataDocente: string) => {
-    console.log(`/usuarios/${dataDocente}/evaluacion-curricular`)
-    dispatch({ type: AppAction.LOADER_PAGES, payload: true })
-    onSnapshot(collection(db, `/usuarios/${dataDocente}/evaluacion-curricular`), (querySnapshot) => {
-      const arrayEvaluaciones: EvaluacionCurricularAlternativa[] = [];
-      querySnapshot.forEach((doc) => {
-        console.log(doc.data())
-        arrayEvaluaciones.push(doc.data());
-      });
-      dispatch({ type: AppAction.ALL_EVALUACIONES_CURRICULARES_DOCENTE, payload: arrayEvaluaciones })
-      dispatch({ type: AppAction.LOADER_PAGES, payload: false })
-    });
-  }
+  
 
   const getCaracteristicasCurricular = async () => {
     const pathRef = collection(db, '/caracteristica-curricular')
@@ -945,7 +953,8 @@ const getUsuarioMaster = (dni: string) => {
     deleteEvaluacionCurricular,
     deletePreguntaEstandar,
     crearNuevoInstrumento,
-    getInstrumentos
+    getInstrumentos,
+    tituloCoberturaCurricular
   }
 }
 export default useEvaluacionCurricular

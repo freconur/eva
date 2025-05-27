@@ -4,6 +4,11 @@ import { AppActions, AppReducerValues } from "../types/types";
 
 export const appReducer = (state: AppReducerValues, action: AppActions) => {
   switch (action.type) {  
+    case AppAction.TITULO_COBERTURA_CURRICULAR:
+      return {
+        ...state,
+        tituloCoberturaCurricular: action.payload
+      }
     case AppAction.ESTADRES_CURRICULARES:
       return {
         ...state,
