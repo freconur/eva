@@ -18,7 +18,7 @@ const UpdateEvaluacionCoberturaCurricular = ({evaluacion, handleShowInputUpdate}
 
   const handleSubmit = async () => {
     try {
-      updateEvaluacionCurricular(`${evaluacion.id}`, name)
+      /* updateEvaluacionCurricular(`${evaluacion.id}`, name) */
     } catch (error) {
       console.error('Error al actualizar:', error);
     }

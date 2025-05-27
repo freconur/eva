@@ -128,7 +128,7 @@ const EstandaresCurriculares = () => {
         }
         loadData()
     }, [selectedEstandar])
-
+    console.log('preguntasEstandar', preguntasEstandar)
     return (
         <div className={estilos.container}>
             <h1 className={estilos.title}>Estándares curriculares</h1>

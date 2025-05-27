@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { addDoc, collection, doc, getDoc, getDocs, getFirestore, limit, onSnapshot, orderBy, query, setDoc, startAfter, updateDoc, where, QueryDocumentSnapshot, DocumentData, writeBatch } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, getDocs, getFirestore, limit, onSnapshot, orderBy, query, setDoc, startAfter, updateDoc, where, QueryDocumentSnapshot, DocumentData, writeBatch, deleteDoc } from "firebase/firestore";
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AnexosCurricularType, CaracteristicaCurricular, DataEstadisticas, DataEstadisticasCurricular, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, PaHanilidad, User } from '../types/types';
 import { AppAction } from '../actions/appAction';
@@ -561,10 +561,19 @@ const getUsuarioMaster = (dni: string) => {
       })
   }
 
-  const updateEvaluacionCurricular = async (idCurricular: string, name: string) => {
-    await updateDoc(doc(db, "/evaluacion-curricular", idCurricular), {
-      name: name
-    })
+  const updateEvaluacionCurricular = async (idCurricular: string, data: Partial<EvaluacionCurricular>) => {
+    try {
+      const docRef = doc(db, "/evaluacion-curricular", idCurricular);
+      await updateDoc(docRef, data);
+      
+      // Actualizar la lista de evaluaciones después de la actualización
+      getEvaluacionCurricular();
+      
+      return true;
+    } catch (error) {
+      console.error("Error al actualizar la evaluación curricular:", error);
+      return false;
+    }
   }
   const updateDocenteParaCoberturaCurricular = async (dataDocente: string, data: User, docente: User) => {
     console.log('data', data)
@@ -725,7 +734,8 @@ const getUsuarioMaster = (dni: string) => {
     onSnapshot(q, (querySnapshot) => {
       const arrayPreguntaEstandar: PaHanilidad[] = []
       querySnapshot.forEach(doc => {
-        arrayPreguntaEstandar.push(doc.data())
+        /* arrayPreguntaEstandar.push(doc.data()) */
+        arrayPreguntaEstandar.push({...doc.data(), id: doc.id})
       })
       dispatch({ type: AppAction.PREGUNTAS_ESTANDAR, payload: arrayPreguntaEstandar })
     })
@@ -736,7 +746,7 @@ const getUsuarioMaster = (dni: string) => {
       const docRef = doc(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`, id)
       await updateDoc(docRef, data)
       // Actualizar la lista después de actualizar
-      getEstandaresCurriculares(nivel)
+      /* getEstandaresCurriculares(nivel) */
     } catch (error) {
       console.error('Error al actualizar la pregunta:', error)
     }
@@ -814,6 +824,67 @@ const getUsuarioMaster = (dni: string) => {
     }
   }
 
+  const deleteEvaluacionCurricular = async (idCurricular: string) => {
+    try {
+      // Eliminar la evaluación curricular principal
+      await deleteDoc(doc(db, "/evaluacion-curricular", idCurricular));
+      
+      // Obtener todos los usuarios que tienen esta evaluación
+      const usuariosRef = collection(db, "usuarios");
+      const usuariosSnapshot = await getDocs(usuariosRef);
+      
+      // Eliminar la evaluación de cada usuario que la tenga
+      const batch = writeBatch(db);
+      usuariosSnapshot.forEach((usuarioDoc) => {
+        const evaluacionRef = doc(db, `usuarios/${usuarioDoc.id}/evaluacion-curricular/${idCurricular}`);
+        batch.delete(evaluacionRef);
+      });
+      
+      await batch.commit();
+      
+      // Actualizar la lista de evaluaciones
+      getEvaluacionCurricular();
+      
+      return true;
+    } catch (error) {
+      console.error("Error al eliminar la evaluación curricular:", error);
+      return false;
+    }
+  };
+
+  const deletePreguntaEstandar = async (nivel: string, preguntaId: string) => {
+    try {
+      // Eliminar la pregunta
+      await deleteDoc(doc(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`, preguntaId));
+      
+      // Reordenar las preguntas restantes
+      const pathRef = collection(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`);
+      const q = query(pathRef, orderBy('order', 'asc'));
+      const querySnapshot = await getDocs(q);
+      
+      const batch = writeBatch(db);
+      let newOrder = 1;
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.order > parseInt(preguntaId)) {
+          batch.update(doc.ref, { order: newOrder });
+          newOrder++;
+        }
+      });
+      
+      await batch.commit();
+      
+      // Actualizar la lista de preguntas
+      getEstandaresCurriculares(nivel);
+      
+      return true;
+    } catch (error) {
+      console.error("Error al eliminar la pregunta estándar:", error);
+      return false;
+    }
+  };
+
   return {
     createEvaluacionCurricular, 
     getEvaluacionCurricular,
@@ -850,7 +921,9 @@ const getUsuarioMaster = (dni: string) => {
     getEstandaresCurriculares,
     updatePreguntaEstandar,
     createPreguntaEstandar,
-    reorderPreguntaEstandar
+    reorderPreguntaEstandar,
+    deleteEvaluacionCurricular,
+    deletePreguntaEstandar
   }
 }
 export default useEvaluacionCurricular

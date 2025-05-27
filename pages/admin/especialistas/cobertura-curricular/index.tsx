@@ -66,7 +66,7 @@ const CoberturaCurricular = () => {
               onClick={handleShowModalCrearEvaluacion} 
               className={styles.headerButton}
             >
-              Crear instrumento de monitoreo
+              Crear unidad didáctica
             </button>
             <Link
             href="/admin/estandares"
