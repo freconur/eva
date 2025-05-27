@@ -147,6 +147,10 @@ const TablasEvaluaciones = ({ evaluacionCurricular }: TablasEvaluacionesProps) =
       {showDeleteModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
+          <button 
+                >
+                  crear nuevo instrumento
+              </button>
             <h3>Confirmar Eliminación</h3>
             <p>{`¿Estás seguro que deseas eliminar la evaluación ${selectedEvaluacion?.name}?`}</p>
             <div className={styles.modalActions}>

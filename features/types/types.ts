@@ -66,7 +66,8 @@ export type AppReducerValues = {
   dataDocenteMaster:User,
   warningEvaEstudianteSinRegistro:string | null,
   allEvaluacionesEstudiantes:User[],
-  preguntasEstandar:PaHanilidad[]
+  preguntasEstandar:PaHanilidad[],
+  estandaresCurriculares:EstandaresCurriculares[]
 };
 
 export type AppActions =
@@ -148,6 +149,7 @@ export type AppActions =
   | { type: AppAction.WARNING_EVA_ESTUDIANTE_SIN_REGISTRO; payload: string  | null}
   | { type: AppAction.ALL_EVALUACIONES_ESTUDIANTES; payload: User[] }
   | { type: AppAction.PREGUNTAS_ESTANDAR; payload: PaHanilidad[] }
+  | { type: AppAction.ESTADRES_CURRICULARES; payload: EstandaresCurriculares[] }
 export type LoginData = {
   usuario: string;
   contrasena: string;
@@ -428,5 +430,10 @@ export type ReporteDataEstadisticasCD = {
   total?:number
 }
 
+export type EstandaresCurriculares = {
+  id?:string,
+  nivel?:string,
+  name?:string
+}
 
 

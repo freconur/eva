@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, limit, onSnapshot, orderBy, query, setDoc, startAfter, updateDoc, where, QueryDocumentSnapshot, DocumentData, writeBatch, deleteDoc } from "firebase/firestore";
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
-import { AnexosCurricularType, CaracteristicaCurricular, DataEstadisticas, DataEstadisticasCurricular, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, PaHanilidad, User } from '../types/types';
+import { AnexosCurricularType, CaracteristicaCurricular, DataEstadisticas, DataEstadisticasCurricular, EstandaresCurriculares, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, PaHanilidad, User } from '../types/types';
 import { AppAction } from '../actions/appAction';
 
 const useEvaluacionCurricular = () => {
@@ -885,6 +885,26 @@ const getUsuarioMaster = (dni: string) => {
     }
   };
 
+  const crearNuevoInstrumento = async(instrumento:string) => {
+    const pathRef = collection(db, `/evaluacion-curricular-preguntas-alternativas`)
+    const querySnapshot = await getDocs(pathRef)
+    await setDoc(doc(db, `/evaluacion-curricular-preguntas-alternativas`, `${querySnapshot.size + 1}`), {
+      name: instrumento,
+      nivel: querySnapshot.size + 1
+    })
+  }
+  const getInstrumentos = async() => {
+    const pathRef = collection(db, `/evaluacion-curricular-preguntas-alternativas`)
+    const querySnapshot = await getDocs(pathRef)
+    onSnapshot(pathRef, (querySnapshot) => {
+      const arrayPreguntaEstandar: EstandaresCurriculares[] = []
+      querySnapshot.forEach(doc => {
+        arrayPreguntaEstandar.push({...doc.data(), id: doc.id})
+      })
+      dispatch({ type: AppAction.ESTADRES_CURRICULARES, payload: arrayPreguntaEstandar })
+    })
+    
+  }
   return {
     createEvaluacionCurricular, 
     getEvaluacionCurricular,
@@ -923,7 +943,9 @@ const getUsuarioMaster = (dni: string) => {
     createPreguntaEstandar,
     reorderPreguntaEstandar,
     deleteEvaluacionCurricular,
-    deletePreguntaEstandar
+    deletePreguntaEstandar,
+    crearNuevoInstrumento,
+    getInstrumentos
   }
 }
 export default useEvaluacionCurricular
