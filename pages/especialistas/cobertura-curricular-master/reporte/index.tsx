@@ -58,7 +58,8 @@ const ReporteCurricular = () => {
   const [ filter, setFilter ] = useState({
     grado: "",
     orden: "",
-    seccion: ""
+    seccion: "",
+    genero: ""
   })
   const { currentUserData, reporteCurricularDirector, reportePreguntaHabilidad, reporteCurricularDirectorData, curricularDirectorDataFilter } = useGlobalContext()
   const { idCurricular } = router.query

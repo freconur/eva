@@ -3,6 +3,7 @@ import { addDoc, collection, doc, getDoc, getDocs, getFirestore, limit, onSnapsh
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AnexosCurricularType, CaracteristicaCurricular, DataEstadisticas, DataEstadisticasCurricular, EstandaresCurriculares, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, PaHanilidad, User } from '../types/types';
 import { AppAction } from '../actions/appAction';
+import { currentYear } from '@/fuctions/dates';
 
 const useEvaluacionCurricular = () => {
   const db = getFirestore()
@@ -503,7 +504,7 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
   const getEvaluacionCurricularDocente = async (dataDocente: string, nivel: string) => {
     console.log(`/usuarios/${dataDocente}/evaluacion-curricular`)
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
-    onSnapshot(collection(db, `/usuarios/${dataDocente}/evaluacion-curricular/${nivel}/${nivel}`), (querySnapshot) => {
+    onSnapshot(collection(db, `/usuarios/${dataDocente}/evaluacion-curricular/${currentYear}-cobertura-curricular/${nivel}`), (querySnapshot) => {
       /* onSnapshot(collection(db, `/usuarios/${dataDocente}/evaluacion-curricular`), (querySnapshot) => { */
       const arrayEvaluaciones: EvaluacionCurricularAlternativa[] = [];
       querySnapshot.forEach((doc) => {
@@ -523,33 +524,35 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
     /* console.log('dataDocente', dataDocente.grados?.find(grado => grado === 1 || grado === 2) ? 1 : dataDocente.grados?.find(grado => grado === 3 || grado === 4) ? 2 : 3) */
 
     //esto es para guardar la evaluacion curricular de un docente o director
-    await setDoc(doc(db, `/usuarios/${dataDocente.dni}/evaluacion-curricular/${nivel}/${nivel}`, `${idCurricular}`), {
+    await setDoc(doc(db, `/usuarios/${dataDocente.dni}/evaluacion-curricular/${currentYear}-cobertura-curricular/${nivel}`, `${idCurricular}`), {
       dataDocente,
       preguntasAlternativas: data,
-      nivel: dataDocente.grados?.find(grado => grado === 1 || grado === 2) ? 1 : dataDocente.grados?.find(grado => grado === 3 || grado === 4) ? 2 : 3
+      nivel: nivel
     });
 
     //esto es para guardar la evaluacion curricular de un docente o director pero para los datos estadísticos
 
     //si es un usuario de director
-    if(currentUserData.rol ===2) {
-      await setDoc(doc(db, `/usuarios/${currentUserData.dni}/${idCurricular}`, `${dataDocente.dni}`), {
+    if(currentUserData.rol ===2 ) {
+      /* const path = `usuarios/${dniDirector}/evaluacion-curricular/${currentYear}-cobertura-curricular/${nivel}/${idCurricular}` */
+      await setDoc(doc(db, `/usuarios/${currentUserData.dni}/${currentYear}-cobertura-curricular/${nivel}/${idCurricular}`, `${dataDocente.dni}`), {
         ...dataDocente,
         preguntasAlternativas: data,
-        nivel: dataDocente.grados?.find(grado => grado === 1 || grado === 2) ? 1 : dataDocente.grados?.find(grado => grado === 3 || grado === 4) ? 2 : 3
+        nivel: nivel
       });
-    } else if(currentUserData.rol ===1) {//si el usuario es especialista
+    } else if(currentUserData.rol ===1 || currentUserData.rol === 4) {//si el usuario es especialista
       if(dataDocente.rol === 2) {
         await setDoc(doc(db, `/usuarios/${dataDocente.dni}/${idCurricular}`, `${dataDocente.dni}`), {
           ...dataDocente,
           preguntasAlternativas: data,
-          nivel: dataDocente.grados?.find(grado => grado === 1 || grado === 2) ? 1 : dataDocente.grados?.find(grado => grado === 3 || grado === 4) ? 2 : 3
+          nivel: nivel
         });
       }else if(dataDocente.rol === 3) {
         await setDoc(doc(db, `/usuarios/${dataDocente.dniDirector}/${idCurricular}`, `${dataDocente.dni}`), {
           ...dataDocente,
           preguntasAlternativas: data,
-          nivel: dataDocente.grados?.find(grado => grado === 1 || grado === 2) ? 1 : dataDocente.grados?.find(grado => grado === 3 || grado === 4) ? 2 : 3
+          /* nivel: dataDocente.grados?.find(grado => grado === 1 || grado === 2) ? 1 : dataDocente.grados?.find(grado => grado === 3 || grado === 4) ? 2 : 3 */
+          nivel:nivel
         });
       }
     }
@@ -629,34 +632,21 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
     dispatch({ type: AppAction.EVALUACION_CURRICULAR_ALTERNATIVA, payload: [] })
   }
 
-  const reporteCurricularDirectorFilter = (data: User[], { grado, orden, seccion }: { grado: string, orden: string, seccion: string }) => {
+  const reporteCurricularDirectorFilter = (data: User[], { grado, seccion, genero, orden }: { grado: string, seccion: string, genero: string,orden:string }) => {
     const filteredData = data.reduce((acc: User[], docente) => {
       // Verificar si el docente tiene los grados y secciones necesarios
       const hasGrado = grado ? Array.isArray(docente.grados) && docente.grados.includes(Number(grado)) : true;
       const hasSeccion = seccion ? Array.isArray(docente.secciones) && docente.secciones.includes(Number(seccion)) : true;
+      const hasGenero = genero ? docente.genero === genero : true;
 
       // Si el docente cumple con los filtros, lo agregamos al acumulador
-      if (hasGrado && hasSeccion) {
+      if (hasGrado && hasSeccion && hasGenero) {
         acc.push(docente);
       }
 
       return acc;
     }, []);
 
-    // Ordenar los datos si se especifica un orden
-    if (orden) {
-      filteredData.sort((a, b) => {
-        const nombreA = a.nombres || '';
-        const nombreB = b.nombres || '';
-
-        if (orden === 'asc') {
-          return nombreA.localeCompare(nombreB);
-        } else {
-          return nombreB.localeCompare(nombreA);
-        }
-      });
-    }
-    console.log('filteredData', filteredData)
     dispatch({ type: AppAction.CURRICULAR_DIRECTOR_DATA_FILTER, payload: filteredData });
   }
   const resetReporteCurricularDirector = () => {
@@ -665,11 +655,11 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
     dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: [] })
     dispatch({ type: AppAction.CURRICULAR_DIRECTOR_DATA_FILTER, payload: [] })
   }
-  const reporteCD = async (idCurricular: string, dniDirector: string, nivel: string) => {
-    dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: [] })
-    const path = `usuarios/${dniDirector}/${idCurricular}`
+  const reporteCD = async (idCurricular: string, dniDirector: string, nivel: string, filter: { grado: string, seccion: string, genero: string } = { grado: "", seccion: "", genero: "" }) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true }) // Activar loader
+    dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: [] })//limpiar el reporte
+    const path = `usuarios/${dniDirector}/${currentYear}-cobertura-curricular/${nivel}/${idCurricular}`// es la ruta de los usuarios evaluados del director
     const pathRef = collection(db, path)
-    const q = query(pathRef, where("nivel", "==", Number(nivel)))
     const docentesEvaluados: User[] = []
 
     const pathRefHabilidad = collection(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`)
@@ -681,14 +671,23 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
         })
         dispatch({ type: AppAction.REPORT_PREGUNTA_HABILIDAD, payload: arrayEvaluacionHabilidad.sort((a: any, b: any) => a.order - b.order) })
       })
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await getDocs(pathRef);
     const promises = querySnapshot.docs.map(doc => Promise.resolve(doc.data()));
     await Promise.all(promises).then(rta => {
       docentesEvaluados.push(...rta)
       dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR_DATA, payload: docentesEvaluados })
     })
 
-    const rta = docentesEvaluados.reduce((acc, docente) => {
+    // Aplicar filtros a los datos antes de generar las estadísticas
+    const filteredDocentes = docentesEvaluados.filter(docente => {
+      const { grado, seccion, genero } = filter;
+      const hasGrado = grado ? Array.isArray(docente.grados) && docente.grados.includes(Number(grado)) : true;
+      const hasSeccion = seccion ? Array.isArray(docente.secciones) && docente.secciones.includes(Number(seccion)) : true;
+      const hasGenero = genero ? docente.genero === genero : true;
+      return hasGrado && hasSeccion && hasGenero;
+    });
+
+    const rta = filteredDocentes.reduce((acc, docente) => {
       docente.preguntasAlternativas?.forEach(respuesta => {
         if (respuesta.order === undefined) return;
 
@@ -696,7 +695,6 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
         let estadistica = acc.find(stat => stat.id === orderId);
 
         if (!estadistica) {
-          // Inicializamos con todas las propiedades posibles
           estadistica = {
             id: orderId,
             n: 0,
@@ -721,7 +719,6 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
           }
         });
 
-        // Calculamos el total sumando todas las alternativas seleccionadas
         if (estadistica) {
           estadistica.total = (estadistica.n || 0) +
             (estadistica.cn || 0) +
@@ -733,6 +730,8 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
       dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: acc.sort((a: any, b: any) => a.id - b.id) })
       return acc;
     }, [] as DataEstadisticasCurricular[]);
+
+    dispatch({ type: AppAction.LOADER_PAGES, payload: false }) // Desactivar loader
   }
 
   const getEstandaresCurriculares = async (nivel:string) => {

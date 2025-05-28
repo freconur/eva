@@ -19,9 +19,10 @@ import {
 import { Bar } from "react-chartjs-2"
 import { ReporteCurricularDirector, ReporteDataEstadisticasCD } from '@/features/types/types'
 import styles from '@/styles/coberturaCurricular.module.css'
-import { nivelCurricularPreguntas } from '@/fuctions/regiones'
+import { genero, nivelCurricularPreguntas } from '@/fuctions/regiones'
 import header from '../../../../assets/evaluacion-docente.jpg'
 import {gradosDeColegio,ordernarAscDsc, sectionByGrade  } from '@/fuctions/regiones'
+import { RiLoader4Line } from 'react-icons/ri'
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -52,16 +53,17 @@ const getBackgroundColor = (acronimo: string | undefined) => {
 
 const ReporteCurricular = () => {
   const router = useRouter()
-  const [nivel, setNivel] = useState("")
+  const [nivel, setNivel] = useState("1")
   const [activePopover, setActivePopover] = useState<string | null>(null)
   const [ filter, setFilter ] = useState({
     grado: "",
-    orden: "",
-    seccion: ""
+    genero: "",
+    seccion: "",
+    orden: ""
   })
-  const { currentUserData, reporteCurricularDirector, reportePreguntaHabilidad, reporteCurricularDirectorData, curricularDirectorDataFilter } = useGlobalContext()
+  const { currentUserData, reporteCurricularDirector, reportePreguntaHabilidad, reporteCurricularDirectorData, curricularDirectorDataFilter, estandaresCurriculares, loaderPages } = useGlobalContext()
   const { idCurricular } = router.query
-  const { reporteCD , reporteCurricularDirectorFilter} = useEvaluacionCurricular()
+  const { reporteCD , reporteCurricularDirectorFilter, getInstrumentos} = useEvaluacionCurricular()
 
   const iterateData = (data: ReporteCurricularDirector) => {
     return {
@@ -125,13 +127,28 @@ const ReporteCurricular = () => {
     })
   }
   const handleFilter = () => {
-    console.log('filter', filter)
+    // Filtrar datos para la tabla
     reporteCurricularDirectorFilter(reporteCurricularDirectorData, filter)
+    
+    // Filtrar datos para los gráficos
+    if (idCurricular && currentUserData.dni && nivel) {
+      reporteCD(String(idCurricular), String(currentUserData.dni), String(nivel), filter)
+    }
   }
   useEffect(() => {
-    if (!nivel) return;
-    reporteCD(String(idCurricular), String(currentUserData.dni), String(nivel));
-  }, [nivel]);
+    if (idCurricular && currentUserData.dni && nivel) {
+      reporteCD(String(idCurricular), String(currentUserData.dni), String(nivel), filter)
+    }
+  }, [nivel, idCurricular, currentUserData.dni])
+
+  useEffect(() => {
+    if (nivel && filter.grado !== "" || filter.seccion !== "" || filter.genero !== "") {
+      handleFilter()
+    }
+  }, [nivel])
+  useEffect(() => {
+		getInstrumentos()
+	},[])
   console.log('curricularDirectorDataFilter', curricularDirectorDataFilter)
   return (
     <div className={styles.container}>
@@ -152,135 +169,152 @@ const ReporteCurricular = () => {
               value={nivel}
             >
               <option value="">Seleccione un nivel</option>
-              {nivelCurricularPreguntas.map((nivel, index) => (
-                <option key={index} value={nivel.id}>{nivel.description}</option>
+              {estandaresCurriculares.map((nivel, index) => (
+                <option key={index} value={nivel.nivel}>{nivel?.name?.toUpperCase()}</option>
               ))}
             </select>
           </div>
         </div>
       </div>
-      <div className={styles.filterContainer}>
-        <select 
-          onChange={handleChangeFilter}
-          className={styles.filterSelect}
-          name='grado'
-        >
-          <option value="">Seleccione un grado</option>
-          {gradosDeColegio.map((grado) => (
-            <option key={grado.id} value={grado.id}>
-              {grado.name}
-            </option>
-          ))}
-        </select>
 
-        <select 
-          onChange={handleChangeFilter}
-          className={styles.filterSelect}
-          name='orden'
-        >
-          <option value="">Seleccione orden</option>
-          {ordernarAscDsc.map((orden) => (
-            <option key={orden.id} value={orden.id}>
-              {orden.name}
-            </option>
-          ))}
-        </select>
+      {loaderPages ? (
+        <div className={styles.loaderContainer}>
+          <RiLoader4Line className={styles.loaderIcon} />
+          <p className={styles.loaderText}>Buscando resultados...</p>
+        </div>
+      ) : (
+        <>
+          <div className={styles.filterContainer}>
+            <select 
+              onChange={handleChangeFilter}
+              className={styles.filterSelect}
+              name='grado'
+              value={filter.grado}
+            >
+              <option value="">Seleccione un grado</option>
+              {gradosDeColegio.map((grado) => (
+                <option key={grado.id} value={grado.id}>
+                  {grado.name}
+                </option>
+              ))}
+            </select>
+            <select 
+              onChange={handleChangeFilter}
+              className={styles.filterSelect}
+              name='seccion'
+              value={filter.seccion}
+            >
+              <option value="">Seleccione una sección</option>
+              {sectionByGrade.map((seccion) => (
+                <option key={seccion.id} value={seccion.id}>
+                  {seccion.name}
+                </option>
+              ))}
+            </select>
+            <select 
+              onChange={handleChangeFilter}
+              className={styles.filterSelect}
+              name='genero'
+              value={filter.genero}
+            >
+              <option value="">Genero</option>
+              {genero.map((gen) => (
+                <option key={gen.id} value={gen.id}>
+                  {gen.name}
+                </option>
+              ))}
+            </select>
+            <button onClick={handleFilter} className={styles.filterButton}>
+              Filtrar
+            </button>
+          </div>
 
-        <select 
-          onChange={handleChangeFilter}
-          className={styles.filterSelect}
-          name='seccion'
-        >
-          <option value="">Seleccione una sección</option>
-          {sectionByGrade.map((seccion) => (
-            <option key={seccion.id} value={seccion.id}>
-              {seccion.name}
-            </option>
-          ))}
-        </select>
-        <button onClick={handleFilter} className={styles.filterButton}>
-          Filtrar
-        </button>
-      </div>
-
-      <div className={styles.tableContainer}>
-        <table className={styles.table}>
-          <thead className={styles.tableHeader}>
-            <tr>
-              <th className={styles.tableHeaderCell}>#</th>
-              <th className={styles.tableHeaderCell}>Nombre y apellidos</th>
-              {
-                reportePreguntaHabilidad.map((pregunta) => (
-                  <th 
-                    key={pregunta.id} 
-                    className={styles.tableHeaderCell}
-                    onClick={() => setActivePopover(activePopover === String(pregunta.order) ? null : String(pregunta.order))}
-                  >
-                    {pregunta.order}
-                  </th>
-                ))
-              }
-            </tr>
-          </thead>
-          <tbody>
-            {
-              curricularDirectorDataFilter.map((dat, index) => (
-                <tr key={index} className={styles.tableRow}>
-                  <td className={styles.tableCell}>{index + 1}</td>
-                  <td className={`${styles.tableCell} ${styles.tableCellName}`}>{dat.nombres} {dat.apellidos}</td>
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
+              <thead className={styles.tableHeader}>
+                <tr>
+                  <th className={styles.tableHeaderCell}>#</th>
+                  <th className={styles.tableHeaderCell}>Nombre y apellidos</th>
                   {
-                    dat.preguntasAlternativas?.map((pregunta) => (
-                      <td 
+                    reportePreguntaHabilidad.map((pregunta) => (
+                      <th 
                         key={pregunta.id} 
-                        className={`${styles.tableCell} ${getBackgroundColor(pregunta.alternativas?.find(alternativa => alternativa.selected)?.acronimo)}`}
+                        className={styles.tableHeaderCell}
+                        onClick={() => setActivePopover(activePopover === String(pregunta.order) ? null : String(pregunta.order))}
                       >
-                        {pregunta.alternativas?.find(alternativa => alternativa.selected)?.acronimo?.toLocaleUpperCase()}
-                      </td>
+                        {pregunta.order}
+                      </th>
                     ))
                   }
                 </tr>
-              ))
-            }
-          </tbody>
-        </table>
-        {activePopover && (
-          <div className={styles.popover}>
-            {reportePreguntaHabilidad.find(p => String(p.order) === activePopover)?.habilidad}
+              </thead>
+              <tbody>
+                {
+                  curricularDirectorDataFilter.map((dat, index) => (
+                    <tr key={index} className={styles.tableRow}>
+                      <td className={styles.tableCell}>{index + 1}</td>
+                      <td className={`${styles.tableCell} ${styles.tableCellName}`}>{dat.nombres} {dat.apellidos}</td>
+                      {
+                        dat.preguntasAlternativas?.map((pregunta) => (
+                          <td 
+                            key={pregunta.id} 
+                            className={`${styles.tableCell} ${getBackgroundColor(pregunta.alternativas?.find(alternativa => alternativa.selected)?.acronimo)}`}
+                          >
+                            {pregunta.alternativas?.find(alternativa => alternativa.selected)?.acronimo?.toLocaleUpperCase()}
+                          </td>
+                        ))
+                      }
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+            {activePopover && (
+              <div className={styles.popover}>
+                {reportePreguntaHabilidad.find(p => String(p.order) === activePopover)?.habilidad}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      <div className={styles.tableContainer}>
-        <div className={styles.containerGrafico}>
-          {reporteCurricularDirector?.map((dat, index) => (
-            <div key={index} className={styles.reporteCard}>
-              {iterarPregunta(`${dat.id}`)}
-              <div className={styles.chartContainer}>
-                <Bar
-                  options={options}
-                  data={iterateData(dat as ReporteCurricularDirector)}
-                  className={styles.chart}
-                />
-              </div>
-              <div className={styles.statsContainer}>
-                {[
-                  { label: 'N', value: dat.n },
-                  { label: 'CN', value: dat.cn },
-                  { label: 'AV', value: dat.av },
-                  { label: 'F', value: dat.f },
-                  { label: 'S', value: dat.s }
-                ].map(({ label, value }) => (
-                  <div key={label} className={styles.statItem}>
-                    <span className={styles.statLabel}>{label}:</span>
-                    <span className={styles.statValue}>
-                      {value} | {((100 * Number(value)) / Number(dat.total)).toFixed(0)}%
-                    </span>
+          <div className={styles.tableContainer}>
+            <div className={styles.containerGrafico}>
+              {reporteCurricularDirector?.length === 0 ? (
+                <div className={styles.noDataContainer}>
+                  <p className={styles.noDataText}>No hay registros disponibles</p>
+                </div>
+              ) : (
+                reporteCurricularDirector?.map((dat, index) => (
+                  <div key={index} className={styles.reporteCard}>
+                    {iterarPregunta(`${dat.id}`)}
+                    <div className={styles.chartContainer}>
+                      <Bar
+                        options={options}
+                        data={iterateData(dat as ReporteCurricularDirector)}
+                        className={styles.chart}
+                      />
+                    </div>
+                    <div className={styles.statsContainer}>
+                      {[
+                        { label: 'N', value: dat.n },
+                        { label: 'CN', value: dat.cn },
+                        { label: 'AV', value: dat.av },
+                        { label: 'F', value: dat.f },
+                        { label: 'S', value: dat.s }
+                      ].map(({ label, value }) => (
+                        <div key={label} className={styles.statItem}>
+                          <span className={styles.statLabel}>{label}:</span>
+                          <span className={styles.statValue}>
+                            {value} | {((100 * Number(value)) / Number(dat.total)).toFixed(0)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
