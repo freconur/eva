@@ -27,12 +27,6 @@ const EvaluarCurricula = () => {
       //esta funciona retorn el paHabilidad que solo tiene las preguntas de la habilidad lectora y lo pasa por props al componente CoberturaCurricular
     }
   }, [dataDocente])
-
-  console.log('paHabilidad', paHabilidad)
-  console.log('dataDocente', dataDocente)
- /*  console.log('evaluacionCurricular', evaluacionCurricular)
-  console.log('evaluacionCurricularAlternativa', evaluacionCurricularAlternativa) */
-  
   return (
     <div className='m-auto w-[1000px] p-10'>
       <div className='p-10'>

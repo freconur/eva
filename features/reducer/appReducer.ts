@@ -3,7 +3,17 @@ import { AppActions, AppReducerValues } from "../types/types";
 
 
 export const appReducer = (state: AppReducerValues, action: AppActions) => {
-  switch (action.type) {  
+  switch (action.type) { 
+    case AppAction.CC_DATA_FILTER_ESPECIALISTA:
+      return {
+        ...state,
+        ccDataFilterEspecialista: action.payload
+      }
+    case AppAction.REPORT_CCA_DATA_ESPECIALISTA:
+      return {
+        ...state,
+        reporteCCADataEspecialista: action.payload
+      }
     case AppAction.TITULO_COBERTURA_CURRICULAR:
       return {
         ...state,

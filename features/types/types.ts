@@ -68,7 +68,9 @@ export type AppReducerValues = {
   allEvaluacionesEstudiantes:User[],
   preguntasEstandar:PaHanilidad[],
   estandaresCurriculares:EstandaresCurriculares[],
-  tituloCoberturaCurricular:string
+  tituloCoberturaCurricular:string,
+  reporteCCADataEspecialista:ResultadosAcumuladosCC[],
+  ccDataFilterEspecialista:ResultadosAcumuladosCC[]
 };
 
 export type AppActions =
@@ -138,7 +140,7 @@ export type AppActions =
   | { type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA; payload: UserEstudiante[] }
   | { type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE; payload: ReporteDocenteIndividual[] }
   | { type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA; payload: ReporteDocenteIndividual[] }
-  | { type: AppAction.REPORT_CURRICULAR_DIRECTOR_DATA; payload: User[] }
+  | { type: AppAction.REPORT_CURRICULAR_DIRECTOR_DATA; payload: User[]}
   | { type: AppAction.CURRICULAR_DIRECTOR_DATA_FILTER; payload: User[] }
   | { type: AppAction.ALL_EVALUACIONES_ESPECIALISTA_DIRECTOR; payload: ReporteDocenteIndividual[] }
   | { type: AppAction.DATA_FILTRADA_ESPECIALISTA_DIRECTOR_TABLA; payload: ReporteDocenteIndividual[] }
@@ -152,6 +154,8 @@ export type AppActions =
   | { type: AppAction.PREGUNTAS_ESTANDAR; payload: PaHanilidad[] }
   | { type: AppAction.ESTADRES_CURRICULARES; payload: EstandaresCurriculares[] }
   | { type: AppAction.TITULO_COBERTURA_CURRICULAR; payload: string }
+  | { type: AppAction.REPORT_CCA_DATA_ESPECIALISTA; payload:ResultadosAcumuladosCC[]}
+  | { type: AppAction.CC_DATA_FILTER_ESPECIALISTA; payload:ResultadosAcumuladosCC[]}
 export type LoginData = {
   usuario: string;
   contrasena: string;
@@ -275,6 +279,10 @@ export type DataEstadisticas = {
   d?: number;
   total?: number;
 };
+export type ResultadosAcumuladosCC = {
+  acumuladoDirector?:DataEstadisticasCurricular[],
+  info?:User
+}
 export type DataEstadisticasCurricular = {
   id?: string;
   n?: number;

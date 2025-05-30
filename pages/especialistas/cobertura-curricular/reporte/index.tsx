@@ -19,10 +19,11 @@ import {
 import { Bar } from "react-chartjs-2"
 import { ReporteCurricularDirector, ReporteDataEstadisticasCD } from '@/features/types/types'
 import styles from '@/styles/coberturaCurricular.module.css'
-import { nivelCurricularPreguntas } from '@/fuctions/regiones'
+import { area, caracteristicasDirectivo, genero, nivelCurricularPreguntas } from '@/fuctions/regiones'
 import header from '../../../../assets/evaluacion-docente.jpg'
 import {gradosDeColegio,ordernarAscDsc, sectionByGrade  } from '@/fuctions/regiones'
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista'
+import { distritosPuno } from '@/fuctions/provinciasPuno'
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -53,17 +54,17 @@ const getBackgroundColor = (acronimo: string | undefined) => {
 
 const ReporteCurricular = () => {
   const router = useRouter()
-  const [nivel, setNivel] = useState("")
+  const [nivel, setNivel] = useState("1")
   const [activePopover, setActivePopover] = useState<string | null>(null)
   const [ filter, setFilter ] = useState({
-    grado: "",
-    orden: "",
-    seccion: "",
-    genero: ""
+    genero: "",
+    area: "",
+    caracteristicaCurricular: "",
+    distrito: "",
   })
-  const { currentUserData, reporteCurricularDirector, reportePreguntaHabilidad, reporteCurricularDirectorData, curricularDirectorDataFilter } = useGlobalContext()
+  const { currentUserData, reporteCurricularDirector, reportePreguntaHabilidad, reporteCurricularDirectorData, curricularDirectorDataFilter, reporteCCADataEspecialista, ccDataFilterEspecialista, estandaresCurriculares} = useGlobalContext()
   const { idCurricular } = router.query
-  const { reporteCD , reporteCurricularDirectorFilter, resetReporteCurricularDirector} = useEvaluacionCurricular()
+  const { reporteCD , reporteCurricularDirectorFilter, getInstrumentos, resetReporteCurricularDirector, reporteEspecialistaCCDocentes, reporteCCDirectorFilterEspecialista} = useEvaluacionCurricular()
 
   const iterateData = (data: ReporteCurricularDirector) => {
     return {
@@ -127,22 +128,27 @@ const ReporteCurricular = () => {
     })
   }
   const handleFilter = () => {
-    console.log('filter', filter)
-    reporteCurricularDirectorFilter(reporteCurricularDirectorData, filter)
+    /* console.log('filter', filter) */
+    console.log('reporteCCADataEspecialista', reporteCCADataEspecialista)
+    /* reporteCurricularDirectorFilter(reporteCurricularDirectorData, filter) */
+    reporteCCDirectorFilterEspecialista(reporteCCADataEspecialista, filter)
   }
   useEffect(() => {
     if (!nivel){
       resetReporteCurricularDirector();
       return;
     }else {
-      reporteCD(String(idCurricular), String(currentUserData.dni), String(nivel));
+      /* reporteCD(String(idCurricular), String(currentUserData.dni), String(nivel)); */
     } 
   }, [nivel]);
   
   useEffect(() => {
-    resetReporteCurricularDirector()
+    getInstrumentos()
   },[])
-  console.log('curricularDirectorDataFilter', curricularDirectorDataFilter)
+  useEffect(() => {
+    currentUserData.region && nivel && idCurricular && reporteEspecialistaCCDocentes(currentUserData, String(nivel), String(idCurricular))
+  }, [nivel, idCurricular, currentUserData.region])
+ 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -162,23 +168,35 @@ const ReporteCurricular = () => {
               value={nivel}
             >
               <option value="">Seleccione un nivel</option>
-              {nivelCurricularPreguntas.map((nivel, index) => (
-                <option key={index} value={nivel.id}>{nivel.description}</option>
+              {estandaresCurriculares.map((nivel, index) => (
+                <option key={index} value={nivel.nivel}>{nivel.name?.toUpperCase()}</option>
               ))}
             </select>
           </div>
         </div>
       </div>
       <div className={styles.filterContainer}>
+      <select 
+          onChange={handleChangeFilter}
+          className={styles.filterSelect}
+          name='distrito'
+        >
+          <option value="">Distrito</option>
+          {distritosPuno.find(dis => Number(dis.id) === Number(currentUserData.region))?.distritos.map((dis) => (
+            <option key={dis} value={dis}>
+              {dis}
+            </option>
+          ))}
+        </select>
         <select 
           onChange={handleChangeFilter}
           className={styles.filterSelect}
-          name='grado'
+          name='area'
         >
-          <option value="">Seleccione un grado</option>
-          {gradosDeColegio.map((grado) => (
-            <option key={grado.id} value={grado.id}>
-              {grado.name}
+          <option value="">Área</option>
+          {area.map((are) => (
+            <option key={are.id} value={are.id}>
+              {are.name}
             </option>
           ))}
         </select>
@@ -186,12 +204,12 @@ const ReporteCurricular = () => {
         <select 
           onChange={handleChangeFilter}
           className={styles.filterSelect}
-          name='orden'
+          name='genero'
         >
-          <option value="">Seleccione orden</option>
-          {ordernarAscDsc.map((orden) => (
-            <option key={orden.id} value={orden.id}>
-              {orden.name}
+          <option value="">Genero</option>
+          {genero.map((gen) => (
+            <option key={gen.id} value={gen.id}>
+              {gen.name}
             </option>
           ))}
         </select>
@@ -199,12 +217,12 @@ const ReporteCurricular = () => {
         <select 
           onChange={handleChangeFilter}
           className={styles.filterSelect}
-          name='seccion'
+          name='caracteristicaCurricular'
         >
-          <option value="">Seleccione una sección</option>
-          {sectionByGrade.map((seccion) => (
-            <option key={seccion.id} value={seccion.id}>
-              {seccion.name}
+          <option value="">Caracteristica</option>
+          {caracteristicasDirectivo.map((cd) => (
+            <option key={cd.id} value={cd.id}>
+              {cd.name}
             </option>
           ))}
         </select>
@@ -213,7 +231,7 @@ const ReporteCurricular = () => {
         </button>
       </div>
 
-      <div className={styles.tableContainer}>
+      {/* <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead className={styles.tableHeader}>
             <tr>
@@ -234,12 +252,12 @@ const ReporteCurricular = () => {
           </thead>
           <tbody>
             {
-              curricularDirectorDataFilter.map((dat, index) => (
+              ccDataFilterEspecialista.map((dat, index) => (
                 <tr key={index} className={styles.tableRow}>
                   <td className={styles.tableCell}>{index + 1}</td>
-                  <td className={`${styles.tableCell} ${styles.tableCellName}`}>{dat.nombres} {dat.apellidos}</td>
+                  <td className={`${styles.tableCell} ${styles.tableCellName}`}>{dat.info?.nombres} {dat.info?.apellidos}</td>
                   {
-                    dat.preguntasAlternativas?.map((pregunta) => (
+                    dat?.acumuladoDirector?.map((pregunta) => (
                       <td 
                         key={pregunta.id} 
                         className={`${styles.tableCell} ${getBackgroundColor(pregunta.alternativas?.find(alternativa => alternativa.selected)?.acronimo)}`}
@@ -258,7 +276,7 @@ const ReporteCurricular = () => {
             {reportePreguntaHabilidad.find(p => String(p.order) === activePopover)?.habilidad}
           </div>
         )}
-      </div>
+      </div> */}
       <div className={styles.tableContainer}>
         <div className={styles.containerGrafico}>
           {reporteCurricularDirector?.map((dat, index) => (
