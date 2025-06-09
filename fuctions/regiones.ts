@@ -130,7 +130,16 @@ export const nivelCurricular = [
   { id: 2, name: "estandar IV" },
   { id: 3, name: "estandar V" },
 ]
-
+export const getGradoTexto = (grado: string | number | undefined) => {
+  if (!grado) return '-'
+  const gradoEncontrado = gradosDeColegio.find(g => g.id === Number(grado))
+  return gradoEncontrado?.name ?? '-'
+}
+export const getSeccionTexto = (seccion: string | number | undefined) => {
+  if (!seccion) return '-'
+  const seccionEncontrada = sectionByGrade.find(s => s.id === Number(seccion))
+  return seccionEncontrada?.name ?? '-'
+}
 export const nivelCobertura =
 {
   id: 1,

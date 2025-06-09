@@ -268,7 +268,8 @@ export type User = {
   rolDirectivo?:number,
   tipoEspecialista?:number,
   reporteEstudiantes?: DataEstadisticas[]
-  resultados?:DataEstadisticas[]
+  resultados?:DataEstadisticas[],
+  fechaEvaluacion?:Date
 };
 
 export type DataEstadisticas = {
@@ -418,13 +419,16 @@ export type AnexosCurricularType = {
 }
 
 export type NivelCobertura = {
-  cobertura?:string,
-  alternativas?: AlternativasCobertura[]
+  /* cobertura?:string, */
+  alternativas?: AlternativasCobertura[],
+  id?:string,
+  order?:number
 }
 export type AlternativasCobertura = {
-  alternativa:string,
+  alternativa?:string,
   descripcion?:string,
-  selected?:boolean
+  selected?:boolean,
+  cobertura?:string,
 }
 export type ReporteCurricularDirector = {
   n?:number,

@@ -47,9 +47,9 @@ const EvaluarCurricula = () => {
             </span>
           </h1>
         </div>
-        <DatosInstitucion dataDocente={dataDocenteMaster} />
-        <DatosMonitor dataMonitor={currentUserData}/>
-        <CoberturaCurricular dataDocente={dataDocenteMaster} evaluacionCurricularAlternativa={evaluacionCurricularAlternativa} paHabilidad={paHabilidad} evaluacionCurricular={evaluacionCurricular}/>
+        {/* <DatosInstitucion dataDocente={dataDocenteMaster} />
+        <DatosMonitor dataMonitor={currentUserData}/> */}
+        <CoberturaCurricular currentUserData={currentUserData} dataDocente={dataDocenteMaster} evaluacionCurricularAlternativa={evaluacionCurricularAlternativa} paHabilidad={paHabilidad} evaluacionCurricular={evaluacionCurricular}/>
         <AnexosCurricular dataDocente={dataDocenteMaster}/>
       </div>
 

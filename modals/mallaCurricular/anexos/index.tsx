@@ -41,7 +41,6 @@ const AnexosCurricular = ({ dataDocente }: Props) => {
     const { name, value } = e.target;
     if (name === 'nivelCobertura') {
       const updatedNivelCobertura = {
-        ...nivelCobertura,
         alternativas: nivelCobertura.alternativas.map(alt => ({
           ...alt,
           selected: alt.alternativa === value

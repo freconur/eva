@@ -1,6 +1,7 @@
 import CoberturaCurricular from '@/components/curricular/cobertura-curricular'
 import DatosInstitucion from '@/components/curricular/datos-institucion'
 import DatosMonitor from '@/components/curricular/datos-monitor'
+import { ReporteDocentePdf } from '@/components/invoce'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import { converNivelCurricularPreguntas, nivelCurricularPreguntas } from '@/fuctions/regiones'
@@ -31,6 +32,7 @@ const EvaluarCurricula = () => {
     <div className='m-auto w-[1000px] p-10'>
       <div className='p-10'>
         <div className='py-12'>
+          
           <h1 className='text-center font-serif'>
             <span className='block text-4xl font-light text-gray-800 tracking-wider mb-2'>
               Cobertura Curricular
@@ -40,9 +42,9 @@ const EvaluarCurricula = () => {
             </span>
           </h1>
         </div>
-        <DatosInstitucion dataDocente={dataDocente} />
-        <DatosMonitor dataMonitor={currentUserData}/>
-        <CoberturaCurricular dataDocente={dataDocente} evaluacionCurricularAlternativa={evaluacionCurricularAlternativa} paHabilidad={paHabilidad} evaluacionCurricular={evaluacionCurricular}/>
+        {/* <DatosInstitucion dataDocente={dataDocente} />
+        <DatosMonitor dataMonitor={currentUserData}/> */}
+        <CoberturaCurricular currentUserData={currentUserData} dataDocente={dataDocente} evaluacionCurricularAlternativa={evaluacionCurricularAlternativa} paHabilidad={paHabilidad} evaluacionCurricular={evaluacionCurricular}/>
         <AnexosCurricular dataDocente={dataDocente}/>
       </div>
 

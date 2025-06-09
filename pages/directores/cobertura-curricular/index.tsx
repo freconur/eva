@@ -43,40 +43,47 @@ const CoberturaCurricular = () => {
 
       <div className={styles.header}>
         <div className={styles.headerOverlay}></div>
-        
+
         <Image
           className={styles.headerImage}
           src={header}
           alt="imagen de cabecera"
           priority
         />
-        
+
         <div className={styles.headerContent}>
           <h1 className={styles.headerTitle}>
             Monitoreo a las prácticas pedagógicas
           </h1>
-          
-          <div className={styles.headerButtons}>
-            <button 
-              onClick={handleShowModalCrearEvaluacion} 
-              className={styles.headerButton}
-            >
-              Crear instrumento de monitoreo
-            </button>
-            {/* <button 
+
+          {
+            currentUserData.perfil?.rol === 4 ?
+              <>
+                <div className={styles.headerButtons}>
+                  <button
+                    onClick={handleShowModalCrearEvaluacion}
+                    className={styles.headerButton}
+                  >
+                    Crear instrumento de monitoreo
+                  </button>
+                  {/* <button 
               onClick={handleShowModalPreguntasAlternativas} 
               className={styles.headerButton}
             >
               Agregar
             </button> */}
-            <Link
-            href="/admin/estandares"
-              /* onClick={handleShowModalPreguntasAlternativas}  */
-              className={styles.headerButton}
-            >
-              Estandares
-            </Link>
-          </div>
+                  <Link
+                    href="/admin/estandares"
+                    /* onClick={handleShowModalPreguntasAlternativas}  */
+                    className={styles.headerButton}
+                  >
+                    Estandares
+                  </Link>
+                </div>
+              </>
+              :
+              null
+          }
         </div>
       </div>
 
@@ -89,13 +96,13 @@ const CoberturaCurricular = () => {
           :
           <>
             <div className={styles.tableContainer}>
-            <TablasEvaluacionesDocentes evaluacionCurricular={evaluacionCurricular}/>
-            {
-              currentUserData.perfil?.rol === 4 ?
-              null
-              :
-              <TablaUsuarios rol={3} docentesDeDirectores={docentesDeDirectores}/>
-            }
+              <TablasEvaluacionesDocentes evaluacionCurricular={evaluacionCurricular} />
+              {
+                currentUserData.perfil?.rol === 4 ?
+                  null
+                  :
+                  <TablaUsuarios rol={3} docentesDeDirectores={docentesDeDirectores} />
+              }
               {/* <div className={styles.tableSection}>
                 <h2 className={styles.sectionTitle}>
                   <span className={styles.sectionTitleIndicator}></span>

@@ -1,24 +1,30 @@
-import { useGlobalContext } from '@/features/context/GlolbalContext'
+import { useGlobalContext, useGlobalContextDispatch } from '@/features/context/GlolbalContext'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import { EstandaresCurriculares, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, User } from '@/features/types/types'
 import EvaluarCurriculaDocente from '@/modals/mallaCurricular/evaluarCurriculaDocente'
 import React, { useEffect, useState } from 'react'
 import styles from './cobertura-curricular.module.css'
+import DatosInstitucion from './datos-institucion'
+import DatosMonitor from './datos-monitor'
+import { ReporteDocentePdf } from '../invoce'
+import { AppAction } from '@/features/actions/appAction'
 
 
 interface Props {
   paHabilidad: EvaluacionHabilidad[],
   evaluacionCurricular: EvaluacionCurricular[],
   evaluacionCurricularAlternativa: EvaluacionCurricularAlternativa[],
-  dataDocente: User
+  dataDocente: User,
+  currentUserData: User
 }
-const CoberturaCurricular = ({ dataDocente, paHabilidad, evaluacionCurricular, evaluacionCurricularAlternativa }: Props) => {
+const CoberturaCurricular = ({ currentUserData,dataDocente, paHabilidad, evaluacionCurricular, evaluacionCurricularAlternativa }: Props) => {
 
   const [showEvaluacion, setShowEvaluacion] = useState<boolean>(false)
   const [idCurricular, setIdCurricular] = useState<string>("")
   const { generateEvaluacionCurricular, getEvaluacionCurricularDocente, getInstrumentos, getEstandaresCurriculares, tituloCoberturaCurricular } = useEvaluacionCurricular()
   const [selectedEstandar, setSelectedEstandar] = useState<string>('1')
-  const { evaluacionCurricularById, allEvaluacionesCurricularesDocente, preguntasEstandar,estandaresCurriculares } = useGlobalContext()
+  const { evaluacionCurricularById, allEvaluacionesCurricularesDocente, preguntasEstandar, estandaresCurriculares } = useGlobalContext()
+  const dispatch = useGlobalContextDispatch()
   const handleEvaluarDocenteCurricular = (id: string) => {
     setShowEvaluacion(!showEvaluacion)
     //aqui es donde se genera la evaluacion curricular vuando se abre el modal de evaluacion
@@ -47,6 +53,8 @@ const CoberturaCurricular = ({ dataDocente, paHabilidad, evaluacionCurricular, e
 
 
   useEffect(() => {
+    // Limpiar preguntasEstandar antes de obtener nuevos datos
+    dispatch({ type: AppAction.PREGUNTAS_ESTANDAR, payload: [] })
     getEvaluacionCurricularDocente(`${dataDocente.dni}`, selectedEstandar)
     getEstandaresCurriculares(selectedEstandar)
   },[selectedEstandar, dataDocente.dni])
@@ -57,7 +65,21 @@ const CoberturaCurricular = ({ dataDocente, paHabilidad, evaluacionCurricular, e
   /* console.log('evaluacionCurricular', evaluacionCurricular)
   console.log('allEvaluacionesCurricularesDocente', allEvaluacionesCurricularesDocente)
   console.log('paHabilidad', paHabilidad) */
+  console.log('estandaresCurriculares', estandaresCurriculares)
   return (
+    <div>
+      <ReporteDocentePdf 
+        currentUserData={currentUserData} 
+        dataDocente={dataDocente}
+        selectedEstandar={selectedEstandar}
+        estandaresCurriculares={estandaresCurriculares}
+        preguntasEstandar={preguntasEstandar}
+        evaluacionCurricular={evaluacionCurricular}
+        allEvaluacionesCurricularesDocente={allEvaluacionesCurricularesDocente}
+      />
+<DatosInstitucion dataDocente={dataDocente} />
+<DatosMonitor dataMonitor={currentUserData}/>
+
     <div className={styles.coberturaContainer}>
       {
         showEvaluacion && <EvaluarCurriculaDocente selectedEstandar={selectedEstandar} dataDocente={dataDocente} evaluacionCurricularById={evaluacionCurricularById} paHabilidad={paHabilidad} evaluacionCurricular={evaluacionCurricular} handleShowEvaluarCurriculaDocente={handleShowEvaluarCurriculaDocente} idCurricular={idCurricular} />
@@ -106,8 +128,8 @@ const CoberturaCurricular = ({ dataDocente, paHabilidad, evaluacionCurricular, e
 					}
 				</select>
       </div>
-      <div className={styles.tableContainer}>
-        <ul className={styles.skillsList}>
+      <div className={styles.tableContainer}>{/* esta es la tabla de la cobertura curricular */}
+        <ul className={styles.skillsList}>{/* esta es la cabecera de la tabla */}
           <li className={styles.skillsHeader}>A. habilidad lectora</li>
           {preguntasEstandar.map((habilidad, index) => (
             <li className={styles.skillItem} key={habilidad.id}>
@@ -133,26 +155,34 @@ const CoberturaCurricular = ({ dataDocente, paHabilidad, evaluacionCurricular, e
             ))}
           </ul>
           <div className={styles.evaluationsGrid}>
-            {allEvaluacionesCurricularesDocente?.map((evaluacion, index) => (
-              <ul key={index}>
-                {evaluacion?.preguntasAlternativas?.map((eva, evaIndex) => (
-                  eva.alternativas?.map((alt, altIndex) => (
-                    alt.selected && (
-                      <li
-                        key={`${index}-${evaIndex}-${altIndex}`}
-                        className={`${styles.evaluationCell} ${styles[`level${alt.order}`]}`}
-                      >
-                        <p className={styles.evaluationAcronym}>{alt.acronimo}</p>
-                      </li>
-                    )
-                  ))
-                ))}
-              </ul>
-            ))}
+            {evaluacionCurricular?.map((evaluacion) => {
+              const evaluacionDocente = allEvaluacionesCurricularesDocente?.find(
+                (eva) => eva.id === evaluacion.id
+              );
+              return (
+                <ul key={evaluacion.id}>
+                  {evaluacionDocente ? (
+                    evaluacionDocente.preguntasAlternativas?.map((eva, evaIndex) => (
+                      eva.alternativas?.map((alt, altIndex) => (
+                        alt.selected && (
+                          <li
+                            key={`${evaluacion.id}-${evaIndex}-${altIndex}`}
+                            className={`${styles.evaluationCell} ${styles[`level${alt.order}`]}`}
+                          >
+                            <p className={styles.evaluationAcronym}>{alt.acronimo}</p>
+                          </li>
+                        )
+                      ))
+                    ))
+                  ) : <div className={`${styles.evaluationCellVacio}`}>--</div>}
+                </ul>
+              );
+            })}
           </div>
         </div>
 
       </div>
+    </div>
     </div>
   )
 }

@@ -2,7 +2,7 @@ import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import { User } from '@/features/types/types'
 import { converGenero, convertRolToTitle, regionTexto } from '@/fuctions/regiones'
 import UpdateDataDocente from '@/modals/updateDocente'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { MdEditSquare } from 'react-icons/md'
 import { gradosDeColegio, sectionByGrade, area, genero } from '../../fuctions/regiones'
 import styles from './datos-institucion.module.css'
@@ -11,6 +11,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DesktopDatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
+import { doc, updateDoc, getFirestore } from "firebase/firestore";
+
 interface Props {
 	dataDocente: User
 }
@@ -18,7 +20,14 @@ interface Props {
 const DatosInstitucion = ({ dataDocente }: Props) => {
 	const [minDate, setMinDate] = useState(dayjs(new Date().setFullYear(2023)));
 	const [showUpdateDataDocente, setShowUpdateDataDocente] = useState(false)
-	const [startDate, setStartDate] = useState(dayjs());
+	const [startDate, setStartDate] = useState(() => {
+		if (dataDocente.fechaEvaluacion) {
+			return dayjs(dataDocente.fechaEvaluacion);
+		}
+		return dayjs();
+	});
+	const db = getFirestore();
+
 	const getGradoTexto = (grado: string | number | undefined) => {
 		if (!grado) return '-'
 		const gradoEncontrado = gradosDeColegio.find(g => g.id === Number(grado))
@@ -36,6 +45,22 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 		const areaEncontrada = area.find(a => a.id === Number(areaId))
 		return areaEncontrada?.name ?? '-'
 	}
+
+	const handleDateChange = async (newValue: any) => {
+		setStartDate(newValue);
+		if (!dataDocente.dni) {
+			console.error("DNI no disponible");
+			return;
+		}
+		try {
+			const userRef = doc(db, "usuarios", dataDocente.dni);
+			await updateDoc(userRef, {
+				fechaEvaluacion: newValue.toDate()
+			});
+		} catch (error) {
+			console.error("Error al actualizar la fecha:", error);
+		}
+	};
 
 	return (
 		<div className="bg-white">
@@ -92,7 +117,7 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 						<DesktopDatePicker
 							minDate={minDate}
 							value={startDate}
-							onChange={(newValue: any) => setStartDate(newValue)}
+							onChange={handleDateChange}
 						/>
 					</LocalizationProvider>
 				</div>

@@ -509,7 +509,7 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
       const arrayEvaluaciones: EvaluacionCurricularAlternativa[] = [];
       querySnapshot.forEach((doc) => {
         console.log(doc.data())
-        arrayEvaluaciones.push(doc.data());
+        arrayEvaluaciones.push({...doc.data(), id: doc.id});
       });
       console.log('arrayEvaluaciones', arrayEvaluaciones)
       dispatch({ type: AppAction.ALL_EVALUACIONES_CURRICULARES_DOCENTE, payload: arrayEvaluaciones })

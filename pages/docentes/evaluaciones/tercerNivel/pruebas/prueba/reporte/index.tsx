@@ -29,6 +29,8 @@ import DeleteEstudiante from "@/modals/deleteEstudiante";
 import styles from "./reporte.module.css";
 import { currentMonth, getAllMonths, getMonthName } from "@/fuctions/dates";
 import { ordernarAscDsc } from "@/fuctions/regiones";
+import { read, utils, writeFile } from 'xlsx';
+import { exportEstudiantesToExcel } from '@/features/utils/excelExport';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -63,16 +65,16 @@ const Reportes = () => {
     setShowtable(!showTable);
   };
 
-  const handleDownload = () => {
+  const handleExportToExcel = () => {
     setLoading(true);
-    const libro = XLSX.utils.book_new();
-    const hoja = XLSX.utils.json_to_sheet(estudiantes);
-    XLSX.utils.book_append_sheet(libro, hoja, "estudiantes");
-
-    setTimeout(() => {
-      XLSX.writeFile(libro, "estudiantes.xlsx");
+    try {
+      const fileName = `estudiantes_${currentUserData.dni}_${getMonthName(monthSelected)}.xlsx`;
+      exportEstudiantesToExcel(estudiantes, fileName);
+    } catch (error) {
+      console.error('Error al exportar a Excel:', error);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
@@ -173,7 +175,7 @@ const Reportes = () => {
     console.log('order', order)
     filtroEstudiantes(estudiantes, order)
   }
-  console.log('monthSelected', monthSelected)
+  console.log('estudiantes', estudiantes)
   return (
     <>
       {showDeleteEstudiante && (
@@ -195,29 +197,32 @@ const Reportes = () => {
       ) : (
         <div className={styles.container}>
           <div className={styles.content}>
-            <div
-              onClick={handleShowTable}
-              className={styles.toggleButton}
-            >
-              {showTable
-                ? "ocultar tabla de estudiantes"
-                : "ver tabla de estudiantes"}
+            <div className={styles.headerActions}>
+              <div
+                onClick={handleShowTable}
+                className={styles.toggleButton}
+              >
+                {showTable
+                  ? "ocultar tabla de estudiantes"
+                  : "mostrar tabla de estudiantes"}
+              </div>
+              {showTable && (
+                <button
+                  onClick={handleExportToExcel}
+                  disabled={loading}
+                  className={styles.exportButton}
+                >
+                  {loading ? (
+                    <RiLoader4Line className={styles.loaderIcon} />
+                  ) : (
+                    "Exportar a Excel"
+                  )}
+                </button>
+              )}
             </div>
             {showTable ? (
               <>
                 <div className={styles.exportContainer}>
-                  <div className={styles.selectContainer}>
-                    <label htmlFor="monthSelect" className={styles.selectLabel}>
-                      Exportar:
-                    </label>
-                    <button
-                      className={styles.exportButton}
-                      onClick={handleDownload}
-                    >
-                      exportar excel
-                    </button>
-                  </div>
-
                   <div className={styles.selectContainer}>
                     <label htmlFor="monthSelect" className={styles.selectLabel}>
                       Ordernar por:

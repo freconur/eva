@@ -33,17 +33,36 @@
   margin-bottom: 5rem;
 }
 
-.exportButton {
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  background-color: var(--color-paleta4);
-  color: white;
-  margin-bottom: 0.75rem;
-  width: 150px;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.3s;
+.headerActions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
 }
+
+.exportButton {
+  padding: 0.5rem 1rem;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.exportButton:hover {
+  background-color: #45a049;
+}
+
+.exportButton:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
 .buttonOrdenar{
   margin-left: 1rem;
   padding: 0.5rem;
@@ -55,9 +74,6 @@
   border: none;
   cursor: pointer;
   transition: background-color 0.3s;
-}
-.exportButton:hover {
-  background-color: var(--color-paleta6);
 }
 .buttonOrdenar:hover {
   background-color: var(--color-paleta5);

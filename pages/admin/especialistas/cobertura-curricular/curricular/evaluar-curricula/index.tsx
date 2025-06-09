@@ -49,7 +49,7 @@ const EvaluarCurricula = () => {
         </div>
         <DatosInstitucion dataDocente={dataDocente} />
         <DatosMonitor dataMonitor={currentUserData}/>
-        <CoberturaCurricular dataDocente={dataDocente} evaluacionCurricularAlternativa={evaluacionCurricularAlternativa} paHabilidad={paHabilidad} evaluacionCurricular={evaluacionCurricular}/>
+        <CoberturaCurricular currentUserData={currentUserData} dataDocente={dataDocente} evaluacionCurricularAlternativa={evaluacionCurricularAlternativa} paHabilidad={paHabilidad} evaluacionCurricular={evaluacionCurricular}/>
         <AnexosCurricular dataDocente={dataDocente}/>
       </div>
 

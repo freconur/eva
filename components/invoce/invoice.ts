@@ -1,48 +1,210 @@
 import { StyleSheet } from "@react-pdf/renderer";
+
 export const styles = StyleSheet.create({
   page: {
-    // flexDirection: "row",
-    borderWidth: 1,
-    borderColor: '#000',
-    backgroundColor: "#ffff",
-    margin:"20px"
+    padding: 20,
+    backgroundColor: 'white',
   },
-  section: {
-    margin: 10,
-    padding: 10,
-    flexGrow: 1,
+  container: {
+    /* border: '1px solid #e5e7eb', */
+    overflow: 'hidden',
+    marginBottom: 15,
   },
-  tituloPrincipal: {
-    color: "#475569",
-    textAlign:"left",
-    fontWeight:600,
-    textTransform:"uppercase",
-    marginBottom:"20px",
-    // marginTop:"20px"
+  header: {
+    padding: '12px 0',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  tituloSecundario: {
-    fontSize:'12px',
-    color: "#475569",
-    textTransform:"capitalize",
-    fontWeight:600
+  headerText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    color: '#374151',
+    letterSpacing: 0.3,
   },
-  containerInfo:{
-    // display:'flex',
-    flexDirection: "row",
-    marginBottom:"5px"
+  sectionTitle: {
+    padding: '10px 15px',
+    backgroundColor: '#f3f4f6',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    color: '#374151',
+    borderBottom: '1px solid #e5e7eb',
+    fontSize: 10,
+    letterSpacing: 0.3,
   },
-  label:{
-    fontSize:'12px',
-    color: "#475569",
-    marginRight:"5px",
+  dataRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    borderBottom: '1px solid #e5e7eb',
+    minHeight: 10,
   },
-  tituloTabla: {
-    fontSize:'13px',
-    color: "#475569",
-    textTransform:"uppercase"
+  label: {
+    width: '180px',
+    padding: '8px 12px',
+    borderRight: '1px solid #e5e7eb',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    color: '#374151',
+    backgroundColor: '#f9fafb',
+    fontSize: 8,
+    letterSpacing: 0.3,
   },
-  containerTabla:{
-    marginVertical:"10px"
+  value: {
+    flex: 1,
+    padding: '8px 12px',
+    color: '#4b5563',
+    fontWeight: 'medium',
+    fontSize: 8,
+    textTransform: 'uppercase',
   },
-  // tabla
+  tableContainer2: {
+    width: '350px',
+    borderRight: '1px solid #e5e7eb',
+  },
+  tableContainer: {
+    flexDirection: 'row',
+    marginTop: 15,
+    border: '1px solid #e5e7eb',
+    backgroundColor: '#ffffff',
+  },
+  tableHeader: {
+    backgroundColor: '#f3f4f6',
+    padding: '5px 15px',
+    borderBottom: '1px solid #e5e7eb',
+    minHeight: 30,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  tableHeaderText: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    color: '#374151',
+    letterSpacing: 0.3,
+    /* lineHeight: 1.2, */
+    margin: 0,
+    padding: 0,
+  },
+  tableRow: {
+    padding: '5px 15px',
+    borderBottom: '1px solid #e5e7eb',
+    backgroundColor: '#ffffff',
+    minHeight: 36,
+  },
+  tableCell: {
+    padding: '5px 0',
+    fontSize: 8,
+    color: '#4b5563',
+    textAlign: 'left',
+    lineHeight: 1.2,
+  },
+  evaluationsContainer: {
+    flex: 1,
+    borderLeft: '1px solid #e5e7eb',
+  },
+  evaluationsHeader: {
+    display: 'flex',
+    flexDirection: 'row',
+    backgroundColor: '#f3f4f6',
+    borderBottom: '1px solid #e5e7eb',
+    height: 30,
+    alignItems: 'center',
+  },
+  evaluationTitle: {
+    flex: 1,
+    padding: '2px 5px',
+    fontSize: 7,
+    fontWeight: 'bold',
+    color: '#374151',
+    textAlign: 'center',
+    borderRight: '1px solid #e5e7eb',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  evaluationsGrid: {
+    display: 'flex',
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+  },
+  evaluationColumn: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    borderRight: '1px solid #e5e7eb',
+  },
+  evaluationCell: {
+    padding: '5px 0',
+    fontSize: 8,
+    color: '#4b5563',
+    textAlign: 'center',
+    borderBottom: '1px solid #e5e7eb',
+    minHeight: 36,
+    textTransform: 'uppercase',
+  },
+  evaluationCellEmpty: {
+    padding: '5px 0',
+    fontSize: 8,
+    color: '#9ca3af',
+    textAlign: 'center',
+    borderBottom: '1px solid #e5e7eb',
+    minHeight: 36,
+  },
+  observationsContainer: {
+    marginTop: 15,
+    border: '1px solid #e5e7eb',
+    backgroundColor: '#ffffff',
+  },
+  observationSection: {
+    padding: '10px 15px',
+    borderBottom: '1px solid #e5e7eb',
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  observationTitle: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: '#374151',
+    textTransform: 'uppercase',
+    width: '180px',
+  },
+  observationText: {
+    fontSize: 8,
+    color: '#4b5563',
+    lineHeight: 1.4,
+    flex: 1,
+  },
+  signaturesContainer: {
+    marginTop: 30,
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: '0 50px',
+  },
+  signatureBox: {
+    width: '200px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  signatureTitle: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: '#374151',
+    marginBottom: 10,
+    textTransform: 'uppercase',
+  },
+  signatureLine: {
+    width: '100%',
+    borderBottom: '1px solid #374151',
+    marginBottom: 5,
+  },
+  signatureName: {
+    fontSize: 8,
+    color: '#4b5563',
+    textTransform: 'uppercase',
+  }
 });

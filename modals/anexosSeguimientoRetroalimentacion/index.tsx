@@ -54,7 +54,10 @@ const AnexosSeguimientoRetroalimentacion = ({ dataDocente, idEvaluacion }: Props
       };
       setFormData(prev => ({
         ...prev,
-        nivelCobertura: updatedNivelCobertura
+        nivelCobertura: {
+          ...updatedNivelCobertura,
+          id: updatedNivelCobertura.id?.toString() || ''
+        }
       }));
     } else {
       setFormData(prev => ({
