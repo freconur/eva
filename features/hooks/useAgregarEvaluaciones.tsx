@@ -329,6 +329,7 @@ const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${idEvaluacion}/${curr
         pregunta: data.pregunta,
         preguntaDocente: data.preguntaDocente,
         respuesta: data.respuesta,
+        puntaje: data.puntaje || "0",
         alternativas: [
           {
             // selected: alternativass[0].selected,
@@ -354,6 +355,7 @@ const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${idEvaluacion}/${curr
         pregunta: data.pregunta,
         preguntaDocente: data.preguntaDocente,
         respuesta: data.respuesta,
+        puntaje: data.puntaje || "0",
         alternativas: [
           {
             // selected: alternativass[0].selected,

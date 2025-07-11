@@ -202,6 +202,7 @@ export type PreguntasRespuestas = {
   alternativas?: Alternativa[];
   order?: number;
   preguntaDocente?: string;
+  puntaje?: string;
 };
 export type Evaluaciones = {
   id?: string;

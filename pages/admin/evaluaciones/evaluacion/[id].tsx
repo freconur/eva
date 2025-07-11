@@ -8,11 +8,31 @@ import UpdatePreguntaRespuesta from '@/modals/updatePreguntaRespuesta'
 import DeletePregunta from '@/modals/deletePregunta'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { MdEditSquare, MdDelete } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 import { FaArrowUp, FaArrowDown } from 'react-icons/fa'
 import styles from './evaluacion.module.css'
+
+// Hook personalizado para mantener la posición de scroll
+const useScrollPosition = () => {
+  const [scrollPosition, setScrollPosition] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const saveScrollPosition = useCallback(() => {
+    if (containerRef.current) {
+      setScrollPosition(containerRef.current.scrollTop)
+    }
+  }, [])
+
+  const restoreScrollPosition = useCallback(() => {
+    if (containerRef.current && scrollPosition > 0) {
+      containerRef.current.scrollTop = scrollPosition
+    }
+  }, [scrollPosition])
+
+  return { containerRef, saveScrollPosition, restoreScrollPosition }
+}
 
 const Evaluacion = () => {
   const route = useRouter()
@@ -24,6 +44,9 @@ const Evaluacion = () => {
   const [showModalUpdatePReguntaRespuesta, setShowModalUpdatePReguntaRespuesta] = useState(false)
   const [showModalDelete, setShowModalDelete] = useState(false)
   const [preguntaToDelete, setPreguntaToDelete] = useState({ id: '', order: 0 })
+
+  // Hook para mantener la posición de scroll
+  const { containerRef, saveScrollPosition, restoreScrollPosition } = useScrollPosition()
 
   const handleshowModal = () => {
     setShowModal(!showModal)
@@ -53,10 +76,13 @@ const Evaluacion = () => {
   }
 
   const handleDeletePregunta = async () => {
+    saveScrollPosition() // Guardar posición antes de eliminar
     await deletePreguntaRespuesta(`${route.query.id}`, preguntaToDelete.id, preguntaToDelete.order)
   }
 
   const handleMoveQuestion = async (index: number, direction: 'up' | 'down') => {
+    saveScrollPosition() // Guardar posición antes de mover
+    
     const newIndex = direction === 'up' ? index - 1 : index + 1
 
     if (newIndex < 0 || newIndex >= preguntasRespuestas.length) return
@@ -83,6 +109,16 @@ const Evaluacion = () => {
       getPreguntasRespuestas(`${route.query.id}`)
     }
   }, [route.query.id])
+
+  // Restaurar posición de scroll después de que se actualicen las preguntas
+  useEffect(() => {
+    if (preguntasRespuestas.length > 0) {
+      // Usar setTimeout para asegurar que el DOM se haya actualizado
+      setTimeout(() => {
+        restoreScrollPosition()
+      }, 100)
+    }
+  }, [preguntasRespuestas, restoreScrollPosition])
 
   console.log('evaluacion', evaluacion)
   console.log('preguntasRespuestas', preguntasRespuestas)
@@ -113,7 +149,7 @@ const Evaluacion = () => {
           </div>
         </div>
       ) : (
-        <div className={styles.container}>
+        <div className={styles.container} ref={containerRef}>
           <div className={styles.content}>
             <h1 className={styles.title}>{evaluacion.nombre}</h1>
             <div className={styles.actions}>
@@ -189,7 +225,10 @@ const Evaluacion = () => {
                     </div>
                   ))}
 
-                  <div className={styles.answer}>respuesta: {pr.respuesta}</div>
+                  <div className={styles.answerContainer}>
+                    <div className={styles.answer}>respuesta: {pr.respuesta}</div>
+                    <div className={styles.puntaje}>puntaje: {pr.puntaje}</div>
+                  </div>
                 </li>
               ))}
             </ul>

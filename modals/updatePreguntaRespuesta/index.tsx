@@ -19,6 +19,7 @@ const initialValue = {
   pregunta: "",
   preguntaDocente: "",
   respuesta: "",
+  puntaje: "",
   alternativas: [
     { descripcion: "", alternativa: "", selected: false },
     { descripcion: "", alternativa: "", selected: false },
@@ -38,6 +39,7 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
   const [valueInputB, setValueInputB] = useState<Alternativa>(initialValueAlternativas)
   const [valueInputC, setValueInputC] = useState<Alternativa>(initialValueAlternativas)
   const [valueInputD, setValueInputD] = useState<Alternativa>(initialValueAlternativas)
+  const [puntajeError, setPuntajeError] = useState<string>("")
   // const [valueInputAlternativas, setValueInputAlternativas] = useState<Alternativa[]>(initialValueAlternativas)
   // const [valueInput, setValueInput] = useState<Evaluaciones>(initialValue)
   // const [nameUpdate, setNameUpdate] = useState(nameEva)
@@ -62,6 +64,22 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
   }
   const handleD = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValueInputD({ ...valueInputD, descripcion: e.target.value })
+  }
+
+  const handlePuntajeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numericValue = value.replace(/[^0-9]/g, ''); // Solo permite números
+    
+    setValueInput({ ...valueInput, puntaje: numericValue });
+    
+    // Validación
+    if (value && !/^\d+$/.test(value)) {
+      setPuntajeError("Solo se permiten números");
+    } else if (numericValue && parseInt(numericValue) <= 0) {
+      setPuntajeError("El puntaje debe ser mayor a 0");
+    } else {
+      setPuntajeError("");
+    }
   }
 
   const handleActualizar = () => {
@@ -156,14 +174,28 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
                       value={valueInputD?.descripcion}
                       onChange={handleD}
                     />
-                    <p className={styles.tituloBotones}>Respuesta Correcta</p>
-                    <input
-                      type="text"
-                      className={styles.inputNombresDni}
-                      name="respuesta"
-                      value={valueInput.respuesta}
-                      onChange={handleChangeInput}
-                    />
+                    <div>
+                      <p className={styles.tituloBotones}>Respuesta Correcta</p>
+                      <input
+                        type="text"
+                        className={styles.inputNombresDni}
+                        name="respuesta"
+                        value={valueInput.respuesta}
+                        onChange={handleChangeInput}
+                      />
+                      <p className={styles.tituloBotones}>Puntaje</p>
+                      <input
+                        type="text"
+                        className={styles.inputNombresDni}
+                        name="puntaje"
+                        value={valueInput.puntaje || ""}
+                        onChange={handlePuntajeChange}
+                        placeholder="Ingrese el puntaje"
+                      />
+                      {puntajeError && (
+                        <p className="text-red-500 text-sm mt-1">{puntajeError}</p>
+                      )}
+                    </div>
                   </div>
                   <p className={styles.tituloBotones}>¿Quieres actualizar esta pregunta y sus alternativas?</p>
                   <div className='flex gap-3 justify-center items-center'>
