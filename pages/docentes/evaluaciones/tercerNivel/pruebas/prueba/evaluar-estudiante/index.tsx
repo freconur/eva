@@ -49,6 +49,7 @@ const EvaluarEstudiante = () => {
     formState: { errors } 
   } = useForm();
 
+
   /**
    * Valida si todos los datos del estudiante están completos
    * @param formData - Datos del formulario
@@ -145,6 +146,8 @@ const EvaluarEstudiante = () => {
     const respuestasCorrectas = contarRespuestasCorrectas(preguntasRespuestasEstudiante);
     
     // Guardar evaluación en la base de datos
+
+    //ESTO LO COMENTE PARA PODER HACER PRUEBAS ESTA ES LA FUNCION PRINCIPAL PARA GUARDAR LA EVALUACION
     await salvarPreguntRespuestaEstudiante(
       data, 
       idExamen as string, 
@@ -152,7 +155,8 @@ const EvaluarEstudiante = () => {
       respuestasCorrectas, 
       sizePreguntas
     );
-    
+    /* console.log('data', data)
+    console.log('preguntasRespuestasEstudiante', preguntasRespuestasEstudiante) */
     // Actualizar estado y reiniciar formulario
     getPreguntasRespuestas(idExamen as string);
     setRespuestasCorrectas(0);
@@ -160,6 +164,7 @@ const EvaluarEstudiante = () => {
     setTodasRespondidas(false);
     reset();
   });
+  /* console.log('preguntasRespuestas', preguntasRespuestas) */
 
   /**
    * Maneja la selección de respuestas por parte del estudiante
@@ -293,6 +298,7 @@ const EvaluarEstudiante = () => {
     }
   };
 
+  console.log('preguntasOrdenadas', preguntasOrdenadas)
   return (
     <div className={styles.containerPage}>
       <div className={styles.containerContent}>
@@ -421,7 +427,7 @@ const EvaluarEstudiante = () => {
                       {/* Título de la pregunta */}
                       <p className={styles.preguntaTitulo}>
                         <span className={styles.numeroPregunta}>
-                          {pregunta.order}.
+                          {preguntaIndex + 1}.
                         </span>
                         {pregunta.pregunta}
                       </p>

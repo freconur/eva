@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, increment, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch, onSnapshot, QuerySnapshot, DocumentData } from "firebase/firestore"
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, getFirestore, increment, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch, onSnapshot, QuerySnapshot, DocumentData, runTransaction } from "firebase/firestore"
 import { AppAction } from "../actions/appAction"
 import { useGlobalContext, useGlobalContextDispatch } from "../context/GlolbalContext"
 import { Alternativa, CreaEvaluacion, Evaluaciones, Grades, PreguntasRespuestas, User, UserEstudiante } from "../types/types"
@@ -133,7 +133,11 @@ export const useAgregarEvaluaciones = () => {
 
   const getPreguntasRespuestas = async (id: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
-    if (id.length > 0) {
+    console.log('id', id)
+    if (id && id.length > 0) {
+      // Inicializar el contador si no existe
+      await initializeCounter(id);
+      
       const pethRef = collection(db, `/evaluaciones/${id}/preguntasRespuestas`)
       const q = query(pethRef, orderBy("order", "asc"));
       
@@ -152,23 +156,57 @@ export const useAgregarEvaluaciones = () => {
         console.log('error', error)
         dispatch({ type: AppAction.LOADER_PAGES, payload: false })
       });
+    } else {
+      // Si no hay id válido, limpiar el estado y desactivar el loader
+      dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: [] })
+      dispatch({ type: AppAction.SIZE_PREGUNTAS, payload: 0 })
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false })
     }
   }
 
+  // Alternativa con timestamp como ID
   const guardarPreguntasRespuestas = async (data: PreguntasRespuestas) => {
     console.log('data', data)
-    const querySnapshot = await getDocs(collection(db, `/evaluaciones/${data.id}/preguntasRespuestas`));
-    console.log('querySnapshot.size', querySnapshot.size)
-    const count = querySnapshot.size
-
-
-    await setDoc(doc(db, `/evaluaciones/${data.id}/preguntasRespuestas`, `${count + 1}`), {
-      pregunta: data.pregunta,
-      respuesta: data.respuesta,
-      alternativas: data.alternativas,
-      preguntaDocente: data.preguntaDocente,
-      order: count + 1 //modificacion para poder ordenar las preguntas en caso se falle y no querer volver a agregarlas desde cero
-    });
+    
+    try {
+      // Usar transacción para garantizar atomicidad en el contador
+      const nextId = await runTransaction(db, async (transaction) => {
+        // Referencia al documento contador
+        const counterRef = doc(db, `/evaluaciones/${data.id}/metadata/counter`);
+        const counterDoc = await transaction.get(counterRef);
+        
+        let nextCount: number;
+        
+        if (!counterDoc.exists()) {
+          // Si no existe el contador, inicializarlo en 1
+          nextCount = 1;
+          transaction.set(counterRef, { count: nextCount });
+        } else {
+          // Si existe, incrementar el contador
+          nextCount = counterDoc.data().count + 1;
+          transaction.update(counterRef, { count: nextCount });
+        }
+        
+        // Crear el documento de la pregunta con el ID secuencial
+        const preguntaRef = doc(db, `/evaluaciones/${data.id}/preguntasRespuestas`, `${nextCount}`);
+        transaction.set(preguntaRef, {
+          pregunta: data.pregunta,
+          respuesta: data.respuesta,
+          alternativas: data.alternativas,
+          preguntaDocente: data.preguntaDocente,
+          order: nextCount,
+          timestamp: serverTimestamp()
+        });
+        
+        return nextCount;
+      });
+      
+      console.log(`Pregunta guardada con ID secuencial: ${nextId}`);
+      
+    } catch (error) {
+      console.error('Error al guardar pregunta con ID secuencial:', error);
+      throw error;
+    }
   }
   const salvarPreguntRespuestaEstudiante = async (data: UserEstudiante, idEvaluacion: string, pq: PreguntasRespuestas[], respuestasCorrectas: number, sizePreguntas: number) => {
     console.log('tiene que salir la respuesta', respuestasCorrectas)
@@ -206,11 +244,11 @@ const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${idEvaluacion}/${curr
             respuestaEstudiante: rta.length > 0 && rta,
             preguntaDocente: a.preguntaDocente
           })
-          const docRef = doc(db, `/evaluaciones/${idEvaluacion}/${currentUserData.dni}`, `${a.id}`);
+          const docRef = doc(db, `/evaluaciones/${idEvaluacion}/${currentUserData.dni}`, `${a.order}`);
           const querySnapshot = await getDoc(docRef);
           // const docSnap = await getDoc(docRef);
           if (!querySnapshot.exists()) {
-            const dataGraficos = doc(db, `/evaluaciones/${idEvaluacion}/${currentUserData.dni}/${a.id}`)
+            const dataGraficos = doc(db, `/evaluaciones/${idEvaluacion}/${currentUserData.dni}/${a.order}`)
             if (a.alternativas?.length === 3) {
               await setDoc(dataGraficos, {
                 a: 0,
@@ -396,36 +434,112 @@ const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${idEvaluacion}/${curr
       })
   }
 
+  // Función para inicializar el contador basándose en el ID más alto existente
+  const initializeCounter = async (idEvaluacion: string) => {
+    try {
+      const counterRef = doc(db, `/evaluaciones/${idEvaluacion}/metadata/counter`);
+      const counterDoc = await getDoc(counterRef);
+      
+      if (!counterDoc.exists()) {
+        // Obtener todas las preguntas existentes
+        const preguntasSnapshot = await getDocs(collection(db, `/evaluaciones/${idEvaluacion}/preguntasRespuestas`));
+        
+        let maxId = 0;
+        preguntasSnapshot.forEach((doc) => {
+          const id = parseInt(doc.id);
+          if (!isNaN(id) && id > maxId) {
+            maxId = id;
+          }
+        });
+        
+        // Inicializar el contador con el ID más alto encontrado
+        await setDoc(counterRef, { count: maxId });
+        console.log(`Contador inicializado con valor: ${maxId}`);
+      }
+    } catch (error) {
+      console.error('Error al inicializar contador:', error);
+    }
+  }
+
   const deletePreguntaRespuesta = async (idEvaluacion: string, idPregunta: string, order: number) => {
+    console.log('=== INICIO DELETE PREGUNTA ===')
+    console.log('idEvaluacion:', idEvaluacion)
+    console.log('idPregunta:', idPregunta)
+    console.log('order:', order)
+    
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true })
     
     try {
-      // Borrar la pregunta
-      await deleteDoc(doc(db, `/evaluaciones/${idEvaluacion}/preguntasRespuestas`, idPregunta))
+      // Verificar que los parámetros no sean undefined
+      if (!idEvaluacion || !idPregunta || order === undefined) {
+        console.error('Parámetros inválidos:', { idEvaluacion, idPregunta, order })
+        dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+        return
+      }
       
-      // Obtener todas las preguntas restantes
-      const preguntasRef = collection(db, `/evaluaciones/${idEvaluacion}/preguntasRespuestas`)
-      const q = query(preguntasRef, orderBy("order", "asc"))
-      const querySnapshot = await getDocs(q)
+      // Primero, eliminar la pregunta en una transacción simple
+      console.log('Eliminando pregunta...')
+      await runTransaction(db, async (transaction) => {
+        // DESPUÉS: Todas las escrituras
+        const preguntaRef = doc(db, `/evaluaciones/${idEvaluacion}/preguntasRespuestas`, idPregunta);
+        console.log('Ruta de la pregunta:', `/evaluaciones/${idEvaluacion}/preguntasRespuestas/${idPregunta}`)
+        transaction.delete(preguntaRef);
+        
+        // NO decrementar el contador para mantener IDs únicos
+        // El contador debe ser siempre incremental
+      });
       
-      // Actualizar el orden de las preguntas restantes
-      const batch = writeBatch(db)
-      querySnapshot.forEach((doc) => {
-        const pregunta = doc.data()
+      console.log('Pregunta eliminada exitosamente')
+      
+      // Después, reorganizar las preguntas restantes (fuera de la transacción)
+      console.log('Reorganizando preguntas restantes...')
+      const preguntasSnapshot = await getDocs(collection(db, `/evaluaciones/${idEvaluacion}/preguntasRespuestas`));
+      const batch = writeBatch(db);
+      
+      preguntasSnapshot.forEach((doc) => {
+        const pregunta = doc.data();
         if (pregunta.order > order) {
-          batch.update(doc.ref, { order: pregunta.order - 1 })
+          console.log(`Actualizando orden de pregunta ${doc.id} de ${pregunta.order} a ${pregunta.order - 1}`)
+          batch.update(doc.ref, { order: pregunta.order - 1 });
         }
-      })
+      });
       
-      await batch.commit()
+      // Ejecutar todas las actualizaciones de orden
+      await batch.commit();
+      console.log('Orden de preguntas actualizado')
       
       // Recargar las preguntas
-      await getPreguntasRespuestas(idEvaluacion)
+      console.log('Recargando preguntas...')
+      await getPreguntasRespuestas(idEvaluacion);
       
       dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+      console.log('=== FIN DELETE PREGUNTA EXITOSO ===')
     } catch (error) {
-      console.error('Error al borrar la pregunta:', error)
+      console.error('=== ERROR AL BORRAR LA PREGUNTA ===')
+      console.error('Error details:', error)
       dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
+    }
+  }
+
+  // Función para reparar el contador en caso de desincronización
+  const repairCounter = async (idEvaluacion: string) => {
+    try {
+      const preguntasSnapshot = await getDocs(collection(db, `/evaluaciones/${idEvaluacion}/preguntasRespuestas`));
+      
+      let maxId = 0;
+      preguntasSnapshot.forEach((doc) => {
+        const id = parseInt(doc.id);
+        if (!isNaN(id) && id > maxId) {
+          maxId = id;
+        }
+      });
+      
+      const counterRef = doc(db, `/evaluaciones/${idEvaluacion}/metadata/counter`);
+      await setDoc(counterRef, { count: maxId }, { merge: true });
+      
+      console.log(`Contador reparado. Nuevo valor: ${maxId}`);
+    } catch (error) {
+      console.error('Error al reparar contador:', error);
     }
   }
 
@@ -444,6 +558,8 @@ const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${idEvaluacion}/${curr
     updateEvaluacion,
     updatePreguntaRespuesta,
     getEvaluacionesDirector,
-    deletePreguntaRespuesta
+    deletePreguntaRespuesta,
+    initializeCounter,
+    repairCounter
   }
 }

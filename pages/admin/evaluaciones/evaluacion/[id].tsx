@@ -66,16 +66,30 @@ const Evaluacion = () => {
 
   const handleSelectPreguntaToDelete = (index: number) => {
     const pregunta = preguntasRespuestas[index]
+    console.log('=== SELECCIONAR PREGUNTA PARA ELIMINAR ===')
+    console.log('index:', index)
+    console.log('pregunta completa:', pregunta)
+    console.log('pregunta.id:', pregunta.id)
+    console.log('pregunta.order:', pregunta.order)
+    console.log('typeof pregunta.order:', typeof pregunta.order)
+    
     if (pregunta.id && typeof pregunta.order === 'number') {
       setPreguntaToDelete({
         id: pregunta.id,
         order: pregunta.order
       })
+      console.log('Pregunta seleccionada para eliminar:', { id: pregunta.id, order: pregunta.order })
       handleShowModalDelete()
+    } else {
+      console.error('Pregunta no tiene ID o order válidos')
     }
   }
 
   const handleDeletePregunta = async () => {
+    console.log('=== HANDLE DELETE PREGUNTA ===')
+    console.log('route.query.id:', route.query.id)
+    console.log('preguntaToDelete:', preguntaToDelete)
+    
     saveScrollPosition() // Guardar posición antes de eliminar
     await deletePreguntaRespuesta(`${route.query.id}`, preguntaToDelete.id, preguntaToDelete.order)
   }

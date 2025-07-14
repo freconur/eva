@@ -70,7 +70,8 @@ export type AppReducerValues = {
   estandaresCurriculares:EstandaresCurriculares[],
   tituloCoberturaCurricular:string,
   reporteCCADataEspecialista:ResultadosAcumuladosCC[],
-  ccDataFilterEspecialista:ResultadosAcumuladosCC[]
+  ccDataFilterEspecialista:ResultadosAcumuladosCC[],
+  evaluacionEstudiante:UserEstudiante
 };
 
 export type AppActions =
@@ -156,6 +157,7 @@ export type AppActions =
   | { type: AppAction.TITULO_COBERTURA_CURRICULAR; payload: string }
   | { type: AppAction.REPORT_CCA_DATA_ESPECIALISTA; payload:ResultadosAcumuladosCC[]}
   | { type: AppAction.CC_DATA_FILTER_ESPECIALISTA; payload:ResultadosAcumuladosCC[]}
+  | { type: AppAction.EVALUACION_ESTUDIANTE; payload:UserEstudiante}
 export type LoginData = {
   usuario: string;
   contrasena: string;
@@ -241,6 +243,8 @@ export type Estudiante = {
   respuestasCorrectas?: number;
   totalPreguntas?: number;
   respuestasIncorrectas?: number;
+  puntaje?: number;
+  nivel?: string;
 };
 export type User = {
   nombres?: string;

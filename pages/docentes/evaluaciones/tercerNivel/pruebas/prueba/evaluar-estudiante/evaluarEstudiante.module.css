@@ -200,7 +200,7 @@
   background: #ffffff;
   border: 2px solid #e5e7eb;
   border-radius: 0.75rem;
-  padding: 1.5rem;
+  padding: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
@@ -401,6 +401,10 @@
   .saveButton {
     padding: 1rem 1.5rem;
     font-size: 1rem;
+  }
+  
+  .respuestaItem {
+    padding: 0.75rem;
   }
 }
 
