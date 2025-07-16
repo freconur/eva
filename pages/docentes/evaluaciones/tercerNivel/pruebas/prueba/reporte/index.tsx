@@ -3,7 +3,7 @@ import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useReporteDocente } from '@/features/hooks/useReporteDocente';
 import { Alternativa, DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -109,14 +109,48 @@ const Reportes = () => {
   };
 
   useEffect(() => {
-    estadisticasEstudiantesDelDocente(`${route.query.idExamen}`, monthSelected);
-    getPreguntasRespuestas(`${route.query.idExamen}`);
-    setMonthSelected(currentMonth);
+    const idExamen = route.query.idExamen as string;
+    if (idExamen) {
+      estadisticasEstudiantesDelDocente(idExamen, monthSelected);
+      getPreguntasRespuestas(idExamen);
+      setMonthSelected(currentMonth);
+    }
   }, [route.query.idExamen, currentUserData.dni]);
 
+
+
   useEffect(() => {
-    estadisticasEstudiantesDelDocente(`${route.query.idExamen}`, monthSelected);
+    const idExamen = route.query.idExamen as string;
+    if (idExamen) {
+      estadisticasEstudiantesDelDocente(idExamen, monthSelected);
+    }
   }, [monthSelected]);
+
+  // Crear un mapa optimizado de preguntas por ID para evitar búsquedas repetidas O(1) en lugar de O(n)
+  const preguntasMap = useMemo(() => {
+    const map = new Map<string, PreguntasRespuestas>();
+    preguntasRespuestas.forEach(pregunta => {
+      if (pregunta.id) {
+        map.set(pregunta.id, pregunta);
+      }
+    });
+    return map;
+  }, [preguntasRespuestas]);
+
+  // Ordenar dataEstadisticas por el order de las preguntas correspondientes
+  const dataEstadisticasOrdenadas = useMemo(() => {
+    if (!dataEstadisticas || !preguntasRespuestas.length) return dataEstadisticas;
+    
+    return [...dataEstadisticas].sort((a, b) => {
+      const preguntaA = preguntasMap.get(a.id || '');
+      const preguntaB = preguntasMap.get(b.id || '');
+      
+      const orderA = preguntaA?.order || 0;
+      const orderB = preguntaB?.order || 0;
+      
+      return orderA - orderB;
+    });
+  }, [dataEstadisticas, preguntasMap]);
 
   const options = {
     plugins: {
@@ -130,31 +164,29 @@ const Reportes = () => {
     },
   };
 
-  const iterarPregunta = (idPregunta: string) => {
-    // Buscar la pregunta por su ID o order
-    const pregunta = preguntasRespuestas.find(pr => pr.id === idPregunta || pr.order?.toString() === idPregunta);
-    
+  // Función optimizada para renderizar pregunta usando el mapa
+  const renderPregunta = useCallback((idPregunta: string) => {
+    const pregunta = preguntasMap.get(idPregunta);
     if (!pregunta) {
       return <p>Pregunta no encontrada</p>;
     }
-
     return (
       <>
         <h3 className={styles.questionTitle}>
-          {/* <p className={styles.questionNumber}>{pregunta.order}.</p> */}
           {pregunta.pregunta}
         </h3>
         <h4 className={styles.questionSubtitle}>
-          <strong>Actuacion</strong>: {pregunta.preguntaDocente}
+          <strong>Actuación</strong>: {pregunta.preguntaDocente}
         </h4>
       </>
     );
-  };
+  }, [preguntasMap]);
 
-  const obtenerRespuestaPorId = (idPregunta: string): string => {
-    const pregunta = preguntasRespuestas.find(pr => pr.id === idPregunta || pr.order?.toString() === idPregunta);
+  // Función optimizada para obtener respuesta usando el mapa
+  const obtenerRespuestaPorId = useCallback((idPregunta: string): string => {
+    const pregunta = preguntasMap.get(idPregunta);
     return pregunta?.respuesta || '';
-  };
+  }, [preguntasMap]);
 
   const handleValidateRespuesta = (data: PreguntasRespuestas) => {
     const rta: Alternativa | undefined = data.alternativas?.find((r) => r.selected === true);
@@ -359,10 +391,12 @@ const Reportes = () => {
                 {warningEvaEstudianteSinRegistro ? (
                   <div className={styles.warningContainer}>{warningEvaEstudianteSinRegistro}</div>
                 ) : (
-                  dataEstadisticas?.map((dat, index) => {
+                  dataEstadisticasOrdenadas?.map((dat, index) => {
+                    const pregunta = preguntasMap.get(dat.id || '');
+                    const numeroOrden = pregunta?.order || index + 1;
                     return (
-                      <div key={index} className={styles.questionContainer}>
-                        <div>{index+1}.{iterarPregunta(`${dat.id}`)}</div>
+                      <div key={dat.id || index} className={styles.questionContainer}>
+                        <div>{index + 1}.{renderPregunta(`${dat.id}`)}</div>
                         <div className={styles.chartContainer}>
                           <div className={styles.chartWrapper}>
                             <Bar

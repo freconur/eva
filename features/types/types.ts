@@ -284,6 +284,7 @@ export type DataEstadisticas = {
   c?: number;
   d?: number;
   total?: number;
+  order?: number;
 };
 export type ResultadosAcumuladosCC = {
   acumuladoDirector?:DataEstadisticasCurricular[],

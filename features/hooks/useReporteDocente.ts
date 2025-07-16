@@ -63,18 +63,31 @@ export const useReporteDocente = () => {
         })
       })
       estudiante.puntaje = puntajeAcumulado;
-      
-      // Determinar el nivel según el puntaje
-      if (puntajeAcumulado >= 523 && puntajeAcumulado <= 800) {
-        estudiante.nivel = "satisfactorio";
-      } else if (puntajeAcumulado >= 446 && puntajeAcumulado <= 522) {
-        estudiante.nivel = "en proceso";
-      } else if (puntajeAcumulado >= 357 && puntajeAcumulado <= 445) {
-        estudiante.nivel = "en inicio";
-      } else if (puntajeAcumulado >= 0 && puntajeAcumulado <= 356) {
-        estudiante.nivel = "previo al inicio";
-      } else {
-        estudiante.nivel = "sin clasificar";
+      if(idExamen==='ksor0YefuQFZy1kaWEO3'){
+        if (puntajeAcumulado >= 526 && puntajeAcumulado <= 800) {
+          estudiante.nivel = "satisfactorio";
+        } else if (puntajeAcumulado >= 422 && puntajeAcumulado <= 525) {
+          estudiante.nivel = "en proceso";
+        } else if (puntajeAcumulado >= 352 && puntajeAcumulado <= 421) {
+          estudiante.nivel = "en inicio";
+        } else if (puntajeAcumulado >= 0 && puntajeAcumulado <= 351) {
+          estudiante.nivel = "previo al inicio";
+        } else {
+          estudiante.nivel = "sin clasificar";
+        }
+      }else {
+        // Determinar el nivel según el puntaje
+        if (puntajeAcumulado >= 523 && puntajeAcumulado <= 800) {
+          estudiante.nivel = "satisfactorio";
+        } else if (puntajeAcumulado >= 446 && puntajeAcumulado <= 522) {
+          estudiante.nivel = "en proceso";
+        } else if (puntajeAcumulado >= 357 && puntajeAcumulado <= 445) {
+          estudiante.nivel = "en inicio";
+        } else if (puntajeAcumulado >= 0 && puntajeAcumulado <= 356) {
+          estudiante.nivel = "previo al inicio";
+        } else {
+          estudiante.nivel = "sin clasificar";
+        }
       }
     })
     dispatch({ type: AppAction.ESTUDIANTES, payload: arrayEstudiantes })
@@ -88,7 +101,7 @@ export const useReporteDocente = () => {
     const estudiantes = await estudiantesQueDieronExamen(idEvaluacion, month)
     // Acumular los valores de a, b, c, d por cada pregunta
     const acumuladoPorPregunta: Record<string, { id: string, a: number, b: number, c: number, d?: number, total: number }> = {}
-    console.log('estudiantes', estudiantes.length)
+   
     estudiantes.forEach(estudiante => {
       if (estudiante.respuestas && Array.isArray(estudiante.respuestas)) {
         estudiante.respuestas.forEach(respuesta => {

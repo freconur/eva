@@ -147,6 +147,14 @@ export const useAgregarEvaluaciones = () => {
 
         querySnapshot.forEach((doc) => {
           preguntasrespuestas.push({ ...doc.data(), id: doc.id })
+          
+        });
+
+        // Ordenar por ID de manera ascendente (convertir a número para ordenamiento correcto)
+        preguntasrespuestas.sort((a, b) => {
+          const idA = parseInt(a.order?.toString() || '0');
+          const idB = parseInt(b.order?.toString() || '0');
+          return idA - idB;
         });
 
         dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: preguntasrespuestas })

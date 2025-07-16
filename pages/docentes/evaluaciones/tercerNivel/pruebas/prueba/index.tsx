@@ -34,21 +34,54 @@ const Evaluacion = () => {
   const verificarPuntajePreguntas = () => {
     // Verificar que preguntasRespuestas no esté vacío
     if (!preguntasRespuestas || preguntasRespuestas.length === 0) {
-      return false;
+      console.log('');
+      return { todasValidas: false, contadorValidas: 0, preguntasInvalidas: [] };
     }
 
-    // Verificar que todas las preguntas tengan puntaje mayor a 0
-    return preguntasRespuestas.every((pregunta) => {
+    // Contar cuántas preguntas tienen puntaje válido (mayor a 0)
+    let contadorValidas = 0;
+    const preguntasInvalidas: Array<{indice: number, pregunta: string, puntaje: string | number}> = [];
+    
+    preguntasRespuestas.forEach((pregunta, index) => {
       // Verificar que la propiedad puntaje existe
-      if (!pregunta.puntaje) {
-        return false;
+      if (pregunta.puntaje) {
+        // Convertir a número y verificar que sea mayor a 0
+        const puntajeNumerico = Number(pregunta.puntaje);
+        if (!isNaN(puntajeNumerico) && puntajeNumerico > 0) {
+          contadorValidas++;
+        } else {
+          preguntasInvalidas.push({
+            indice: index + 1,
+            pregunta: pregunta.pregunta || 'Pregunta sin texto',
+            puntaje: pregunta.puntaje
+          });
+        }
+      } else {
+        preguntasInvalidas.push({
+          indice: index + 1,
+          pregunta: pregunta.pregunta || 'Pregunta sin texto',
+          puntaje: 'Sin puntaje'
+        });
       }
-
-      // Convertir a número y verificar que sea mayor a 0
-      const puntajeNumerico = Number(pregunta.puntaje);
-      return !isNaN(puntajeNumerico) && puntajeNumerico > 0;
     });
+
+    // Verificar que todas las preguntas tengan puntaje válido
+    const todasValidas = contadorValidas === preguntasRespuestas.length;
+    
+    return { todasValidas, contadorValidas, preguntasInvalidas };
   };
+  
+  const resultadoPuntajes = verificarPuntajePreguntas();
+  console.log('Puntajes válidos:', resultadoPuntajes.contadorValidas, 'de', preguntasRespuestas?.length || 0);
+  
+  if (resultadoPuntajes.preguntasInvalidas.length > 0) {
+    console.log('Preguntas que NO cumplen con puntaje válido:');
+    resultadoPuntajes.preguntasInvalidas.forEach((pregunta) => {
+      console.log(`- Pregunta ${pregunta.indice}: "${pregunta.pregunta}" - Puntaje: ${pregunta.puntaje}`);
+    });
+  } else {
+    console.log('✅ Todas las preguntas tienen puntajes válidos');
+  }
   return (
     <>
       {showModal && (
@@ -81,7 +114,7 @@ const Evaluacion = () => {
             <div className="flex gap-3 justify-end">
               {/* <button onClick={handleshowModal} className='bg-green-500 p-3 rounded-md shadow text-white capitalize font-semibold'>agregar preguntas</button> */}
 
-              {verificarPuntajePreguntas() ? (
+              {resultadoPuntajes.todasValidas ? (
                 <Link
                   className="border-iconColor border-[1px] p-3 rounded-md shadow text-iconColor hover:bg-iconColor hover:text-white duration-300 hover:duration-300 capitalize font-semibold"
                   href={`prueba/evaluar-estudiante?idExamen=${route.query.idExamen}`}
