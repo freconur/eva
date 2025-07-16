@@ -25,6 +25,7 @@ const Pruebas = () => {
         <ul className={styles.list}>
           {
             evaluacionesGradoYCategoria?.map((eva, index) => {
+              if(eva.active){
               return (
                 <li key={index} className={styles.listItem}>
                   <Link href={`pruebas/prueba?idExamen=${eva.id}`} className={styles.link}>
@@ -35,6 +36,7 @@ const Pruebas = () => {
                   </Link>
                 </li>
               )
+              }
             })
           }
         </ul>

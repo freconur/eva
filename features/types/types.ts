@@ -214,6 +214,7 @@ export type Evaluaciones = {
   grado?: number;
   categoria?: number;
   rol?: number;
+  active?:boolean
 };
 
 export type UserEstudiante = {
