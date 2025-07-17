@@ -8,13 +8,13 @@ import UpdateEvaluacion from '@/modals/updateEvaluacion'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
-import { MdDeleteForever, MdEditSquare } from 'react-icons/md'
+import { MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 import header from '@/assets/evaluacion-docente.jpg'
 import styles from './evaluaciones.module.css'
 
 const Evaluaciones = () => {
-  const { getEvaluaciones, getEvaluacion } = useAgregarEvaluaciones()
+  const { getEvaluaciones, getEvaluacion, updateEvaluacion } = useAgregarEvaluaciones()
   const { evaluaciones, currentUserData, loaderPages, evaluacion } = useGlobalContext()
   const [showDelete, setShowDelete] = useState<boolean>(false)
   const [inputUpdate, setInputUpdate] = useState<boolean>(false)
@@ -23,6 +23,11 @@ const Evaluaciones = () => {
   const handleShowInputUpdate = () => { setInputUpdate(!inputUpdate) }
   const handleShowModalDelete = () => { setShowDelete(!showDelete) }
   const [dataEvaluacion, setDataEvaluacion] = useState(evaluacion)
+
+  const toggleActiveStatus = async (eva: any) => {
+    const updatedEva = { ...eva, active: !eva.active }
+    await updateEvaluacion(updatedEva, eva.id)
+  }
   
   useEffect(() => {
     getEvaluaciones()
@@ -61,8 +66,8 @@ const Evaluaciones = () => {
                   <tr className={styles.tableHeaderRow}>
                     <th className={styles.tableHeaderCell}>#</th>
                     <th className={styles.tableHeaderCell}>nombre de evaluación</th>
-                    <th className={styles.tableHeaderCell}></th>
-                    <th className={styles.tableHeaderCell}></th>
+                    <th className={styles.tableHeaderCell}>estado</th>
+                    <th className={styles.tableHeaderCell}>acciones</th>
                   </tr>
                 </thead>
                 <tbody className={styles.tableBody}>
@@ -80,23 +85,38 @@ const Evaluaciones = () => {
                           </Link>
                         </td>
                         <td>
-                          <MdEditSquare 
-                            onClick={() => { 
-                              setNameEva(`${eva.nombre}`); 
-                              handleShowInputUpdate(); 
-                              setIdEva(`${eva.id}`) 
-                            }} 
-                            className={`${styles.actionIcon} ${styles.editIcon}`} 
-                          />
+                          {eva.active ? (
+                            <MdVisibility 
+                              onClick={() => toggleActiveStatus(eva)} 
+                              className={`${styles.actionIcon} ${styles.activeIcon}`} 
+                              title="Evaluación activa - Click para desactivar"
+                            />
+                          ) : (
+                            <MdVisibilityOff 
+                              onClick={() => toggleActiveStatus(eva)} 
+                              className={`${styles.actionIcon} ${styles.inactiveIcon}`} 
+                              title="Evaluación inactiva - Click para activar"
+                            />
+                          )}
                         </td>
                         <td>
-                          <MdDeleteForever 
-                            onClick={() => { 
-                              handleShowModalDelete(); 
-                              setIdEva(`${eva.id}`) 
-                            }} 
-                            className={`${styles.actionIcon} ${styles.deleteIcon}`} 
-                          />
+                          <div className={styles.actionsContainer}>
+                            <MdEditSquare 
+                              onClick={() => { 
+                                setNameEva(`${eva.nombre}`); 
+                                handleShowInputUpdate(); 
+                                setIdEva(`${eva.id}`) 
+                              }} 
+                              className={`${styles.actionIcon} ${styles.editIcon}`} 
+                            />
+                            <MdDeleteForever 
+                              onClick={() => { 
+                                handleShowModalDelete(); 
+                                setIdEva(`${eva.id}`) 
+                              }} 
+                              className={`${styles.actionIcon} ${styles.deleteIcon}`} 
+                            />
+                          </div>
                         </td>
                       </tr>
                     ))

@@ -400,6 +400,14 @@
   transition: all 0.2s ease;
   padding: 0.5rem;
   border-radius: 0.5rem;
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+.actionsContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .editIcon {
@@ -417,6 +425,24 @@
 
 .deleteIcon:hover {
   background-color: #fee2e2;
+  transform: scale(1.1);
+}
+
+.activeIcon {
+  color: #22c55e;
+}
+
+.activeIcon:hover {
+  background-color: #dcfce7;
+  transform: scale(1.1);
+}
+
+.inactiveIcon {
+  color: #94a3b8;
+}
+
+.inactiveIcon:hover {
+  background-color: #f1f5f9;
   transform: scale(1.1);
 }
 

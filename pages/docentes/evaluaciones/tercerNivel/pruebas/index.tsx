@@ -9,13 +9,30 @@ import { PiFilesFill } from 'react-icons/pi'
 import styles from './pruebas.module.css'
 
 const Pruebas = () => {
-  const { evaluacionesGradoYCategoria } = useGlobalContext()
+  const { evaluacionesGradoYCategoria , loaderPages} = useGlobalContext()
   const { getEvaluacionesGradoYCategoria } = useAgregarEvaluaciones()
   const route = useRouter()
   useEffect(() => {
     getEvaluacionesGradoYCategoria(Number(route.query.grado), Number(route.query.categoria))
   }, [route.query.grado, route.query.categoria])
   console.log('evaluacionesGradoYCategoria', evaluacionesGradoYCategoria)
+  
+  // Renderizar loader si loaderPages es true
+  if (loaderPages) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>{convertGrade(`${route.query.grado}`)}: {categoriaTransform(Number(route.query.categoria))}</h1>
+        </div>
+        <div className={styles.loaderContainer}>
+          <div className={styles.loader}></div>
+          <p className={styles.loaderText}>Cargando evaluaciones...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Renderizar contenido cuando loaderPages es false
   return (
     <div className={styles.container}>
       <div className={styles.header}>

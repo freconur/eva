@@ -276,6 +276,24 @@
   transform: translateY(-2px);
 }
 
+.puntajeBajo {
+  display: inline-block;
+  color: #dc2626;
+  border: 2px solid #dc2626;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  background: rgba(220, 38, 38, 0.1);
+  transition: var(--transition);
+  width: 180px;
+  text-transform: capitalize;
+}
+
+.puntajeBajo:hover {
+  background: rgba(220, 38, 38, 0.2);
+  transform: translateY(-2px);
+}
+
 .loader {
   display: grid;
   place-items: center;
@@ -332,10 +350,15 @@
   
   .actions {
     flex-direction: column;
+    align-items: stretch;
   }
   
   .button {
     width: 100%;
+  }
+  
+  .totalPuntaje {
+    justify-content: center;
   }
   
   .teacherAction {
@@ -372,4 +395,33 @@
 .orderButton:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+.totalPuntaje {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(to right, #fbbf24, #f59e0b);
+  color: #1f2937;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.totalPuntaje:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.totalLabel {
+  font-weight: 500;
+}
+
+.totalValue {
+  font-weight: 700;
+  font-size: 1rem;
 }

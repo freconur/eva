@@ -64,51 +64,57 @@ export const useAgregarEvaluaciones = () => {
   }
 
   const getEvaluacionesGradoYCategoria = async (grado: number, categoria: number) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true })
+    
+    if (!grado || !categoria) {
+      dispatch({ type: AppAction.EVALUACIONES_GRADO_CATEGORIA, payload: [] })
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+      return () => {} // Retorna función vacía si no hay parámetros válidos
+    }
+
     const refGrados = collection(db, 'evaluaciones')
-    // const q = query(refGrados, where("grado", "==", Number(grado)), where("categoria", "==", Number(categoria)))
     const q = query(refGrados, where("grado", "==", Number(grado)), where("categoria", "==", Number(categoria)), where("rol", "==", 4))
     const q1 = query(refGrados, where("grado", "==", Number(grado)), where("categoria", "==", Number(categoria)), where("idDocente", "==", `${currentUserData.dniDirector}`))
-    // const q = query(refGrados, )
 
-    const allEvaluaciones: Evaluaciones[] = []
-    await getDocs(q).then(res => {
-      res.forEach(doc => {
-        allEvaluaciones.push({ ...doc.data(), id: doc.id })
+    let evaluacionesQ: Evaluaciones[] = []
+    let evaluacionesQ1: Evaluaciones[] = []
+
+    // Función para combinar y actualizar los resultados
+    const updateCombinedResults = () => {
+      const allEvaluaciones = [...evaluacionesQ, ...evaluacionesQ1]
+      dispatch({ type: AppAction.EVALUACIONES_GRADO_CATEGORIA, payload: allEvaluaciones })
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false })
+    }
+
+    // Listener para evaluaciones con rol 4
+    const unsubscribeQ = onSnapshot(q, (querySnapshot: QuerySnapshot<DocumentData>) => {
+      evaluacionesQ = []
+      querySnapshot.forEach((doc) => {
+        evaluacionesQ.push({ ...doc.data(), id: doc.id })
       })
+      updateCombinedResults()
+    }, (error: Error) => {
+      console.log('Error en query Q:', error)
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false })
     })
-    await getDocs(q1).then(res2 => {
-      res2.forEach(doc => {
-        allEvaluaciones.push({ ...doc.data(), id: doc.id })
+
+    // Listener para evaluaciones del docente específico
+    const unsubscribeQ1 = onSnapshot(q1, (querySnapshot: QuerySnapshot<DocumentData>) => {
+      evaluacionesQ1 = []
+      querySnapshot.forEach((doc) => {
+        evaluacionesQ1.push({ ...doc.data(), id: doc.id })
       })
-
+      updateCombinedResults()
+    }, (error: Error) => {
+      console.log('Error en query Q1:', error)
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false })
     })
-    dispatch({ type: AppAction.EVALUACIONES_GRADO_CATEGORIA, payload: allEvaluaciones })
-    // const newPromise = new Promise<any>(async (resolve, reject) => {
-    //   await getDocs(q1)
-    //     .then(async (res) => {
-    //       res.forEach(doc => {
-    //         allEvaluaciones.push({ ...doc.data(), id: doc.id })
-    //       })
-    //       resolve(true)
-    //     })
-    // })
-    // newPromise.then(async res => {
-    //   if (res === true) {
-    //     await getDocs(q).then(res2 => {
-    //       res2.forEach(doc => {
-    //         allEvaluaciones.push({ ...doc.data(), id: doc.id })
-    //       })
 
-    //     })
-    //       .then(res => {
-
-    //         setTimeout(() => {
-              
-    //         }, 3000)
-
-    //       })
-    //   }
-    // })
+    // Retornar función para desuscribirse de ambos listeners
+    return () => {
+      unsubscribeQ()
+      unsubscribeQ1()
+    }
   }
   const crearEvaluacion = async (value: CreaEvaluacion) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })

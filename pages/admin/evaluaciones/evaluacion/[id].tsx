@@ -48,6 +48,15 @@ const Evaluacion = () => {
   // Hook para mantener la posición de scroll
   const { containerRef, saveScrollPosition, restoreScrollPosition } = useScrollPosition()
 
+  // Calcular la suma total de puntajes
+  const totalPuntaje = preguntasRespuestas.reduce((total, pregunta) => {
+    const puntaje = Number(pregunta.puntaje) || 0
+    return total + puntaje
+  }, 0)
+
+  // Verificar si alguna pregunta tiene la propiedad puntaje
+  const hayPuntajes = preguntasRespuestas.some(pregunta => pregunta.puntaje !== undefined && pregunta.puntaje !== null)
+
   const handleshowModal = () => {
     setShowModal(!showModal)
   }
@@ -183,6 +192,12 @@ const Evaluacion = () => {
               >
                 reporte de evaluación
               </Link>
+              {hayPuntajes && (
+                <div className={styles.totalPuntaje}>
+                  <span className={styles.totalLabel}>Puntaje Total: </span>
+                  <span className={styles.totalValue}>{totalPuntaje}</span>
+                </div>
+              )}
             </div>
 
             <h2 className={styles.sectionTitle}>preguntas y respuestas</h2>
@@ -241,7 +256,11 @@ const Evaluacion = () => {
 
                   <div className={styles.answerContainer}>
                     <div className={styles.answer}>respuesta: {pr.respuesta}</div>
-                    <div className={styles.puntaje}>puntaje: {pr.puntaje}</div>
+                    {pr.puntaje !== undefined && pr.puntaje !== null && (
+                      <div className={pr.puntaje !== undefined && Number(pr.puntaje) <= 0 ? styles.puntajeBajo : styles.puntaje}>
+                        puntaje: {pr.puntaje}
+                      </div>
+                    )}
                   </div>
                 </li>
               ))}
