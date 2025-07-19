@@ -166,9 +166,8 @@ const Reporte = () => {
 
   
 
-   console.log('monthSelected', monthSelected)
-   console.log('currentUserData', currentUserData)
-   console.log('idEvaluaction', `${route.query.idEvaluacion}`)
+   console.log('preguntasRespuestas', preguntasRespuestas)
+   
   return (
 
     <>

@@ -209,6 +209,7 @@ const useUsuario = () => {
     }
   };
   const createNewDirector = (data: User) => {
+    console.log('data', data)
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
       if (currentUserData.perfil?.rol === 1) {
@@ -235,7 +236,7 @@ const useUsuario = () => {
                 dispatch({ type: AppAction.LOADER_PAGES, payload: false });
               } else {
                 console.log("no existe se creara el usuario");
-                await setDoc(doc(db, "usuarios", `${data.dni}`), {
+                const userData: any = {
                   dni: `${data.dni}`,
                   institucion: `${data.institucion}`,
                   perfil: data.perfil,
@@ -243,10 +244,20 @@ const useUsuario = () => {
                   nombres: data.nombres,
                   apellidos: data.apellidos,
                   region: Number(data.region),
-                  genero: data.genero,
-                  distrito: data.distrito,
-                  rolDirectivo: data.rolDirectivo,
-                }).then((res) => {
+                };
+                
+                // Solo agregar campos opcionales si no son undefined o null
+                if (data.genero !== undefined && data.genero !== null) {
+                  userData.genero = data.genero;
+                }
+                if (data.distrito !== undefined && data.distrito !== null) {
+                  userData.distrito = data.distrito;
+                }
+                if (data.rolDirectivo !== undefined && data.rolDirectivo !== null) {
+                  userData.rolDirectivo = data.rolDirectivo;
+                }
+                
+                await setDoc(doc(db, "usuarios", `${data.dni}`), userData).then((res) => {
                   dispatch({
                     type: AppAction.WARNING_USUARIO_EXISTE,
                     payload: "",
@@ -260,6 +271,7 @@ const useUsuario = () => {
         }
       } else if (currentUserData.perfil?.rol === 4) {
         console.log("agregando director como admin");
+        
         try {
           axios
             .post(`${URL_API}crear-director`, {
@@ -283,16 +295,22 @@ const useUsuario = () => {
                 dispatch({ type: AppAction.LOADER_PAGES, payload: false });
               } else {
                 console.log("no existe se creara el usuario");
-                await setDoc(doc(db, "usuarios", `${data.dni}`), {
+                const userData: any = {
                   dni: `${data.dni}`,
                   institucion: `${data.institucion}`,
                   perfil: data.perfil,
                   rol: data.perfil?.rol,
-                  modular: data.modular,
                   nombres: data.nombres,
                   apellidos: data.apellidos,
                   region: Number(data.region),
-                }).then((res) => {
+                };
+                
+                // Solo agregar modular si no es undefined o null
+                if (data.modular !== undefined && data.modular !== null) {
+                  userData.modular = data.modular;
+                }
+                
+                await setDoc(doc(db, "usuarios", `${data.dni}`), userData).then((res) => {
                   dispatch({
                     type: AppAction.WARNING_USUARIO_EXISTE,
                     payload: "",
