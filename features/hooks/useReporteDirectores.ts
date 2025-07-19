@@ -57,7 +57,49 @@ export const useReporteDirectores = () => {
         dispatch({ type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR, payload: [] });
         return [];
       }
-
+      todasLasEvaluaciones.forEach(estudiante => {
+        //satisfactorio  523 a 800
+        //en proceso 446 a 522
+        //en inicio 357 a 445
+        //previo al inicio 0 a 356
+        let puntajeAcumulado = 0;
+        estudiante.respuestas?.forEach(pregunta => {
+          pregunta.alternativas?.forEach(alternativas => {
+            if (alternativas.selected) {
+              if (alternativas.alternativa?.toLowerCase() === pregunta.respuesta?.toLowerCase()) {
+                puntajeAcumulado = puntajeAcumulado +Number(pregunta.puntaje)
+              }
+            }
+          })
+        })
+        estudiante.puntaje = puntajeAcumulado;
+        if(idEvaluacion==='ksor0YefuQFZy1kaWEO3'){
+          if (puntajeAcumulado >= 526 && puntajeAcumulado <= 800) {
+            estudiante.nivel = "satisfactorio";
+          } else if (puntajeAcumulado >= 422 && puntajeAcumulado <= 525) {
+            estudiante.nivel = "en proceso";
+          } else if (puntajeAcumulado >= 352 && puntajeAcumulado <= 421) {
+            estudiante.nivel = "en inicio";
+          } else if (puntajeAcumulado >= 0 && puntajeAcumulado <= 351) {
+            estudiante.nivel = "previo al inicio";
+          } else {
+            estudiante.nivel = "sin clasificar";
+          }
+        }else {
+          // Determinar el nivel según el puntaje
+          if (puntajeAcumulado >= 523 && puntajeAcumulado <= 800) {
+            estudiante.nivel = "satisfactorio";
+          } else if (puntajeAcumulado >= 446 && puntajeAcumulado <= 522) {
+            estudiante.nivel = "en proceso";
+          } else if (puntajeAcumulado >= 357 && puntajeAcumulado <= 445) {
+            estudiante.nivel = "en inicio";
+          } else if (puntajeAcumulado >= 0 && puntajeAcumulado <= 356) {
+            estudiante.nivel = "previo al inicio";
+          } else {
+            estudiante.nivel = "sin clasificar";
+          }
+        }
+      })
       dispatch({ type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR, payload: todasLasEvaluaciones });
       return todasLasEvaluaciones;
     } catch (error) {

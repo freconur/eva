@@ -22,6 +22,8 @@ import { RiLoader4Line } from 'react-icons/ri';
 import styles from './Reporte.module.css';
 import { currentMonth, getAllMonths } from '@/fuctions/dates';
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
+import { useGlobalContextDispatch } from '@/features/context/GlolbalContext';
+import { AppAction } from '@/features/actions/appAction';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -35,6 +37,7 @@ ChartJS.register(
 
 
 const Reporte = () => {
+  const dispatch = useGlobalContextDispatch();
   const [filtros, setFiltros] = useState({
     grado: '',
     seccion: '',
@@ -90,6 +93,12 @@ const Reporte = () => {
   const [showTable, setShowTable] = useState(false)
   const route = useRouter()
   const [monthSelected, setMonthSelected] = useState(currentMonth)
+  
+  // Limpiar dataFiltradaDirectorTabla cuando el componente se monta
+  useEffect(() => {
+    dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, payload: [] });
+  }, [dispatch]);
+
   useEffect(() => {
 //me trae las preguntas y respuestas para los graficos
     getPreguntasRespuestas(`${route.query.idEvaluacion}`)
@@ -154,7 +163,12 @@ const Reporte = () => {
   useEffect(() => {
     reporteDirectorEstudiantes(`${route.query.idEvaluacion}`,monthSelected,currentUserData)
   },[monthSelected])
+
+  
+
    console.log('monthSelected', monthSelected)
+   console.log('currentUserData', currentUserData)
+   console.log('idEvaluaction', `${route.query.idEvaluacion}`)
   return (
 
     <>
@@ -250,14 +264,16 @@ const Reporte = () => {
                         <th className={styles.tableHeaderCell}>Nombre y apellidos</th>
                         <th className={styles.tableHeaderCell}>R.C</th>
                         <th className={styles.tableHeaderCell}>T.P</th>
-                        {preguntasRespuestas.map((pr) => {
+                        <th className={styles.tableHeaderCell}>Puntaje</th>
+                        <th className={styles.tableHeaderCell}>Nivel</th>
+                        {preguntasRespuestas.map((pr, index) => {
                           return (
                             <th key={pr.order} className={styles.tableHeaderCell}>
                               <button
                                 className={styles.popoverButton}
                                 popoverTarget={`${pr.order}`}
                               >
-                                {pr.order}
+                                {index + 1}
                               </button>
                               <div
                                 className={styles.popoverContent}
@@ -266,7 +282,7 @@ const Reporte = () => {
                               >
                                 <div className="w-full">
                                   <span className={styles.popoverTitle}>
-                                    {pr.order}. Actuación:
+                                    {index + 1}. Actuación:
                                   </span>
                                   <span className={styles.popoverText}>
                                     {pr.preguntaDocente}
@@ -289,13 +305,19 @@ const Reporte = () => {
                               {index + 1}
                             </td>
                             <td className={`${styles.tableCell} ${styles.tableCellName}`}>
-                              {dir.nombresApellidos}
+                              {dir.nombresApellidos?.toUpperCase()}
                             </td>
                             <td className={styles.tableCell}>
                               {dir.respuestasCorrectas}
                             </td>
                             <td className={styles.tableCell}>
                               {dir.totalPreguntas}
+                            </td>
+                            <td className={styles.tableCell}>
+                              {dir.puntaje}
+                            </td>
+                            <td className={styles.tableCell}>
+                              {dir.nivel}
                             </td>
                             {dir.respuestas?.map((res) => {
                               return (

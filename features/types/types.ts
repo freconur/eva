@@ -227,12 +227,16 @@ export type UserEstudiante = {
   grado?: number;
   seccion?: string;
   genero?: string;
+  nivel?: string;
+  puntaje?: number;
   respuestas?: {
     id?: string;
     order?: number;
     pregunta?: string;
     respuesta?: string;
     alternativas?: Alternativa[];
+    preguntaDocente?: string;
+    puntaje?: string;
   }[];
 };
 
