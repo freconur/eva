@@ -56,7 +56,7 @@ const Evaluacion = () => {
                   <button onClick={handleshowModal} className='bg-green-500 p-3 rounded-md shadow text-white capitalize font-semibold'>agregar preguntas</button>
 
                 }
-                <Link href={`reporte?id=${currentUserData.dni}&idEvaluacion=${route.query.id}`} className='bg-colorTercero p-3 rounded-md duration-300 hover:bg-colorCuarto hover:text-colorSegundo text-white shadow-md capitalize font-semibold'>generar repote de evaluación</Link>
+                <Link href={`reporte?id=${currentUserData.dni}&idEvaluacion=${route.query.id}`} className='bg-colorTercero p-3 rounded-md duration-300 hover:bg-colorCuarto hover:text-colorSegundo text-white shadow-md capitalize font-semibold'>Reporte</Link>
               </div>
               <h2 className='text-2xl text-colorSexto capitalize mb-2 mt-5' >preguntas y respuestas</h2>
               <ul className='mt-1'>

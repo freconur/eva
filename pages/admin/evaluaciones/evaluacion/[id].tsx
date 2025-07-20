@@ -143,7 +143,7 @@ const Evaluacion = () => {
     }
   }, [preguntasRespuestas, restoreScrollPosition])
 
-  console.log('evaluacion', evaluacion)
+  console.log('currentUserData', currentUserData)
   console.log('preguntasRespuestas', preguntasRespuestas)
   return (
     <>
@@ -183,16 +183,18 @@ const Evaluacion = () => {
                   handleshowModal={handleshowModal}
                 />
               )}
-              <button onClick={handleshowModal} className={styles.buttonPrimary}>
-                agregar preguntas
-              </button>
+              {currentUserData.rol === 4 && (
+                <button onClick={handleshowModal} className={styles.buttonPrimary}>
+                  agregar preguntas
+                </button>
+              )}
               <Link
                 href={`reporte?id=${currentUserData.dni}&idEvaluacion=${route.query.id}`}
                 className={styles.buttonSecondary}
               >
                 reporte de evaluación
               </Link>
-              {hayPuntajes && (
+              {hayPuntajes && currentUserData.rol === 4 && (
                 <div className={styles.totalPuntaje}>
                   <span className={styles.totalLabel}>Puntaje Total: </span>
                   <span className={styles.totalValue}>{totalPuntaje}</span>
@@ -256,7 +258,7 @@ const Evaluacion = () => {
 
                   <div className={styles.answerContainer}>
                     <div className={styles.answer}>respuesta: {pr.respuesta}</div>
-                    {pr.puntaje !== undefined && pr.puntaje !== null && (
+                    {pr.puntaje !== undefined && pr.puntaje !== null && currentUserData.rol === 4 && (
                       <div className={pr.puntaje !== undefined && Number(pr.puntaje) <= 0 ? styles.puntajeBajo : styles.puntaje}>
                         puntaje: {pr.puntaje}
                       </div>
