@@ -391,7 +391,7 @@ const Reporte = () => {
                       return (
                         <div key={dat.id || index} className={styles.questionContainer}>
                          {/*  <div>{numeroOrden}.{renderPregunta(`${dat.id}`)}</div> */}
-                          <div>{renderPregunta(`${dat.id}`)}</div>
+                          <div>{index + 1}.{renderPregunta(`${dat.id}`)}</div>
                           <div className={styles.chartContainer}>
                             <div className={styles.chartWrapper}>
                               <Bar className={styles.chart}
