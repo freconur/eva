@@ -1,7 +1,7 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useReporteDirectores } from '@/features/hooks/useReporteDirectores'
 import { useRouter } from 'next/router'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -110,6 +110,12 @@ const Reporte = () => {
   const [showTable, setShowTable] = useState(false)
   const route = useRouter()
   const [monthSelected, setMonthSelected] = useState(currentMonth)
+  
+  // Memorizar las preguntas ordenadas por la propiedad order
+  const preguntasOrdenadas = useMemo(() => {
+    return [...(preguntasRespuestas || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [preguntasRespuestas]);
+  
   useEffect(() => {
     //me trae las preguntas y respuestas para los graficos
     getPreguntasRespuestas(`${route.query.idEvaluacion}`)
@@ -128,11 +134,15 @@ const Reporte = () => {
     /* reporteDirectorData(`${route.query.id}`, `${route.query.idEvaluacion}`) */
   }, [route.query.id, route.query.idEvaluacion, currentUserData.dni])
 
-  const iterarPregunta = (index: string) => {
+  const iterarPregunta = (idPregunta: string) => {
+    const pregunta = preguntasOrdenadas.find(p => p.id === idPregunta);
+    
     return (
       <div className='grid gap-1'>
-        <h3 className='text-slate-500 mr-2'><span className='text-colorSegundo mr-2 font-semibold'>{index}.</span>{preguntasRespuestas[Number(index) - 1]?.pregunta}</h3>
-        <h3 className='text-slate-500 mr-2'><span className='text-colorSegundo mr-2 font-semibold'>Actuación:</span> {preguntasRespuestas[Number(index) - 1]?.preguntaDocente}</h3>
+        <h3 className='text-slate-500 mr-2'>
+          {/* <span className='text-colorSegundo mr-2 font-semibold'>{pregunta?.order || idPregunta}.</span> */}
+          {pregunta?.pregunta}</h3>
+        <h3 className='text-slate-500 mr-2'><span className='text-colorSegundo mr-2 font-semibold'>Actuación:</span> {pregunta?.preguntaDocente}</h3>
       </div>
     )
   }
@@ -178,7 +188,8 @@ const Reporte = () => {
     /* reporteDirectorEstudiantes(`${route.query.idEvaluacion}`, monthSelected, currentUserData) */
   }, [monthSelected])
 
-  console.log('reporteDirector', reporteDirector)
+ /*  console.log('preguntasRespuestas', preguntasRespuestas)
+  console.log('reporteDirector', reporteDirector) */
   return (
 
     <>
@@ -294,14 +305,17 @@ const Reporte = () => {
                 <div>
                   {
                     reporteDirector?.map((dat, index) => {
+                      // Encontrar la pregunta correspondiente por su id
+                      const preguntaCorrespondiente = preguntasOrdenadas.find(p => p.id === dat.id);
+                      
                       return (
                         <div key={index} className={styles.questionContainer}>
-                          {iterarPregunta(`${dat.id}`)}
+                          {index + 1}.{iterarPregunta(`${dat.id}`)}
                           <div className={styles.chartContainer}>
                             <div className={styles.chartWrapper}>
                               <Bar className={styles.chart}
                                 options={options}
-                                data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
+                                data={iterateData(dat, `${preguntaCorrespondiente?.respuesta || ''}`)}
                               />
                             </div>
                             <div className={styles.statsContainer}>
@@ -314,11 +328,11 @@ const Reporte = () => {
                                 ))}
                             </div>
                             <div className={styles.answerContainer}>
-                              respuesta:<span className={styles.answerText}>{preguntasRespuestas[Number(index)]?.respuesta}</span>
+                              respuesta:<span className={styles.answerText}>{preguntaCorrespondiente?.respuesta}</span>
                             </div>
                           </div>
                         </div>
-                      )
+                      );
                     })
                   }
                 </div>

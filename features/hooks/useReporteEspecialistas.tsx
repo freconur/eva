@@ -215,8 +215,9 @@ export const useReporteEspecialistas = () => {
       docentesDelDirector.push(doc.data() as User);
     });
     
-    console.log('docentesDelDirector', docentesDelDirector)
+    /* console.log('docentesDelDirector', docentesDelDirector) */
     dispatch({ type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE, payload: docentesDelDirector });
+    console.log('docentesDelDirector', docentesDelDirector)
     return docentesDelDirector;
   }
   //creo que esta funcion se esta usando para el especialista y directores, tengo que verificar en caso alguna pagina comienze a fallar y comienze a dar error
@@ -224,14 +225,89 @@ const reporteEspecialistaDeEstudiantes = async (idEvaluacion: string, month: num
   /* const reporteDeEstudiantes = await getAllReporteDeDirectoresToDocentes(idEvaluacion, month) */
   const reporteDeEstudiantes = await getAllReporteDeDirectoreToAdmin(idEvaluacion, month)
   console.log('reporteDeEstudiantes', reporteDeEstudiantes)
+  console.log('🔍 DEBUG: reporteDeEstudiantes.length (número de directores):', reporteDeEstudiantes.length)
 
   const acumuladoPorPregunta: Record<string, { id: string, a: number, b: number, c: number, d?: number, total: number }> = {}
 
-  reporteDeEstudiantes.forEach(director => {
+  // Primero, analizar todos los directores para encontrar el patrón más común
+  const directoresConDatos = reporteDeEstudiantes.filter(director => 
+    director.reporteEstudiantes && Array.isArray(director.reporteEstudiantes) && director.reporteEstudiantes.length > 0
+  )
+
+  // Validar que hay directores con datos antes de continuar
+  if (directoresConDatos.length === 0) {
+    console.log('⚠️ DEBUG: No hay directores con reporteEstudiantes válido')
+    const resultadoVacio: any[] = []
+    dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: resultadoVacio });
+    return resultadoVacio
+  }
+
+  // Contar frecuencia de cantidad de preguntas
+  const frecuenciaPorCantidad: Record<number, number> = {}
+  const directoresPorCantidad: Record<number, typeof directoresConDatos> = {}
+
+  directoresConDatos.forEach(director => {
+    const cantidadPreguntas = director.reporteEstudiantes!.length
+    frecuenciaPorCantidad[cantidadPreguntas] = (frecuenciaPorCantidad[cantidadPreguntas] || 0) + 1
+    
+    if (!directoresPorCantidad[cantidadPreguntas]) {
+      directoresPorCantidad[cantidadPreguntas] = []
+    }
+    directoresPorCantidad[cantidadPreguntas].push(director)
+  })
+
+  // Encontrar la cantidad de preguntas más común
+  const cantidadesPreguntasDisponibles = Object.keys(frecuenciaPorCantidad)
+  
+  if (cantidadesPreguntasDisponibles.length === 0) {
+    console.log('⚠️ DEBUG: No se encontraron cantidades de preguntas válidas')
+    const resultadoVacio: any[] = []
+    dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: resultadoVacio });
+    return resultadoVacio
+  }
+
+  const cantidadMasComun = cantidadesPreguntasDisponibles.reduce((a, b) => 
+    frecuenciaPorCantidad[parseInt(a)] > frecuenciaPorCantidad[parseInt(b)] ? a : b
+  )
+
+  const directoresValidos = directoresPorCantidad[parseInt(cantidadMasComun)] || []
+
+  console.log('🔍 DEBUG: Análisis de directores:', {
+    totalDirectores: reporteDeEstudiantes.length,
+    directoresConDatos: directoresConDatos.length,
+    frecuenciaPorCantidad,
+    cantidadPreguntasMasComun: parseInt(cantidadMasComun),
+    directoresConCantidadMasComun: directoresValidos.length,
+    directoresDescartados: directoresConDatos.length - directoresValidos.length
+  })
+
+  // Log detallado de directores descartados
+  if (directoresConDatos.length !== directoresValidos.length) {
+    console.log('🔍 DEBUG: Directores descartados por tener diferente cantidad de preguntas:')
+    directoresConDatos.forEach((director, index) => {
+      const cantidadPreguntas = director.reporteEstudiantes!.length
+      const esValido = cantidadPreguntas === parseInt(cantidadMasComun)
+      if (!esValido) {
+        console.log(`  - Director ${index + 1} (${director.dni}): ${cantidadPreguntas} preguntas (esperado: ${cantidadMasComun})`)
+      }
+    })
+  }
+
+  // Procesar solo los directores válidos
+  directoresValidos.forEach((director, directorIndex) => {
+    console.log(`🔍 DEBUG Director válido ${directorIndex + 1}:`, {
+      dni: director.dni,
+      nombres: director.nombres,
+      reporteEstudiantesLength: director.reporteEstudiantes?.length || 0
+    })
+    
     if (director.reporteEstudiantes && Array.isArray(director.reporteEstudiantes)) {
       director.reporteEstudiantes.forEach(reporte => {
         const idPregunta = String(reporte.id)
-        if (!idPregunta) return
+        if (!idPregunta) {
+          console.log('⚠️ WARNING: Pregunta sin ID encontrada:', reporte)
+          return
+        }
 
         // Detectar si la alternativa 'd' existe en esta pregunta
         let tieneD = typeof reporte.d === 'number'
@@ -259,6 +335,25 @@ const reporteEspecialistaDeEstudiantes = async (idEvaluacion: string, month: num
   })
 
   const resultado = Object.values(acumuladoPorPregunta)
+  
+  console.log('🔍 DEBUG: Resultado final:', {
+    directoresValidos: directoresValidos.length,
+    preguntasEsperadas: parseInt(cantidadMasComun),
+    preguntasUnicasEncontradas: resultado.length,
+    longitudesCoinciden: parseInt(cantidadMasComun) === resultado.length,
+    preguntasIds: Object.keys(acumuladoPorPregunta).sort((a, b) => parseInt(a) - parseInt(b))
+  })
+
+  // Validación final
+  if (directoresValidos.length > 0 && parseInt(cantidadMasComun) === resultado.length) {
+    console.log('✅ ÉXITO: Las longitudes coinciden correctamente')
+  } else if (directoresValidos.length === 0) {
+    console.warn('⚠️ ADVERTENCIA: No hay directores válidos para procesar')
+  } else {
+    console.warn('⚠️ ADVERTENCIA: Aún hay inconsistencia en las longitudes, puede haber preguntas duplicadas o faltantes')
+  }
+
+  console.log('resultado', resultado)
   dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: resultado });
   return resultado
 }

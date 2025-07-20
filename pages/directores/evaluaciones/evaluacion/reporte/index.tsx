@@ -1,7 +1,7 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useReporteDirectores } from '@/features/hooks/useReporteDirectores'
 import { useRouter } from 'next/router'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -113,16 +113,8 @@ const Reporte = () => {
   useEffect(() => {
     currentUserData.dni &&reporteDirectorEstudiantes(`${route.query.idEvaluacion}`,monthSelected,currentUserData)
     /* reporteDirectorData(`${route.query.id}`, `${route.query.idEvaluacion}`) */
-  }, [route.query.id, route.query.idEvaluacion, currentUserData.dni])
+      }, [route.query.id, route.query.idEvaluacion, currentUserData.dni])
 
-  const iterarPregunta = (index: string) => {
-    return (
-      <div className='grid gap-1'>
-        <h3 className='text-slate-500 mr-2'><span className='text-colorSegundo mr-2 font-semibold'>{index}.</span>{preguntasRespuestas[Number(index) - 1]?.pregunta}</h3>
-        <h3 className='text-slate-500 mr-2'><span className='text-colorSegundo mr-2 font-semibold'>Actuación:</span> {preguntasRespuestas[Number(index) - 1]?.preguntaDocente}</h3>
-      </div>
-    )
-  }
   const handleValidateRespuesta = (data: PreguntasRespuestas) => {
     const rta: Alternativa | undefined = data.alternativas?.find(
       (r) => r.selected === true
@@ -164,9 +156,60 @@ const Reporte = () => {
     reporteDirectorEstudiantes(`${route.query.idEvaluacion}`,monthSelected,currentUserData)
   },[monthSelected])
 
-  
+  // Crear un mapa optimizado de preguntas por ID para evitar búsquedas repetidas O(1) en lugar de O(n)
+  const preguntasMap = useMemo(() => {
+    const map = new Map<string, PreguntasRespuestas>();
+    preguntasRespuestas.forEach(pregunta => {
+      if (pregunta.id) {
+        map.set(pregunta.id, pregunta);
+      }
+    });
+    return map;
+  }, [preguntasRespuestas]);
 
-   console.log('preguntasRespuestas', preguntasRespuestas)
+  // Ordenar reporteDirector por el order de las preguntas correspondientes
+  const reporteDirectorOrdenado = useMemo(() => {
+    if (!reporteDirector || !preguntasRespuestas.length) return reporteDirector;
+    
+    return [...reporteDirector].sort((a, b) => {
+      const preguntaA = preguntasMap.get(a.id || '');
+      const preguntaB = preguntasMap.get(b.id || '');
+      
+      const orderA = preguntaA?.order || 0;
+      const orderB = preguntaB?.order || 0;
+      
+      return orderA - orderB;
+    });
+  }, [reporteDirector, preguntasMap]);
+
+  // Función optimizada para renderizar pregunta usando el mapa
+  const renderPregunta = useCallback((idPregunta: string) => {
+    const pregunta = preguntasMap.get(idPregunta);
+    if (!pregunta) {
+      return <p>Pregunta no encontrada</p>;
+    }
+    return (
+      <div className='grid gap-1'>
+        <h3 className='text-slate-500 mr-2'>
+          {/* <span className='text-colorSegundo mr-2 font-semibold'>{pregunta.order}.</span> */}
+          {pregunta.pregunta}
+        </h3>
+        <h3 className='text-slate-500 mr-2'>
+          <span className='text-colorSegundo mr-2 font-semibold'>Actuación:</span> 
+          {pregunta.preguntaDocente}
+        </h3>
+      </div>
+    );
+  }, [preguntasMap]);
+
+  // Función optimizada para obtener respuesta usando el mapa
+  const obtenerRespuestaPorId = useCallback((idPregunta: string): string => {
+    const pregunta = preguntasMap.get(idPregunta);
+    return pregunta?.respuesta || '';
+  }, [preguntasMap]);
+
+  console.log('reporteDirector', reporteDirector)
+  console.log('preguntasRespuestas', preguntasRespuestas)
    
   return (
 
@@ -342,15 +385,18 @@ const Reporte = () => {
               <div>
                 <div>
                   {
-                    reporteDirector?.map((dat, index) => {
+                    reporteDirectorOrdenado?.map((dat, index) => {
+                      const pregunta = preguntasMap.get(dat.id || '');
+                      const numeroOrden = pregunta?.order || index + 1;
                       return (
-                        <div key={index} className={styles.questionContainer}>
-                          {iterarPregunta(`${dat.id}`)}
+                        <div key={dat.id || index} className={styles.questionContainer}>
+                         {/*  <div>{numeroOrden}.{renderPregunta(`${dat.id}`)}</div> */}
+                          <div>{renderPregunta(`${dat.id}`)}</div>
                           <div className={styles.chartContainer}>
                             <div className={styles.chartWrapper}>
                               <Bar className={styles.chart}
                                 options={options}
-                                data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
+                                data={iterateData(dat, obtenerRespuestaPorId(`${dat.id}`))}
                               />
                             </div>
                             <div className={styles.statsContainer}>
@@ -363,7 +409,7 @@ const Reporte = () => {
                               }
                             </div>
                             <div className={styles.answerContainer}>
-                              respuesta:<span className={styles.answerText}>{preguntasRespuestas[Number(index)]?.respuesta}</span>
+                              respuesta:<span className={styles.answerText}>{obtenerRespuestaPorId(`${dat.id}`)}</span>
                             </div>
                           </div>
                         </div>
