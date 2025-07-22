@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
-import { Estudiante, UserEstudiante, PreguntasRespuestas } from '../types/types';
-import { converGenero, converSeccion, convertGrade } from '@/fuctions/regiones';
+import { Estudiante, UserEstudiante, PreguntasRespuestas, User } from '../types/types';
+import { converGenero, converSeccion, convertGrade, regionTexto, rolTexto } from '@/fuctions/regiones';
 
 type BaseData = {
   'DNI': string;
@@ -90,6 +90,92 @@ export const exportEstudiantesToExcel = (estudiantes: (Estudiante | UserEstudian
 
   // Agregar la hoja al libro
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Estudiantes');
+
+  // Guardar el archivo
+  XLSX.writeFile(workbook, fileName);
+};
+
+export const exportDirectorDocenteDataToExcel = (datos: any[], fileName: string = 'evaluaciones_director_docente.xlsx') => {
+  // Crear un nuevo libro de Excel
+  const workbook = XLSX.utils.book_new();
+
+  // Preparar los datos para la exportación, incluyendo reporteEstudiantes
+  const dataToExport = datos.map((item: User, index) => {
+    // Crear el objeto base con solo las propiedades requeridas
+    const baseData: any = {
+      'N°': index + 1,
+      'DNI': item.dni || '',
+      'Apellidos': item.apellidos || '',
+      'Nombres': item.nombres || '',
+      'Distrito': item.distrito || '',
+      'Institucion': item.institucion || '',
+      'region': regionTexto(String(item.region)) || '',
+      'rol': rolTexto(Number(item.rol)) || '',
+    };
+
+    // Agregar datos de reporteEstudiantes si existe
+    if (item.reporteEstudiantes && Array.isArray(item.reporteEstudiantes)) {
+      item.reporteEstudiantes.forEach((reporte: any, reporteIndex: number) => {
+        const indexSuffix = reporteIndex + 1;
+        
+        // Agregar las propiedades ax, bx, cx, dx, totalx según existan
+        if (reporte.a !== undefined) {
+          baseData[`a${indexSuffix}`] = reporte.a;
+        }
+        if (reporte.b !== undefined) {
+          baseData[`b${indexSuffix}`] = reporte.b;
+        }
+        if (reporte.c !== undefined) {
+          baseData[`c${indexSuffix}`] = reporte.c;
+        }
+        if (reporte.d !== undefined) {
+          baseData[`d${indexSuffix}`] = reporte.d;
+        }
+        if (reporte.total !== undefined) {
+          baseData[`total${indexSuffix}`] = reporte.total;
+        }
+      });
+    }
+
+    return baseData;
+  });
+
+  // Crear una hoja de cálculo con los datos
+  const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+
+  // Calcular el número máximo de reportes para determinar las columnas
+  const maxReportes = Math.max(...datos.map((item: any) => 
+    item.reporteEstudiantes ? item.reporteEstudiantes.length : 0
+  ));
+
+  // Ajustar el ancho de las columnas para las propiedades básicas
+  const baseColumnWidths = [
+    { wch: 5 },   // N°
+    { wch: 15 },  // DNI
+    { wch: 20 },  // Apellidos
+    { wch: 20 },  // Nombres
+    { wch: 20 },  // Distrito
+    { wch: 30 },  // Institución
+    { wch: 10 },  // Región
+    { wch: 8 },   // Rol
+  ];
+
+  // Agregar anchos para las columnas de reporte
+  const reporteColumnWidths = [];
+  for (let i = 1; i <= maxReportes; i++) {
+    reporteColumnWidths.push(
+      { wch: 10 }, // ax
+      { wch: 10 }, // bx
+      { wch: 10 }, // cx
+      { wch: 10 }, // dx
+      { wch: 12 }  // totalx
+    );
+  }
+
+  worksheet['!cols'] = [...baseColumnWidths, ...reporteColumnWidths];
+
+  // Agregar la hoja al libro
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Evaluaciones Director Docente');
 
   // Guardar el archivo
   XLSX.writeFile(workbook, fileName);

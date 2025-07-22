@@ -25,6 +25,7 @@ import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista';
 import { useReporteEspecialistas } from '@/features/hooks/useReporteEspecialistas';
 import { distritosPuno } from '@/fuctions/provinciasPuno';
+import { exportDirectorDocenteDataToExcel } from '@/features/utils/excelExport';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -47,6 +48,7 @@ const Reporte = () => {
   });
 
   const [distritosDisponibles, setDistritosDisponibles] = useState<string[]>([]);
+  const [loadingExport, setLoadingExport] = useState(false);
 
   useEffect(() => {
     if (filtros.region) {
@@ -188,8 +190,33 @@ const Reporte = () => {
     /* reporteDirectorEstudiantes(`${route.query.idEvaluacion}`, monthSelected, currentUserData) */
   }, [monthSelected])
 
- /*  console.log('preguntasRespuestas', preguntasRespuestas)
-  console.log('reporteDirector', reporteDirector) */
+  /* console.log('preguntasRespuestas', preguntasRespuestas) */
+  console.log('reporteDirector', reporteDirector)
+
+  // Función para exportar datos a Excel
+  const handleExportToExcel = async () => {
+    if (!allEvaluacionesDirectorDocente || allEvaluacionesDirectorDocente.length === 0) {
+      alert('No hay datos disponibles para exportar');
+      return;
+    }
+    
+    setLoadingExport(true);
+    try {
+      // Agregar un pequeño delay para mostrar el loading
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const fileName = `evaluaciones_director_docente_${new Date().toISOString().split('T')[0]}.xlsx`;
+      exportDirectorDocenteDataToExcel(allEvaluacionesDirectorDocente, fileName);
+      
+      // Mostrar mensaje de éxito
+      alert('Archivo Excel exportado exitosamente');
+    } catch (error) {
+      console.error('Error al exportar a Excel:', error);
+      alert('Error al exportar los datos. Por favor, inténtalo de nuevo.');
+    } finally {
+      setLoadingExport(false);
+    }
+  };
   return (
 
     <>
@@ -296,7 +323,23 @@ const Reporte = () => {
                     ))}
                   </select> */}
               <button className={styles.filterButton} onClick={handleFiltrar}>Filtrar</button>
+            </div>
 
+            <div className={styles.exportContainer}>
+              <button 
+                className={styles.exportButton} 
+                onClick={handleExportToExcel}
+                disabled={loadingExport || !allEvaluacionesDirectorDocente || allEvaluacionesDirectorDocente.length === 0}
+              >
+                {loadingExport ? (
+                  <>
+                    <RiLoader4Line className={styles.loaderIcon} />
+                    Exportando...
+                  </>
+                ) : (
+                  'Exportar a Excel'
+                )}
+              </button>
             </div>
 
             <div className={styles.reportContainer}>

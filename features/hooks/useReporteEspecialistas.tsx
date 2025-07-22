@@ -145,12 +145,13 @@ export const useReporteEspecialistas = () => {
   
     const resultado = Object.values(acumuladoPorPregunta)
     console.log('acumulado por pregunta', resultado)
+    console.log('dataFiltrada', dataFiltrada)
     dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: resultado });
     return dataFiltrada;
   }
   
   const reporteFiltrosEspecialistaDirectores = (data: User[], { area, genero, caracteristicaCurricular, distrito }: { area: string, genero: string, caracteristicaCurricular: string, distrito: string }) => {
-    console.log('data', data)
+    console.log('data', data)//data son todos los docentes de la region, se filtra todos los docentes con sus datos personales y los datos de las evaluaciones echas a sus estudiantes.
     
     const dataFiltrada = data?.filter(estudiante => {
       // Crear un objeto con los filtros que tienen valor
@@ -203,6 +204,7 @@ export const useReporteEspecialistas = () => {
   
     const resultado = Object.values(acumuladoPorPregunta)
     console.log('acumulado por pregunta', resultado)
+    console.log('dataFiltrada', dataFiltrada)
     dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: resultado });
     return dataFiltrada;
   }
@@ -226,7 +228,7 @@ const reporteEspecialistaDeEstudiantes = async (idEvaluacion: string, month: num
   const reporteDeEstudiantes = await getAllReporteDeDirectoreToAdmin(idEvaluacion, month)
   console.log('reporteDeEstudiantes', reporteDeEstudiantes)
   console.log('🔍 DEBUG: reporteDeEstudiantes.length (número de directores):', reporteDeEstudiantes.length)
-
+  
   const acumuladoPorPregunta: Record<string, { id: string, a: number, b: number, c: number, d?: number, total: number }> = {}
 
   // Primero, analizar todos los directores para encontrar el patrón más común
@@ -353,7 +355,7 @@ const reporteEspecialistaDeEstudiantes = async (idEvaluacion: string, month: num
     console.warn('⚠️ ADVERTENCIA: Aún hay inconsistencia en las longitudes, puede haber preguntas duplicadas o faltantes')
   }
 
-  console.log('resultado', resultado)
+  /* console.log('resultado', resultado) */
   dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: resultado });
   return resultado
 }
