@@ -20,12 +20,58 @@ interface Props {
 const DatosInstitucion = ({ dataDocente }: Props) => {
 	const [minDate, setMinDate] = useState(dayjs(new Date().setFullYear(2023)));
 	const [showUpdateDataDocente, setShowUpdateDataDocente] = useState(false)
-	const [startDate, setStartDate] = useState(() => {
-		if (dataDocente.fechaEvaluacion) {
-			return dayjs(dataDocente.fechaEvaluacion);
+	// Función helper para convertir timestamp a Date y verificar si es válida
+	const convertTimestampToDate = (timestamp: any) => {
+		if (!timestamp || timestamp === null || timestamp === undefined) return null;
+		
+		try {
+			// Si es un timestamp de Firestore
+			if (timestamp && typeof timestamp.toDate === 'function') {
+				return timestamp.toDate();
+			}
+			// Si es un timestamp en segundos (número)
+			if (typeof timestamp === 'number') {
+				return new Date(timestamp * 1000);
+			}
+			// Si ya es una fecha o string válido
+			return new Date(timestamp);
+		} catch {
+			return null;
 		}
+	};
+
+	// Función helper para verificar si la fecha es válida
+	const isValidDate = (date: any) => {
+		const convertedDate = convertTimestampToDate(date);
+		if (!convertedDate) return false;
+		
+		try {
+			const daysDate = dayjs(convertedDate);
+			return daysDate.isValid();
+		} catch {
+			return false;
+		}
+	};
+
+	const [startDate, setStartDate] = useState(() => {
+		// Verificar si fechaEvaluacion existe y es una fecha válida
+		if (isValidDate(dataDocente.fechaEvaluacion)) {
+			const convertedDate = convertTimestampToDate(dataDocente.fechaEvaluacion);
+			return dayjs(convertedDate);
+		}
+		// Si no existe o no es válida, usar la fecha actual
 		return dayjs();
 	});
+
+	// Actualizar el estado cuando dataDocente cambie
+	useEffect(() => {
+		if (isValidDate(dataDocente.fechaEvaluacion)) {
+			const convertedDate = convertTimestampToDate(dataDocente.fechaEvaluacion);
+			setStartDate(dayjs(convertedDate));
+		} else {
+			setStartDate(dayjs());
+		}
+	}, [dataDocente.fechaEvaluacion]);
 	const db = getFirestore();
 
 	const getGradoTexto = (grado: string | number | undefined) => {
@@ -61,7 +107,7 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 			console.error("Error al actualizar la fecha:", error);
 		}
 	};
-
+console.log('dataDocente', dataDocente)
 	return (
 		<div className="bg-white">
 			{showUpdateDataDocente && (
