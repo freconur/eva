@@ -225,7 +225,7 @@ const Reportes = () => {
     );
   };
 
-  console.log('preguntasRespuestas', preguntasRespuestas);
+  console.log('estudiantes', estudiantes);
   return (
     <>
       {showDeleteEstudiante && (

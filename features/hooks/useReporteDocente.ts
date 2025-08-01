@@ -4,6 +4,7 @@ import { AppAction } from "../actions/appAction"
 import { currentMonth, currentYear } from "@/fuctions/dates"
 import { app } from "@/firebase/firebase.config"
 import { doc, getDoc,collection, getDocs, getFirestore, updateDoc } from "firebase/firestore"
+import { puntajePreguntasMatemticaProgresiva } from "@/fuctions/correccionPuntaje"
 
 
 
@@ -155,6 +156,20 @@ export const useReporteDocente = () => {
   }
   const updateEvaluacionEstudiante = async (data: UserEstudiante, idExamen: string, idEstudiante: string, dni:string) => {
     console.log('data', data)
+    
+    // Agregar puntaje a cada objeto en respuestas basándose en la coincidencia de order
+    if (data.respuestas && Array.isArray(data.respuestas)) {
+      data.respuestas.forEach((respuesta) => {
+        const puntajeEncontrado = puntajePreguntasMatemticaProgresiva.find(
+          (item) => item.order === respuesta.order
+        );
+        
+        if (puntajeEncontrado) {
+          respuesta.puntaje = String(puntajeEncontrado.puntaje);
+        }
+      });
+    }
+    console.log('data2', data)
     const docRef = doc(db, `/usuarios/${dni}/${idExamen}/${currentYear}/${currentMonth}`,`${idEstudiante}`)
     await updateDoc(docRef, data)
   }

@@ -111,6 +111,7 @@ export const exportDirectorDocenteDataToExcel = (datos: any[], fileName: string 
       'Institucion': item.institucion || '',
       'region': regionTexto(String(item.region)) || '',
       'rol': rolTexto(Number(item.rol)) || '',
+      'Género': converGenero(String(item.genero || '')) || '',
     };
 
     // Agregar datos de reporteEstudiantes si existe
@@ -158,6 +159,7 @@ export const exportDirectorDocenteDataToExcel = (datos: any[], fileName: string 
     { wch: 30 },  // Institución
     { wch: 10 },  // Región
     { wch: 8 },   // Rol
+    { wch: 12 },  // Género
   ];
 
   // Agregar anchos para las columnas de reporte

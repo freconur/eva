@@ -167,20 +167,43 @@ const Reporte = () => {
     return map;
   }, [preguntasRespuestas]);
 
+  // Memorizar las preguntas ordenadas por la propiedad order
+  const preguntasOrdenadas = useMemo(() => {
+    return [...(preguntasRespuestas || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [preguntasRespuestas]);
+  
   // Ordenar reporteDirector por el order de las preguntas correspondientes
   const reporteDirectorOrdenado = useMemo(() => {
-    if (!reporteDirector || !preguntasRespuestas.length) return reporteDirector;
+    if (!reporteDirector || !preguntasOrdenadas.length) return reporteDirector;
     
-    return [...reporteDirector].sort((a, b) => {
-      const preguntaA = preguntasMap.get(a.id || '');
-      const preguntaB = preguntasMap.get(b.id || '');
-      
-      const orderA = preguntaA?.order || 0;
-      const orderB = preguntaB?.order || 0;
-      
-      return orderA - orderB;
+    // Crear un mapa de estadísticas por ID de pregunta
+    const estadisticasMap = new Map<string, any>();
+    reporteDirector.forEach(stat => {
+      if (stat.id) {
+        estadisticasMap.set(stat.id, stat);
+      }
     });
-  }, [reporteDirector, preguntasMap]);
+    
+    // Crear un array sincronizado basado en preguntasRespuestas
+    const reporteSincronizado = preguntasOrdenadas.map(pregunta => {
+      const estadistica = estadisticasMap.get(pregunta.id || '');
+      if (estadistica) {
+        return estadistica;
+      } else {
+        // Si no hay estadísticas para esta pregunta, crear una estructura vacía
+        return {
+          id: pregunta.id,
+          a: 0,
+          b: 0,
+          c: 0,
+          d: pregunta.alternativas?.some(alt => alt.alternativa === 'd') ? 0 : undefined,
+          total: 0
+        };
+      }
+    });
+    
+    return reporteSincronizado;
+  }, [reporteDirector, preguntasOrdenadas]);
 
   // Función optimizada para renderizar pregunta usando el mapa
   const renderPregunta = useCallback((idPregunta: string) => {
@@ -208,9 +231,8 @@ const Reporte = () => {
     return pregunta?.respuesta || '';
   }, [preguntasMap]);
 
-  console.log('reporteDirector', reporteDirector)
-  console.log('preguntasRespuestas', preguntasRespuestas)
-   
+  console.log('dataFiltradaDirectorTabla', dataFiltradaDirectorTabla)
+  console.log('preguntasRespuestas', preguntasRespuestas.length)
   return (
 
     <>
@@ -304,6 +326,7 @@ const Reporte = () => {
                       <tr>
                         <th className={styles.tableHeaderCell}>#</th>
                         <th className={styles.tableHeaderCell}>Nombre y apellidos</th>
+                        <th className={styles.tableHeaderCell}>Docente</th>
                         <th className={styles.tableHeaderCell}>R.C</th>
                         <th className={styles.tableHeaderCell}>T.P</th>
                         <th className={styles.tableHeaderCell}>Puntaje</th>
@@ -349,6 +372,9 @@ const Reporte = () => {
                             <td className={`${styles.tableCell} ${styles.tableCellName}`}>
                               {dir.nombresApellidos?.toUpperCase()}
                             </td>
+                            <td className={`${styles.tableCell} ${styles.tableCellName}`}>
+                              {dir.dniDocente?.toUpperCase()}
+                            </td>
                             <td className={styles.tableCell}>
                               {dir.respuestasCorrectas}
                             </td>
@@ -385,35 +411,35 @@ const Reporte = () => {
               <div>
                 <div>
                   {
-                    reporteDirectorOrdenado?.map((dat, index) => {
-                      const pregunta = preguntasMap.get(dat.id || '');
-                      const numeroOrden = pregunta?.order || index + 1;
+                    reporteDirectorOrdenado?.map((dat: DataEstadisticas, index: number) => {
+                      // Encontrar la pregunta correspondiente por su id
+                      const preguntaCorrespondiente = preguntasMap.get(dat.id || '');
+                      
                       return (
-                        <div key={dat.id || index} className={styles.questionContainer}>
-                         {/*  <div>{numeroOrden}.{renderPregunta(`${dat.id}`)}</div> */}
-                          <div>{index + 1}.{renderPregunta(`${dat.id}`)}</div>
+                        <div key={index} className={styles.questionContainer}>
+                          {index + 1}.{renderPregunta(dat.id || '')}
                           <div className={styles.chartContainer}>
                             <div className={styles.chartWrapper}>
                               <Bar className={styles.chart}
                                 options={options}
-                                data={iterateData(dat, obtenerRespuestaPorId(`${dat.id}`))}
+                                data={iterateData(dat, obtenerRespuestaPorId(dat.id || ''))}
                               />
                             </div>
                             <div className={styles.statsContainer}>
-                              <p>{dat.a} | {dat.total === 0 ? 0 : ((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)} %</p>
-                              <p>{dat.b} |{dat.total === 0 ? 0 : ((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
-                              <p>{dat.c} | {dat.total === 0 ? 0 : ((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
-                              {
-                                dat.d &&
-                                <p>{dat.d} | {dat.total === 0 ? `${0}%` : ((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
-                              }
+                              {Object.entries(dat)
+                                .filter(([key]) => key !== 'id' && key !== 'total')
+                                .map(([key, value]) => (
+                                  <p key={key}>
+                                    {key}: {value} | {dat.total === 0 ? 0 : ((100 * Number(value)) / Number(dat.total)).toFixed(0)}%
+                                  </p>
+                                ))}
                             </div>
                             <div className={styles.answerContainer}>
-                              respuesta:<span className={styles.answerText}>{obtenerRespuestaPorId(`${dat.id}`)}</span>
+                              respuesta:<span className={styles.answerText}>{obtenerRespuestaPorId(dat.id || '')}</span>
                             </div>
                           </div>
                         </div>
-                      )
+                      );
                     })
                   }
                 </div>

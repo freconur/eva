@@ -1,7 +1,7 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useReporteDirectores } from '@/features/hooks/useReporteDirectores'
 import { useRouter } from 'next/router'
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -26,6 +26,7 @@ import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecial
 import { useReporteEspecialistas } from '@/features/hooks/useReporteEspecialistas';
 import { distritosPuno } from '@/fuctions/provinciasPuno';
 import { exportDirectorDocenteDataToExcel } from '@/features/utils/excelExport';
+import { useGenerarReporte } from '@/features/hooks/useGenerarReporte';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -109,6 +110,7 @@ const Reporte = () => {
   const { getAllReporteDeDirectores, reporteParaTablaDeEspecialista, reporteEspecialistaDeEstudiantes } = useReporteEspecialistas()
   const { currentUserData, reporteDirector, preguntasRespuestas, loaderReporteDirector, allRespuestasEstudiantesDirector, dataFiltradaDirectorTabla, allEvaluacionesEstudiantes, allEvaluacionesDirectorDocente } = useGlobalContext()
   const { getPreguntasRespuestas } = useAgregarEvaluaciones()
+  const { generarReporte, loading: loadingGenerarReporte } = useGenerarReporte()
   const [showTable, setShowTable] = useState(false)
   const route = useRouter()
   const [monthSelected, setMonthSelected] = useState(currentMonth)
@@ -118,6 +120,51 @@ const Reporte = () => {
     return [...(preguntasRespuestas || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [preguntasRespuestas]);
   
+  // Crear un mapa optimizado de preguntas por ID para evitar búsquedas repetidas O(1) en lugar de O(n)
+  const preguntasMap = useMemo(() => {
+    const map = new Map<string, PreguntasRespuestas>();
+    preguntasOrdenadas.forEach(pregunta => {
+      if (pregunta.id) {
+        map.set(pregunta.id, pregunta);
+      }
+    });
+    return map;
+  }, [preguntasOrdenadas]);
+
+  // Ordenar reporteDirector por el order de las preguntas correspondientes
+  const reporteDirectorOrdenado = useMemo(() => {
+    if (!reporteDirector || !preguntasOrdenadas.length) return reporteDirector;
+    
+    // Crear un mapa de estadísticas por ID de pregunta
+    const estadisticasMap = new Map<string, any>();
+    reporteDirector.forEach(stat => {
+      if (stat.id) {
+        estadisticasMap.set(stat.id, stat);
+      }
+    });
+    
+    // Crear un array sincronizado basado en preguntasRespuestas
+    const reporteSincronizado = preguntasOrdenadas.map(pregunta => {
+      const estadistica = estadisticasMap.get(pregunta.id || '');
+      if (estadistica) {
+        return estadistica;
+      } else {
+        // Si no hay estadísticas para esta pregunta, crear una estructura vacía
+        return {
+          id: pregunta.id,
+          a: 0,
+          b: 0,
+          c: 0,
+          d: pregunta.alternativas?.some(alt => alt.alternativa === 'd') ? 0 : undefined,
+          total: 0
+        };
+      }
+    });
+    
+    return reporteSincronizado;
+  }, [reporteDirector, preguntasOrdenadas]);
+
+
   useEffect(() => {
     //me trae las preguntas y respuestas para los graficos
     getPreguntasRespuestas(`${route.query.idEvaluacion}`)
@@ -136,18 +183,30 @@ const Reporte = () => {
     /* reporteDirectorData(`${route.query.id}`, `${route.query.idEvaluacion}`) */
   }, [route.query.id, route.query.idEvaluacion, currentUserData.dni])
 
-  const iterarPregunta = (idPregunta: string) => {
-    const pregunta = preguntasOrdenadas.find(p => p.id === idPregunta);
-    
+  // Función optimizada para renderizar pregunta usando el mapa
+  const iterarPregunta = useCallback((idPregunta: string) => {
+    const pregunta = preguntasMap.get(idPregunta);
+    if (!pregunta) {
+      return <p>Pregunta no encontrada</p>;
+    }
     return (
-      <div className='grid gap-1'>
+      <>
         <h3 className='text-slate-500 mr-2'>
-          {/* <span className='text-colorSegundo mr-2 font-semibold'>{pregunta?.order || idPregunta}.</span> */}
-          {pregunta?.pregunta}</h3>
-        <h3 className='text-slate-500 mr-2'><span className='text-colorSegundo mr-2 font-semibold'>Actuación:</span> {pregunta?.preguntaDocente}</h3>
-      </div>
-    )
-  }
+          {pregunta.pregunta}
+        </h3>
+        <h3 className='text-slate-500 mr-2'>
+          <span className='text-colorSegundo mr-2 font-semibold'>Actuación:</span> {pregunta.preguntaDocente}
+        </h3>
+      </>
+    );
+  }, [preguntasMap]);
+
+  // Función optimizada para obtener respuesta usando el mapa
+  const obtenerRespuestaPorId = useCallback((idPregunta: string): string => {
+    const pregunta = preguntasMap.get(idPregunta);
+    return pregunta?.respuesta || '';
+  }, [preguntasMap]);
+
   const handleValidateRespuesta = (data: PreguntasRespuestas) => {
     const rta: Alternativa | undefined = data.alternativas?.find(
       (r) => r.selected === true
@@ -191,7 +250,10 @@ const Reporte = () => {
   }, [monthSelected])
 
   /* console.log('preguntasRespuestas', preguntasRespuestas) */
-  console.log('reporteDirector', reporteDirector)
+  /* console.log('reporteDirector', reporteDirector) */
+  console.log('preguntasRespuestas', preguntasRespuestas.length)
+  console.log('reporteDirector original', reporteDirector?.length || 0)
+  console.log('reporteDirectorOrdenado sincronizado', reporteDirectorOrdenado?.length || 0)
 
   // Función para exportar datos a Excel
   const handleExportToExcel = async () => {
@@ -215,6 +277,78 @@ const Reporte = () => {
       alert('Error al exportar los datos. Por favor, inténtalo de nuevo.');
     } finally {
       setLoadingExport(false);
+    }
+  };
+
+  // Función para generar reporte usando Firebase Functions
+  const handleGenerarReporte = async () => {
+    if (!route.query.idEvaluacion) {
+      alert('No se ha seleccionado una evaluación válida');
+      return;
+    }
+
+    // Mostrar alerta informativa antes de comenzar
+    const confirmed = window.confirm(
+      '⏱️ Esta operación puede tomar hasta 9 minutos para procesar todos los datos.\n\n' +
+      '• Se procesarán todos los directores y sus docentes\n' +
+      '• Se generarán estadísticas consolidadas\n' +
+      '• Por favor, mantén esta ventana abierta\n\n' +
+      '¿Deseas continuar?'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      console.log('🚀 Iniciando generación de reporte...');
+      
+      const resultado = await generarReporte(
+        String(route.query.idEvaluacion),
+        monthSelected,
+        {
+          region: filtros.region,
+          distrito: filtros.distrito,
+          caracteristicaCurricular: filtros.caracteristicaCurricular,
+          genero: filtros.genero,
+          area: filtros.area
+        }
+      );
+      
+      console.log('✅ Reporte generado exitosamente:', resultado);
+      
+      // Mostrar detalles del resultado al usuario
+      if (resultado) {
+        // Acceder a las estadísticas desde la estructura real de la respuesta
+        const data = resultado as any; // Cast temporal para acceder a las propiedades
+        const message = 
+          `🎉 ¡Reporte generado exitosamente!\n\n` +
+          `📊 Estadísticas del procesamiento:\n` +
+          `• Directores procesados: ${data.procesados || 'N/A'}\n` +
+          `• Total de docentes: ${data.totalDocentes || 'N/A'}\n` +
+          `• Total de evaluaciones: ${data.totalEvaluaciones || 'N/A'}\n` +
+          `• Directores con datos: ${data.estadisticas?.directoresConDatos || 'N/A'}\n` +
+          `• Preguntas procesadas: ${data.estadisticas?.preguntasProcesadas || 'N/A'}\n\n` +
+          `Los datos están listos para visualización y exportación.`;
+        
+        alert(message);
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Error al generar reporte:', error);
+      
+      // Manejo específico para timeout
+      if (error.code === 'functions/deadline-exceeded') {
+        const timeoutMessage = 
+          '⚠️ Tiempo de espera agotado\n\n' +
+          'El reporte está tardando más de lo esperado debido al gran volumen de datos.\n\n' +
+          'Opciones:\n' +
+          '• Intenta nuevamente en unos minutos\n' +
+          '• La función podría seguir ejecutándose en el servidor\n' +
+          '• Contacta al administrador si el problema persiste\n\n' +
+          'Esto puede ocurrir con más de 1000 directores o muchas evaluaciones.';
+        
+        alert(timeoutMessage);
+      }
+      // El error ya se maneja en el hook useGenerarReporte para otros casos
     }
   };
   return (
@@ -340,6 +474,20 @@ const Reporte = () => {
                   'Exportar a Excel'
                 )}
               </button>
+              <button 
+                className={styles.exportButton}
+                onClick={handleGenerarReporte}
+                disabled={loadingGenerarReporte || !route.query.idEvaluacion}
+              >
+                {loadingGenerarReporte ? (
+                  <>
+                    <RiLoader4Line className={styles.loaderIcon} />
+                    Procesando datos... (hasta 9 min)
+                  </>
+                ) : (
+                  'Generar reporte consolidado'
+                )}
+              </button>
             </div>
 
             <div className={styles.reportContainer}>
@@ -347,18 +495,18 @@ const Reporte = () => {
               <div>
                 <div>
                   {
-                    reporteDirector?.map((dat, index) => {
+                    reporteDirectorOrdenado?.map((dat: DataEstadisticas, index: number) => {
                       // Encontrar la pregunta correspondiente por su id
-                      const preguntaCorrespondiente = preguntasOrdenadas.find(p => p.id === dat.id);
+                      const preguntaCorrespondiente = preguntasMap.get(dat.id || '');
                       
                       return (
                         <div key={index} className={styles.questionContainer}>
-                          {index + 1}.{iterarPregunta(`${dat.id}`)}
+                          {index + 1}.{iterarPregunta(dat.id || '')}
                           <div className={styles.chartContainer}>
                             <div className={styles.chartWrapper}>
                               <Bar className={styles.chart}
                                 options={options}
-                                data={iterateData(dat, `${preguntaCorrespondiente?.respuesta || ''}`)}
+                                data={iterateData(dat, obtenerRespuestaPorId(dat.id || ''))}
                               />
                             </div>
                             <div className={styles.statsContainer}>
@@ -371,7 +519,7 @@ const Reporte = () => {
                                 ))}
                             </div>
                             <div className={styles.answerContainer}>
-                              respuesta:<span className={styles.answerText}>{preguntaCorrespondiente?.respuesta}</span>
+                              respuesta:<span className={styles.answerText}>{obtenerRespuestaPorId(dat.id || '')}</span>
                             </div>
                           </div>
                         </div>

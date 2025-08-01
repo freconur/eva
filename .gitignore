@@ -1,36 +1,297 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
+# ==========================================================
+# DEPENDENCIAS Y MÓDULOS
+# ==========================================================
+node_modules/
 /.pnp
 .pnp.js
+package-lock.json
+yarn.lock
 
-# testing
-/coverage
-
-# next.js
+# ==========================================================
+# NEXT.JS Y BUILD
+# ==========================================================
 /.next/
 /out/
-
-# production
 /build
+.next/
+*.tsbuildinfo
+next-env.d.ts
 
-# misc
-.DS_Store
-*.pem
+# ==========================================================
+# ARCHIVOS DE ENTORNO Y CONFIGURACIÓN SENSIBLE
+# ==========================================================
+# Variables de entorno
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
 
-# debug
+# Configuraciones de Firebase
+firebase-debug.log
+firebase-debug.*.log
+.firebase/
+firebase-export-*/
+firebase-export-*.json
+firebase-export-*.zip
+
+# Configuraciones de servicios
+google-services.json
+GoogleService-Info.plist
+serviceAccountKey.json
+service-account-key.json
+*-service-account.json
+
+# ==========================================================
+# DATOS Y EXPORTACIONES SENSIBLES
+# ==========================================================
+# Exportaciones de Firestore
+eva-ugel-emulator-firestore/
+firebase-export-*/
+firebase-export-1753758057919GjXyU3/
+firebase-export-1753761037738OADsJc/
+firebase-export-1753797370504mVN5VC/
+firebase-export-1753809807224Ko7sLG/
+firebase-export-1753813818398VYPblL/
+firebase-export-1753819026088FaButq/
+firebase-export-1753827120306cI85Ok/
+firebase-export-1753828943185LJKb1Z/
+firebase-export-1753831757826aNIfjQ/
+firebase-export-1753831808038ZfJ8Cx/
+
+# Archivos de datos sensibles
+admin-user.json
+*.json.bak
+*.json.backup
+data-export/
+exports/
+backups/
+
+# ==========================================================
+# ARCHIVOS DE CONFIGURACIÓN CRÍTICA
+# ==========================================================
+# Configuraciones de hosting
+apphosting.yaml
+firebase.json
+.firebaserc
+eva-ugel.json
+
+# Scripts de configuración
+asignar-custom-claims-produccion.js
+asignarAdmin.js
+creacion-usuario.js
+create-admin-user-emulator.js
+create-admin-user.js
+start-emulator-optimized.sh
+start-emulator-partial.sh
+start-emulators.sh
+
+# ==========================================================
+# LOGS Y ARCHIVOS TEMPORALES
+# ==========================================================
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+logs/
+debug.log
+firestore-debug.log
+firestore-debug.*.log
 
-# local env files
-.env*.local
-.env
+# Archivos temporales
+*.tmp
+*.temp
+.tmp/
+.temp/
+temp/
+tmp/
 
-# vercel
+# ==========================================================
+# SISTEMA OPERATIVO
+# ==========================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==========================================================
+# IDEs Y EDITORES
+# ==========================================================
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ==========================================================
+# TESTING Y COBERTURA
+# ==========================================================
+/coverage
+*.lcov
+.nyc_output
+coverage/
+.nyc_output/
+
+# ==========================================================
+# DEPLOYMENT Y HOSTING
+# ==========================================================
+# Vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Netlify
+.netlify
+
+# Heroku
+.env.production
+
+# ==========================================================
+# ARCHIVOS ESPECÍFICOS DEL PROYECTO
+# ==========================================================
+# Archivos de configuración local
+config.local.js
+config.local.json
+settings.local.js
+settings.local.json
+
+# Archivos de desarrollo local
+dev-data/
+local-data/
+test-data/
+
+# Archivos de respaldo
+*.backup
+*.bak
+*.old
+*.orig
+
+# ==========================================================
+# SEGURIDAD ADICIONAL
+# ==========================================================
+# Archivos que podrían contener información sensible
+secrets/
+secrets.json
+secrets.js
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cert
+
+# Archivos de base de datos local
+*.db
+*.sqlite
+*.sqlite3
+
+# Archivos de caché
+.cache/
+cache/
+*.cache
+
+# ==========================================================
+# ARCHIVOS DE FUNCIONES CLOUD
+# ==========================================================
+# Firebase Functions (si están en el proyecto principal)
+functions/lib/
+functions/node_modules/
+functions/.runtimeconfig.json
+functions/.env
+
+# ==========================================================
+# ARCHIVOS DE MONITOREO Y DEBUG
+# ==========================================================
+# Archivos de profiling
+*.cpuprofile
+*.heapprofile
+
+# Archivos de debug
+debug/
+.debug/
+
+# ==========================================================
+# ARCHIVOS DE DOCUMENTACIÓN TEMPORAL
+# ==========================================================
+# Documentación temporal
+docs/temp/
+docs/draft/
+*.draft
+*.temp.md
+
+# ==========================================================
+# ARCHIVOS DE MIGRACIÓN Y DEPLOYMENT
+# ==========================================================
+# Archivos de migración
+migrations/
+*.migration.js
+*.migration.json
+
+# Archivos de deployment
+deploy/
+deployment/
+*.deploy

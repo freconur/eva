@@ -139,9 +139,17 @@ const useUsuario = () => {
             loginData.contrasena
           );
         })
-        .then((response) => {
+        .then(async (response) => {
           console.log("response", response);
-          // debugger
+          
+          // Refrescar el token para obtener custom claims actualizados
+          try {
+            await response.user.getIdToken(true); // Force refresh
+            console.log("Token refrescado con custom claims");
+          } catch (error) {
+            console.warn("Error al refrescar token:", error);
+          }
+          
           getUser(response.user.uid);
         });
       // .catch(Error) {
@@ -175,6 +183,26 @@ const useUsuario = () => {
       }
     });
   };
+
+  // Función para verificar los custom claims del usuario actual
+  const checkCustomClaims = async () => {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        console.log('No hay usuario autenticado');
+        return null;
+      }
+
+      const token = await currentUser.getIdTokenResult(true);
+      console.log('Custom claims del usuario:', token.claims);
+      
+      return token.claims;
+    } catch (error) {
+      console.error('Error al obtener custom claims:', error);
+      return null;
+    }
+  };
+
   const createNewEspecialista = (data: User) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
@@ -529,7 +557,8 @@ const useUsuario = () => {
     deleteEstudianteById,
     getAllEspecialistas,
     updateEspecialista,
-    deleteEvaluacionEstudiante
+    deleteEvaluacionEstudiante,
+    checkCustomClaims
   };
 };
 

@@ -10,7 +10,7 @@ import styles from './actualizarEvaluacion.module.css'
 const ActualizarEvaluacion = () => {
   const router = useRouter();
   const { idExamen, idEstudiante } = router.query;
-  console.log(idExamen, idEstudiante);
+  
   const { getEvaluacionEstudiante, updateEvaluacionEstudiante } = useReporteDocente();
   const { getPreguntasRespuestas } = useAgregarEvaluaciones();
   const  { evaluacionEstudiante , preguntasRespuestas, currentUserData} = useGlobalContext()
@@ -99,10 +99,10 @@ const ActualizarEvaluacion = () => {
     
     try {
       // Los cambios ya están siendo aplicados al estado global en tiempo real
-      console.log('Guardando cambios:');
+      /* console.log('Guardando cambios:');
       console.log('Estado actual de evaluacionEstudiante:', evaluacionEstudiante);
       console.log('Datos del estudiante:', datosEstudiante);
-      console.log('Respuestas:', respuestasEditables);
+      console.log('Respuestas:', respuestasEditables); */
       
       // Actualizar la evaluación del estudiante
       await updateEvaluacionEstudiante(evaluacionEstudiante, `${idExamen}`, `${idEstudiante}`, `${currentUserData.dni}`);
