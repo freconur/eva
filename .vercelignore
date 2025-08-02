@@ -1,0 +1,18 @@
+# Excluir Cloud Functions del build de Vercel
+functions/
+firebase-export-*/
+firebase-debug.log
+firestore-debug.log
+
+# Archivos de configuración de Firebase
+firebase.json
+.firebaserc
+*.service-account.json
+
+# Scripts de configuración
+asignar-custom-claims-produccion.js
+asignarAdmin.js
+creacion-usuario.js
+create-admin-user-emulator.js
+create-admin-user.js
+start-emulator-*.sh 
