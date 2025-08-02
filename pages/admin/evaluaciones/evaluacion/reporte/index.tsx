@@ -474,8 +474,10 @@ const Reporte = () => {
                   'Exportar a Excel'
                 )}
               </button>
+              {
+                currentUserData.rol === 4 && 
               <button 
-                className={styles.exportButton}
+                className={styles.generateReportButton}
                 onClick={handleGenerarReporte}
                 disabled={loadingGenerarReporte || !route.query.idEvaluacion}
               >
@@ -488,6 +490,7 @@ const Reporte = () => {
                   'Generar reporte consolidado'
                 )}
               </button>
+              }
             </div>
 
             <div className={styles.reportContainer}>

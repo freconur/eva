@@ -30,6 +30,7 @@ export interface EstimacionTiempo {
  * @returns Objeto con estimaciones de tiempo
  */
 export const calcularTiempoEstimado = (totalDirectores: number, batchSize: number = 30): EstimacionTiempo => {
+  console.log('totalDirectores', totalDirectores)
   // Tiempos base estimados (en millisegundos) basados en análisis empírico
   const TIEMPO_BASE_POR_LOTE = 2000; // 2 segundos base por lote de 30 directores
   const TIEMPO_POR_DIRECTOR_EN_LOTE = 150; // 150ms adicionales por director con datos

@@ -34,7 +34,16 @@ import {
 /**
  * Función de prueba simple para diagnosticar problemas de autenticación
  */
-exports.testAuth = functions.https.onCall(async (data: any, context: any) => {
+exports.testAuth = functions.https.onCall({
+  cors: [
+    'http://localhost:3000',
+    'http://localhost:3001', 
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    'https://evaluaciones-ugel.firebaseapp.com',
+    'https://evaluaciones-ugel.web.app'
+  ]
+}, async (data: any, context: any) => {
   functions.logger.info("🧪 TEST AUTH - Inicio");
   
   // Log completo del contexto
@@ -138,7 +147,15 @@ const calcularTiempoEstimado = (totalDirectores: number, batchSize: number = 30)
 exports.leerEvaluacionesParaAdmin = onCall({
   timeoutSeconds: 540, // 9 minutos
   memory: '8GiB',
-  cpu: 4
+  cpu: 4,
+  cors: [
+    'http://localhost:3000',
+    'http://localhost:3001', 
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    'https://evaluaciones-ugel.firebaseapp.com',
+    'https://evaluaciones-ugel.web.app'
+  ]
 }, async (request) => {
   // Inicializar monitores y utilidades
   const trackingId = generarTrackingId();

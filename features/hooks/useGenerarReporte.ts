@@ -81,6 +81,7 @@ export const useGenerarReporte = () => {
    * @returns true si el usuario confirma, false si cancela
    */
   const mostrarConfirmacionConEstimacion = (numeroDirectoresEstimado: number = 100): boolean => {
+    console.log('numeroDirectoresEstimado', numeroDirectoresEstimado)
     const estimacion = calcularTiempoEstimado(numeroDirectoresEstimado);
     
     const mensaje = `

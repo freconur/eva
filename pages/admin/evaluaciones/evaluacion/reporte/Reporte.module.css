@@ -86,6 +86,7 @@
 .exportContainer {
   display: flex;
   justify-content: flex-end;
+  gap: 1rem;
   margin-bottom: 2rem;
   padding: 1rem;
   background-color: #f8fafc;
@@ -121,7 +122,35 @@
   box-shadow: none;
 }
 
-.exportButton .loaderIcon {
+.generateReportButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.generateReportButton:hover:not(:disabled) {
+  background-color: #d97706;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+}
+
+.generateReportButton:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.generateReportButton .loaderIcon {
   font-size: 1rem;
   animation: spin 1s linear infinite;
 }
