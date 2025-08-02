@@ -475,7 +475,7 @@ const Reporte = () => {
                 )}
               </button>
               {
-                currentUserData.rol === 4 && 
+                currentUserData?.rol === 4 && 
               <button 
                 className={styles.generateReportButton}
                 onClick={handleGenerarReporte}
