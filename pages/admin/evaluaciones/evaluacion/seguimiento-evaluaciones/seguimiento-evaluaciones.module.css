@@ -1,0 +1,1066 @@
+/* Estilos principales del contenedor */
+.container {
+  padding: 2rem;
+  background: #ffffff;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.title {
+  color: #374151;
+  font-size: 2rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.title::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: #6b7280;
+  border-radius: 2px;
+}
+
+/* Contenedor de controles */
+.controlsContainer {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.controlsRow {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.controlGroup {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+/* Estilos para inputs y labels */
+.inputGroup {
+  position: relative;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.input {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  width: 200px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #6b7280;
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
+}
+
+.input.valid {
+  border-color: #10b981;
+}
+
+.input.invalid {
+  border-color: #ef4444;
+}
+
+/* Estilos para selects */
+.select {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  width: 200px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #6b7280;
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
+}
+
+.select.evaluacion {
+  width: 250px;
+}
+
+/* Botón de envío */
+.submitButton {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 42px;
+  background: #6b7280;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #4b5563;
+}
+
+.submitButton:active:not(:disabled) {
+  background: #374151;
+}
+
+.submitButton:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Loader del botón */
+.buttonLoader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.buttonLoader .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Validación del input */
+.validationMessage {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.validationMessage.valid {
+  color: #10b981;
+}
+
+.validationMessage.invalid {
+  color: #ef4444;
+}
+
+/* Contenedor de datos del usuario */
+.userDataContainer {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-top: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.userDataContainer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #f59e0b, #f97316, #ea580c);
+  opacity: 0.8;
+}
+
+/* Mensajes de rol */
+.roleMessage {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.roleMessage::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #10b981, #059669, #047857);
+  opacity: 0.8;
+}
+
+.roleMessage.director {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 1px solid #6ee7b7;
+  color: #065f46;
+}
+
+.roleMessage.director::before {
+  background: linear-gradient(90deg, #f59e0b, #f97316, #ea580c);
+}
+
+.roleMessage.docente {
+  background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%);
+  border: 1px solid #60a5fa;
+  color: #1e40af;
+}
+
+.roleMessage.docente::before {
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8, #1e40af);
+}
+
+/* Título de datos del usuario */
+.userDataTitle {
+  margin-bottom: 1.5rem;
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 700;
+  border-bottom: 3px solid #f59e0b;
+  padding-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.userDataTitle::before {
+  content: '';
+  width: 24px;
+  height: 24px;
+  margin-right: 0.75rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f59e0b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' /%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  display: inline-block;
+}
+
+/* Grid de datos del usuario */
+.userDataGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  position: relative;
+}
+
+.userDataGrid::after {
+  content: '';
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 20px;
+  height: 20px;
+  opacity: 0.3;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f59e0b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' /%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Estilos específicos para los campos de datos del director */
+.userDataGrid .dataField {
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.userDataGrid .dataField:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: #e2e8f0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.userDataGrid .dataLabel {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.userDataGrid .dataValue {
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* Estilos generales para dataField (para mantener compatibilidad) */
+.dataField {
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  border-left: 3px solid #6b7280;
+}
+
+.dataLabel {
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.dataValue {
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Sección de docentes del director */
+.docentesSection {
+  margin-top: 2rem;
+  margin-left: 3rem;
+  position: relative;
+  padding-left: 2rem;
+}
+
+/* Línea vertical principal que conecta director con docentes */
+.docentesSection::before {
+  content: '';
+  position: absolute;
+  top: -2rem;
+  left: 0;
+  width: 2px;
+  height: 2rem;
+  background: linear-gradient(180deg, #f59e0b, #f59e0b);
+}
+
+/* Línea horizontal que conecta con cada docente */
+.docentesSection::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1.5rem;
+  height: 2px;
+  background: #f59e0b;
+}
+
+/* Punto de conexión en el director */
+.userDataContainer::after {
+  content: '';
+  position: absolute;
+  bottom: -1rem;
+  right: 2rem;
+  width: 12px;
+  height: 12px;
+  background: #f59e0b;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 0 2px #f59e0b;
+}
+
+.docentesTitle {
+  margin-bottom: 1.5rem;
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 700;
+  border-bottom: 3px solid #f59e0b;
+  padding-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.docentesTitle::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  margin-right: 0.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f59e0b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' /%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  display: inline-block;
+}
+
+/* Lista de docentes */
+.docentesList {
+  display: grid;
+  gap: 1rem;
+}
+
+.docenteCard {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: visible;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  transform: scale(0.98);
+  opacity: 0.95;
+  margin-left: 1.5rem;
+}
+
+/* Línea de conexión para cada docente */
+.docenteCard::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -1.5rem;
+  width: 1.5rem;
+  height: 2px;
+  background: #f59e0b;
+  transform: translateY(-50%);
+}
+
+/* Punto de conexión en cada docente */
+.docenteCard::after {
+  content: '';
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 18px;
+  height: 18px;
+  opacity: 0.7;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f59e0b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' /%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.docenteCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #10b981, #059669, #047857);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.docenteCard:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  border-color: #cbd5e1;
+  opacity: 1;
+}
+
+.docenteCard:hover::before {
+  opacity: 1;
+}
+
+.docenteHeader {
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+  position: relative;
+}
+
+.docenteHeader::after {
+  content: '📚';
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.2rem;
+  opacity: 0.7;
+}
+
+.docenteHeader:hover {
+  background: rgba(255, 255, 255, 1);
+}
+
+.docenteHeader.clickable {
+  cursor: pointer;
+}
+
+.docenteHeader.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.docenteData {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  flex: 1;
+}
+
+/* Estilos específicos para los campos de datos de docentes */
+.docenteData .dataField {
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.docenteData .dataField:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.docenteData .dataLabel {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.docenteData .dataValue {
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* Estilos específicos para los campos de datos de estudiantes */
+.estudianteData .estudianteField {
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.estudianteData .estudianteField:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: #e2e8f0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.estudianteData .estudianteLabel {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.estudianteData .estudianteValue {
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* Indicador de expansión */
+.expansionIndicator {
+  margin-left: 1rem;
+  transition: transform 0.2s ease;
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+.expansionIndicator.expanded {
+  transform: rotate(180deg);
+}
+
+/* Spinner de carga */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #f3f4f6;
+  border-top: 2px solid #6b7280;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Sección de estudiantes */
+.estudiantesSection {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-top: 1px solid #e2e8f0;
+  padding: 1.5rem;
+  margin-left: 2rem;
+  position: relative;
+}
+
+/* Línea vertical que conecta docente con estudiantes */
+.estudiantesSection::before {
+  content: '';
+  position: absolute;
+  top: -1rem;
+  left: 0;
+  width: 2px;
+  height: 1rem;
+  background: linear-gradient(180deg, #10b981, #10b981);
+}
+
+/* Línea horizontal que conecta con la sección de estudiantes */
+.estudiantesSection::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1.5rem;
+  height: 2px;
+  background: #10b981;
+}
+
+/* Punto de conexión en el docente */
+.docenteCard::after {
+  content: '';
+  position: absolute;
+  bottom: -0.5rem;
+  right: 2rem;
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px #10b981;
+}
+
+.estudiantesTitle {
+  margin-bottom: 1.5rem;
+  color: #1e293b;
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.estudiantesList {
+  display: grid;
+  gap: 1rem;
+}
+
+.estudianteCard {
+  padding: 1rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.85rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: visible;
+  transform: scale(0.96);
+  opacity: 0.9;
+  margin-left: 1rem;
+}
+
+/* Línea de conexión para cada estudiante */
+.estudianteCard::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -1rem;
+  width: 1rem;
+  height: 1px;
+  background: #10b981;
+  transform: translateY(-50%);
+}
+
+.estudianteCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.estudianteCard::after {
+  content: '';
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f59e0b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M12 14l9-5-9-5-9 5 9 5z' /%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-8.825-6.998 12.083 12.083 0 01.665-6.479L12 14z' /%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-8.825-6.998 12.083 12.083 0 01.665-6.479L12 14z' /%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.estudianteCard:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  border-color: #cbd5e1;
+  opacity: 1;
+}
+
+.estudianteCard:hover::before {
+  opacity: 1;
+}
+
+.estudianteData {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.estudianteField {
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.estudianteField:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.estudianteLabel {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.estudianteValue {
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* Mensajes de estado */
+.statusMessage {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.statusMessage.warning {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.statusMessage.error {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+/* Mensaje de carga */
+.loadingMessage {
+  text-align: center;
+  padding: 1.5rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* Loader general */
+.generalLoader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  margin-top: 2rem;
+  border: 1px solid #e2e8f0;
+}
+
+.loaderContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loaderSpinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f1f5f9;
+  border-top: 4px solid #6b7280;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loaderText {
+  color: #6b7280;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Animaciones */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 1000px;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .title {
+    font-size: 2rem;
+  }
+  
+  .controlsRow {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .controlGroup {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .input,
+  .select {
+    width: 100%;
+  }
+  
+  .userDataGrid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .userDataGrid .dataField {
+    padding: 0.5rem;
+  }
+  
+  .userDataGrid::after {
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 16px;
+    height: 16px;
+  }
+  
+  .docenteData {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .docenteHeader {
+    padding: 1rem;
+  }
+  
+  .docenteHeader::after {
+    top: 0.75rem;
+    right: 0.75rem;
+    font-size: 1rem;
+  }
+  
+  .docenteData .dataField {
+    padding: 0.5rem;
+  }
+  
+  .estudianteData .estudianteField {
+    padding: 0.5rem;
+  }
+  
+  .estudianteData {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .estudianteCard {
+    padding: 0.75rem;
+  }
+  
+  .estudianteField {
+    padding: 0.5rem;
+  }
+  
+  .docentesSection {
+    margin-left: 1rem;
+    padding-left: 1rem;
+  }
+  
+  .docenteCard {
+    margin-left: 0.5rem;
+  }
+  
+  .docenteCard::before {
+    width: 0.5rem;
+    left: -0.5rem;
+  }
+  
+  .estudiantesSection {
+    margin-left: 1rem;
+    padding: 1rem;
+  }
+  
+  .estudianteCard {
+    margin-left: 0.5rem;
+  }
+  
+  .estudianteCard::before {
+    width: 0.5rem;
+    left: -0.5rem;
+  }
+  
+  .generalLoader {
+    min-height: 200px;
+    margin-top: 1rem;
+  }
+  
+  .loaderSpinner {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .loaderText {
+    font-size: 1rem;
+  }
+  
+  .buttonLoader {
+    font-size: 0.8rem;
+  }
+  
+  .buttonLoader .spinner {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Efectos de hover mejorados */
+.docenteCard:hover .docenteHeader {
+  background: #f3f4f6;
+}
+
+.estudianteCard:hover {
+  border-color: #6b7280;
+}
+
+/* Efectos de focus mejorados */
+.input:focus,
+.select:focus {
+  border-color: #374151;
+}
+
+/* Transiciones adicionales para elementos específicos */
+.dataField {
+  transition: all 0.2s ease;
+}
+
+.dataField:hover {
+  background: #f3f4f6;
+}
+
+.statusMessage {
+  transition: all 0.2s ease;
+}
+
+/* Efectos de transición suaves - aplicados a elementos específicos */
+
+/* Scrollbar personalizado */
+.estudiantesSection::-webkit-scrollbar {
+  width: 4px;
+}
+
+.estudiantesSection::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.estudiantesSection::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 2px;
+}
+
+.estudiantesSection::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}

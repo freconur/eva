@@ -154,7 +154,9 @@ exports.leerEvaluacionesParaAdmin = onCall({
     'http://127.0.0.1:3000',
     'http://127.0.0.1:3001',
     'https://evaluaciones-ugel.firebaseapp.com',
-    'https://evaluaciones-ugel.web.app'
+    'https://evaluaciones-ugel.web.app',
+    'https://eva-rouge-zeta.vercel.app',
+    'https://*.vercel.app'
   ]
 }, async (request) => {
   // Inicializar monitores y utilidades

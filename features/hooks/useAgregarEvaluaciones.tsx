@@ -228,6 +228,7 @@ export const useAgregarEvaluaciones = () => {
 //guarda la informacion para el propio docente
 /* const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`); */
 const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${currentMonth}/${data.dni}`);
+/* const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/6/${data.dni}`); */
     await setDoc(rutaRef, {
       nombresApellidos: data.nombresApellidos,
       dni: data.dni,

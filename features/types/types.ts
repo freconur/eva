@@ -71,7 +71,8 @@ export type AppReducerValues = {
   tituloCoberturaCurricular:string,
   reporteCCADataEspecialista:ResultadosAcumuladosCC[],
   ccDataFilterEspecialista:ResultadosAcumuladosCC[],
-  evaluacionEstudiante:UserEstudiante
+  evaluacionEstudiante:UserEstudiante,
+  usuarioPorDni:User
 };
 
 export type AppActions =
@@ -158,6 +159,7 @@ export type AppActions =
   | { type: AppAction.REPORT_CCA_DATA_ESPECIALISTA; payload:ResultadosAcumuladosCC[]}
   | { type: AppAction.CC_DATA_FILTER_ESPECIALISTA; payload:ResultadosAcumuladosCC[]}
   | { type: AppAction.EVALUACION_ESTUDIANTE; payload:UserEstudiante}
+  | { type: AppAction.USUARIO_POR_DNI; payload: User }
 export type LoginData = {
   usuario: string;
   contrasena: string;
@@ -214,7 +216,8 @@ export type Evaluaciones = {
   grado?: number;
   categoria?: number;
   rol?: number;
-  active?:boolean
+  active?:boolean,
+  timestamp?:Date
 };
 
 export type UserEstudiante = {
@@ -279,7 +282,9 @@ export type User = {
   tipoEspecialista?:number,
   reporteEstudiantes?: DataEstadisticas[]
   resultados?:DataEstadisticas[],
-  fechaEvaluacion?:Date
+  fechaEvaluacion?:Date,
+  docentesDelDirector?:User[]
+  estudiantesDelDocente?:UserEstudiante[]
 };
 
 export type DataEstadisticas = {

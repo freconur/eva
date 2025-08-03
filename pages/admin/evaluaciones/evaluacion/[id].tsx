@@ -192,7 +192,15 @@ const Evaluacion = () => {
                 href={`reporte?id=${currentUserData.dni}&idEvaluacion=${route.query.id}`}
                 className={styles.buttonSecondary}
               >
+                
                 reporte de evaluación
+              </Link>
+              <Link
+                href={`seguimiento-evaluaciones`}
+                className={styles.buttonSeguimiento}
+              >
+                
+                seguimiento
               </Link>
               {hayPuntajes && currentUserData.rol === 4 && (
                 <div className={styles.totalPuntaje}>
