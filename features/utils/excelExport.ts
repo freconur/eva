@@ -8,6 +8,8 @@ type BaseData = {
   'Respuestas Correctas': string;
   'Total Preguntas': string;
   'DNI Docente': string;
+  'Nivel'?: string;
+  'Puntaje'?: string;
   'Grado'?: string;
   'Sección'?: string;
   'Género'?: string;
@@ -25,7 +27,9 @@ export const exportEstudiantesToExcel = (estudiantes: (Estudiante | UserEstudian
       'Nombres y Apellidos': estudiante.nombresApellidos || '',
       'Respuestas Correctas': String(estudiante.respuestasCorrectas || ''),
       'Total Preguntas': String(estudiante.totalPreguntas || ''),
-      'DNI Docente': estudiante.dniDocente || ''
+      'DNI Docente': estudiante.dniDocente || '',
+      'Nivel': estudiante.nivel || '',
+      'Puntaje': String(estudiante.puntaje || '')
     };
 
     // Agregar propiedades específicas de UserEstudiante si existen
@@ -68,7 +72,9 @@ export const exportEstudiantesToExcel = (estudiantes: (Estudiante | UserEstudian
     { wch: 40 }, // Nombres y Apellidos
     { wch: 20 }, // Respuestas Correctas
     { wch: 20 }, // Total Preguntas
-    { wch: 15 }  // DNI Docente
+    { wch: 15 }, // DNI Docente
+    { wch: 15 }, // Nivel
+    { wch: 15 }  // Puntaje
   ];
 
   // Agregar anchos para las columnas opcionales
