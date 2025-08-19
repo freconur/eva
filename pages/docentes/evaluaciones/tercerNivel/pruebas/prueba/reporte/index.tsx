@@ -82,7 +82,7 @@ const Reportes = () => {
     try {
       await generarPDFReporte(reporteCompletoConImagenes, {
         titulo: 'Reporte de Evaluación',
-        nombreDocente: currentUserData.nombres || 'Docente',
+        nombreDocente: `${currentUserData.nombres || ''} ${currentUserData.apellidos || ''}`.trim() || 'Docente',
         fecha: new Date().toLocaleDateString('es-ES')
       });
     } catch (error) {

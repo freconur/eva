@@ -159,7 +159,6 @@ export const useReporteDirectores = () => {
     })
     const resultado = Object.values(acumuladoPorPregunta)
     console.log('acumulado por pregunta', resultado)
-    /* dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: resultado }) */
     dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: resultado });
 
 
@@ -172,22 +171,7 @@ export const useReporteDirectores = () => {
       ...myDirector.data(),
       reporteEstudiantes: resultado
     })
-    /* if (currentUserData.dni) {
-      try {
-        // Filtrar propiedades undefined de currentUserData
-        const userDataToSave = Object.fromEntries(
-          Object.entries(currentUserData).filter(([_, value]) => value !== undefined)
-        );
-
-        await setDoc(doc(db, `evaluaciones/${idEvaluacion}/${currentYear}-${month}`, `${currentUserData.dni}`), {
-          ...userDataToSave,
-          reporteEstudiantes: resultado || []
-        });
-      } catch (error) {
-        console.error("Error al guardar el reporte:", error);
-        throw error;
-      }
-    } */
+    
     return resultado
   }
 
