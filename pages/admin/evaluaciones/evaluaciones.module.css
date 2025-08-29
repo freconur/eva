@@ -1,8 +1,7 @@
 .header {
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: column;  align-items: flex-start;
   justify-content: center;
   padding: 4rem 3rem;
   background: linear-gradient(135deg, var(--color-paleta1), var(--color-paleta2));
@@ -231,9 +230,12 @@
 }
 
 .loaderIcon {
-  position: relative;
-  width: 50px;
-  height: 50px;
+  animation: spin 1s linear infinite;
+  font-size: 0.875rem;
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  line-height: 1;
 }
 
 .loaderIcon::before,
@@ -317,133 +319,432 @@
   align-items: center;
   position: relative;
   margin-top: 0.75rem;
+  padding: 0 1rem;
 }
 
 .tableContainer {
-  width: 1024px;
+  width: 100%;
+  max-width: 1200px;
   background: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.6);
 }
 
 .tableTitle {
-  color: #334155;
-  font-weight: 600;
+  color: var(--color-paleta1);
+  font-weight: 700;
   font-size: 1.875rem;
   font-family: 'Poppins', sans-serif;
   margin-bottom: 2.5rem;
   text-transform: capitalize;
+  text-align: center;
 }
 
 .table {
   width: 100%;
   background: white;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .tableHeader {
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, var(--color-paleta1), var(--color-paleta2));
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .tableHeaderRow {
-  color: #475569;
+  color: white;
   text-transform: capitalize;
   font-family: 'Poppins', sans-serif;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
 }
 
 .tableHeaderCell {
-  padding: 1rem 1.5rem;
+  padding: 1.25rem 1.5rem;
   text-align: left;
   font-size: 0.875rem;
   letter-spacing: 0.025em;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  position: relative;
 }
 
 .tableHeaderCell:first-child {
-  text-align: center;
+  text-align: left;
   padding-left: 1.5rem;
+  border-top-left-radius: 1rem;
+}
+
+.tableHeaderCell:last-child {
+  border-top-right-radius: 1rem;
+}
+
+.tableHeaderCell::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.tableHeaderCell:hover::after {
+  transform: scaleX(1);
 }
 
 .tableBody {
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .tableRow {
-  height: 64px;
-  transition: all 0.2s ease;
+  height: 72px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid rgba(241, 245, 249, 0.8);
+  position: relative;
 }
 
 .tableRow:hover {
-  background-color: #f8fafc;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  background: linear-gradient(135deg, rgba(241, 245, 249, 0.8), rgba(248, 250, 252, 0.9));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid var(--color-tercero);
+}
+
+.tableRow:last-child {
+  border-bottom: none;
+}
+
+.tableRow:last-child .tableCell:first-child {
+  border-bottom-left-radius: 1rem;
+}
+
+.tableRow:last-child .tableCell:last-child {
+  border-bottom-right-radius: 1rem;
 }
 
 .tableCell {
-  text-transform: uppercase;
-  color: #64748b;
-  padding: 1rem 1.5rem;
+  text-transform: none;
+  color: var(--color-paleta1);
+  padding: 1.25rem 1.5rem;
   font-size: 0.875rem;
-  font-weight: 400;
+  font-weight: 500;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.5;
+  transition: all 0.2s ease;
 }
 
 .tableCell:first-child {
   text-align: center;
+  font-weight: 600;
+  color: var(--color-tercero);
+}
+
+.tableCell a {
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  display: block;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  margin: -0.5rem;
+}
+
+.tableCell a:hover {
+  color: var(--color-tercero);
+  background: rgba(58, 190, 249, 0.1);
+  transform: translateY(-1px);
 }
 
 .actionIcon {
-  font-size: 2.25rem;
+  font-size: 1.25rem;
   cursor: pointer;
   transition: all 0.2s ease;
   padding: 0.5rem;
   border-radius: 0.5rem;
-  display: inline-block;
-  margin-right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0.25rem;
+  background: transparent;
+  border: none;
+  color: inherit;
+  width: 2.5rem;
+  height: 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.actionIcon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: block;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.actionIcon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 0.5rem;
+  background: currentColor;
+  opacity: 0.08;
+  transform: scale(0);
+  transition: transform 0.2s ease;
+}
+
+.actionIcon:hover::before {
+  transform: scale(1);
+}
+
+/* Estilos específicos para iconos de react-icons */
+.actionIcon svg[data-icon] {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  display: block !important;
+  fill: currentColor !important;
+}
+
+/* Asegurar que los iconos tengan el color correcto */
+.actionIcon[class*="editIcon"] {
+  color: #f59e0b !important;
+}
+
+.actionIcon[class*="deleteIcon"] {
+  color: #ef4444 !important;
+}
+
+.actionIcon[class*="activeIcon"] {
+  color: #10b981 !important;
+}
+
+.actionIcon[class*="inactiveIcon"] {
+  color: #6b7280 !important;
+}
+
+/* Estilos minimalistas para los iconos */
+.actionIcon {
+  border: none !important;
+  background: transparent !important;
+}
+
+.actionIcon:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  transform: translateY(-1px);
 }
 
 .actionsContainer {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  justify-content: flex-start;
+  padding: 0.5rem;
+  min-height: 3rem;
+  align-items: center;
 }
 
 .editIcon {
-  color: #f59e0b;
+  color: #f59e0b !important;
 }
 
 .editIcon:hover {
-  background-color: #fef3c7;
-  transform: scale(1.1);
+  background: rgba(245, 158, 11, 0.08) !important;
+  transform: translateY(-1px);
 }
 
 .deleteIcon {
-  color: #ef4444;
+  color: #ef4444 !important;
 }
 
 .deleteIcon:hover {
-  background-color: #fee2e2;
-  transform: scale(1.1);
+  background: rgba(239, 68, 68, 0.08) !important;
+  transform: translateY(-1px);
 }
 
 .activeIcon {
-  color: #22c55e;
+  color: #10b981 !important;
 }
 
 .activeIcon:hover {
-  background-color: #dcfce7;
-  transform: scale(1.1);
+  background: rgba(16, 185, 129, 0.08) !important;
+  transform: translateY(-1px);
 }
 
 .inactiveIcon {
-  color: #94a3b8;
+  color: #6b7280 !important;
 }
 
 .inactiveIcon:hover {
-  background-color: #f1f5f9;
-  transform: scale(1.1);
+  background: rgba(107, 114, 128, 0.08) !important;
+  transform: translateY(-1px);
+}
+
+/* Asegurar que las celdas de acciones tengan el ancho adecuado */
+.tableCell:last-child {
+  min-width: 120px;
+  width: 120px;
+}
+
+.monthContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: rgba(248, 250, 252, 0.5);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  transition: all 0.2s ease;
+}
+
+.monthContainer:hover {
+  background: rgba(248, 250, 252, 0.8);
+  border-color: var(--color-tercero);
+  transform: translateY(-1px);
+}
+
+.monthText {
+  flex: 1;
+  color: var(--color-paleta1);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: capitalize;
+}
+
+.editMonthButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.editMonthButton:hover {
+  background: linear-gradient(135deg, rgba(242, 110, 39, 0.1), rgba(242, 110, 39, 0.05));
+  border-color: var(--color-paleta3);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(242, 110, 39, 0.2);
+}
+
+.editMonthIcon {
+  font-size: 1.125rem;
+  color: var(--color-paleta3);
+}
+
+.monthEditContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 0.75rem;
+  border: 2px solid var(--color-tercero);
+  box-shadow: 0 4px 12px rgba(58, 190, 249, 0.15);
+}
+
+.monthSelect {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 0.5rem;
+  background: white;
+  color: var(--color-paleta1);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.monthSelect:focus {
+  outline: none;
+  border-color: var(--color-tercero);
+  box-shadow: 0 0 0 3px rgba(58, 190, 249, 0.1);
+  transform: translateY(-1px);
+}
+
+.monthSelect:hover {
+  border-color: var(--color-tercero);
+  transform: translateY(-1px);
+}
+
+.monthEditActions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.saveMonthButton {
+  background: linear-gradient(135deg, var(--color-paleta4), var(--color-paleta6));
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  box-shadow: 0 4px 12px rgba(24, 150, 70, 0.3);
+}
+
+.saveMonthButton:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(24, 150, 70, 0.4);
+}
+
+.saveMonthButton:disabled {
+  background: linear-gradient(135deg, #9ca3af, #6b7280);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.cancelMonthButton {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.cancelMonthButton:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
 }
 
 @keyframes spin {
@@ -461,5 +762,49 @@
   }
   50% {
     opacity: 0.5;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .tableContainer {
+    width: 100%;
+    margin: 0 1rem;
+  }
+  
+  .tableHeaderCell,
+  .tableCell {
+    padding: 1rem;
+  }
+  
+  .actionsContainer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 0 0.5rem;
+  }
+  
+  .tableContainer {
+    margin: 0 0.5rem;
+    border-radius: 0.75rem;
+  }
+  
+  .tableHeaderCell,
+  .tableCell {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .monthEditContainer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .monthEditActions {
+    justify-content: center;
   }
 } 

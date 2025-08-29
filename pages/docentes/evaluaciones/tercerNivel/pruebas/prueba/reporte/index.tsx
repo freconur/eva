@@ -559,7 +559,7 @@ const Reportes = () => {
                               <td>
                                 
                                 <Link
-                                  href={`/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&idEstudiante=${dir.dni}`}
+                                  href={`/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&idEstudiante=${dir.dni}&mes=${monthSelected}`}
                                 >
                                   {dir.nombresApellidos}
                                 </Link>

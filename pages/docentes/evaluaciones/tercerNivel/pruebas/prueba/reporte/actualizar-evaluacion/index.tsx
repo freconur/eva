@@ -9,7 +9,7 @@ import styles from './actualizarEvaluacion.module.css'
 
 const ActualizarEvaluacion = () => {
   const router = useRouter();
-  const { idExamen, idEstudiante } = router.query;
+  const { idExamen, idEstudiante, mes } = router.query;
   
   const { getEvaluacionEstudiante, updateEvaluacionEstudiante } = useReporteDocente();
   const { getPreguntasRespuestas } = useAgregarEvaluaciones();
@@ -34,7 +34,7 @@ const ActualizarEvaluacion = () => {
   useEffect(() => {
     /* getPreguntasRespuestas(idExamen as string) */
     if(idExamen && idEstudiante)
-    getEvaluacionEstudiante(`${idExamen}`, `${idEstudiante}`, `${currentUserData.dni}`)
+    getEvaluacionEstudiante(`${idExamen}`, `${idEstudiante}`, `${currentUserData.dni}`, `${mes}`)
   },[idExamen, idEstudiante,currentUserData.dni])
 
   // Sincronizar respuestas editables cuando cambie evaluacionEstudiante

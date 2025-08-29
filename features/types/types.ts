@@ -219,7 +219,8 @@ export type Evaluaciones = {
   categoria?: number;
   rol?: number;
   active?:boolean,
-  timestamp?:Date
+  timestamp?:Date,
+  mesDelExamen?:string
 };
 
 export type UserEstudiante = {
@@ -386,7 +387,8 @@ export type Evaluacion = {
   grado?:number,
   categoria?:number,
   active?:boolean,
-  timestamp?:Date
+  timestamp?:Date,
+  mesDelExamen?:string
 }
 
 export type ReporteDocenteIndividual = {

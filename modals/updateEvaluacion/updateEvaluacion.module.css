@@ -172,6 +172,38 @@
   border-color: #a7e6ff;
 }
 
+.inputContainer {
+  margin-bottom: 15px;
+}
+
+.label {
+  color: white;
+  margin-bottom: 8px;
+  display: block;
+  font-weight: 500;
+}
+
+.select {
+  background-color: #121f3d;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid white;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #a7e6ff;
+}
+
+.select option {
+  background-color: #121f3d;
+  color: white;
+}
+
 .buttonDelete {
   background: rgb(228, 35, 115);
   width: 100px;
@@ -182,6 +214,36 @@
   font-size:15px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.buttonDelete:disabled {
+  background: rgb(156, 163, 175);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.buttonDelete:hover:not(:disabled) {
+  color: #20bf6b !important;
+  border-radius: 50px;
+  border-color: #00f7ff !important;
+  transition: all 0.3s ease 0s;
+}
+
+.loaderContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.loaderIcon {
+  animation: spin 1s linear infinite;
+  font-size: 0.875rem;
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  line-height: 1;
 }
 .buttonCrearEvaluacion {
   background: rgb(247, 243, 36);
@@ -353,4 +415,13 @@
   padding: 10px;
   box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
   margin-bottom: 10px;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

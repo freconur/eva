@@ -176,13 +176,14 @@ export const useReporteDocente = () => {
     await updateDoc(docRef, data)
   }
 
-  const getEvaluacionEstudiante = async (idExamen: string, idEstudiante: string, dni: string) => {
+  const getEvaluacionEstudiante = async (idExamen: string, idEstudiante: string, dni: string, mes: string) => {
     /* /usuarios/00000900/HYC6LBERKU3DWgeO9rXL/2025/6/90049381 */
     if(idExamen && idEstudiante){
       console.log('idExamen', idExamen)
       console.log('idEstudiante', idEstudiante)
       console.log('currentUserData.dni', currentUserData.dni)
-      const queryEvaluacion = doc(db, `/usuarios/${dni}/${idExamen}/${currentYear}/${currentMonth}`,`${idEstudiante}`)
+      /* const queryEvaluacion = doc(db, `/usuarios/${dni}/${idExamen}/${currentYear}/${currentMonth}`,`${idEstudiante}`) */
+      const queryEvaluacion = doc(db, `/usuarios/${dni}/${idExamen}/${currentYear}/${mes}`,`${idEstudiante}`)
     /* const docRef = doc(db, "cities", "SF");
 const docSnap = await getDoc(docRef); */
     const evaluacion = await getDoc(queryEvaluacion)

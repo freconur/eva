@@ -396,7 +396,7 @@ const EvaluarEstudiante = () => {
       });
     }
   };
-  
+  console.log('evaluacion', evaluacion)
   return (
     <div className={styles.containerPage}>
       <div className={styles.containerContent}>

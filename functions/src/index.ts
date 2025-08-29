@@ -29,6 +29,8 @@ import {
 
 // Importar la función desde el archivo separado
 import { crearEstudianteDeDocente } from './crearEstudianteDeDocente';
+// Importar la nueva función para frontend
+import { crearEstudianteDeDocenteFrontend } from './crearEstudianteDeDocenteFrontend';
 /* import { Estudiante } from './types'; */
 /* import { Estudiante } from './types'; */
 
@@ -855,6 +857,9 @@ function generarEstadisticasFinales(
 
 // Exportar la función para uso interno
 exports.crearEstudianteDeDocente = crearEstudianteDeDocente;
+
+// Exportar la nueva función para frontend
+exports.crearEstudianteDeDocenteFrontend = crearEstudianteDeDocenteFrontend;
 
 // Configuración global para todas las funciones
 // Nota: setGlobalOptions no está disponible en la versión actual de firebase-functions

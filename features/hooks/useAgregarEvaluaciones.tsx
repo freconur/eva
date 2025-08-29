@@ -113,38 +113,32 @@ const obtenerEstudianteDeEvaluacion = (evaluacion:Evaluacion,seccion:string) => 
 }
 
 
-  const getEvaluaciones = async () => {
+  const getEvaluaciones = () => {
     // let allEvaluaciones: Evaluaciones[] = []
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     const pathRef = collection(db, 'evaluaciones');
     const q = query(pathRef, where('rol', '==', 4));
-    const querySnapshot = await getDocs(q);
-    let allEvaluaciones: Evaluaciones[] = [];
-    // const q2 = query(pathRef, where("rol", "==", 1));
-    // const querySnapshot2 = await getDocs(q2)
-    // querySnapshot2.forEach((doc) => {
-    //   allEvaluaciones.push({ ...doc.data(), id: doc.id })
-    // });
-    const newPromise = new Promise<boolean>((resolve, reject) => {
-      try {
+    
+    // Usar onSnapshot para actualizaciones en tiempo real
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot: QuerySnapshot<DocumentData>) => {
+        let allEvaluaciones: Evaluaciones[] = [];
         querySnapshot.forEach((doc) => {
           allEvaluaciones.push({ ...doc.data(), id: doc.id });
         });
-
-        resolve(true);
-      } catch (error) {
-        console.log('error', error);
-        dispatch({ type: AppAction.LOADER_PAGES, payload: false });
-        reject(false);
-      }
-    });
-
-    newPromise.then((response) => {
-      if (response === true) {
+        
         dispatch({ type: AppAction.EVALUACIONES, payload: allEvaluaciones });
         dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      },
+      (error: Error) => {
+        console.log('Error en getEvaluaciones:', error);
+        dispatch({ type: AppAction.LOADER_PAGES, payload: false });
       }
-    });
+    );
+    
+    // Retornar la función de limpieza para poder desuscribirse
+    return unsubscribe;
   };
 
   const getGrades = async () => {
@@ -244,13 +238,24 @@ const obtenerEstudianteDeEvaluacion = (evaluacion:Evaluacion,seccion:string) => 
     }).then((res) => dispatch({ type: AppAction.LOADER_PAGES, payload: false }));
   };
 
-  const getEvaluacion = async (id: string) => {
+  const getEvaluacion = (id: string) => {
     const docRef = doc(db, 'evaluaciones', `${id}`);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      dispatch({ type: AppAction.EVALUACION, payload: {id: docSnap.id, ...docSnap.data()} });
-    }
+    
+    // Usar onSnapshot para cambios en tiempo real
+    const unsubscribe = onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          dispatch({ type: AppAction.EVALUACION, payload: {id: docSnap.id, ...docSnap.data()} });
+        }
+      },
+      (error: Error) => {
+        console.log('Error al obtener evaluación:', error);
+      }
+    );
+    
+    // Retornar la función de desuscripción para poder limpiar el listener
+    return unsubscribe;
   };
 
   const getPreguntasRespuestas = async (id: string) => {
@@ -354,7 +359,7 @@ const obtenerEstudianteDeEvaluacion = (evaluacion:Evaluacion,seccion:string) => 
     /* const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`); */
     const rutaRef = doc(
       db,
-      `usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${currentMonth}/${data.dni}`
+      `usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${evaluacion.mesDelExamen}/${data.dni}`
     );
 
     await setDoc(rutaRef, {

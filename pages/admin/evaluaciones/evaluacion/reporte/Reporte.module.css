@@ -240,4 +240,69 @@
   .statsContainer {
     flex-direction: column;
   }
+}
+
+/* Estilos para el indicador de progreso de crear estudiantes */
+.progressContainer {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f0f9ff;
+  border: 1px solid #0ea5e9;
+  border-radius: 8px;
+  max-width: 100%;
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background-color: #e0f2fe;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #0ea5e9, #0284c7);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.progressText {
+  font-size: 0.9rem;
+  color: #0c4a6e;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.progressDetails {
+  font-size: 0.8rem;
+  color: #0369a1;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Mensajes de estado */
+.errorMessage {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #fef2f2;
+  border: 1px solid #f87171;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.successMessage {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f0fdf4;
+  border: 1px solid #4ade80;
+  border-radius: 8px;
+  color: #16a34a;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.4;
 } 

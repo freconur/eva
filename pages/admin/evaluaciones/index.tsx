@@ -12,6 +12,8 @@ import { MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff } from 're
 import { RiLoader4Line } from 'react-icons/ri'
 import header from '@/assets/evaluacion-docente.jpg'
 import styles from './evaluaciones.module.css'
+import { getMonthName } from '@/fuctions/dates'
+import { getAllMonths } from '@/fuctions/dates'
 
 const Evaluaciones = () => {
   const { getEvaluaciones, getEvaluacion, updateEvaluacion } = useAgregarEvaluaciones()
@@ -20,6 +22,9 @@ const Evaluaciones = () => {
   const [inputUpdate, setInputUpdate] = useState<boolean>(false)
   const [idEva, setIdEva] = useState<string>("")
   const [nameEva, setNameEva] = useState<string>("")
+  const [editingMonth, setEditingMonth] = useState<boolean>(false)
+  const [editingMonthId, setEditingMonthId] = useState<string>("")
+  const [updatingMonth, setUpdatingMonth] = useState<boolean>(false)
   const handleShowInputUpdate = () => { setInputUpdate(!inputUpdate) }
   const handleShowModalDelete = () => { setShowDelete(!showDelete) }
   const [dataEvaluacion, setDataEvaluacion] = useState(evaluacion)
@@ -28,9 +33,43 @@ const Evaluaciones = () => {
     const updatedEva = { ...eva, active: !eva.active }
     await updateEvaluacion(updatedEva, eva.id)
   }
+
+  const handleEditMonth = (eva: any) => {
+    setEditingMonth(true)
+    setEditingMonthId(eva.id)
+    setDataEvaluacion(eva)
+  }
+  
+  const handleCancelEditMonth = () => {
+    setEditingMonth(false)
+    setEditingMonthId("")
+    setDataEvaluacion(evaluacion)
+  }
+  
+  const handleSaveMonth = async (newMonth: string) => {
+    if (editingMonthId) {
+      setUpdatingMonth(true)
+      const updatedEva = { ...dataEvaluacion, mesDelExamen: newMonth }
+      await updateEvaluacion(updatedEva, editingMonthId)
+      setEditingMonth(false)
+      setEditingMonthId("")
+      setUpdatingMonth(false)
+    }
+  }
   
   useEffect(() => {
-    getEvaluaciones()
+    let unsubscribe: (() => void) | undefined;
+    
+    if (currentUserData.dni) {
+      unsubscribe = getEvaluaciones();
+    }
+    
+    // Cleanup function para desuscribirse cuando el componente se desmonte
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [currentUserData.dni])
 
   return (
@@ -66,6 +105,7 @@ const Evaluaciones = () => {
                   <tr className={styles.tableHeaderRow}>
                     <th className={styles.tableHeaderCell}>#</th>
                     <th className={styles.tableHeaderCell}>nombre de evaluación</th>
+                    <th className={styles.tableHeaderCell}>mes</th>
                     <th className={styles.tableHeaderCell}>estado</th>
                     <th className={styles.tableHeaderCell}>acciones</th>
                   </tr>
@@ -81,8 +121,54 @@ const Evaluaciones = () => {
                         </td>
                         <td className={styles.tableCell}>
                           <Link href={`/admin/evaluaciones/evaluacion/${eva.id}`}>
-                            {eva.nombre}
+                            {eva.nombre?.toUpperCase() || ''}
                           </Link>
+                        </td>
+                        <td className={styles.tableCell}>
+                          {editingMonth && editingMonthId === eva.id ? (
+                            <div className={styles.monthEditContainer}>
+                              <select
+                                className={styles.monthSelect}
+                                value={dataEvaluacion.mesDelExamen || "0"}
+                                onChange={(e) => setDataEvaluacion({...dataEvaluacion, mesDelExamen: e.target.value})}
+                              >
+                                {getAllMonths.map((mes) => (
+                                  <option key={mes.id} value={mes.id.toString()}>
+                                    {mes.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className={styles.monthEditActions}>
+                                <button
+                                  onClick={() => handleSaveMonth(dataEvaluacion.mesDelExamen || "0")}
+                                  className={styles.saveMonthButton}
+                                  title="Guardar mes"
+                                >
+                                  {updatingMonth ? <RiLoader4Line className={styles.loaderIcon} /> : "✓"}
+                                </button>
+                                <button
+                                  onClick={handleCancelEditMonth}
+                                  className={styles.cancelMonthButton}
+                                  title="Cancelar"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className={styles.monthContainer}>
+                              <span className={styles.monthText}>
+                                {getMonthName(Number(eva.mesDelExamen))}
+                              </span>
+                              <button
+                                onClick={() => handleEditMonth(eva)}
+                                className={styles.editMonthButton}
+                                title="Editar mes del examen"
+                              >
+                                <MdEditSquare className={styles.editMonthIcon} />
+                              </button>
+                            </div>
+                          )}
                         </td>
                         <td>
                           {eva.active ? (

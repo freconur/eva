@@ -7,7 +7,7 @@ import { RiLoader4Line } from "react-icons/ri";
 import { usePsicolinguistica } from "@/features/hooks/usePsicolinguistica";
 import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones";
 import { useEffect, useState } from "react";
-
+import { getAllMonths } from "@/fuctions/dates";
 interface Props {
   handleShowInputUpdate: () => void,
   evaluacion: Evaluaciones,
@@ -21,6 +21,8 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
   const [valueInput, setValueInput] = useState<Evaluaciones>(evaluacion)
   // const [valueInput, setValueInput] = useState<Evaluaciones>(initialValue)
   const [nameUpdate, setNameUpdate] = useState(nameEva)
+  const [selectedMonth, setSelectedMonth] = useState<string>(evaluacion.mesDelExamen || "0")
+  const [updating, setUpdating] = useState<boolean>(false)
   let container;
   if (typeof window !== "undefined") {
     container = document.getElementById("portal-modal");
@@ -31,21 +33,32 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
     setValueInput({ ...valueInput, nombre: e.target.value })
   }
 
-  const handleActualizar = () => {
+  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const monthId = e.target.value
+    setSelectedMonth(monthId)
+    setValueInput({ ...valueInput, mesDelExamen: monthId })
+  }
+
+  const handleActualizar = async () => {
     // console.log('nameUpdate', nameUpdate)
     // console.log('valueInput', valueInput)
-    updateEvaluacion({...evaluacion,nombre:valueInput.nombre}, idEva)
-    setValueInput(initialValue)
+    setUpdating(true)
+    try {
+      await updateEvaluacion({...evaluacion, nombre: valueInput.nombre, mesDelExamen: valueInput.mesDelExamen}, idEva)
+      setValueInput(initialValue)
+    } finally {
+      setUpdating(false)
+    }
   }
   useEffect(() => {
     // setValueInput(initialValue)
     getEvaluacion(idEva)
   }, [])
   useEffect(() => {
-    setValueInput({idDocente:valueInput.idDocente, grado:valueInput.grado, nombre:valueInput.nombre, categoria:valueInput.categoria })
+    setValueInput({idDocente:valueInput.idDocente, grado:valueInput.grado, nombre:valueInput.nombre, categoria:valueInput.categoria, mesDelExamen: valueInput.mesDelExamen })
   },[evaluacion.id])
-  // console.log('evaluacion',evaluacion)
-  // console.log('valueInput',valueInput)
+  console.log('evaluacion',evaluacion)
+  console.log('valueInput',valueInput)
   return container
     ? createPortal(
       <div className={styles.containerModal}>
@@ -77,11 +90,40 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
                     onChange={handleChangeInput}
                     placeholder={nameEva}
                   />
+                  
+                  <div className={styles.inputContainer}>
+                    <label className={styles.label}>Mes del examen:</label>
+                    <select
+                      className={styles.select}
+                      value={selectedMonth}
+                      onChange={handleMonthChange}
+                    >
+                      {getAllMonths.map((mes) => (
+                        <option key={mes.id} value={mes.id.toString()}>
+                          {mes.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
                   <p className={styles.tituloBotones}>¿Quieres actualizar esta evaluación?</p>
                   <div className='flex gap-3 justify-center items-center'>
 
                     <button onClick={() => { handleShowInputUpdate(); setValueInput(initialValue) }} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
-                    <button onClick={() => { handleActualizar();handleShowInputUpdate();setValueInput(initialValue) }} className={styles.buttonDelete}>SI</button>
+                    <button 
+                      onClick={() => { handleActualizar();handleShowInputUpdate();setValueInput(initialValue) }} 
+                      className={styles.buttonDelete}
+                      disabled={updating}
+                    >
+                      {updating ? (
+                        <div className={styles.loaderContainer}>
+                          <RiLoader4Line className={styles.loaderIcon} />
+                          <span>Actualizando...</span>
+                        </div>
+                      ) : (
+                        "SI"
+                      )}
+                    </button>
 
                   </div>
 
