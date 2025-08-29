@@ -158,18 +158,20 @@ export const useReporteDocente = () => {
     console.log('data', data)
     
     // Agregar puntaje a cada objeto en respuestas basándose en la coincidencia de order
-    if (data.respuestas && Array.isArray(data.respuestas)) {
-      data.respuestas.forEach((respuesta) => {
-        const puntajeEncontrado = puntajePreguntasMatemticaProgresiva.find(
-          (item) => item.order === respuesta.order
-        );
-        
-        if (puntajeEncontrado) {
-          respuesta.puntaje = String(puntajeEncontrado.puntaje);
-        }
-      });
+    if(idExamen === 'ksor0YefuQFZy1kaWEO3' || idExamen === 'PPnzR009d0GOySiOEiQK') {
+      if (data.respuestas && Array.isArray(data.respuestas)) {
+        data.respuestas.forEach((respuesta) => {
+          const puntajeEncontrado = puntajePreguntasMatemticaProgresiva.find(
+            (item) => item.order === respuesta.order
+          );
+          
+          if (puntajeEncontrado) {
+            respuesta.puntaje = String(puntajeEncontrado.puntaje);
+          }
+        });
+      }
+      console.log('data2', data)
     }
-    console.log('data2', data)
     const docRef = doc(db, `/usuarios/${dni}/${idExamen}/${currentYear}/${currentMonth}`,`${idEstudiante}`)
     await updateDoc(docRef, data)
   }

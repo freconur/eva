@@ -55,9 +55,9 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
     });
 
     if (respuestaCorrecta) {
-      salvarPreguntRespuestaEstudiante(dataForm, id, preguntasRespuestasEstudiante, repuestasCorrectas + 1, sizePreguntas);
+      /* salvarPreguntRespuestaEstudiante(dataForm, id, preguntasRespuestasEstudiante, repuestasCorrectas + 1, sizePreguntas); */
     } else {
-      salvarPreguntRespuestaEstudiante(dataForm, id, preguntasRespuestasEstudiante, repuestasCorrectas, sizePreguntas);
+      /* salvarPreguntRespuestaEstudiante(dataForm, id, preguntasRespuestasEstudiante, repuestasCorrectas, sizePreguntas); */
     }
   }
   const handleSubmitform = handleSubmit(async (data) => {

@@ -38,7 +38,7 @@ const isClient = typeof window !== 'undefined';
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isLocalhost = isClient && window.location.hostname === 'localhost';
 
-/* if ((isDevelopment || isLocalhost) && !emulatorsConnected && isClient) {
+if ((isDevelopment || isLocalhost) && !emulatorsConnected && isClient) {
   console.log('--- CONECTANDO LA APLICACIÓN A LOS EMULADORES DE FIREBASE ---');
 
   try {
@@ -61,7 +61,7 @@ const isLocalhost = isClient && window.location.hostname === 'localhost';
   } catch (error) {
     console.warn('Los emuladores ya están conectados o hay un error:', error);
   }
-} */
+}
 // -------------------------------------------------------------------------
 
 // Exporta las instancias de Firebase para usarlas en tu aplicación

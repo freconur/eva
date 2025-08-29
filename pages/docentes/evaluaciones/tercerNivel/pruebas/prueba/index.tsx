@@ -114,7 +114,7 @@ const Evaluacion = () => {
             <div className="flex gap-3 justify-end">
               {/* <button onClick={handleshowModal} className='bg-green-500 p-3 rounded-md shadow text-white capitalize font-semibold'>agregar preguntas</button> */}
 
-              {resultadoPuntajes.todasValidas ? (
+              {/* {resultadoPuntajes.todasValidas ? (
                 <Link
                   className="border-iconColor border-[1px] p-3 rounded-md shadow text-iconColor hover:bg-iconColor hover:text-white duration-300 hover:duration-300 capitalize font-semibold"
                   href={`prueba/evaluar-estudiante?idExamen=${route.query.idExamen}`}
@@ -128,7 +128,13 @@ const Evaluacion = () => {
                 >
                   evaluar estudiante
                 </button>
-              )}
+              )} */}
+              <Link
+                  className="border-iconColor border-[1px] p-3 rounded-md shadow text-iconColor hover:bg-iconColor hover:text-white duration-300 hover:duration-300 capitalize font-semibold"
+                  href={`prueba/evaluar-estudiante?idExamen=${route.query.idExamen}`}
+                >
+                  evaluar estudiante
+                </Link>
               <div className="bg-colorTercero p-3 rounded-md shadow text-white capitalize font-semibold cursor-pointer hover:bg-colorCuarto hover:text-colorQuinto duration-300 hover:duration-300">
                 <Link href={`prueba/reporte?idExamen=${route.query.idExamen}`}>reporte</Link>
               </div>

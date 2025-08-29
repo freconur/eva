@@ -1,6 +1,6 @@
 export type Estudiante = {
     id?: string;
-    nombresApellidos?: string;
+    nombresApellidos?: string;  
     dni?: string;
     dniDocente?: string;
     respuestasCorrectas?: string;

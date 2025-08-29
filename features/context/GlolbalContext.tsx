@@ -76,7 +76,8 @@ const initialState: AppReducerValues = {
   reporteCCADataEspecialista:[],
   ccDataFilterEspecialista:[],
   evaluacionEstudiante:{},
-  usuarioPorDni:{}
+  usuarioPorDni:{},
+  estudiantesDeEvaluacion:[]
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

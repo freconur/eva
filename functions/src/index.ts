@@ -6,26 +6,31 @@
  *
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+import * as functions from 'firebase-functions';
+import * as admin from 'firebase-admin';
+import { onCall } from 'firebase-functions/v2/https';
+
 admin.initializeApp();
 const db = admin.firestore();
-import { setGlobalOptions } from 'firebase-functions';
-import { onCall } from 'firebase-functions/v2/https';
 // Import removido ya que no se usa en la versión optimizada
-import { 
-  ErrorHandler, 
-  CacheManager, 
-  PerformanceMonitor, 
-  validarDNI, 
+import {
+  ErrorHandler,
+  CacheManager,
+  PerformanceMonitor,
+  validarDNI,
   validarParametrosEntrada,
   manejarPromesa,
   calcularEstadisticasOptimizadas,
   formatearTiempo,
   calcularProgreso,
   generarTrackingId,
-  limpiarParaFirestore
+  limpiarParaFirestore,
 } from './utils';
+
+// Importar la función desde el archivo separado
+import { crearEstudianteDeDocente } from './crearEstudianteDeDocente';
+/* import { Estudiante } from './types'; */
+/* import { Estudiante } from './types'; */
 
 // ==========================================================
 // 1. FUNCIÓN DE PRUEBA SIMPLE
@@ -34,41 +39,131 @@ import {
 /**
  * Función de prueba simple para diagnosticar problemas de autenticación
  */
-exports.testAuth = functions.https.onCall({
-  cors: [
-    'http://localhost:3000',
-    'http://localhost:3001', 
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
-    'https://evaluaciones-ugel.firebaseapp.com',
-    'https://evaluaciones-ugel.web.app'
-  ]
-}, async (data: any, context: any) => {
-  functions.logger.info("🧪 TEST AUTH - Inicio");
-  
-  // Log completo del contexto
-  functions.logger.info("🔍 Contexto completo:", JSON.stringify(context, null, 2));
-  
-  if (!context.auth) {
-    functions.logger.warn("❌ Context.auth es null o undefined");
-    return { 
-      success: false, 
-      error: "No auth context",
-      fullContext: context 
+/* exports.testAuth = functions.https.onCall(
+  {
+    cors: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+      'https://evaluaciones-ugel.firebaseapp.com',
+      'https://evaluaciones-ugel.web.app',
+    ],
+  },
+  async (data: any, context: any) => {
+    functions.logger.info('🧪 TEST AUTH - Inicio');
+
+    // Log completo del contexto
+    functions.logger.info('🔍 Contexto completo:', JSON.stringify(context, null, 2));
+
+    if (!context.auth) {
+      functions.logger.warn('❌ Context.auth es null o undefined');
+      return {
+        success: false,
+        error: 'No auth context',
+        fullContext: context,
+      };
+    }
+
+    functions.logger.info('✅ Context.auth existe:', JSON.stringify(context.auth, null, 2));
+
+    return {
+      success: true,
+      message: 'Autenticación funciona correctamente',
+      auth: context.auth,
+      uid: context.auth.uid,
+      email: context.auth.token?.email,
+      claims: context.auth.token,
     };
   }
-  
-  functions.logger.info("✅ Context.auth existe:", JSON.stringify(context.auth, null, 2));
-  
-  return {
-    success: true,
-    message: "Autenticación funciona correctamente",
-    auth: context.auth,
-    uid: context.auth.uid,
-    email: context.auth.token?.email,
-    claims: context.auth.token
-  };
-});
+); */
+
+// ==========================================================
+// 1.1. ENDPOINT DE TESTING PARA crearEstudianteDeDocente
+// ==========================================================
+
+/**
+ * Endpoint HTTP para testing de la función crearEstudianteDeDocente
+ * Permite probar la función sin necesidad de autenticación
+ */
+/* exports.testCrearEstudianteDeDocente = functions.https.onRequest(
+  async (req: any, res: any) => {
+    // Inicializar monitores y utilidades (adaptado de leerEvaluacionesParaAdmin)
+    const trackingId = generarTrackingId();
+    const errorHandler = ErrorHandler.getInstance();
+    const performanceMonitor = new PerformanceMonitor();
+
+    performanceMonitor.iniciar('funcion_completa');
+
+    functions.logger.info(`🧪 TEST crearEstudianteDeDocente - INICIO - Tracking ID: ${trackingId}`);
+
+    // Configurar CORS para testing
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, POST');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    try {
+      // Extraer parámetros de la request (si los hay)
+      const { dniDocente = '12345678', idEvaluacion = 'test-evaluacion' } = req.body || req.query || {};
+
+      functions.logger.info(`📥 Parámetros de testing:`, {
+        dniDocente,
+        idEvaluacion,
+        timestamp: new Date().toISOString(),
+        trackingId
+      });
+
+      // Validar parámetros básicos
+      if (!dniDocente || !idEvaluacion) {
+        throw new Error('Parámetros dniDocente e idEvaluacion son requeridos para testing');
+      }
+
+      // Llamar a la función interna con parámetros de testing
+      performanceMonitor.iniciar('crearEstudianteDeDocente');
+      
+      const resultado = await crearEstudianteDeDocente(dniDocente, { idEvaluacion }, trackingId);
+      
+      performanceMonitor.finalizar('crearEstudianteDeDocente');
+      performanceMonitor.finalizar('funcion_completa');
+
+      // Generar estadísticas de rendimiento
+      const estadisticas = {
+        tiempoTotal: performanceMonitor.obtenerEstadisticas()['funcion_completa']?.promedio || 0,
+        tiempoProcesamiento: performanceMonitor.obtenerEstadisticas()['crearEstudianteDeDocente']?.promedio || 0,
+        timestamp: new Date().toISOString(),
+        trackingId,
+        parametros: { dniDocente, idEvaluacion }
+      };
+
+      functions.logger.info(`✅ TEST COMPLETADO EXITOSAMENTE - Tracking ID: ${trackingId}`);
+      functions.logger.info(performanceMonitor.generarReporte());
+
+      res.status(200).json({
+        success: true,
+        message: 'Función de testing ejecutada correctamente',
+        resultado: resultado,
+        estadisticas: estadisticas,
+        mode: process.env.FUNCTIONS_EMULATOR === 'true' ? 'development' : 'production',
+        trackingId: trackingId
+      });
+
+    } catch (error: any) {
+      performanceMonitor.finalizar('funcion_completa');
+      errorHandler.registrarError(error, 'test_crearEstudianteDeDocente');
+
+      functions.logger.error(`💥 Error en test crearEstudianteDeDocente - Tracking ID: ${trackingId}:`, error);
+
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+        trackingId: trackingId,
+        mode: process.env.FUNCTIONS_DEVELOPMENT === 'true' ? 'development' : 'production'
+      });
+    }
+  }
+); */
 
 // ==========================================================
 // 2. FUNCIÓN DE LECTURA DE DOCUMENTOS (MODO DESARROLLO)
@@ -87,25 +182,29 @@ const calcularTiempoEstimado = (totalDirectores: number, batchSize: number = 30)
   const OVERHEAD_NETWORK = 500; // 500ms de overhead de red por lote
   const FACTOR_DOCENTES_PROMEDIO = 1.8; // Factor multiplicador por docentes promedio por director
   const FACTOR_EVALUACIONES_PROMEDIO = 1.5; // Factor multiplicador por evaluaciones promedio
-  
+
   // Cálculos
   const totalLotes = Math.ceil(totalDirectores / batchSize);
   const directoresPorLote = Math.min(batchSize, totalDirectores);
-  
+
   // Tiempo estimado por lote considerando paralelismo
-  const tiempoPorLote = TIEMPO_BASE_POR_LOTE + 
-                       (directoresPorLote * TIEMPO_POR_DIRECTOR_EN_LOTE * FACTOR_DOCENTES_PROMEDIO * FACTOR_EVALUACIONES_PROMEDIO) + 
-                       OVERHEAD_NETWORK;
-  
+  const tiempoPorLote =
+    TIEMPO_BASE_POR_LOTE +
+    directoresPorLote *
+      TIEMPO_POR_DIRECTOR_EN_LOTE *
+      FACTOR_DOCENTES_PROMEDIO *
+      FACTOR_EVALUACIONES_PROMEDIO +
+    OVERHEAD_NETWORK;
+
   // Tiempo total estimado
   const tiempoTotalMs = totalLotes * tiempoPorLote;
   const tiempoTotalSegundos = Math.round(tiempoTotalMs / 1000);
-  const tiempoTotalMinutos = Math.round(tiempoTotalSegundos / 60 * 10) / 10; // Redondear a 1 decimal
-  
+  const tiempoTotalMinutos = Math.round((tiempoTotalSegundos / 60) * 10) / 10; // Redondear a 1 decimal
+
   // Clasificación del tiempo
   let clasificacion = '';
   let recomendacion = '';
-  
+
   if (tiempoTotalSegundos < 60) {
     clasificacion = 'RÁPIDO';
     recomendacion = 'Procesamiento rápido esperado';
@@ -119,7 +218,7 @@ const calcularTiempoEstimado = (totalDirectores: number, batchSize: number = 30)
     clasificacion = 'MUY LENTO';
     recomendacion = 'Tiempo crítico - puede exceder timeout de 8 minutos';
   }
-  
+
   return {
     totalDirectores,
     totalLotes,
@@ -135,8 +234,10 @@ const calcularTiempoEstimado = (totalDirectores: number, batchSize: number = 30)
       tiempoPorLoteMs: Math.round(tiempoPorLote),
       tiempoPorLoteSegundos: Math.round(tiempoPorLote / 1000),
       factorParalelismo: `${batchSize} directores por lote`,
-      velocidadProcesamiento: `${Math.round(totalDirectores / tiempoTotalMinutos)} directores/minuto`
-    }
+      velocidadProcesamiento: `${Math.round(
+        totalDirectores / tiempoTotalMinutos
+      )} directores/minuto`,
+    },
   };
 };
 
@@ -144,156 +245,173 @@ const calcularTiempoEstimado = (totalDirectores: number, batchSize: number = 30)
  * Función Callable (invocable) para leer todos los documentos de la colección 'evaluaciones'.
  * VERSIÓN OPTIMIZADA: Con manejo avanzado de errores, caché, monitoreo de rendimiento y validaciones
  */
-exports.leerEvaluacionesParaAdmin = onCall({
-  timeoutSeconds: 540, // 9 minutos
-  memory: '8GiB',
-  cpu: 4,
-  cors: [
-    'http://localhost:3000',
-    'http://localhost:3001', 
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
-    'https://evaluaciones-ugel.firebaseapp.com',
-    'https://evaluaciones-ugel.web.app',
-    'https://eva-rouge-zeta.vercel.app',
-    'https://*.vercel.app'
-  ]
-}, async (request) => {
-  // Inicializar monitores y utilidades
-  const trackingId = generarTrackingId();
-  const errorHandler = ErrorHandler.getInstance();
-  const cacheManager = new CacheManager();
-  const performanceMonitor = new PerformanceMonitor();
-  
-  performanceMonitor.iniciar('funcion_completa');
-  
-  functions.logger.info(`🚀 INICIO de leerEvaluacionesParaAdmin - Tracking ID: ${trackingId}`);
+exports.leerEvaluacionesParaAdmin = onCall(
+  {
+    timeoutSeconds: 540, // 9 minutos
+    memory: '8GiB',
+    cpu: 4,
+    cors: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+      'https://evaluaciones-ugel.firebaseapp.com',
+      'https://evaluaciones-ugel.web.app',
+      'https://eva-rouge-zeta.vercel.app',
+      'https://*.vercel.app',
+    ],
+  },
+  async (request) => {
+    // Inicializar monitores y utilidades
+    const trackingId = generarTrackingId();
+    const errorHandler = ErrorHandler.getInstance();
+    const cacheManager = new CacheManager();
+    const performanceMonitor = new PerformanceMonitor();
 
-  try {
-    // Extraer y validar parámetros
-    const { idEvaluacion, month, filtros, currentYear } = request.data;
-    
-    const validacion = validarParametrosEntrada({ idEvaluacion, month, currentYear, filtros });
-    if (!validacion.valido) {
-      errorHandler.registrarError(new Error(`Parámetros inválidos: ${validacion.errores.join(', ')}`), 'validacion_parametros');
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        `Parámetros inválidos: ${validacion.errores.join(', ')}`
+    performanceMonitor.iniciar('funcion_completa');
+
+    functions.logger.info(`🚀 INICIO de leerEvaluacionesParaAdmin - Tracking ID: ${trackingId}`);
+
+    try {
+      // Extraer y validar parámetros
+      const { idEvaluacion, month, filtros, currentYear } = request.data;
+
+      const validacion = validarParametrosEntrada({ idEvaluacion, month, currentYear, filtros });
+      if (!validacion.valido) {
+        errorHandler.registrarError(
+          new Error(`Parámetros inválidos: ${validacion.errores.join(', ')}`),
+          'validacion_parametros'
+        );
+        throw new functions.https.HttpsError(
+          'invalid-argument',
+          `Parámetros inválidos: ${validacion.errores.join(', ')}`
+        );
+      }
+
+      functions.logger.info(`📥 Parámetros validados:`, {
+        idEvaluacion,
+        month,
+        filtros,
+        currentYear,
+      });
+
+      // Verificar autenticación
+      const isEmulator =
+        process.env.FUNCTIONS_EMULATOR === 'true' || process.env.NODE_ENV === 'development';
+      functions.logger.info(`🔧 Modo emulador: ${isEmulator}`);
+
+      if (!isEmulator) {
+        if (!request.auth) {
+          errorHandler.registrarError(new Error('Usuario no autenticado'), 'autenticacion');
+          throw new functions.https.HttpsError(
+            'unauthenticated',
+            'El usuario debe estar autenticado para acceder a esta función.'
+          );
+        }
+
+        if (!(request.auth.token?.role === 'admin')) {
+          errorHandler.registrarError(
+            new Error(`Usuario no es admin. Role: ${request.auth.token?.role}`),
+            'autorizacion'
+          );
+          throw new functions.https.HttpsError(
+            'permission-denied',
+            'Solo los administradores tienen permiso para leer todas las evaluaciones.'
+          );
+        }
+      }
+
+      performanceMonitor.iniciar('obtener_directores');
+
+      // Obtener directores con manejo de errores
+      //aqui hace el get de los directores junto a ello todas sus validaciones correspondientes
+      const directores = await manejarPromesa(obtenerDirectores(), 'obtener_directores', []);
+
+      performanceMonitor.finalizar('obtener_directores');
+
+      if (directores.length === 0) {
+        functions.logger.warn('⚠️ No se encontraron directores para procesar');
+        return {
+          success: true,
+          message: 'No se encontraron directores para procesar',
+          data: {
+            directores: [],
+            resultados: [],
+            estadisticas: {
+              totalDirectores: 0,
+              tiempoProcesamiento: { ms: 0, segundos: 0, minutos: 0 },
+              estimacionPrevia: null,
+            },
+          },
+          mode: isEmulator ? 'development' : 'production',
+          trackingId,
+        };
+      }
+
+      // Calcular estimación de tiempo
+      const estimacionTiempo = calcularTiempoEstimado(directores.length);
+      functions.logger.info(
+        `⏱️ Estimación de tiempo: ${formatearTiempo(estimacionTiempo.tiempoEstimadoMs)} (${
+          estimacionTiempo.clasificacion
+        })`
       );
-    }
-    
-    functions.logger.info(`📥 Parámetros validados:`, { idEvaluacion, month, filtros, currentYear });
 
-    // Verificar autenticación
-    const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true' || process.env.NODE_ENV === 'development';
-    functions.logger.info(`🔧 Modo emulador: ${isEmulator}`);
+      performanceMonitor.iniciar('procesar_directores');
 
-    if (!isEmulator) {
-      if (!request.auth) {
-        errorHandler.registrarError(new Error('Usuario no autenticado'), 'autenticacion');
-        throw new functions.https.HttpsError(
-          'unauthenticated',
-          'El usuario debe estar autenticado para acceder a esta función.'
-        );
-      }
+      // Procesar directores con todas las optimizaciones
+      const resultadosProcesamiento = await procesarDirectoresOptimizado(
+        directores,
+        idEvaluacion,
+        currentYear,
+        month,
+        cacheManager,
+        errorHandler,
+        performanceMonitor
+      );
 
-      if (!(request.auth.token?.role === 'admin')) {
-        errorHandler.registrarError(new Error(`Usuario no es admin. Role: ${request.auth.token?.role}`), 'autorizacion');
-        throw new functions.https.HttpsError(
-          'permission-denied',
-          'Solo los administradores tienen permiso para leer todas las evaluaciones.'
-        );
-      }
-    }
+      performanceMonitor.finalizar('procesar_directores');
+      performanceMonitor.finalizar('funcion_completa');
 
-    performanceMonitor.iniciar('obtener_directores');
-    
-    // Obtener directores con manejo de errores
-    //aqui hace el get de los directores junto a ello todas sus validaciones correspondientes
-    const directores = await manejarPromesa(
-      obtenerDirectores(),
-      'obtener_directores',
-      []
-    );
-    
-    performanceMonitor.finalizar('obtener_directores');
-    
-    if (directores.length === 0) {
-      functions.logger.warn('⚠️ No se encontraron directores para procesar');
+      // Generar estadísticas finales
+      const estadisticasFinales = generarEstadisticasFinales(
+        resultadosProcesamiento,
+        performanceMonitor,
+        cacheManager,
+        errorHandler,
+        estimacionTiempo
+      );
+
+      functions.logger.info(`✅ PROCESAMIENTO COMPLETADO - Tracking ID: ${trackingId}`);
+      functions.logger.info(performanceMonitor.generarReporte());
+
       return {
         success: true,
-        message: 'No se encontraron directores para procesar',
+        message: `Procesamiento completado: ${resultadosProcesamiento.length} directores procesados`,
         data: {
-          directores: [],
-          resultados: [],
-          estadisticas: {
-            totalDirectores: 0,
-            tiempoProcesamiento: { ms: 0, segundos: 0, minutos: 0 },
-            estimacionPrevia: null
-          }
+          directores,
+          resultados: resultadosProcesamiento,
+          estadisticas: estadisticasFinales,
         },
         mode: isEmulator ? 'development' : 'production',
-        trackingId
+        trackingId,
       };
+    } catch (error: any) {
+      performanceMonitor.finalizar('funcion_completa');
+      errorHandler.registrarError(error, 'funcion_principal');
+
+      functions.logger.error(
+        `💥 Error en leerEvaluacionesParaAdmin - Tracking ID: ${trackingId}:`,
+        error
+      );
+
+      throw new functions.https.HttpsError(
+        'internal',
+        'Error al procesar la solicitud de lectura.',
+        error.message
+      );
     }
-
-    // Calcular estimación de tiempo
-    const estimacionTiempo = calcularTiempoEstimado(directores.length);
-    functions.logger.info(`⏱️ Estimación de tiempo: ${formatearTiempo(estimacionTiempo.tiempoEstimadoMs)} (${estimacionTiempo.clasificacion})`);
-
-    performanceMonitor.iniciar('procesar_directores');
-    
-    // Procesar directores con todas las optimizaciones
-    const resultadosProcesamiento = await procesarDirectoresOptimizado(
-      directores, 
-      idEvaluacion, 
-      currentYear, 
-      month,
-      cacheManager,
-      errorHandler,
-      performanceMonitor
-    );
-    
-    performanceMonitor.finalizar('procesar_directores');
-    performanceMonitor.finalizar('funcion_completa');
-
-    // Generar estadísticas finales
-    const estadisticasFinales = generarEstadisticasFinales(
-      resultadosProcesamiento,
-      performanceMonitor,
-      cacheManager,
-      errorHandler,
-      estimacionTiempo
-    );
-
-    functions.logger.info(`✅ PROCESAMIENTO COMPLETADO - Tracking ID: ${trackingId}`);
-    functions.logger.info(performanceMonitor.generarReporte());
-
-    return {
-      success: true,
-      message: `Procesamiento completado: ${resultadosProcesamiento.length} directores procesados`,
-      data: {
-        directores,
-        resultados: resultadosProcesamiento,
-        estadisticas: estadisticasFinales
-      },
-      mode: isEmulator ? 'development' : 'production',
-      trackingId
-    };
-
-  } catch (error: any) {
-    performanceMonitor.finalizar('funcion_completa');
-    errorHandler.registrarError(error, 'funcion_principal');
-    
-    functions.logger.error(`💥 Error en leerEvaluacionesParaAdmin - Tracking ID: ${trackingId}:`, error);
-    
-    throw new functions.https.HttpsError(
-      'internal',
-      'Error al procesar la solicitud de lectura.',
-      error.message
-    );
   }
-});
+);
 
 // ==========================================================
 // FUNCIONES AUXILIARES OPTIMIZADAS
@@ -312,12 +430,14 @@ async function guardarEvaluacionDirectorSinDocentes(
   try {
     // Validar parámetros de entrada
     if (!validarDNI(dni) || !idEvaluacion || !currentYear || !month) {
-      throw new Error(`Parámetros inválidos: dni=${dni}, idEvaluacion=${idEvaluacion}, year=${currentYear}, month=${month}`);
+      throw new Error(
+        `Parámetros inválidos: dni=${dni}, idEvaluacion=${idEvaluacion}, year=${currentYear}, month=${month}`
+      );
     }
 
     // Obtener datos del director con validación
     const directorDoc = await db.collection('usuarios').doc(dni).get();
-    
+
     if (!directorDoc.exists) {
       functions.logger.warn(`⚠️ Director ${dni} no encontrado en la base de datos`);
       return;
@@ -334,16 +454,21 @@ async function guardarEvaluacionDirectorSinDocentes(
       ...limpiarParaFirestore(directorData),
       reporteEstudiantes: [],
       /* fechaActualizacion: admin.firestore.FieldValue.serverTimestamp(), */
-      estado: 'sin_docentes'
+      estado: 'sin_docentes',
     };
 
     // Guardar en la base de datos
-    await db.collection(`evaluaciones/${idEvaluacion}/${currentYear}-${month}`).doc(dni).set(datosEvaluacion);
-    
-    functions.logger.info(`✅ DIRECTOR SIN DOCENTES GUARDADO - DNI: ${dni}`);
+    await db
+      .collection(`evaluaciones/${idEvaluacion}/${currentYear}-${month}`)
+      .doc(dni)
+      .set(datosEvaluacion);
 
+    functions.logger.info(`✅ DIRECTOR SIN DOCENTES GUARDADO - DNI: ${dni}`);
   } catch (error) {
-    functions.logger.error(`❌ Error al guardar evaluación de director sin docentes ${dni}:`, error);
+    functions.logger.error(
+      `❌ Error al guardar evaluación de director sin docentes ${dni}:`,
+      error
+    );
     // No relanzar el error para no interrumpir el procesamiento de otros directores
   }
 }
@@ -383,7 +508,7 @@ async function procesarDirectoresOptimizado(
   const TIMEOUT_LIMITE = 480000; // 8 minutos
   const BATCH_SIZE = 30;
   const tiempoInicio = Date.now();
-  
+
   const resultados: any[] = [];
   let totalProcesados = 0;
   let totalErrores = 0;
@@ -393,7 +518,9 @@ async function procesarDirectoresOptimizado(
   for (let i = 0; i < directores.length; i += BATCH_SIZE) {
     // Verificar timeout
     if (Date.now() - tiempoInicio > TIMEOUT_LIMITE) {
-      functions.logger.warn(`⚠️ Timeout alcanzado. Procesados ${i}/${directores.length} directores`);
+      functions.logger.warn(
+        `⚠️ Timeout alcanzado. Procesados ${i}/${directores.length} directores`
+      );
       break;
     }
 
@@ -401,15 +528,24 @@ async function procesarDirectoresOptimizado(
     const progreso = calcularProgreso(i, directores.length);
     if (i % (BATCH_SIZE * 5) === 0) {
       const tiempoRestante = Math.round((TIMEOUT_LIMITE - (Date.now() - tiempoInicio)) / 1000);
-      functions.logger.info(`📈 Progreso: ${progreso}% (${i}/${directores.length}) - Tiempo restante: ${tiempoRestante}s`);
+      functions.logger.info(
+        `📈 Progreso: ${progreso}% (${i}/${directores.length}) - Tiempo restante: ${tiempoRestante}s`
+      );
     }
 
     const lote = directores.slice(i, i + BATCH_SIZE);
-    
+
     // Procesar lote con manejo de errores
-    const promesasLote = lote.map(dni => 
+    const promesasLote = lote.map((dni) =>
       manejarPromesa(
-        procesarDirectorOptimizado(dni, idEvaluacion, currentYear, month, cacheManager, performanceMonitor),
+        procesarDirectorOptimizado(
+          dni,
+          idEvaluacion,
+          currentYear,
+          month,
+          cacheManager,
+          performanceMonitor
+        ),
         `procesar_director_${dni}`,
         {
           dni,
@@ -417,13 +553,13 @@ async function procesarDirectoresOptimizado(
           acumuladoPorPregunta: {},
           totalEvaluaciones: 0,
           error: 'Error en procesamiento',
-          tiempoProcesamiento: 0
+          tiempoProcesamiento: 0,
         }
       )
     );
 
     const resultadosLote = await Promise.allSettled(promesasLote);
-    
+
     // Procesar resultados del lote
     for (const resultado of resultadosLote) {
       if (resultado.status === 'fulfilled') {
@@ -460,7 +596,7 @@ async function procesarDirectorOptimizado(
   performanceMonitor: PerformanceMonitor
 ): Promise<any> {
   performanceMonitor.iniciar(`director_${dni}`);
-  
+
   try {
     // Validar DNI
     if (!validarDNI(dni)) {
@@ -469,7 +605,7 @@ async function procesarDirectorOptimizado(
 
     // Obtener docentes con caché
     const docentes = await obtenerDocentesConCache(dni, cacheManager, performanceMonitor);
-    
+
     if (docentes.length === 0) {
       // Director sin docentes - guardar evaluación con array vacío
       const resultadoSinDocentes = {
@@ -477,7 +613,7 @@ async function procesarDirectorOptimizado(
         docentes: [],
         acumuladoPorPregunta: {},
         totalEvaluaciones: 0,
-        tiempoProcesamiento: performanceMonitor.finalizar(`director_${dni}`)
+        tiempoProcesamiento: performanceMonitor.finalizar(`director_${dni}`),
       };
 
       // Optimización: Usar manejarPromesa para operación de base de datos
@@ -492,17 +628,17 @@ async function procesarDirectorOptimizado(
 
     // Obtener evaluaciones de docentes
     const evaluacionesDocentes = await obtenerEvaluacionesDocentes(
-      docentes, 
-      idEvaluacion, 
-      currentYear, 
-      month, 
-      cacheManager, 
+      docentes,
+      idEvaluacion,
+      currentYear,
+      month,
+      cacheManager,
       performanceMonitor
     );
 
     // Calcular estadísticas
     const estadisticas = calcularEstadisticasOptimizadas(evaluacionesDocentes);
-    
+
     // Validar y limpiar estadísticas para Firestore
     if (!estadisticas || !Array.isArray(estadisticas)) {
       functions.logger.warn(`⚠️ Estadísticas inválidas para director ${dni}:`, estadisticas);
@@ -511,18 +647,20 @@ async function procesarDirectorOptimizado(
         docentes: evaluacionesDocentes,
         acumuladoPorPregunta: {},
         totalEvaluaciones: 0,
-        tiempoProcesamiento: performanceMonitor.finalizar(`director_${dni}`)
+        tiempoProcesamiento: performanceMonitor.finalizar(`director_${dni}`),
       };
     }
-    
+
     // Limpiar valores undefined de las estadísticas para Firestore
     const estadisticasLimpias = limpiarParaFirestore(estadisticas);
-    
-    functions.logger.info(`📊 Estadísticas calculadas para director ${dni}: ${estadisticasLimpias.length} preguntas`);
-    
+
+    functions.logger.info(
+      `📊 Estadísticas calculadas para director ${dni}: ${estadisticasLimpias.length} preguntas`
+    );
+
     // Obtener datos del director con validación
     const myDirector = await db.collection('usuarios').doc(dni).get();
-    
+
     // Solo guardar si el director existe
     if (myDirector.exists) {
       try {
@@ -534,14 +672,17 @@ async function procesarDirectorOptimizado(
             docentes: evaluacionesDocentes,
             acumuladoPorPregunta: {},
             totalEvaluaciones: 0,
-            tiempoProcesamiento: performanceMonitor.finalizar(`director_${dni}`)
+            tiempoProcesamiento: performanceMonitor.finalizar(`director_${dni}`),
           };
         }
-        
-        await db.collection(`evaluaciones/${idEvaluacion}/${currentYear}-${month}`).doc(`${dni}`).set({
-          ...directorData,
-          reporteEstudiantes: estadisticasLimpias
-        });
+
+        await db
+          .collection(`evaluaciones/${idEvaluacion}/${currentYear}-${month}`)
+          .doc(`${dni}`)
+          .set({
+            ...directorData,
+            reporteEstudiantes: estadisticasLimpias,
+          });
         functions.logger.info(`✅ Datos guardados para director ${dni}`);
       } catch (error) {
         functions.logger.error(`❌ Error al guardar datos del director ${dni}:`, error);
@@ -550,11 +691,18 @@ async function procesarDirectorOptimizado(
     } else {
       functions.logger.warn(`⚠️ Director ${dni} no encontrado en la base de datos`);
     }
-    const totalEvaluaciones = evaluacionesDocentes.reduce((total, docente) => total + docente.cantidadEvaluaciones, 0);
+    const totalEvaluaciones = evaluacionesDocentes.reduce(
+      (total, docente) => total + docente.cantidadEvaluaciones,
+      0
+    );
 
     const tiempoProcesamiento = performanceMonitor.finalizar(`director_${dni}`);
-    
-    functions.logger.info(`✅ Director ${dni}: ${docentes.length} docentes, ${totalEvaluaciones} evaluaciones, ${estadisticasLimpias.length} preguntas en ${formatearTiempo(tiempoProcesamiento)}`);
+
+    functions.logger.info(
+      `✅ Director ${dni}: ${docentes.length} docentes, ${totalEvaluaciones} evaluaciones, ${
+        estadisticasLimpias.length
+      } preguntas en ${formatearTiempo(tiempoProcesamiento)}`
+    );
 
     return {
       dni,
@@ -564,9 +712,8 @@ async function procesarDirectorOptimizado(
         return acc;
       }, {} as Record<string, any>),
       totalEvaluaciones,
-      tiempoProcesamiento
+      tiempoProcesamiento,
     };
-
   } catch (error) {
     performanceMonitor.finalizar(`director_${dni}`);
     throw error;
@@ -577,12 +724,12 @@ async function procesarDirectorOptimizado(
  * Obtiene docentes de un director con caché
  */
 async function obtenerDocentesConCache(
-  dni: string, 
-  cacheManager: CacheManager, 
+  dni: string,
+  cacheManager: CacheManager,
   performanceMonitor: PerformanceMonitor
 ): Promise<string[]> {
   const cacheKey = `docentes_${dni}`;
-  
+
   // Intentar obtener del caché
   const cached = cacheManager.get<string[]>(cacheKey);
   if (cached) {
@@ -591,10 +738,10 @@ async function obtenerDocentesConCache(
 
   // Obtener de la base de datos
   performanceMonitor.iniciar(`db_docentes_${dni}`);
-  
+
   const queryDocentes = db.collection('usuarios').where('dniDirector', '==', dni);
   const snapshot = await queryDocentes.get();
-  
+
   const docentes: string[] = [];
   snapshot.forEach((doc: any) => {
     const dniDocente = doc.data().dni;
@@ -604,10 +751,10 @@ async function obtenerDocentesConCache(
   });
 
   performanceMonitor.finalizar(`db_docentes_${dni}`);
-  
+
   // Guardar en caché
   cacheManager.set(cacheKey, docentes, 300000); // 5 minutos
-  
+
   return docentes;
 }
 
@@ -624,23 +771,25 @@ async function obtenerEvaluacionesDocentes(
 ): Promise<any[]> {
   const promesas = docentes.map(async (dniDocente) => {
     const cacheKey = `evaluaciones_${dniDocente}_${idEvaluacion}_${currentYear}_${month}`;
-    
+
     // Intentar obtener del caché
     const cached = cacheManager.get<any[]>(cacheKey);
     if (cached) {
       return {
         docente: dniDocente,
         evaluaciones: cached,
-        cantidadEvaluaciones: cached.length
+        cantidadEvaluaciones: cached.length,
       };
     }
 
     // Obtener de la base de datos
     performanceMonitor.iniciar(`db_evaluaciones_${dniDocente}`);
-    
-    const queryEvaluaciones = db.collection(`usuarios/${dniDocente}/${idEvaluacion}/${currentYear}/${month}`);
+
+    const queryEvaluaciones = db.collection(
+      `usuarios/${dniDocente}/${idEvaluacion}/${currentYear}/${month}`
+    );
     const snapshot = await queryEvaluaciones.get();
-    
+
     const evaluaciones: any[] = [];
     snapshot.forEach((doc: any) => {
       const data = doc.data();
@@ -650,14 +799,14 @@ async function obtenerEvaluacionesDocentes(
     });
 
     performanceMonitor.finalizar(`db_evaluaciones_${dniDocente}`);
-    
+
     // Guardar en caché
     cacheManager.set(cacheKey, evaluaciones, 300000); // 5 minutos
-    
+
     return {
       docente: dniDocente,
       evaluaciones,
-      cantidadEvaluaciones: evaluaciones.length
+      cantidadEvaluaciones: evaluaciones.length,
     };
   });
 
@@ -683,79 +832,37 @@ function generarEstadisticasFinales(
     tiempoProcesamiento: {
       ms: tiempoTotal,
       segundos: Math.round(tiempoTotal / 1000),
-      minutos: Math.round(tiempoTotal / 60000 * 10) / 10
+      minutos: Math.round((tiempoTotal / 60000) * 10) / 10,
     },
     estimacionPrevia,
     rendimiento: {
       cache: cacheStats,
       errores: errorStats,
-      metricas: performanceMonitor.obtenerEstadisticas()
-    }
+      metricas: performanceMonitor.obtenerEstadisticas(),
+    },
   };
 }
 
 // ==========================================================
-// 3. FUNCIÓN PARA GENERAR REPORTES
+// 3. FUNCIÓN PARA CREAR ESTUDIANTE DE DOCENTE (OPTIMIZADA)
 // ==========================================================
 
 /**
- * Función Callable para generar reportes consolidados
- * Parámetros esperados en data:
- * - idEvaluacion: string
- * - month: number
- * - filtros: object con filtros opcionales (region, distrito, area, genero, caracteristicaCurricular)
+ * Función interna para crear un estudiante asociado a un docente
+ * Solo usa Firestore - no requiere HTTP
+ * OPTIMIZADA para máximo rendimiento y cumplir límite de 540 segundos
  */
 
+// Exportar la función para uso interno
+exports.crearEstudianteDeDocente = crearEstudianteDeDocente;
 
-// ==========================================================
-// 4. (OPCIONAL) EJEMPLO DE USO CON LA LÓGICA DE GENERACIÓN DE REPORTES
-// ==========================================================
-// Si quisieras que esta lectura de 1500 documentos sea parte de la función
-// que genera los reportes consolidados (performReportGenerationLogic),
-// la integrarías dentro de esa función. Por ejemplo:
+// Configuración global para todas las funciones
+// Nota: setGlobalOptions no está disponible en la versión actual de firebase-functions
+// La configuración se maneja individualmente en cada función
 
-/*
-async function performReportGenerationLogic() {
-    console.log('Iniciando la generación de reportes...');
-
-    // AQUI ES DONDE INTEGRARÍAS LA LECTURA DE 'evaluaciones' SI FUERA NECESARIO PARA TU LÓGICA PRINCIPAL
-    // Actualmente, nuestra función performReportGenerationLogic lee de 'directores'
-    // y luego de 'evaluacionesEstudiantes'.
-    // Si tu reporte general depende directamente de los 1500 documentos en 'evaluaciones',
-    // lo harías así:
-
-    const todasLasEvaluacionesGeneradas = [];
-    const evaluacionesSnapshot = await db.collection('evaluaciones').get();
-    evaluacionesSnapshot.forEach(doc => {
-        todasLasEvaluacionesGeneradas.push({ id: doc.id, ...doc.data() });
-    });
-    console.log(`Lectura inicial de ${todasLasEvaluacionesGeneradas.length} documentos de 'evaluaciones' para el reporte.`);
-
-    // ... A partir de aquí, usarías 'todasLasEvaluacionesGeneradas' para tus cálculos ...
-    // ... el resto de la lógica de tu función performReportGenerationLogic ...
-
-    return { success: true, message: 'Reportes generados incluyendo lectura de evaluaciones.' };
-}
-
-// Y luego, tu generateAdminReportsOnCall o generateAdminReportsScheduled llamarían a performReportGenerationLogic
-*/
-
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
-
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
-
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+// Configuración específica para la función crearEstudianteDeDocente
+/* export const crearEstudianteDeDocenteConfig = {
+  timeoutSeconds: 900, // 15 minutos
+  memory: '2GiB',
+  maxInstances: 5
+}; */
