@@ -1,4 +1,4 @@
-import { Estudiante, LoginData, Region, User } from "../types/types";
+import { Estudiante, LoginData, Region, User } from '../types/types';
 import {
   browserSessionPersistence,
   getAuth,
@@ -6,19 +6,19 @@ import {
   setPersistence,
   signInWithEmailAndPassword,
   signOut,
-} from "firebase/auth";
-import {
-  useGlobalContext,
-  useGlobalContextDispatch,
-} from "../context/GlolbalContext";
+} from 'firebase/auth';
+import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 // import { getFirestore, doc, getDoc } from "firebase/firestore/lite"
-import { AppAction } from "../actions/appAction";
+import { AppAction } from '../actions/appAction';
 
-import { app } from "@/firebase/firebase.config";
-import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
+import { app } from '@/firebase/firebase.config';
+import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
 import {
-  onSnapshot, where, query, getFirestore,
+  onSnapshot,
+  where,
+  query,
+  getFirestore,
   doc,
   getDoc,
   setDoc,
@@ -28,10 +28,10 @@ import {
   updateDoc,
   deleteDoc,
   increment,
-} from "firebase/firestore";
-import { currentYear } from "@/fuctions/dates";
+} from 'firebase/firestore';
+import { currentYear } from '@/fuctions/dates';
 const useUsuario = () => {
-  const URL_API = "https://api-ugel-production.up.railway.app/";
+  const URL_API = 'https://api-ugel-production.up.railway.app/';
   /* const URL_API = "http://localhost:3001/" */
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -39,12 +39,12 @@ const useUsuario = () => {
   const dispatch = useGlobalContextDispatch();
 
   const getUsersDirectores = async () => {
-    console.log('currentUserData', currentUserData)
+    console.log('currentUserData', currentUserData);
     const q = query(
-      collection(db, "usuarios"),
-      where("rol", "==", 2),
-      where("region", "==", Number(currentUserData.region)),
-      orderBy("rol", "asc")
+      collection(db, 'usuarios'),
+      where('rol', '==', 2),
+      where('region', '==', Number(currentUserData.region)),
+      orderBy('rol', 'asc')
     );
     onSnapshot(q, (querysanpshot) => {
       const arryaDirectores: User[] = [];
@@ -66,23 +66,23 @@ const useUsuario = () => {
         payload: arryaDirectores,
       });
     }); */
-  }
+  };
   const getDirectorById = async (dni: string) => {
-    dispatch({ type: AppAction.WARNING_USUARIO_NO_ENCONTRADO, payload: "" });
-    const pathRef = doc(db, "usuarios", `${dni}`);
+    dispatch({ type: AppAction.WARNING_USUARIO_NO_ENCONTRADO, payload: '' });
+    const pathRef = doc(db, 'usuarios', `${dni}`);
     await getDoc(pathRef).then((res) => {
       if (res.exists()) {
         dispatch({ type: AppAction.DATA_DIRECTOR, payload: res.data() });
       } else {
         dispatch({
           type: AppAction.WARNING_USUARIO_NO_ENCONTRADO,
-          payload: "no se encontro usuario prueba con otro dni",
+          payload: 'no se encontro usuario prueba con otro dni',
         });
       }
     });
   };
   const updateDirector = async (dniDirector: string, data: User) => {
-    const pathRef = doc(db, "usuarios", `${dniDirector}`);
+    const pathRef = doc(db, 'usuarios', `${dniDirector}`);
     await updateDoc(pathRef, data).then((res) => {
       getUsersDirectores();
       dispatch({ type: AppAction.DATA_DIRECTOR, payload: {} });
@@ -90,7 +90,7 @@ const useUsuario = () => {
   };
 
   const getUser = async (id: string) => {
-    const refUser = doc(db, "usuarios", id as string);
+    const refUser = doc(db, 'usuarios', id as string);
     const user = await getDoc(refUser);
 
     if (user.exists()) {
@@ -110,13 +110,13 @@ const useUsuario = () => {
         },
       });
     } else {
-      console.log("usuario incorrecto o la contraseña no es valida.");
+      console.log('usuario incorrecto o la contraseña no es valida.');
       dispatch({ type: AppAction.LOADER_LOGIN, payload: false });
     }
   };
 
   const getRegiones = async () => {
-    const regionRef = collection(db, "region");
+    const regionRef = collection(db, 'region');
     const queryRegiones = await getDocs(regionRef);
     const arrayRegiones: Region[] = [];
     queryRegiones.forEach((doc) => {
@@ -127,29 +127,25 @@ const useUsuario = () => {
   };
   const signIn = async (loginData: LoginData) => {
     dispatch({ type: AppAction.LOADER_LOGIN, payload: true });
-    dispatch({ type: AppAction.WARNING_LOGIN, payload: "" });
-    console.log("loginDatad", loginData);
+    dispatch({ type: AppAction.WARNING_LOGIN, payload: '' });
+    console.log('loginDatad', loginData);
     try {
       // return await signInWithEmailAndPassword(auth, loginData.usuario, loginData.contrasena)
       await setPersistence(auth, browserSessionPersistence)
         .then(async () => {
-          return await signInWithEmailAndPassword(
-            auth,
-            loginData.usuario,
-            loginData.contrasena
-          );
+          return await signInWithEmailAndPassword(auth, loginData.usuario, loginData.contrasena);
         })
         .then(async (response) => {
-          console.log("response", response);
-          
+          console.log('response', response);
+
           // Refrescar el token para obtener custom claims actualizados
           try {
             await response.user.getIdToken(true); // Force refresh
-            console.log("Token refrescado con custom claims");
+            console.log('Token refrescado con custom claims');
           } catch (error) {
-            console.warn("Error al refrescar token:", error);
+            console.warn('Error al refrescar token:', error);
           }
-          
+
           getUser(response.user.uid);
         });
       // .catch(Error) {
@@ -158,10 +154,10 @@ const useUsuario = () => {
     } catch (error) {
       dispatch({ type: AppAction.LOADER_LOGIN, payload: false });
       if (error) {
-        console.log("error");
+        console.log('error');
         dispatch({
           type: AppAction.WARNING_LOGIN,
-          payload: "el usuario o contraseña son invalidos",
+          payload: 'el usuario o contraseña son invalidos',
         });
       }
     }
@@ -195,7 +191,7 @@ const useUsuario = () => {
 
       const token = await currentUser.getIdTokenResult(true);
       console.log('Custom claims del usuario:', token.claims);
-      
+
       return token.claims;
     } catch (error) {
       console.error('Error al obtener custom claims:', error);
@@ -214,8 +210,8 @@ const useUsuario = () => {
             dni: `${data.dni}`,
           })
           .then(async (res) => {
-            console.log("res", res);
-            await setDoc(doc(db, "usuarios", `${data.dni}`), {
+            console.log('res', res);
+            await setDoc(doc(db, 'usuarios', `${data.dni}`), {
               dni: `${data.dni}`,
               // institucion: `${data.institucion}`,
               perfil: data.perfil,
@@ -233,15 +229,15 @@ const useUsuario = () => {
           });
       }
     } catch (error) {
-      console.log("error", error);
+      console.log('error', error);
     }
   };
   const createNewDirector = (data: User) => {
-    console.log('data', data)
+    console.log('data', data);
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
       if (currentUserData.perfil?.rol === 1) {
-        console.log("agregando director");
+        console.log('agregando director');
         try {
           axios
             .post(`${URL_API}crear-director`, {
@@ -256,14 +252,14 @@ const useUsuario = () => {
             })
             .then(async (res) => {
               if (res.data.exists === true) {
-                console.log("ya existe el usuario");
+                console.log('ya existe el usuario');
                 dispatch({
                   type: AppAction.WARNING_USUARIO_EXISTE,
                   payload: `${data.dni} ${res.data.warning}`,
                 });
                 dispatch({ type: AppAction.LOADER_PAGES, payload: false });
               } else {
-                console.log("no existe se creara el usuario");
+                console.log('no existe se creara el usuario');
                 const userData: any = {
                   dni: `${data.dni}`,
                   institucion: `${data.institucion}`,
@@ -273,7 +269,7 @@ const useUsuario = () => {
                   apellidos: data.apellidos,
                   region: Number(data.region),
                 };
-                
+
                 // Solo agregar campos opcionales si no son undefined o null
                 if (data.genero !== undefined && data.genero !== null) {
                   userData.genero = data.genero;
@@ -284,22 +280,22 @@ const useUsuario = () => {
                 if (data.rolDirectivo !== undefined && data.rolDirectivo !== null) {
                   userData.rolDirectivo = data.rolDirectivo;
                 }
-                
-                await setDoc(doc(db, "usuarios", `${data.dni}`), userData).then((res) => {
+
+                await setDoc(doc(db, 'usuarios', `${data.dni}`), userData).then((res) => {
                   dispatch({
                     type: AppAction.WARNING_USUARIO_EXISTE,
-                    payload: "",
+                    payload: '',
                   });
                   dispatch({ type: AppAction.LOADER_PAGES, payload: false });
                 });
               }
             });
         } catch (error) {
-          console.log("error", error);
+          console.log('error', error);
         }
       } else if (currentUserData.perfil?.rol === 4) {
-        console.log("agregando director como admin");
-        
+        console.log('agregando director como admin');
+
         try {
           axios
             .post(`${URL_API}crear-director`, {
@@ -315,14 +311,14 @@ const useUsuario = () => {
             })
             .then(async (res) => {
               if (res.data.exists === true) {
-                console.log("ya existe el usuario");
+                console.log('ya existe el usuario');
                 dispatch({
                   type: AppAction.WARNING_USUARIO_EXISTE,
                   payload: `${data.dni} ${res.data.warning}`,
                 });
                 dispatch({ type: AppAction.LOADER_PAGES, payload: false });
               } else {
-                console.log("no existe se creara el usuario");
+                console.log('no existe se creara el usuario');
                 const userData: any = {
                   dni: `${data.dni}`,
                   institucion: `${data.institucion}`,
@@ -332,33 +328,33 @@ const useUsuario = () => {
                   apellidos: data.apellidos,
                   region: Number(data.region),
                 };
-                
+
                 // Solo agregar modular si no es undefined o null
                 if (data.modular !== undefined && data.modular !== null) {
                   userData.modular = data.modular;
                 }
-                
-                await setDoc(doc(db, "usuarios", `${data.dni}`), userData).then((res) => {
+
+                await setDoc(doc(db, 'usuarios', `${data.dni}`), userData).then((res) => {
                   dispatch({
                     type: AppAction.WARNING_USUARIO_EXISTE,
-                    payload: "",
+                    payload: '',
                   });
                   dispatch({ type: AppAction.LOADER_PAGES, payload: false });
                 });
               }
             });
         } catch (error) {
-          console.log("error", error);
+          console.log('error', error);
         }
       }
     } catch (error) {
-      console.log("error", error);
+      console.log('error', error);
     }
   };
 
   const crearNuevoDocente = async (data: User) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
-    console.log("data", data);
+    console.log('data', data);
     try {
       axios
         .post(`${URL_API}crear-docente`, {
@@ -374,15 +370,15 @@ const useUsuario = () => {
         })
         .then(async (res) => {
           if (res.data.exists === true) {
-            console.log("ya existe el usuario");
+            console.log('ya existe el usuario');
             dispatch({
               type: AppAction.WARNING_USUARIO_EXISTE,
               payload: `${data.dni} ${res.data.warning}`,
             });
             dispatch({ type: AppAction.LOADER_PAGES, payload: false });
           } else {
-            console.log("no existe se creara el usuario");
-            await setDoc(doc(db, "usuarios", `${data.dni}`), {
+            console.log('no existe se creara el usuario');
+            await setDoc(doc(db, 'usuarios', `${data.dni}`), {
               dni: `${data.dni}`,
               rol: data.perfil?.rol,
               institucion: currentUserData.institucion,
@@ -395,57 +391,72 @@ const useUsuario = () => {
               secciones: data.secciones,
               genero: data.genero,
             }).then((res) => {
-              dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: "" });
+              dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: '' });
               dispatch({ type: AppAction.LOADER_PAGES, payload: false });
             });
           }
         });
     } catch (error) {
-      console.log("error", error);
+      console.log('error', error);
     }
   };
   const deleteUsuarioById = (idUsuario: string) => {
-    console.log("idUsuario", idUsuario)
+    console.log('idUsuario', idUsuario);
     const newPromise = new Promise<boolean>((resolve, reject) => {
       try {
         axios
-          .post(`${URL_API}borrar-usuario`, { dni: idUsuario }, {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            withCredentials: true, // si usas cookies/sesiones
-          })
+          .post(
+            `${URL_API}borrar-usuario`,
+            { dni: idUsuario },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              withCredentials: true, // si usas cookies/sesiones
+            }
+          )
           .then((res) => {
-            console.log("resDelete", res);
+            console.log('resDelete', res);
             resolve(true);
           });
       } catch (error) {
-        console.log("error", error);
+        console.log('error', error);
         reject(false);
       }
     });
     toast.promise(newPromise, {
-      pending: "Eliminando usuario",
-      success: "Se ha eliminado usuario con exito 👌",
-      error: "Parece que algo fallo, intentalo despues 🤯",
+      pending: 'Eliminando usuario',
+      success: 'Se ha eliminado usuario con exito 👌',
+      error: 'Parece que algo fallo, intentalo despues 🤯',
     });
   };
 
-  const deleteEvaluacionEstudiante = async (idEvaluacion: string, idEstudiante: string, monthSelected: number) => {
-    console.log("idEvaluacion", idEvaluacion) 
-    console.log("idEstudiante", idEstudiante)
-    console.log("monthSelected", monthSelected)
-    const pathRef = doc(db, `/usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${monthSelected}`, idEstudiante)
-    await deleteDoc(pathRef)
-  }
-  const deleteEstudianteById = async (
-    id: string,
-    idExamen: string,
-    estudiantes: Estudiante[]
+  const deleteEvaluacionEstudiante = async (
+    idEvaluacion: string,
+    idEstudiante: string,
+    monthSelected: number
   ) => {
-    dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true })
+    console.log('idEvaluacion', idEvaluacion);
+    console.log('idEstudiante', idEstudiante);
+    console.log('monthSelected', monthSelected);
+    const pathRef = doc(
+      db,
+      `/usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${monthSelected}`,
+      idEstudiante
+    );
+    await deleteDoc(pathRef);
+
+    const pathRefBorrarEstudianteEvaluacion = doc(
+      db,
+      `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${currentYear}/${monthSelected}`,
+      idEstudiante
+    );
+    await deleteDoc(pathRefBorrarEstudianteEvaluacion);
+  };
+  const deleteEstudianteById = async (id: string, idExamen: string, estudiantes: Estudiante[]) => {
+    dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
     const rta = estudiantes.find((es) => es.dni === id);
-    console.log("primero");
+    console.log('primero');
     const newPRomise = new Promise<boolean>((resolve, reject) => {
       try {
         rta?.respuestas?.forEach(async (respuesta) => {
@@ -460,19 +471,19 @@ const useUsuario = () => {
             `/evaluaciones/${idExamen}/${currentUserData.dni}`,
             `${respuesta.order}`
           );
-          const dataValidate = await getDoc(pathValidateRef)
+          const dataValidate = await getDoc(pathValidateRef);
 
           if (respuesta.alternativas?.length === 3) {
             respuesta.alternativas?.map(async (al) => {
-              if (al.selected === true && al.alternativa === "a") {
+              if (al.selected === true && al.alternativa === 'a') {
                 await updateDoc(pathRef, {
                   a: Number(dataValidate.data()?.a) === 0 ? 0 : increment(-1),
                 });
-              } else if (al.selected === true && al.alternativa === "b") {
+              } else if (al.selected === true && al.alternativa === 'b') {
                 await updateDoc(pathRef, {
                   b: Number(dataValidate.data()?.b) === 0 ? 0 : increment(-1),
                 });
-              } else if (al.selected === true && al.alternativa === "c") {
+              } else if (al.selected === true && al.alternativa === 'c') {
                 await updateDoc(pathRef, {
                   c: Number(dataValidate.data()?.c) === 0 ? 0 : increment(-1),
                 });
@@ -482,19 +493,19 @@ const useUsuario = () => {
           //esto es nuevo para mas alternativas
           if (respuesta.alternativas?.length === 4) {
             respuesta.alternativas?.map(async (al) => {
-              if (al.selected === true && al.alternativa === "a") {
+              if (al.selected === true && al.alternativa === 'a') {
                 await updateDoc(pathRef, {
                   a: Number(dataValidate.data()?.a) === 0 ? 0 : increment(-1),
                 });
-              } else if (al.selected === true && al.alternativa === "b") {
+              } else if (al.selected === true && al.alternativa === 'b') {
                 await updateDoc(pathRef, {
                   b: Number(dataValidate.data()?.b) === 0 ? 0 : increment(-1),
                 });
-              } else if (al.selected === true && al.alternativa === "c") {
+              } else if (al.selected === true && al.alternativa === 'c') {
                 await updateDoc(pathRef, {
                   c: Number(dataValidate.data()?.c) === 0 ? 0 : increment(-1),
                 });
-              } else if (al.selected === true && al.alternativa === "d") {
+              } else if (al.selected === true && al.alternativa === 'd') {
                 await updateDoc(pathRef, {
                   d: Number(dataValidate.data()?.d) === 0 ? 0 : increment(-1),
                 });
@@ -503,44 +514,42 @@ const useUsuario = () => {
           }
         });
         resolve(true);
-        console.log("segundo");
+        console.log('segundo');
       } catch (error) {
         reject(false);
       }
     });
     newPRomise.then((res) => {
       if (res === true) {
-        console.log("tercero");
-        console.log("rta estudiante", rta);
+        console.log('tercero');
+        console.log('rta estudiante', rta);
 
         setTimeout(async () => {
-          const pathRef = doc(db, `/usuarios/${currentUserData.dni}/${idExamen}/`, id)
+          const pathRef = doc(db, `/usuarios/${currentUserData.dni}/${idExamen}/`, id);
           await deleteDoc(pathRef);
-          dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false })
-        }, 5000)
+          dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
+        }, 5000);
       }
     });
   };
 
   const getAllEspecialistas = async () => {
-    const pathRef = collection(db, "usuarios")
-    const q = query(pathRef, where("rol", "==", 1));
+    const pathRef = collection(db, 'usuarios');
+    const q = query(pathRef, where('rol', '==', 1));
     onSnapshot(q, (querySnapshot) => {
-      const arrayEspecialistas: User[] = []
+      const arrayEspecialistas: User[] = [];
       querySnapshot.forEach((doc) => {
-        arrayEspecialistas.push(doc.data())
-      })
-      dispatch({ type: AppAction.ALL_ESPECIALISTAS, payload: arrayEspecialistas })
+        arrayEspecialistas.push(doc.data());
+      });
+      dispatch({ type: AppAction.ALL_ESPECIALISTAS, payload: arrayEspecialistas });
     });
-  }
+  };
 
   const updateEspecialista = async (dniEspecialista: string, data: User) => {
-    const pathRef = doc(db, "usuarios", `${dniEspecialista}`);
+    const pathRef = doc(db, 'usuarios', `${dniEspecialista}`);
     await updateDoc(pathRef, data);
     getAllEspecialistas(); // Actualizamos la lista después de modificar
   };
-
-
 
   return {
     getDirectorById,
@@ -558,7 +567,7 @@ const useUsuario = () => {
     getAllEspecialistas,
     updateEspecialista,
     deleteEvaluacionEstudiante,
-    checkCustomClaims
+    checkCustomClaims,
   };
 };
 

@@ -1,0 +1,176 @@
+Oimport React from 'react'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  ArcElement
+} from 'chart.js'
+import { Pie } from 'react-chartjs-2'
+import { GraficoPieChart } from '@/features/types/types'
+import { useGlobalContext } from '@/features/context/GlolbalContext'
+
+// Registrar los componentes necesarios de Chart.js
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  ArcElement
+)
+
+interface PieChartComponentProps {
+  monthSelected: number
+  dataGraficoTendenciaNiveles: GraficoPieChart[]
+}
+  const { loaderDataGraficoPieChart } = useGlobalContext()
+const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieChartComponentProps) => {
+  // Buscar datos del mes seleccionado usando find
+  const datosMesSeleccionado = dataGraficoTendenciaNiveles.find(item => item.mes === monthSelected)
+
+  // Configuración del gráfico de pie
+  const opcionesGraficoPie = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          color: '#333',
+          font: {
+            size: 14
+          },
+          padding: 20
+        }
+      },
+      title: {
+        display: true,
+        text: `Distribución de Estudiantes por Niveles - ${datosMesSeleccionado ? 
+          ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+           'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][monthSelected] || `Mes ${monthSelected}` : 'Sin datos'}`,
+        color: '#333',
+        font: {
+          size: 18
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: '#666',
+        borderWidth: 1,
+        cornerRadius: 8,
+        callbacks: {
+          label: function(context: any) {
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0)
+            const percentage = ((context.parsed / total) * 100).toFixed(1)
+            return `${context.label}: ${context.parsed} estudiantes (${percentage}%)`
+          }
+        }
+      }
+    }
+  }
+
+  // Datos del gráfico de pie para el mes seleccionado
+  const datosChartPie = datosMesSeleccionado ? {
+    labels: datosMesSeleccionado.niveles.map(nivel => {
+      // Capitalizar la primera letra de cada palabra
+      return nivel.nivel.split(' ').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ')
+    }),
+    datasets: [{
+      data: datosMesSeleccionado.niveles.map(nivel => nivel.cantidadDeEstudiantes),
+      backgroundColor: [
+        '#8b5cf6', // Púrpura para Previo al Inicio (nivelPrevioInicio)
+        '#ef4444', // Rojo para En Inicio (nivelEnInicio)
+        '#f59e0b', // Amarillo para En Proceso (nivelEnProceso)
+        '#10b981'  // Verde para Satisfactorio (nivelSatisfactorio)
+      ],
+      borderColor: [
+        '#7c3aed', // Púrpura más oscuro para Previo al Inicio
+        '#dc2626', // Rojo más oscuro para En Inicio
+        '#d97706', // Naranja más oscuro para En Proceso
+        '#059669'  // Verde más oscuro para Satisfactorio
+      ],
+      borderWidth: 2,
+      hoverBackgroundColor: [
+        '#7c3aed', // Púrpura más oscuro para hover Previo al Inicio
+        '#dc2626', // Rojo más oscuro para hover En Inicio
+        '#d97706', // Naranja más oscuro para hover En Proceso
+        '#059669'  // Verde más oscuro para hover Satisfactorio
+      ],
+      hoverBorderColor: [
+        '#8b5cf6', // Púrpura original para hover border Previo al Inicio
+        '#ef4444', // Rojo original para hover border En Inicio
+        '#f59e0b', // Amarillo original para hover border En Proceso
+        '#10b981'  // Verde original para hover border Satisfactorio
+      ],
+      hoverBorderWidth: 3
+    }]
+  } : {
+    labels: ['Sin datos'],
+    datasets: [{
+      data: [1],
+      backgroundColor: ['#E5E7EB'],
+      borderColor: ['#9CA3AF'],
+      borderWidth: 2
+    }]
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-lg p-4">
+      <div className="bg-gray-50 p-3 rounded-lg">
+        <div className="h-80">
+          <Pie data={datosChartPie} options={opcionesGraficoPie} />
+        </div>
+      </div>
+      
+      {/* Estadísticas del mes seleccionado */}
+      {datosMesSeleccionado && (
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+          {datosMesSeleccionado.niveles.map((nivel, index) => {
+            const totalEstudiantes = datosMesSeleccionado.niveles.reduce((sum, n) => sum + n.cantidadDeEstudiantes, 0)
+            const porcentaje = totalEstudiantes > 0 ? ((nivel.cantidadDeEstudiantes / totalEstudiantes) * 100).toFixed(1) : '0.0'
+            
+            const colores = [
+              { bg: 'bg-purple-50', border: 'border-purple-500', text: 'text-purple-800', textValue: 'text-purple-600' }, // Previo al Inicio
+              { bg: 'bg-red-50', border: 'border-red-500', text: 'text-red-800', textValue: 'text-red-600' }, // En Inicio
+              { bg: 'bg-yellow-50', border: 'border-yellow-500', text: 'text-yellow-800', textValue: 'text-yellow-600' }, // En Proceso
+              { bg: 'bg-green-50', border: 'border-green-500', text: 'text-green-800', textValue: 'text-green-600' } // Satisfactorio
+            ]
+            
+            const color = colores[index] || colores[3]
+            
+            return (
+              <div key={nivel.nivel} className={`${color.bg} p-3 rounded-lg border-l-4 ${color.border}`}>
+                <h3 className={`font-medium text-sm ${color.text} mb-1`}>
+                  {nivel.nivel.split(' ').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                  ).join(' ')}
+                </h3>
+                <p className={`text-xl font-bold ${color.textValue} mb-1`}>
+                  {nivel.cantidadDeEstudiantes}
+                </p>
+                <p className={`text-xs ${color.textValue}`}>
+                  {porcentaje}%
+                </p>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default PieChartComponent

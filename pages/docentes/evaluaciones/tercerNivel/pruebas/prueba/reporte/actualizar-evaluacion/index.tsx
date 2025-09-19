@@ -12,8 +12,8 @@ const ActualizarEvaluacion = () => {
   const { idExamen, idEstudiante, mes } = router.query;
   
   const { getEvaluacionEstudiante, updateEvaluacionEstudiante } = useReporteDocente();
-  const { getPreguntasRespuestas } = useAgregarEvaluaciones();
-  const  { evaluacionEstudiante , preguntasRespuestas, currentUserData} = useGlobalContext()
+  const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
+  const  { evaluacionEstudiante , preguntasRespuestas, currentUserData, evaluacion} = useGlobalContext()
   const dispatch = useGlobalContextDispatch()
   
   // Estado local para manejar las respuestas editables
@@ -35,6 +35,7 @@ const ActualizarEvaluacion = () => {
     /* getPreguntasRespuestas(idExamen as string) */
     if(idExamen && idEstudiante)
     getEvaluacionEstudiante(`${idExamen}`, `${idEstudiante}`, `${currentUserData.dni}`, `${mes}`)
+    getEvaluacion(`${idExamen}`)
   },[idExamen, idEstudiante,currentUserData.dni])
 
   // Sincronizar respuestas editables cuando cambie evaluacionEstudiante
@@ -105,7 +106,7 @@ const ActualizarEvaluacion = () => {
       console.log('Respuestas:', respuestasEditables); */
       
       // Actualizar la evaluación del estudiante
-      await updateEvaluacionEstudiante(evaluacionEstudiante, `${idExamen}`, `${idEstudiante}`, `${currentUserData.dni}`);
+      await updateEvaluacionEstudiante(evaluacionEstudiante, `${idExamen}`, `${idEstudiante}`, `${currentUserData.dni}`,evaluacion, `${mes}`);
       
       // Mostrar notificación de éxito
       alert('✅ Los cambios se han guardado correctamente');

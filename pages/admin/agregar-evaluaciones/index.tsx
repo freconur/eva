@@ -9,14 +9,14 @@ import { RiLoader4Line } from 'react-icons/ri'
 
 const AgregarEvaluaciones = () => {
   const initialValues = { evaluacion: "" }
-  const initialValuesForData = { grado: 0, categoria: "", nombreEvaluacion: "" }
+  const initialValuesForData = { grado: 0, categoria: "", nombreEvaluacion: "", tipoDeEvaluacion: "" }
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
   const [showModal, setShowModal] = useState(false)
   const [selectValues, setSelectValues] = useState(initialValuesForData)
   // 
-  const { grados, loaderPages } = useGlobalContext()
+  const { grados, loaderPages, tiposDeEvaluacion } = useGlobalContext()
   const [nombreEvaluacion, setNombreEvaluacion] = useState<{ evaluacion: string }>(initialValues)
-  const { crearEvaluacion, getGrades } = useAgregarEvaluaciones()
+  const { crearEvaluacion, getGrades, getTipoDeEvaluacion } = useAgregarEvaluaciones()
   const handleshowModal = () => {
     setShowModal(!showModal)
   }
@@ -40,6 +40,7 @@ const AgregarEvaluaciones = () => {
   }
   useEffect(() => {
     getGrades()
+    getTipoDeEvaluacion()
   }, [])
 
   console.log('selectValues', selectValues)
@@ -105,12 +106,25 @@ const AgregarEvaluaciones = () => {
 
                   </select>
                 </div>
+                <div className='w-full my-2'>
+                  {/* <p className='text-slate-400 text-sm uppercase'>tipo de evaluación</p> */}
+                  <select name="tipoDeEvaluacion" onChange={handleChangeValues} className='w-full p-3 drop-shadow-lg text-slate-500'>
+                    <option>--TIPO DE EVALUACIÓN--</option>
+                    {
+                      tiposDeEvaluacion?.map((tipo, index) => {
+                        return (
+                          <option key={tipo.value} value={tipo.value}>{tipo.name}</option>
+                        )
+                      })
+                    }
+                  </select>
+                </div>
                 <button
                   disabled={
-                    `${selectValues?.grado}`.length === 1 && selectValues?.categoria?.length === 1 && selectValues.nombreEvaluacion?.length > 3 ? false : true
+                    `${selectValues?.grado}`.length === 1 && selectValues?.categoria?.length === 1 && selectValues.nombreEvaluacion?.length > 3 && selectValues.tipoDeEvaluacion?.length > 0 ? false : true
                   }
                   // onClick={handleshowModal}
-                  className={`cursor-pointer flex justify-center items-center ${`${selectValues.grado}`.length === 1 && selectValues?.categoria?.length === 1 && selectValues.nombreEvaluacion?.length > 3 ? 'bg-blue-500 hover:bg-blue-300' : 'bg-gray-300'}    duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase`}>
+                  className={`cursor-pointer flex justify-center items-center ${`${selectValues.grado}`.length === 1 && selectValues?.categoria?.length === 1 && selectValues.nombreEvaluacion?.length > 3 && selectValues.tipoDeEvaluacion?.length > 0 ? 'bg-blue-500 hover:bg-blue-300' : 'bg-gray-300'}    duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase`}>
                   guardar
                 </button>
               </form>

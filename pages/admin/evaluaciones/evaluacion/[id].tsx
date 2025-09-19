@@ -6,6 +6,7 @@ import AgregarPreguntasRespuestas from '@/modals/agregarPreguntasYRespuestas'
 import EvaluarEstudiante from '@/modals/evaluarEstudiante'
 import UpdatePreguntaRespuesta from '@/modals/updatePreguntaRespuesta'
 import DeletePregunta from '@/modals/deletePregunta'
+import PuntuacionYNivel from '@/modals/PuntuacionYNivel/puntuacionYNivel'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState, useRef, useCallback } from 'react'
@@ -43,6 +44,7 @@ const Evaluacion = () => {
   const [pregunta, setPregunta] = useState({})
   const [showModalUpdatePReguntaRespuesta, setShowModalUpdatePReguntaRespuesta] = useState(false)
   const [showModalDelete, setShowModalDelete] = useState(false)
+  const [showModalPuntuacionYNivel, setShowModalPuntuacionYNivel] = useState(false)
   const [preguntaToDelete, setPreguntaToDelete] = useState({ id: '', order: 0 })
 
   // Hook para mantener la posición de scroll
@@ -69,25 +71,21 @@ const Evaluacion = () => {
     setShowModalDelete(!showModalDelete)
   }
 
+  const handleShowModalPuntuacionYNivel = () => {
+    setShowModalPuntuacionYNivel(!showModalPuntuacionYNivel)
+  }
+
   const handleSelectPregunta = (index: number) => {
     setPregunta(preguntasRespuestas[index])
   }
 
   const handleSelectPreguntaToDelete = (index: number) => {
     const pregunta = preguntasRespuestas[index]
-    console.log('=== SELECCIONAR PREGUNTA PARA ELIMINAR ===')
-    console.log('index:', index)
-    console.log('pregunta completa:', pregunta)
-    console.log('pregunta.id:', pregunta.id)
-    console.log('pregunta.order:', pregunta.order)
-    console.log('typeof pregunta.order:', typeof pregunta.order)
-    
     if (pregunta.id && typeof pregunta.order === 'number') {
       setPreguntaToDelete({
         id: pregunta.id,
         order: pregunta.order
       })
-      console.log('Pregunta seleccionada para eliminar:', { id: pregunta.id, order: pregunta.order })
       handleShowModalDelete()
     } else {
       console.error('Pregunta no tiene ID o order válidos')
@@ -95,10 +93,6 @@ const Evaluacion = () => {
   }
 
   const handleDeletePregunta = async () => {
-    console.log('=== HANDLE DELETE PREGUNTA ===')
-    console.log('route.query.id:', route.query.id)
-    console.log('preguntaToDelete:', preguntaToDelete)
-    
     saveScrollPosition() // Guardar posición antes de eliminar
     await deletePreguntaRespuesta(`${route.query.id}`, preguntaToDelete.id, preguntaToDelete.order)
   }
@@ -131,7 +125,7 @@ const Evaluacion = () => {
     if (route.query.id) {
       getPreguntasRespuestas(`${route.query.id}`)
     }
-  }, [route.query.id])
+  }, [route.query.id, evaluacion.id])
 
   // Restaurar posición de scroll después de que se actualicen las preguntas
   useEffect(() => {
@@ -142,9 +136,6 @@ const Evaluacion = () => {
       }, 100)
     }
   }, [preguntasRespuestas, restoreScrollPosition])
-
-  console.log('currentUserData', currentUserData)
-  console.log('preguntasRespuestas', preguntasRespuestas)
   return (
     <>
       {showModalUpdatePReguntaRespuesta && (
@@ -161,6 +152,16 @@ const Evaluacion = () => {
           idPregunta={preguntaToDelete.id}
           handleShowModalDelete={handleShowModalDelete}
           onDelete={handleDeletePregunta}
+        />
+      )}
+
+      {showModalPuntuacionYNivel && (
+        <PuntuacionYNivel
+          evaluacion={evaluacion}
+          showModal={showModalPuntuacionYNivel}
+          handleShowModal={handleShowModalPuntuacionYNivel}
+          estudiante={null}
+          idExamen={`${route.query.id}`}
         />
       )}
 
@@ -202,6 +203,12 @@ const Evaluacion = () => {
                 
                 seguimiento
               </Link>
+              <button 
+                onClick={handleShowModalPuntuacionYNivel} 
+                className={styles.buttonRangoNivel}
+              >
+                rango de nivel
+              </button>
               {hayPuntajes && currentUserData.rol === 4 && (
                 <div className={styles.totalPuntaje}>
                   <span className={styles.totalLabel}>Puntaje Total: </span>

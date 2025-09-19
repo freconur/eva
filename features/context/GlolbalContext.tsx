@@ -77,7 +77,15 @@ const initialState: AppReducerValues = {
   ccDataFilterEspecialista:[],
   evaluacionEstudiante:{},
   usuarioPorDni:{},
-  estudiantesDeEvaluacion:[]
+  estudiantesDeEvaluacion:[],
+  dataGraficoTendencia:[],
+  dataGraficoTendenciaNiveles:[], 
+  dataEstadisticaEvaluacion:[],
+  loaderGraficos:false,
+  loaderReportePorPregunta:false,
+  tiposDeEvaluacion:[],
+  dataGraficoPieChart:[],
+  loaderDataGraficoPieChart:false
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

@@ -11,7 +11,7 @@ export type AppReducerValues = {
   preguntasRespuestasEstudiante: PreguntasRespuestas[];
   preguntasRespuestasEstudianteInitialValue: PreguntasRespuestas[];
   directores: User[];
-  estudiantes: Estudiante[];
+  estudiantes: Estudiante[] | UserEstudiante[];
   docentesDeDirectores: User[];
   dataEstadisticas: DataEstadisticas[];
   reporteDirector: DataEstadisticas[];
@@ -73,7 +73,15 @@ export type AppReducerValues = {
   ccDataFilterEspecialista:ResultadosAcumuladosCC[],
   evaluacionEstudiante:UserEstudiante,
   usuarioPorDni:User,
-  estudiantesDeEvaluacion:UserEstudiante[]
+  estudiantesDeEvaluacion:UserEstudiante[],
+  dataGraficoTendencia:DataGraficoTendencia[],
+  dataGraficoTendenciaNiveles:GraficoTendenciaNiveles[],
+  dataEstadisticaEvaluacion:DataEstadisticas[],
+  loaderGraficos:boolean,
+  loaderReportePorPregunta:boolean,
+  tiposDeEvaluacion:TipoDeEvaluacion[],
+  dataGraficoPieChart:GraficoPieChart[],
+  loaderDataGraficoPieChart:boolean
 };
 
 export type AppActions =
@@ -94,7 +102,7 @@ export type AppActions =
       payload: PreguntasRespuestas[];
     }
   | { type: AppAction.DIRECTORES; payload: User[] }
-  | { type: AppAction.ESTUDIANTES; payload: Estudiante[] }
+  | { type: AppAction.ESTUDIANTES; payload: Estudiante[] | UserEstudiante[]}
   | { type: AppAction.DOCENTES_DIRECTORES; payload: User[] }
   | { type: AppAction.DATA_ESTADISTICAS; payload: DataEstadisticas[] }
   | { type: AppAction.REPORTE_DIRECTOR; payload: DataEstadisticas[] }
@@ -161,7 +169,15 @@ export type AppActions =
   | { type: AppAction.CC_DATA_FILTER_ESPECIALISTA; payload:ResultadosAcumuladosCC[]}
   | { type: AppAction.EVALUACION_ESTUDIANTE; payload:UserEstudiante}
   | { type: AppAction.USUARIO_POR_DNI; payload: User }
-  | { type: AppAction.ESTUDIANTES_DE_EVALUACION; payload: UserEstudiante[] }
+  | { type: AppAction.ESTUDIANTES_DE_EVALUACION; payload: UserEstudiante[]}
+  | { type: AppAction.DATA_GRAFICO_TENDENCIA; payload: DataGraficoTendencia[] }
+  | { type: AppAction.DATA_GRAFICO_TENDENCIA_NIVELES; payload: GraficoTendenciaNiveles[] }
+  | { type: AppAction.DATA_ESTADISTICA_EVALUACION; payload: DataEstadisticas[] }
+  | { type: AppAction.LOADER_GRAFICOS; payload: boolean }
+  | { type: AppAction.LOADER_REPORTE_POR_PREGUNTA; payload: boolean }
+  | { type: AppAction.TIPOS_DE_EVALUACION; payload: TipoDeEvaluacion[] }
+  | { type: AppAction.DATA_GRAFICO_PIE_CHART; payload: GraficoPieChart[] }
+  | { type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART; payload: boolean }
 export type LoginData = {
   usuario: string;
   contrasena: string;
@@ -220,33 +236,46 @@ export type Evaluaciones = {
   rol?: number;
   active?:boolean,
   timestamp?:Date,
-  mesDelExamen?:string
-};
+  mesDelExamen?:string,
+  tipoEvaluacion?:string,
+  tipoDeEvaluacion?:string,
+  nivelYPuntaje?:NivelYPuntaje[],
 
+};
+export type Evaluacion = {
+  id?:string,
+  nombre?:string,
+  grado?:number,
+  rol?: number,
+  categoria?:number,
+  active?:boolean,
+  timestamp?:Date,
+  mesDelExamen?:string,
+  tipoSDeEvaluacion?:TipoDeEvaluacion[],
+  tipoEvaluacion?:string,
+  tipoDeEvaluacion?:string
+  nivelYPuntaje?:NivelYPuntaje[],
+  idDocente?: string;
+}
 export type UserEstudiante = {
   id?: string;
   nombresApellidos?: string;
   dni?: string;
   dniDocente?: string;
-  respuestasCorrectas?: string;
-  totalPreguntas?: string;
+  respuestasCorrectas?: number;
+  totalPreguntas?: number;
   grado?: number | string;
   seccion?: string;
   genero?: string;
   nivel?: string;
+  nivelData?: NivelYPuntaje;
   puntaje?: number;
-  respuestas?: {
-    id?: string;
-    order?: number;
-    pregunta?: string;
-    respuesta?: string;
-    alternativas?: Alternativa[];
-    preguntaDocente?: string;
-    puntaje?: string;
-  }[];
+  respuestas?: PreguntasRespuestas[];
+  respuestasIncorrectas?: number;
 };
 
 export type Estudiante = {
+  id?:string
   respuestas?: PreguntasRespuestas[];
   dni?: string;
   nombresApellidos?: string;
@@ -256,6 +285,10 @@ export type Estudiante = {
   respuestasIncorrectas?: number;
   puntaje?: number;
   nivel?: string;
+  nivelData?: NivelYPuntaje;
+  grado?: number | string;
+  seccion?: string;
+  genero?: string;
 };
 export type User = {
   nombres?: string;
@@ -336,6 +369,8 @@ export type CreaEvaluacion = {
   grado?: number;
   categoria?: string;
   nombreEvaluacion?: string;
+  tipoEvaluacion?: string;
+  tipoDeEvaluacion?: string;
 };
 
 export type respuestaPsicolinguistica = {
@@ -381,16 +416,18 @@ export type DataEvaluacion = {
   categoria?:string,
 }
 
-export type Evaluacion = {
-  id?:string,
-  nombre?:string,
-  grado?:number,
-  categoria?:number,
-  active?:boolean,
-  timestamp?:Date,
-  mesDelExamen?:string
-}
 
+export type NivelYPuntaje = {
+  nivel?:string,
+  max?:number,
+  min?:number,
+  color?:string,
+  id?:number,
+}
+export type TipoDeEvaluacion = {
+  name?:string,
+  value?:string,
+}
 export type ReporteDocenteIndividual = {
   calificacion?:number,
   dni?:string,
@@ -479,4 +516,27 @@ export type EstandaresCurriculares = {
   name?:string
 }
 
+export type DataGraficoTendencia = {
+  mes: number,
+  puntajeMedia: number
+}
 
+export type GraficoTendenciaNiveles = {
+  mes: number,
+  niveles: {
+    id?:number,
+    nivel: string,
+    color?:string,
+    cantidadDeEstudiantes: number
+  }[],
+}
+
+export type GraficoPieChart = {
+  mes: number,
+  niveles: {
+    color?:string,
+    id?:number,
+    nivel: string,
+    cantidadDeEstudiantes: number
+  }[],
+}

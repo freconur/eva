@@ -125,9 +125,9 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
               </div>
               :
               <>
-                <div className={styles.closeModalContainer}>
+                {/* <div className={styles.closeModalContainer}>
                   <div className={styles.close} onClick={() => { handleShowModalUpdatePreguntaRespuesta(); setValueInput(initialValue) }} >cerrar</div>
-                </div>
+                </div> */}
                 <h3 className={styles.title}>Editar pregunta</h3>
                 <div>
                   {/* <h3 className="text-xl text-white">{valueInput.pregunta}</h3> */}

@@ -4,6 +4,46 @@ import { AppActions, AppReducerValues } from "../types/types";
 
 export const appReducer = (state: AppReducerValues, action: AppActions) => {
   switch (action.type) { 
+    case AppAction.LOADER_DATA_GRAFICO_PIE_CHART:
+      return {
+        ...state,
+        loaderDataGraficoPieChart: action.payload
+      }
+    case AppAction.DATA_GRAFICO_PIE_CHART:
+      return {
+        ...state,
+        dataGraficoPieChart: action.payload
+      }
+    case AppAction.TIPOS_DE_EVALUACION:
+      return {
+        ...state,
+        tiposDeEvaluacion: action.payload
+      }
+    case AppAction.LOADER_REPORTE_POR_PREGUNTA:
+      return {
+        ...state,
+        loaderReportePorPregunta: action.payload
+      }
+    case AppAction.LOADER_GRAFICOS:
+      return {
+        ...state,
+        loaderGraficos: action.payload
+      }
+    case AppAction.DATA_ESTADISTICA_EVALUACION:
+      return {
+        ...state,
+        dataEstadisticaEvaluacion: action.payload
+      }
+    case AppAction.DATA_GRAFICO_TENDENCIA_NIVELES:
+      return {
+        ...state,
+        dataGraficoTendenciaNiveles: action.payload
+      }
+    case AppAction.DATA_GRAFICO_TENDENCIA:
+      return {
+        ...state,
+        dataGraficoTendencia: action.payload
+      }
     case AppAction.ESTUDIANTES_DE_EVALUACION:
       return {
         ...state,

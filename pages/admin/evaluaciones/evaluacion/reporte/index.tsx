@@ -36,6 +36,9 @@ import { distritosPuno } from '@/fuctions/provinciasPuno';
 import { exportDirectorDocenteDataToExcel } from '@/features/utils/excelExport';
 import { useGenerarReporte } from '@/features/hooks/useGenerarReporte';
 import { useCrearEstudiantesDeDocente } from '@/features/hooks/useCrearEstudiantesDeDocente';
+import AcordeonGraficosTendencia from './AcordeonGraficosTendencia';
+import AcordeonReportePregunta from './AcordeonReportePregunta';
+import PieChartComponent from './PieChartComponent';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -70,6 +73,18 @@ const Reporte = () => {
     obtenerMensajeResumen,
     obtenerEstadisticas
   } = useCrearEstudiantesDeDocente();
+
+  const [rangoMes, setRangoMes] = useState<number[]>([]);
+
+  // Callback para manejar cambios en el rango
+  const handleRangoChange = (mesInicio: number, mesFin: number, año: number, mesesIds: number[]) => {
+    console.log('Rango cambiado:', { mesInicio, mesFin, año, mesesIds });
+    setRangoMes(mesesIds);
+  };
+
+  // Verificar cuando cambie rangoMes
+ 
+
 
   useEffect(() => {
     if (filtros.region) {
@@ -166,6 +181,11 @@ const Reporte = () => {
     getAllReporteDeDirectores,
     reporteParaTablaDeEspecialista,
     reporteEspecialistaDeEstudiantes,
+    getDataParaGraficoTendencia,
+    getEstadisticaGlobal,
+    getAllReporteDeDirectoreToAdmin,
+    getDataGraficoPieChart,
+    restablecerFiltrosDeEspecialista
   } = useReporteEspecialistas();
   const {
     currentUserData,
@@ -176,8 +196,11 @@ const Reporte = () => {
     dataFiltradaDirectorTabla,
     allEvaluacionesEstudiantes,
     allEvaluacionesDirectorDocente,
+    dataEstadisticaEvaluacion,
+    evaluacion,
+    dataGraficoTendenciaNiveles,
   } = useGlobalContext();
-  const { getPreguntasRespuestas } = useAgregarEvaluaciones();
+  const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
   const { generarReporte, loading: loadingGenerarReporte } = useGenerarReporte();
   const [showTable, setShowTable] = useState(false);
   const route = useRouter();
@@ -199,13 +222,13 @@ const Reporte = () => {
     return map;
   }, [preguntasOrdenadas]);
 
-  // Ordenar reporteDirector por el order de las preguntas correspondientes
-  const reporteDirectorOrdenado = useMemo(() => {
-    if (!reporteDirector || !preguntasOrdenadas.length) return reporteDirector;
+  // Ordenar dataEstadisticaEvaluacion por el order de las preguntas correspondientes
+  const dataEstadisticaEvaluacionOrdenada = useMemo(() => {
+    if (!dataEstadisticaEvaluacion || dataEstadisticaEvaluacion.length === 0 || !preguntasOrdenadas.length) return [];
 
     // Crear un mapa de estadísticas por ID de pregunta
     const estadisticasMap = new Map<string, any>();
-    reporteDirector.forEach((stat) => {
+    dataEstadisticaEvaluacion.forEach((stat) => {
       if (stat.id) {
         estadisticasMap.set(stat.id, stat);
       }
@@ -230,11 +253,12 @@ const Reporte = () => {
     });
 
     return reporteSincronizado;
-  }, [reporteDirector, preguntasOrdenadas]);
+  }, [dataEstadisticaEvaluacion, preguntasOrdenadas]);
 
   useEffect(() => {
     //me trae las preguntas y respuestas para los graficos
     getPreguntasRespuestas(`${route.query.idEvaluacion}`);
+    getEvaluacion(`${route.query.idEvaluacion}`);
   }, [currentUserData.dni, route.query.idEvaluacion]);
 
   const handleShowTable = () => {
@@ -251,16 +275,21 @@ const Reporte = () => {
         caracteristicaCurricular: filtros.caracteristicaCurricular,
         distrito: filtros.distrito,
       },
-      `${route.query.id}`,
+      monthSelected,
       `${route.query.idEvaluacion}`
     );
   };
   useEffect(() => {
-    reporteEspecialistaDeEstudiantes(`${route.query.idEvaluacion}`, monthSelected, currentUserData);
+    getDataGraficoPieChart(`${route.query.idEvaluacion}`, monthSelected);
+    getEstadisticaGlobal(`${route.query.idEvaluacion}`, monthSelected);
     /* currentUserData.dni && reporteDirectorEstudiantes(`${route.query.idEvaluacion}`,monthSelected,currentUserData) */
     /* reporteDirectorData(`${route.query.id}`, `${route.query.idEvaluacion}`) */
-  }, [route.query.id, route.query.idEvaluacion, currentUserData.dni]);
+  }, [route.query.id, route.query.idEvaluacion, currentUserData.dni, monthSelected]);
 
+
+  const handleRestablecerFiltros = () => {
+    restablecerFiltrosDeEspecialista(`${route.query.idEvaluacion}`, monthSelected);
+  }
   // Función optimizada para renderizar pregunta usando el mapa
   const iterarPregunta = useCallback(
     (idPregunta: string) => {
@@ -318,32 +347,40 @@ const Reporte = () => {
   };
 
   useEffect(() => {
-    reporteEspecialistaDeEstudiantes(`${route.query.idEvaluacion}`, monthSelected, currentUserData);
+    /* reporteEspecialistaDeEstudiantes(`${route.query.idEvaluacion}`, monthSelected, currentUserData); */
     /* reporteDirectorEstudiantes(`${route.query.idEvaluacion}`, monthSelected, currentUserData) */
   }, [monthSelected]);
 
-  /* console.log('preguntasRespuestas', preguntasRespuestas) */
-  /* console.log('reporteDirector', reporteDirector) */
-  console.log('preguntasRespuestas', preguntasRespuestas.length);
-  console.log('reporteDirector original', reporteDirector?.length || 0);
-  console.log('reporteDirectorOrdenado sincronizado', reporteDirectorOrdenado?.length || 0);
+  
+  
 
   // Función para exportar datos a Excel
   const handleExportToExcel = async () => {
-    if (!allEvaluacionesDirectorDocente || allEvaluacionesDirectorDocente.length === 0) {
-      alert('No hay datos disponibles para exportar');
+    // Mostrar confirmación antes de proceder
+    const confirmacion = window.confirm(
+      '¿Deseas generar un archivo Excel con los datos de las evaluaciones?\n\n' +
+      'Esta acción descargará un archivo con todos los datos disponibles.'
+    );
+
+    if (!confirmacion) {
       return;
     }
 
     setLoadingExport(true);
+    
     try {
-      // Agregar un pequeño delay para mostrar el loading
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const resultado = await getAllReporteDeDirectoreToAdmin(`${route.query.idEvaluacion}`, monthSelected);
+      console.log('Resultado de reporteEspecialistaDeEstudiantes:', resultado);
+      
+      if (!resultado || resultado.length === 0) {
+        alert('No hay datos disponibles para exportar');
+        return;
+      }
 
       const fileName = `evaluaciones_director_docente_${
         new Date().toISOString().split('T')[0]
       }.xlsx`;
-      exportDirectorDocenteDataToExcel(allEvaluacionesDirectorDocente, fileName);
+      exportDirectorDocenteDataToExcel(resultado, fileName);
 
       // Mostrar mensaje de éxito
       alert('Archivo Excel exportado exitosamente');
@@ -422,7 +459,7 @@ const Reporte = () => {
     }
   };
 
-  console.log('monthSelected', monthSelected);
+  
   return (
     <>
       {loaderReporteDirector ? (
@@ -519,20 +556,12 @@ const Reporte = () => {
                 </option>
               ))}
             </select>
-            {/* <select
-                    className={styles.select}
-                    onChange={handleChangeFiltros}
-                    name="orden"
-                    id="">
-                    <option value="">ordernar por</option>
-                    {ordernarAscDsc.map((orden) => (
-                      <option key={orden.id} value={orden.name}>
-                        {orden.name}
-                      </option>
-                    ))}
-                  </select> */}
+           
             <button className={styles.filterButton} onClick={handleFiltrar}>
               Filtrar
+            </button>
+            <button className={styles.filterButton} onClick={handleRestablecerFiltros}>
+              restablecer
             </button>
           </div>
 
@@ -554,11 +583,7 @@ const Reporte = () => {
             <button
               className={styles.exportButton}
               onClick={handleExportToExcel}
-              disabled={
-                loadingExport ||
-                !allEvaluacionesDirectorDocente ||
-                allEvaluacionesDirectorDocente.length === 0
-              }
+              disabled={loadingExport}
             >
               {loadingExport ? (
                 <>
@@ -623,51 +648,40 @@ const Reporte = () => {
             )}
           </div>
 
-          <div className={styles.reportContainer}>
-            <h1 className={styles.reportTitle}>reporte de evaluación</h1>
-            <div>
-              <div>
-                {reporteDirectorOrdenado?.map((dat: DataEstadisticas, index: number) => {
-                  // Encontrar la pregunta correspondiente por su id
-                  const preguntaCorrespondiente = preguntasMap.get(dat.id || '');
+          {/* Componente de gráfico pie chart */}
+          {
+            evaluacion.tipoDeEvaluacion === '1' ? (
+              <PieChartComponent 
+                monthSelected={monthSelected}
+                dataGraficoTendenciaNiveles={dataGraficoTendenciaNiveles}
+              />
 
-                  return (
-                    <div key={index} className={styles.questionContainer}>
-                      {index + 1}.{iterarPregunta(dat.id || '')}
-                      <div className={styles.chartContainer}>
-                        <div className={styles.chartWrapper}>
-                          <Bar
-                            className={styles.chart}
-                            options={options}
-                            data={iterateData(dat, obtenerRespuestaPorId(dat.id || ''))}
-                          />
-                        </div>
-                        <div className={styles.statsContainer}>
-                          {Object.entries(dat)
-                            .filter(([key]) => key !== 'id' && key !== 'total')
-                            .map(([key, value]) => (
-                              <p key={key}>
-                                {key}: {value} |{' '}
-                                {dat.total === 0
-                                  ? 0
-                                  : ((100 * Number(value)) / Number(dat.total)).toFixed(0)}
-                                %
-                              </p>
-                            ))}
-                        </div>
-                        <div className={styles.answerContainer}>
-                          respuesta:
-                          <span className={styles.answerText}>
-                            {obtenerRespuestaPorId(dat.id || '')}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+            ) : null
+          }
+
+          {/* Componente de acordeón para gráficos de tendencia */}
+
+          {
+            evaluacion.tipoDeEvaluacion === '1' ? (
+              <AcordeonGraficosTendencia
+                rangoMes={rangoMes}
+                monthSelected={monthSelected}
+                setRangoMes={setRangoMes}
+                onRangoChange={handleRangoChange}
+                idEvaluacion={`${route.query.idEvaluacion}`}
+              />
+            )
+            : null
+          }
+          {/* Componente de acordeón para reporte por pregunta */}
+          <AcordeonReportePregunta
+            reporteDirectorOrdenado={dataEstadisticaEvaluacionOrdenada}
+            preguntasMap={preguntasMap}
+            iterarPregunta={iterarPregunta}
+            obtenerRespuestaPorId={obtenerRespuestaPorId}
+            iterateData={iterateData}
+            options={options}
+          />
         </div>
       )}
     </>

@@ -27,98 +27,132 @@ import {
   Evaluacion,
   Evaluaciones,
   Grades,
+  NivelYPuntaje,
   PreguntasRespuestas,
+  TipoDeEvaluacion,
   User,
   UserEstudiante,
 } from '../types/types';
 import { currentMonth, currentYear } from '@/fuctions/dates';
+import { calculoNivel } from '../utils/calculoNivel';
 
 export const useAgregarEvaluaciones = () => {
   const dispatch = useGlobalContextDispatch();
   const { currentUserData } = useGlobalContext();
   const db = getFirestore();
 
+  const getTipoDeEvaluacion = async () => {
+    const docRef = doc(db, 'options', 'tipos-de-evaluacion');
+    const docSnap = await getDoc(docRef);
 
-const obtenerEstudianteDeEvaluacion = (evaluacion:Evaluacion,seccion:string) => {
-  console.log('test estamos dentro de obtenerEstudianteDeEvaluacion')
-  console.log(`/usuarios/${currentUserData.dni}/${evaluacion.id}/${currentYear}/${currentMonth}`);
-  console.log(`/usuarios/${currentUserData.dni}/estudiantes-docentes`);
-  const rutaEstudiantesEvaluados = collection(db, `/usuarios/${currentUserData.dni}/${evaluacion.id}/${currentYear}/${currentMonth}/`);
-  const rutaEstudiantesRef = collection(db, `/usuarios/${currentUserData.dni}/estudiantes-docentes/`);
+    if (docSnap.exists()) {
+      try {
+        dispatch({
+          type: AppAction.TIPOS_DE_EVALUACION,
+          payload: docSnap.data().tiposDeEvaluacion as TipoDeEvaluacion[],
+        });
+      } catch (error) {
+        console.log('error', error);
+      } finally {
+      }
+    }
+  };
+  const obtenerEstudianteDeEvaluacion = (
+    evaluacion: Evaluacion,
+    seccion: string,
+    month: string
+  ) => {
+    console.log('test estamos dentro de obtenerEstudianteDeEvaluacion');
+    console.log(`/usuarios/${currentUserData.dni}/${evaluacion.id}/${currentYear}/${currentMonth}`);
+    console.log(`/usuarios/${currentUserData.dni}/estudiantes-docentes`);
+    const rutaEstudiantesEvaluados = collection(
+      db,
+      `/usuarios/${currentUserData.dni}/${evaluacion.id}/${currentYear}/${month}/`
+    );
+    const rutaEstudiantesRef = collection(
+      db,
+      `/usuarios/${currentUserData.dni}/estudiantes-docentes/`
+    );
 
- 
-  
- const q = seccion && seccion.trim() !== '' && seccion !== '-- Selecciona una sección --' ?
- query(rutaEstudiantesRef, where('grado', '==', `${evaluacion.grado}`) , where('seccion', '==', `${seccion}`))
- : query(rutaEstudiantesRef, where('grado', '==', `${evaluacion.grado}`));
-  
-  let unsubscribeEstudiantes: (() => void) | null = null;
-  
-  // Listener para estudiantes evaluados
-  const unsubscribeEstudiantesEvaluados = onSnapshot(
-    rutaEstudiantesEvaluados,
-    (querySnapshot: QuerySnapshot<DocumentData>) => {
-      let estudiantesEvaluadosArray: UserEstudiante[] = [];
-      querySnapshot.forEach((doc) => {
-        estudiantesEvaluadosArray.push({ ...doc.data(), id: doc.id });
-      });
-      
-      // Desuscribirse del listener anterior si existe
+    const q =
+      seccion && seccion.trim() !== '' && seccion !== '-- Selecciona una sección --'
+        ? query(
+            rutaEstudiantesRef,
+            where('grado', '==', `${evaluacion.grado}`),
+            where('seccion', '==', `${seccion}`)
+          )
+        : query(rutaEstudiantesRef, where('grado', '==', `${evaluacion.grado}`));
+
+    let unsubscribeEstudiantes: (() => void) | null = null;
+
+    // Listener para estudiantes evaluados
+    const unsubscribeEstudiantesEvaluados = onSnapshot(
+      rutaEstudiantesEvaluados,
+      (querySnapshot: QuerySnapshot<DocumentData>) => {
+        let estudiantesEvaluadosArray: UserEstudiante[] = [];
+        querySnapshot.forEach((doc) => {
+          estudiantesEvaluadosArray.push({ ...doc.data(), id: doc.id });
+        });
+
+        // Desuscribirse del listener anterior si existe
+        if (unsubscribeEstudiantes) {
+          unsubscribeEstudiantes();
+        }
+
+        // Listener para todos los estudiantes del grado
+        unsubscribeEstudiantes = onSnapshot(
+          q,
+          (querySnapshot: QuerySnapshot<DocumentData>) => {
+            let estudiantesDeEvaluacion: UserEstudiante[] = [];
+            querySnapshot.forEach((doc) => {
+              // Verificar si el estudiante ya ha sido evaluado
+              const yaEvaluado = estudiantesEvaluadosArray.find(
+                (estudiante) => `${estudiante.id}` === `${doc.id}`
+              );
+
+              // Solo agregar si no ha sido evaluado
+              if (!yaEvaluado) {
+                estudiantesDeEvaluacion.push({ ...doc.data(), id: doc.id });
+              }
+            });
+            console.log('estudiantesDeEvaluacion', estudiantesDeEvaluacion);
+            dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+            estudiantesDeEvaluacion.length > 0
+              ? dispatch({
+                  type: AppAction.ESTUDIANTES_DE_EVALUACION,
+                  payload: estudiantesDeEvaluacion,
+                })
+              : dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
+          },
+          (error: Error) => {
+            console.log('Error en query estudiantes:', error);
+            dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+            dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
+          }
+        );
+      },
+      (error: Error) => {
+        console.log('Error en query estudiantes evaluados:', error);
+        dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+        dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
+      }
+    );
+
+    // Retornar función para desuscribirse de ambos listeners
+    return () => {
       if (unsubscribeEstudiantes) {
         unsubscribeEstudiantes();
       }
-      
-      // Listener para todos los estudiantes del grado
-      unsubscribeEstudiantes = onSnapshot(
-        q,
-        (querySnapshot: QuerySnapshot<DocumentData>) => {
-          let estudiantesDeEvaluacion: UserEstudiante[] = [];
-          querySnapshot.forEach((doc) => {
-            // Verificar si el estudiante ya ha sido evaluado
-            const yaEvaluado = estudiantesEvaluadosArray.find(estudiante => `${estudiante.id}` === `${doc.id}`);
-            
-            // Solo agregar si no ha sido evaluado
-            if (!yaEvaluado) {
-              estudiantesDeEvaluacion.push({ ...doc.data(), id: doc.id });
-            }
-          });
-          console.log('estudiantesDeEvaluacion', estudiantesDeEvaluacion);
-          dispatch({type: AppAction.LOADER_PAGES, payload: false});
-          estudiantesDeEvaluacion.length > 0 ?
-            dispatch({type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: estudiantesDeEvaluacion})
-            :
-            dispatch({type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: []});
-        },
-        (error: Error) => {
-          console.log('Error en query estudiantes:', error);
-          dispatch({type: AppAction.LOADER_PAGES, payload: false});
-          dispatch({type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: []});
-        }
-      );
-    },
-    (error: Error) => {
-      console.log('Error en query estudiantes evaluados:', error);
-      dispatch({type: AppAction.LOADER_PAGES, payload: false});
-      dispatch({type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: []});
-    }
-  );
-  
-  // Retornar función para desuscribirse de ambos listeners
-  return () => {
-    if (unsubscribeEstudiantes) {
-      unsubscribeEstudiantes();
-    }
-    unsubscribeEstudiantesEvaluados();
+      unsubscribeEstudiantesEvaluados();
+    };
   };
-}
-
 
   const getEvaluaciones = () => {
     // let allEvaluaciones: Evaluaciones[] = []
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     const pathRef = collection(db, 'evaluaciones');
     const q = query(pathRef, where('rol', '==', 4));
-    
+
     // Usar onSnapshot para actualizaciones en tiempo real
     const unsubscribe = onSnapshot(
       q,
@@ -127,7 +161,7 @@ const obtenerEstudianteDeEvaluacion = (evaluacion:Evaluacion,seccion:string) => 
         querySnapshot.forEach((doc) => {
           allEvaluaciones.push({ ...doc.data(), id: doc.id });
         });
-        
+
         dispatch({ type: AppAction.EVALUACIONES, payload: allEvaluaciones });
         dispatch({ type: AppAction.LOADER_PAGES, payload: false });
       },
@@ -136,7 +170,7 @@ const obtenerEstudianteDeEvaluacion = (evaluacion:Evaluacion,seccion:string) => 
         dispatch({ type: AppAction.LOADER_PAGES, payload: false });
       }
     );
-    
+
     // Retornar la función de limpieza para poder desuscribirse
     return unsubscribe;
   };
@@ -161,7 +195,7 @@ const obtenerEstudianteDeEvaluacion = (evaluacion:Evaluacion,seccion:string) => 
     if (!grado || !categoria) {
       dispatch({ type: AppAction.EVALUACIONES_GRADO_CATEGORIA, payload: [] });
       dispatch({ type: AppAction.LOADER_PAGES, payload: false });
-      return () => { }; // Retorna función vacía si no hay parámetros válidos
+      return () => {}; // Retorna función vacía si no hay parámetros válidos
     }
 
     const refGrados = collection(db, 'evaluaciones');
@@ -228,34 +262,47 @@ const obtenerEstudianteDeEvaluacion = (evaluacion:Evaluacion,seccion:string) => 
   };
   const crearEvaluacion = async (value: CreaEvaluacion) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    // 1. Obtiene una referencia a la colección 'productos' y un ID autogenerado
+    const nuevoProductoRef = doc(collection(db, 'evaluaciones'));
 
-    await addDoc(collection(db, '/evaluaciones'), {
-      idDocente: currentUserData.dni,
-      nombre: value.nombreEvaluacion,
-      grado: Number(value.grado),
-      categoria: Number(value.categoria),
-      rol: 4,
-    }).then((res) => dispatch({ type: AppAction.LOADER_PAGES, payload: false }));
+    // 2. Obtiene el ID del documento
+    /* ).then((res) => dispatch({ type: AppAction.LOADER_PAGES, payload: false }));
+} */
+
+    const nuevoProductoId: string = nuevoProductoRef.id;
+    try {
+      await setDoc(nuevoProductoRef, {
+        id: nuevoProductoId,
+        idDocente: currentUserData.dni,
+        nombre: value.nombreEvaluacion,
+        grado: Number(value.grado),
+        categoria: Number(value.categoria),
+        rol: 4,
+        tipoDeEvaluacion: value.tipoDeEvaluacion,
+        mesDelExamen: `${currentMonth}`,
+        active: false,
+      });
+    } catch (error) {
+      console.log('error', error);
+    } finally {
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+    }
   };
-
   const getEvaluacion = (id: string) => {
     const docRef = doc(db, 'evaluaciones', `${id}`);
-    
+
     // Usar onSnapshot para cambios en tiempo real
-    const unsubscribe = onSnapshot(
+    onSnapshot(
       docRef,
       (docSnap) => {
         if (docSnap.exists()) {
-          dispatch({ type: AppAction.EVALUACION, payload: {id: docSnap.id, ...docSnap.data()} });
+          dispatch({ type: AppAction.EVALUACION, payload: { id: docSnap.id, ...docSnap.data() } });
         }
       },
       (error: Error) => {
         console.log('Error al obtener evaluación:', error);
       }
     );
-    
-    // Retornar la función de desuscripción para poder limpiar el listener
-    return unsubscribe;
   };
 
   const getPreguntasRespuestas = async (id: string) => {
@@ -345,15 +392,23 @@ const obtenerEstudianteDeEvaluacion = (evaluacion:Evaluacion,seccion:string) => 
       throw error;
     }
   };
+
+  const addRangosNivel = async (nivelYPuntaje: NivelYPuntaje[], evaluacion: Evaluacion) => {
+    console.log('evaluacion', evaluacion);
+    const rutaRef = doc(db, `evaluaciones`, `${evaluacion.id}`);
+    await updateDoc(rutaRef, {
+      nivelYPuntaje: nivelYPuntaje,
+    });
+  };
   const salvarPreguntRespuestaEstudiante = async (
     data: UserEstudiante,
     idEvaluacion: string,
     pq: PreguntasRespuestas[],
     respuestasCorrectas: number,
     sizePreguntas: number,
-    evaluacion:Evaluacion
+    evaluacion: Evaluacion
   ) => {
-    console.log('tiene que salir la respuesta', respuestasCorrectas);
+    let puntajeAcumulado = 0;
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
     //guarda la informacion para el propio docente
     /* const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`); */
@@ -373,133 +428,75 @@ const obtenerEstudianteDeEvaluacion = (evaluacion:Evaluacion,seccion:string) => 
       totalPreguntas: sizePreguntas,
       respuestas: pq,
     });
-    const rutaCrearEstudiante = doc(db, `/usuarios/${currentUserData.dni}/estudiantes-docentes/${data.dni}`);
-    '/usuarios/80509804/estudiantes-docentes/2025/4/47163626'
-    await setDoc(rutaCrearEstudiante,{
-      nombresApellidos:data.nombresApellidos,
-      dni:data.dni,
+    const rutaCrearEstudiante = doc(
+      db,
+      `/usuarios/${currentUserData.dni}/estudiantes-docentes/${data.dni}`
+    );
+    ('/usuarios/80509804/estudiantes-docentes/2025/4/47163626');
+    await setDoc(rutaCrearEstudiante, {
+      nombresApellidos: data.nombresApellidos,
+      dni: data.dni,
       grado: `${data.grado}`,
       seccion: `${data.seccion}`,
       genero: `${data.genero}`,
-    })
-    //y aqui guarda la informacion en datos para el director
-    const promiseGuardarData = new Promise<boolean>((resolve, reject) => {
-      try {
-        pq.forEach(async (a) => {
-          let rta: string = '';
-          a.alternativas?.forEach((x) => {
-            if (x.selected === true) {
-              rta = `${x.alternativa}`;
-              // console.log('rta', rta)
-            }
-          });
-          const rutaRef = doc(
-            db,
-            `/usuarios/${currentUserData.dni}/${idEvaluacion}/${data.dni}/${data.dni}/${a.id}`
-          );
-          await setDoc(rutaRef, {
-            pregunta: a.pregunta,
-            respuesta: a.respuesta,
-            respuestaEstudiante: rta.length > 0 && rta,
-            preguntaDocente: a.preguntaDocente,
-          });
-          const docRef = doc(
-            db,
-            `/evaluaciones/${idEvaluacion}/${currentUserData.dni}`,
-            `${a.order}`
-          );
-          const querySnapshot = await getDoc(docRef);
-          // const docSnap = await getDoc(docRef);
-          if (!querySnapshot.exists()) {
-            const dataGraficos = doc(
-              db,
-              `/evaluaciones/${idEvaluacion}/${currentUserData.dni}/${a.order}`
-            );
-            if (a.alternativas?.length === 3) {
-              await setDoc(dataGraficos, {
-                a: 0,
-                b: 0,
-                c: 0,
-              });
-            }
-            //esto es nuevo para mas alternativas
-            if (a.alternativas?.length === 4) {
-              await setDoc(dataGraficos, {
-                a: 0,
-                b: 0,
-                c: 0,
-                d: 0,
-              });
-            }
-          }
-          const dataGraficos = doc(
-            db,
-            `/evaluaciones/${idEvaluacion}/${currentUserData.dni}/${a.order}`
-          );
-          if (a.alternativas?.length === 3) {
-            a.alternativas?.map(async (al) => {
-              if (al.selected === true && al.alternativa === 'a') {
-                await updateDoc(dataGraficos, {
-                  a: increment(1),
-                });
-              } else if (al.selected === true && al.alternativa === 'b') {
-                await updateDoc(dataGraficos, {
-                  b: increment(1),
-                });
-              } else if (al.selected === true && al.alternativa === 'c') {
-                await updateDoc(dataGraficos, {
-                  c: increment(1),
-                });
-              }
-            });
-          }
-          //esto es nuevo para mas alternativas
-          if (a.alternativas?.length === 4) {
-            a.alternativas?.map(async (al) => {
-              if (al.selected === true && al.alternativa === 'a') {
-                await updateDoc(dataGraficos, {
-                  a: increment(1),
-                });
-              } else if (al.selected === true && al.alternativa === 'b') {
-                await updateDoc(dataGraficos, {
-                  b: increment(1),
-                });
-              } else if (al.selected === true && al.alternativa === 'c') {
-                await updateDoc(dataGraficos, {
-                  c: increment(1),
-                });
-              } else if (al.selected === true && al.alternativa === 'd') {
-                await updateDoc(dataGraficos, {
-                  d: increment(1),
-                });
-              }
-            });
-          }
-        });
-        resolve(true);
-      } catch (error) {
-        console.log('error', error);
-        ////////
-        pq.map((p) => {
-          p.alternativas?.map((a) => {
-            if (a.selected === true) {
-              a.selected = false;
-            }
-          });
-        });
-        dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES, payload: pq });
-        ///////
-        dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
-        reject(false);
-      }
     });
 
-    promiseGuardarData.then((response) => {
-      if (response === true) {
-        console.log('response update data', response);
+    const rutaEstudianteParaEvaluacion = doc(
+      db,
+      `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${currentYear}/${evaluacion.mesDelExamen}`,
+      `${data.dni}`
+    );
+
+    // Incluir las respuestas en el objeto data antes de calcular el nivel
+    const dataConRespuestas = {
+      ...data,
+      respuestas: pq,
+    };
+
+    if (evaluacion.tipoDeEvaluacion === '1') {
+      try {
+        const dataEstudiante = calculoNivel(dataConRespuestas, evaluacion);
+        // Crear el objeto base del documento
+        const documentoEstudiante: any = {
+          nombresApellidos: dataEstudiante.nombresApellidos,
+          dni: dataEstudiante.dni,
+          grado: `${dataEstudiante.grado}`,
+          seccion: `${dataEstudiante.seccion}`,
+          genero: `${dataEstudiante.genero}`,
+        };
+        // Solo agregar puntaje y nivel si tienen datos válidos
+        if (
+          dataEstudiante.puntaje !== undefined &&
+          dataEstudiante.puntaje !== null &&
+          dataEstudiante.puntaje !== 0
+        ) {
+          documentoEstudiante.puntaje = dataEstudiante.puntaje;
+        }
+
+        if (
+          dataEstudiante.nivel !== undefined &&
+          dataEstudiante.nivel !== null &&
+          dataEstudiante.nivel !== ''
+        ) {
+          documentoEstudiante.nivel = dataEstudiante.nivel;
+        }
+        await setDoc(rutaEstudianteParaEvaluacion, documentoEstudiante);
+      } catch (error) {
+        console.log('error', error);
+      } finally {
         dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
       }
-    });
+    }
+    if (evaluacion.tipoDeEvaluacion === '0') {
+      try {
+        await setDoc(rutaEstudianteParaEvaluacion, dataConRespuestas);
+      } catch (error) {
+        console.log('error', error);
+      } finally {
+        dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
+      }
+    }
+    
   };
   const prEstudiantes = (data: PreguntasRespuestas[]) => {
     dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES, payload: data });
@@ -510,16 +507,16 @@ const obtenerEstudianteDeEvaluacion = (evaluacion:Evaluacion,seccion:string) => 
   };
 
   const deleteEvaluacion = async (id: string) => {
-    await deleteDoc(doc(db, 'evaluaciones', `${id}`)).then((res) => getEvaluaciones());
+    await deleteDoc(doc(db, 'evaluaciones', `${id}`));
+    // No es necesario llamar getEvaluaciones() aquí porque onSnapshot ya actualiza automáticamente
   };
 
   const updateEvaluacion = async (evaluacion: Evaluaciones, id: string) => {
     const pathRef = doc(db, 'evaluaciones', `${id}`);
     console.log('rta', evaluacion);
-    await updateDoc(pathRef, { ...evaluacion, timestamp: serverTimestamp() }).then((res) => {
-      getEvaluaciones();
-      getEvaluacionesDirector();
-    });
+    await updateDoc(pathRef, { ...evaluacion, timestamp: serverTimestamp() });
+    // No es necesario llamar getEvaluaciones() aquí porque onSnapshot ya actualiza automáticamente
+    // El re-renderizado completo causaba que la página volviera al top
   };
 
   const updatePreguntaRespuesta = async (
@@ -747,6 +744,8 @@ const obtenerEstudianteDeEvaluacion = (evaluacion:Evaluacion,seccion:string) => 
     deletePreguntaRespuesta,
     initializeCounter,
     repairCounter,
-    obtenerEstudianteDeEvaluacion
+    obtenerEstudianteDeEvaluacion,
+    getTipoDeEvaluacion,
+    addRangosNivel,
   };
 };

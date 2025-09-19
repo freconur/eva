@@ -4,17 +4,20 @@ import {
   getDoc,
   getDocs,
   getFirestore,
+  orderBy,
   query,
   setDoc,
   where,
 } from "firebase/firestore";
-import { DataEstadisticas, Region, User, UserEstudiante } from "../types/types";
+import { DataEstadisticas, Evaluacion, Grades, Region, User, UserEstudiante } from "../types/types";
 import {
   useGlobalContext,
   useGlobalContextDispatch,
 } from "../context/GlolbalContext";
 import { AppAction } from "../actions/appAction";
 import { currentMonth, currentYear, } from "@/fuctions/dates";
+import { calculoNivel } from "../utils/calculoNivel";
+import { generarDataGraficoPiechart } from "../utils/generar-data-grafico-piechart";
 export const useReporteDirectores = () => {
   const dispatch = useGlobalContextDispatch();
   const { currentUserData } = useGlobalContext();
@@ -22,10 +25,21 @@ export const useReporteDirectores = () => {
 
 
   //dataFiltradaDirectorTabla, esta es la constate que contiene los datos de los estudiantes que se van a mostrar en la tabla
-
-  const getAllEvaluacionesDeEstudiantes = async (idEvaluacion: string, month: number) => {
+const getGrados = async() => {
+  const refGrados = collection(db, 'grados');
+  const q = query(refGrados, orderBy('grado'));
+  const res = await getDocs(q);
+  const grados: Grades[] = [];
+  res.forEach((doc) => {
+    grados.push(doc.data());
+  });
+  dispatch({ type: AppAction.GRADOS, payload: grados });
+  return grados;
+}
+  const getAllEvaluacionesDeEstudiantes = async (idEvaluacion: string, month: number, evaluacion: Evaluacion) => {
     try {
       console.log('month', month)
+      dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: true })
       const q = query(collection(db, "usuarios"), where("dniDirector", "==", `${currentUserData.dni}`));
       const querySnapshot = await getDocs(q);
 
@@ -57,59 +71,29 @@ export const useReporteDirectores = () => {
         dispatch({ type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR, payload: [] });
         return [];
       }
-      todasLasEvaluaciones.forEach(estudiante => {
-        //satisfactorio  523 a 800
-        //en proceso 446 a 522
-        //en inicio 357 a 445
-        //previo al inicio 0 a 356
-        let puntajeAcumulado = 0;
-        estudiante.respuestas?.forEach(pregunta => {
-          pregunta.alternativas?.forEach(alternativas => {
-            if (alternativas.selected) {
-              if (alternativas.alternativa?.toLowerCase() === pregunta.respuesta?.toLowerCase()) {
-                puntajeAcumulado = puntajeAcumulado +Number(pregunta.puntaje)
-              }
-            }
-          })
+      if(evaluacion.tipoDeEvaluacion==='1'){
+        todasLasEvaluaciones.forEach(estudiante => {
+          calculoNivel(estudiante,evaluacion)
         })
-        estudiante.puntaje = puntajeAcumulado;
-        if(idEvaluacion==='ksor0YefuQFZy1kaWEO3'){
-          if (puntajeAcumulado >= 526 && puntajeAcumulado <= 800) {
-            estudiante.nivel = "satisfactorio";
-          } else if (puntajeAcumulado >= 422 && puntajeAcumulado <= 525) {
-            estudiante.nivel = "en proceso";
-          } else if (puntajeAcumulado >= 352 && puntajeAcumulado <= 421) {
-            estudiante.nivel = "en inicio";
-          } else if (puntajeAcumulado >= 0 && puntajeAcumulado <= 351) {
-            estudiante.nivel = "previo al inicio";
-          } else {
-            estudiante.nivel = "sin clasificar";
-          }
-        }else {
-          // Determinar el nivel según el puntaje
-          if (puntajeAcumulado >= 523 && puntajeAcumulado <= 800) {
-            estudiante.nivel = "satisfactorio";
-          } else if (puntajeAcumulado >= 446 && puntajeAcumulado <= 522) {
-            estudiante.nivel = "en proceso";
-          } else if (puntajeAcumulado >= 357 && puntajeAcumulado <= 445) {
-            estudiante.nivel = "en inicio";
-          } else if (puntajeAcumulado >= 0 && puntajeAcumulado <= 356) {
-            estudiante.nivel = "previo al inicio";
-          } else {
-            estudiante.nivel = "sin clasificar";
-          }
-        }
-      })
-      dispatch({ type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR, payload: todasLasEvaluaciones });
+        
+        const dataGraficoPiechart = generarDataGraficoPiechart(todasLasEvaluaciones,month,evaluacion)
+        dispatch({ type: AppAction.DATA_GRAFICO_PIE_CHART, payload: [dataGraficoPiechart] });
+        dispatch({ type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR, payload: todasLasEvaluaciones });
+      } else if(evaluacion.tipoDeEvaluacion==='0'){
+        dispatch({ type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR, payload: todasLasEvaluaciones });
+      }
+      
       return todasLasEvaluaciones;
     } catch (error) {
       console.error("Error en reporteDirectorEstudiantes:", error);
       throw error;
+    }finally{
+      dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: false })
     }
   }
 
-  const reporteDirectorEstudiantes = async (idEvaluacion: string, month: number, currentUserData: User) => {
-    const estudiantes = await getAllEvaluacionesDeEstudiantes(idEvaluacion, month)
+  const reporteDirectorEstudiantes = async (idEvaluacion: string, month: number, currentUserData: User, evaluacion: Evaluacion) => {
+    const estudiantes = await getAllEvaluacionesDeEstudiantes(idEvaluacion, month,evaluacion)
     const acumuladoPorPregunta: Record<string, { id: string, a: number, b: number, c: number, d?: number, total: number }> = {}
     console.log('estudiantes', estudiantes.length)
     estudiantes.forEach(estudiante => {
@@ -821,6 +805,7 @@ export const useReporteDirectores = () => {
     reporteRegionalGlobal,
     resetReporteGlobal,
     reporteToTableDirector,
-    reporteDirectorEstudiantes
+    reporteDirectorEstudiantes,
+    getGrados
   };
 };

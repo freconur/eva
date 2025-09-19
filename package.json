@@ -18,7 +18,7 @@
     "chart.js": "^4.4.7",
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.7",
-    "firebase": "^10.7.2",
+    "firebase": "^12.2.1",
     "firebase-admin": "^13.1.0",
     "html2canvas": "^1.4.1",
     "html2pdf.js": "^0.10.3",
@@ -35,6 +35,7 @@
   },
   "devDependencies": {
     "@ag-media/react-pdf-table": "^2.0.0",
+    "@types/firebase": "^2.4.32",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

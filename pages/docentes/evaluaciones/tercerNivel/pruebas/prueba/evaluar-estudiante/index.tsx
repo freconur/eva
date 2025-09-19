@@ -3,9 +3,9 @@ import { useForm } from 'react-hook-form';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { PreguntasRespuestas, UserEstudiante } from '@/features/types/types';
-import { RiLoader4Line } from 'react-icons/ri';
+import { RiLoader4Line, RiArrowUpLine, RiPlayFill, RiPauseFill } from 'react-icons/ri';
 import { gradosDeColegio, sectionByGrade, genero } from '../../../../../../../fuctions/regiones';
-import { currentYear } from '@/fuctions/dates';
+import { currentYear, getMonthName } from '@/fuctions/dates';
 import { useRouter } from 'next/router';
 import styles from './evaluarEstudiante.module.css';
 
@@ -33,6 +33,8 @@ const EvaluarEstudiante = () => {
   const [todasRespondidas, setTodasRespondidas] = useState(false);
   const [headerTop, setHeaderTop] = useState(60); // Estado para el top del header
   const [contentPadding, setContentPadding] = useState(270); // Estado para el padding del contenido
+  const [showFloatingButton, setShowFloatingButton] = useState(false); // Estado para mostrar el botón flotante
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true); // Estado para controlar el avance automático
 
   // Hooks personalizados
   const {
@@ -231,6 +233,61 @@ const EvaluarEstudiante = () => {
   };
 
   /**
+   * Hace scroll automático a la siguiente pregunta después de seleccionar una respuesta
+   * @param preguntaIndex - Índice de la pregunta actual
+   */
+  const scrollToNextQuestion = (preguntaIndex: number) => {
+    // Solo hacer scroll automático si está habilitado
+    if (!autoScrollEnabled) return;
+    
+    // Esperar un pequeño delay para que la UI se actualice
+    setTimeout(() => {
+      const nextQuestionIndex = preguntaIndex + 1;
+      const nextQuestionElement = document.getElementById(`pregunta-${nextQuestionIndex}`);
+      
+      if (nextQuestionElement) {
+        // Calcular la posición considerando el header fijo
+        const headerHeight = 260; // Altura aproximada del header fijo
+        const elementPosition = nextQuestionElement.offsetTop;
+        const offsetPosition = elementPosition - headerHeight - 20; // 20px de margen adicional
+        
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 300); // Delay de 300ms para suavizar la transición
+  };
+
+  /**
+   * Hace scroll a una pregunta específica cuando se hace clic en su número
+   * @param preguntaIndex - Índice de la pregunta (0-based)
+   */
+  const scrollToQuestion = (preguntaIndex: number) => {
+    const questionElement = document.getElementById(`pregunta-${preguntaIndex}`);
+    
+    if (questionElement) {
+      // Calcular la posición considerando el header fijo
+      const headerHeight = 260; // Altura aproximada del header fijo
+      const elementPosition = questionElement.offsetTop;
+      const offsetPosition = elementPosition - headerHeight - 20; // 20px de margen adicional
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Función para hacer scroll al top de la página
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  /**
    * Maneja cambios en los campos del formulario para validar en tiempo real
    */
   const handleFormChange = () => {
@@ -285,7 +342,7 @@ const EvaluarEstudiante = () => {
     const fetchEstudiantes = async () => {
       try {
         if (evaluacion?.id && evaluacion?.grado) {
-           obtenerEstudianteDeEvaluacion(evaluacion, nuevaSeccion);
+           obtenerEstudianteDeEvaluacion(evaluacion, nuevaSeccion, `${evaluacion.mesDelExamen}`);
         }
       } catch (error) {
         console.error('Error al obtener estudiantes:', error);
@@ -328,6 +385,17 @@ const EvaluarEstudiante = () => {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
+  }, []);
+
+  // Efecto para detectar el scroll y mostrar/ocultar el botón flotante
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      setShowFloatingButton(scrollTop > 300); // Mostrar botón después de 300px de scroll
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Ordenar preguntas por el atributo order para mostrar en secuencia correcta
@@ -396,7 +464,7 @@ const EvaluarEstudiante = () => {
       });
     }
   };
-  console.log('evaluacion', evaluacion)
+  
   return (
     <div className={styles.containerPage}>
       <div className={styles.containerContent}>
@@ -413,7 +481,7 @@ const EvaluarEstudiante = () => {
             {/* Header con botón de regreso */}
             {/* Header fijo con información del estudiante */}
             <div className={styles.stickyHeader} style={{ top: `${headerTop}px` }}>
-              <h3 className={styles.title}>Evaluar Estudiante</h3>
+              {/* <h3 className={styles.title}>Evaluar Estudiante</h3> */}
               
               {/* Indicador de progreso */}
               <div className={styles.progressIndicator}>
@@ -429,18 +497,42 @@ const EvaluarEstudiante = () => {
                   ></div>
                 </div>
               </div>
-              <select
-                    className={styles.inputNombresDni}
-                    value={nuevaSeccion}
-                    onChange={handleNuevaSeccionChange}
-                  >
-                    <option value="">-- Selecciona una sección --</option>
-                    {sectionByGrade.map((seccion) => (
-                      <option key={seccion.id} value={seccion.id}>
-                        Sección {seccion.name.toUpperCase()}
-                      </option>
-                    ))}
-                  </select>
+
+              {/* Selector de sección con toggle de avance automático */}
+              <div className={styles.seccionToggleContainer}>
+                <select
+                  className={styles.inputNombresDni}
+                  value={nuevaSeccion}
+                  onChange={handleNuevaSeccionChange}
+                >
+                  <option value="">-- Selecciona una sección --</option>
+                  {sectionByGrade.map((seccion) => (
+                    <option key={seccion.id} value={seccion.id}>
+                      Sección {seccion.name.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+                
+                {/* Toggle para avance automático */}
+                <div className={styles.autoScrollToggle}>
+                  <label className={styles.toggleLabel}>
+                    <input
+                      type="checkbox"
+                      className={styles.toggleCheckbox}
+                      checked={autoScrollEnabled}
+                      onChange={(e) => setAutoScrollEnabled(e.target.checked)}
+                    />
+                    <span className={styles.toggleSlider}>
+                      <span className={styles.toggleIcon}>
+                        {autoScrollEnabled ? <RiPlayFill /> : <RiPauseFill />}
+                      </span>
+                    </span>
+                    <span className={styles.toggleText}>
+                      Avance automático
+                    </span>
+                  </label>
+                </div>
+              </div>
               {/* Selector de estudiantes */}
               {nuevaSeccion && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0 && (
                   <select
@@ -555,17 +647,36 @@ const EvaluarEstudiante = () => {
                   </div>
                 </>
               )}
-           
+
+              {/* Lista de estado de preguntas */}
+              <div className={styles.listaEstadoPreguntas}>
+                {preguntasOrdenadas.map((pregunta, index) => {
+                  const preguntaRespondida = pregunta.alternativas?.some(alternativa => alternativa.selected === true);
+                  return (
+                    <span
+                      key={index}
+                      className={`${styles.numeroPreguntaEstado} ${
+                        preguntaRespondida ? styles.respondida : styles.sinResponder
+                      }`}
+                      onClick={() => scrollToQuestion(index)}
+                      title={`Ir a la pregunta ${index + 1}`}
+                    >
+                      {index + 1}
+                    </span>
+                  );
+                })}
+              </div>
               
             </div>
 
             {/* Contenido principal con margen superior para el header fijo */}
             <div className={styles.mainContent} style={{ paddingTop: `${contentPadding}px` }}>
+              <h2 className={styles.evaluacionTitle}>{evaluacion?.nombre} - {getMonthName(Number(evaluacion?.mesDelExamen))}</h2>
               <form onSubmit={handleSubmitform} onChange={handleFormChange}>
                 {/* Sección de preguntas y respuestas */}
                 <div className={styles.preguntasContainer}>
                   {preguntasOrdenadas.map((pregunta, preguntaIndex) => (
-                    <div key={preguntaIndex} className="mb-8 border-b border-gray-200 pb-6">
+                    <div key={preguntaIndex} id={`pregunta-${preguntaIndex}`} className="mb-8 border-b border-gray-200 pb-6">
                       {/* Título de la pregunta */}
                       <p className={styles.preguntaTitulo}>
                         <span className={styles.numeroPregunta}>{preguntaIndex + 1}.</span>
@@ -584,12 +695,14 @@ const EvaluarEstudiante = () => {
                                 className={`${styles.respuestaItem} ${
                                   alternativa.selected ? styles.selected : ''
                                 }`}
-                                onClick={() =>
+                                onClick={() => {
                                   handleContenedorClick(
                                     pregunta.order || 0,
                                     alternativa.alternativa || ''
-                                  )
-                                }
+                                  );
+                                  // Hacer scroll a la siguiente pregunta
+                                  scrollToNextQuestion(preguntaIndex);
+                                }}
                               >
                                 <div className="flex items-start gap-3">
                                   <input
@@ -602,7 +715,11 @@ const EvaluarEstudiante = () => {
                                         ? false
                                         : alternativa.selected
                                     }
-                                    onChange={handleCheckedRespuesta}
+                                    onChange={(e) => {
+                                      handleCheckedRespuesta(e);
+                                      // Hacer scroll a la siguiente pregunta
+                                      scrollToNextQuestion(preguntaIndex);
+                                    }}
                                     onClick={(e) => e.stopPropagation()} // Evitar doble ejecución
                                   />
                                   <div className="flex-1">
@@ -640,6 +757,16 @@ const EvaluarEstudiante = () => {
           </>
         )}
       </div>
+
+      {/* Botón flotante para volver al top */}
+      <button
+        className={`${styles.floatingButton} ${showFloatingButton ? styles.visible : ''}`}
+        onClick={scrollToTop}
+        title="Volver al inicio"
+        aria-label="Volver al inicio de la página"
+      >
+        <RiArrowUpLine className={styles.floatingButtonIcon} />
+      </button>
     </div>
   );
 };

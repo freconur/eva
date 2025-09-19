@@ -21,6 +21,7 @@ import {
   validarParametrosEntrada,
   manejarPromesa,
   calcularEstadisticasOptimizadas,
+  calcularAcumuladoGlobal,
   formatearTiempo,
   calcularProgreso,
   generarTrackingId,
@@ -31,141 +32,7 @@ import {
 import { crearEstudianteDeDocente } from './crearEstudianteDeDocente';
 // Importar la nueva función para frontend
 import { crearEstudianteDeDocenteFrontend } from './crearEstudianteDeDocenteFrontend';
-/* import { Estudiante } from './types'; */
-/* import { Estudiante } from './types'; */
 
-// ==========================================================
-// 1. FUNCIÓN DE PRUEBA SIMPLE
-// ==========================================================
-
-/**
- * Función de prueba simple para diagnosticar problemas de autenticación
- */
-/* exports.testAuth = functions.https.onCall(
-  {
-    cors: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001',
-      'https://evaluaciones-ugel.firebaseapp.com',
-      'https://evaluaciones-ugel.web.app',
-    ],
-  },
-  async (data: any, context: any) => {
-    functions.logger.info('🧪 TEST AUTH - Inicio');
-
-    // Log completo del contexto
-    functions.logger.info('🔍 Contexto completo:', JSON.stringify(context, null, 2));
-
-    if (!context.auth) {
-      functions.logger.warn('❌ Context.auth es null o undefined');
-      return {
-        success: false,
-        error: 'No auth context',
-        fullContext: context,
-      };
-    }
-
-    functions.logger.info('✅ Context.auth existe:', JSON.stringify(context.auth, null, 2));
-
-    return {
-      success: true,
-      message: 'Autenticación funciona correctamente',
-      auth: context.auth,
-      uid: context.auth.uid,
-      email: context.auth.token?.email,
-      claims: context.auth.token,
-    };
-  }
-); */
-
-// ==========================================================
-// 1.1. ENDPOINT DE TESTING PARA crearEstudianteDeDocente
-// ==========================================================
-
-/**
- * Endpoint HTTP para testing de la función crearEstudianteDeDocente
- * Permite probar la función sin necesidad de autenticación
- */
-/* exports.testCrearEstudianteDeDocente = functions.https.onRequest(
-  async (req: any, res: any) => {
-    // Inicializar monitores y utilidades (adaptado de leerEvaluacionesParaAdmin)
-    const trackingId = generarTrackingId();
-    const errorHandler = ErrorHandler.getInstance();
-    const performanceMonitor = new PerformanceMonitor();
-
-    performanceMonitor.iniciar('funcion_completa');
-
-    functions.logger.info(`🧪 TEST crearEstudianteDeDocente - INICIO - Tracking ID: ${trackingId}`);
-
-    // Configurar CORS para testing
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, POST');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-
-    try {
-      // Extraer parámetros de la request (si los hay)
-      const { dniDocente = '12345678', idEvaluacion = 'test-evaluacion' } = req.body || req.query || {};
-
-      functions.logger.info(`📥 Parámetros de testing:`, {
-        dniDocente,
-        idEvaluacion,
-        timestamp: new Date().toISOString(),
-        trackingId
-      });
-
-      // Validar parámetros básicos
-      if (!dniDocente || !idEvaluacion) {
-        throw new Error('Parámetros dniDocente e idEvaluacion son requeridos para testing');
-      }
-
-      // Llamar a la función interna con parámetros de testing
-      performanceMonitor.iniciar('crearEstudianteDeDocente');
-      
-      const resultado = await crearEstudianteDeDocente(dniDocente, { idEvaluacion }, trackingId);
-      
-      performanceMonitor.finalizar('crearEstudianteDeDocente');
-      performanceMonitor.finalizar('funcion_completa');
-
-      // Generar estadísticas de rendimiento
-      const estadisticas = {
-        tiempoTotal: performanceMonitor.obtenerEstadisticas()['funcion_completa']?.promedio || 0,
-        tiempoProcesamiento: performanceMonitor.obtenerEstadisticas()['crearEstudianteDeDocente']?.promedio || 0,
-        timestamp: new Date().toISOString(),
-        trackingId,
-        parametros: { dniDocente, idEvaluacion }
-      };
-
-      functions.logger.info(`✅ TEST COMPLETADO EXITOSAMENTE - Tracking ID: ${trackingId}`);
-      functions.logger.info(performanceMonitor.generarReporte());
-
-      res.status(200).json({
-        success: true,
-        message: 'Función de testing ejecutada correctamente',
-        resultado: resultado,
-        estadisticas: estadisticas,
-        mode: process.env.FUNCTIONS_EMULATOR === 'true' ? 'development' : 'production',
-        trackingId: trackingId
-      });
-
-    } catch (error: any) {
-      performanceMonitor.finalizar('funcion_completa');
-      errorHandler.registrarError(error, 'test_crearEstudianteDeDocente');
-
-      functions.logger.error(`💥 Error en test crearEstudianteDeDocente - Tracking ID: ${trackingId}:`, error);
-
-      res.status(500).json({
-        success: false,
-        error: error.message,
-        stack: error.stack,
-        timestamp: new Date().toISOString(),
-        trackingId: trackingId,
-        mode: process.env.FUNCTIONS_DEVELOPMENT === 'true' ? 'development' : 'production'
-      });
-    }
-  }
-); */
 
 // ==========================================================
 // 2. FUNCIÓN DE LECTURA DE DOCUMENTOS (MODO DESARROLLO)
@@ -339,6 +206,8 @@ exports.leerEvaluacionesParaAdmin = onCall(
           data: {
             directores: [],
             resultados: [],
+            acumuladoGlobal: [],
+            valoresExtras: 0,
             estadisticas: {
               totalDirectores: 0,
               tiempoProcesamiento: { ms: 0, segundos: 0, minutos: 0 },
@@ -361,7 +230,7 @@ exports.leerEvaluacionesParaAdmin = onCall(
       performanceMonitor.iniciar('procesar_directores');
 
       // Procesar directores con todas las optimizaciones
-      const resultadosProcesamiento = await procesarDirectoresOptimizado(
+      const { resultados: resultadosProcesamiento, acumuladoGlobal, valoresExtras } = await procesarDirectoresOptimizado(
         directores,
         idEvaluacion,
         currentYear,
@@ -383,8 +252,29 @@ exports.leerEvaluacionesParaAdmin = onCall(
         estimacionTiempo
       );
 
+      // Guardar estadísticas globales en Firestore
+      if (acumuladoGlobal && acumuladoGlobal.length > 0) {
+        functions.logger.info(`✅ Valores extras: ${valoresExtras}`);
+        console.log('valoresExtras',valoresExtras)
+        try {
+          await db
+            .collection(`evaluaciones/${idEvaluacion}/estadisticas-graficos`)
+            .doc(`${currentYear}-${month}`)
+            .set({acumuladoGlobal});
+          functions.logger.info(`✅ Estadísticas globales guardadas: ${acumuladoGlobal.length} preguntas`);
+        } catch (error) {
+          functions.logger.error('❌ Error al guardar estadísticas globales:', error);
+          errorHandler.registrarError(error, 'guardar_estadisticas_globales');
+        }
+      } else {
+        functions.logger.warn('⚠️ No hay datos de acumulado global para guardar');
+      }
       functions.logger.info(`✅ PROCESAMIENTO COMPLETADO - Tracking ID: ${trackingId}`);
-      functions.logger.info(performanceMonitor.generarReporte());
+      /* functions.logger.info(performanceMonitor.generarReporte()); */
+      
+      // Mostrar acumulado global en los logs
+      functions.logger.info(`🌍 ACUMULADO GLOBAL - ${acumuladoGlobal.length} preguntas:`, acumuladoGlobal);
+      console.log('📊 ACUMULADO GLOBAL COMPLETO:', JSON.stringify(acumuladoGlobal, null, 2));
 
       return {
         success: true,
@@ -392,6 +282,8 @@ exports.leerEvaluacionesParaAdmin = onCall(
         data: {
           directores,
           resultados: resultadosProcesamiento,
+          acumuladoGlobal,
+          valoresExtras,
           estadisticas: estadisticasFinales,
         },
         mode: isEmulator ? 'development' : 'production',
@@ -506,12 +398,13 @@ async function procesarDirectoresOptimizado(
   cacheManager: CacheManager,
   errorHandler: ErrorHandler,
   performanceMonitor: PerformanceMonitor
-): Promise<any[]> {
+): Promise<{ resultados: any[], acumuladoGlobal: any[], valoresExtras: number }> {
   const TIMEOUT_LIMITE = 480000; // 8 minutos
   const BATCH_SIZE = 30;
   const tiempoInicio = Date.now();
 
   const resultados: any[] = [];
+  const todosLosPuntajes: any[][] = []; // Array para almacenar todos los acumulados de directores
   let totalProcesados = 0;
   let totalErrores = 0;
 
@@ -566,6 +459,11 @@ async function procesarDirectoresOptimizado(
     for (const resultado of resultadosLote) {
       if (resultado.status === 'fulfilled') {
         resultados.push(resultado.value);
+        // Recopilar puntajes para el acumulado global
+        if (resultado.value.acumuladoPorPregunta && Object.keys(resultado.value.acumuladoPorPregunta).length > 0) {
+          const puntajesDirector = Object.values(resultado.value.acumuladoPorPregunta);
+          todosLosPuntajes.push(puntajesDirector);
+        }
         totalProcesados++;
       } else {
         totalErrores++;
@@ -583,7 +481,25 @@ async function procesarDirectoresOptimizado(
   }
 
   functions.logger.info(`📊 Lote completado: ${totalProcesados} exitosos, ${totalErrores} errores`);
-  return resultados;
+  
+  // Calcular acumulado global DESPUÉS de procesar todos los directores
+  let acumuladoGlobal: any[] = [];
+  let valoresExtras: number = 0;
+  if (todosLosPuntajes.length > 0) {
+    functions.logger.info(`🌍 Calculando acumulado global de ${todosLosPuntajes.length} directores...`);
+    const resultadoAcumulado = calcularAcumuladoGlobal(todosLosPuntajes);
+    acumuladoGlobal = resultadoAcumulado.acumulado;
+    valoresExtras = resultadoAcumulado.canti;
+    functions.logger.info(`✅ Acumulado global calculado: ${acumuladoGlobal.length} preguntas`);
+  } else {
+    functions.logger.warn('⚠️ No se encontraron puntajes para calcular acumulado global');
+  }
+  
+  return {
+    resultados,
+    acumuladoGlobal,
+    valoresExtras
+  };
 }
 
 /**

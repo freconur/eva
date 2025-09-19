@@ -1,0 +1,593 @@
+/* Contenedor principal */
+.mainContainer {
+  width: 100%;
+}
+
+/* Contenedor con scroll horizontal para la tabla */
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  margin-bottom: 2.5rem;
+  margin-top: 2rem; /* Espacio superior para el popover */
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  position: relative; /* Para posicionamiento absoluto de popovers */
+}
+
+/* Estilos para el scrollbar horizontal */
+.tableWrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.tableWrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.tableWrapper::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.tableWrapper::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Mejora visual para las columnas de respuestas */
+.tableWrapper .table th:nth-child(n+8),
+.tableWrapper .table td:nth-child(n+8) {
+  text-align: center;
+  padding: 0.5rem 0.25rem;
+  border-left: 1px solid #e5e7eb;
+}
+
+.table {
+  width: 100%;
+  min-width: 800px; /* Ancho mínimo para evitar compresión excesiva */
+  background-color: white;
+  border-collapse: collapse;
+}
+
+.tableHeader {
+  background-color: #1d4ed8;
+  border-bottom: 2px solid #93c5fd;
+}
+
+.tableHeader th {
+  color: white;
+  text-transform: uppercase;
+  font-family: 'Nunito', sans-serif;
+  padding: 0.75rem;
+  text-align: left;
+  font-size: 0.625rem;
+  min-width: 40px; /* Ancho mínimo para columnas de respuestas */
+  white-space: nowrap; /* Evita el salto de línea */
+  position: relative; /* Para posicionar el popover correctamente */
+}
+
+.tableBody tr {
+  height: 30px;
+  transition: background-color 0.1s;
+  cursor: pointer;
+}
+
+.tableBody tr:hover {
+  background-color: #dbeafe;
+}
+
+.tableBody td {
+  color: #64748b;
+  text-transform: uppercase;
+  padding: 0.5rem;
+  font-size: 0.625rem;
+  text-align: left;
+  min-width: 40px; /* Ancho mínimo para columnas de respuestas */
+  white-space: nowrap; /* Evita el salto de línea */
+}
+
+.deleteIcon {
+  font-size: 1.25rem;
+  color: #ef4444;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.deleteIcon:hover {
+  color: #dc2626;
+}
+
+.questionButton {
+  display: block;
+  height: 20px;
+  width: 20px;
+  border-radius: 9999px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+.questionButton:focus {
+  background-color: #1e40af;
+}
+
+.questionButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.questionPopover {
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: flex-start;
+  text-align: left;
+  width: 300px;
+  min-height: 120px;
+  max-height: 400px;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e5e7eb;
+  padding: 0;
+  font-size: 0.875rem;
+  text-transform: none;
+  font-family: 'Comfortaa', sans-serif;
+  transition: all 0.3s ease-in-out;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+/* Efectos de fade para el popover */
+.fadeIn {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+  visibility: visible;
+}
+
+.fadeOut {
+  opacity: 0;
+  transform: translateY(-50%) scale(0.95);
+  visibility: hidden;
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 768px) {
+  .questionPopover {
+    right: 15px;
+    width: 280px;
+    max-width: calc(100vw - 30px);
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .questionPopover {
+    right: 10px;
+    width: 260px;
+    max-width: calc(100vw - 20px);
+    font-size: 0.75rem;
+  }
+}
+
+.popoverContent {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+  box-sizing: border-box;
+}
+
+.popoverHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+  user-select: none;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+
+.questionNumber {
+  font-weight: 600;
+  color: #1d4ed8;
+  font-size: 0.75rem;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.closeButton:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.popoverBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow-y: auto;
+  max-height: 200px;
+}
+
+.questionLabel {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 0.25rem;
+}
+
+.questionText {
+  color: #64748b;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  margin: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  hyphens: auto;
+}
+
+.correctAnswer {
+  font-size: 0.625rem;
+  background-color: #86efac;
+  width: 100%;
+  height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s;
+  border-radius: 4px;
+  font-weight: 600;
+  color: #166534;
+  min-width: 25px;
+}
+
+.correctAnswer:hover {
+  background-color: #4ade80;
+  transform: translateY(1px);
+}
+
+.incorrectAnswer {
+  font-size: 0.625rem;
+  background-color: #fca5a5;
+  width: 100%;
+  height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s;
+  border-radius: 4px;
+  font-weight: 600;
+  color: #991b1b;
+  min-width: 25px;
+}
+
+.incorrectAnswer:hover {
+  background-color: #f87171;
+  transform: translateY(1px);
+}
+
+.noAnswer {
+  font-size: 0.625rem;
+  background-color: #f3f4f6;
+  width: 100%;
+  height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s;
+  border-radius: 4px;
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 25px;
+}
+
+.studentLink {
+  color: #1d4ed8;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.studentLink:hover {
+  color: #1e40af;
+  text-decoration: underline;
+}
+
+.studentName {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.warningContainer {
+  width: 100%;
+  height: 100%;
+  background-color: #f8fcfd;
+  color: rgb(128, 128, 128);
+  text-align: center;
+  margin: auto;
+  padding: 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .tableWrapper {
+    margin-bottom: 1.5rem;
+  }
+  
+  .table {
+    min-width: 600px;
+  }
+  
+  .tableHeader th,
+  .tableBody td {
+    font-size: 0.5rem;
+    padding: 0.25rem;
+  }
+  
+  .questionButton {
+    height: 16px;
+    width: 16px;
+    font-size: 0.5rem;
+  }
+  
+  .questionPopover {
+    width: 280px;
+    max-width: calc(100vw - 30px);
+    font-size: 0.8rem;
+  }
+  
+  .questionNumber {
+    font-size: 0.65rem;
+  }
+  
+  .questionLabel,
+  .questionText {
+    font-size: 0.6rem;
+  }
+  
+  .closeButton {
+    font-size: 1rem;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .correctAnswer,
+  .incorrectAnswer,
+  .noAnswer {
+    height: 25px;
+    font-size: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .table {
+    min-width: 500px;
+  }
+  
+  .tableHeader th,
+  .tableBody td {
+    font-size: 0.45rem;
+    padding: 0.2rem;
+  }
+  
+  .questionButton {
+    height: 14px;
+    width: 14px;
+    font-size: 0.45rem;
+  }
+  
+  .questionPopover {
+    width: 260px;
+    max-width: calc(100vw - 20px);
+    font-size: 0.75rem;
+  }
+  
+  .questionNumber {
+    font-size: 0.6rem;
+  }
+  
+  .questionLabel,
+  .questionText {
+    font-size: 0.55rem;
+  }
+  
+  .closeButton {
+    font-size: 0.875rem;
+    width: 18px;
+    height: 18px;
+  }
+  
+  .popoverContent {
+    padding: 0.5rem;
+  }
+  
+  .correctAnswer,
+  .incorrectAnswer,
+  .noAnswer {
+    height: 20px;
+    font-size: 0.45rem;
+  }
+}
+
+/* Estilos para la paginación */
+.paginationContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+.paginationInfo {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.paginationButton {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.paginationButton:hover:not(.disabled) {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.paginationButton.disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pageNumbers {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.pageNumber {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  color: #64748b;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pageNumber:hover {
+  background-color: #f3f4f6;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.pageNumber.active {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.pageNumber.active:hover {
+  background-color: #2563eb;
+  color: white;
+}
+
+/* Responsive para paginación */
+@media (max-width: 768px) {
+  .paginationContainer {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0.75rem;
+  }
+  
+  .paginationInfo {
+    font-size: 0.75rem;
+  }
+  
+  .paginationButton {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .pageNumber {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .paginationControls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .pageNumbers {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .paginationButton {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.625rem;
+  }
+  
+  .pageNumber {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.625rem;
+  }
+}

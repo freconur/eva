@@ -2,7 +2,7 @@ import { createPortal } from "react-dom";
 import styles from "../deleteEvaluacion/deleteEvaluacion.module.css";
 import { useForm } from "react-hook-form";
 import { useGlobalContext } from "@/features/context/GlolbalContext";
-import { Estudiante, Psicolinguistica } from "@/features/types/types";
+import { Estudiante, Psicolinguistica, UserEstudiante } from "@/features/types/types";
 import { RiLoader4Line } from "react-icons/ri";
 import { usePsicolinguistica } from "@/features/hooks/usePsicolinguistica";
 import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones";
@@ -13,7 +13,7 @@ interface Props {
   handleShowModalDelete: () => void;
   idEstudiante: string;
   idExamen: string;
-  estudiantes: Estudiante[];
+  estudiantes: Estudiante[] | UserEstudiante[];
   monthSelected:number
 
 }
