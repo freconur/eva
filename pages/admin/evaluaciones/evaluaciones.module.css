@@ -314,17 +314,72 @@
 }
 
 .content {
-  display: grid;
-  justify-content: center;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
   position: relative;
   margin-top: 0.75rem;
   padding: 0 1rem;
 }
 
+/* Botón de cambio de vista */
+.viewToggleContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+  padding: 0 1rem;
+}
+
+.viewToggleButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-paleta1), var(--color-paleta2));
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.viewToggleButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, var(--color-paleta2), var(--color-paleta1));
+}
+
+.viewToggleIcon {
+  font-size: 1.25rem;
+  transition: transform 0.3s ease;
+}
+
+.viewToggleButton:hover .viewToggleIcon {
+  transform: scale(1.1);
+}
+
+/* Contenedores de vista */
+.acordeonViewContainer {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.tableViewContainer {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
 .tableContainer {
   width: 100%;
-  max-width: 1200px;
+  max-width: 100%;
   background: white;
   border-radius: 1rem;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);

@@ -5,10 +5,11 @@ import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 // import { Evaluaciones } from '@/features/types/types'
 import DeleteEvaluacion from '@/modals/deleteEvaluacion'
 import UpdateEvaluacion from '@/modals/updateEvaluacion'
+import GradosAcordeon from '@/components/grados-acordeon/GradosAcordeon'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
-import { MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff } from 'react-icons/md'
+import { MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff, MdViewList, MdViewModule } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 import header from '@/assets/evaluacion-docente.jpg'
 import styles from './evaluaciones.module.css'
@@ -16,8 +17,8 @@ import { getMonthName } from '@/fuctions/dates'
 import { getAllMonths } from '@/fuctions/dates'
 
 const Evaluaciones = () => {
-  const { getEvaluaciones, getEvaluacion, updateEvaluacion } = useAgregarEvaluaciones()
-  const { evaluaciones, currentUserData, loaderPages, evaluacion } = useGlobalContext()
+  const { getEvaluaciones, getEvaluacion, updateEvaluacion,getGrades } = useAgregarEvaluaciones()
+  const { evaluaciones, currentUserData, loaderPages, evaluacion , grados} = useGlobalContext()
   const [showDelete, setShowDelete] = useState<boolean>(false)
   const [inputUpdate, setInputUpdate] = useState<boolean>(false)
   const [idEva, setIdEva] = useState<string>("")
@@ -25,8 +26,12 @@ const Evaluaciones = () => {
   const [editingMonth, setEditingMonth] = useState<boolean>(false)
   const [editingMonthId, setEditingMonthId] = useState<string>("")
   const [updatingMonth, setUpdatingMonth] = useState<boolean>(false)
+  const [viewMode, setViewMode] = useState<'acordeon' | 'table'>('acordeon')
   const handleShowInputUpdate = () => { setInputUpdate(!inputUpdate) }
   const handleShowModalDelete = () => { setShowDelete(!showDelete) }
+  const toggleViewMode = () => { 
+    setViewMode(viewMode === 'acordeon' ? 'table' : 'acordeon') 
+  }
   const [dataEvaluacion, setDataEvaluacion] = useState(evaluacion)
 
   const toggleActiveStatus = async (eva: any) => {
@@ -56,7 +61,9 @@ const Evaluaciones = () => {
       setUpdatingMonth(false)
     }
   }
-  
+  useEffect(() => {
+    getGrades()
+  },[])
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     
@@ -72,6 +79,9 @@ const Evaluaciones = () => {
     };
   }, [currentUserData.dni])
 
+
+  console.log('evaluaciones', evaluaciones)
+  console.log('grados', grados)
   return (
     <>
       {showDelete && <DeleteEvaluacion handleShowModalDelete={handleShowModalDelete} idEva={idEva} />}
@@ -89,6 +99,27 @@ const Evaluaciones = () => {
           <h1 className={styles.headerTitle}>Seguimiento y retroalimentacion al desempeño del directivo</h1>
         </div>
 
+        {/* Botón de cambio de vista */}
+        <div className={styles.viewToggleContainer}>
+          <button 
+            onClick={toggleViewMode}
+            className={styles.viewToggleButton}
+            title={viewMode === 'acordeon' ? 'Cambiar a vista de tabla' : 'Cambiar a vista de acordeón'}
+          >
+            {viewMode === 'acordeon' ? (
+              <>
+                <MdViewList className={styles.viewToggleIcon} />
+                <span>Vista de Tabla</span>
+              </>
+            ) : (
+              <>
+                <MdViewModule className={styles.viewToggleIcon} />
+                <span>Vista de Acordeón</span>
+              </>
+            )}
+          </button>
+        </div>
+
         {loaderPages ? (
           <div className={styles.loader}>
             <div className={styles.loaderContent}>
@@ -98,7 +129,39 @@ const Evaluaciones = () => {
           </div>
         ) : (
           <div className={styles.content}>
-            <div className={styles.tableContainer}>
+            {/* Vista de Acordeón */}
+            {viewMode === 'acordeon' && grados && grados.length > 0 && (
+              <div className={styles.acordeonViewContainer}>
+                <GradosAcordeon 
+                  grados={grados}
+                  evaluaciones={evaluaciones}
+                  onToggleActive={toggleActiveStatus}
+                  onEditMonth={handleEditMonth}
+                  onCancelEditMonth={handleCancelEditMonth}
+                  onSaveMonth={handleSaveMonth}
+                  onEdit={(evaluacion) => {
+                    setNameEva(`${evaluacion.nombre}`)
+                    handleShowInputUpdate()
+                    setIdEva(`${evaluacion.id}`)
+                  }}
+                  onDelete={(evaluacion) => {
+                    handleShowModalDelete()
+                    setIdEva(`${evaluacion.id}`)
+                  }}
+                  editingMonth={editingMonth}
+                  editingMonthId={editingMonthId}
+                  updatingMonth={updatingMonth}
+                  dataEvaluacion={dataEvaluacion}
+                  setDataEvaluacion={setDataEvaluacion}
+                  baseRoute="/admin/evaluaciones/evaluacion"
+                />
+              </div>
+            )}
+            
+            {/* Vista de Tabla */}
+            {viewMode === 'table' && (
+              <div className={styles.tableViewContainer}>
+                <div className={styles.tableContainer}>
               {/* <h1 className={styles.tableTitle}>evaluaciones</h1> */}
               <table className={styles.table}>
                 <thead className={styles.tableHeader}>
@@ -209,7 +272,9 @@ const Evaluaciones = () => {
                   ) : null}
                 </tbody>
               </table>
-            </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

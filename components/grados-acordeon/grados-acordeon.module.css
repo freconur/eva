@@ -1,0 +1,1193 @@
+/* ===== CONTENEDOR PRINCIPAL DEL ACORDEÓN ===== */
+.acordeonContainer {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin: 24px 0;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+/* ===== HEADER PRINCIPAL CON SELECTOR ===== */
+.acordeonHeader {
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+  color: #ffffff;
+  margin: 0;
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #374151;
+}
+
+.acordeonTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+
+.columnSelector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.columnLabel {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #e5e7eb;
+}
+
+.columnButtons {
+  display: flex;
+  gap: 4px;
+}
+
+.columnButton {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  min-width: 32px;
+  text-align: center;
+}
+
+.columnButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.columnButton.active {
+  background: #3b82f6;
+  border-color: #2563eb;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.acordeonContent {
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* ===== ITEM INDIVIDUAL DEL ACORDEÓN ===== */
+.acordeonItem {
+  border-bottom: 1px solid #f3f4f6;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.acordeonItem:last-child {
+  border-bottom: none;
+}
+
+.acordeonItem:hover {
+  background-color: #fafbfc;
+}
+
+/* ===== HEADER DEL ACORDEÓN ===== */
+.acordeonItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  background: #ffffff;
+}
+
+.acordeonItemHeader:hover {
+  background-color: #f8fafc;
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.gradoNumber {
+  background: #1f2937;
+  color: #ffffff;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  min-width: 70px;
+  text-align: center;
+  border: 2px solid #374151;
+  box-shadow: 0 2px 4px rgba(31, 41, 55, 0.2);
+  transition: all 0.3s ease;
+}
+
+.acordeonHeader:hover .gradoNumber {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(31, 41, 55, 0.3);
+}
+
+.gradoName {
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 1.2rem;
+  flex: 1;
+  letter-spacing: -0.025em;
+}
+
+.nivelTag {
+  background: #e5e7eb;
+  color: #4b5563;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid #d1d5db;
+  transition: all 0.3s ease;
+}
+
+.acordeonHeader:hover .nivelTag {
+  background: #d1d5db;
+  color: #1f2937;
+}
+
+.expandIcon {
+  color: #6b7280;
+  font-size: 1.5rem;
+  transition: all 0.3s ease;
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.expandIcon:hover {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.icon {
+  transition: all 0.3s ease;
+}
+
+.acordeonHeader:hover .icon {
+  transform: scale(1.1) rotate(180deg);
+}
+
+/* ===== COLORES POR NIVEL EDUCATIVO ===== */
+.nivelPrimaria {
+  border-left: 4px solid #3b82f6;
+}
+
+.nivelSecundaria {
+  border-left: 4px solid #f59e0b;
+}
+
+.nivelOtro {
+  border-left: 4px solid #6b7280;
+}
+
+/* ===== CUERPO DEL ACORDEÓN ===== */
+.acordeonBody {
+  background: #ffffff;
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.4s ease;
+  border-top: 1px solid #f3f4f6;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.acordeonBody.expanded {
+  max-height: none;
+  padding: 24px;
+}
+
+.acordeonBodyContent {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  transition-delay: 0.1s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.acordeonBody.expanded .acordeonBodyContent {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== CONTENEDOR DE EVALUACIONES ===== */
+.evaluacionesContainer {
+  margin-top: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.evaluacionesTitle {
+  color: #1f2937;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid #e5e7eb;
+  position: relative;
+}
+
+.evaluacionesTitle::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  border-radius: 2px;
+}
+
+.evaluacionesList {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* ===== CLASES DINÁMICAS PARA COLUMNAS ===== */
+.evaluacionesList.columns2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.evaluacionesList.columns3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.evaluacionesList.columns4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* ===== WRAPPER DE TARJETA DE EVALUACIÓN ===== */
+.evaluacionCardWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ===== ENLACE DE TARJETA DE EVALUACIÓN ===== */
+.evaluacionCardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.evaluacionCardLink:hover {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ===== TARJETA DE EVALUACIÓN ===== */
+.evaluacionCard {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px 20px 60px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  height: 160px;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  min-width: 0;
+}
+
+
+.evaluacionCard:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  border-color: #cbd5e1;
+}
+
+
+/* ===== TIPOS DE EVALUACIÓN ===== */
+.tipoEvaluacion0 {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  position: relative;
+}
+
+
+.tipoEvaluacion0::before {
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+}
+
+.tipoEvaluacion0:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2);
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+}
+
+.tipoEvaluacion1 {
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+  position: relative;
+}
+
+
+.tipoEvaluacion1::before {
+  background: linear-gradient(90deg, #10b981, #047857);
+}
+
+.tipoEvaluacion1:hover {
+  border-color: #10b981;
+  box-shadow: 0 20px 40px rgba(16, 185, 129, 0.2);
+  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+}
+
+/* ===== ELEMENTOS ESPECÍFICOS POR TIPO ===== */
+.tipoEvaluacion0 .evaluacionNombre {
+  color: #1e40af;
+}
+
+.tipoEvaluacion0 .evaluacionMes {
+  background: none;
+  border: none;
+  color: #1e40af;
+}
+
+.tipoEvaluacion0 .evaluacionMes strong {
+  color: #1e40af;
+}
+
+.tipoEvaluacion1 .evaluacionNombre {
+  color: #059669;
+}
+
+.tipoEvaluacion1 .evaluacionMes {
+  background: none;
+  border: none;
+  color: #059669;
+}
+
+.tipoEvaluacion1 .evaluacionMes strong {
+  color: #059669;
+}
+
+/* ===== BOTONES DE ACCIÓN POR TIPO ===== */
+.tipoEvaluacion0 .actionButton {
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.tipoEvaluacion0 .actionButton:hover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.tipoEvaluacion1 .actionButton {
+  border-color: #bbf7d0;
+  color: #059669;
+}
+
+.tipoEvaluacion1 .actionButton:hover {
+  background: #f0fdf4;
+  border-color: #10b981;
+  color: #047857;
+}
+
+/* ===== ANIMACIONES DE CALENDARIO POR TIPO ===== */
+.tipoEvaluacion0 .calendarButton:active {
+  background: #dbeafe !important;
+  border-color: #3b82f6 !important;
+}
+
+.tipoEvaluacion1 .calendarButton:active {
+  background: #dcfce7 !important;
+  border-color: #10b981 !important;
+}
+
+/* ===== ETIQUETAS DE TIPO ===== */
+.tipoEvaluacion0 .tipoEvaluacionTag {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.tipoEvaluacion1 .tipoEvaluacionTag {
+  background: #dcfce7;
+  color: #059669;
+  border: 1px solid #bbf7d0;
+}
+
+
+.evaluacionCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-color: #3b82f6;
+}
+
+/* ===== INFORMACIÓN DE LA EVALUACIÓN ===== */
+.evaluacionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1;
+  padding-right: 0;
+}
+
+.evaluacionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 0;
+  position: relative;
+  z-index: 2;
+}
+
+
+.evaluacionNombre {
+  color: #1e293b;
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+  position: relative;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* ===== TOOLTIP PARA NOMBRE COMPLETO ===== */
+.evaluacionNombre::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+  word-wrap: break-word;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.evaluacionNombre::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(100%);
+  border: 5px solid transparent;
+  border-top-color: #1f2937;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.evaluacionNombre:hover::before,
+.evaluacionNombre:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-8px);
+}
+
+.evaluacionNombre:hover::after {
+  transform: translateX(-50%) translateY(100%);
+}
+
+.evaluacionDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2;
+  padding-right: 80px;
+}
+
+.evaluacionMes {
+  color: #64748b;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+  background: none;
+  border: none;
+  min-height: auto;
+  font-weight: 500;
+  box-shadow: none;
+  transition: none;
+}
+
+.evaluacionMes strong {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.evaluacionEstado {
+  padding: 2px 0;
+  border-radius: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: auto;
+  box-shadow: none;
+  transition: none;
+  position: relative;
+  overflow: visible;
+  margin-top: 0;
+}
+
+.evaluacionEstado.activo {
+  background: none;
+  color: #15803d;
+  border: none;
+  box-shadow: none;
+}
+
+.evaluacionEstado.activo:hover {
+  background: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.evaluacionEstado.inactivo {
+  background: none;
+  color: #dc2626;
+  border: none;
+  box-shadow: none;
+}
+
+.evaluacionEstado.inactivo:hover {
+  background: none;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===== ACCIONES DE LA EVALUACIÓN ===== */
+.evaluacionActions {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-wrap: nowrap;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.evaluacionCardWrapper:hover .evaluacionActions {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.actionsContainer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.actionButton {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.actionButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s ease;
+}
+
+.actionButton:hover::before {
+  left: 100%;
+}
+
+
+.actionButton:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  border-color: #cbd5e1;
+}
+
+.actionButton:active {
+  transform: translateY(0);
+}
+
+/* ===== ANIMACIÓN ESPECÍFICA PARA CALENDARIO ===== */
+.actionButton.calendarButton {
+  position: relative;
+  overflow: hidden;
+}
+
+.actionButton.calendarButton:active {
+  animation: calendarClick 0.3s ease-in-out;
+}
+
+@keyframes calendarClick {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+    background: #f0f9ff;
+    border-color: #3b82f6;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.actionButton.calendarButton:active .actionIcon {
+  animation: calendarIconSpin 0.3s ease-in-out;
+}
+
+@keyframes calendarIconSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(10deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.toggleButton:hover {
+  background: #f0fdf4;
+  border-color: #16a34a;
+  color: #16a34a;
+}
+
+.editButton:hover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.deleteButton:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.actionIcon {
+  font-size: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+  position: relative;
+}
+
+/* ===== EDICIÓN DE MES ===== */
+.monthEditContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  animation: slideInFromRight 0.3s ease-out;
+  transform-origin: right center;
+  position: relative;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.monthEditContainer.closing {
+  animation: slideOutToRight 0.2s ease-in forwards;
+}
+
+@keyframes slideOutToRight {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(20px) scale(0.95);
+  }
+}
+
+@keyframes slideInFromRight {
+  0% {
+    opacity: 0;
+    transform: translateX(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.monthSelect {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: #ffffff;
+  color: #1f2937;
+  min-height: 40px;
+  transition: all 0.2s ease;
+  animation: fadeInScale 0.4s ease-out 0.1s both;
+}
+
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.monthSelect:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: scale(1.02);
+}
+
+.monthEditActions {
+  display: flex;
+  gap: 6px;
+  animation: slideInFromRight 0.4s ease-out 0.2s both;
+}
+
+.saveMonthButton,
+.cancelMonthButton {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  min-height: 40px;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: bounceIn 0.5s ease-out 0.3s both;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(-20px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.saveMonthButton::before,
+.cancelMonthButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.saveMonthButton:hover::before,
+.cancelMonthButton:hover::before {
+  left: 100%;
+}
+
+.saveMonthButton {
+  background: #16a34a;
+  color: white;
+}
+
+.saveMonthButton:hover {
+  background: #15803d;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+}
+
+.cancelMonthButton {
+  background: #dc2626;
+  color: white;
+}
+
+.cancelMonthButton:hover {
+  background: #b91c1c;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.monthContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.monthText {
+  flex: 1;
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+
+.editMonthButton {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.editMonthButton:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.editMonthIcon {
+  font-size: 1.1rem;
+}
+
+.loaderIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== MENSAJE SIN EVALUACIONES ===== */
+.noEvaluaciones {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+  background: #f9fafb;
+  border-radius: 16px;
+  border: 2px dashed #d1d5db;
+}
+
+.noEvaluaciones p {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+  .acordeonContainer {
+    margin: 16px 0;
+    border-radius: 16px;
+  }
+  
+  .acordeonHeader {
+    padding: 20px;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .acordeonTitle {
+    font-size: 1.3rem;
+  }
+  
+  .columnSelector {
+    align-self: center;
+  }
+  
+  .acordeonItemHeader {
+    padding: 16px 20px;
+  }
+  
+  .headerContent {
+    gap: 12px;
+  }
+  
+  .gradoNumber {
+    font-size: 1rem;
+    padding: 10px 14px;
+    min-width: 60px;
+  }
+  
+  .gradoName {
+    font-size: 1.1rem;
+  }
+  
+  .nivelTag {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+  
+  .acordeonBody.expanded {
+    padding: 20px;
+  }
+  
+  .evaluacionesList {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .evaluacionesList.columns2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .evaluacionesList.columns3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .evaluacionesList.columns4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .evaluacionCard {
+    padding: 16px 16px 50px 16px;
+    height: 140px;
+  }
+  
+  .evaluacionNombre {
+    font-size: 1rem;
+  }
+  
+  .evaluacionNombre::before {
+    max-width: 250px;
+    font-size: 0.8rem;
+  }
+  
+  .evaluacionDetails {
+    gap: 0;
+    padding-right: 70px;
+  }
+  
+  .evaluacionMes,
+  .evaluacionEstado {
+    min-height: auto;
+    padding: 2px 0;
+  }
+  
+  .evaluacionActions {
+    bottom: 6px;
+    right: 6px;
+    gap: 4px;
+    padding: 6px;
+  }
+  
+  .actionsContainer {
+    gap: 4px;
+  }
+  
+  .actionButton {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .actionIcon {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .acordeonContainer {
+    margin: 12px 0;
+    border-radius: 12px;
+  }
+  
+  .acordeonTitle {
+    font-size: 1.2rem;
+    padding: 16px;
+  }
+  
+  .acordeonHeader {
+    padding: 12px 16px;
+  }
+  
+  .headerContent {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .gradoNumber {
+    align-self: flex-start;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+    min-width: 50px;
+  }
+  
+  .gradoName {
+    font-size: 1rem;
+  }
+  
+  .nivelTag {
+    align-self: flex-start;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+  
+  .acordeonBody.expanded {
+    padding: 16px;
+  }
+  
+  .evaluacionesList {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .evaluacionesList.columns2,
+  .evaluacionesList.columns3,
+  .evaluacionesList.columns4 {
+    grid-template-columns: 1fr;
+  }
+  
+  .evaluacionCard {
+    padding: 16px 16px 50px 16px;
+    height: 140px;
+  }
+  
+  .evaluacionNombre {
+    font-size: 0.95rem;
+    min-height: 32px;
+  }
+  
+  .evaluacionNombre::before {
+    max-width: 200px;
+    font-size: 0.75rem;
+    padding: 6px 10px;
+  }
+  
+  .evaluacionDetails {
+    gap: 0;
+    padding-right: 60px;
+  }
+  
+  .evaluacionMes,
+  .evaluacionEstado {
+    min-height: auto;
+    padding: 2px 0;
+    font-size: 0.75rem;
+  }
+  
+  .evaluacionActions {
+    bottom: 4px;
+    right: 4px;
+    gap: 3px;
+    padding: 4px;
+  }
+  
+  .actionsContainer {
+    gap: 3px;
+  }
+  
+  .actionButton {
+    width: 26px;
+    height: 26px;
+  }
+  
+  .actionIcon {
+    font-size: 0.85rem;
+  }
+}
