@@ -41,21 +41,31 @@ export const useAgregarEvaluaciones = () => {
   const { currentUserData } = useGlobalContext();
   const db = getFirestore();
 
-  const getTipoDeEvaluacion = async () => {
+  const getTipoDeEvaluacion = () => {
     const docRef = doc(db, 'options', 'tipos-de-evaluacion');
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      try {
-        dispatch({
-          type: AppAction.TIPOS_DE_EVALUACION,
-          payload: docSnap.data().tiposDeEvaluacion as TipoDeEvaluacion[],
-        });
-      } catch (error) {
-        console.log('error', error);
-      } finally {
+    
+    // Usar onSnapshot para actualizaciones en tiempo real
+    const unsubscribe = onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          try {
+            dispatch({
+              type: AppAction.TIPOS_DE_EVALUACION,
+              payload: docSnap.data().tiposDeEvaluacion as TipoDeEvaluacion[],
+            });
+          } catch (error) {
+            console.log('error', error);
+          }
+        }
+      },
+      (error: Error) => {
+        console.log('Error en getTipoDeEvaluacion:', error);
       }
-    }
+    );
+
+    // Retornar la función de limpieza para poder desuscribirse
+    return unsubscribe;
   };
   const obtenerEstudianteDeEvaluacion = (
     evaluacion: Evaluacion,

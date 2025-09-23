@@ -79,6 +79,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
               <ul className={`${styles.submenu} ${openDropdown === 'docentes' ? styles.show : ''}`}>
                 <li><Link href="/directores/evaluaciones-docentes" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
                 <li><Link href="/directores/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
+                <li><Link href="/admin/docentes/conocimiento-pedagogico" className={styles.submenuLink}>Conocimiento pedagogico</Link></li>
               </ul>
             </li>
             <li className={styles.menuItem}>

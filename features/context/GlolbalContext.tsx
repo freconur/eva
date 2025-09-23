@@ -85,7 +85,8 @@ const initialState: AppReducerValues = {
   loaderReportePorPregunta:false,
   tiposDeEvaluacion:[],
   dataGraficoPieChart:[],
-  loaderDataGraficoPieChart:false
+  loaderDataGraficoPieChart:false,
+  preguntaEvaluacionLikert:[]
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

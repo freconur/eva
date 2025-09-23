@@ -13,6 +13,7 @@ const UseEvaluacionDocentes = () => {
   const db = getFirestore()
   const router = useRouter()
   const createEvaluacionesDocentes = async (data: CrearEvaluacionDocente) => {
+    
     await addDoc(collection(db, "evaluaciones-docentes"), data);
   }
 
@@ -46,6 +47,10 @@ const UseEvaluacionDocentes = () => {
 
   const deleteEvaluacionDocentes = async (id: string) => {
     await deleteDoc(doc(db, "evaluaciones-docentes", id));
+  }
+
+  const updateEvaluacionDocentes = async (data: CrearEvaluacionDocente, id: string) => {
+    await updateDoc(doc(db, "evaluaciones-docentes", id), data);
   }
   const addPreguntasEvaluacionDocente = async (data: PreviewPRDocentes, idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_MODALES, payload: true })
@@ -735,6 +740,7 @@ const UseEvaluacionDocentes = () => {
     createEvaluacionesDocentes,
     getEvaluacionesDocentes,
     deleteEvaluacionDocentes,
+    updateEvaluacionDocentes,
     addPreguntasEvaluacionDocente,
     getPreguntasRespuestasDocentes,
     updatePreResDocentes,

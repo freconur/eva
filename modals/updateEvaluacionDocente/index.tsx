@@ -1,44 +1,53 @@
 import { createPortal } from "react-dom"
-import styles from './crearEvaluacionDocentes.module.css'
+import styles from './updateEvaluacionDocente.module.css'
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones";
-import { Alternativa, Alternativas, Evaluaciones, PreguntasRespuestas, Psicolinguistica } from "@/features/types/types";
+import { CrearEvaluacionDocente } from "@/features/types/types";
 import { RiLoader4Line } from "react-icons/ri";
-import { usePsicolinguistica } from "@/features/hooks/usePsicolinguistica";
 import UseEvaluacionDocentes from "@/features/hooks/UseEvaluacionDocentes";
-import UseEvaluacionDirectores from "@/features/hooks/UseEvaluacionDirectores";
 
 interface Props {
-  handleShowModalCrearEvaluacion: () => void
+  handleShowModalUpdate: () => void
+  evaluacionData: CrearEvaluacionDocente
 }
 
-const CrearEvaluacionDocente = ({ handleShowModalCrearEvaluacion }: Props) => {
-  const { preguntasRespuestas, sizePreguntas, preguntasRespuestasEstudiante, loaderSalvarPregunta } = useGlobalContext()
-  const [ordenLimitePregunta, setOrdenLimitePregunta] = useState(0)
-  const [activarBotonSiguiente, setActivarBotonSiguiente] = useState(false)
-  const [repuestasCorrectas, setRespuestasCorrectas] = useState(0)
-  const { prEstudiantes, salvarPreguntRespuestaEstudiante, getPreguntasRespuestas } = useAgregarEvaluaciones()
+const UpdateEvaluacionDocente = ({ handleShowModalUpdate, evaluacionData }: Props) => {
+  const { tiposDeEvaluacion, loaderSalvarPregunta } = useGlobalContext()
+  const { getTipoDeEvaluacion } = useAgregarEvaluaciones()
+  const { updateEvaluacionDocentes } = UseEvaluacionDocentes()
+  
   let container;
   if (typeof window !== "undefined") {
     container = document.getElementById("portal-modal");
   }
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
-
-  const { createEvaluacionesDocentes } = UseEvaluacionDocentes()
-
-  const handleCreateEvaluacion = handleSubmit((data) => {
-    createEvaluacionesDocentes(data)
-    reset()
+  
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    defaultValues: {
+      name: evaluacionData.name || "",
+      categoria: evaluacionData.categoria || "",
+      tipoDeEvaluacion: evaluacionData.tipoDeEvaluacion || ""
+    }
   })
-  const { tiposDeEvaluacion } = useGlobalContext()
-const { getTipoDeEvaluacion } = useAgregarEvaluaciones()
+
   useEffect(() => {
     getTipoDeEvaluacion()
-  },[])
+    // Resetear el formulario con los datos de la evaluación
+    reset({
+      name: evaluacionData.name || "",
+      categoria: evaluacionData.categoria || "",
+      tipoDeEvaluacion: evaluacionData.tipoDeEvaluacion || ""
+    })
+  }, [evaluacionData, reset])
 
-  
+  const handleUpdateEvaluacion = handleSubmit((data) => {
+    if (evaluacionData.id) {
+      updateEvaluacionDocentes(data, evaluacionData.id)
+      handleShowModalUpdate()
+    }
+  })
+
   return container
     ? createPortal(
       <div className={styles.containerModal}>
@@ -46,17 +55,17 @@ const { getTipoDeEvaluacion } = useAgregarEvaluaciones()
           {loaderSalvarPregunta ? (
             <div className={styles.loaderContainer}>
               <RiLoader4Line className={styles.loaderIcon} />
-              <span>Guardando respuestas...</span>
+              <span>Actualizando evaluación...</span>
             </div>
           ) : (
             <>
               <div className={styles.closeModalContainer}>
-                <button className={styles.close} onClick={handleShowModalCrearEvaluacion}>
+                <button className={styles.close} onClick={handleShowModalUpdate}>
                   Cerrar
                 </button>
               </div>
-              <h3 className={styles.title}>Crear Evaluación Desempeño del director</h3>
-              <form onSubmit={handleCreateEvaluacion}>
+              <h3 className={styles.title}>Editar Evaluación de Docente</h3>
+              <form onSubmit={handleUpdateEvaluacion}>
                 <div className="w-full my-2">
                   <label className={styles.inputLabel}>Nombre de evaluación:</label>
                   <input
@@ -102,9 +111,14 @@ const { getTipoDeEvaluacion } = useAgregarEvaluaciones()
                   </select>
                   {errors.tipoDeEvaluacion && <span className={styles.errorMessage}>{errors.tipoDeEvaluacion.message as string}</span>}
                 </div>
-                <button type="submit" className={styles.buttonCrearEvaluacion}>
-                  Guardar
-                </button>
+                <div className={styles.buttonContainer}>
+                  <button type="button" onClick={handleShowModalUpdate} className={styles.buttonCancel}>
+                    Cancelar
+                  </button>
+                  <button type="submit" className={styles.buttonUpdate}>
+                    Actualizar
+                  </button>
+                </div>
               </form>
             </>
           )}
@@ -115,4 +129,4 @@ const { getTipoDeEvaluacion } = useAgregarEvaluaciones()
     : null
 }
 
-export default CrearEvaluacionDocente
+export default UpdateEvaluacionDocente

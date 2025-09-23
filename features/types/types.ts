@@ -81,7 +81,8 @@ export type AppReducerValues = {
   loaderReportePorPregunta:boolean,
   tiposDeEvaluacion:TipoDeEvaluacion[],
   dataGraficoPieChart:GraficoPieChart[],
-  loaderDataGraficoPieChart:boolean
+  loaderDataGraficoPieChart:boolean,
+  preguntaEvaluacionLikert:PreguntasEvaluacionLikert[]
 };
 
 export type AppActions =
@@ -178,6 +179,9 @@ export type AppActions =
   | { type: AppAction.TIPOS_DE_EVALUACION; payload: TipoDeEvaluacion[] }
   | { type: AppAction.DATA_GRAFICO_PIE_CHART; payload: GraficoPieChart[] }
   | { type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART; payload: boolean }
+  | { type: AppAction.PREGUNTAS_EVALUACION_ESCALA_LIKERT; payload: PreguntasEvaluacionLikert[]}
+    
+  
 export type LoginData = {
   usuario: string;
   contrasena: string;
@@ -320,9 +324,24 @@ export type User = {
   resultados?:DataEstadisticas[],
   fechaEvaluacion?:Date,
   docentesDelDirector?:User[]
-  estudiantesDelDocente?:UserEstudiante[]
+  estudiantesDelDocente?:UserEstudiante[],
+  conocimientoPedagogico?:ConocimientoPedagogico
 };
 
+export type ConocimientoPedagogico = {
+  nombres?:string,
+  apellidos?:string,
+  dni?:string,
+  grado?:string[],
+  edad?:{id?:number,name?:string},
+  sexo?:{id?:number,name?:string},
+  institucion?:string,
+  dniDirector?:string,
+  rol?:number,
+  region?:number,
+  anosExperiencia?:string,
+  distrito?:string
+}
 export type DataEstadisticas = {
   id?: string;
   a?: number;
@@ -384,6 +403,7 @@ export type CrearEvaluacionDocente = {
   name?: string;
   categoria?: string;
   id?: string;
+  tipoDeEvaluacion?: string;
 };
 
 export type PreviewPRDocentes = {
@@ -539,4 +559,31 @@ export type GraficoPieChart = {
     nivel: string,
     cantidadDeEstudiantes: number
   }[],
+}
+
+export type EscalaLikert = {
+  name?:string,
+  value?:number,
+}
+
+export type PreguntasEvaluacionLikert = {
+  pregunta?:string,
+  orden?:number,
+  id?:string,
+  respuesta?:number
+}
+export type EvaluacionLikert = {
+  name?:string,
+  puntaje?:EscalaLikert[],
+  id?:string,
+  mesDelExamen?:string,
+  tipoDeEvaluacion?:string,
+  active?:boolean
+}
+
+export type DataUsuarioEvaluacionLikert = {
+  datosUsuario?:User,
+  evaluacion?:{
+    preguntas?:PreguntasEvaluacionLikert[],
+  }
 }

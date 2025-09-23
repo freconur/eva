@@ -208,3 +208,11 @@ export const convertRolToTitle = (rol: number) => {
   if (rol === 3) return "docente"
   if (rol === 4) return "especiliasta drep"
 }
+
+export const rangoEdad = [
+  { id: 1, name: "20-30" },
+  { id: 2, name: "30-40" },
+  { id: 3, name: "40-50" },
+  { id: 4, name: "50-60" },
+  { id: 5, name: "60-70" },
+]
