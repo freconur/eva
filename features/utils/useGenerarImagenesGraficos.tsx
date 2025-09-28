@@ -21,18 +21,29 @@ export const useGenerarImagenesGraficos = ({ reporteDirectorOrdenado }: UseGener
       const tempCanvas = document.createElement('canvas');
       const tempCtx = tempCanvas.getContext('2d');
       
-      // Dimensiones fijas para el PDF (más grandes para mejor calidad)
-      const pdfWidth = 600;
-      const pdfHeight = 400;
+      // Dimensiones optimizadas para calidad y tamaño balanceado
+      const pdfWidth = 900; // Reducido de 1200 a 900 para tamaño más compacto
+      const pdfHeight = 600; // Reducido de 800 a 600 para tamaño más compacto
       
       tempCanvas.width = pdfWidth;
       tempCanvas.height = pdfHeight;
       
       if (tempCtx) {
-        // Copiar el contenido del canvas original al temporal
-        tempCtx.drawImage(canvasRef, 0, 0, pdfWidth, pdfHeight);
+        // Configurar el contexto para mejor calidad
+        tempCtx.imageSmoothingEnabled = true;
+        tempCtx.imageSmoothingQuality = 'high';
         
-        // Convertir a base64 con mejor calidad
+        // Configurar DPI para mejor calidad de impresión (300 DPI)
+        const dpi = 300;
+        const scaleFactor = dpi / 96; // 96 es el DPI estándar de pantalla
+        
+        // Aplicar el factor de escala para DPI
+        tempCtx.scale(scaleFactor, scaleFactor);
+        
+        // Copiar el contenido del canvas original al temporal con escalado suave
+        tempCtx.drawImage(canvasRef, 0, 0, pdfWidth / scaleFactor, pdfHeight / scaleFactor);
+        
+        // Convertir a base64 con máxima calidad
         const base64 = tempCanvas.toDataURL('image/png', 1.0);
         
         setGraficosImagenes(prev => {

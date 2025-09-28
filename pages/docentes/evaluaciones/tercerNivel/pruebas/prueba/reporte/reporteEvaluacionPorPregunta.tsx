@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
 import styles from './reporte.module.css';
@@ -18,6 +18,8 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   warningEvaEstudianteSinRegistro,
   convertirGraficoAImagen
 }) => {
+  // Estado para controlar el número de columnas (por defecto 2)
+  const [numeroColumnas, setNumeroColumnas] = useState<number>(2);
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
     // Usar el número de opciones detectado globalmente
     const numOpciones = detectarNumeroOpciones;
@@ -34,14 +36,23 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
     const porcentajeCRaw = calcularPorcentaje(data.c || 0);
     const porcentajeDRaw = numOpciones === 4 ? calcularPorcentaje(data.d || 0) : 0;
 
+    // Función para determinar si una opción es la respuesta correcta
+    const esRespuestaCorrecta = (opcion: string) => {
+      return opcion.toLowerCase() === respuesta.toLowerCase();
+    };
+
     if (numOpciones === 3) {
       // Para 3 opciones: redondear las primeras 2 y calcular la tercera
       const porcentajeA = Math.round(porcentajeARaw);
       const porcentajeB = Math.round(porcentajeBRaw);
       const porcentajeC = Math.max(0, 100 - porcentajeA - porcentajeB);
 
-      // Crear etiquetas solo para las 3 opciones
-      const labels = [`a (${porcentajeA}%)`, `b (${porcentajeB}%)`, `c (${porcentajeC}%)`];
+      // Crear etiquetas solo para las 3 opciones con check para la respuesta correcta
+      const labels = [
+        `A (${data.a || 0} - ${porcentajeA}%)${esRespuestaCorrecta('a') ? ' ✓' : ''}`,
+        `B (${data.b || 0} - ${porcentajeB}%)${esRespuestaCorrecta('b') ? ' ✓' : ''}`,
+        `C (${data.c || 0} - ${porcentajeC}%)${esRespuestaCorrecta('c') ? ' ✓' : ''}`
+      ];
 
       return {
         labels: labels,
@@ -50,14 +61,14 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
             label: 'estadisticas de respuesta',
             data: [data.a, data.b, data.c],
             backgroundColor: [
-              'rgba(52, 152, 219, 0.7)',   // Azul azulado
-              'rgba(46, 204, 113, 0.7)',   // Verde esmeralda
-              'rgba(155, 89, 182, 0.7)',   // Púrpura
+              esRespuestaCorrecta('a') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(59, 130, 246, 0.8)',   // Verde para respuesta correcta, azul para otras
+              esRespuestaCorrecta('b') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(107, 114, 128, 0.8)',  // Verde para respuesta correcta, gris para otras
+              esRespuestaCorrecta('c') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(17, 24, 39, 0.8)',     // Verde para respuesta correcta, gris oscuro para otras
             ],
             borderColor: [
-              'rgb(52, 152, 219)',         // Azul azulado
-              'rgb(46, 204, 113)',         // Verde esmeralda
-              'rgb(155, 89, 182)',         // Púrpura
+              esRespuestaCorrecta('a') ? 'rgb(34, 197, 94)' : 'rgb(59, 130, 246)',         // Verde para respuesta correcta, azul para otras
+              esRespuestaCorrecta('b') ? 'rgb(34, 197, 94)' : 'rgb(107, 114, 128)',        // Verde para respuesta correcta, gris para otras
+              esRespuestaCorrecta('c') ? 'rgb(34, 197, 94)' : 'rgb(17, 24, 39)',           // Verde para respuesta correcta, gris oscuro para otras
             ],
             borderWidth: 2,
           },
@@ -70,8 +81,13 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
       const porcentajeC = Math.round(porcentajeCRaw);
       const porcentajeD = Math.max(0, 100 - porcentajeA - porcentajeB - porcentajeC);
 
-      // Crear etiquetas para las 4 opciones
-      const labels = [`a (${porcentajeA}%)`, `b (${porcentajeB}%)`, `c (${porcentajeC}%)`, `d (${porcentajeD}%)`];
+      // Crear etiquetas para las 4 opciones con check para la respuesta correcta
+      const labels = [
+        `A (${data.a || 0} - ${porcentajeA}%)${esRespuestaCorrecta('a') ? ' ✓' : ''}`,
+        `B (${data.b || 0} - ${porcentajeB}%)${esRespuestaCorrecta('b') ? ' ✓' : ''}`,
+        `C (${data.c || 0} - ${porcentajeC}%)${esRespuestaCorrecta('c') ? ' ✓' : ''}`,
+        `D (${data.d || 0} - ${porcentajeD}%)${esRespuestaCorrecta('d') ? ' ✓' : ''}`
+      ];
 
       return {
         labels: labels,
@@ -80,16 +96,16 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
             label: 'estadisticas de respuesta',
             data: [data.a, data.b, data.c, data.d],
             backgroundColor: [
-              'rgba(52, 152, 219, 0.7)',   // Azul azulado
-              'rgba(46, 204, 113, 0.7)',   // Verde esmeralda
-              'rgba(155, 89, 182, 0.7)',   // Púrpura
-              'rgba(230, 126, 34, 0.7)',   // Naranja
+              esRespuestaCorrecta('a') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(59, 130, 246, 0.8)',   // Verde para respuesta correcta, azul para otras
+              esRespuestaCorrecta('b') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(107, 114, 128, 0.8)',  // Verde para respuesta correcta, gris para otras
+              esRespuestaCorrecta('c') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(17, 24, 39, 0.8)',     // Verde para respuesta correcta, gris oscuro para otras
+              esRespuestaCorrecta('d') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(75, 85, 99, 0.8)',     // Verde para respuesta correcta, gris medio para otras
             ],
             borderColor: [
-              'rgb(52, 152, 219)',         // Azul azulado
-              'rgb(46, 204, 113)',         // Verde esmeralda
-              'rgb(155, 89, 182)',         // Púrpura
-              'rgb(230, 126, 34)',         // Naranja
+              esRespuestaCorrecta('a') ? 'rgb(34, 197, 94)' : 'rgb(59, 130, 246)',         // Verde para respuesta correcta, azul para otras
+              esRespuestaCorrecta('b') ? 'rgb(34, 197, 94)' : 'rgb(107, 114, 128)',        // Verde para respuesta correcta, gris para otras
+              esRespuestaCorrecta('c') ? 'rgb(34, 197, 94)' : 'rgb(17, 24, 39)',           // Verde para respuesta correcta, gris oscuro para otras
+              esRespuestaCorrecta('d') ? 'rgb(34, 197, 94)' : 'rgb(75, 85, 99)',           // Verde para respuesta correcta, gris medio para otras
             ],
             borderWidth: 2,
           },
@@ -107,11 +123,72 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
         display: true,
         text: 'estadistica de respuestas',
       },
+      tooltip: {
+        enabled: true,
+        mode: 'index' as const,
+        intersect: false,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#22c55e',
+        borderWidth: 1,
+        cornerRadius: 8,
+        displayColors: true,
+        callbacks: {
+          title: function(context: any) {
+            return `Opción ${context[0].label.split(' ')[0].toUpperCase()}`;
+          },
+          label: function(context: any) {
+            const label = context.label;
+            const value = context.parsed.y;
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+            return `Respuestas: ${value} (${percentage}%)`;
+          }
+        }
+      }
     },
+    scales: {
+      x: {
+        ticks: {
+          color: function(context: any) {
+            const label = context.tick.label;
+            // Si la etiqueta contiene un check, usar color verde
+            if (label && label.includes('✓')) {
+              return '#22c55e';
+            }
+            return '#374151';
+          },
+          font: {
+            family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+            size: 12,
+            weight: 'bold' as const
+          }
+        }
+      },
+      y: {
+        ticks: {
+          color: '#6b7280',
+          font: {
+            family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+            size: 11
+          }
+        }
+      }
+    },
+    interaction: {
+      mode: 'index' as const,
+      intersect: false
+    },
+    onHover: (event: any, activeElements: any) => {
+      if (event.native) {
+        event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+      }
+    }
   };
 
   // Función optimizada para renderizar pregunta usando el mapa
-  const renderPregunta = useCallback((idPregunta: string) => {
+  /* const renderPregunta = useCallback((idPregunta: string) => {
     const pregunta = preguntasMap.get(idPregunta);
     if (!pregunta) {
       return <p>Pregunta no encontrada</p>;
@@ -126,7 +203,7 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
         </h4>
       </>
     );
-  }, [preguntasMap]);
+  }, [preguntasMap]); */
 
   // Función optimizada para obtener respuesta usando el mapa
   const obtenerRespuestaPorId = useCallback((idPregunta: string): string => {
@@ -135,9 +212,32 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   }, [preguntasMap]);
 
   return (
-    <>
+    <div className={styles.containerPrincipal}>
       <h1 className={styles.title}>Reporte de Evaluación</h1>
-      <div className={styles.reportContainer}>
+      
+      {/* Selector de número de columnas */}
+      <div className={styles.columnSelectorContainer}>
+        <label className={styles.columnSelectorLabel}>
+          Número de columnas:
+        </label>
+        <select 
+          className={styles.columnSelector}
+          value={numeroColumnas}
+          onChange={(e) => setNumeroColumnas(Number(e.target.value))}
+        >
+          <option value={1}>1 Columna</option>
+          <option value={2}>2 Columnas</option>
+          <option value={3}>3 Columnas</option>
+        </select>
+      </div>
+
+      <div 
+        className={styles.reportContainer}
+        style={{
+          gridTemplateColumns: `repeat(${numeroColumnas}, 1fr)`,
+          display: 'grid'
+        }}
+      >
         {warningEvaEstudianteSinRegistro ? (
           <div className={styles.warningContainer}>{warningEvaEstudianteSinRegistro}</div>
         ) : (
@@ -148,11 +248,13 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
               <div key={dat.id || index} className={styles.questionCard}>
                 {/* Header de la pregunta */}
                 <div className={styles.questionHeader}>
-                  <div className={styles.questionNumber}>
-                    <span className={styles.numberBadge}>{index + 1}</span>
-                  </div>
                   <div className={styles.questionContent}>
-                    {renderPregunta(`${dat.id}`)}
+                    <h3 className={styles.questionTitle}>
+                      {index + 1}. {pregunta?.pregunta}
+                    </h3>
+                    <h4 className={styles.questionSubtitle}>
+                      <strong>Actuación</strong>: {pregunta?.preguntaDocente}
+                    </h4>
                   </div>
                 </div>
 
@@ -164,20 +266,20 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
                       <h4 className={styles.chartTitle}>Distribución de Respuestas</h4>
                       <div className={styles.chartLegend}>
                         <span className={styles.legendItem}>
-                          <span className={`${styles.legendColor} ${styles.legendColorA}`}></span>
+                          <span className={`${styles.legendColor} ${obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === 'a' ? styles.correctAnswerColor : styles.legendColorA}`}></span>
                           Opción A
                         </span>
                         <span className={styles.legendItem}>
-                          <span className={`${styles.legendColor} ${styles.legendColorB}`}></span>
+                          <span className={`${styles.legendColor} ${obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === 'b' ? styles.correctAnswerColor : styles.legendColorB}`}></span>
                           Opción B
                         </span>
                         <span className={styles.legendItem}>
-                          <span className={`${styles.legendColor} ${styles.legendColorC}`}></span>
+                          <span className={`${styles.legendColor} ${obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === 'c' ? styles.correctAnswerColor : styles.legendColorC}`}></span>
                           Opción C
                         </span>
                         {detectarNumeroOpciones === 4 && (
                           <span className={styles.legendItem}>
-                            <span className={`${styles.legendColor} ${styles.legendColorD}`}></span>
+                            <span className={`${styles.legendColor} ${obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === 'd' ? styles.correctAnswerColor : styles.legendColorD}`}></span>
                             Opción D
                           </span>
                         )}
@@ -204,8 +306,6 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
                           dat,
                           obtenerRespuestaPorId(`${dat.id}`)
                         )}
-                        width={600}
-                        height={400}
                         ref={(chartRef) => {
                           if (chartRef && chartRef.canvas) {
                             setTimeout(() => {
@@ -217,22 +317,13 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
                     </div>
                   </div>
 
-                  {/* Contenedor de estadísticas y respuesta correcta */}
-                  <div className={styles.bottomPanelsContainer}>
-                    {/* Panel de respuesta correcta */}
-                    <div className={styles.answerPanel}>
-                      <span className={styles.answerText}>
-                        <strong>Respuesta correcta:</strong> {obtenerRespuestaPorId(`${dat.id}`)}
-                      </span>
-                    </div>
-                  </div>
                 </div>
               </div>
             );
           })
         )}
       </div>
-    </>
+    </div>
   );
 };
 

@@ -10,10 +10,11 @@
   overflow-y: visible;
   margin-bottom: 2.5rem;
   margin-top: 2rem; /* Espacio superior para el popover */
-  border-radius: 0.375rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   background-color: white;
   position: relative; /* Para posicionamiento absoluto de popovers */
+  border: 1px solid var(--color-azul-claro2);
 }
 
 /* Estilos para el scrollbar horizontal */
@@ -39,8 +40,9 @@
 .tableWrapper .table th:nth-child(n+8),
 .tableWrapper .table td:nth-child(n+8) {
   text-align: center;
-  padding: 0.5rem 0.25rem;
-  border-left: 1px solid #e5e7eb;
+  /* padding: 0.5rem 0.25rem; */
+  padding: 0.7rem;
+  border-left: 1px solid var(--color-azul-claro2);
 }
 
 .table {
@@ -51,40 +53,76 @@
 }
 
 .tableHeader {
-  background-color: #1d4ed8;
-  border-bottom: 2px solid #93c5fd;
+  background: linear-gradient(135deg, var(--color-azul-oscuro) 0%, var(--color-secundario) 50%, var(--color-quinto) 100%);
+  border-bottom: 3px solid var(--color-azul-oscuro);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .tableHeader th {
   color: white;
   text-transform: uppercase;
-  font-family: 'Nunito', sans-serif;
-  padding: 0.75rem;
-  text-align: left;
-  font-size: 0.625rem;
-  min-width: 40px; /* Ancho mínimo para columnas de respuestas */
-  white-space: nowrap; /* Evita el salto de línea */
-  position: relative; /* Para posicionar el popover correctamente */
+  font-family: 'Inter', 'Nunito', sans-serif;
+  padding: 1rem 0.75rem;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  min-width: 50px;
+  white-space: nowrap;
+  position: relative;
+  border-right: 1px solid var(--color-azul-claro2);
+  transition: all 0.2s ease;
+}
+
+.tableHeader th:first-child {
+  border-top-left-radius: 0.5rem;
+}
+
+.tableHeader th:last-child {
+  border-top-right-radius: 0.5rem;
+  border-right: none;
+}
+
+.tableHeader th:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
 }
 
 .tableBody tr {
-  height: 30px;
-  transition: background-color 0.1s;
+  height: 40px;
+  transition: all 0.2s ease;
   cursor: pointer;
+  border-bottom: 1px solid var(--color-azul-claro);
+}
+
+.tableBody tr:nth-child(even) {
+  background-color: var(--tertiary);
 }
 
 .tableBody tr:hover {
-  background-color: #dbeafe;
+  background: linear-gradient(90deg, var(--color-azul-claro) 0%, var(--color-cuarto) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .tableBody td {
-  color: #64748b;
+  color: var(--color-azul-oscuro);
   text-transform: uppercase;
-  padding: 0.5rem;
-  font-size: 0.625rem;
-  text-align: left;
-  min-width: 40px; /* Ancho mínimo para columnas de respuestas */
-  white-space: nowrap; /* Evita el salto de línea */
+  padding: 0.75rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-align: center;
+  min-width: 50px;
+  white-space: nowrap;
+  border-right: 1px solid var(--color-azul-claro);
+  transition: all 0.2s ease;
+}
+
+.tableBody td:last-child {
+  border-right: none;
 }
 
 .deleteIcon {
@@ -99,25 +137,58 @@
 }
 
 .questionButton {
-  display: block;
-  height: 20px;
-  width: 20px;
-  border-radius: 9999px;
-  background: none;
-  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  width: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   color: white;
-  font-size: 0.625rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.questionButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.questionButton:hover::before {
+  left: 100%;
 }
 
 .questionButton:focus {
-  background-color: #1e40af;
+  outline: none;
+  background: rgba(255, 255, 255, 0.25);
+  border-color: var(--color-azul-claro2);
+  box-shadow: 0 0 0 3px var(--color-tercero);
+  transform: scale(1.05);
 }
 
 .questionButton:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.questionButton:active {
+  transform: scale(0.95);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .questionPopover {
@@ -272,7 +343,7 @@
 
 .correctAnswer {
   font-size: 0.625rem;
-  background-color: #86efac;
+  background-color: var(--color-pastel2);
   width: 100%;
   height: 30px;
   display: flex;
@@ -281,12 +352,13 @@
   transition: all 0.3s;
   border-radius: 4px;
   font-weight: 600;
-  color: #166534;
+  color: var(--color-azul-oscuro);
   min-width: 25px;
+  border: 1px solid var(--color-beneficios);
 }
 
 .correctAnswer:hover {
-  background-color: #4ade80;
+  background-color: var(--color-beneficios);
   transform: translateY(1px);
 }
 
@@ -303,6 +375,7 @@
   font-weight: 600;
   color: #991b1b;
   min-width: 25px;
+  border: 1px solid #f87171;
 }
 
 .incorrectAnswer:hover {
@@ -312,7 +385,7 @@
 
 .noAnswer {
   font-size: 0.625rem;
-  background-color: #f3f4f6;
+  background-color: var(--tertiary);
   width: 100%;
   height: 30px;
   display: flex;
@@ -321,59 +394,91 @@
   transition: all 0.3s;
   border-radius: 4px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-azul-oscuro);
   min-width: 25px;
+  border: 1px solid var(--color-azul-claro);
 }
 
 .studentLink {
-  color: #1d4ed8;
+  color: var(--color-secundario);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s;
 }
 
 .studentLink:hover {
-  color: #1e40af;
+  color: var(--color-quinto);
   text-decoration: underline;
 }
 
 .studentName {
-  color: #64748b;
+  color: var(--color-azul-oscuro);
   font-weight: 500;
 }
 
 .warningContainer {
   width: 100%;
   height: 100%;
-  background-color: #f8fcfd;
-  color: rgb(128, 128, 128);
+  background-color: var(--tertiary);
+  color: var(--color-azul-oscuro);
   text-align: center;
   margin: auto;
   padding: 2rem;
   font-size: 1rem;
   font-weight: 500;
+  border: 1px solid var(--color-azul-claro);
+  border-radius: 0.5rem;
+}
+
+/* Estilos para el mensaje de "no hay datos" */
+.noDataContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--tertiary);
+  border: 1px solid var(--color-azul-claro);
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.noDataMessage {
+  text-align: center;
+  color: var(--color-azul-oscuro);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: 'Inter', 'Nunito', sans-serif;
+  opacity: 0.7;
+  margin: 0;
 }
 
 /* Responsive design */
 @media (max-width: 768px) {
   .tableWrapper {
     margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
   }
   
   .table {
     min-width: 600px;
   }
   
-  .tableHeader th,
+  .tableHeader th {
+    font-size: 0.6rem;
+    padding: 0.75rem 0.5rem;
+    font-weight: 700;
+  }
+  
   .tableBody td {
-    font-size: 0.5rem;
-    padding: 0.25rem;
+    font-size: 0.55rem;
+    padding: 0.5rem 0.25rem;
   }
   
   .questionButton {
-    height: 16px;
-    width: 16px;
-    font-size: 0.5rem;
+    height: 22px;
+    width: 22px;
+    font-size: 0.6rem;
+    font-weight: 700;
   }
   
   .questionPopover {
@@ -400,8 +505,16 @@
   .correctAnswer,
   .incorrectAnswer,
   .noAnswer {
-    height: 25px;
-    font-size: 0.5rem;
+    height: 28px;
+    font-size: 0.55rem;
+  }
+  
+  .noDataContainer {
+    padding: 0.75rem;
+  }
+  
+  .noDataMessage {
+    font-size: 0.8rem;
   }
 }
 
@@ -410,16 +523,22 @@
     min-width: 500px;
   }
   
-  .tableHeader th,
+  .tableHeader th {
+    font-size: 0.5rem;
+    padding: 0.5rem 0.25rem;
+    font-weight: 700;
+  }
+  
   .tableBody td {
-    font-size: 0.45rem;
-    padding: 0.2rem;
+    font-size: 0.5rem;
+    padding: 0.4rem 0.2rem;
   }
   
   .questionButton {
-    height: 14px;
-    width: 14px;
-    font-size: 0.45rem;
+    height: 20px;
+    width: 20px;
+    font-size: 0.5rem;
+    font-weight: 700;
   }
   
   .questionPopover {
@@ -450,64 +569,87 @@
   .correctAnswer,
   .incorrectAnswer,
   .noAnswer {
-    height: 20px;
-    font-size: 0.45rem;
+    height: 24px;
+    font-size: 0.5rem;
+  }
+  
+  .noDataContainer {
+    padding: 0.5rem;
+  }
+  
+  .noDataMessage {
+    font-size: 0.75rem;
   }
 }
 
-/* Estilos para la paginación */
+/* Estilos para la paginación - Diseño minimalista */
 .paginationContainer {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  padding: 1rem;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  margin-top: 0.5rem;
+  gap: 1rem;
+  /* padding: 1.5rem; */
+  /* background: white;
+  border: 1px solid var(--color-azul-claro2);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); */
+ /*  margin-top: 1rem; */
 }
 
 .paginationInfo {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--color-azul-oscuro);
   font-weight: 500;
+  font-family: 'Inter', 'Nunito', sans-serif;
+  text-align: center;
+  margin-bottom: 0.5rem;
 }
 
 .paginationControls {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
-.paginationButton {
+.paginationArrow {
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 1rem;
-  background-color: #3b82f6;
-  color: white;
+  justify-content: center;
+  background: transparent;
+  color: var(--color-azul-oscuro);
   border: none;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  font-weight: 300;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  font-family: 'Inter', 'Nunito', sans-serif;
 }
 
-.paginationButton:hover:not(.disabled) {
-  background-color: #2563eb;
-  transform: translateY(-1px);
+.paginationArrow:hover:not(.disabled) {
+  background: var(--color-azul-claro);
+  color: var(--color-secundario);
+  transform: scale(1.1);
 }
 
-.paginationButton.disabled {
-  background-color: #9ca3af;
+.paginationArrow.disabled {
+  color: #9ca3af;
   cursor: not-allowed;
+  transform: none;
+}
+
+.paginationArrow.disabled:hover {
+  background: transparent;
+  color: #9ca3af;
   transform: none;
 }
 
 .pageNumbers {
   display: flex;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .pageNumber {
@@ -516,78 +658,97 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: white;
-  color: #64748b;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--color-azul-oscuro);
+  border: none;
+  border-radius: 50%;
   font-size: 0.875rem;
   font-weight: 500;
+  font-family: 'Inter', 'Nunito', sans-serif;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .pageNumber:hover {
-  background-color: #f3f4f6;
-  border-color: #3b82f6;
-  color: #3b82f6;
+  background: var(--color-azul-claro);
+  color: var(--color-secundario);
+  transform: scale(1.05);
 }
 
 .pageNumber.active {
-  background-color: #3b82f6;
+  background: var(--color-secundario);
   color: white;
-  border-color: #3b82f6;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(10, 71, 196, 0.3);
 }
 
 .pageNumber.active:hover {
-  background-color: #2563eb;
+  background: var(--color-quinto);
   color: white;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(10, 71, 196, 0.4);
 }
 
 /* Responsive para paginación */
 @media (max-width: 768px) {
   .paginationContainer {
-    flex-direction: column;
-    gap: 1rem;
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+  
+  .paginationInfo {
+    font-size: 0.8rem;
+  }
+  
+  .paginationControls {
+    gap: 0.75rem;
+  }
+  
+  .paginationArrow {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 1.25rem;
+  }
+  
+  .pageNumbers {
+    gap: 0.375rem;
+  }
+  
+  .pageNumber {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .paginationContainer {
     padding: 0.75rem;
+    gap: 0.5rem;
   }
   
   .paginationInfo {
     font-size: 0.75rem;
+    margin-bottom: 0.25rem;
   }
   
-  .paginationButton {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
+  .paginationControls {
+    gap: 0.5rem;
+  }
+  
+  .paginationArrow {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.125rem;
+  }
+  
+  .pageNumbers {
+    gap: 0.25rem;
   }
   
   .pageNumber {
     width: 2rem;
     height: 2rem;
     font-size: 0.75rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .paginationControls {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  
-  .pageNumbers {
-    order: -1;
-    width: 100%;
-    justify-content: center;
-    margin-bottom: 0.5rem;
-  }
-  
-  .paginationButton {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.625rem;
-  }
-  
-  .pageNumber {
-    width: 1.75rem;
-    height: 1.75rem;
-    font-size: 0.625rem;
   }
 }

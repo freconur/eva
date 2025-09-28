@@ -47,13 +47,13 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   title: {
-    fontSize: 24,
+    fontSize: 12,
     fontWeight: 'bold',
     marginBottom: 5,
     color: '#2c3e50',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#7f8c8d',
     marginBottom: 10,
   },
@@ -78,27 +78,27 @@ const styles = StyleSheet.create({
     color: '#2c3e50',
   },
   questionSection: {
-    marginBottom: 30,
-    padding: 20,
+   /*  marginBottom: 20,
+    padding: 15,
     border: '1 solid #ddd',
-    borderRadius: 5,
+    borderRadius: 5, */
     backgroundColor: '#fff',
-    minHeight: 400, // Asegura que ocupe más espacio en la página
+    minHeight: 220, // Reducido de 280 a 220 para acomodar imágenes más pequeñas
   },
   questionNumber: {
-    fontSize: 18,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#2c3e50',
-    marginBottom: 15,
+    marginBottom: 10, // Reducido de 15 a 10
   },
   questionText: {
-    fontSize: 14,
+    fontSize: 12,
     marginBottom: 10,
     lineHeight: 1.4,
     color: '#34495e',
   },
   questionDetails: {
-    marginBottom: 12,
+    /* marginBottom: 12, */
     paddingLeft: 15,
   },
   questionLabel: {
@@ -121,23 +121,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   chartContainer: {
-    marginTop: 25,
+    /* marginTop: 25, */
     alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#f8f9fa',
+    padding: 10, // Reducido de 15 a 10 para menos espacio
+    /* backgroundColor: '#f8f9fa', */
     borderRadius: 5,
   },
   chartImage: {
-    width: 350,
-    height: 200,
+    width: 350, // Reducido de 500 a 350 para tamaño más compacto
+    height: 200, // Reducido de 300 a 200 para tamaño más compacto
     objectFit: 'contain',
-    marginTop: 15,
-    marginBottom: 10,
-  },
-  separator: {
-    borderTop: '1 solid #ddd',
-    marginTop: 15,
-    marginBottom: 15,
+    marginTop: 8,
+    marginBottom: 6,
   },
   footer: {
     position: 'absolute',
@@ -162,13 +157,13 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   pageTitle: {
-    fontSize: 18,
+    fontSize: 12,
     fontWeight: 'bold',
     marginBottom: 5,
     color: '#2c3e50',
   },
   pageSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#7f8c8d',
     marginBottom: 10,
   },
@@ -222,16 +217,16 @@ const PreguntaItem = ({ item }: { item: ReporteItem }) => {
         </Text>
       </View>
       
-      <View style={styles.statsContainer}>
+      {/* <View style={styles.statsContainer}>
         <Text style={styles.statsText}>
           Estadísticas: A={a} ({calcularPorcentaje(a)}%), B={b} ({calcularPorcentaje(b)}%), C={c} ({calcularPorcentaje(c)}%)
           {d !== undefined ? `, D=${d} (${calcularPorcentaje(d)}%)` : ''}
         </Text>
-      </View>
+      </View> */}
       
       {item.graficoImagen && (
         <View style={styles.chartContainer}>
-          <Text style={styles.questionLabel}>Gráfico de resultados:</Text>
+          {/* <Text style={styles.questionLabel}>Gráfico de resultados:</Text> */}
           <Image 
             src={item.graficoImagen} 
             style={styles.chartImage}
@@ -239,8 +234,6 @@ const PreguntaItem = ({ item }: { item: ReporteItem }) => {
           />
         </View>
       )}
-      
-      <View style={styles.separator} />
     </View>
   );
 };
@@ -259,43 +252,44 @@ const ReportePDF = ({
     fecha = new Date().toLocaleDateString('es-ES')
   } = options;
 
+  // Calcular el número total de páginas (2 preguntas por página)
+  const totalPaginas = Math.ceil(reporteCompleto.length / 2);
+
   return (
     <Document>
-      {/* Primera página con datos del docente y primera pregunta */}
+      {/* Primera página con primeras dos preguntas */}
       <Page size="A4" style={styles.page}>
-        <ReporteInfo titulo={titulo} nombreDocente={nombreDocente} fecha={fecha} />
-        <DocenteInfo nombreDocente={nombreDocente} fecha={fecha} />
-        
-        {/* Solo la primera pregunta en la primera página */}
-        {reporteCompleto.length > 0 && (
-          <PreguntaItem key={`${reporteCompleto[0].id}-0`} item={reporteCompleto[0]} />
-        )}
+        {/* Primeras dos preguntas en la primera página */}
+        {reporteCompleto.slice(0, 2).map((item, index) => (
+          <PreguntaItem key={`${item.id}-${index}`} item={item} />
+        ))}
         
         <View style={styles.footer}>
           <Text style={styles.pageNumber}>
-            Página 1 de {reporteCompleto.length}
+            Página 1 de {totalPaginas}
           </Text>
         </View>
       </Page>
 
-      {/* Páginas adicionales para las demás preguntas */}
-      {reporteCompleto.slice(1).map((item, index) => (
-        <Page key={`page-${item.id}-${index + 1}`} size="A4" style={styles.page}>
-          {/* Encabezado simplificado para páginas adicionales */}
-          <View style={styles.pageHeader}>
-            <Text style={styles.pageTitle}>{titulo}</Text>
-            <Text style={styles.pageSubtitle}>Pregunta {item.index}</Text>
-          </View>
-          
-          <PreguntaItem key={`${item.id}-${index + 1}`} item={item} />
-          
-          <View style={styles.footer}>
-            <Text style={styles.pageNumber}>
-              Página {index + 2} de {reporteCompleto.length}
-            </Text>
-          </View>
-        </Page>
-      ))}
+      {/* Páginas adicionales con dos preguntas cada una */}
+      {Array.from({ length: totalPaginas - 1 }, (_, pageIndex) => {
+        const startIndex = (pageIndex + 1) * 2;
+        const preguntasEnPagina = reporteCompleto.slice(startIndex, startIndex + 2);
+        
+        return (
+          <Page key={`page-${pageIndex + 2}`} size="A4" style={styles.page}>
+            {preguntasEnPagina.map((item, index) => (
+              <PreguntaItem key={`${item.id}-${startIndex + index}`} item={item} />
+            ))}
+            
+            <View style={styles.footer}>
+              <Text style={styles.pageNumber}>
+                Página {pageIndex + 2} de {totalPaginas}
+              </Text>
+            </View>
+          </Page>
+        );
+      })}
     </Document>
   );
 };

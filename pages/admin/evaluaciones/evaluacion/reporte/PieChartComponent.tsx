@@ -15,6 +15,7 @@ import { Pie } from 'react-chartjs-2'
 import { GraficoPieChart } from '@/features/types/types'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import Loader from '@/components/loader/loader'
+import { useHighQualityChartOptions } from '@/features/hooks/useHighQualityChartOptions'
 
 // Registrar los componentes necesarios de Chart.js
 ChartJS.register(
@@ -40,48 +41,16 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
     : undefined;
   
   const { loaderDataGraficoPieChart } = useGlobalContext()
-  // Configuración del gráfico de pie
-  const opcionesGraficoPie = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          color: '#333',
-          font: {
-            size: 14
-          },
-          padding: 20
-        }
-      },
-      title: {
-        display: true,
-        text: `Distribución de Estudiantes por Niveles - ${datosMesSeleccionado ? 
-          ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-           'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][monthSelected] || `Mes ${monthSelected}` : 'Sin datos'}`,
-        color: '#333',
-        font: {
-          size: 18
-        }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: '#fff',
-        bodyColor: '#fff',
-        borderColor: '#666',
-        borderWidth: 1,
-        cornerRadius: 8,
-        callbacks: {
-          label: function(context: any) {
-            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0)
-            const percentage = ((context.parsed / total) * 100).toFixed(1)
-            return `${context.label}: ${context.parsed} estudiantes (${percentage}%)`
-          }
-        }
-      }
-    }
-  }
+  
+  // Usar opciones de alta calidad
+  const opcionesGraficoPie = useHighQualityChartOptions({
+    chartType: 'pie',
+    title: `Distribución de Estudiantes por Niveles - ${datosMesSeleccionado ? 
+      ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][monthSelected] || `Mes ${monthSelected}` : 'Sin datos'}`,
+    showLegend: true,
+    legendPosition: 'bottom'
+  })
 
   // Función para obtener el color según el nivel
   const obtenerColorPorNivel = (nivel: string) => {
@@ -137,7 +106,17 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
               text="Cargando datos del gráfico..."
             />
           ) : (
-            <Pie data={datosChartPie} options={opcionesGraficoPie} />
+            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+              <Pie 
+                data={datosChartPie} 
+                options={{
+                  ...opcionesGraficoPie,
+                  // Configuración adicional para alta calidad
+                  devicePixelRatio: 2,
+                  animation: false,
+                }}
+              />
+            </div>
           )}
         </div>
       </div>

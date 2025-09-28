@@ -58,6 +58,95 @@ export const calculoNivel = (data:UserEstudiante | Estudiante, evaluacion:Evalua
     return data;
 }
 
+export const calculoNivelProgresivo = (estudiantes:Estudiante[], evaluacion:Evaluacion, ) => {
+    // Verificar que tenemos los datos necesarios
+    if (!estudiantes || estudiantes.length === 0 || !evaluacion.nivelYPuntaje || evaluacion.nivelYPuntaje.length === 0) {
+        return [];
+    }
+
+    // Ordenar los niveles por puntaje mínimo para asegurar el orden correcto
+    const nivelesOrdenados = [...evaluacion.nivelYPuntaje].sort((a, b) => (a.min || 0) - (b.min || 0));
+    
+    // Crear un mapa para contar estudiantes por nivel
+    const conteoNiveles: { [key: string]: { id: number; nivel: string; cantidadDeEstudiantes: number; color?: string } } = {};
+    
+    // Inicializar contadores para cada nivel
+    nivelesOrdenados.forEach(nivelData => {
+        const nivelKey = nivelData.nivel || 'sin clasificar';
+        conteoNiveles[nivelKey] = {
+            id: nivelData.id || 0,
+            nivel: nivelKey,
+            cantidadDeEstudiantes: 0,
+            color: nivelData.color
+        };
+    });
+    
+    
+    // Iterar sobre cada estudiante y clasificar por nivel
+    estudiantes.forEach(estudiante => {
+        if (estudiante.puntaje !== undefined && estudiante.puntaje !== null) {
+            const puntaje = estudiante.puntaje;
+            let nivelEncontrado = null;
+            
+            // Buscar el nivel correspondiente al puntaje
+            for (const nivelData of nivelesOrdenados) {
+                const minPuntaje = nivelData.min || 0;
+                const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
+                
+                if (puntaje >= minPuntaje && puntaje <= maxPuntaje) {
+                    nivelEncontrado = nivelData.nivel;
+                    break;
+                }
+            }
+            
+            // Incrementar contador del nivel encontrado solo si existe
+            if (nivelEncontrado && conteoNiveles[nivelEncontrado]) {
+                conteoNiveles[nivelEncontrado].cantidadDeEstudiantes++;
+            }
+        }
+    });
+    
+    // Convertir el mapa a array y retornar todos los niveles (incluso con cantidad 0)
+    console.log('rta', Object.values(conteoNiveles))
+    return Object.values(conteoNiveles);
+}
+
+export const calculoPromedioGlobalPorGradoEvaluacionPRogresiva = (estudiantes:Estudiante[]) => {
+    // Verificar que tenemos estudiantes
+    if (!estudiantes || estudiantes.length === 0) {
+        return { totalEstudiantes: 0, promedioGlobal: 0 };
+    }
+
+    // Filtrar estudiantes que tienen puntaje válido
+    const estudiantesConPuntaje = estudiantes.filter(estudiante => 
+        estudiante.puntaje !== undefined && 
+        estudiante.puntaje !== null && 
+        !isNaN(Number(estudiante.puntaje))
+    );
+
+    const totalEstudiantes = estudiantesConPuntaje.length;
+
+    // Si no hay estudiantes con puntaje válido, retornar 0
+    if (totalEstudiantes === 0) {
+        return { totalEstudiantes: 0, promedioGlobal: 0 };
+    }
+
+    // Calcular la suma total de puntajes
+    const sumaTotal = estudiantesConPuntaje.reduce((suma, estudiante) => {
+        return suma + Number(estudiante.puntaje);
+    }, 0);
+
+    // Calcular el promedio global
+    const promedioGlobal = sumaTotal / totalEstudiantes;
+    console.log('funcionalidad', {
+        totalEstudiantes,
+        promedioGlobal: Math.round(promedioGlobal * 100) / 100 // Redondear a 2 decimales
+    })
+    return {
+        totalEstudiantes,
+        promedioGlobal: Math.round(promedioGlobal * 100) / 100 // Redondear a 2 decimales
+    };
+}
 
 export const calculoPreguntasCorrectas = (estudiante:UserEstudiante | Estudiante) => {
     let count = 0;

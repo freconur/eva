@@ -587,3 +587,14 @@ export type DataUsuarioEvaluacionLikert = {
     preguntas?:PreguntasEvaluacionLikert[],
   }
 }
+
+export type PromedioGlobalPorGradoEvaluacionPRogresiva = {
+  totalEstudiantes: number,
+  promedioGlobal: number
+}
+
+export type PromedioGlobalPorMes = {
+  mes: number,
+  totalEstudiantes: number,
+  promedioGlobal: number
+}

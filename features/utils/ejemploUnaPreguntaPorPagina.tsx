@@ -87,7 +87,7 @@ export const EjemploUnaPreguntaPorPagina: React.FC = () => {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        📄 Nuevo Formato: Una Pregunta por Página
+        📄 Nuevo Formato: Dos Preguntas por Página
       </h1>
       
       <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
@@ -95,11 +95,11 @@ export const EjemploUnaPreguntaPorPagina: React.FC = () => {
           ✅ Características del Nuevo Formato
         </h2>
         <ul className="text-green-700 space-y-1">
-          <li>• <strong>Página 1:</strong> Datos del docente + Primera pregunta</li>
-          <li>• <strong>Páginas 2+:</strong> Una pregunta por página</li>
-          <li>• <strong>Mejor legibilidad:</strong> Más espacio para cada pregunta</li>
+          <li>• <strong>Página 1:</strong> Datos del docente + Primeras dos preguntas</li>
+          <li>• <strong>Páginas 2+:</strong> Dos preguntas por página</li>
+          <li>• <strong>Mejor legibilidad:</strong> Espacio optimizado para dos preguntas</li>
           <li>• <strong>Navegación clara:</strong> Numeración de páginas</li>
-          <li>• <strong>Imágenes más grandes:</strong> 350×200 píxeles</li>
+          <li>• <strong>Imágenes optimizadas:</strong> 300×150 píxeles</li>
         </ul>
       </div>
 
@@ -111,8 +111,8 @@ export const EjemploUnaPreguntaPorPagina: React.FC = () => {
           <div className="text-blue-700 space-y-2">
             <p>• Encabezado del reporte</p>
             <p>• Información del docente</p>
-            <p>• Primera pregunta completa</p>
-            <p>• Gráfico de la primera pregunta</p>
+            <p>• Primeras dos preguntas completas</p>
+            <p>• Gráficos de las dos preguntas</p>
             <p>• Pie de página con numeración</p>
           </div>
         </div>
@@ -123,7 +123,7 @@ export const EjemploUnaPreguntaPorPagina: React.FC = () => {
           </h3>
           <div className="text-purple-700 space-y-2">
             <p>• Encabezado simplificado</p>
-            <p>• Una pregunta por página</p>
+            <p>• Dos preguntas por página</p>
             <p>• Gráficos cuando estén disponibles</p>
             <p>• Numeración progresiva</p>
             <p>• Mejor distribución del espacio</p>
@@ -146,27 +146,36 @@ export const EjemploUnaPreguntaPorPagina: React.FC = () => {
         </h3>
         
         <div className="space-y-4">
-          {datosEjemplo.map((item, index) => (
-            <div key={item.id} className="border-l-4 border-blue-500 pl-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-gray-800">
-                    Página {index + 1}: {item.pregunta.substring(0, 60)}...
-                  </h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    <strong>Actuación:</strong> {item.actuacion.substring(0, 80)}...
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <strong>Gráfico:</strong> {item.graficoImagen ? '✅ Presente' : '❌ No disponible'}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-blue-600">{index + 1}</div>
-                  <div className="text-xs text-gray-500">Página</div>
+          {Array.from({ length: Math.ceil(datosEjemplo.length / 2) }, (_, pageIndex) => {
+            const startIndex = pageIndex * 2;
+            const preguntasEnPagina = datosEjemplo.slice(startIndex, startIndex + 2);
+            
+            return (
+              <div key={pageIndex} className="border-l-4 border-blue-500 pl-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-gray-800">
+                      Página {pageIndex + 1}: Preguntas {startIndex + 1}-{Math.min(startIndex + 2, datosEjemplo.length)}
+                    </h4>
+                    {preguntasEnPagina.map((item, itemIndex) => (
+                      <div key={item.id} className="mt-2 ml-4">
+                        <p className="text-sm text-gray-600">
+                          <strong>Pregunta {item.index}:</strong> {item.pregunta.substring(0, 50)}...
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          <strong>Gráfico:</strong> {item.graficoImagen ? '✅ Presente' : '❌ No disponible'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-blue-600">{pageIndex + 1}</div>
+                    <div className="text-xs text-gray-500">Página</div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -175,18 +184,18 @@ export const EjemploUnaPreguntaPorPagina: React.FC = () => {
           💡 Beneficios del Nuevo Formato
         </h3>
         <div className="text-yellow-700 space-y-2">
-          <li>• <strong>Legibilidad mejorada:</strong> Cada pregunta tiene su propio espacio</li>
-          <li>• <strong>Imágenes más grandes:</strong> Gráficos de 350×200 píxeles</li>
+          <li>• <strong>Legibilidad optimizada:</strong> Dos preguntas por página con espacio suficiente</li>
+          <li>• <strong>Imágenes optimizadas:</strong> Gráficos de 300×150 píxeles</li>
           <li>• <strong>Mejor organización:</strong> Estructura clara y navegable</li>
-          <li>• <strong>Impresión optimizada:</strong> Cada pregunta en una hoja separada</li>
-          <li>• <strong>Análisis detallado:</strong> Más espacio para estadísticas y observaciones</li>
+          <li>• <strong>Impresión eficiente:</strong> Menos páginas, más contenido por hoja</li>
+          <li>• <strong>Análisis detallado:</strong> Espacio adecuado para estadísticas y observaciones</li>
         </div>
       </div>
 
       <div className="mt-6 text-sm text-gray-500 text-center">
         <p>
-          <strong>Nota:</strong> Este nuevo formato genera un PDF donde cada pregunta ocupa una página completa, 
-          mejorando significativamente la legibilidad y presentación del reporte.
+          <strong>Nota:</strong> Este nuevo formato genera un PDF donde cada página contiene dos preguntas, 
+          optimizando el uso del espacio y mejorando la eficiencia del reporte.
         </p>
       </div>
     </div>

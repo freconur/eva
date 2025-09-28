@@ -37,6 +37,10 @@
   margin: 1rem auto 0;
   max-width: 80ch;
 }
+/* #__next > main {
+  margin: 1rem auto 0;
+  max-width: 80ch;
+} */
 
 body {
   color: "black";

@@ -1,7 +1,7 @@
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
-import { DataEstadisticas, Estudiante, Evaluacion, UserEstudiante } from '../types/types';
+import { DataEstadisticas, Estudiante, Evaluacion, GraficoTendenciaNiveles, PromedioGlobalPorGradoEvaluacionPRogresiva, PromedioGlobalPorMes, UserEstudiante } from '../types/types';
 import { AppAction } from '../actions/appAction';
-import { currentMonth, currentYear } from '@/fuctions/dates';
+import { currentMonth, currentYear, getAllMonths } from '@/fuctions/dates';
 import { app } from '@/firebase/firebase.config';
 import {
   doc,
@@ -11,11 +11,17 @@ import {
   getFirestore,
   updateDoc,
   onSnapshot,
+  getAggregateFromServer,
+  count,
 } from 'firebase/firestore';
 import { puntajePreguntasMatemticaProgresiva } from '@/fuctions/correccionPuntaje';
-import { calculoNivel, calculoPreguntasCorrectas } from '../utils/calculoNivel';
+import { calculoNivel, calculoNivelProgresivo, calculoPreguntasCorrectas, calculoPromedioGlobalPorGradoEvaluacionPRogresiva } from '../utils/calculoNivel';
+import { useState } from 'react';
 
 export const useReporteDocente = () => {
+  const [ mesesConDataDisponibles, setMesesConDataDisponibles ] = useState<number[]>([])
+  const [ promedioGlobal, setPromedioGlobal ] = useState<PromedioGlobalPorMes[]>([])
+  const [ datosPorMes, setDatosPorMes ] = useState<GraficoTendenciaNiveles[]>([])
   const db = getFirestore(app);
   const { currentUserData } = useGlobalContext();
   const dispatch = useGlobalContextDispatch();
@@ -35,6 +41,84 @@ export const useReporteDocente = () => {
     dispatch({ type: AppAction.ESTUDIANTES, payload: estudiantesOrdenados });
     return estudiantesOrdenados;
   };
+  const estudiantesQueDieronExamenPorMes = async (evaluacion: Evaluacion, estudiantes: Estudiante[]) => {
+    const usuario = currentUserData.dni
+    const mesesConData: number[] = []
+    
+    for (const mes of getAllMonths) {
+      try {
+        const pathRef = collection(db, `/usuarios/${usuario}/${evaluacion.id}/${currentYear}/${mes.id}`)
+        const snapshot = await getAggregateFromServer(pathRef, {
+          total: count()
+        })
+        
+        if (snapshot.data().total > 0) {
+          mesesConData.push(mes.id)
+        }
+      } catch (error) {
+        console.error(`Error verificando datos para el mes ${mes.id}:`, error)
+      }
+    }
+    setMesesConDataDisponibles(mesesConData)
+    mesesConData.forEach((mes) => {
+      const pathRef = collection(db, `/usuarios/${currentUserData.dni}/${evaluacion.id}/${currentYear}/${mes}`)
+      
+      const estudiantesDelMes: Estudiante[] = [];
+      onSnapshot(
+        pathRef,
+        (snapshot) => {
+          // Procesar los documentos en tiempo real
+          snapshot.forEach((doc) => {
+            const estudianteData = {
+              ...doc.data(),
+              respuestasIncorrectas: Number(doc.data().totalPreguntas) - Number(doc.data().respuestasCorrectas),
+            } as Estudiante;
+            
+            estudiantesDelMes.push(estudianteData);
+          });
+
+          // Aplicar cálculos a los estudiantes
+          estudiantesDelMes.forEach((estudiante) => {
+            calculoNivel(estudiante, evaluacion);
+            calculoPreguntasCorrectas(estudiante);
+          });
+         
+          // Actualizar el estado con los datos del mes
+          const resultadosProgresivo = calculoNivelProgresivo(estudiantesDelMes, evaluacion)
+
+          // Calcular el promedio global para este mes
+          const promedioGlobalDelMes = calculoPromedioGlobalPorGradoEvaluacionPRogresiva(estudiantesDelMes);
+
+          setDatosPorMes(prevData => {
+            // Filtrar datos existentes del mismo mes
+            const otrosMeses = prevData.filter(item => item.mes !== mes);
+            // Agregar o actualizar los datos del mes actual
+            return [...otrosMeses, { mes, niveles: resultadosProgresivo }];
+          });
+
+          // Actualizar el estado con el promedio global del mes
+          setPromedioGlobal(prevData => {
+            // Filtrar datos existentes del mismo mes
+            const otrosMeses = prevData.filter(item => item.mes !== mes);
+            // Agregar o actualizar los datos del mes actual
+            return [...otrosMeses, { 
+              mes, 
+              totalEstudiantes: promedioGlobalDelMes.totalEstudiantes,
+              promedioGlobal: promedioGlobalDelMes.promedioGlobal
+            }];
+          });
+        },
+        (error) => {
+          console.error(`Error en onSnapshot para el mes ${mes}:`, error);
+        }
+      );
+      
+      // Opcional: guardar la función unsubscribe si necesitas cancelar la suscripción más tarde
+      // Puedes almacenar estas funciones en un array o estado si necesitas gestionarlas
+    })
+    
+    return mesesConData
+  }
   const estudiantesQueDieronExamen = (
     evaluacion: Evaluacion,
     month: number,
@@ -92,6 +176,7 @@ export const useReporteDocente = () => {
 
     //codigo para crear la tabla de estudiantes con las pregunta de actuacion
   };
+  const estadisticasEstudiantesDelDocentes = () => {}
   const estadisticasEstudiantesDelDocente = (
     evaluacion: Evaluacion,
     month: number,
@@ -99,7 +184,8 @@ export const useReporteDocente = () => {
   ) => {
     dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: true });
 
-    const unsubscribe = estudiantesQueDieronExamen(evaluacion, month, (estudiantes) => {//este unsubscribe la verdad que no es nada relevante ya vere que hago con el.
+    const unsubscribe = estudiantesQueDieronExamen(evaluacion, month, async (estudiantes) => {//este unsubscribe la verdad que no es nada relevante ya vere que hago con el.
+    /* await estudiantesQueDieronExamenPorMes(evaluacion, estudiantes) */
       // Acumular los valores de a, b, c, d por cada pregunta
       const acumuladoPorPregunta: Record<
         string,
@@ -249,5 +335,9 @@ const docSnap = await getDoc(docRef); */
     filtroEstudiantes,
     getEvaluacionEstudiante,
     updateEvaluacionEstudiante,
+    estudiantesQueDieronExamenPorMes,
+    mesesConDataDisponibles,
+    datosPorMes,
+    promedioGlobal,
   };
 };

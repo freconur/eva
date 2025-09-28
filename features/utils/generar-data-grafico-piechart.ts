@@ -5,7 +5,6 @@ export const generarDataGraficoPiechart = (estudiantes: UserEstudiante[] | Estud
   // Ordenar la evaluación de manera descendente por ID de NivelYPuntaje
   const evaluacionOrdenada = evaluacion.nivelYPuntaje ? [...evaluacion.nivelYPuntaje].sort((a, b) => (b.id || 0) - (a.id || 0)) : [];
   
-  console.log('evaluacion', evaluacionOrdenada)
   const conteoNiveles: { [key: string]: number } = {};
   
   // Iterar sobre cada estudiante
@@ -37,6 +36,5 @@ export const generarDataGraficoPiechart = (estudiantes: UserEstudiante[] | Estud
   
   // Ordenar el resultado de manera descendente por ID
   const resultadoOrdenado = resultado.sort((a, b) => b.id - a.id);
-  console.log({niveles: resultadoOrdenado, mes: month})
   return {niveles: resultadoOrdenado, mes: month};
 }
