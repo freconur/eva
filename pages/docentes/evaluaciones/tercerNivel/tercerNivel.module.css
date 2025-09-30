@@ -1,5 +1,5 @@
 .container {
-  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  background: white;
   min-height: calc(100vh - 60px);
   padding: 2rem;
   display: flex;
@@ -18,10 +18,11 @@
   font-weight: 700;
   font-family: 'Gabarito', sans-serif;
   text-transform: uppercase;
-  color: white;
+  color: #1a202c;
   text-align: center;
   margin-bottom: 3rem;
   letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .gridContainer {
@@ -55,6 +56,14 @@
   position: relative;
 }
 
+.header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
 .header4 {
   background-color: var(--color-graduado-blue-1);
   padding: 1.5rem;
@@ -65,6 +74,14 @@
   position: relative;
 }
 
+.header4::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
 .header5 {
   background-color: var(--color-pastel13);
   padding: 1.5rem;
@@ -73,6 +90,14 @@
   align-items: center;
   justify-content: center;
   position: relative;
+}
+
+.header5::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  z-index: 1;
 }
 
 .number {
@@ -127,15 +152,15 @@
 .overlay {
   position: absolute;
   inset: 0;
-  background-color: rgb(51, 65, 85);
-  opacity: 0;
+  background-color: rgba(51, 65, 85, 0.3);
+  opacity: 1;
   z-index: 30;
   transition: all 0.3s ease;
   backdrop-filter: blur(0px);
 }
 
 .link:hover .overlay {
-  opacity: 0.5;
+  background-color: rgba(51, 65, 85, 0.6);
   backdrop-filter: blur(4px);
 }
 

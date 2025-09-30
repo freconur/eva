@@ -39,7 +39,9 @@ const Evaluaciones = () => {
               </thead>
               <tbody className={styles.tableBody}>
                 {evaluaciones.length > 0 &&
-                  evaluaciones?.map((eva, index) => (
+                  evaluaciones
+                    ?.filter(eva => eva.active === true)
+                    ?.map((eva, index) => (
                     <tr key={index} className={styles.tableRow}>
                       <td className={styles.tableCell}>
                         <Link href={`/directores/evaluaciones/evaluacion/${eva.id}`} className={styles.link}>

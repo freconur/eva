@@ -59,6 +59,7 @@ export const calculoNivel = (data:UserEstudiante | Estudiante, evaluacion:Evalua
 }
 
 export const calculoNivelProgresivo = (estudiantes:Estudiante[], evaluacion:Evaluacion, ) => {
+    
     // Verificar que tenemos los datos necesarios
     if (!estudiantes || estudiantes.length === 0 || !evaluacion.nivelYPuntaje || evaluacion.nivelYPuntaje.length === 0) {
         return [];
@@ -107,11 +108,11 @@ export const calculoNivelProgresivo = (estudiantes:Estudiante[], evaluacion:Eval
     });
     
     // Convertir el mapa a array y retornar todos los niveles (incluso con cantidad 0)
-    console.log('rta', Object.values(conteoNiveles))
     return Object.values(conteoNiveles);
 }
 
 export const calculoPromedioGlobalPorGradoEvaluacionPRogresiva = (estudiantes:Estudiante[]) => {
+    
     // Verificar que tenemos estudiantes
     if (!estudiantes || estudiantes.length === 0) {
         return { totalEstudiantes: 0, promedioGlobal: 0 };
@@ -138,10 +139,8 @@ export const calculoPromedioGlobalPorGradoEvaluacionPRogresiva = (estudiantes:Es
 
     // Calcular el promedio global
     const promedioGlobal = sumaTotal / totalEstudiantes;
-    console.log('funcionalidad', {
-        totalEstudiantes,
-        promedioGlobal: Math.round(promedioGlobal * 100) / 100 // Redondear a 2 decimales
-    })
+   
+    
     return {
         totalEstudiantes,
         promedioGlobal: Math.round(promedioGlobal * 100) / 100 // Redondear a 2 decimales

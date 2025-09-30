@@ -76,7 +76,10 @@ const Loader: React.FC<LoaderProps> = ({
     <div className={`${styles.loaderWrapper} ${className}`}>
       {renderLoader()}
       {text && (
-        <div className={`${styles.loaderText} ${getSizeClass()}`}>
+        <div 
+          className={`${styles.loaderText} ${getSizeClass()}`}
+          style={{ color: color }}
+        >
           {text}
         </div>
       )}

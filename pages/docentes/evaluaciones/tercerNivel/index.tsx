@@ -10,7 +10,7 @@ const TercerNivel = () => {
   return (
     <div className={styles.container}>
       <div className={styles.wrapper}>
-        <h1 className={styles.title}>educación primaria</h1>
+        <h1 className={styles.title}>Evaluaciones de Aprendizaje - Primaria</h1>
         <div className={styles.gridContainer}>
           <div className={styles.card}>
             <div className={styles.header}>

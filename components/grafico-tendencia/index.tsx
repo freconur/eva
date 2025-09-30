@@ -55,7 +55,7 @@ const GraficoTendenciaColegio = ({
   dataGraficoTendenciaNiveles,
   evaluacion,
 }: Props) => {
-  console.log('datosPorMes', datosPorMes);
+  
 
   const { loaderDataGraficoPieChart } = useGlobalContext();
 
@@ -88,7 +88,7 @@ const GraficoTendenciaColegio = ({
     valorMaximoNiveles,
     monthSelected,
   });
-
+ 
   return (
     <div className={styles.threeColumnGrid}>
       {/* Columna 1 - Gráfico de Pie Chart */}

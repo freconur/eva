@@ -32,7 +32,7 @@ import { currentMonth, getAllMonths, getMonthName } from '@/fuctions/dates';
 import { ordernarAscDsc } from '@/fuctions/regiones';
 import { read, utils, writeFile } from 'xlsx';
 import { exportEstudiantesToExcel } from '@/features/utils/excelExport';
-import { generarPDFReporte } from '@/features/utils/pdfExportEstadisticasDocentes';
+import { useGenerarPDFReporte } from '@/features/hooks/useGenerarPDFReporte';
 import Link from 'next/link';
 import ReporteEvaluacionPorPregunta from './reporteEvaluacionPorPregunta';
 import PieChartComponent from '@/pages/admin/evaluaciones/evaluacion/reporte/PieChartComponent';
@@ -53,7 +53,6 @@ ChartJS.register(
 
 const Reportes = () => {
   const [loading, setLoading] = useState<boolean>(false);
-  const [loadingPDF, setLoadingPDF] = useState<boolean>(false);
   const [showTable, setShowtable] = useState<boolean>(true);
   const [showDeleteEstudiante, setShowDeleteEstudiante] = useState<boolean>(false);
   const route = useRouter();
@@ -95,68 +94,6 @@ const Reportes = () => {
       setLoading(false);
     }
   };
-
-  const handleGenerarPDF = async () => {
-    setLoadingPDF(true);
-    try {
-      await generarPDFReporte(reporteCompletoConImagenes, {
-        titulo: 'Reporte de Evaluación',
-        nombreDocente:
-          `${currentUserData.nombres || ''} ${currentUserData.apellidos || ''}`.trim() || 'Docente',
-        fecha: new Date().toLocaleDateString('es-ES'),
-      });
-    } catch (error) {
-      console.error('Error al generar PDF:', error);
-    } finally {
-      setLoadingPDF(false);
-    }
-  };
-
-  // Función para detectar si toda la evaluación tiene 3 o 4 opciones
-  const detectarNumeroOpciones = useMemo(() => {
-    if (!dataEstadisticas || dataEstadisticas.length === 0) return 4; // Por defecto 4
-
-    // Verificar si todas las preguntas tienen la opción D con valores válidos
-    const todasTienenOpcionD = dataEstadisticas.every(
-      (dat) => dat.d !== null && dat.d !== undefined && dat.d > 0
-    );
-
-    // Verificar si todas las preguntas NO tienen la opción D
-    const ningunaTieneOpcionD = dataEstadisticas.every(
-      (dat) => dat.d === null || dat.d === undefined || dat.d === 0
-    );
-
-    // Si todas tienen opción D, es de 4 opciones
-    if (todasTienenOpcionD) return 4;
-
-    // Si ninguna tiene opción D, es de 3 opciones
-    if (ningunaTieneOpcionD) return 3;
-
-    // Si hay mezcla, mostrar advertencia y usar 4 por defecto
-    console.warn(
-      'Advertencia: La evaluación tiene preguntas con diferente número de opciones. Usando 4 opciones por defecto.'
-    );
-    return 4;
-  }, [dataEstadisticas]);
-
-  useEffect(() => {
-    const idExamen = route.query.idExamen as string;
-    if (idExamen) {
-      estudiantesQueDieronExamenPorMes(evaluacion, estudiantes);
-      estadisticasEstudiantesDelDocente(evaluacion, monthSelected);
-      getPreguntasRespuestas(idExamen);
-      setMonthSelected(currentMonth);
-      getEvaluacion(`${idExamen}`);
-    }
-  }, [route.query.idExamen, currentUserData.dni, evaluacion.id]);
-
-  useEffect(() => {
-    const idExamen = route.query.idExamen as string;
-    if (idExamen) {
-      estudiantesQueDieronExamenPorMes(evaluacion, estudiantes);
-      estadisticasEstudiantesDelDocente(evaluacion, monthSelected);
-    }
-  }, [monthSelected]);
 
   // Crear un mapa optimizado de preguntas por ID para evitar búsquedas repetidas O(1) en lugar de O(n)
   const preguntasMap = useMemo(() => {
@@ -204,63 +141,67 @@ const Reportes = () => {
     });
   }, [dataEstadisticasOrdenadas, preguntasMap]);
 
-  // Estado para almacenar las imágenes de los gráficos
-  const [graficosImagenes, setGraficosImagenes] = useState<{ [key: string]: string }>({});
+  // Hook para generar PDF con imágenes
+  const {
+    graficosImagenes,
+    imagenesGeneradas,
+    loadingPDF,
+    reporteCompletoConImagenes,
+    convertirGraficoAImagen,
+    handleGenerarPDF
+  } = useGenerarPDFReporte({
+    reporteCompleto,
+    currentUserData,
+    titulo: 'Reporte de Evaluación',
+    tipoUsuario: 'Docente',
+    monthSelected
+  });
 
-  // Función para convertir el gráfico a imagen con mejor calidad
-  const convertirGraficoAImagen = useCallback(
-    (idPregunta: string, canvasRef: HTMLCanvasElement | null) => {
-      if (!canvasRef) return;
+  // Función para detectar si toda la evaluación tiene 3 o 4 opciones
+  const detectarNumeroOpciones = useMemo(() => {
+    if (!dataEstadisticas || dataEstadisticas.length === 0) return 4; // Por defecto 4
 
-      try {
-        // Crear un canvas temporal con dimensiones fijas para mejor calidad
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
+    // Verificar si todas las preguntas tienen la opción D con valores válidos
+    const todasTienenOpcionD = dataEstadisticas.every(
+      (dat) => dat.d !== null && dat.d !== undefined && dat.d > 0
+    );
 
-        // Dimensiones optimizadas para calidad y tamaño balanceado
-        const pdfWidth = 900; // Reducido de 1200 a 900 para tamaño más compacto
-        const pdfHeight = 600; // Reducido de 800 a 600 para tamaño más compacto
+    // Verificar si todas las preguntas NO tienen la opción D
+    const ningunaTieneOpcionD = dataEstadisticas.every(
+      (dat) => dat.d === null || dat.d === undefined || dat.d === 0
+    );
 
-        tempCanvas.width = pdfWidth;
-        tempCanvas.height = pdfHeight;
+    // Si todas tienen opción D, es de 4 opciones
+    if (todasTienenOpcionD) return 4;
 
-        if (tempCtx) {
-          // Configurar el contexto para mejor calidad
-          tempCtx.imageSmoothingEnabled = true;
-          tempCtx.imageSmoothingQuality = 'high';
+    // Si ninguna tiene opción D, es de 3 opciones
+    if (ningunaTieneOpcionD) return 3;
 
-          // Configurar DPI para mejor calidad de impresión (300 DPI)
-          const dpi = 300;
-          const scaleFactor = dpi / 96; // 96 es el DPI estándar de pantalla
-          
-          // Aplicar el factor de escala para DPI
-          tempCtx.scale(scaleFactor, scaleFactor);
+    // Si hay mezcla, mostrar advertencia y usar 4 por defecto
+    console.warn(
+      'Advertencia: La evaluación tiene preguntas con diferente número de opciones. Usando 4 opciones por defecto.'
+    );
+    return 4;
+  }, [dataEstadisticas]);
 
-          // Copiar el contenido del canvas original al temporal con escalado suave
-          tempCtx.drawImage(canvasRef, 0, 0, pdfWidth / scaleFactor, pdfHeight / scaleFactor);
+  useEffect(() => {
+    const idExamen = route.query.idExamen as string;
+    if (idExamen) {
+      estudiantesQueDieronExamenPorMes(evaluacion, estudiantes);
+      estadisticasEstudiantesDelDocente(evaluacion, monthSelected);
+      getPreguntasRespuestas(idExamen);
+      setMonthSelected(currentMonth);
+      getEvaluacion(`${idExamen}`);
+    }
+  }, [route.query.idExamen, currentUserData.dni, evaluacion.id]);
 
-          // Convertir a base64 con máxima calidad
-          const base64 = tempCanvas.toDataURL('image/png', 1.0);
-
-          setGraficosImagenes((prev) => ({
-            ...prev,
-            [idPregunta]: base64,
-          }));
-        }
-      } catch (error) {
-        console.error('Error al convertir gráfico a imagen:', error);
-      }
-    },
-    []
-  );
-
-  // Actualizar reporteCompleto cuando se generen las imágenes de los gráficos
-  const reporteCompletoConImagenes = useMemo(() => {
-    return reporteCompleto.map((item) => ({
-      ...item,
-      graficoImagen: graficosImagenes[item.id] || '',
-    }));
-  }, [reporteCompleto, graficosImagenes]);
+  useEffect(() => {
+    const idExamen = route.query.idExamen as string;
+    if (idExamen) {
+      estudiantesQueDieronExamenPorMes(evaluacion, estudiantes);
+      estadisticasEstudiantesDelDocente(evaluacion, monthSelected);
+    }
+  }, [monthSelected]);
 
   // Mostrar en consola el array completo con las imágenes
 
@@ -321,6 +262,8 @@ const Reportes = () => {
     );
   };
 
+  console.log('dataEstadisticasOrdenadas', dataEstadisticasOrdenadas)
+  console.log('preguntasMap',preguntasMap)
   return (
     <>
       {showDeleteEstudiante && (
@@ -360,10 +303,31 @@ const Reportes = () => {
                 )}
                 <button
                   onClick={handleGenerarPDF}
-                  disabled={loading || loadingPDF || reporteCompletoConImagenes.length === 0}
-                  className={styles.pdfButton}
+                  disabled={loading || loadingPDF || reporteCompletoConImagenes.length === 0 || !imagenesGeneradas}
+                  className={`${styles.pdfButton} ${
+                    loadingPDF
+                      ? styles.pdfButtonLoading
+                      : !imagenesGeneradas
+                      ? styles.pdfButtonGenerating
+                      : styles.pdfButtonReady
+                  }`}
                 >
-                  {loadingPDF ? <RiLoader4Line className={styles.loaderIcon} /> : 'Generar PDF'}
+                  {loadingPDF ? (
+                    <>
+                      <RiLoader4Line className={styles.loaderIcon} />
+                      <span>Generando PDF...</span>
+                    </>
+                  ) : !imagenesGeneradas ? (
+                    <>
+                      <RiLoader4Line className={styles.loaderIcon} />
+                      <span>Preparando gráficos...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>📄</span>
+                      <span>Generar PDF</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

@@ -1,45 +1,39 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useReporteDirectores } from '@/features/hooks/useReporteDirectores';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
   Title,
   Tooltip,
   Legend,
-  ChartData,
 } from 'chart.js';
 import {
-  gradosDeColegio,
   sectionByGrade,
   ordernarAscDsc,
   genero,
   convertGrade,
 } from '@/fuctions/regiones';
-import { Bar } from 'react-chartjs-2';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
-import { Alternativa, DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
+import { DataEstadisticas, PreguntasRespuestas, UserEstudiante } from '@/features/types/types';
 import { RiLoader4Line } from 'react-icons/ri';
 import styles from './Reporte.module.css';
 import { currentMonth, getAllMonths } from '@/fuctions/dates';
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
-import Loader from '@/components/loader/loader';
 import { useGlobalContextDispatch } from '@/features/context/GlolbalContext';
 import { AppAction } from '@/features/actions/appAction';
 import { generarPDFReporte } from '@/features/utils/pdfExportEstadisticasDocentes';
-import { useGenerarImagenesGraficos } from '@/features/utils/useGenerarImagenesGraficos';
-import PieChartComponent from '@/pages/admin/evaluaciones/evaluacion/reporte/PieChartComponent';
+import { useGenerarPDFReporte } from '@/features/hooks/useGenerarPDFReporte';
+import { TablaPreguntas } from '@/components/tabla-preguntas';
+import GraficoTendenciaColegio from '@/components/grafico-tendencia';
+import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafico-piechart';
+import ReporteEvaluacionPorPregunta from '@/pages/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/reporteEvaluacionPorPregunta';
+import Loader from '@/components/loader/loader';
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
   Title,
   Tooltip,
   Legend
@@ -53,12 +47,9 @@ const Reporte = () => {
     orden: '',
     genero: '',
   });
-  const [loadingPDF, setLoadingPDF] = useState<boolean>(false);
   const [loadingMonth, setLoadingMonth] = useState<boolean>(false);
+  const [estudiantesOriginales, setEstudiantesOriginales] = useState<UserEstudiante[]>([]);
 
-  // Estado para paginación
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage, setItemsPerPage] = useState<number>(25);
 
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFiltros({
@@ -67,96 +58,55 @@ const Reporte = () => {
     });
   };
 
-  const iterateData = (data: DataEstadisticas, respuesta: string) => {
-    // Usar el número de opciones detectado globalmente
-    const numOpciones = detectarNumeroOpciones;
+  const handleLimpiarFiltros = () => {
+    setFiltros({
+      grado: '',
+      seccion: '',
+      orden: '',
+      genero: '',
+    });
+    
+    // Restaurar todos los estudiantes originales
+    const estudiantesARestaurar = estudiantesOriginales.length > 0 ? estudiantesOriginales : estudiantes;
+    dispatch({ 
+      type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, 
+      payload: estudiantesARestaurar 
+    });
+    setEstudiantes(estudiantesARestaurar);
+  };
+  const hasValidPuntaje = () => {
+    return estudiantes?.some(
+      (estudiante) =>
+        estudiante.puntaje !== undefined &&
+        estudiante.puntaje !== null &&
+        !isNaN(estudiante.puntaje)
+    );
+  };
 
-    // Calcular porcentajes para cada opción
-    const calcularPorcentaje = (valor: number | undefined) => {
-      if (valor === null || valor === undefined) return 0;
-      return data.total === 0 ? 0 : (100 * Number(valor)) / Number(data.total);
-    };
-
-    // Calcular porcentajes sin redondear
-    const porcentajeARaw = calcularPorcentaje(data.a || 0);
-    const porcentajeBRaw = calcularPorcentaje(data.b || 0);
-    const porcentajeCRaw = calcularPorcentaje(data.c || 0);
-    const porcentajeDRaw = numOpciones === 4 ? calcularPorcentaje(data.d || 0) : 0;
-
-    if (numOpciones === 3) {
-      // Para 3 opciones: redondear las primeras 2 y calcular la tercera
-      const porcentajeA = Math.round(porcentajeARaw);
-      const porcentajeB = Math.round(porcentajeBRaw);
-      const porcentajeC = Math.max(0, 100 - porcentajeA - porcentajeB);
-
-      // Crear etiquetas solo para las 3 opciones
-      const labels = [`a (${porcentajeA}%)`, `b (${porcentajeB}%)`, `c (${porcentajeC}%)`];
-
-      return {
-        labels: labels,
-        datasets: [
-          {
-            label: 'estadisticas de respuesta',
-            data: [data.a, data.b, data.c],
-            backgroundColor: [
-              'rgba(52, 152, 219, 0.7)', // Azul azulado
-              'rgba(46, 204, 113, 0.7)', // Verde esmeralda
-              'rgba(155, 89, 182, 0.7)', // Púrpura
-            ],
-            borderColor: [
-              'rgb(52, 152, 219)', // Azul azulado
-              'rgb(46, 204, 113)', // Verde esmeralda
-              'rgb(155, 89, 182)', // Púrpura
-            ],
-            borderWidth: 2,
-          },
-        ],
-      };
-    } else {
-      // Para 4 opciones: redondear las primeras 3 y calcular la cuarta
-      const porcentajeA = Math.round(porcentajeARaw);
-      const porcentajeB = Math.round(porcentajeBRaw);
-      const porcentajeC = Math.round(porcentajeCRaw);
-      const porcentajeD = Math.max(0, 100 - porcentajeA - porcentajeB - porcentajeC);
-
-      // Crear etiquetas para las 4 opciones
-      const labels = [
-        `A (${porcentajeA}%)`,
-        `B (${porcentajeB}%)`,
-        `C (${porcentajeC}%)`,
-        `D (${porcentajeD}%)`,
-      ];
-
-      return {
-        labels: labels,
-        datasets: [
-          {
-            label: 'estadisticas de respuesta',
-            data: [data.a, data.b, data.c, data.d],
-            backgroundColor: [
-              'rgba(52, 152, 219, 0.7)', // Azul azulado
-              'rgba(46, 204, 113, 0.7)', // Verde esmeralda
-              'rgba(155, 89, 182, 0.7)', // Púrpura
-              'rgba(230, 126, 34, 0.7)', // Naranja
-            ],
-            borderColor: [
-              'rgb(52, 152, 219)', // Azul azulado
-              'rgb(46, 204, 113)', // Verde esmeralda
-              'rgb(155, 89, 182)', // Púrpura
-              'rgb(230, 126, 34)', // Naranja
-            ],
-            borderWidth: 2,
-          },
-        ],
-      };
-    }
+  // Verificar si existen valores válidos para nivel
+  const hasValidNivel = () => {
+    return estudiantes?.some(
+      (estudiante) =>
+        estudiante.nivel !== undefined &&
+        estudiante.nivel !== null &&
+        estudiante.nivel !== '' &&
+        estudiante.nivel !== 'sin clasificar'
+    );
   };
   const {
-    reporteDirectorData,
     reporteToTableDirector,
     reporteDirectorEstudiantes,
-    agregarDatosEstadisticosDirector,
     getGrados,
+    estudiantes,
+    setEstudiantes,
+    getAllEvaluacionesDeEstudiantesPorMes,
+    datosPorMes,
+    promedioGlobal,
+    mesesConDataDisponibles,
+    warning,
+    setIsLoading,
+    isLoading,
+    filtrosParaReporteDirector
   } = useReporteDirectores();
   const {
     currentUserData,
@@ -165,10 +115,7 @@ const Reporte = () => {
     loaderReporteDirector,
     allRespuestasEstudiantesDirector,
     dataFiltradaDirectorTabla,
-    grados,
     evaluacion,
-    dataGraficoPieChart,
-    loaderDataGraficoPieChart
   } = useGlobalContext();
   const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
   const route = useRouter();
@@ -200,140 +147,6 @@ const Reporte = () => {
     );
     return 4;
   }, [reporteDirector]);
-
-  // Limpiar dataFiltradaDirectorTabla cuando el componente se monta
-  useEffect(() => {
-    dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, payload: [] });
-  }, [dispatch]);
-
-  useEffect(() => {
-    //me trae las preguntas y respuestas para los graficos
-    getPreguntasRespuestas(`${route.query.idEvaluacion}`);
-  }, [currentUserData.dni, route.query.idEvaluacion]);
-
-  const handleFiltrar = () => {
-    reporteToTableDirector(
-      allRespuestasEstudiantesDirector,
-      {
-        grado: filtros.grado,
-        seccion: filtros.seccion,
-        orden: filtros.orden,
-        genero: filtros.genero,
-      },
-      `${route.query.id}`,
-      `${route.query.idEvaluacion}`
-    );
-  };
-  useEffect(() => {
-    currentUserData.dni &&
-      reporteDirectorEstudiantes(
-        `${route.query.idEvaluacion}`,
-        monthSelected,
-        currentUserData,
-        evaluacion
-      );
-    getGrados();
-    getEvaluacion(`${route.query.idEvaluacion}`);
-    /* reporteDirectorData(`${route.query.id}`, `${route.query.idEvaluacion}`) */
-  }, [route.query.id, route.query.idEvaluacion, currentUserData.dni]);
-
-  const handleValidateRespuesta = (data: PreguntasRespuestas) => {
-    const rta: Alternativa | undefined = data.alternativas?.find((r) => r.selected === true);
-    if (rta?.alternativa) {
-      if (rta.alternativa.toLowerCase() === data.respuesta?.toLowerCase()) {
-        return <div className={styles.correctAnswer}>si</div>;
-      } else {
-        return <div className={styles.incorrectAnswer}>no</div>;
-      }
-    }
-  };
-
-  // Lógica de paginación
-  const totalPages = Math.ceil((dataFiltradaDirectorTabla?.length || 0) / itemsPerPage);
-
-  const paginatedData = useMemo(() => {
-    if (!dataFiltradaDirectorTabla || dataFiltradaDirectorTabla.length === 0) return [];
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return dataFiltradaDirectorTabla.slice(startIndex, endIndex);
-  }, [dataFiltradaDirectorTabla, currentPage, itemsPerPage]);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handleFirstPage = () => {
-    setCurrentPage(1);
-  };
-
-  const handleLastPage = () => {
-    setCurrentPage(totalPages);
-  };
-
-  const handlePrevPage = () => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
-  };
-
-  const handleNextPage = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
-  };
-
-  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newItemsPerPage = parseInt(e.target.value);
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Resetear a la primera página
-  };
-
-  // Resetear a la primera página cuando cambien los filtros
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [dataFiltradaDirectorTabla]);
-
-  // Función para determinar si mostrar las columnas de puntaje y nivel
-  const shouldShowPuntajeNivel = useMemo(() => {
-    if (!dataFiltradaDirectorTabla || dataFiltradaDirectorTabla.length === 0) return false;
-    
-    // Verificar si al menos un estudiante tiene puntaje o nivel
-    return dataFiltradaDirectorTabla.some(estudiante => 
-      (estudiante.puntaje !== undefined && estudiante.puntaje !== null && estudiante.puntaje > 0) ||
-      (estudiante.nivel !== undefined && estudiante.nivel !== null && estudiante.nivel !== '')
-    );
-  }, [dataFiltradaDirectorTabla]);
-
-  const options = {
-    plugins: {
-      legend: {
-        position: 'center' as const,
-      },
-      title: {
-        display: true,
-        text: 'estadistica de respuestas',
-      },
-    },
-  };
-  const handleChangeMonth = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setLoadingMonth(true);
-    const selectedMonth = getAllMonths.find((mes) => mes.name === e.target.value);
-    setMonthSelected(selectedMonth ? selectedMonth.id : currentMonth);
-    // Limpiar las imágenes de gráficos cuando cambie el mes
-    limpiarImagenes();
-
-    // Simular un pequeño delay para mostrar el loader
-    setTimeout(() => {
-      setLoadingMonth(false);
-    }, 500);
-  };
-
-  useEffect(() => {
-    reporteDirectorEstudiantes(
-      `${route.query.idEvaluacion}`,
-      monthSelected,
-      currentUserData,
-      evaluacion
-    );
-  }, [monthSelected]);
-
-  // Crear un mapa optimizado de preguntas por ID para evitar búsquedas repetidas O(1) en lugar de O(n)
   const preguntasMap = useMemo(() => {
     const map = new Map<string, PreguntasRespuestas>();
     preguntasRespuestas.forEach((pregunta) => {
@@ -343,8 +156,6 @@ const Reporte = () => {
     });
     return map;
   }, [preguntasRespuestas]);
-
-  // Memorizar las preguntas ordenadas por la propiedad order
   const preguntasOrdenadas = useMemo(() => {
     return [...(preguntasRespuestas || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [preguntasRespuestas]);
@@ -382,15 +193,6 @@ const Reporte = () => {
     return reporteSincronizado;
   }, [reporteDirector, preguntasOrdenadas]);
 
-  // Hook para generar imágenes de gráficos
-  const { graficosImagenes, imagenesGeneradas, obtenerRefGrafico, limpiarImagenes } =
-    useGenerarImagenesGraficos({ reporteDirectorOrdenado });
-
-  // Limpiar imágenes cuando cambie el mes
-  useEffect(() => {
-    limpiarImagenes();
-  }, [monthSelected, limpiarImagenes]);
-
   // Crear array de objetos con toda la información necesaria para el reporte
   const reporteCompleto = useMemo(() => {
     if (!reporteDirectorOrdenado || !preguntasRespuestas.length) return [];
@@ -410,65 +212,142 @@ const Reporte = () => {
       };
     });
   }, [reporteDirectorOrdenado, preguntasMap]);
+  const {
+    graficosImagenes,
+    imagenesGeneradas,
+    loadingPDF,
+    reporteCompletoConImagenes,
+    convertirGraficoAImagen,
+    handleGenerarPDF,
+    limpiarImagenes
+  } = useGenerarPDFReporte({
+    reporteCompleto,
+    currentUserData,
+    titulo: 'Reporte de Evaluación - Directores',
+    tipoUsuario: 'Director',
+    monthSelected
+  });
+  // Limpiar dataFiltradaDirectorTabla cuando el componente se monta
+  useEffect(() => {
+    dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, payload: [] });
+  }, [dispatch]);
 
-  // Actualizar reporteCompleto cuando se generen las imágenes de los gráficos
-  const reporteCompletoConImagenes = useMemo(() => {
-    return reporteCompleto.map((item) => ({
-      ...item,
-      graficoImagen: graficosImagenes[item.id] || '',
-    }));
-  }, [reporteCompleto, graficosImagenes]);
+  useEffect(() => {
+    //me trae las preguntas y respuestas para los graficos
+    getPreguntasRespuestas(`${route.query.idEvaluacion}`);
+    getEvaluacion(`${route.query.idEvaluacion}`);
+  }, [currentUserData.dni, route.query.idEvaluacion]);
 
-  // Función para generar PDF
-  const handleGenerarPDF = async () => {
-    setLoadingPDF(true);
-    try {
-      await generarPDFReporte(reporteCompletoConImagenes, {
-        titulo: 'Reporte de Evaluación - Directores',
-        nombreDocente:
-          `${currentUserData.nombres || ''} ${currentUserData.apellidos || ''}`.trim() ||
-          'Director',
-        fecha: new Date().toLocaleDateString('es-ES'),
+  const handleFiltrar = () => {
+    // Verificar si hay filtros seleccionados
+    const hayFiltrosSeleccionados = filtros.grado || filtros.seccion || filtros.genero || filtros.orden;
+    
+    // Usar estudiantes originales como base para el filtrado
+    const baseEstudiantes = estudiantesOriginales.length > 0 ? estudiantesOriginales : estudiantes;
+    
+    if (hayFiltrosSeleccionados && baseEstudiantes.length > 0) {
+      // Aplicar filtros usando la función del hook
+      const estudiantesFiltrados = filtrosParaReporteDirector(baseEstudiantes, filtros);
+      
+      // Actualizar el estado global con los datos filtrados
+      dispatch({ 
+        type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, 
+        payload: estudiantesFiltrados 
       });
+      
+      // También actualizar el estado local de estudiantes para que se refleje en la tabla
+      setEstudiantes(estudiantesFiltrados);
+    } else {
+      // Si no hay filtros, restaurar todos los estudiantes originales
+      const estudiantesARestaurar = estudiantesOriginales.length > 0 ? estudiantesOriginales : baseEstudiantes;
+      dispatch({ 
+        type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, 
+        payload: estudiantesARestaurar 
+      });
+      setEstudiantes(estudiantesARestaurar);
+    }
+  };
+  useEffect(() => {
+    currentUserData.dni &&
+      reporteDirectorEstudiantes(
+        `${route.query.idEvaluacion}`,
+        monthSelected,
+        currentUserData,
+        evaluacion
+      );
+    
+    
+  }, [route.query.id, route.query.idEvaluacion, currentUserData.dni]);
+useEffect(() => {
+  getGrados();
+},[])
+  useEffect(() => {
+    getAllEvaluacionesDeEstudiantesPorMes(evaluacion);
+  }, [evaluacion.id]);
+
+  // Guardar estudiantes originales cuando se cargan
+  useEffect(() => {
+    if (estudiantes.length > 0 && estudiantesOriginales.length === 0) {
+      setEstudiantesOriginales([...estudiantes]);
+    }
+  }, [estudiantes, estudiantesOriginales.length]);
+
+
+console.log('estudiantes', estudiantes);
+
+  const handleChangeMonth = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setLoadingMonth(true);
+    const selectedMonth = getAllMonths.find((mes) => mes.name === e.target.value);
+    const newMonth = selectedMonth ? selectedMonth.id : currentMonth;
+    
+    // Limpiar las imágenes de gráficos cuando cambie el mes
+    limpiarImagenes();
+    // Limpiar filtros cuando cambie el mes
+    setFiltros({
+      grado: '',
+      seccion: '',
+      orden: '',
+      genero: '',
+    });
+    // Limpiar estudiantes originales para que se recarguen
+    setEstudiantesOriginales([]);
+
+    try {
+      // Actualizar el mes seleccionado
+      setMonthSelected(newMonth);
+      
+      // La función reporteDirectorEstudiantes se ejecutará automáticamente 
+      // por el useEffect que depende de monthSelected
+      // Solo necesitamos esperar un momento para que se complete
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
-      console.error('Error al generar PDF:', error);
+      console.error('Error al cambiar mes:', error);
     } finally {
-      setLoadingPDF(false);
+      setLoadingMonth(false);
     }
   };
 
-  // Función optimizada para renderizar pregunta usando el mapa
-  const renderPregunta = useCallback(
-    (idPregunta: string) => {
-      const pregunta = preguntasMap.get(idPregunta);
-      if (!pregunta) {
-        return <p>Pregunta no encontrada</p>;
-      }
-      return (
-        <div className="grid gap-1">
-          <h3 className="text-slate-500 mr-2">
-            {/* <span className='text-colorSegundo mr-2 font-semibold'>{pregunta.order}.</span> */}
-            {pregunta.pregunta}
-          </h3>
-          <h3 className="text-slate-500 mr-2">
-            <span className="text-colorSegundo mr-2 font-semibold">Actuación:</span>
-            {pregunta.preguntaDocente}
-          </h3>
-        </div>
-      );
-    },
-    [preguntasMap]
-  );
+  useEffect(() => {
+    if (monthSelected && currentUserData.dni && evaluacion.id) {
+      reporteDirectorEstudiantes(
+        `${route.query.idEvaluacion}`,
+        monthSelected,
+        currentUserData,
+        evaluacion
+      ).finally(() => {
+        setLoadingMonth(false);
+      });
+    }
+  }, [monthSelected, currentUserData.dni, evaluacion.id]);
 
-  // Función optimizada para obtener respuesta usando el mapa
-  const obtenerRespuestaPorId = useCallback(
-    (idPregunta: string): string => {
-      const pregunta = preguntasMap.get(idPregunta);
-      return pregunta?.respuesta || '';
-    },
-    [preguntasMap]
-  );
+  // Crear un mapa optimizado de preguntas por ID para evitar búsquedas repetidas O(1) en lugar de O(n)
+  
 
+  // Memorizar las preguntas ordenadas por la propiedad order
+ 
+
+  // Hook para generar PDF con imágenes
+  
   return (
     <>
       {loaderReporteDirector ? (
@@ -480,9 +359,9 @@ const Reporte = () => {
         </div>
       ) : (
         <div className={styles.mainContainer}>
-          <div>
+          <div className={styles.content}>
             <div className={styles.selectContainer}>
-              <button
+              {/* <button
                 onClick={handleGenerarPDF}
                 disabled={
                   loadingPDF || reporteCompletoConImagenes.length === 0 || !imagenesGeneradas
@@ -511,7 +390,7 @@ const Reporte = () => {
                     <span>Generar PDF</span>
                   </>
                 )}
-              </button>
+              </button> */}
 
               <div className={styles.selectWrapper}>
                 <select
@@ -583,203 +462,62 @@ const Reporte = () => {
               <button className={styles.filterButton} onClick={handleFiltrar}>
                 Filtrar
               </button>
+              <button className={styles.clearButton} onClick={handleLimpiarFiltros}>
+                Limpiar
+              </button>
             </div>
 
-            {/* Contenedor de la tabla */}
-            <div className={styles.tableContainer}>
-              {dataFiltradaDirectorTabla && dataFiltradaDirectorTabla.length > 0 ? (
-                <table className={styles.table}>
-                  <thead className={styles.tableHeader}>
-                    <tr>
-                      <th className={styles.tableHeaderCell}>#</th>
-                      <th className={styles.tableHeaderCell}>Nombre y apellidos</th>
-                      <th className={styles.tableHeaderCell}>Docente</th>
-                      <th className={styles.tableHeaderCell}>R.C</th>
-                      <th className={styles.tableHeaderCell}>T.P</th>
-                      {shouldShowPuntajeNivel && (
-                        <>
-                          <th className={styles.tableHeaderCell}>Puntaje</th>
-                          <th className={styles.tableHeaderCell}>Nivel</th>
-                        </>
-                      )}
-                      {preguntasRespuestas.map((pr, index) => {
-                        return (
-                          <th key={pr.order} className={styles.tableHeaderCell}>
-                            <button className={styles.popoverButton} popoverTarget={`${pr.order}`}>
-                              {index + 1}
-                            </button>
-                            <div
-                              className={styles.popoverContent}
-                              popover="auto"
-                              id={`${pr.order}`}
-                            >
-                              <div className="w-full">
-                                <span className={styles.popoverTitle}>{index + 1}. Actuación:</span>
-                                <span className={styles.popoverText}>{pr.preguntaDocente}</span>
-                              </div>
-                            </div>
-                          </th>
-                        );
-                      })}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedData.map((dir, index) => {
-                      const globalIndex = (currentPage - 1) * itemsPerPage + index;
-                      return (
-                        <tr key={globalIndex} className={styles.tableRow}>
-                          <td className={styles.tableCell}>{globalIndex + 1}</td>
-                          <td className={`${styles.tableCell} ${styles.tableCellName}`}>
-                            {dir.nombresApellidos?.toUpperCase()}
-                          </td>
-                          <td className={`${styles.tableCell} ${styles.tableCellName}`}>
-                            {dir.dniDocente?.toUpperCase()}
-                          </td>
-                          <td className={styles.tableCell}>{dir.respuestasCorrectas}</td>
-                          <td className={styles.tableCell}>{dir.totalPreguntas}</td>
-                          {shouldShowPuntajeNivel && (
-                            <>
-                              <td className={styles.tableCell}>{dir.puntaje || '-'}</td>
-                              <td className={styles.tableCell}>{dir.nivel || '-'}</td>
-                            </>
-                          )}
-                          {dir.respuestas?.map((res) => {
-                            return (
-                              <td key={res.order} className={styles.tableCell}>
-                                {handleValidateRespuesta(res)}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              ) : (
-                <div className={styles.noDataContainer}>
-                  <div className={styles.noDataMessage}>
-                    <span>📊</span>
-                    <p>No hay datos para mostrar</p>
-                    <p>Intenta cambiar los filtros o seleccionar otro mes</p>
-                  </div>
-                </div>
-              )}
-            </div>
-            {dataFiltradaDirectorTabla && dataFiltradaDirectorTabla.length > 0 && (
-              <div className={styles.paginationContainer}>
-                <div className={styles.paginationInfo}>
-                  <span>
-                    Mostrando {(currentPage - 1) * itemsPerPage + 1} -{' '}
-                    {Math.min(currentPage * itemsPerPage, dataFiltradaDirectorTabla?.length || 0)}{' '}
-                    de {dataFiltradaDirectorTabla?.length || 0} registros
-                  </span>
-                </div>
-                <div className={styles.paginationSettings}>
-                  <label htmlFor="itemsPerPage" className={styles.itemsPerPageLabel}>
-                    Mostrar:
-                  </label>
-                  <select
-                    id="itemsPerPage"
-                    value={itemsPerPage}
-                    onChange={handleItemsPerPageChange}
-                    className={styles.itemsPerPageSelect}
-                  >
-                    <option value={10}>10</option>
-                    <option value={25}>25</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
-                  <span>por página</span>
-                </div>
-                <div className={styles.paginationControls}>
-                  <button
-                    onClick={handleFirstPage}
-                    disabled={currentPage === 1}
-                    className={styles.paginationButton}
-                  >
-                    ⏮️ Primera
-                  </button>
-                  <button
-                    onClick={handlePrevPage}
-                    disabled={currentPage === 1}
-                    className={styles.paginationButton}
-                  >
-                    ◀️ Anterior
-                  </button>
-                  <span className={styles.pageInfo}>
-                    Página {currentPage} de {totalPages}
-                  </span>
-                  <button
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                    className={styles.paginationButton}
-                  >
-                    Siguiente ▶️
-                  </button>
-                  <button
-                    onClick={handleLastPage}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                    className={styles.paginationButton}
-                  >
-                    Última ⏭️
-                  </button>
-                </div>
-              </div>
-            )}
-            {/* Contenedor de paginación separado */}
-            {evaluacion.tipoDeEvaluacion === '1' ? (
-              
-                <PieChartComponent
-                  monthSelected={monthSelected}
-                  dataGraficoTendenciaNiveles={dataGraficoPieChart}
-                />
-            ) : null}
+           
+          <TablaPreguntas
+            estudiantes={estudiantes}
+            preguntasRespuestas={preguntasRespuestas}
+            warningEvaEstudianteSinRegistro={undefined}
+            /* warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined} */
 
-            
+            linkToEdit={`/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`}
+            customColumns={{
+              showPuntaje: hasValidPuntaje(),
+              showNivel: hasValidNivel(),
+            }}
+            className={styles.tableWrapper}
+          />
+        
+          {isLoading ? (
+            <div className={styles.loaderContainer}>
+              <Loader 
+                size="large" 
+                variant="spinner" 
+                text="Cargando datos..." 
+                color="#10b981"
+              />
+            </div>
+          ) : (
+            <>
+              {evaluacion.tipoDeEvaluacion === '1' ? (
+                <div className={styles.graficosContainer}>
+                  <GraficoTendenciaColegio
+                    evaluacion={evaluacion}
+                    datosPorMes={datosPorMes}
+                    mesesConDataDisponibles={mesesConDataDisponibles}
+                    promedioGlobal={promedioGlobal}
+                    monthSelected={monthSelected}
+                    dataGraficoTendenciaNiveles={[
+                      generarDataGraficoPiechart(estudiantes, monthSelected, evaluacion),
+                    ]}
+                  />
+                </div>
+              ) : null}
+              <ReporteEvaluacionPorPregunta
+                dataEstadisticasOrdenadas={reporteDirectorOrdenado}
+                preguntasMap={preguntasMap}
+                detectarNumeroOpciones={detectarNumeroOpciones}
+                warningEvaEstudianteSinRegistro={ undefined}
+                convertirGraficoAImagen={convertirGraficoAImagen}
+              />
+            </>
+          )}
           </div>
-
-          <div className={styles.reportContainer}>
-            <h1 className={styles.reportTitle}>reporte de evaluación</h1>
-            <div>
-              <div>
-                {reporteDirectorOrdenado?.map((dat: DataEstadisticas, index: number) => {
-                  // Encontrar la pregunta correspondiente por su id
-                  const preguntaCorrespondiente = preguntasMap.get(dat.id || '');
-
-                  return (
-                    <div key={index} className={styles.questionContainer}>
-                      {index + 1}.{renderPregunta(dat.id || '')}
-                      <div className={styles.chartContainer}>
-                        <div className={styles.chartWrapper}>
-                          <Bar
-                            className={styles.chart}
-                            options={options}
-                            data={iterateData(dat, obtenerRespuestaPorId(dat.id || ''))}
-                            ref={obtenerRefGrafico(dat.id || '')}
-                          />
-                        </div>
-                        {/* <div className={styles.statsContainer}>
-                              {Object.entries(dat)
-                                .filter(([key]) => key !== 'id' && key !== 'total')
-                                .map(([key, value]) => (
-                                  <p key={key}>
-                                    {key}: {value} | {dat.total === 0 ? 0 : ((100 * Number(value)) / Number(dat.total)).toFixed(0)}%
-                                  </p>
-                                ))}
-                            </div> */}
-                        <div className={styles.answerContainer}>
-                          respuesta:
-                          <span className={styles.answerText}>
-                            {obtenerRespuestaPorId(dat.id || '')}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          
         </div>
       )}
     </>

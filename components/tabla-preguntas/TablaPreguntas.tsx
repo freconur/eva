@@ -176,11 +176,11 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
           </div>
         ) : (
           <>
-            {/*  <div className={styles.tableWrapper}> */}
+            <div className={className.includes('tableWrapper') ? className : ''}>
             <table className={styles.table}>
               <thead className={styles.tableHeader}>
                 <tr>
-                  {showDeleteButton && <th></th>}
+                  {showDeleteButton && onDeleteEstudiante && <th></th>}
                   <th>#</th>
                   <th>N-A</th>
                   <th>r.c</th>
@@ -208,7 +208,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                   paginationData.currentStudents?.map((estudiante, index) => {
                     return (
                       <tr key={estudiante.dni || index}>
-                        {showDeleteButton && (
+                        {showDeleteButton && onDeleteEstudiante && (
                           <td>
                             <MdDeleteForever
                               onClick={() => handleDeleteClick(estudiante.dni)}
@@ -244,7 +244,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                   })
                 ) : (
                   <tr>
-                    <td colSpan={preguntasRespuestas.length + (showDeleteButton ? 6 : 5) + (hasValidPuntaje() ? 1 : 0) + (hasValidNivel() ? 1 : 0)}>
+                    <td colSpan={preguntasRespuestas.length + (showDeleteButton && onDeleteEstudiante ? 6 : 5) + (hasValidPuntaje() ? 1 : 0) + (hasValidNivel() ? 1 : 0)}>
                       <div className={styles.warningContainer}>
                         {warningEvaEstudianteSinRegistro}
                       </div>
@@ -253,7 +253,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                 )}
               </tbody>
             </table>
-            {/*  </div> */}
+            </div>
           </>
         )}
       </div>

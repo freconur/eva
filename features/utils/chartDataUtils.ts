@@ -74,9 +74,14 @@ export const prepararDatosPieChart = (
 export const prepararDatosNiveles = (datosPorMes: GraficoTendenciaNiveles[]) => {
   if (!datosPorMes || datosPorMes.length === 0) return null;
 
+  // Filtrar datos que tengan niveles con length > 0
+  const datosFiltrados = datosPorMes.filter((dato) => dato.niveles && dato.niveles.length > 0);
+  
+  if (datosFiltrados.length === 0) return null;
+
   // Obtener todos los niveles únicos de todos los meses con su información completa
   const nivelesMap = new Map<string, { nivel: string; id: number }>();
-  datosPorMes.forEach((dato) => {
+  datosFiltrados.forEach((dato) => {
     dato.niveles.forEach((nivel) => {
       if (nivel.id !== undefined) {
         nivelesMap.set(nivel.nivel, { nivel: nivel.nivel, id: nivel.id });
@@ -90,7 +95,7 @@ export const prepararDatosNiveles = (datosPorMes: GraficoTendenciaNiveles[]) => 
     .map(nivel => nivel.nivel);
 
   // Crear datasets para cada mes
-  const datasets = datosPorMes.map((dato, index) => {
+  const datasets = datosFiltrados.map((dato, index) => {
     const color = coloresProfesionales[index % coloresProfesionales.length];
 
     const data = nivelesOrdenados.map((nivel) => {
@@ -128,9 +133,14 @@ export const prepararDatosNiveles = (datosPorMes: GraficoTendenciaNiveles[]) => 
 export const calcularValorMaximoNiveles = (datosPorMes: GraficoTendenciaNiveles[]) => {
   if (!datosPorMes || datosPorMes.length === 0) return 50;
 
+  // Filtrar datos que tengan niveles con length > 0
+  const datosFiltrados = datosPorMes.filter((dato) => dato.niveles && dato.niveles.length > 0);
+  
+  if (datosFiltrados.length === 0) return 50;
+
   // Encontrar el valor máximo entre todos los niveles de todos los meses
   let maximoValor = 0;
-  datosPorMes.forEach((dato) => {
+  datosFiltrados.forEach((dato) => {
     dato.niveles.forEach((nivel) => {
       if (nivel.cantidadDeEstudiantes > maximoValor) {
         maximoValor = nivel.cantidadDeEstudiantes;
@@ -158,8 +168,15 @@ export const calcularValorMaximoNiveles = (datosPorMes: GraficoTendenciaNiveles[
 export const prepararDatosPromedio = (promedioGlobal: PromedioGlobalPorMes[]) => {
   if (!promedioGlobal || promedioGlobal.length === 0) return null;
 
+  // Filtrar datos que tengan promedio y totalEstudiantes diferentes de 0
+  const datosFiltrados = promedioGlobal.filter((dato) => 
+    dato.promedioGlobal !== 0 && dato.totalEstudiantes !== 0
+  );
+  
+  if (datosFiltrados.length === 0) return null;
+
   // Ordenar los datos por mes de manera ascendente
-  const datosOrdenados = [...promedioGlobal].sort((a, b) => a.mes - b.mes);
+  const datosOrdenados = [...datosFiltrados].sort((a, b) => a.mes - b.mes);
 
   return {
     labels: datosOrdenados.map((dato) => getMonthName(dato.mes)),
@@ -185,8 +202,15 @@ export const prepararDatosPromedio = (promedioGlobal: PromedioGlobalPorMes[]) =>
 export const prepararDatosBarrasPromedio = (promedioGlobal: PromedioGlobalPorMes[]) => {
   if (!promedioGlobal || promedioGlobal.length === 0) return null;
 
+  // Filtrar datos que tengan promedio y totalEstudiantes diferentes de 0
+  const datosFiltrados = promedioGlobal.filter((dato) => 
+    dato.promedioGlobal !== 0 && dato.totalEstudiantes !== 0
+  );
+  
+  if (datosFiltrados.length === 0) return null;
+
   // Ordenar los datos por mes de manera ascendente
-  const datosOrdenados = [...promedioGlobal].sort((a, b) => a.mes - b.mes);
+  const datosOrdenados = [...datosFiltrados].sort((a, b) => a.mes - b.mes);
 
   return {
     labels: datosOrdenados.map((dato) => `${getMonthName(dato.mes)}`),
@@ -212,7 +236,14 @@ export const prepararDatosBarrasPromedio = (promedioGlobal: PromedioGlobalPorMes
 export const calcularValorMinimoPromedio = (promedioGlobal: PromedioGlobalPorMes[]) => {
   if (!promedioGlobal || promedioGlobal.length === 0) return 0;
 
-  const valores = promedioGlobal.map((dato) => dato.promedioGlobal);
+  // Filtrar datos que tengan promedio y totalEstudiantes diferentes de 0
+  const datosFiltrados = promedioGlobal.filter((dato) => 
+    dato.promedioGlobal !== 0 && dato.totalEstudiantes !== 0
+  );
+  
+  if (datosFiltrados.length === 0) return 0;
+
+  const valores = datosFiltrados.map((dato) => dato.promedioGlobal);
   const min = Math.min(...valores);
   const max = Math.max(...valores);
   const rango = max - min;

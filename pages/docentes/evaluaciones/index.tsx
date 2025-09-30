@@ -7,19 +7,50 @@ import React, { useEffect } from "react";
 import primaria from "../../../assets/primaria.png";
 import secundaria from "../../../assets/secundaria.png";
 import inicial from "../../../assets/inicial.png";
-import logo from "../../../assets/formativa-logo.png";
-import { RiLoader4Line } from "react-icons/ri";
+import { RiLoader4Line, RiArrowRightLine, RiCheckLine } from "react-icons/ri";
+import { FaGraduationCap, FaChalkboardTeacher, FaBaby } from "react-icons/fa";
 import styles from "./evaluaciones.module.css";
 
-const getRandomPosition = () => {
-  const circlePositions = ['circleTopRight', 'circleTopLeft', 'circleBottomRight', 'circleBottomLeft'];
-  const shapePositions = ['shapeTopRight', 'shapeTopLeft', 'shapeBottomRight', 'shapeBottomLeft'];
-  
-  const randomCircle = circlePositions[Math.floor(Math.random() * circlePositions.length)];
-  const randomShape = shapePositions[Math.floor(Math.random() * shapePositions.length)];
-  
-  return `${styles[randomCircle]} ${styles[randomShape]}`;
-};
+// Datos de los niveles educativos
+const educationLevels = [
+  {
+    id: 'secundaria',
+    title: 'Educación Secundaria',
+    description: 'Niveles 6 y 7 - Estudiantes de 12 a 17 años',
+    icon: FaGraduationCap,
+    image: secundaria,
+    levels: [
+      { number: 6, title: 'Nivel 6', description: 'Estándares de aprendizaje para estudiantes de 1° y 2° de secundaria' },
+      { number: 7, title: 'Nivel 7', description: 'Estándares de aprendizaje para estudiantes de 3°, 4° y 5° de secundaria' }
+    ],
+    href: '/docentes/evaluaciones/secundaria'
+  },
+  {
+    id: 'primaria',
+    title: 'Educación Primaria',
+    description: 'Niveles 3, 4 y 5 - Estudiantes de 6 a 11 años',
+    icon: FaChalkboardTeacher,
+    image: primaria,
+    levels: [
+      { number: 3, title: 'Nivel 3', description: 'Estándares de aprendizaje para estudiantes de 1° y 2° de primaria' },
+      { number: 4, title: 'Nivel 4', description: 'Estándares de aprendizaje para estudiantes de 3° y 4° de primaria' },
+      { number: 5, title: 'Nivel 5', description: 'Estándares de aprendizaje para estudiantes de 5° y 6° de primaria' }
+    ],
+    href: '/docentes/evaluaciones/tercerNivel'
+  },
+  {
+    id: 'inicial',
+    title: 'Educación Inicial',
+    description: 'Niveles 1 y 2 - Niños de 3 a 5 años',
+    icon: FaBaby,
+    image: inicial,
+    levels: [
+      { number: 1, title: 'Nivel 1', description: 'Estándares de aprendizaje para estudiantes de 3 años' },
+      { number: 2, title: 'Nivel 2', description: 'Estándares de aprendizaje para estudiantes de 4 y 5 años' }
+    ],
+    href: '/docentes/evaluaciones/inicial'
+  }
+];
 
 const Evaluaciones = () => {
   const { getEvaluaciones } = useAgregarEvaluaciones();
@@ -30,206 +61,101 @@ const Evaluaciones = () => {
   }, [currentUserData.dni]);
 
   console.log("evaluaciones", evaluaciones);
+
+  if (loaderPages) {
+    return (
+      <div className={styles.container}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '50vh',
+          flexDirection: 'column',
+          gap: '1rem'
+        }}>
+          <RiLoader4Line className="animate-spin" style={{ fontSize: '3rem', color: '#667eea' }} />
+          <span style={{ color: '#667eea', fontSize: '1.2rem', fontWeight: '500' }}>
+            Cargando evaluaciones...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>
-        evaluaciones por niveles
+        Evaluaciones por Niveles
       </h1>
+      
       <div className={styles.gridContainer}>
-        <div className={styles.secundariaContainer}>
-          <div className={styles.levelTitle}>
-            <Link href="/docentes/evaluaciones/secundaria" className={styles.levelTitle}>
-              <div className={styles.levelImage}>
-                <Image
-                  alt="logo formativa"
-                  src={secundaria}
-                  width={400}
-                  height={300}
-                />
+        {educationLevels.map((level) => {
+          const IconComponent = level.icon;
+          console.log(`Renderizando nivel: ${level.id} con ${level.levels.length} subniveles`);
+          
+          return (
+            <div key={level.id} className={`${styles.educationLevel} ${styles[level.id]}`}>
+              <div className={styles.levelHeader}>
+                <div className={styles.levelInfo}>
+                  <div className={styles.levelIcon}>
+                    <IconComponent />
+                  </div>
+                  <div>
+                    <h2 className={styles.levelTitle}>{level.title}</h2>
+                    <p className={styles.levelDescription}>{level.description}</p>
+                  </div>
+                </div>
+                <div className={styles.levelImage}>
+                  <Image
+                    alt={`${level.title} illustration`}
+                    src={level.image}
+                    width={120}
+                    height={80}
+                    style={{ objectFit: 'contain' }}
+                  />
+                </div>
               </div>
-              <h3>
-                educación secundaria
-              </h3>
-            </Link>
-          </div>
-          <Link href="/docentes/evaluaciones/secundaria" className={`${styles.levelCard} ${styles.secundaria6} ${getRandomPosition()}`}>
-            <div className={styles.overlay}></div>
-            <div className={styles.levelNumber}>
-              <p>6</p>
+              
+              <div className={styles.levelsGrid}>
+                {level.levels.map((subLevel) => {
+                  console.log(`Renderizando subnivel: ${subLevel.number} - ${subLevel.title}`);
+                  return (
+                    <Link 
+                      key={subLevel.number} 
+                      href={level.href}
+                      className={styles.levelCard}
+                    >
+                      <div className={styles.levelNumber}>
+                        {subLevel.number}
+                      </div>
+                      
+                      <div className={styles.cardContent}>
+                        <h3 className={styles.cardTitle}>
+                          {subLevel.title}
+                        </h3>
+                        <p className={styles.cardDescription}>
+                          {subLevel.description}
+                        </p>
+                        
+                        <div className={styles.cardFooter}>
+                          <div className={styles.cardStatus}>
+                            <div className={styles.statusDot}></div>
+                            <span>Disponible</span>
+                          </div>
+                          <div className={styles.cardArrow}>
+                            <RiArrowRightLine />
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-            <div className={styles.levelContent}>
-              <p className={styles.textTableEstandares6}>
-                Estándar de aprendizaje
-              </p>
-            </div>
-            {/* <div className={styles.levelFooter}>
-              <p>nivel 6</p>
-            </div> */}
-          </Link>
-          <Link href="/docentes/evaluaciones/secundaria" className={`${styles.levelCard} ${styles.secundaria7} ${getRandomPosition()}`}>
-            <div className={styles.overlay}></div>
-            <div className={styles.levelNumber}>
-              <p>7</p>
-            </div>
-            <div className={styles.levelContent}>
-              <p className={styles.textWhite}>Estándar de aprendizaje</p>
-            </div>
-            {/* <div className={styles.levelFooter}>
-              <p>nivel 7</p>
-            </div> */}
-          </Link>
-        </div>
-
-        <div className={styles.primariaContainer}>
-          <Link href="/docentes/evaluaciones/tercerNivel" className={styles.levelTitle}>
-            <div className={styles.levelImage}>
-              <Image
-                alt="logo formativa"
-                src={primaria}
-                width={300}
-                height={200}
-              />
-            </div>
-            <h3>
-              educación primaria
-            </h3>
-          </Link>
-          <Link href="/docentes/evaluaciones/tercerNivel" className={`${styles.levelCard} ${styles.primaria3} ${getRandomPosition()}`}>
-            <div className={styles.overlay}></div>
-            <div className={styles.levelNumber}>
-              <p>3</p>
-            </div>
-            <div className={styles.levelContent}>
-              <p className={styles.textTableEstandares6}>
-                Estándar de aprendizaje
-              </p>
-            </div>
-            {/* <div className={styles.levelFooter}>
-              <p>nivel 3</p>
-            </div> */}
-          </Link>
-          <Link href="/docentes/evaluaciones/tercerNivel" className={`${styles.levelCard} ${styles.primaria4} ${getRandomPosition()}`}>
-            <div className={styles.overlay}></div>
-            <div className={styles.levelNumber}>
-              <p>4</p>
-            </div>
-            <div className={styles.levelContent}>
-              <p className={styles.textWhite}>Estándar de aprendizaje</p>
-            </div>
-           {/*  <div className={styles.levelFooter}>
-              <p>nivel 4</p>
-            </div> */}
-          </Link>
-          <Link href="/docentes/evaluaciones/tercerNivel" className={`${styles.levelCard} ${styles.primaria5} ${getRandomPosition()}`}>
-            <div className={styles.overlay}></div>
-            <div className={styles.levelNumber}>
-              <p>5</p>
-            </div>
-            <div className={styles.levelContent}>
-              <p className={styles.textTableEstandares6}>
-                Estándar de aprendizaje
-              </p>
-            </div>
-            {/* <div className={styles.levelFooter}>
-              <p>nivel 5</p>
-            </div> */}
-          </Link>
-        </div>
-
-        <div className={styles.inicialContainer}>
-          <div className={styles.levelTitle}>
-            <div className={styles.levelImage}>
-              <Image
-                alt="logo formativa"
-                src={inicial}
-                width={300}
-                height={200}
-              />
-            </div>
-            <h3>
-              educación inicial
-            </h3>
-          </div>
-          <Link href="" className={`${styles.levelCard} ${styles.inicial1} ${getRandomPosition()}`}>
-            <div className={styles.overlay}></div>
-            <div className={styles.levelNumber}>
-              <p>1</p>
-            </div>
-            <div className={styles.levelContent}>
-              <p className={styles.textWhite}>Estándar de aprendizaje</p>
-            </div>
-            {/* <div className={styles.levelFooter}>
-              <p>nivel 1</p>
-            </div> */}
-          </Link>
-          <Link href="" className={`${styles.levelCard} ${styles.inicial2} ${getRandomPosition()}`}>
-            <div className={styles.overlay}></div>
-            <div className={styles.levelNumber}>
-              <p>2</p>
-            </div>
-            <div className={styles.levelContent}>
-              <p className={styles.textTableEstandares6}>
-                Estándar de aprendizaje
-              </p>
-            </div>
-            {/* <div className={styles.levelFooter}>
-              <p>nivel 2</p>
-            </div> */}
-          </Link>
-        </div>
+          );
+        })}
       </div>
     </div>
-
-    // <>
-    //   {
-    //     loaderPages ?
-    //       <div className='grid grid-rows-loader'>
-    //         <div className='flex justify-center items-center'>
-    //           <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-    //           <span className='text-colorTercero animate-pulse'>...cargando</span>
-    //         </div>
-    //       </div>
-
-    //       :
-    //       <div className='grid justify-center items-center relative mt-3'>
-    //         <div className='w-[1024px] bg-white  p-20'>
-    //           <h1 className='text-colorSexto font-semibold text-3xl font-mono mb-10 capitalize'>evaluaciones</h1>
-    //           <table className='w-full  bg-white  rounded-md shadow-md'>
-    //             <thead className='bg-colorSegundo border-b-2 border-blue-300 '>
-    //               <tr className='text-white capitalize font-nunito '>
-    //                 <th className="uppercase  pl-1 md:pl-2 px-1 text-center">#</th>
-    //                 <th className="py-3 md:p-2  text-left">nombre de evaluación</th>
-    //               </tr>
-    //             </thead>
-    //             <tbody className="divide-y divide-gray-100">
-    //               {
-    //                 evaluaciones.length > 0 ?
-    //                   evaluaciones?.map((eva, index) => {
-    //                     return (
-    //                       <tr key={index} className='h-[60px] hover:bg-blue-100 duration-300 cursor-pointer'>
-    //                         <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>
-    //                           <Link href={`/docentes/evaluaciones/evaluacion/${eva.id}`}>
-    //                             {index + 1}
-    //                           </Link>
-    //                         </td>
-    //                         <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-left'>
-    //                           <Link href={`/docentes/evaluaciones/evaluacion/${eva.id}`}>
-    //                             {eva.nombre}
-    //                           </Link>
-    //                         </td>
-    //                       </tr>
-    //                     )
-    //                   })
-    //                   :
-    //                   null
-    //               }
-    //             </tbody>
-    //           </table>
-    //         </div>
-    //       </div>
-
-    //   }
-    // </>
   );
 };
 

@@ -252,13 +252,16 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
         padding: 12,
         callbacks: {
           title: function (context: any) {
-            const datosOrdenados = [...promedioGlobal].sort((a, b) => a.mes - b.mes);
-            const dato = datosOrdenados[context[0].dataIndex];
-            return dato ? getMonthName(dato.mes) : context[0].label;
+            // Usar el label del gráfico que ya está correctamente filtrado
+            return context[0].label;
           },
           label: function (context: any) {
             if (context.datasetIndex === 0) {
-              const datosOrdenados = [...promedioGlobal].sort((a, b) => a.mes - b.mes);
+              // Obtener los datos filtrados y ordenados
+              const datosFiltrados = promedioGlobal.filter((dato) => 
+                dato.promedioGlobal !== 0 && dato.totalEstudiantes !== 0
+              );
+              const datosOrdenados = [...datosFiltrados].sort((a, b) => a.mes - b.mes);
               const dato = datosOrdenados[context.dataIndex];
               const nivelInfo = obtenerNivelPorPuntaje(context.parsed.y);
               
@@ -379,12 +382,15 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
         padding: 12,
         callbacks: {
           title: function (context: any) {
-            const datosOrdenados = [...promedioGlobal].sort((a, b) => a.mes - b.mes);
-            const dato = datosOrdenados[context[0].dataIndex];
-            return dato ? getMonthName(dato.mes) : context[0].label;
+            // Usar el label del gráfico que ya está correctamente filtrado
+            return context[0].label;
           },
           label: function (context: any) {
-            const datosOrdenados = [...promedioGlobal].sort((a, b) => a.mes - b.mes);
+            // Obtener los datos filtrados y ordenados
+            const datosFiltrados = promedioGlobal.filter((dato) => 
+              dato.promedioGlobal !== 0 && dato.totalEstudiantes !== 0
+            );
+            const datosOrdenados = [...datosFiltrados].sort((a, b) => a.mes - b.mes);
             const dato = datosOrdenados[context.dataIndex];
             return [
               `Promedio Global: ${context.parsed.y.toFixed(2)}`,

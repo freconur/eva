@@ -138,7 +138,7 @@ const EjemploUsoTablaPreguntas: React.FC = () => {
       </div>
 
       <div style={{ marginBottom: '2rem' }}>
-        <h2>Sin Botones de Eliminación</h2>
+        <h2>Sin Botones de Eliminación (sin prop onDeleteEstudiante)</h2>
         <TablaPreguntas
           estudiantes={estudiantes}
           preguntasRespuestas={preguntasRespuestas}
@@ -183,6 +183,16 @@ const EjemploUsoTablaPreguntas: React.FC = () => {
           onEditEstudiante={handleEditEstudiante}
           linkToEdit="/editar-estudiante"
           className="mi-tabla-personalizada"
+        />
+      </div>
+
+      <div style={{ marginBottom: '2rem' }}>
+        <h2>Sin prop onDeleteEstudiante (botones ocultos automáticamente)</h2>
+        <TablaPreguntas
+          estudiantes={estudiantes}
+          preguntasRespuestas={preguntasRespuestas}
+          onEditEstudiante={handleEditEstudiante}
+          linkToEdit="/editar-estudiante"
         />
       </div>
     </div>

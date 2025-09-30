@@ -10,11 +10,11 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding: 1.5rem;
+  /* padding: 1.5rem;
   background-color: white;
   border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); */
+ /*  margin-bottom: 1rem; */
 }
 .loaderContent {
   display: flex;
@@ -39,31 +39,45 @@
   font-size: 2rem;
   color: var(--color-tercero);
 }
-
+.content {
+  width: 100%;
+  max-width: 100%;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  box-sizing: border-box;
+  overflow-x: auto;
+  padding: 1rem;
+}
 .mainContainer {
   display: grid;
-  justify-content: center;
-  align-items: center;
+  grid-template-columns: 1fr;
+  justify-content: stretch;
+  align-items: start;
   position: relative;
   z-index: 10;
-  padding: 2rem;
-  gap: 2rem;
+  width: 100%;
+  max-width: 100%;
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
 .filtersContainer {
   display: flex;
   gap: 1rem;
-  margin-bottom: 1rem;
-  background-color: white;
+  margin:  2rem 0;
+  /* background-color: white;
   padding: 1.5rem;
   border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); */
 }
 
 .select {
   padding: 0.75rem 1rem;
   border: 2px solid #e5e7eb;
-  border-radius: 0.5rem;
+  border-radius: 0;
   font-size: 0.875rem;
   color: #374151;
   transition: all 0.3s ease;
@@ -73,7 +87,7 @@
 .select:focus {
   outline: none;
   border-color: var(--color-tercero);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(58, 190, 249, 0.1);
 }
 
 .tableContainer {
@@ -85,10 +99,50 @@
   margin-bottom: 2.5rem;
 }
 
+/* Contenedor con scroll horizontal para la tabla */
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  margin-bottom: 2.5rem;
+  border-radius: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  position: relative;
+}
+
+/* Estilos para el scrollbar horizontal */
+.tableWrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.tableWrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.tableWrapper::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.tableWrapper::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Mejora visual para las columnas de respuestas */
+.tableWrapper .table th:nth-child(n+8),
+.tableWrapper .table td:nth-child(n+8) {
+  text-align: center;
+  padding: 0.5rem 0.25rem;
+  border-left: 1px solid #e5e7eb;
+}
+
 .table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  min-width: 800px; /* Ancho mínimo para evitar compresión excesiva */
+  background-color: white;
+  border-collapse: collapse;
 }
 
 .tableHeader {
@@ -126,10 +180,10 @@
 }
 
 .button {
-  background-color: #3b82f6;
+  background-color: var(--color-tercero);
   color: white;
   padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+  border-radius: 0;
   font-weight: 500;
   transition: all 0.3s ease;
   border: none;
@@ -141,7 +195,7 @@
 }
 
 .button:hover {
-  background-color: #2563eb;
+  background-color: var(--color-azul-claro4);
   transform: translateY(-1px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
@@ -155,10 +209,10 @@
 }
 
 .pdfButton {
-  background-color: #dc2626;
+  background-color: var(--color-paleta3);
   color: white;
   padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+  border-radius: 0;
   font-weight: 500;
   transition: all 0.3s ease;
   border: none;
@@ -170,34 +224,34 @@
 }
 
 .pdfButton:hover {
-  background-color: #b91c1c;
+  background-color: var(--color-paleta5);
   transform: translateY(-1px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .pdfButton:disabled {
-  background-color: #9ca3af;
+  background-color: var(--color-paleta7);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
 .pdfButtonLoading {
-  background-color: #dc2626;
+  background-color: var(--color-paleta3);
   animation: pulse 2s infinite;
 }
 
 .pdfButtonGenerating {
-  background-color: #f59e0b;
+  background-color: var(--color-paleta7);
   animation: pulse 2s infinite;
 }
 
 .pdfButtonReady {
-  background-color: #dc2626;
+  background-color: var(--color-paleta3);
 }
 
 .pdfButtonReady:hover {
-  background-color: #b91c1c;
+  background-color: var(--color-paleta5);
   transform: translateY(-2px);
   box-shadow: 0 6px 12px -1px rgba(0, 0, 0, 0.15);
 }
@@ -272,24 +326,101 @@
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 .filterButton {
-  background-color: #3b82f6;
-  color: white;
   padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
   border: none;
+  border-radius: 0;
   cursor: pointer;
+  font-weight: 600;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.875rem;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.025em;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  min-width: 100px;
+}
+
+.filterButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .filterButton:hover {
-  background-color: #2563eb;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.filterButton:hover::before {
+  opacity: 1;
+}
+
+.filterButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.clearButton {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.025em;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+  min-width: 100px;
+}
+
+.clearButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.clearButton:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.clearButton:hover::before {
+  opacity: 1;
+}
+
+.clearButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
 }
 
 
@@ -501,7 +632,7 @@
 .itemsPerPageSelect {
   padding: 0.5rem 0.75rem;
   border: 2px solid #e5e7eb;
-  border-radius: 0.5rem;
+  border-radius: 0;
   background-color: white;
   color: #374151;
   font-size: 0.875rem;
@@ -514,7 +645,7 @@
 .itemsPerPageSelect:focus {
   outline: none;
   border-color: var(--color-tercero);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(58, 190, 249, 0.1);
 }
 
 .paginationSettings span {
@@ -533,7 +664,7 @@
 .paginationButton {
   padding: 0.5rem 1rem;
   border: 2px solid #e5e7eb;
-  border-radius: 0.5rem;
+  border-radius: 0;
   background-color: white;
   color: #374151;
   font-size: 0.875rem;
@@ -558,7 +689,7 @@
 .paginationButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background-color: #f3f4f6;
+  background-color: var(--color-paleta7);
   color: #9ca3af;
 }
 
@@ -567,9 +698,9 @@
   font-weight: 600;
   font-size: 0.875rem;
   padding: 0.75rem 1.5rem;
-  background-color: #eff6ff;
-  border-radius: 0.5rem;
-  border: 2px solid #3b82f6;
+  background-color: var(--color-azul-claro);
+  border-radius: 0;
+  border: 2px solid var(--color-tercero);
   min-width: 120px;
   text-align: center;
 }
@@ -615,4 +746,22 @@
 .noDataMessage p:first-of-type {
   color: #374151;
   font-weight: 600;
+}
+
+.loaderContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  padding: 20px;
+}
+
+.loaderContainer .loaderText {
+  font-weight: 600;
+  margin-top: 16px;
+  font-size: 16px;
 } 
