@@ -11,7 +11,6 @@ import styles from './index.module.css'
 import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas'
 import AgregarPreguntasRespuestasEspecialistas from '@/modals/AgregarPreguntasRespuestasEspecialistas'
 import UpdatePreguntaRespuestaEspecialistas from '@/modals/updatePrEspecialistas'
-import EvaluarEspecialista from '@/modals/evaluarEspecialista'
 
 const EvaluacionDocente = () => {
 	const [showAgregarPreguntas, setShowAgregarPreguntas] = useState<boolean>(false)
@@ -20,7 +19,6 @@ const EvaluacionDocente = () => {
 	const { getPreguntasRespuestasEspecialistas, getDataEvaluacion, buscarEspecialista } = UseEvaluacionEspecialistas()
 	const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false)
 	const [valueDni, setValueDni] = useState<string>("")
-	const [showEvaluarDocente, setShowEvaluarDocente] = useState<boolean>(false)
 	const [dataUpdate, setDataUpdate] = useState<PRDocentes>({})
 
 	const handleShowModalPreguntas = () => {
@@ -28,9 +26,6 @@ const EvaluacionDocente = () => {
 	}
 	const handleShowUpdateModal = () => {
 		setShowUpdateModal(!showUpdateModal)
-	}
-	const handleShowEvaluarDocente = () => {
-		setShowEvaluarDocente(!showEvaluarDocente)
 	}
 	const handleChangeDniDocente = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setValueDni(e.target.value)
@@ -50,7 +45,6 @@ const EvaluacionDocente = () => {
 	return (
 		<div>
 			{showUpdateModal && <UpdatePreguntaRespuestaEspecialistas id={`${router.query.id}`} dataUpdate={dataUpdate} handleShowUpdateModal={handleShowUpdateModal} />}
-			{showEvaluarDocente && <EvaluarEspecialista handleShowEvaluarDocente={handleShowEvaluarDocente} id={`${router.query.id}`} getPreguntaRespuestaDocentes={getPreguntaRespuestaDocentes} />}
 			{showAgregarPreguntas && <AgregarPreguntasRespuestasEspecialistas idEvaluacion={`${router.query.id}`} handleShowModalPreguntas={handleShowModalPreguntas} />}
 
 			<div className={styles.header}>
@@ -87,7 +81,9 @@ const EvaluacionDocente = () => {
 				<div className={styles.buttonContainer}>
 					<button onClick={() => handleShowModalPreguntas()} className={`${styles.button} ${styles.buttonPrimary}`}>Agregar</button>
 					<button onClick={() => handleShowModalPreguntas()} className={`${styles.button} ${styles.buttonPrimary}`}>Agregar preguntas</button>
-					<button onClick={handleShowEvaluarDocente} className={`${styles.button} ${styles.buttonSecondary}`}>Evaluar especialista</button>
+					<Link href={`evaluar-especialista?id=${router.query.id}`} className={`${styles.button} ${styles.buttonSecondary}`}>
+						Evaluar especialista
+					</Link>
 					<div className={`${styles.button} ${styles.buttonPrimary}`}>
 						<Link href={`reporte?idEvaluacion=${router.query.id}`} className={styles.buttonLink}>
 							Reporte ugel

@@ -295,6 +295,7 @@ export type Estudiante = {
   genero?: string;
 };
 export type User = {
+  calificacion?:number,
   nombres?: string;
   apellidos?: string;
   dni?: string;
@@ -326,6 +327,8 @@ export type User = {
   docentesDelDirector?:User[]
   estudiantesDelDocente?:UserEstudiante[],
   conocimientoPedagogico?:ConocimientoPedagogico
+  resultadosSeguimientoRetroalimentacion?:PRDocentes[],
+  observacionesSeguimientoRetroalimentacion?:string
 };
 
 export type ConocimientoPedagogico = {
@@ -449,6 +452,14 @@ export type TipoDeEvaluacion = {
   value?:string,
 }
 export type ReporteDocenteIndividual = {
+  calificacion?:number,
+  dni?:string,
+  dniDirector?:string,
+  info?:User,
+  observacionesMonitoreo?:ObservacionMonitoreoDocente,
+  resultados?:PRDocentes[]
+}
+export type ReporteEspecialistaIndividual = {
   calificacion?:number,
   dni?:string,
   dniDirector?:string,

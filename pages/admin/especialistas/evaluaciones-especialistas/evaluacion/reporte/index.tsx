@@ -1,8 +1,8 @@
-import { useGlobalContext } from '@/features/context/GlolbalContext'
-import { DataEstadisticas } from '@/features/types/types'
-import { useRouter } from 'next/router'
-import React, { useEffect, useState } from 'react'
-import header from '@/assets/evaluacion-docente.jpg'
+import { useGlobalContext } from '@/features/context/GlolbalContext';
+import { DataEstadisticas } from '@/features/types/types';
+import { useRouter } from 'next/router';
+import React, { useEffect, useState } from 'react';
+import header from '@/assets/evaluacion-docente.jpg';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,16 +15,24 @@ import {
   Legend,
   ChartData,
 } from 'chart.js';
-import { Bar } from "react-chartjs-2"
-import { RiLoader4Line } from 'react-icons/ri'
-import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores'
-import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes'
-import Image from 'next/image'
-import styles from './styles.module.css'
-import { sectionByGrade, ordernarAscDsc, niveles,regiones, area, caracteristicasDirectivo, genero } from '@/fuctions/regiones'
-import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
-import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas'
-import { currentMonth, getAllMonths } from '@/fuctions/dates'
+import { Bar } from 'react-chartjs-2';
+import { RiLoader4Line } from 'react-icons/ri';
+import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
+import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes';
+import Image from 'next/image';
+import styles from './styles.module.css';
+import {
+  sectionByGrade,
+  ordernarAscDsc,
+  niveles,
+  regiones,
+  area,
+  caracteristicasDirectivo,
+  genero,
+} from '@/fuctions/regiones';
+import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes';
+import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas';
+import { currentMonth, getAllMonths } from '@/fuctions/dates';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -37,11 +45,30 @@ ChartJS.register(
 );
 
 const Reportes = () => {
-  const route = useRouter()
-  const { currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages,  getPreguntaRespuestaDocentes, dataEvaluacionDocente, allEvaluacionesDirectorDocente,dataFiltradaEspecialistaDirectorTabla } = useGlobalContext()
-  const { reporteEvaluacionDocentes  } = UseEvaluacionDocentes()
-  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth)
-  const { reporteTablaEvaluacionEspecialista,getPreguntasRespuestasEspecialistas, getDataEvaluacion } = UseEvaluacionEspecialistas()
+  const route = useRouter();
+  const {
+    currentUserData,
+    dataEstadisticas,
+    preguntasRespuestas,
+    loaderPages,
+    getPreguntaRespuestaDocentes,
+    dataEvaluacionDocente,
+    allEvaluacionesDirectorDocente,
+    dataFiltradaEspecialistaDirectorTabla,
+  } = useGlobalContext();
+  const { reporteEvaluacionDocentes } = UseEvaluacionDocentes();
+  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth);
+  const {
+    reporteTablaEvaluacionEspecialista,
+    getPreguntasRespuestasEspecialistas,
+    getDataEvaluacion,
+    reporteEvaluacionEspecialistas,
+    getDataEvaluacionEspecialistas,
+    evaluacionEspecialista,
+    dataEvaluaciones,
+    allEvaluacionesEspecialistas,
+    filtrosEvaluacionEspecialistasSeguimientoRetroalimentacion
+  } = UseEvaluacionEspecialistas();
   const [distritosDisponibles, setDistritosDisponibles] = useState<string[]>([]);
   const [filtros, setFiltros] = useState({
     area: '',
@@ -49,15 +76,16 @@ const Reportes = () => {
     distrito: '',
     orden: '',
     genero: '',
-    caracteristicaCurricular: ''
+    caracteristicaCurricular: '',
   });
-
+  console.log('dataEstadisticas', dataEstadisticas);
+  console.log('dataEvaluacionDocente', dataEvaluacionDocente);
   const [activePopover, setActivePopover] = useState<string | null>(null);
 
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFiltros({
       ...filtros,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -66,7 +94,7 @@ const Reportes = () => {
       labels: ['nivel 1', 'nivel 2', 'nivel 3', 'nivel 4'],
       datasets: [
         {
-          label: "estadisticas de evaluación",
+          label: 'estadisticas de evaluación',
           data: [data.a, data.b, data.c, data.d],
           backgroundColor: [
             'rgba(255, 99, 132, 0.2)',
@@ -74,7 +102,7 @@ const Reportes = () => {
             'rgba(54, 162, 235, 0.5)',
             'rgba(75, 192, 192, 0.2)',
             'rgba(153, 102, 255, 0.2)',
-            'rgba(201, 203, 207, 0.2)'
+            'rgba(201, 203, 207, 0.2)',
           ],
           borderColor: [
             'rgb(255, 99, 132)',
@@ -83,13 +111,13 @@ const Reportes = () => {
             'rgb(75, 192, 192)',
             'rgb(255, 159, 64)',
             'rgb(255, 205, 86)',
-            'rgb(201, 203, 207)'
+            'rgb(201, 203, 207)',
           ],
-          borderWidth: 1
-        }
-      ]
-    }
-  }
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
 
   const options = {
     plugins: {
@@ -104,20 +132,19 @@ const Reportes = () => {
   };
 
   const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedMonth(Number(e.target.value))
-  }
+    setSelectedMonth(Number(e.target.value));
+  };
   const handleFiltrar = () => {
-    console.log('test')
-    console.log('filtros', filtros)
-    reporteTablaEvaluacionEspecialista(allEvaluacionesDirectorDocente, filtros)
-  }
+    console.log('test');
+    console.log('filtros', filtros);
+    reporteTablaEvaluacionEspecialista(allEvaluacionesDirectorDocente, filtros);
+  };
   useEffect(() => {
-    getDataEvaluacion(`${route.query.idEvaluacion}`);
-    reporteEvaluacionDocentes(`${route.query.idEvaluacion}`);
-    getPreguntasRespuestasEspecialistas(`${route.query.idEvaluacion}`)
-  }, [route.query.idEvaluacion, currentUserData.dni])
-
-
+    getDataEvaluacionEspecialistas(`${route.query.idEvaluacion}`);
+    /* reporteEvaluacionDocentes(`${route.query.idEvaluacion}`); */
+    reporteEvaluacionEspecialistas(`${route.query.idEvaluacion}`); //esta funcion trae la data de dataEvaluacioanes
+    getPreguntasRespuestasEspecialistas(`${route.query.idEvaluacion}`);
+  }, [route.query.idEvaluacion, currentUserData.dni]);
 
   const getBackgroundColor = (value: number) => {
     switch (value) {
@@ -133,7 +160,7 @@ const Reportes = () => {
         return '';
     }
   };
-  console.log('getPreguntaRespuestaDocentes', getPreguntaRespuestaDocentes)
+  console.log('dataEvaluacionDocente', dataEvaluacionDocente);
   return (
     <>
       {loaderPages ? (
@@ -143,38 +170,21 @@ const Reportes = () => {
         </div>
       ) : (
         <div className={styles.container}>
-          <div className={styles.header}>
-            <div className={styles.headerOverlay}></div>
-
-            <Image
-              className={styles.headerImage}
-              src={header}
-              alt="imagen de cabecera"
-              priority
-            />
-
-            <div className={styles.headerContent}>
-              <h1 className={styles.headerTitle}>
-                Reporte de {dataEvaluacionDocente?.name?.toLocaleLowerCase()}
-              </h1>
-            </div>
-          </div>
-
           <div className={styles.tableContainer}>
             <div className={styles.tableSection}>
               <div>
                 <div className={styles.filtersContainer}>
                   <div className={styles.filtersContainerMonth}>
-                    <select
-                      onChange={handleChangeMonth}
-                      className={styles.select}>
+                    <select onChange={handleChangeMonth} className={styles.select}>
                       <option value="">Mes</option>
                       {getAllMonths.slice(0, currentMonth + 1).map((mes, index) => (
-                        <option key={index} value={mes.id}>{mes.name}</option>
+                        <option key={index} value={mes.id}>
+                          {mes.name}
+                        </option>
                       ))}
                     </select>
                   </div>
-                  <div>
+                  {/* <div>
                     <select
                       name="region"
                       className={styles.select}
@@ -183,7 +193,9 @@ const Reportes = () => {
                     >
                       <option value="">Seleccionar Región</option>
                       {regiones.map((region, index) => (
-                        <option key={index} value={region.id}>{region.region}</option>
+                        <option key={index} value={region.id}>
+                          {region.region}
+                        </option>
                       ))}
                     </select>
 
@@ -196,7 +208,9 @@ const Reportes = () => {
                     >
                       <option value="">Seleccionar Distrito</option>
                       {distritosDisponibles.map((distrito, index) => (
-                        <option key={index} value={distrito}>{distrito}</option>
+                        <option key={index} value={distrito}>
+                          {distrito}
+                        </option>
                       ))}
                     </select>
 
@@ -239,8 +253,10 @@ const Reportes = () => {
                         </option>
                       ))}
                     </select>
-                    <button className={styles.filterButton} onClick={handleFiltrar}>Filtrar</button>
-                  </div>
+                    <button className={styles.filterButton} onClick={handleFiltrar}>
+                      Filtrar
+                    </button>
+                  </div> */}
                 </div>
                 <table className={styles.table}>
                   <thead>
@@ -249,29 +265,40 @@ const Reportes = () => {
                       <th>Nombre y apellidos</th>
                       <th>puntaje</th>
                       {getPreguntaRespuestaDocentes.map((pregunta, index) => (
-                        <th 
+                        <th
                           key={index}
-                          onClick={() => setActivePopover(activePopover === pregunta.id ? null : pregunta.id || null)}
+                          onClick={() =>
+                            setActivePopover(
+                              activePopover === pregunta.id ? null : pregunta.id || null
+                            )
+                          }
                         >
                           {pregunta.id}
                           {activePopover === pregunta.id && (
-                            <div className={styles.popover}>
-                              {pregunta.criterio}
-                            </div>
+                            <div className={styles.popover}>{pregunta.criterio}</div>
                           )}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {dataFiltradaEspecialistaDirectorTabla.map((docente, index) => (
+                    {allEvaluacionesEspecialistas.map((docente, index) => (
                       <tr key={index}>
                         <td>{index + 1}</td>
-                        <td>{docente.info?.nombres} {docente.info?.apellidos}</td>
+                        <td>
+                          {docente.nombres} {docente.apellidos}
+                        </td>
                         <td>{docente.calificacion}</td>
-                        {docente.resultados?.map((respuesta, index) => (
-                          <td key={index} className={getBackgroundColor(Number(respuesta.alternativas?.find(a => a.selected)?.value))}>
-                            {niveles(Number(respuesta.alternativas?.find(a => a.selected)?.value)) || '-'}
+                        {docente.resultadosSeguimientoRetroalimentacion?.map((respuesta, index) => (
+                          <td
+                            key={index}
+                            className={getBackgroundColor(
+                              Number(respuesta.alternativas?.find((a) => a.selected)?.value)
+                            )}
+                          >
+                            {niveles(
+                              Number(respuesta.alternativas?.find((a) => a.selected)?.value)
+                            ) || '-'}
                           </td>
                         ))}
                       </tr>
@@ -280,25 +307,40 @@ const Reportes = () => {
                 </table>
               </div>
               <div>
-                {dataEstadisticas?.map((dat, index) => (
+                {dataEvaluaciones?.map((dat, index) => (
                   <div key={index} className={styles.chartContainer}>
                     <h3 className={styles.sectionTitle}>
                       <span className={styles.sectionTitleIndicator}></span>
-                      <span>{getPreguntaRespuestaDocentes[Number(index)]?.subOrden || getPreguntaRespuestaDocentes[Number(index)]?.order}.</span>
+                      <span>
+                        {getPreguntaRespuestaDocentes[Number(index)]?.subOrden ||
+                          getPreguntaRespuestaDocentes[Number(index)]?.order}
+                        .
+                      </span>
                       <span>{getPreguntaRespuestaDocentes[Number(index)]?.criterio}</span>
                     </h3>
                     <div className={styles.chartWrapper}>
                       <Bar
                         options={options}
-                        data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
+                        data={iterateData(
+                          dat,
+                          `${preguntasRespuestas[Number(index) - 1]?.respuesta}`
+                        )}
                       />
                     </div>
                     <div className={styles.statsContainer}>
-                      <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
-                      <p>{dat.b} | {((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
-                      <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
+                      <p>
+                        {dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%
+                      </p>
+                      <p>
+                        {dat.b} | {((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%
+                      </p>
+                      <p>
+                        {dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%
+                      </p>
                       {dat.d && (
-                        <p>{dat.d} | {((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
+                        <p>
+                          {dat.d} | {((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%
+                        </p>
                       )}
                     </div>
                   </div>
@@ -309,8 +351,8 @@ const Reportes = () => {
         </div>
       )}
     </>
-  )
-}
+  );
+};
 
-export default Reportes
-Reportes.Auth = PrivateRouteAdmins
+export default Reportes;
+Reportes.Auth = PrivateRouteAdmins;
