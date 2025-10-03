@@ -37,9 +37,6 @@ const Pruebas = () => {
       })
   }, [evaluacionesGradoYCategoria])
   
-  console.log('evaluacionesGradoYCategoria', evaluacionesGradoYCategoria)
-  console.log('evaluacionesOrdenadas', evaluacionesOrdenadas)
-  
   // Renderizar loader si loaderPages es true
   if (loaderPages) {
     return (
@@ -62,18 +59,31 @@ const Pruebas = () => {
         <h1 className={styles.title}>{convertGrade(`${route.query.grado}`)}: {categoriaTransform(Number(route.query.categoria))}</h1>
       </div>
       <div className={styles.content}>
-        <ul className={styles.list}>
+        <div className={styles.cardsGrid}>
           {evaluacionesOrdenadas.map((eva, index) => (
-            <li key={`${eva.id}-${index}`} className={styles.listItem}>
-              <Link href={`pruebas/prueba?idExamen=${eva.id}`} className={styles.link}>
-                <div className={styles.iconContainer}>
-                  <PiFilesFill className={styles.icon} />
+            <div key={`${eva.id}-${index}`} className={styles.card}>
+              <Link href={`pruebas/prueba?idExamen=${eva.id}`} className={styles.cardLink}>
+                <div className={styles.cardHeader}>
+                  <div className={styles.iconContainer}>
+                    <PiFilesFill className={styles.icon} />
+                  </div>
+                  <div className={styles.cardBadge}>
+                    <span className={styles.badgeText}>Evaluación</span>
+                  </div>
                 </div>
-                <p className={styles.name}>{eva.nombre}</p>
+                <div className={styles.cardBody}>
+                  <h3 className={styles.cardTitle}>{eva.nombre}</h3>
+                  {/* <p className={styles.cardDescription}>
+                    Haz clic para comenzar esta evaluación
+                  </p> */}
+                </div>
+                <div className={styles.cardFooter}>
+                  <span className={styles.startButton}>Comenzar →</span>
+                </div>
               </Link>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
     </div>
   )

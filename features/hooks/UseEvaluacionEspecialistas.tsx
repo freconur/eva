@@ -84,6 +84,9 @@ const UseEvaluacionEspecialistas = () => {
 
   const [evaluacionEspecialista, setEvaluacionEspecialista] = useState<CrearEvaluacionDocente>({});
   const [dataEvaluaciones, setDataEvaluaciones] = useState<DataEstadisticas[]>([]);
+  const [valueLoader, setValueLoader] = useState<boolean>(false);
+  const [warning, setWarning] = useState<boolean>(false);
+  const [dataEspecialista, setDataEspecialista] = useState<User>({});
   const [allEvaluacionesEspecialistas, setAllEvaluacionesEspecialistas] = useState<User[]>([]);
   const createEvaluacionesEspecialistas = async (data: CrearEvaluacionDocente) => {
     await addDoc(collection(db, 'evaluaciones-especialista'), data);
@@ -330,20 +333,7 @@ const UseEvaluacionEspecialistas = () => {
     return dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: estadisticas });
   };
 
-  const getDataEvaluacionEspecialistas = (idEvaluacion: string) => {
-    onSnapshot(doc(db, '/evaluaciones-especialista', idEvaluacion), (doc) => {
-      if (doc.exists()) {
-        setEvaluacionEspecialista(doc.data());
-      }
-    });
-    /* onSnapshot(collection(db, "/evaluaciones-especialista"), (querySnapshot) => {
-      const arrayEvaluaciones: CrearEvaluacionDocente[] = [];
-      querySnapshot.forEach((doc) => {
-        arrayEvaluaciones.push({ ...doc.data(), id: doc.id });
-      });
-      
-    }); */
-  };
+  
   const getDataEvaluacion = (idEvaluacion: string) => {
     onSnapshot(doc(db, '/evaluaciones-director', idEvaluacion), (doc) => {
       if (doc.exists()) {
@@ -413,10 +403,11 @@ const UseEvaluacionEspecialistas = () => {
     const path = `/evaluaciones-especialista/${idEvaluacion}/preguntasRespuestas`;
     const q = query(collection(db, path), orderBy('order', 'asc'));
     onSnapshot(q, (querySnapshot) => {
-      const arrayPreguntaRespuestaDocentes: PreviewPRDocentes[] = [];
+      const arrayPreguntaRespuestaDocentes: PRDocentes[] = [];
       querySnapshot.forEach((doc) => {
         arrayPreguntaRespuestaDocentes.push({ ...doc.data(), id: doc.id });
       });
+
       dispatch({
         type: AppAction.GET_PREGUNTA_RESPUESTA_DOCENTE,
         payload: arrayPreguntaRespuestaDocentes,
@@ -535,14 +526,11 @@ const UseEvaluacionEspecialistas = () => {
     idEvaluacion: string,
     data: PRDocentes[],
     especialista: User,
-    observacion: string
   ) => {
+
+    console.log('entrando a guardar datos')
     // Calcular la calificación del especialista
     const calificacion = calcularCalificacionEspecialista(data);
-
-    console.log('data', data);
-    console.log('Calificación calculada:', calificacion);
-
     /* const docRef = doc(db, `/evaluaciones-especialista/${idEvaluacion}/2025-9`, `${pr.order}`); */
     const path = doc(
       db,
@@ -555,7 +543,7 @@ const UseEvaluacionEspecialistas = () => {
       ...especialista,
       resultadosSeguimientoRetroalimentacion: data,
       calificacion: calificacion,
-      observacionesSeguimientoRetroalimentacion: observacion || '',
+      
     });
   };
   const reporteEvaluacionDocenteAdmin = (idEvaluacion: string, dniDirector: string) => {
@@ -919,42 +907,89 @@ const UseEvaluacionEspecialistas = () => {
 const filtrosEvaluacionEspecialistasSeguimientoRetroalimentacion = () => {
 
 }
-  const getAllEvaluacionesEspecialistas = (idEvaluacion: string) => {
-    const path = `/evaluaciones-especialista/${idEvaluacion}/2025-9`;
+  const getAllEvaluacionesEspecialistas = (idEvaluacion: string, month:number) => {
+    const path = `/evaluaciones-especialista/${idEvaluacion}/2025-${month}`;
     const refData = collection(db, path);
 
+    const docentesDelDirector: User[] = [];
     onSnapshot(refData, (docenteSnapshot) => {
-      const docentesDelDirector: User[] = [];
       docenteSnapshot.forEach((doc) => {
         docentesDelDirector.push(doc.data() as User);
       });
       setAllEvaluacionesEspecialistas(docentesDelDirector);
+      // Verificar warning después de cargar los datos
+      docentesDelDirector.length === 0 ? setWarning(true) : setWarning(false);
     });
   };
-  const reporteEvaluacionEspecialistas = async (idEvaluacion: string) => {
-    dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: [] });
-    getAllEvaluacionesEspecialistas(idEvaluacion);
-    //const path = doc(db, `/evaluaciones-especialista/${idEvaluacion}/2025-9`, `${especialista.dni}`)
-    const path = `/evaluaciones-especialista/${idEvaluacion}/2025-9/`;
-    const rtaEvaluacionesEspecialistas = collection(db, path);
+  const reporteEvaluacionEspecialistas = async (idEvaluacion: string,month: number) => {
 
-    const especialistasEvaluacion: User[] = [];
-    const getDocenterIdRef = collection(db, `usuarios/${currentUserData.dni}/${idEvaluacion}`);
-    //me traigo a todos los docentes que estan acargo del director
 
-    //aqui debemos de validar si existe evaluaciones de los docentes de dicha evalucion
-    const docenteSnapshot = await getDocs(rtaEvaluacionesEspecialistas);
-    docenteSnapshot.forEach((doc) => {
-      especialistasEvaluacion.push(doc.data());
-    });
-    // Calcular estadísticas de especialistas usando la función
-    const dataEstadisticasEspecialistas = calcularEstadisticasEspecialistas(especialistasEvaluacion);
-    setDataEvaluaciones(dataEstadisticasEspecialistas);
-    // Guardar las estadísticas de especialistas en el estado global
-    dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: dataEstadisticasEspecialistas });
+    try{
+      setValueLoader(true);
+      dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: [] });
+      getAllEvaluacionesEspecialistas(idEvaluacion,month);
+      //const path = doc(db, `/evaluaciones-especialista/${idEvaluacion}/2025-9`, `${especialista.dni}`)
+      const path = `/evaluaciones-especialista/${idEvaluacion}/2025-${month}/`;
+      const rtaEvaluacionesEspecialistas = collection(db, path);
+  
+      const especialistasEvaluacion: User[] = [];
+      const getDocenterIdRef = collection(db, `usuarios/${currentUserData.dni}/${idEvaluacion}`);
+      //me traigo a todos los docentes que estan acargo del director
+  
+      //aqui debemos de validar si existe evaluaciones de los docentes de dicha evalucion
+      const docenteSnapshot = await getDocs(rtaEvaluacionesEspecialistas);
+      docenteSnapshot.forEach((doc) => {
+        especialistasEvaluacion.push(doc.data());
+      });
+      // Calcular estadísticas de especialistas usando la función
+      const dataEstadisticasEspecialistas = calcularEstadisticasEspecialistas(especialistasEvaluacion);
+      
+      setDataEvaluaciones(dataEstadisticasEspecialistas);
+
+      // Guardar las estadísticas de especialistas en el estado global
+     /*  dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: dataEstadisticasEspecialistas }); */
+    }catch(error){
+      console.log('error', error);
+      setValueLoader(false);
+    }finally{
+      setValueLoader(false);
+    }
   };
+
+
+const getDataSeguimientoRetroalimentacionEspecialista = (idEvaluacion:string,especialista:string) => {
+  console.log('idEvaluacion', idEvaluacion);
+  console.log('especialista', especialista);
+ const path =  `/evaluaciones-especialista/${idEvaluacion}/2025-9/`
+
+ onSnapshot(doc(db, path, especialista), (doc) => {
+  console.log("Current data: ", doc.data());
+  if (doc.exists() && doc.data()) {
+    setDataEspecialista(doc.data() as User);
+  }
+});
+}
+
+const updateEvaluacionEspecialistaSeguimientoRetroalimentacion = async (idEvaluacion:string,especialista:string,data:User) => {
+  try {
+    setValueLoader(true);
+    const calificacion = calcularCalificacionEspecialista(data.resultadosSeguimientoRetroalimentacion || [])
+    const path = `/evaluaciones-especialista/${idEvaluacion}/2025-9/`
+    await updateDoc(doc(db, path, especialista), {
+      ...data,
+      calificacion: calificacion
+    });
+  }catch(error){
+    console.log('error', error);
+  }finally{
+    setValueLoader(false);
+  }
+}
 
   return {
+    getDataSeguimientoRetroalimentacionEspecialista,
+    updateEvaluacionEspecialistaSeguimientoRetroalimentacion,
+    dataEspecialista,
     createEvaluacionesEspecialistas,
     reporteEvaluacionEspecialistas,
     getEvaluacionesEspecialistas,
@@ -984,11 +1019,13 @@ const filtrosEvaluacionEspecialistasSeguimientoRetroalimentacion = () => {
     getPREspecialistaDirector,
     reporteDeEspecialistaToDirectore,
     getReporteDeDirectoresToEspecialistaTabla,
-    getDataEvaluacionEspecialistas,
     evaluacionEspecialista,
     dataEvaluaciones,
     allEvaluacionesEspecialistas,
-    filtrosEvaluacionEspecialistasSeguimientoRetroalimentacion
+    filtrosEvaluacionEspecialistasSeguimientoRetroalimentacion,
+    valueLoader,
+    warning,
+    setDataEspecialista
   };
 };
 

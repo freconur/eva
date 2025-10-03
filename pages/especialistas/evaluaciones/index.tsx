@@ -65,7 +65,7 @@ const Evaluaciones = () => {
                 <tbody className="divide-y divide-gray-100">
                   {
                     evaluaciones.length > 0 ?
-                      evaluaciones?.map((eva, index) => {
+                      evaluaciones?.filter(eva => eva.active === true).map((eva, index) => {
                         return (
                           <tr key={index} className='h-[60px] hover:bg-blue-100 duration-300 cursor-pointer'>
                             <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>
@@ -78,12 +78,6 @@ const Evaluaciones = () => {
                                 {eva.nombre}
                               </Link>
                             </td>
-                            {/* <td>
-                              <MdEditSquare onClick={() => { setNameEva(`${eva.nombre}`); handleShowInputUpdate(); setIdEva(`${eva.id}`) }} className='text-xl text-yellow-500 cursor-pointer' />
-                            </td>
-                            <td>
-                              <MdDeleteForever onClick={() => { handleShowModalDelete(); setIdEva(`${eva.id}`) }} className='text-xl text-red-500 cursor-pointer' />
-                            </td> */}
                           </tr>
                         )
                       })

@@ -33,6 +33,9 @@ import {
 import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes';
 import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas';
 import { currentMonth, getAllMonths } from '@/fuctions/dates';
+import NoHayResultados from '@/components/no-hay-resultados';
+import Loader from '@/components/loader/loader';
+import Link from 'next/link';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -63,11 +66,12 @@ const Reportes = () => {
     getPreguntasRespuestasEspecialistas,
     getDataEvaluacion,
     reporteEvaluacionEspecialistas,
-    getDataEvaluacionEspecialistas,
     evaluacionEspecialista,
     dataEvaluaciones,
     allEvaluacionesEspecialistas,
-    filtrosEvaluacionEspecialistasSeguimientoRetroalimentacion
+    filtrosEvaluacionEspecialistasSeguimientoRetroalimentacion,
+    valueLoader,
+    warning
   } = UseEvaluacionEspecialistas();
   const [distritosDisponibles, setDistritosDisponibles] = useState<string[]>([]);
   const [filtros, setFiltros] = useState({
@@ -78,8 +82,6 @@ const Reportes = () => {
     genero: '',
     caracteristicaCurricular: '',
   });
-  console.log('dataEstadisticas', dataEstadisticas);
-  console.log('dataEvaluacionDocente', dataEvaluacionDocente);
   const [activePopover, setActivePopover] = useState<string | null>(null);
 
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -140,12 +142,16 @@ const Reportes = () => {
     reporteTablaEvaluacionEspecialista(allEvaluacionesDirectorDocente, filtros);
   };
   useEffect(() => {
-    getDataEvaluacionEspecialistas(`${route.query.idEvaluacion}`);
+    /* getDataEvaluacionEspecialistas(`${route.query.idEvaluacion}`); */
     /* reporteEvaluacionDocentes(`${route.query.idEvaluacion}`); */
-    reporteEvaluacionEspecialistas(`${route.query.idEvaluacion}`); //esta funcion trae la data de dataEvaluacioanes
+    reporteEvaluacionEspecialistas(`${route.query.idEvaluacion}`, selectedMonth); //esta funcion trae la data de dataEvaluacioanes
     getPreguntasRespuestasEspecialistas(`${route.query.idEvaluacion}`);
   }, [route.query.idEvaluacion, currentUserData.dni]);
 
+  useEffect(() => {
+    reporteEvaluacionEspecialistas(`${route.query.idEvaluacion}`, selectedMonth);
+  }, [selectedMonth]);
+console.log('warning', warning);
   const getBackgroundColor = (value: number) => {
     switch (value) {
       case 1:
@@ -175,7 +181,11 @@ const Reportes = () => {
               <div>
                 <div className={styles.filtersContainer}>
                   <div className={styles.filtersContainerMonth}>
-                    <select onChange={handleChangeMonth} className={styles.select}>
+                    <select
+                      onChange={handleChangeMonth}
+                      value={selectedMonth}
+                      className={styles.select}
+                    >
                       <option value="">Mes</option>
                       {getAllMonths.slice(0, currentMonth + 1).map((mes, index) => (
                         <option key={index} value={mes.id}>
@@ -258,93 +268,107 @@ const Reportes = () => {
                     </button>
                   </div> */}
                 </div>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Nombre y apellidos</th>
-                      <th>puntaje</th>
-                      {getPreguntaRespuestaDocentes.map((pregunta, index) => (
-                        <th
-                          key={index}
-                          onClick={() =>
-                            setActivePopover(
-                              activePopover === pregunta.id ? null : pregunta.id || null
-                            )
-                          }
-                        >
-                          {pregunta.id}
-                          {activePopover === pregunta.id && (
-                            <div className={styles.popover}>{pregunta.criterio}</div>
-                          )}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allEvaluacionesEspecialistas.map((docente, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>
-                          {docente.nombres} {docente.apellidos}
-                        </td>
-                        <td>{docente.calificacion}</td>
-                        {docente.resultadosSeguimientoRetroalimentacion?.map((respuesta, index) => (
-                          <td
-                            key={index}
-                            className={getBackgroundColor(
-                              Number(respuesta.alternativas?.find((a) => a.selected)?.value)
+                {valueLoader === false ? (
+                  warning ? (
+                    <NoHayResultados />
+                  ) : (
+                    <>
+                      <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Nombre y apellidos</th>
+                          <th>puntaje</th>
+                          {getPreguntaRespuestaDocentes.map((pregunta, index) => (
+                            <th
+                              key={index}
+                              onClick={() =>
+                                setActivePopover(
+                                  activePopover === pregunta.id ? null : pregunta.id || null
+                                )
+                              }
+                            >
+                              {pregunta.id}
+                              {activePopover === pregunta.id && (
+                                <div className={styles.popover}>{pregunta.criterio}</div>
+                              )}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allEvaluacionesEspecialistas.map((especialista, index) => (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>
+                              <Link href={`/admin/especialistas/evaluaciones-especialistas/evaluacion/actualizar-evaluacion?dni=${especialista.dni}&idEvaluacion=${route.query.idEvaluacion}`}>
+                              {especialista.nombres} {especialista.apellidos}
+                              </Link>
+                            </td>
+                            <td>{especialista.calificacion}</td>
+                            {especialista.resultadosSeguimientoRetroalimentacion?.map(
+                              (respuesta, index) => (
+                                <td
+                                  key={index}
+                                  className={getBackgroundColor(
+                                    Number(respuesta.alternativas?.find((a) => a.selected)?.value)
+                                  )}
+                                >
+                                  {niveles(
+                                    Number(respuesta.alternativas?.find((a) => a.selected)?.value)
+                                  ) || '-'}
+                                </td>
+                              )
                             )}
-                          >
-                            {niveles(
-                              Number(respuesta.alternativas?.find((a) => a.selected)?.value)
-                            ) || '-'}
-                          </td>
+                          </tr>
                         ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div>
-                {dataEvaluaciones?.map((dat, index) => (
-                  <div key={index} className={styles.chartContainer}>
-                    <h3 className={styles.sectionTitle}>
-                      <span className={styles.sectionTitleIndicator}></span>
-                      <span>
-                        {getPreguntaRespuestaDocentes[Number(index)]?.subOrden ||
-                          getPreguntaRespuestaDocentes[Number(index)]?.order}
-                        .
-                      </span>
-                      <span>{getPreguntaRespuestaDocentes[Number(index)]?.criterio}</span>
-                    </h3>
-                    <div className={styles.chartWrapper}>
-                      <Bar
-                        options={options}
-                        data={iterateData(
-                          dat,
-                          `${preguntasRespuestas[Number(index) - 1]?.respuesta}`
-                        )}
-                      />
+                      </tbody>
+                    </table>
+                    <div>
+                      {dataEvaluaciones?.map((dat, index) => (
+                        <div key={index} className={styles.chartContainer}>
+                          <h3 className={styles.sectionTitle}>
+                            <span className={styles.sectionTitleIndicator}></span>
+                            <span>
+                              {getPreguntaRespuestaDocentes[Number(index)]?.subOrden ||
+                                getPreguntaRespuestaDocentes[Number(index)]?.order}
+                              .
+                            </span>
+                            <span>{getPreguntaRespuestaDocentes[Number(index)]?.criterio}</span>
+                          </h3>
+                          <div className={styles.chartWrapper}>
+                            <Bar
+                              options={options}
+                              data={iterateData(
+                                dat,
+                                `${preguntasRespuestas[Number(index) - 1]?.respuesta}`
+                              )}
+                            />
+                          </div>
+                          <div className={styles.statsContainer}>
+                            <p>
+                              {dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%
+                            </p>
+                            <p>
+                              {dat.b} | {((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%
+                            </p>
+                            <p>
+                              {dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%
+                            </p>
+                            {dat.d && (
+                              <p>
+                                {dat.d} | {((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className={styles.statsContainer}>
-                      <p>
-                        {dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%
-                      </p>
-                      <p>
-                        {dat.b} | {((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%
-                      </p>
-                      <p>
-                        {dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%
-                      </p>
-                      {dat.d && (
-                        <p>
-                          {dat.d} | {((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                    </>
+                  )
+                ) : (
+                  <Loader size="large" text="buscando resultados..." variant="spinner" />
+                )}
               </div>
             </div>
           </div>

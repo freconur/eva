@@ -494,7 +494,7 @@ const Reporte = () => {
               onChange={handleChangeFiltros}
               value={filtros.region}
             >
-              <option value="">Seleccionar Región</option>
+              <option value="">Seleccionar Ugel</option>
               {regiones.map((region, index) => (
                 <option key={index} value={region.id}>
                   {region.region}
@@ -566,6 +566,8 @@ const Reporte = () => {
           </div>
 
           <div className={styles.exportContainer}>
+            
+            {/* {currentUserData.rol === 4 && (
             <button 
               className={styles.exportButton} 
               onClick={handleCrearEstudiantes}
@@ -580,6 +582,7 @@ const Reporte = () => {
                 'Generar estudiantes de docentes'
               )}
             </button>
+            )} */}
             <button
               className={styles.exportButton}
               onClick={handleExportToExcel}

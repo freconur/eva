@@ -30,9 +30,7 @@ const EvaluarEspecialista = () => {
   } = useGlobalContext();
   const [originalPR, setOriginalPR] = useState<PRDocentes[]>([]);
   const [copyPR, setCopyPR] = useState<PRDocentes[]>([]);
-  const [observacion, setObservacion] = useState<boolean>(false);
   const [dniDocente, setDniDocente] = useState<string>('');
-  const [valueObservacion, setValueObservacion] = useState<string>('');
   const [autoNavigate, setAutoNavigate] = useState<boolean>(true);
 
   const { actualizarPreguntasPsicolinguistica } = usePsicolinguistica();
@@ -162,14 +160,11 @@ const EvaluarEspecialista = () => {
     return copyPR.every((pregunta) => pregunta.alternativas?.some((alt) => alt.selected === true));
   };
 
-  const handleChangeObservacion = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setValueObservacion(e.target.value);
-  };
 
-  const handleFinalizar = () => {
+  const handleSalvarPreguntaDocente = (e: React.ChangeEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (dataDirector.dni && router.query.id) {
-      agregarObservacionEspecialistas(`${router.query.id}`, dataDirector.dni, valueObservacion);
-      setObservacion(!observacion);
+      guardarEvaluacionEspecialistas(`${router.query.id}`, copyPR, dataDirector);
       setCopyPR([...originalPR]);
       resetEspecialista();
       // Redirigir de vuelta a la página anterior
@@ -177,22 +172,11 @@ const EvaluarEspecialista = () => {
     }
   };
 
-  const handleSalvarPreguntaDocente = (e: React.ChangeEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (dataDirector.dni && router.query.id) {
-      guardarEvaluacionEspecialistas(`${router.query.id}`, copyPR, dataDirector,valueObservacion);
-      setCopyPR([...originalPR]);
-      setObservacion(!observacion);
-      // Redirigir de vuelta a la página anterior
-      /* router.back() */
-    }
-  };
-
   const handleGuardarClick = () => {
     if (dataDirector.dni && router.query.id) {
-      guardarEvaluacionEspecialistas(`${router.query.id}`, copyPR, dataDirector, valueObservacion);
+      guardarEvaluacionEspecialistas(`${router.query.id}`, copyPR, dataDirector);
       setCopyPR([...originalPR]);
-      setObservacion(!observacion);
+      resetEspecialista();
       // Redirigir de vuelta a la página anterior
       /* router.back() */
     }
@@ -358,35 +342,19 @@ const EvaluarEspecialista = () => {
 
                 {/* Form */}
                 <form onSubmit={handleSalvarPreguntaDocente} className={styles.form}>
-                  {observacion ? (
-                    <div className={styles.observationContainer}>
-                      <label className={styles.observationLabel}>
-                        Observación para el especialista
-                      </label>
-                      <textarea
-                        onChange={handleChangeObservacion}
-                        className={styles.observationTextarea}
-                        rows={4}
-                        placeholder="Escriba una observación para el especialista..."
-                      />
-                    </div>
-                  ) : (
-                    <>
-                      {/* All Questions */}
-                      <div className={styles.questionsContainer}>
-                        {copyPR.map((pregunta, index) => (
-                          <div key={index} id={`question-${index}`} className={styles.questionCard}>
-                            <h3 className={styles.questionTitle}>
-                              {`${index + 1}) ${pregunta.criterio}`}
-                            </h3>
-                            <div className={styles.alternativesContainer}>
-                              {preguntaRespuestaFunction(copyPR, index)}
-                            </div>
-                          </div>
-                        ))}
+                  {/* All Questions */}
+                  <div className={styles.questionsContainer}>
+                    {copyPR.map((pregunta, index) => (
+                      <div key={index} id={`question-${index}`} className={styles.questionCard}>
+                        <h3 className={styles.questionTitle}>
+                          {`${index + 1}) ${pregunta.criterio}`}
+                        </h3>
+                        <div className={styles.alternativesContainer}>
+                          {preguntaRespuestaFunction(copyPR, index)}
+                        </div>
                       </div>
-                    </>
-                  )}
+                    ))}
+                  </div>
                 </form>
               </>
             )}
@@ -399,19 +367,9 @@ const EvaluarEspecialista = () => {
         <div className={styles.bottomButtonContainer}>
           <div className={styles.bottomButtonWrapper}>
             <div className={styles.bottomButtonContainerInner}>
-              {observacion ? (
-                <button
-                  type="button"
-                  onClick={() => handleFinalizar()}
-                  className={styles.finalizeButton}
-                >
-                  Finalizar
-                </button>
-              ) : (
-                <button type="button" onClick={handleGuardarClick} className={styles.saveButton}>
-                  Guardar Evaluación
-                </button>
-              )}
+              <button type="button" onClick={handleGuardarClick} className={styles.saveButton}>
+                Guardar Evaluación
+              </button>
             </div>
           </div>
         </div>

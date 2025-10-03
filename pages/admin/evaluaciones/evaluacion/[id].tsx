@@ -203,12 +203,14 @@ const Evaluacion = () => {
                 
                 seguimiento
               </Link>
+              {currentUserData.rol === 4 && (
               <button 
                 onClick={handleShowModalPuntuacionYNivel} 
                 className={styles.buttonRangoNivel}
               >
                 rango de nivel
               </button>
+              )}
               {hayPuntajes && currentUserData.rol === 4 && (
                 <div className={styles.totalPuntaje}>
                   <span className={styles.totalLabel}>Puntaje Total: </span>
