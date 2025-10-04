@@ -239,7 +239,15 @@ const ConocimientoPedagogicosMain = () => {
                   </td>
                 </tr>
               ) : (
-                evaluacionesEscalaLikert.map((evaluacion, index) => (
+                evaluacionesEscalaLikert
+                  .filter(evaluacion => {
+                    // Si el usuario es docente (rol 3) y la evaluación está inactiva, no mostrarla
+                    if (currentUserData.rol === 3 && !evaluacion.active) {
+                      return false
+                    }
+                    return true
+                  })
+                  .map((evaluacion, index) => (
                   <tr key={evaluacion.id || index} className={styles.tableRow}>
                     <td className={styles.tableCell}>
                       <Link href={`${currentUserData.rol === 3 ? `/docentes/conocimiento-pedagogico?idEvaluacion=${evaluacion.id}` : `/admin/docentes/conocimiento-pedagogico/${evaluacion.id}`}`}>

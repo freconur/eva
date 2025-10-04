@@ -844,19 +844,19 @@
 }
 
 .legendColorA {
-  background: #3b82f6;
+  background: var(--alternativa-a);
 }
 
 .legendColorB {
-  background: #6b7280;
+  background: var(--alternativa-b);
 }
 
 .legendColorC {
-  background: #111827;
+  background: var(--alternativa-c);
 }
 
 .legendColorD {
-  background: #4b5563;
+  background: var(--alternativa-d);
 }
 
 .chartWrapper {

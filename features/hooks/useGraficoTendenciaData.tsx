@@ -5,7 +5,6 @@ import {
   GraficoPieChart,
   Evaluacion,
 } from '@/features/types/types';
-import { useNivelColors } from './useNivelColors';
 import {
   prepararDatosPieChart,
   prepararDatosNiveles,
@@ -32,12 +31,11 @@ export const useGraficoTendenciaData = ({
   dataGraficoTendenciaNiveles,
   evaluacion,
 }: UseGraficoTendenciaDataProps) => {
-  const { obtenerColorPorNivel } = useNivelColors();
 
   // Datos del gráfico de pie para el mes seleccionado
   const datosChartPie = useMemo(() => {
-    return prepararDatosPieChart(dataGraficoTendenciaNiveles, monthSelected, obtenerColorPorNivel);
-  }, [dataGraficoTendenciaNiveles, monthSelected, obtenerColorPorNivel]);
+    return prepararDatosPieChart(dataGraficoTendenciaNiveles, monthSelected);
+  }, [dataGraficoTendenciaNiveles, monthSelected]);
 
   // Datos del mes seleccionado para el pie chart
   const datosMesSeleccionado = useMemo(() => {

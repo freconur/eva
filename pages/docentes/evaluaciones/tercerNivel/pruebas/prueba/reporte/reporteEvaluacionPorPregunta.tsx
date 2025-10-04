@@ -2,6 +2,7 @@ import React, { useMemo, useCallback, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
 import styles from './reporte.module.css';
+import { useColorsFromCSS } from '@/features/hooks/useColorsFromCSS';
 
 interface ReporteEvaluacionPorPreguntaProps {
   dataEstadisticasOrdenadas: DataEstadisticas[];
@@ -20,6 +21,8 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
 }) => {
   // Estado para controlar el número de columnas (por defecto 2)
   const [numeroColumnas, setNumeroColumnas] = useState<number>(2);
+
+  const { prepareBarChartData } = useColorsFromCSS();
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
     // Usar el número de opciones detectado globalmente
     const numOpciones = detectarNumeroOpciones;
@@ -54,25 +57,12 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
         `C (${data.c || 0} - ${porcentajeC}%)${esRespuestaCorrecta('c') ? ' ✓' : ''}`
       ];
 
+      // Usar el hook para preparar los datos del gráfico
+      const chartData = prepareBarChartData(data, respuesta, 3);
+      
       return {
         labels: labels,
-        datasets: [
-          {
-            label: 'estadisticas de respuesta',
-            data: [data.a, data.b, data.c],
-            backgroundColor: [
-              esRespuestaCorrecta('a') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(59, 130, 246, 0.8)',   // Verde para respuesta correcta, azul para otras
-              esRespuestaCorrecta('b') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(107, 114, 128, 0.8)',  // Verde para respuesta correcta, gris para otras
-              esRespuestaCorrecta('c') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(17, 24, 39, 0.8)',     // Verde para respuesta correcta, gris oscuro para otras
-            ],
-            borderColor: [
-              esRespuestaCorrecta('a') ? 'rgb(34, 197, 94)' : 'rgb(59, 130, 246)',         // Verde para respuesta correcta, azul para otras
-              esRespuestaCorrecta('b') ? 'rgb(34, 197, 94)' : 'rgb(107, 114, 128)',        // Verde para respuesta correcta, gris para otras
-              esRespuestaCorrecta('c') ? 'rgb(34, 197, 94)' : 'rgb(17, 24, 39)',           // Verde para respuesta correcta, gris oscuro para otras
-            ],
-            borderWidth: 2,
-          },
-        ],
+        datasets: chartData.datasets
       };
     } else {
       // Para 4 opciones: redondear las primeras 3 y calcular la cuarta
@@ -89,27 +79,12 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
         `D (${data.d || 0} - ${porcentajeD}%)${esRespuestaCorrecta('d') ? ' ✓' : ''}`
       ];
 
+      // Usar el hook para preparar los datos del gráfico
+      const chartData = prepareBarChartData(data, respuesta, 4);
+      
       return {
         labels: labels,
-        datasets: [
-          {
-            label: 'estadisticas de respuesta',
-            data: [data.a, data.b, data.c, data.d],
-            backgroundColor: [
-              esRespuestaCorrecta('a') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(59, 130, 246, 0.8)',   // Verde para respuesta correcta, azul para otras
-              esRespuestaCorrecta('b') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(107, 114, 128, 0.8)',  // Verde para respuesta correcta, gris para otras
-              esRespuestaCorrecta('c') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(17, 24, 39, 0.8)',     // Verde para respuesta correcta, gris oscuro para otras
-              esRespuestaCorrecta('d') ? 'rgba(34, 197, 94, 0.8)' : 'rgba(75, 85, 99, 0.8)',     // Verde para respuesta correcta, gris medio para otras
-            ],
-            borderColor: [
-              esRespuestaCorrecta('a') ? 'rgb(34, 197, 94)' : 'rgb(59, 130, 246)',         // Verde para respuesta correcta, azul para otras
-              esRespuestaCorrecta('b') ? 'rgb(34, 197, 94)' : 'rgb(107, 114, 128)',        // Verde para respuesta correcta, gris para otras
-              esRespuestaCorrecta('c') ? 'rgb(34, 197, 94)' : 'rgb(17, 24, 39)',           // Verde para respuesta correcta, gris oscuro para otras
-              esRespuestaCorrecta('d') ? 'rgb(34, 197, 94)' : 'rgb(75, 85, 99)',           // Verde para respuesta correcta, gris medio para otras
-            ],
-            borderWidth: 2,
-          },
-        ],
+        datasets: chartData.datasets
       };
     }
   };

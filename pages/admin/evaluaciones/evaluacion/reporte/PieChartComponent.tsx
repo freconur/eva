@@ -16,6 +16,7 @@ import { GraficoPieChart } from '@/features/types/types'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import Loader from '@/components/loader/loader'
 import { useHighQualityChartOptions } from '@/features/hooks/useHighQualityChartOptions'
+import { useColorsFromCSS } from '@/features/hooks/useColorsFromCSS'
 
 // Registrar los componentes necesarios de Chart.js
 ChartJS.register(
@@ -41,6 +42,7 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
     : undefined;
   
   const { loaderDataGraficoPieChart } = useGlobalContext()
+  const { preparePieChartData, getNivelStyles } = useColorsFromCSS()
   
   // Usar opciones de alta calidad
   const opcionesGraficoPie = useHighQualityChartOptions({
@@ -52,47 +54,18 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
     legendPosition: 'bottom'
   })
 
-  // Función para obtener el color según el nivel
-  const obtenerColorPorNivel = (nivel: string) => {
-    const nivelLower = nivel.toLowerCase();
-    if (nivelLower.includes('satisfactorio')) {
-      return { bg: '#10b981', border: '#059669', hoverBg: '#059669', hoverBorder: '#10b981' };
-    } else if (nivelLower.includes('proceso')) {
-      return { bg: '#f59e0b', border: '#d97706', hoverBg: '#d97706', hoverBorder: '#f59e0b' };
-    } else if (nivelLower.includes('inicio') && !nivelLower.includes('previo')) {
-      return { bg: '#ef4444', border: '#dc2626', hoverBg: '#dc2626', hoverBorder: '#ef4444' };
-    } else if (nivelLower.includes('previo')) {
-      return { bg: '#8b5cf6', border: '#7c3aed', hoverBg: '#7c3aed', hoverBorder: '#8b5cf6' };
-    }
-    return { bg: '#6b7280', border: '#4b5563', hoverBg: '#4b5563', hoverBorder: '#6b7280' }; // Color gris por defecto
-  };
-
   // Datos del gráfico de pie para el mes seleccionado
-  const datosChartPie = datosMesSeleccionado ? {
-    labels: datosMesSeleccionado.niveles.map(nivel => {
-      // Capitalizar la primera letra de cada palabra
-      return nivel.nivel.split(' ').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join(' ')
-    }),
-    datasets: [{
-      data: datosMesSeleccionado.niveles.map(nivel => nivel.cantidadDeEstudiantes),
-      backgroundColor: datosMesSeleccionado.niveles.map(nivel => obtenerColorPorNivel(nivel.nivel).bg),
-      borderColor: datosMesSeleccionado.niveles.map(nivel => obtenerColorPorNivel(nivel.nivel).border),
-      borderWidth: 2,
-      hoverBackgroundColor: datosMesSeleccionado.niveles.map(nivel => obtenerColorPorNivel(nivel.nivel).hoverBg),
-      hoverBorderColor: datosMesSeleccionado.niveles.map(nivel => obtenerColorPorNivel(nivel.nivel).hoverBorder),
-      hoverBorderWidth: 3
-    }]
-  } : {
-    labels: ['Sin datos'],
-    datasets: [{
-      data: [1],
-      backgroundColor: ['#E5E7EB'],
-      borderColor: ['#9CA3AF'],
-      borderWidth: 2
-    }]
-  }
+  const datosChartPie = datosMesSeleccionado 
+    ? preparePieChartData(datosMesSeleccionado.niveles)
+    : {
+        labels: ['Sin datos'],
+        datasets: [{
+          data: [1],
+          backgroundColor: ['#E5E7EB'],
+          borderColor: ['#9CA3AF'],
+          borderWidth: 2
+        }]
+      }
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-4">
@@ -122,47 +95,48 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
       </div>
       
       {/* Estadísticas del mes seleccionado - Solo mostrar si no está cargando */}
-      {!loaderDataGraficoPieChart && datosMesSeleccionado && (
+     {/*  {!loaderDataGraficoPieChart && datosMesSeleccionado && (
         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
           {datosMesSeleccionado.niveles.map((nivel, index) => {
             const totalEstudiantes = datosMesSeleccionado.niveles.reduce((sum, n) => sum + n.cantidadDeEstudiantes, 0)
             const porcentaje = totalEstudiantes > 0 ? ((nivel.cantidadDeEstudiantes / totalEstudiantes) * 100).toFixed(1) : '0.0'
             
-            // Función para obtener las clases de color según el nivel
-            const obtenerClasesColorPorNivel = (nivel: string) => {
-              const nivelLower = nivel.toLowerCase();
-              if (nivelLower.includes('satisfactorio')) {
-                return { bg: 'bg-green-50', border: 'border-green-500', text: 'text-green-800', textValue: 'text-green-600' };
-              } else if (nivelLower.includes('proceso')) {
-                return { bg: 'bg-orange-50', border: 'border-orange-500', text: 'text-orange-800', textValue: 'text-orange-600' };
-              } else if (nivelLower.includes('inicio') && !nivelLower.includes('previo')) {
-                return { bg: 'bg-red-50', border: 'border-red-500', text: 'text-red-800', textValue: 'text-red-600' };
-              } else if (nivelLower.includes('previo')) {
-                return { bg: 'bg-purple-50', border: 'border-purple-500', text: 'text-purple-800', textValue: 'text-purple-600' };
-              }
-              return { bg: 'bg-gray-50', border: 'border-gray-500', text: 'text-gray-800', textValue: 'text-gray-600' }; // Color gris por defecto
-            };
-            
-            const color = obtenerClasesColorPorNivel(nivel.nivel)
+            const color = getNivelStyles(nivel.nivel)
             
             return (
-              <div key={nivel.nivel} className={`${color.bg} p-3 rounded-lg border-l-4 ${color.border}`}>
-                <h3 className={`font-medium text-sm ${color.text} mb-1`}>
+              <div 
+                key={nivel.nivel} 
+                className="p-3 rounded-lg border-l-4"
+                style={{
+                  backgroundColor: color.bg,
+                  borderLeftColor: color.border
+                }}
+              >
+                <h3 
+                  className="font-medium text-sm mb-1"
+                  style={{ color: color.text }}
+                >
                   {nivel.nivel.split(' ').map(word => 
                     word.charAt(0).toUpperCase() + word.slice(1)
                   ).join(' ')}
                 </h3>
-                <p className={`text-xl font-bold ${color.textValue} mb-1`}>
+                <p 
+                  className="text-xl font-bold mb-1"
+                  style={{ color: color.textValue }}
+                >
                   {nivel.cantidadDeEstudiantes}
                 </p>
-                <p className={`text-xs ${color.textValue}`}>
+                <p 
+                  className="text-xs"
+                  style={{ color: color.textValue }}
+                >
                   {porcentaje}%
                 </p>
               </div>
             )
           })}
         </div>
-      )}
+      )} */}
     </div>
   )
 }

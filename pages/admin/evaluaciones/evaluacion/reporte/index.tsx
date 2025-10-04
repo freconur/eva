@@ -1,7 +1,7 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext';
-import { useReporteDirectores } from '@/features/hooks/useReporteDirectores';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { useColorsFromCSS } from '@/features/hooks/useColorsFromCSS';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,24 +12,18 @@ import {
   Title,
   Tooltip,
   Legend,
-  ChartData,
 } from 'chart.js';
 import {
-  gradosDeColegio,
-  sectionByGrade,
-  ordernarAscDsc,
   genero,
   regiones,
   area,
   caracteristicasDirectivo,
 } from '@/fuctions/regiones';
-import { Bar } from 'react-chartjs-2';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { Alternativa, DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
 import { RiLoader4Line } from 'react-icons/ri';
 import styles from './Reporte.module.css';
 import { currentMonth, getAllMonths } from '@/fuctions/dates';
-import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista';
 import { useReporteEspecialistas } from '@/features/hooks/useReporteEspecialistas';
 import { distritosPuno } from '@/fuctions/provinciasPuno';
@@ -39,6 +33,7 @@ import { useCrearEstudiantesDeDocente } from '@/features/hooks/useCrearEstudiant
 import AcordeonGraficosTendencia from './AcordeonGraficosTendencia';
 import AcordeonReportePregunta from './AcordeonReportePregunta';
 import PieChartComponent from './PieChartComponent';
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -78,13 +73,8 @@ const Reporte = () => {
 
   // Callback para manejar cambios en el rango
   const handleRangoChange = (mesInicio: number, mesFin: number, año: number, mesesIds: number[]) => {
-    console.log('Rango cambiado:', { mesInicio, mesFin, año, mesesIds });
     setRangoMes(mesesIds);
   };
-
-  // Verificar cuando cambie rangoMes
- 
-
 
   useEffect(() => {
     if (filtros.region) {
@@ -136,52 +126,14 @@ const Reporte = () => {
     }
   };
 
+  const { prepareBarChartData } = useColorsFromCSS();
+
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
-    return {
-      labels: data.d === undefined ? ['a', 'b', 'c'] : ['a', 'b', 'c', 'd'],
-      datasets: [
-        {
-          label: 'total',
-          data: [data.a, data.b, data.c, data.d !== 0 && data.d],
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.2)',
-            'rgba(255, 159, 64, 0.2)',
-            'rgba(153, 102, 255, 0.2)',
-            // respuesta === "a" ? 'rgba(255, 99, 132, 0.2)' : 'rgb(0, 153, 0)',
-            // respuesta === "b" ? 'rgba(255, 159, 64, 0.2)' : 'rgb(0, 153, 0)',
-            // respuesta === "c" ? 'rgba(153, 102, 255, 0.2)' : 'rgb(0, 153, 0)',
-            'rgba(255, 159, 64, 0.2)',
-            'rgba(255, 205, 86, 0.2)',
-            'rgba(75, 192, 192, 0.2)',
-            'rgba(54, 162, 235, 0.2)',
-            'rgba(153, 102, 255, 0.2)',
-            'rgba(201, 203, 207, 0.2)',
-          ],
-          borderColor: [
-            'rgb(255, 99, 132)',
-            'rgb(255, 159, 64)',
-            'rgb(255, 205, 86)',
-            'rgb(75, 192, 192)',
-            'rgb(54, 162, 235)',
-            'rgb(153, 102, 255)',
-            'rgb(201, 203, 207)',
-          ],
-          borderWidth: 1,
-        },
-      ],
-    };
+    const numOpciones = data.d === undefined ? 3 : 4;
+    return prepareBarChartData(data, respuesta, numOpciones);
   };
   const {
-    reporteDirectorData,
-    reporteToTableDirector,
-    reporteDirectorEstudiantes,
-    agregarDatosEstadisticosDirector,
-  } = useReporteDirectores();
-  const {
-    getAllReporteDeDirectores,
     reporteParaTablaDeEspecialista,
-    reporteEspecialistaDeEstudiantes,
-    getDataParaGraficoTendencia,
     getEstadisticaGlobal,
     getAllReporteDeDirectoreToAdmin,
     getDataGraficoPieChart,
@@ -189,12 +141,8 @@ const Reporte = () => {
   } = useReporteEspecialistas();
   const {
     currentUserData,
-    reporteDirector,
     preguntasRespuestas,
     loaderReporteDirector,
-    allRespuestasEstudiantesDirector,
-    dataFiltradaDirectorTabla,
-    allEvaluacionesEstudiantes,
     allEvaluacionesDirectorDocente,
     dataEstadisticaEvaluacion,
     evaluacion,
@@ -202,7 +150,6 @@ const Reporte = () => {
   } = useGlobalContext();
   const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
   const { generarReporte, loading: loadingGenerarReporte } = useGenerarReporte();
-  const [showTable, setShowTable] = useState(false);
   const route = useRouter();
   const [monthSelected, setMonthSelected] = useState(currentMonth);
 
@@ -261,11 +208,7 @@ const Reporte = () => {
     getEvaluacion(`${route.query.idEvaluacion}`);
   }, [currentUserData.dni, route.query.idEvaluacion]);
 
-  const handleShowTable = () => {
-    setShowTable(!showTable);
-  };
   const handleFiltrar = () => {
-    /* reporteToTableDirector() */
     reporteParaTablaDeEspecialista(
       allEvaluacionesDirectorDocente,
       {
@@ -282,8 +225,6 @@ const Reporte = () => {
   useEffect(() => {
     getDataGraficoPieChart(`${route.query.idEvaluacion}`, monthSelected);
     getEstadisticaGlobal(`${route.query.idEvaluacion}`, monthSelected);
-    /* currentUserData.dni && reporteDirectorEstudiantes(`${route.query.idEvaluacion}`,monthSelected,currentUserData) */
-    /* reporteDirectorData(`${route.query.id}`, `${route.query.idEvaluacion}`) */
   }, [route.query.id, route.query.idEvaluacion, currentUserData.dni, monthSelected]);
 
 
@@ -346,14 +287,6 @@ const Reporte = () => {
     setMonthSelected(selectedMonth ? selectedMonth.id : currentMonth);
   };
 
-  useEffect(() => {
-    /* reporteEspecialistaDeEstudiantes(`${route.query.idEvaluacion}`, monthSelected, currentUserData); */
-    /* reporteDirectorEstudiantes(`${route.query.idEvaluacion}`, monthSelected, currentUserData) */
-  }, [monthSelected]);
-
-  
-  
-
   // Función para exportar datos a Excel
   const handleExportToExcel = async () => {
     // Mostrar confirmación antes de proceder
@@ -370,7 +303,6 @@ const Reporte = () => {
     
     try {
       const resultado = await getAllReporteDeDirectoreToAdmin(`${route.query.idEvaluacion}`, monthSelected);
-      console.log('Resultado de reporteEspecialistaDeEstudiantes:', resultado);
       
       if (!resultado || resultado.length === 0) {
         alert('No hay datos disponibles para exportar');
@@ -382,10 +314,8 @@ const Reporte = () => {
       }.xlsx`;
       exportDirectorDocenteDataToExcel(resultado, fileName);
 
-      // Mostrar mensaje de éxito
       alert('Archivo Excel exportado exitosamente');
     } catch (error) {
-      console.error('Error al exportar a Excel:', error);
       alert('Error al exportar los datos. Por favor, inténtalo de nuevo.');
     } finally {
       setLoadingExport(false);
@@ -411,8 +341,6 @@ const Reporte = () => {
     if (!confirmed) return;
 
     try {
-      console.log('🚀 Iniciando generación de reporte...');
-
       const resultado = await generarReporte(String(route.query.idEvaluacion), monthSelected, {
         region: filtros.region,
         distrito: filtros.distrito,
@@ -421,12 +349,8 @@ const Reporte = () => {
         area: filtros.area,
       });
 
-      console.log('✅ Reporte generado exitosamente:', resultado);
-
-      // Mostrar detalles del resultado al usuario
       if (resultado) {
-        // Acceder a las estadísticas desde la estructura real de la respuesta
-        const data = resultado as any; // Cast temporal para acceder a las propiedades
+        const data = resultado as any;
         const message =
           `🎉 ¡Reporte generado exitosamente!\n\n` +
           `📊 Estadísticas del procesamiento:\n` +
@@ -440,9 +364,6 @@ const Reporte = () => {
         alert(message);
       }
     } catch (error: any) {
-      console.error('❌ Error al generar reporte:', error);
-
-      // Manejo específico para timeout
       if (error.code === 'functions/deadline-exceeded') {
         const timeoutMessage =
           '⚠️ Tiempo de espera agotado\n\n' +
@@ -455,7 +376,6 @@ const Reporte = () => {
 
         alert(timeoutMessage);
       }
-      // El error ya se maneja en el hook useGenerarReporte para otros casos
     }
   };
 
@@ -471,7 +391,6 @@ const Reporte = () => {
         </div>
       ) : (
         <div className={styles.mainContainer}>
-          {/* <button className={styles.button} onClick={handleShowTable}>ver tabla</button> */}
           <div className={styles.selectContainer}>
             <select
               className={styles.select}
@@ -566,23 +485,6 @@ const Reporte = () => {
           </div>
 
           <div className={styles.exportContainer}>
-            
-            {/* {currentUserData.rol === 4 && (
-            <button 
-              className={styles.exportButton} 
-              onClick={handleCrearEstudiantes}
-              disabled={loadingCrearEstudiantes}
-            >
-              {loadingCrearEstudiantes ? (
-                <>
-                  <RiLoader4Line className={styles.loaderIcon} />
-                  Creando estudiantes... (hasta 9 min)
-                </>
-              ) : (
-                'Generar estudiantes de docentes'
-              )}
-            </button>
-            )} */}
             <button
               className={styles.exportButton}
               onClick={handleExportToExcel}

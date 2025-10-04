@@ -1,6 +1,62 @@
 import { GraficoTendenciaNiveles, PromedioGlobalPorMes, GraficoPieChart } from '@/features/types/types';
 import { getMonthName } from '@/fuctions/dates';
 
+// Función para obtener colores de nivel usando variables CSS
+const obtenerColorPorNivelCSS = (nivel: string) => {
+  // Función para obtener el valor real de una variable CSS
+  const getCSSVariable = (variable: string): string => {
+    if (typeof window === 'undefined') {
+      // En el servidor, devolver valores por defecto
+      return '#6b7280';
+    }
+    
+    const root = document.documentElement;
+    const value = getComputedStyle(root).getPropertyValue(variable).trim();
+    return value || '#6b7280';
+  };
+
+  const nivelLower = nivel.toLowerCase();
+  if (nivelLower.includes('satisfactorio')) {
+    const color = getCSSVariable('--satisfactorio');
+    return { 
+      bg: color, 
+      border: color, 
+      hoverBg: color, 
+      hoverBorder: color 
+    };
+  } else if (nivelLower.includes('proceso')) {
+    const color = getCSSVariable('--en-proceso');
+    return { 
+      bg: color, 
+      border: color, 
+      hoverBg: color, 
+      hoverBorder: color 
+    };
+  } else if (nivelLower.includes('inicio') && !nivelLower.includes('previo')) {
+    const color = getCSSVariable('--inicio');
+    return { 
+      bg: color, 
+      border: color, 
+      hoverBg: color, 
+      hoverBorder: color 
+    };
+  } else if (nivelLower.includes('previo')) {
+    const color = getCSSVariable('--previo-al-inicio');
+    return { 
+      bg: color, 
+      border: color, 
+      hoverBg: color, 
+      hoverBorder: color 
+    };
+  }
+  return { 
+    bg: '#6b7280', 
+    border: '#4b5563', 
+    hoverBg: '#4b5563', 
+    hoverBorder: '#6b7280' 
+  };
+};
+
 // Paleta de colores profesional
 export const coloresProfesionales = [
   '#3B82F6', // Azul
@@ -21,7 +77,7 @@ export const coloresProfesionales = [
 export const prepararDatosPieChart = (
   dataGraficoTendenciaNiveles: GraficoPieChart[],
   monthSelected: number,
-  obtenerColorPorNivel: (nivel: string) => any
+  obtenerColorPorNivel?: (nivel: string) => any
 ) => {
   const datosMesSeleccionado = Array.isArray(dataGraficoTendenciaNiveles)
     ? dataGraficoTendenciaNiveles.find((item) => item.mes === monthSelected)
@@ -41,6 +97,9 @@ export const prepararDatosPieChart = (
     };
   }
 
+  // Usar la función CSS por defecto o la función pasada como parámetro
+  const colorFunction = obtenerColorPorNivel || obtenerColorPorNivelCSS;
+
   return {
     labels: datosMesSeleccionado.niveles.map((nivel) => {
       return nivel.nivel
@@ -52,17 +111,17 @@ export const prepararDatosPieChart = (
       {
         data: datosMesSeleccionado.niveles.map((nivel) => nivel.cantidadDeEstudiantes),
         backgroundColor: datosMesSeleccionado.niveles.map(
-          (nivel) => obtenerColorPorNivel(nivel.nivel).bg
+          (nivel) => colorFunction(nivel.nivel).bg
         ),
         borderColor: datosMesSeleccionado.niveles.map(
-          (nivel) => obtenerColorPorNivel(nivel.nivel).border
+          (nivel) => colorFunction(nivel.nivel).border
         ),
         borderWidth: 2,
         hoverBackgroundColor: datosMesSeleccionado.niveles.map(
-          (nivel) => obtenerColorPorNivel(nivel.nivel).hoverBg
+          (nivel) => colorFunction(nivel.nivel).hoverBg
         ),
         hoverBorderColor: datosMesSeleccionado.niveles.map(
-          (nivel) => obtenerColorPorNivel(nivel.nivel).hoverBorder
+          (nivel) => colorFunction(nivel.nivel).hoverBorder
         ),
         hoverBorderWidth: 3,
       },

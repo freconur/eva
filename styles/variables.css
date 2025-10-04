@@ -41,6 +41,18 @@
   /* Colores de gradientes */
   --graduado-blue-2: rgba(40,62,143,1);
   --graduado-blue-3: rgba(12,49,131,1);
+  
+  /* colores para nivel progresivo*/
+  --previo-al-inicio: #a5a5a5;
+  --inicio: #a64e4d;
+  --en-proceso: #f89646;
+  --satisfactorio: #9bbb58;
+
+  /* colores alternativas de preguntas */
+  --alternativa-a: #9bbb58;
+  --alternativa-b: #f89646;
+  --alternativa-c: #a64e4d;
+  --alternativa-d: #a5a5a5;
 
   /* Colores de niveles */
   --tere: #47d07d;
