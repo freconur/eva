@@ -28,6 +28,7 @@ import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalCo
 import { AppAction } from '../actions/appAction';
 import {} from 'firebase/firestore/lite';
 import { currentMonth, currentYear } from '@/fuctions/dates';
+import { addNoRespondioAlternative } from '../utils/addNoRespondioAlternative';
 
 // Función para calcular estadísticas de especialistas
 const calcularEstadisticasEspecialistas = (especialistasEvaluacion: User[]): DataEstadisticas[] => {
@@ -702,9 +703,13 @@ const UseEvaluacionEspecialistas = () => {
       querySnapshot.forEach((doc) => {
         arrayPreguntaRespuestaDocentes.push({ ...doc.data(), id: doc.id });
       });
+      
+      // Agregar alternativa "no respondió" a todas las preguntas
+      const preguntasConNoRespondio = addNoRespondioAlternative(arrayPreguntaRespuestaDocentes);
+      
       dispatch({
         type: AppAction.GET_PREGUNTA_RESPUESTA_DOCENTE,
-        payload: arrayPreguntaRespuestaDocentes,
+        payload: preguntasConNoRespondio,
       });
       dispatch({ type: AppAction.LOADER_PAGES, payload: false });
     });
@@ -734,7 +739,9 @@ const UseEvaluacionEspecialistas = () => {
       }
     });
     newPromise.then((res) => {
-      dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: res });
+      // Agregar alternativa "no respondió" a todas las preguntas
+      const preguntasConNoRespondio = addNoRespondioAlternative(res);
+      dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: preguntasConNoRespondio });
       dispatch({ type: AppAction.LOADER_PAGES, payload: false });
     });
   };

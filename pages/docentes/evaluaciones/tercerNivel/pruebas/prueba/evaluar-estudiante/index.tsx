@@ -20,8 +20,8 @@ const EvaluarEstudiante = () => {
   // Estados del contexto global
   const {
     preguntasRespuestas,
-    sizePreguntas,
     preguntasRespuestasEstudiante,
+    sizePreguntas,
     loaderSalvarPregunta,
     evaluacion,
     estudiantesDeEvaluacion,
@@ -464,6 +464,8 @@ const EvaluarEstudiante = () => {
       });
     }
   };
+  console.log('preguntasRespuestas',preguntasRespuestas)
+  console.log('preguntasRespuestasEstudiante',preguntasRespuestasEstudiante)
   
   return (
     <div className={styles.containerPage}>

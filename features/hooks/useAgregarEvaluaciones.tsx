@@ -35,6 +35,7 @@ import {
 } from '../types/types';
 import { currentMonth, currentYear } from '@/fuctions/dates';
 import { calculoNivel } from '../utils/calculoNivel';
+import { addNoRespondioAlternative } from '../utils/addNoRespondioAlternative';
 
 export const useAgregarEvaluaciones = () => {
   const dispatch = useGlobalContextDispatch();
@@ -342,7 +343,10 @@ export const useAgregarEvaluaciones = () => {
             return idA - idB;
           });
 
-          dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: preguntasrespuestas });
+          // Agregar alternativa "no respondió" a todas las preguntas
+          const preguntasConNoRespondio = addNoRespondioAlternative(preguntasrespuestas);
+
+          dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: preguntasConNoRespondio });
           dispatch({ type: AppAction.SIZE_PREGUNTAS, payload: count });
           dispatch({ type: AppAction.LOADER_PAGES, payload: false });
         },
@@ -410,6 +414,86 @@ export const useAgregarEvaluaciones = () => {
       nivelYPuntaje: nivelYPuntaje,
     });
   };
+
+  const dataConAlternativasNoRespondidas = (preguntasRespuestas: PreguntasRespuestas[]): PreguntasRespuestas[] => {
+    return preguntasRespuestas.map((pregunta) => {
+      // Verificar si alguna alternativa tiene descripción "no respondio" y está seleccionada
+      const tieneNoRespondioSeleccionado = pregunta.alternativas?.some(
+        (alternativa) => 
+          alternativa.descripcion?.toLowerCase() === "no respondio" && 
+          alternativa.selected === true
+      );
+
+      if (tieneNoRespondioSeleccionado && pregunta.alternativas && pregunta.respuesta) {
+        console.log('=== PROCESANDO PREGUNTA CON "NO RESPONDIÓ" ===');
+        console.log('Pregunta:', pregunta.pregunta);
+        console.log('Respuesta correcta:', pregunta.respuesta);
+        console.log('Alternativas originales:', pregunta.alternativas);
+        
+        // Crear una copia de las alternativas
+        const alternativasModificadas = [...pregunta.alternativas];
+        
+        // Filtrar las alternativas que NO son "no respondio" y que NO coinciden con la respuesta
+        const alternativasElegibles = alternativasModificadas.filter((alternativa) => {
+          const esNoRespondio = alternativa.descripcion?.toLowerCase() === "no respondio";
+          const coincideConRespuesta = alternativa.alternativa?.toString().toLowerCase() === pregunta.respuesta?.toString().toLowerCase();
+          console.log(`Alternativa: "${alternativa.descripcion}" (valor: "${alternativa.alternativa}") - EsNoRespondio: ${esNoRespondio}, CoincideConRespuesta: ${coincideConRespuesta}`);
+          return !esNoRespondio && !coincideConRespuesta;
+        });
+
+        console.log('Alternativas elegibles (excluyendo "no respondió" y respuesta correcta):', alternativasElegibles);
+
+        // Si hay alternativas elegibles, seleccionar una aleatoriamente
+        if (alternativasElegibles.length > 0) {
+          // Deseleccionar todas las alternativas primero
+          alternativasModificadas.forEach((alt) => {
+            alt.selected = false;
+          });
+
+          // Seleccionar una alternativa aleatoria de las elegibles
+          const indiceAleatorio = Math.floor(Math.random() * alternativasElegibles.length);
+          const alternativaSeleccionada = alternativasElegibles[indiceAleatorio];
+          
+          console.log('Alternativa seleccionada aleatoriamente:', alternativaSeleccionada);
+          
+          // Encontrar y seleccionar la alternativa en el array original
+          const indiceEnArrayOriginal = alternativasModificadas.findIndex(
+            (alt) => alt.descripcion === alternativaSeleccionada.descripcion
+          );
+          
+          if (indiceEnArrayOriginal !== -1) {
+            alternativasModificadas[indiceEnArrayOriginal].selected = true;
+            console.log('Alternativa seleccionada en el array modificado:', alternativasModificadas[indiceEnArrayOriginal]);
+          }
+
+          // Eliminar la alternativa "no respondió" del array
+          const alternativasSinNoRespondio = alternativasModificadas.filter(
+            (alt) => alt.descripcion?.toLowerCase() !== "no respondio"
+          );
+          
+          console.log('Alternativas después de eliminar "no respondió":', alternativasSinNoRespondio);
+          
+          // Actualizar el array de alternativas modificadas
+          alternativasModificadas.length = 0;
+          alternativasModificadas.push(...alternativasSinNoRespondio);
+          
+        } else {
+          console.log('No hay alternativas elegibles (todas son "no respondió" o coinciden con la respuesta correcta)');
+        }
+
+        console.log('Alternativas finales:', alternativasModificadas);
+        console.log('=== FIN PROCESAMIENTO ===');
+
+        return {
+          ...pregunta,
+          alternativas: alternativasModificadas
+        };
+      }
+
+      // Si no hay "no respondio" seleccionado, devolver la pregunta sin cambios
+      return pregunta;
+    });
+  };
   const salvarPreguntRespuestaEstudiante = async (
     data: UserEstudiante,
     idEvaluacion: string,
@@ -420,6 +504,10 @@ export const useAgregarEvaluaciones = () => {
   ) => {
     let puntajeAcumulado = 0;
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
+    
+    // Procesar las alternativas para cambiar "no respondió" por una alternativa aleatoria
+    const pqConAlternativasAleatorias = dataConAlternativasNoRespondidas(pq);
+    console.log('pqConAlternativasAleatorias', pqConAlternativasAleatorias);
     //guarda la informacion para el propio docente
     /* const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`); */
     const rutaRef = doc(
@@ -436,7 +524,7 @@ export const useAgregarEvaluaciones = () => {
       genero: `${data.genero}`,
       respuestasCorrectas: respuestasCorrectas,
       totalPreguntas: sizePreguntas,
-      respuestas: pq,
+      respuestas: pqConAlternativasAleatorias,
     });
     const rutaCrearEstudiante = doc(
       db,
@@ -456,11 +544,10 @@ export const useAgregarEvaluaciones = () => {
       `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${currentYear}/${evaluacion.mesDelExamen}`,
       `${data.dni}`
     );
-
     // Incluir las respuestas en el objeto data antes de calcular el nivel
     const dataConRespuestas = {
       ...data,
-      respuestas: pq,
+      respuestas: pqConAlternativasAleatorias,
     };
 
     if (evaluacion.tipoDeEvaluacion === '1') {
@@ -498,6 +585,7 @@ export const useAgregarEvaluaciones = () => {
       }
     }
     if (evaluacion.tipoDeEvaluacion === '0') {
+      
       try {
         await setDoc(rutaEstudianteParaEvaluacion, dataConRespuestas);
       } catch (error) {

@@ -6,6 +6,7 @@ import { AppAction } from '../actions/appAction';
 import { } from 'firebase/firestore/lite';
 import { useRouter } from 'next/router';
 import { currentMonth, currentYear } from '@/fuctions/dates';
+import { addNoRespondioAlternative } from '../utils/addNoRespondioAlternative';
 
 const UseEvaluacionDocentes = () => {
   const dispatch = useGlobalContextDispatch()
@@ -82,7 +83,11 @@ const UseEvaluacionDocentes = () => {
       querySnapshot.forEach((doc) => {
         arrayPreguntaRespuestaDocentes.push({ ...doc.data(), id: doc.id });
       });
-      dispatch({ type: AppAction.GET_PREGUNTA_RESPUESTA_DOCENTE, payload: arrayPreguntaRespuestaDocentes })
+      
+      // Agregar alternativa "no respondió" a todas las preguntas
+      const preguntasConNoRespondio = addNoRespondioAlternative(arrayPreguntaRespuestaDocentes);
+      
+      dispatch({ type: AppAction.GET_PREGUNTA_RESPUESTA_DOCENTE, payload: preguntasConNoRespondio })
       dispatch({ type: AppAction.LOADER_PAGES, payload: false })
     });
   }
