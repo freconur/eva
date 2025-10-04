@@ -14,10 +14,7 @@ interface Props {
 const SidebarDocentes = ({ showSidebar }: Props) => {
   const { logout } = useUsuario()
   const { showSidebarValue } = useRolUsers()
-  const { getEvaluacionEscalaLikert, evaluacionEscalaLikert } = useTituloDeCabecera()
-  useEffect(() => {
-    getEvaluacionEscalaLikert('5j5WEYsHCUM9SDkXmlm1')
-  },[])
+  
   // const { showSidebar } = useGlobalContext()
   return (
     <div className={`z-[2000] grid-rows-gridRows p-2 justify-evenly grid fixed duration-300 drop-shadow-xl h-full w-[250px] bg-graduado-blue-2 ${showSidebar ? "left-[0px]" : "-left-[300px]"}`}>
@@ -39,17 +36,13 @@ const SidebarDocentes = ({ showSidebar }: Props) => {
             </p>
             </Link>
           </li>
-          {
-            evaluacionEscalaLikert.active && (
               <li className='rounded-md text-white   flex items-center gap-x-4 cursor-pointer text-sm  mt-2   hover:border-[1px] hover:border-green-300 hover:text-green-300 duration-300 mx-1 whitespace-nowrap drop-shadow-lg'>
-                <Link href="/docentes/conocimiento-pedagogico" className='p-3'>
+                <Link href="/admin/docentes/conocimiento-pedagogicos" className='p-3'>
                 <p className='flex-wrap w-[150px] flex'>
                   Conocimiento Pedagogico
                 </p>
                 </Link>
               </li>
-            )
-          }
          
         </ul>
         <SidebarInfoUser showSidebar={showSidebar} />

@@ -1604,3 +1604,12 @@ body:has(.orderControls) {
     height: 14px;
   }
 }
+
+/* Estilos para el contenedor de carga */
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  padding: 2rem;
+}

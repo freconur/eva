@@ -5,12 +5,14 @@ import type { ConocimientoPedagogico } from '@/features/types/types';
 import {genero, rangoEdad, gradosDeColegio, regionTexto} from '@/fuctions/regiones'
 import { distritosPuno } from '@/fuctions/provinciasPuno';
 import { useTituloDeCabecera } from '@/features/hooks/useTituloDeCabecera';
+import { useRouter } from 'next/router';
 
 
 
 const ConocimientoPedagogico = () => {
   const { currentUserData, preguntaEvaluacionLikert } = useGlobalContext();
-  
+const router = useRouter()
+const { idEvaluacion } = router.query
   const [datos, setDatos] = useState<ConocimientoPedagogico>({
     nombres: '',
     apellidos: '',
@@ -64,10 +66,11 @@ const ConocimientoPedagogico = () => {
         edad: currentUserData.conocimientoPedagogico?.edad || prev.edad,
       }));
     }
-    getEvaluacionEscalaLikert('5j5WEYsHCUM9SDkXmlm1')
-    getPreguntasEvaluacionEscalaLikert('5j5WEYsHCUM9SDkXmlm1')
-  }, [currentUserData]);
-
+    getEvaluacionEscalaLikert(`${idEvaluacion}`)
+    getPreguntasEvaluacionEscalaLikert(`${idEvaluacion}`)
+  }, [currentUserData.dni, router.query.idEvaluacion]);
+console.log('evaluacionEscalaLikert', evaluacionEscalaLikert)
+console.log('preguntaEvaluacionLikert', preguntaEvaluacionLikert)
   const handleInputChange = (field: keyof ConocimientoPedagogico, value: string | string[] | {id?:number,name?:string}) => {
     setDatos((prev) => ({
       ...prev,
@@ -154,17 +157,17 @@ const ConocimientoPedagogico = () => {
         respuestasCompletas: preguntasConRespuestas.length === preguntaEvaluacionLikert.length
       }
     };
-    saveEvaluacionEscalaLikert('5j5WEYsHCUM9SDkXmlm1', datosCompletos, evaluacionEscalaLikert);
+    saveEvaluacionEscalaLikert(`${idEvaluacion}`, datosCompletos, evaluacionEscalaLikert);
 
-    console.log('Datos completos de la autoevaluación:', datosCompletos);
+    /* console.log('Datos completos de la autoevaluación:', datosCompletos);
     console.log('Datos del docente:', datos);
-    console.log('Preguntas con respuestas:', preguntasConRespuestas);
+    console.log('Preguntas con respuestas:', preguntasConRespuestas); */
     
     // Aquí puedes agregar la lógica para enviar los datos a tu backend
     alert('Autoevaluación enviada correctamente');
   };
   console.log('currentUserData', currentUserData);
-  console.log('datos', datos);
+  /* console.log('datos', datos); */
   return (
     <div className={styles.container}>
       <div className={styles.header}>

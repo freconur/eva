@@ -16,7 +16,7 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { DataUsuarioEvaluacionLikert, EscalaLikert, EvaluacionLikert, PreguntasEvaluacionLikert } from '../types/types';
 import { AppAction } from '../actions/appAction';
 import { currentYear } from '@/fuctions/dates';
@@ -27,6 +27,19 @@ export const useTituloDeCabecera = () => {
   const db = getFirestore();
   const [tituloDeCabecera, setTituloDeCabecera] = useState<string>('');
   const [evaluacionEscalaLikert, setEvaluacionEscalaLikert] = useState<EvaluacionLikert>({});
+  const [preguntasEscalaLikert, setPreguntaEscalaLikert] = useState<PreguntasEvaluacionLikert[]>([]);
+  
+  // Ref para guardar la referencia del unsubscribe
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+  
+  // Limpiar suscripciones cuando el componente se desmonte
+  useEffect(() => {
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, []);
 
   const getTituloDeCabecera = (id: string) => {
     const pathRef = doc(db, 'titulos-cabecera', id);
@@ -55,16 +68,34 @@ export const useTituloDeCabecera = () => {
   };
 
   const getPreguntasEvaluacionEscalaLikert = (id: string) => {
-
+    // Cancelar la suscripción anterior si existe
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+    
+    // Limpiar tanto el estado local como el global
+    setPreguntaEscalaLikert([]);
+    dispatch({ type: AppAction.PREGUNTAS_EVALUACION_ESCALA_LIKERT, payload: [] });
+    
     const pathRef = collection(db, `evaluaciones-escala-likert/${id}/preguntas`);
     const q = query(pathRef, orderBy('orden','asc'));
-    onSnapshot(q, (querySnapshot) => {
+    
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      // Verificar que la suscripción no haya sido cancelada
+      if (!unsubscribeRef.current) return;
+      
       const arrayEvaluacionEscalaLikert: PreguntasEvaluacionLikert[] = [];
       querySnapshot.forEach((doc) => {
         arrayEvaluacionEscalaLikert.push({ ...doc.data(), id: doc.id });
       });
+      
+      setPreguntaEscalaLikert(arrayEvaluacionEscalaLikert);
       dispatch({ type: AppAction.PREGUNTAS_EVALUACION_ESCALA_LIKERT, payload: arrayEvaluacionEscalaLikert });
     });
+    
+    // Guardar la referencia del unsubscribe
+    unsubscribeRef.current = unsubscribe;
   };
 
   const addPuntajeEscalaLikert = async (id: string, puntaje: EscalaLikert[]) => {
@@ -212,6 +243,7 @@ export const useTituloDeCabecera = () => {
     saveEvaluacionEscalaLikert,
     updatePreguntaTexto,
     updateEvaluacionEscalaLikert,
-    deletePreguntaEvaluacionEscalaLikert
+    deletePreguntaEvaluacionEscalaLikert,
+    preguntasEscalaLikert
   };
 };

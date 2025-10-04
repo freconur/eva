@@ -1,13 +1,17 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useTituloDeCabecera } from '@/features/hooks/useTituloDeCabecera'
+import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
 import { HiPencil, HiPlus, HiArrowUp, HiArrowDown, HiEye, HiEyeOff, HiTrash } from 'react-icons/hi'
 import Loader from '@/components/loader/loader'
 import styles from './conocimientoPedagogico.module.css'
 
-const ConocimientoPedagogicoAdmin = () => {
+const EvaluacionEscalaLikert = () => {
 
-const { getTituloDeCabecera, addPuntajeEscalaLikert,tituloDeCabecera, updateTituloDeCabecera,addPreguntasAlternativasEscalaLikert, getPreguntasEvaluacionEscalaLikert, actualizarOrdenesEnBatch, getEvaluacionEscalaLikert, evaluacionEscalaLikert, updatePreguntaTexto, updateEvaluacionEscalaLikert, deletePreguntaEvaluacionEscalaLikert } = useTituloDeCabecera()
+const route = useRouter()
+const {id} = route.query
+
+const { getTituloDeCabecera, addPuntajeEscalaLikert,tituloDeCabecera, updateTituloDeCabecera,addPreguntasAlternativasEscalaLikert, getPreguntasEvaluacionEscalaLikert, actualizarOrdenesEnBatch, getEvaluacionEscalaLikert, evaluacionEscalaLikert, updatePreguntaTexto, updateEvaluacionEscalaLikert, deletePreguntaEvaluacionEscalaLikert, preguntasEscalaLikert } = useTituloDeCabecera()
 const { preguntaEvaluacionLikert  } = useGlobalContext()
 const [isEditing, setIsEditing] = useState(false)
 const [editTitulo, setEditTitulo] = useState('')
@@ -37,6 +41,7 @@ const [editQuestionText, setEditQuestionText] = useState('')
 const [isSavingQuestionEdit, setIsSavingQuestionEdit] = useState(false)
 const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null)
 const [isDeletingQuestion, setIsDeletingQuestion] = useState(false)
+const [isLoadingId, setIsLoadingId] = useState(true)
 
 const handleEdit = () => {
   setEditTitulo(evaluacionEscalaLikert.name || '')
@@ -48,7 +53,7 @@ const handleSave = async () => {
   
   setIsSaving(true)
   try {
-    await updateEvaluacionEscalaLikert('5j5WEYsHCUM9SDkXmlm1', { name: editTitulo.trim() })
+    await updateEvaluacionEscalaLikert(id as string, { name: editTitulo.trim() })
   } catch (error) {
     console.error('Error al actualizar el título:', error)
   } finally {
@@ -66,7 +71,7 @@ const handleToggleVisibility = async () => {
   
   const newActiveState = !evaluacionEscalaLikert.active
   try {
-    await updateEvaluacionEscalaLikert('5j5WEYsHCUM9SDkXmlm1', { active: newActiveState })
+    await updateEvaluacionEscalaLikert(id as string, { active: newActiveState })
   } catch (error) {
     console.error('Error al actualizar la visibilidad:', error)
   }
@@ -93,7 +98,7 @@ const handleSaveQuestion = async () => {
   try {
     // Guardar la pregunta en Firestore
     console.log('opcionesGlobales', opcionesGlobales)
-    await addPreguntasAlternativasEscalaLikert('5j5WEYsHCUM9SDkXmlm1', nuevaPregunta.texto)
+    await addPreguntasAlternativasEscalaLikert(id as string, nuevaPregunta.texto)
     
     // Cerrar el modal y limpiar el formulario después de guardar exitosamente
     setShowAddQuestion(false)
@@ -142,7 +147,7 @@ const handleSaveOptions = async () => {
   try {
     // Aquí agregar tu función para guardar las opciones globales en Firestore
     console.log('Guardando opciones globales en Firestore:', opcionesGlobales)
-    addPuntajeEscalaLikert('5j5WEYsHCUM9SDkXmlm1', opcionesGlobales)
+    addPuntajeEscalaLikert(id as string, opcionesGlobales)
     // await guardarOpcionesGlobalesEnFirestore(opcionesGlobales)
     setShowEditOptions(false)
   } catch (error) {
@@ -243,7 +248,7 @@ const handleSaveOrder = async () => {
     })
     
     if (cambios.size > 0) {
-      await actualizarOrdenesEnBatch('5j5WEYsHCUM9SDkXmlm1', cambios)
+      await actualizarOrdenesEnBatch(id as string, cambios)
       
       // Actualizar las preguntas originales con el nuevo estado
       const nuevasPreguntasOriginales = preguntasLocales.map((pregunta, index) => ({
@@ -288,7 +293,7 @@ const handleSaveQuestionEdit = async () => {
   
   setIsSavingQuestionEdit(true)
   try {
-    await updatePreguntaTexto('5j5WEYsHCUM9SDkXmlm1', editingQuestionId, editQuestionText.trim())
+    await updatePreguntaTexto(id as string, editingQuestionId, editQuestionText.trim())
     
     // Cerrar el modal y limpiar el estado
     setEditingQuestionId(null)
@@ -315,7 +320,7 @@ const handleConfirmDelete = async () => {
   if (!deletingQuestionId) return
   setIsDeletingQuestion(true)
   try {
-    await deletePreguntaEvaluacionEscalaLikert('5j5WEYsHCUM9SDkXmlm1', deletingQuestionId)
+    await deletePreguntaEvaluacionEscalaLikert(id as string, deletingQuestionId)
     // Cerrar el modal de confirmación
     setDeletingQuestionId(null)
   } catch (error) {
@@ -330,22 +335,31 @@ const handleCancelDelete = () => {
   setDeletingQuestionId(null)
 }
 
-
-
-
-
-
 useEffect(() => {
-  const ID = 'vyoPdwg4785DQ4FetrEl'
-  const unsubscribe = getTituloDeCabecera(ID)
-  getPreguntasEvaluacionEscalaLikert('5j5WEYsHCUM9SDkXmlm1')
-  getEvaluacionEscalaLikert('5j5WEYsHCUM9SDkXmlm1')
-  return () => {
-    if (unsubscribe) {
-      unsubscribe()
+    // Solo ejecutar si el id está disponible
+    if (!id || typeof id !== 'string') {
+      setIsLoadingId(true)
+      return
     }
-  }
-}, []) // Removemos las dependencias que causan re-renders innecesarios
+    
+    // Limpiar estados locales cuando cambie el ID
+    setPreguntasLocales([]);
+    setPreguntasOriginales([]);
+    setHasChanges(false);
+    setEditingQuestionId(null);
+    setDeletingQuestionId(null);
+    
+    setIsLoadingId(false)
+    const ID = 'vyoPdwg4785DQ4FetrEl'
+    const unsubscribe = getTituloDeCabecera(ID)
+    getPreguntasEvaluacionEscalaLikert(id)
+    getEvaluacionEscalaLikert(id)
+    return () => {
+      if (unsubscribe) {
+        unsubscribe()
+      }
+    }
+  }, [id]) // Agregamos id como dependencia para que se ejecute cuando esté disponible
 
 // Sincronizar preguntas locales con las del contexto global
 useEffect(() => {
@@ -355,17 +369,16 @@ useEffect(() => {
       orden: pregunta.orden || (index + 1) * 10
     }))
     
-    // Solo actualizar si realmente hay cambios para evitar bucles
-    const preguntasActuales = preguntasLocales.map(p => p.id).sort().join(',')
-    const preguntasNuevas = preguntasConOrden.map(p => p.id).sort().join(',')
-    
-    if (preguntasActuales !== preguntasNuevas) {
-      setPreguntasLocales(preguntasConOrden)
-      setPreguntasOriginales(preguntasConOrden)
-      setHasChanges(false)
-    }
+    setPreguntasLocales(preguntasConOrden)
+    setPreguntasOriginales(preguntasConOrden)
+    setHasChanges(false)
+  } else {
+    // Si no hay preguntas en el contexto global, limpiar las locales
+    setPreguntasLocales([])
+    setPreguntasOriginales([])
+    setHasChanges(false)
   }
-}, [preguntaEvaluacionLikert, preguntasLocales]) // Agregamos preguntasLocales para comparación
+}, [preguntaEvaluacionLikert])
 
 // Verificar si hay cambios reales comparando con el estado original
 useEffect(() => {
@@ -383,6 +396,16 @@ useEffect(() => {
     setHasChanges(prevHasChanges => prevHasChanges !== hayCambios ? hayCambios : prevHasChanges)
   }
 }, [preguntasLocales, preguntasOriginales])
+
+
+// Mostrar loader mientras se resuelve el id
+if (isLoadingId) {
+  return (
+    <div className={styles.loadingContainer}>
+      <Loader size="large" variant="spinner" color="#007bff" text="Cargando evaluación..." />
+    </div>
+  )
+}
 
   return (
     <div>
@@ -801,4 +824,4 @@ useEffect(() => {
   )
 }
 
-export default ConocimientoPedagogicoAdmin
+export default EvaluacionEscalaLikert
