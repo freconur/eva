@@ -589,7 +589,8 @@ export type EvaluacionLikert = {
   id?:string,
   mesDelExamen?:string,
   tipoDeEvaluacion?:string,
-  active?:boolean
+  active?:boolean,
+  rol?:number
 }
 
 export type DataUsuarioEvaluacionLikert = {

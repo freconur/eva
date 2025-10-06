@@ -17,8 +17,8 @@ echo ""
 
 # Directorio de la base de datos
 #IMPORT_PATH="./eva-ugel-emulator-firestore/2025-08-30T23:48:52_3980"
-IMPORT_PATH="./eva-ugel-emulator-firestore/persistent-data-15"
-EXPORT_DIR="./eva-ugel-emulator-firestore/persistent-data-16"
+IMPORT_PATH="./eva-ugel-emulator-firestore/persistent-data-16"
+EXPORT_DIR="./eva-ugel-emulator-firestore/persistent-data-17"
 
 # Verificar que existe la base de datos
 if [ ! -d "$IMPORT_PATH" ]; then

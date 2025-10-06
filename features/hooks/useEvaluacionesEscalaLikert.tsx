@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, getFirestore, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore"
+import { addDoc, collection, deleteDoc, doc, getFirestore, onSnapshot, orderBy, query, updateDoc, where } from "firebase/firestore"
 import { EvaluacionLikert, TipoDeEvaluacion } from "../types/types";
 import { useState, useEffect } from "react";
 
@@ -14,9 +14,10 @@ export const useEvaluacionesEscalaLikert = () => {
 
     const [evaluacionesEscalaLikert, setEvaluacionesEscalaLikert] = useState<EvaluacionLikert[]>([])
     const [optionsEvaluacion, setOptionsEvaluacion] = useState<{tiposDeEvaluacion: TipoDeEvaluacion[]}>({tiposDeEvaluacion: []})
-const getEvaluacionesEscalaLikert = () => {
+const getEvaluacionesEscalaLikert = (rol: number) => {
     const pathRef = collection(db, 'evaluaciones-escala-likert')
-    const q = query(pathRef, orderBy('name', 'asc'))
+    const q = query(pathRef, where('rol', '==', rol))
+    /* const q = query(pathRef, where('rol', '==', rol), orderBy('name', 'asc')) */
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const evaluacionesEscalaLikert: EvaluacionLikert[] = []
@@ -39,7 +40,7 @@ const deleteEvaluacionEscalaLikert = async (id: string) => {
 }
 const createEvaluacionEscalaLikert = async (data: EvaluacionLikert) => {
     const pathRef = collection(db, 'evaluaciones-escala-likert')
-    await addDoc(pathRef, data)
+    await addDoc(pathRef, {...data, rol: Number(data.rol)})
 }
 const getOptionsEvaluacion = () => {
     const pathRef = doc(db, 'options', 'tipos-de-evaluacion')

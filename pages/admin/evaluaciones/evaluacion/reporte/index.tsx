@@ -137,7 +137,8 @@ const Reporte = () => {
     getEstadisticaGlobal,
     getAllReporteDeDirectoreToAdmin,
     getDataGraficoPieChart,
-    restablecerFiltrosDeEspecialista
+    restablecerFiltrosDeEspecialista,
+    getReporteEspecialistaPorUgel
   } = useReporteEspecialistas();
   const {
     currentUserData,
@@ -201,6 +202,11 @@ const Reporte = () => {
 
     return reporteSincronizado;
   }, [dataEstadisticaEvaluacion, preguntasOrdenadas]);
+
+
+useEffect(() => {
+  getReporteEspecialistaPorUgel(`${route.query.idEvaluacion}`, monthSelected)
+}, [`${route.query.idEvaluacion}`, monthSelected, currentUserData.region])
 
   useEffect(() => {
     //me trae las preguntas y respuestas para los graficos
@@ -499,7 +505,23 @@ const Reporte = () => {
                 'Exportar a Excel'
               )}
             </button>
-
+            
+            {/* Botón para crear estudiantes de docentes */}
+            <button
+              className={styles.exportButton}
+              onClick={handleCrearEstudiantes}
+              disabled={loadingCrearEstudiantes}
+            >
+              {loadingCrearEstudiantes ? (
+                <>
+                  <RiLoader4Line className={styles.loaderIcon} />
+                  Creando estudiantes... (hasta 9 min)
+                </>
+              ) : (
+                'Crear estudiantes de docentes'
+              )}
+            </button>
+            
             {/* Indicador de progreso para crear estudiantes */}
             {loadingCrearEstudiantes && progresoCrearEstudiantes && (
               <div className={styles.progressContainer}>

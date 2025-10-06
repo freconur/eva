@@ -43,6 +43,14 @@ const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null
 const [isDeletingQuestion, setIsDeletingQuestion] = useState(false)
 const [isLoadingId, setIsLoadingId] = useState(true)
 
+// Función helper para convertir EscalaLikert[] a opcionesGlobales
+const convertEscalaLikertToOpciones = (escalaLikert: any[]): { name: string; value: number }[] => {
+  return escalaLikert.map((item, index) => ({
+    name: item.name || '',
+    value: item.value ?? index
+  }))
+}
+
 const handleEdit = () => {
   setEditTitulo(evaluacionEscalaLikert.name || '')
   setIsEditing(true)
@@ -85,6 +93,10 @@ const handleAddQuestion = () => {
 }
 
 const handleEditOptions = () => {
+  // Si evaluacionEscalaLikert tiene puntaje, usar esas opciones, sino usar opcionesGlobales
+  if (evaluacionEscalaLikert?.puntaje) {
+    setOpcionesGlobales(convertEscalaLikertToOpciones(evaluacionEscalaLikert.puntaje))
+  }
   setShowEditOptions(true)
 }
 
@@ -122,21 +134,31 @@ const handleCancelQuestion = () => {
 }
 
 const handleGlobalOptionChange = (index: number, name: string) => {
-  const nuevasOpciones = [...opcionesGlobales]
+  const opcionesActuales = evaluacionEscalaLikert?.puntaje 
+    ? convertEscalaLikertToOpciones(evaluacionEscalaLikert.puntaje)
+    : opcionesGlobales
+  const nuevasOpciones = [...opcionesActuales]
   nuevasOpciones[index] = { name, value: index }
   setOpcionesGlobales(nuevasOpciones)
 }
 
 const addGlobalOption = () => {
-  if (opcionesGlobales.length < 10) {
-    const newValue = opcionesGlobales.length
-    setOpcionesGlobales([...opcionesGlobales, { name: '', value: newValue }])
+  const opcionesActuales = evaluacionEscalaLikert?.puntaje 
+    ? convertEscalaLikertToOpciones(evaluacionEscalaLikert.puntaje)
+    : opcionesGlobales
+  if (opcionesActuales.length < 10) {
+    const newValue = opcionesActuales.length
+    const nuevasOpciones = [...opcionesActuales, { name: '', value: newValue }]
+    setOpcionesGlobales(nuevasOpciones)
   }
 }
 
 const removeGlobalOption = (index: number) => {
-  if (opcionesGlobales.length > 2) {
-    const nuevasOpciones = opcionesGlobales
+  const opcionesActuales = evaluacionEscalaLikert?.puntaje 
+    ? convertEscalaLikertToOpciones(evaluacionEscalaLikert.puntaje)
+    : opcionesGlobales
+  if (opcionesActuales.length > 2) {
+    const nuevasOpciones = opcionesActuales
       .filter((_, i) => i !== index)
       .map((opcion, i) => ({ ...opcion, value: i }))
     setOpcionesGlobales(nuevasOpciones)
@@ -145,17 +167,35 @@ const removeGlobalOption = (index: number) => {
 
 const handleSaveOptions = async () => {
   try {
-    // Aquí agregar tu función para guardar las opciones globales en Firestore
-    console.log('Guardando opciones globales en Firestore:', opcionesGlobales)
-    addPuntajeEscalaLikert(id as string, opcionesGlobales)
-    // await guardarOpcionesGlobalesEnFirestore(opcionesGlobales)
+    console.log('Guardando opciones en Firestore:', opcionesGlobales)
+    
+    if (evaluacionEscalaLikert?.puntaje) {
+      // Si ya tiene puntaje, actualizar la evaluación existente
+      await updateEvaluacionEscalaLikert(id as string, { puntaje: opcionesGlobales })
+    } else {
+      // Si no tiene puntaje, agregar las opciones globales
+      addPuntajeEscalaLikert(id as string, opcionesGlobales)
+    }
+    
     setShowEditOptions(false)
   } catch (error) {
-    console.error('Error al guardar las opciones globales:', error)
+    console.error('Error al guardar las opciones:', error)
   }
 }
 
 const handleCancelOptions = () => {
+  // Restaurar las opciones originales si se cancela
+  if (evaluacionEscalaLikert?.puntaje) {
+    setOpcionesGlobales(convertEscalaLikertToOpciones(evaluacionEscalaLikert.puntaje))
+  } else {
+    setOpcionesGlobales([
+      { name: 'Muy bajo o nula', value: 0 },
+      { name: 'Bajo', value: 1 },
+      { name: 'Moderado/regular', value: 2 },
+      { name: 'Alto', value: 3 },
+      { name: 'Muy alto', value: 4 }
+    ])
+  }
   setShowEditOptions(false)
 }
 
@@ -635,21 +675,24 @@ if (isLoadingId) {
               />
             </div>
             
-            <div className={styles.optionsInfo}>
+            {/* <div className={styles.optionsInfo}>
               <p className={styles.optionsInfoText}>
                 Esta pregunta usará las opciones de respuesta globales configuradas para toda la evaluación.
               </p>
               <div className={styles.currentOptionsPreview}>
                 <strong>Opciones actuales:</strong>
                 <div className={styles.optionsPreviewList}>
-                  {opcionesGlobales.map((opcion, index) => (
+                  {(evaluacionEscalaLikert?.puntaje 
+                    ? convertEscalaLikertToOpciones(evaluacionEscalaLikert.puntaje)
+                    : opcionesGlobales
+                  ).map((opcion, index) => (
                     <span key={index} className={styles.optionPreview}>
                       {opcion.value + 1}. {opcion.name}
                     </span>
                   ))}
                 </div>
               </div>
-            </div>
+            </div> */}
             
             <div className={styles.modalActions}>
               <button
@@ -684,12 +727,23 @@ if (isLoadingId) {
             
             <div className={styles.optionsContainer}>
               <div className={styles.optionsHeader}>
-                <label className={styles.inputLabel}>Opciones de respuesta globales:</label>
+                <label className={styles.inputLabel}>
+                  {evaluacionEscalaLikert?.puntaje ? 'Opciones de respuesta con puntaje:' : 'Opciones de respuesta globales:'}
+                </label>
                 <div className={styles.optionsControls}>
                   <span className={styles.optionsCount}>
-                    {opcionesGlobales.length} opción{opcionesGlobales.length !== 1 ? 'es' : ''}
+                    {(evaluacionEscalaLikert?.puntaje 
+                      ? convertEscalaLikertToOpciones(evaluacionEscalaLikert.puntaje)
+                      : opcionesGlobales
+                    ).length} opción{(evaluacionEscalaLikert?.puntaje 
+                      ? convertEscalaLikertToOpciones(evaluacionEscalaLikert.puntaje)
+                      : opcionesGlobales
+                    ).length !== 1 ? 'es' : ''}
                   </span>
-                  {opcionesGlobales.length < 10 && (
+                  {(evaluacionEscalaLikert?.puntaje 
+                    ? convertEscalaLikertToOpciones(evaluacionEscalaLikert.puntaje)
+                    : opcionesGlobales
+                  ).length < 10 && (
                     <button
                       type="button"
                       onClick={addGlobalOption}
@@ -701,7 +755,10 @@ if (isLoadingId) {
                 </div>
               </div>
               
-              {opcionesGlobales.map((opcion, index) => (
+              {(evaluacionEscalaLikert?.puntaje 
+                ? convertEscalaLikertToOpciones(evaluacionEscalaLikert.puntaje)
+                : opcionesGlobales
+              ).map((opcion, index) => (
                 <div key={index} className={styles.optionInputContainer}>
                   <span className={styles.optionNumber}>{opcion.value + 1}.</span>
                   <input
@@ -711,7 +768,10 @@ if (isLoadingId) {
                     className={styles.optionInput}
                     placeholder={`Opción ${opcion.value + 1}`}
                   />
-                  {opcionesGlobales.length > 2 && (
+                  {(evaluacionEscalaLikert?.puntaje 
+                    ? convertEscalaLikertToOpciones(evaluacionEscalaLikert.puntaje)
+                    : opcionesGlobales
+                  ).length > 2 && (
                     <button
                       type="button"
                       onClick={() => removeGlobalOption(index)}
@@ -735,7 +795,10 @@ if (isLoadingId) {
               <button
                 className={styles.saveButton}
                 onClick={handleSaveOptions}
-                disabled={opcionesGlobales.some(op => !op.name.trim())}
+                disabled={(evaluacionEscalaLikert?.puntaje 
+                  ? convertEscalaLikertToOpciones(evaluacionEscalaLikert.puntaje)
+                  : opcionesGlobales
+                ).some(op => !op.name.trim())}
               >
                 Guardar Opciones
               </button>

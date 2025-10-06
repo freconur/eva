@@ -9,8 +9,12 @@ import {getAllMonths} from '@/fuctions/dates'
 import Link from 'next/link'
 import useUsuario from '@/features/hooks/useUsuario'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
+import { useRouter } from 'next/router'
 
 const ConocimientoPedagogicosMain = () => {
+
+
+const route = useRouter()
 
     const {evaluacionesEscalaLikert, getEvaluacionesEscalaLikert, updateEvaluacionEscalaLikert, createEvaluacionEscalaLikert, optionsEvaluacion, getOptionsEvaluacion, deleteEvaluacionEscalaLikert} = useEvaluacionesEscalaLikert()
     const [updatingId, setUpdatingId] = useState<string | null>(null)
@@ -24,16 +28,25 @@ const ConocimientoPedagogicosMain = () => {
         name: '',
         mesDelExamen: '',
         tipoDeEvaluacion: '',
-        active: true
+        active: true,
+        rol: 0
     })
     const [updateFormData, setUpdateFormData] = useState<Partial<EvaluacionLikert>>({
         name: '',
         mesDelExamen: '',
         tipoDeEvaluacion: '',
-        active: true
+        active: true,
+        rol: 0
     })
     const [selectedEvaluationId, setSelectedEvaluationId] = useState<string | null>(null)
     const { currentUserData } = useGlobalContext()
+    
+    // Opciones para el select "Dirigido a"
+    const opcionesDirigidoA = [
+        { rol: 1, name: 'Especialista' },
+        { rol: 2, name: 'Director' },
+        { rol: 3, name: 'Docente' }
+    ]
     const handleToggleVisibility = async (evaluacionId: string, currentActive: boolean) => {
         setUpdatingId(evaluacionId)
         try {
@@ -56,7 +69,8 @@ const ConocimientoPedagogicosMain = () => {
             name: '',
             mesDelExamen: '',
             tipoDeEvaluacion: '',
-            active: true
+            active: true,
+            rol: 0
         })
     }
 
@@ -66,7 +80,8 @@ const ConocimientoPedagogicosMain = () => {
             name: evaluacion.name || '',
             mesDelExamen: evaluacion.mesDelExamen || '',
             tipoDeEvaluacion: evaluacion.tipoDeEvaluacion || '',
-            active: evaluacion.active ?? true
+            active: evaluacion.active ?? true,
+            rol: evaluacion.rol || 0
         })
         setShowUpdateModal(true)
     }
@@ -78,7 +93,8 @@ const ConocimientoPedagogicosMain = () => {
             name: '',
             mesDelExamen: '',
             tipoDeEvaluacion: '',
-            active: true
+            active: true,
+            rol: 0
         })
     }
 
@@ -170,7 +186,7 @@ const ConocimientoPedagogicosMain = () => {
     }
 
     useEffect(() => {
-        const unsubscribeEvaluaciones = getEvaluacionesEscalaLikert(1)
+        const unsubscribeEvaluaciones = getEvaluacionesEscalaLikert(Number(route.query.rol))
         const unsubscribeOptions = getOptionsEvaluacion()
         return () => {
             if (unsubscribeEvaluaciones) {
@@ -180,7 +196,7 @@ const ConocimientoPedagogicosMain = () => {
                 unsubscribeOptions()
             }
         }
-    }, [])
+    }, [route.query.rol])
 
   return (
     <div>
@@ -250,7 +266,8 @@ const ConocimientoPedagogicosMain = () => {
                   .map((evaluacion, index) => (
                   <tr key={evaluacion.id || index} className={styles.tableRow}>
                     <td className={styles.tableCell}>
-                      <Link href={`${currentUserData.rol === 3 ? `/docentes/conocimiento-pedagogico?idEvaluacion=${evaluacion.id}` : `/admin/docentes/conocimiento-pedagogico/${evaluacion.id}`}`}>
+                      <Link href={`/admin/conocimientos-pedagogicos/autoreporte/${evaluacion.id}`}>
+                      {/* <Link href={`${currentUserData.rol === 3 ? `/docentes/conocimiento-pedagogico?idEvaluacion=${evaluacion.id}` : `/admin/docentes/conocimiento-pedagogico/${evaluacion.id}`}`}> */}
                       <div className={styles.evaluationName}>
                         {evaluacion.name || 'Sin nombre'}
                       </div>
@@ -380,6 +397,26 @@ const ConocimientoPedagogicosMain = () => {
               </div>
 
               <div className={styles.inputGroup}>
+                <label className={styles.inputLabel} htmlFor="rol">
+                  Dirigido a
+                </label>
+                <select
+                  id="rol"
+                  name="rol"
+                  value={formData.rol || 0}
+                  onChange={handleInputChange}
+                  className={styles.select}
+                >
+                  <option value={0}>Seleccionar destinatario</option>
+                  {opcionesDirigidoA.map((opcion) => (
+                    <option key={opcion.rol} value={opcion.rol}>
+                      {opcion.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.inputGroup}>
                 <label className={styles.checkboxLabel}>
                   <input
                     type="checkbox"
@@ -472,6 +509,26 @@ const ConocimientoPedagogicosMain = () => {
                   {optionsEvaluacion.tiposDeEvaluacion.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label className={styles.inputLabel} htmlFor="updateRol">
+                  Dirigido a
+                </label>
+                <select
+                  id="updateRol"
+                  name="rol"
+                  value={updateFormData.rol || 0}
+                  onChange={handleUpdateInputChange}
+                  className={styles.select}
+                >
+                  <option value={0}>Seleccionar destinatario</option>
+                  {opcionesDirigidoA.map((opcion) => (
+                    <option key={opcion.rol} value={opcion.rol}>
+                      {opcion.name}
                     </option>
                   ))}
                 </select>

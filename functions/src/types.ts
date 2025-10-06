@@ -19,10 +19,35 @@ export type Estudiante = {
       preguntaDocente?: string;
       puntaje?: string;
     }[];
+    region?: number;
 }
 
 export type Alternativa = {
     alternativa?: string | undefined;
     descripcion?: string | undefined;
     selected: boolean;
+  };
+  export type User = {
+    calificacion?:number,
+    nombres?: string;
+    apellidos?: string;
+    dni?: string;
+    institucion?: string;
+    modular?: string;
+    dniDirector?: string;
+    rolDirector?: number;
+    rol?: number;
+    region?: number;
+    caracteristicaCurricular?:string;
+    grados?:number[];
+    secciones?:number[];
+    area?:number;
+    distrito?:string;
+    genero?:string;
+    celular?:string;
+    nivel?:number;
+    rolDirectivo?:number,
+    tipoEspecialista?:number,
+    fechaEvaluacion?:Date,
+    docentesDelDirector?:User[]
   };

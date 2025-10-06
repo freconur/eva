@@ -56,6 +56,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 <li><Link href="/admin/especialistas/agregar-especialista" className={styles.submenuLink}>Crear usuario</Link></li>
                 <li><Link href="/admin/especialistas/evaluaciones-especialistas" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
                 <li><Link href="/admin/especialistas/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
+                <li><Link href="/admin/conocimientos-pedagogicos?rol=1" className={styles.submenuLink}>Autorreporte</Link></li>
               </ul>
             </li>
             <li className={styles.menuItem}>
@@ -68,6 +69,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 <li><Link href="/especialistas/agregar-directores" className={styles.submenuLink}>Crear usuario</Link></li>
                 <li><Link href="/especialistas/evaluaciones-director" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
                 <li><Link href="/especialistas/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
+                <li><Link href="/admin/conocimientos-pedagogicos?rol=2" className={styles.submenuLink}>Autorreporte</Link></li>
               </ul>
             </li>
             <li className={styles.menuItem}>
@@ -79,7 +81,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
               <ul className={`${styles.submenu} ${openDropdown === 'docentes' ? styles.show : ''}`}>
                 <li><Link href="/directores/evaluaciones-docentes" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
                 <li><Link href="/directores/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
-                <li><Link href="/admin/docentes/conocimiento-pedagogicos" className={styles.submenuLink}>Conocimiento pedagogico</Link></li>
+                <li><Link href="/admin/conocimientos-pedagogicos?rol=3" className={styles.submenuLink}>Autorreporte</Link></li>
               </ul>
             </li>
             <li className={styles.menuItem}>

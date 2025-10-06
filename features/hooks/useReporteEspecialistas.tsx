@@ -22,7 +22,7 @@ import {
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AppAction } from '../actions/appAction';
 import { currentMonth, currentYear } from '@/fuctions/dates';
-
+import { calcularEstadisticasOptimizadas } from '@/fuctions/funcione-calculo-estadistica';
 
 export const useReporteEspecialistas = () => {
   const dispatch = useGlobalContextDispatch();
@@ -30,12 +30,15 @@ export const useReporteEspecialistas = () => {
   const db = getFirestore();
 
   const getDataGraficoPieChart = async (idEvaluacion: string, mes: number) => {
-    try{
+    try {
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: true });
       const dataGraficoTendenciaNiveles: GraficoTendenciaNiveles[] = [];
-      const coll = collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`);
+      const coll = collection(
+        db,
+        `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`
+      );
       const cantidadDocumentos = await getCountFromServer(coll);
-  
+
       if (cantidadDocumentos.data().count > 0) {
         const qPrevioAlInicio = query(
           collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
@@ -57,12 +60,12 @@ export const useReporteEspecialistas = () => {
           where('puntaje', '<=', 800),
           where('puntaje', '>=', 522)
         );
-  
+
         const snapshotPrevioAlInicio = await getCountFromServer(qPrevioAlInicio);
         const snapshotEnInicio = await getCountFromServer(qEnInicio);
         const snapshotEnProceso = await getCountFromServer(qEnProceso);
         const snapshotSatisfactorio = await getCountFromServer(qSatisfactorio);
-  
+
         // Crear objeto para el gráfico de tendencia por niveles
         const objetoGraficoTendenciaNiveles = {
           mes: mes,
@@ -89,18 +92,17 @@ export const useReporteEspecialistas = () => {
         const dataGraficoTendenciaNivelesOrdenada = dataGraficoTendenciaNiveles.sort(
           (a, b) => a.mes - b.mes
         );
-  
+
         dispatch({
           type: AppAction.DATA_GRAFICO_PIE_CHART,
           payload: dataGraficoTendenciaNivelesOrdenada,
         });
       }
-    }catch(error){
+    } catch (error) {
       console.error('Error al obtener datos para gráfico de tendencia:', error);
-    }finally{
+    } finally {
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: false });
     }
-    
   };
   const getDataParaGraficoTendencia = async (rangoMes: number[], idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_GRAFICOS, payload: true });
@@ -421,7 +423,7 @@ export const useReporteEspecialistas = () => {
     });
 
     const resultado = Object.values(acumuladoPorPregunta);
-    
+
     dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: resultado });
     return dataFiltrada;
   };
@@ -621,7 +623,7 @@ export const useReporteEspecialistas = () => {
         }
       });
     }
-   /*  calcularEstadisticasOptimizadas(directoresValidos) */
+    /*  calcularEstadisticasOptimizadas(directoresValidos) */
     // Procesar solo los directores válidos
     directoresValidos.forEach((director, directorIndex) => {
       if (director.reporteEstudiantes && Array.isArray(director.reporteEstudiantes)) {
@@ -662,7 +664,7 @@ export const useReporteEspecialistas = () => {
     // Validación final
     if (directoresValidos.length > 0 && parseInt(cantidadMasComun) === resultado.length) {
       /*  console.log('✅ ÉXITO: Las longitudes coinciden correctamente') */
-      console.log('probando si es la logica rorrecta', resultado)
+      console.log('probando si es la logica rorrecta', resultado);
     } else if (directoresValidos.length === 0) {
       console.warn('⚠️ ADVERTENCIA: No hay directores válidos para procesar');
     } else {
@@ -709,49 +711,7 @@ export const useReporteEspecialistas = () => {
       // Aplanamos el array de arrays en un solo array
       const todasLasEvaluaciones = resultadosEvaluaciones.flat();
       console.log('todasLasEvaluaciones', todasLasEvaluaciones);
-      /*     todasLasEvaluaciones.forEach(estudiante => {
-      //satisfactorio  523 a 800
-      //en proceso 446 a 522
-      //en inicio 357 a 445
-      //previo al inicio 0 a 356
-      let puntajeAcumulado = 0;
-      estudiante.respuestas?.forEach(pregunta => {
-        pregunta.alternativas?.forEach(alternativas => {
-          if (alternativas.selected) {
-            if (alternativas.alternativa?.toLowerCase() === pregunta.respuesta?.toLowerCase()) {
-              puntajeAcumulado = puntajeAcumulado +Number(pregunta.puntaje)
-            }
-          }
-        })
-      })
-      estudiante.puntaje = puntajeAcumulado;
-      if(idEvaluacion==='ksor0YefuQFZy1kaWEO3'){
-        if (puntajeAcumulado >= 526 && puntajeAcumulado <= 800) {
-          estudiante.nivel = "satisfactorio";
-        } else if (puntajeAcumulado >= 422 && puntajeAcumulado <= 525) {
-          estudiante.nivel = "en proceso";
-        } else if (puntajeAcumulado >= 352 && puntajeAcumulado <= 421) {
-          estudiante.nivel = "en inicio";
-        } else if (puntajeAcumulado >= 0 && puntajeAcumulado <= 351) {
-          estudiante.nivel = "previo al inicio";
-        } else {
-          estudiante.nivel = "sin clasificar";
-        }
-      }else {
-        // Determinar el nivel según el puntaje
-        if (puntajeAcumulado >= 523 && puntajeAcumulado <= 800) {
-          estudiante.nivel = "satisfactorio";
-        } else if (puntajeAcumulado >= 446 && puntajeAcumulado <= 522) {
-          estudiante.nivel = "en proceso";
-        } else if (puntajeAcumulado >= 357 && puntajeAcumulado <= 445) {
-          estudiante.nivel = "en inicio";
-        } else if (puntajeAcumulado >= 0 && puntajeAcumulado <= 356) {
-          estudiante.nivel = "previo al inicio";
-        } else {
-          estudiante.nivel = "sin clasificar";
-        }
-      }
-    }) */
+
       return todasLasEvaluaciones;
     } catch (error) {
       console.error('Error en reporteDirectorEstudiantes:', error);
@@ -834,8 +794,30 @@ export const useReporteEspecialistas = () => {
 
     /* return resultado */
   };
+
+  const getReporteEspecialistaPorUgel = async (idEvaluacion: string, month: number) => {
+    try {
+      if (currentUserData.region) {
+        const pathRef = collection(db, `/evaluaciones/${idEvaluacion}/2025-${month}/`);
+        const q = query(pathRef, where('region', '==', currentUserData.region));
+        const querySnapshot = await getDocs(q);
+        const directoresUgel: User[] = [];
+        querySnapshot.forEach((doc) => {
+          directoresUgel.push(doc.data() as User);
+        });
+        console.log('directoresUgel', directoresUgel);
+        const estadisticas = calcularEstadisticasOptimizadas(directoresUgel);
+        console.log('estadisticas', estadisticas);
+        return directoresUgel;
+      }
+    } catch (error) {
+      console.error('Error en getReporteEspecialistaPorUgel:', error);
+      throw error;
+    }
+  };
   return {
     getAllDirectores,
+    getReporteEspecialistaPorUgel,
     generarReporteAllDirectores,
     getAllReporteDeDirectores,
     reporteParaTablaDeEspecialista,
