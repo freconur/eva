@@ -2,7 +2,7 @@ import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useTituloDeCabecera } from '@/features/hooks/useTituloDeCabecera'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
-import { HiPencil, HiPlus, HiArrowUp, HiArrowDown, HiEye, HiEyeOff, HiTrash } from 'react-icons/hi'
+import { HiPencil, HiPlus, HiArrowUp, HiArrowDown, HiEye, HiEyeOff, HiTrash, HiX } from 'react-icons/hi'
 import Loader from '@/components/loader/loader'
 import styles from './conocimientoPedagogico.module.css'
 
@@ -42,6 +42,9 @@ const [isSavingQuestionEdit, setIsSavingQuestionEdit] = useState(false)
 const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null)
 const [isDeletingQuestion, setIsDeletingQuestion] = useState(false)
 const [isLoadingId, setIsLoadingId] = useState(true)
+const [isEditingDescripcion, setIsEditingDescripcion] = useState(false)
+const [editDescripcionLink, setEditDescripcionLink] = useState('')
+const [isSavingDescripcion, setIsSavingDescripcion] = useState(false)
 
 // Función helper para convertir EscalaLikert[] a opcionesGlobales
 const convertEscalaLikertToOpciones = (escalaLikert: any[]): { name: string; value: number }[] => {
@@ -72,6 +75,34 @@ const handleSave = async () => {
 const handleCancel = () => {
   setEditTitulo('')
   setIsEditing(false)
+}
+
+const handleEditDescripcion = () => {
+  setEditDescripcionLink(evaluacionEscalaLikert.descripcionLink || '')
+  setIsEditingDescripcion(true)
+}
+
+const handleSaveDescripcion = async () => {
+  if (!editDescripcionLink.trim()) {
+    alert('La descripción no puede estar vacía')
+    return
+  }
+
+  setIsSavingDescripcion(true)
+  try {
+    await updateEvaluacionEscalaLikert(id as string, { descripcionLink: editDescripcionLink.trim() })
+    setIsEditingDescripcion(false)
+  } catch (error) {
+    console.error('Error al actualizar la descripción:', error)
+    alert('Error al actualizar la descripción. Intente nuevamente.')
+  } finally {
+    setIsSavingDescripcion(false)
+  }
+}
+
+const handleCancelDescripcion = () => {
+  setEditDescripcionLink('')
+  setIsEditingDescripcion(false)
 }
 
 const handleToggleVisibility = async () => {
@@ -495,7 +526,56 @@ if (isLoadingId) {
           </div>
         </div>
       </section>
-      
+
+      {/* Sección de descripción del link */}
+      <section className={styles.descripcionSection}>
+        <div className={styles.descripcionHeader}>
+          <h3 className={styles.descripcionTitle}>Descripción para Link de Documentos</h3>
+          <button 
+            className={`${styles.editButton} ${isEditingDescripcion ? styles.cancelButton : ''}`}
+            onClick={isEditingDescripcion ? handleCancelDescripcion : handleEditDescripcion}
+            disabled={isSavingDescripcion}
+            title={isEditingDescripcion ? 'Cancelar edición' : 'Editar descripción'}
+          >
+            {isEditingDescripcion ? (
+              <HiX className={styles.editIcon} />
+            ) : (
+              <HiPencil className={styles.editIcon} />
+            )}
+          </button>
+        </div>
+        
+        <div className={styles.editDescripcionContainer}>
+          <textarea
+            value={isEditingDescripcion ? editDescripcionLink : (evaluacionEscalaLikert.descripcionLink || '')}
+            onChange={(e) => setEditDescripcionLink(e.target.value)}
+            className={styles.descripcionTextarea}
+            placeholder="Ingrese la descripción para el link de documentos..."
+            rows={3}
+            disabled={!isEditingDescripcion}
+          />
+          {isEditingDescripcion && (
+            <div className={styles.editDescripcionActions}>
+              <button 
+                className={styles.cancelButton}
+                onClick={handleCancelDescripcion}
+                disabled={isSavingDescripcion}
+              >
+                Cancelar
+              </button>
+              <button 
+                className={styles.saveButton}
+                onClick={handleSaveDescripcion}
+                disabled={isSavingDescripcion || !editDescripcionLink.trim()}
+              >
+                {isSavingDescripcion ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+
       {/* Sección de preguntas */}
       <section className={styles.questionsSection}>
         <div className={styles.questionsHeader}>

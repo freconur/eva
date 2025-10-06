@@ -78,6 +78,13 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
                     className={styles.anclaje} >Cobertura curricular</Link></li>
                 </ul>
               </li>
+              <li className={styles.dropdown}>
+                <div className={styles.containerIcon}>
+                  <Link className={styles.ancla} href="/admin/conocimientos-pedagogicos?rol=2" aria-haspopup="true">
+                    Autorreporte
+                  </Link>
+                </div>
+              </li>
             </ul>
           </div>
           <SidebarInfoUser showSidebar={showSidebar} />
