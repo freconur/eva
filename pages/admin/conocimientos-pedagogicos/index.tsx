@@ -209,7 +209,7 @@ const route = useRouter()
           objectFit='fill'
           fetchPriority='high'
         />
-        <h1 className={styles.headerTitle}>Conocimiento Pedagógico</h1>
+        <h1 className={styles.headerTitle}>Autorreporte</h1>
       </div>
 
       {/* Tabla de evaluaciones */}
@@ -225,7 +225,7 @@ const route = useRouter()
               title="Agregar nueva evaluación"
             >
               <HiPlus className={styles.addIcon} />
-              Evaluación
+              Autorreporte
             </button>
           }
           {/* <button 

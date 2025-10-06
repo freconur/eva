@@ -193,7 +193,7 @@ const ConocimientoPedagogicosMain = () => {
           objectFit='fill'
           fetchPriority='high'
         />
-        <h1 className={styles.headerTitle}>Conocimiento Pedagógico</h1>
+        <h1 className={styles.headerTitle}>Autorreporte</h1>
       </div>
 
       {/* Tabla de evaluaciones */}
