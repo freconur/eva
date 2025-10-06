@@ -117,6 +117,21 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                   className={styles.anclaje} >Agregar evaluacion</Link></li> */}
               </ul>
             </li>
+            <li className={styles.dropdown}>
+              <div className={styles.containerIcon}>
+
+                <Link className={styles.ancla} href="/admin/conocimientos-pedagogicos?rol=1" aria-haspopup="true">
+                  Autorreporte
+                  {/* <label>Estudiantes</label> */}
+                </Link>
+              </div>
+              {/* <ul className={styles.dropdownContent} aria-label="submenu">
+                <li className={styles.containerAncla}><Link
+                  href="/especialistas/evaluaciones"
+                  className={styles.anclaje}
+                  id="ancla">Evaluaciones</Link></li>
+              </ul> */}
+            </li>
           </ul>
         </div>
         <SidebarInfoUser showSidebar={showSidebar} />

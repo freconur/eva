@@ -37,9 +37,9 @@ const SidebarDocentes = ({ showSidebar }: Props) => {
             </Link>
           </li>
               <li className='rounded-md text-white   flex items-center gap-x-4 cursor-pointer text-sm  mt-2   hover:border-[1px] hover:border-green-300 hover:text-green-300 duration-300 mx-1 whitespace-nowrap drop-shadow-lg'>
-                <Link href="/admin/docentes/conocimiento-pedagogicos" className='p-3'>
+                <Link href="/admin/conocimientos-pedagogicos?rol=3" className='p-3'>
                 <p className='flex-wrap w-[150px] flex'>
-                  Conocimiento Pedagogico
+                  Autorreporte
                 </p>
                 </Link>
               </li>

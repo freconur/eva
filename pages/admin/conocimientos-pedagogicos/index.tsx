@@ -29,14 +29,16 @@ const route = useRouter()
         mesDelExamen: '',
         tipoDeEvaluacion: '',
         active: true,
-        rol: 0
+        rol: 0,
+        descripcionLink: 'Link de tu Documento'
     })
     const [updateFormData, setUpdateFormData] = useState<Partial<EvaluacionLikert>>({
         name: '',
         mesDelExamen: '',
         tipoDeEvaluacion: '',
         active: true,
-        rol: 0
+        rol: 0,
+        descripcionLink: 'Link de tu Documento'
     })
     const [selectedEvaluationId, setSelectedEvaluationId] = useState<string | null>(null)
     const { currentUserData } = useGlobalContext()
@@ -70,7 +72,8 @@ const route = useRouter()
             mesDelExamen: '',
             tipoDeEvaluacion: '',
             active: true,
-            rol: 0
+            rol: 0,
+            descripcionLink: 'Link de tu Documento'
         })
     }
 
@@ -81,7 +84,8 @@ const route = useRouter()
             mesDelExamen: evaluacion.mesDelExamen || '',
             tipoDeEvaluacion: evaluacion.tipoDeEvaluacion || '',
             active: evaluacion.active ?? true,
-            rol: evaluacion.rol || 0
+            rol: evaluacion.rol || 0,
+            descripcionLink: evaluacion.descripcionLink || 'Link de tu Documento'
         })
         setShowUpdateModal(true)
     }
@@ -94,7 +98,8 @@ const route = useRouter()
             mesDelExamen: '',
             tipoDeEvaluacion: '',
             active: true,
-            rol: 0
+            rol: 0,
+            descripcionLink: 'Link de tu Documento'
         })
     }
 
@@ -266,7 +271,7 @@ const route = useRouter()
                   .map((evaluacion, index) => (
                   <tr key={evaluacion.id || index} className={styles.tableRow}>
                     <td className={styles.tableCell}>
-                      <Link href={`/admin/conocimientos-pedagogicos/autoreporte/${evaluacion.id}`}>
+                      <Link href={`${currentUserData.rol === 4 ? `/admin/conocimientos-pedagogicos/autoreporte/${evaluacion.id}` : `/autorreporte?idEvaluacion=${evaluacion.id}`}`}>
                       {/* <Link href={`${currentUserData.rol === 3 ? `/docentes/conocimiento-pedagogico?idEvaluacion=${evaluacion.id}` : `/admin/docentes/conocimiento-pedagogico/${evaluacion.id}`}`}> */}
                       <div className={styles.evaluationName}>
                         {evaluacion.name || 'Sin nombre'}
