@@ -13,6 +13,7 @@ import {
   onSnapshot,
   getAggregateFromServer,
   count,
+  setDoc,
 } from 'firebase/firestore';
 import { puntajePreguntasMatemticaProgresiva } from '@/fuctions/correccionPuntaje';
 import { calculoNivel, calculoNivelProgresivo, calculoPreguntasCorrectas, calculoPromedioGlobalPorGradoEvaluacionPRogresiva } from '../utils/calculoNivel';
@@ -277,9 +278,39 @@ export const useReporteDocente = () => {
           
           const estudiante = calculoPreguntasCorrectas(dataEstudiante);
 
+          console.log('estudiante',estudiante)
+          //como se ocasiono problemas con los docentes que evaluaron estudiantes con la spreguntas sin puntaje,
+          //entonces se agregara una validacion para poder actualzar o crear el documento del estudiuante.
+          /* const estudianteExiste = await getDoc(docRefEstudianteEvaluado);
+          if(estudianteExiste.exists()){
+            await updateDoc(docRefEstudianteEvaluado, estudiante);
+          }else{
+            await updateDoc(docRefEstudianteEvaluado, estudiante);
+          } */
           console.log('estudiante progresiva',estudiante)
-          await updateDoc(docRef, estudiante);
-          await updateDoc(docRefEstudianteEvaluado, estudiante);
+          const estudianteUpdate = {
+            dni: estudiante.dni,//defecto
+            nombresApellidos: estudiante.nombresApellidos,//defecto
+            grado: estudiante.grado,//defecto
+            seccion: estudiante.seccion,//defecto
+            genero: estudiante.genero,//defecto
+            respuestas: estudiante.respuestas,
+            region: currentUserData.region,
+            puntaje: estudiante.puntaje,
+            dniDocente: currentUserData.dni,
+            nivel: estudiante.nivel,//defecto
+            nivelData: estudiante.nivelData,
+          }
+          await setDoc(docRef, {
+            respuestas: estudianteUpdate.respuestas,
+            region: currentUserData.region,
+            puntaje: estudianteUpdate.puntaje,
+            dniDocente: currentUserData.dni,
+            nivel: estudianteUpdate.nivel,
+            nivelData: estudianteUpdate.nivelData,
+          },{merge: true});
+          await setDoc(docRefEstudianteEvaluado, estudianteUpdate, {merge: true});
+          /* await updateDoc(docRef, estudiante); */
           /* await setDoc(rutaEstudianteParaEvaluacion, documentoEstudiante); */
         } catch (error) {
           console.log('error', error);

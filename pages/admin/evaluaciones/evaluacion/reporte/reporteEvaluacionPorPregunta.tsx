@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
 import styles from './Reporte.module.css';
@@ -20,6 +20,24 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   iterateData,
   options,
 }) => {
+  const [popoverData, setPopoverData] = useState<{
+    preguntaId: string;
+    alternativa: string;
+    description: string;
+    show: boolean;
+  } | null>(null);
+
+  // Función para obtener la descripción de una alternativa
+  const getAlternativeDescription = (preguntaId: string, alternativaKey: string): string => {
+    const pregunta = preguntasMap.get(preguntaId);
+    if (!pregunta?.alternativas) return '';
+    
+    const alternativa = pregunta.alternativas.find(alt => 
+      alt.alternativa?.toLowerCase() === alternativaKey.toLowerCase()
+    );
+    
+    return alternativa?.descripcion || '';
+  };
   return (
     <div className={styles.reportContainer}>
       <h1 className={styles.reportTitle}>reporte de evaluación</h1>
@@ -43,15 +61,53 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
                   <div className={styles.statsContainer}>
                     {Object.entries(dat)
                       .filter(([key]) => key !== 'id' && key !== 'total')
-                      .map(([key, value]) => (
-                        <p key={key}>
-                          {key}: {value} |{' '}
-                          {dat.total === 0
-                            ? 0
-                            : ((100 * Number(value)) / Number(dat.total)).toFixed(0)}
-                          %
-                        </p>
-                      ))}
+                      .sort(([a], [b]) => a.localeCompare(b))
+                      .map(([key, value]) => {
+                        const description = getAlternativeDescription(dat.id || '', key);
+                        return (
+                          <div key={key} className={styles.statItemWrapper}>
+                            <p 
+                              className={styles.statItem}
+                              onMouseEnter={() => {
+                                if (description) {
+                                  setPopoverData({
+                                    preguntaId: dat.id || '',
+                                    alternativa: key,
+                                    description: description,
+                                    show: true
+                                  });
+                                }
+                              }}
+                              onMouseLeave={() => {
+                                setPopoverData(prev => prev ? { ...prev, show: false } : null);
+                              }}
+                            >
+                              {key}: {value} |{' '}
+                              {dat.total === 0
+                                ? 0
+                                : ((100 * Number(value)) / Number(dat.total)).toFixed(0)}
+                              %
+                            </p>
+                            
+                            {/* Popover */}
+                            {popoverData?.show && 
+                             popoverData.preguntaId === dat.id && 
+                             popoverData.alternativa === key && (
+                              <div className={styles.popover}>
+                                <div className={styles.popoverContent}>
+                                  <div className={styles.popoverHeader}>
+                                    <strong>{popoverData.alternativa}</strong>
+                                  </div>
+                                  <div className={styles.popoverBody}>
+                                    {popoverData.description}
+                                  </div>
+                                </div>
+                                <div className={styles.popoverArrow}></div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                   </div>
                   <div className={styles.answerContainer}>
                     respuesta:

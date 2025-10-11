@@ -560,6 +560,9 @@ export const useAgregarEvaluaciones = () => {
           grado: `${dataEstudiante.grado}`,
           seccion: `${dataEstudiante.seccion}`,
           genero: `${dataEstudiante.genero}`,
+          respuestas: pqConAlternativasAleatorias,
+          region: currentUserData.region,
+          dniDocente: currentUserData.dni,
         };
         // Solo agregar puntaje y nivel si tienen datos válidos
         if (
