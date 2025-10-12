@@ -1,4 +1,4 @@
-import { AppAction } from "../actions/appAction";
+import { AppAction } from '../actions/appAction';
 
 export type AppReducerValues = {
   testValue: boolean;
@@ -37,52 +37,52 @@ export type AppReducerValues = {
   evaluacionDesempeñoDocente: CrearEvaluacionDocente[];
   getPreguntaRespuestaDocentes: PRDocentes[];
   dataDocente: User;
-  warningDataDocente:string
-  dataEvaluacionDocente:DataEvaluacion,
-  reporteIndividualDocente: ReporteDocenteIndividual,
-  loaderModales:boolean,
-  evaluacionCurricular:EvaluacionCurricular[],
-  paHabilidad:EvaluacionHabilidad[],
-  evaluacionCurricularAlternativa:EvaluacionCurricularAlternativa[],
-  evaluacionCurricularById:EvaluacionCurricularAlternativa,
-  allEvaluacionesCurricularesDocente:EvaluacionCurricularAlternativa[],
-  caracteristicaCurricular:CaracteristicaCurricular[],
-  allEspecialistas:User[],
-  reporteCurricularDirector:DataEstadisticasCurricular[],
-  reportePreguntaHabilidad:EvaluacionHabilidad[],
-  testReporteDirector:UserEstudiante[],
-  allRespuestasEstudiantesDirector:UserEstudiante[],
-  dataFiltradaDirectorTabla:UserEstudiante[],
-  allEvaluacionesDirectorDocente:ReporteDocenteIndividual[],
-  dataFiltradaDirectorDocenteTabla:ReporteDocenteIndividual[],
-  reporteCurricularDirectorData:User[],
-  curricularDirectorDataFilter:User[],
-  allEvaluacionesEspecialistaDirector:ReporteDocenteIndividual[],
-  dataFiltradaEspecialistaDirectorTabla:ReporteDocenteIndividual[],
-  usuariosByRol:User[],
-  resultadoBusquedaUsuario:User,
-  lastVisible:any,
-  dataEvaluacionMediacionDirector:DataEvaluacion,
-  dataDocenteMaster:User,
-  warningEvaEstudianteSinRegistro:string | null,
-  allEvaluacionesEstudiantes:User[],
-  preguntasEstandar:PaHanilidad[],
-  estandaresCurriculares:EstandaresCurriculares[],
-  tituloCoberturaCurricular:string,
-  reporteCCADataEspecialista:ResultadosAcumuladosCC[],
-  ccDataFilterEspecialista:ResultadosAcumuladosCC[],
-  evaluacionEstudiante:UserEstudiante,
-  usuarioPorDni:User,
-  estudiantesDeEvaluacion:UserEstudiante[],
-  dataGraficoTendencia:DataGraficoTendencia[],
-  dataGraficoTendenciaNiveles:GraficoTendenciaNiveles[],
-  dataEstadisticaEvaluacion:DataEstadisticas[],
-  loaderGraficos:boolean,
-  loaderReportePorPregunta:boolean,
-  tiposDeEvaluacion:TipoDeEvaluacion[],
-  dataGraficoPieChart:GraficoPieChart[],
-  loaderDataGraficoPieChart:boolean,
-  preguntaEvaluacionLikert:PreguntasEvaluacionLikert[]
+  warningDataDocente: string;
+  dataEvaluacionDocente: DataEvaluacion;
+  reporteIndividualDocente: ReporteDocenteIndividual;
+  loaderModales: boolean;
+  evaluacionCurricular: EvaluacionCurricular[];
+  paHabilidad: EvaluacionHabilidad[];
+  evaluacionCurricularAlternativa: EvaluacionCurricularAlternativa[];
+  evaluacionCurricularById: EvaluacionCurricularAlternativa;
+  allEvaluacionesCurricularesDocente: EvaluacionCurricularAlternativa[];
+  caracteristicaCurricular: CaracteristicaCurricular[];
+  allEspecialistas: User[];
+  reporteCurricularDirector: DataEstadisticasCurricular[];
+  reportePreguntaHabilidad: EvaluacionHabilidad[];
+  testReporteDirector: UserEstudiante[];
+  allRespuestasEstudiantesDirector: UserEstudiante[];
+  dataFiltradaDirectorTabla: UserEstudiante[];
+  allEvaluacionesDirectorDocente: ReporteDocenteIndividual[];
+  dataFiltradaDirectorDocenteTabla: ReporteDocenteIndividual[];
+  reporteCurricularDirectorData: User[];
+  curricularDirectorDataFilter: User[];
+  allEvaluacionesEspecialistaDirector: ReporteDocenteIndividual[];
+  dataFiltradaEspecialistaDirectorTabla: ReporteDocenteIndividual[];
+  usuariosByRol: User[];
+  resultadoBusquedaUsuario: User;
+  lastVisible: any;
+  dataEvaluacionMediacionDirector: DataEvaluacion;
+  dataDocenteMaster: User;
+  warningEvaEstudianteSinRegistro: string | null;
+  allEvaluacionesEstudiantes: User[];
+  preguntasEstandar: PaHanilidad[];
+  estandaresCurriculares: EstandaresCurriculares[];
+  tituloCoberturaCurricular: string;
+  reporteCCADataEspecialista: ResultadosAcumuladosCC[];
+  ccDataFilterEspecialista: ResultadosAcumuladosCC[];
+  evaluacionEstudiante: UserEstudiante;
+  usuarioPorDni: User;
+  estudiantesDeEvaluacion: UserEstudiante[];
+  dataGraficoTendencia: DataGraficoTendencia[];
+  dataGraficoTendenciaNiveles: GraficoTendenciaNiveles[];
+  dataEstadisticaEvaluacion: DataEstadisticas[];
+  loaderGraficos: boolean;
+  loaderReportePorPregunta: boolean;
+  tiposDeEvaluacion: TipoDeEvaluacion[];
+  dataGraficoPieChart: GraficoPieChart[];
+  loaderDataGraficoPieChart: boolean;
+  preguntaEvaluacionLikert: PreguntasEvaluacionLikert[];
 };
 
 export type AppActions =
@@ -103,7 +103,7 @@ export type AppActions =
       payload: PreguntasRespuestas[];
     }
   | { type: AppAction.DIRECTORES; payload: User[] }
-  | { type: AppAction.ESTUDIANTES; payload: Estudiante[] | UserEstudiante[]}
+  | { type: AppAction.ESTUDIANTES; payload: Estudiante[] | UserEstudiante[] }
   | { type: AppAction.DOCENTES_DIRECTORES; payload: User[] }
   | { type: AppAction.DATA_ESTADISTICAS; payload: DataEstadisticas[] }
   | { type: AppAction.REPORTE_DIRECTOR; payload: DataEstadisticas[] }
@@ -140,9 +140,15 @@ export type AppActions =
   | { type: AppAction.LOADER_MODALES; payload: boolean }
   | { type: AppAction.EVALUACION_CURRICULAR; payload: EvaluacionCurricular[] }
   | { type: AppAction.PA_HABILIDAD; payload: EvaluacionHabilidad[] }
-  | { type: AppAction.EVALUACION_CURRICULAR_ALTERNATIVA; payload: EvaluacionCurricularAlternativa[] }
+  | {
+      type: AppAction.EVALUACION_CURRICULAR_ALTERNATIVA;
+      payload: EvaluacionCurricularAlternativa[];
+    }
   | { type: AppAction.EVALUACION_CURRICULAR_BY_ID; payload: EvaluacionCurricularAlternativa }
-  | { type: AppAction.ALL_EVALUACIONES_CURRICULARES_DOCENTE; payload: EvaluacionCurricularAlternativa[] }
+  | {
+      type: AppAction.ALL_EVALUACIONES_CURRICULARES_DOCENTE;
+      payload: EvaluacionCurricularAlternativa[];
+    }
   | { type: AppAction.CARACTERISTICA_CURRICULAR; payload: CaracteristicaCurricular[] }
   | { type: AppAction.ALL_ESPECIALISTAS; payload: User[] }
   | { type: AppAction.REPORT_CURRICULAR_DIRECTOR; payload: DataEstadisticasCurricular[] }
@@ -152,25 +158,28 @@ export type AppActions =
   | { type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA; payload: UserEstudiante[] }
   | { type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE; payload: ReporteDocenteIndividual[] }
   | { type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA; payload: ReporteDocenteIndividual[] }
-  | { type: AppAction.REPORT_CURRICULAR_DIRECTOR_DATA; payload: User[]}
+  | { type: AppAction.REPORT_CURRICULAR_DIRECTOR_DATA; payload: User[] }
   | { type: AppAction.CURRICULAR_DIRECTOR_DATA_FILTER; payload: User[] }
   | { type: AppAction.ALL_EVALUACIONES_ESPECIALISTA_DIRECTOR; payload: ReporteDocenteIndividual[] }
-  | { type: AppAction.DATA_FILTRADA_ESPECIALISTA_DIRECTOR_TABLA; payload: ReporteDocenteIndividual[] }
+  | {
+      type: AppAction.DATA_FILTRADA_ESPECIALISTA_DIRECTOR_TABLA;
+      payload: ReporteDocenteIndividual[];
+    }
   | { type: AppAction.USUARIOS_BY_ROL; payload: User[] }
   | { type: AppAction.RESULTADO_BUSQUEDA_USUARIO; payload: User }
   | { type: AppAction.LAST_VISIBLE; payload: any }
   | { type: AppAction.DATA_EVALUACION_MEDIACION_DIRECTOR; payload: DataEvaluacion }
   | { type: AppAction.DATA_DOCENTE_MASTER; payload: User }
-  | { type: AppAction.WARNING_EVA_ESTUDIANTE_SIN_REGISTRO; payload: string  | null}
+  | { type: AppAction.WARNING_EVA_ESTUDIANTE_SIN_REGISTRO; payload: string | null }
   | { type: AppAction.ALL_EVALUACIONES_ESTUDIANTES; payload: User[] }
   | { type: AppAction.PREGUNTAS_ESTANDAR; payload: PaHanilidad[] }
   | { type: AppAction.ESTADRES_CURRICULARES; payload: EstandaresCurriculares[] }
   | { type: AppAction.TITULO_COBERTURA_CURRICULAR; payload: string }
-  | { type: AppAction.REPORT_CCA_DATA_ESPECIALISTA; payload:ResultadosAcumuladosCC[]}
-  | { type: AppAction.CC_DATA_FILTER_ESPECIALISTA; payload:ResultadosAcumuladosCC[]}
-  | { type: AppAction.EVALUACION_ESTUDIANTE; payload:UserEstudiante}
+  | { type: AppAction.REPORT_CCA_DATA_ESPECIALISTA; payload: ResultadosAcumuladosCC[] }
+  | { type: AppAction.CC_DATA_FILTER_ESPECIALISTA; payload: ResultadosAcumuladosCC[] }
+  | { type: AppAction.EVALUACION_ESTUDIANTE; payload: UserEstudiante }
   | { type: AppAction.USUARIO_POR_DNI; payload: User }
-  | { type: AppAction.ESTUDIANTES_DE_EVALUACION; payload: UserEstudiante[]}
+  | { type: AppAction.ESTUDIANTES_DE_EVALUACION; payload: UserEstudiante[] }
   | { type: AppAction.DATA_GRAFICO_TENDENCIA; payload: DataGraficoTendencia[] }
   | { type: AppAction.DATA_GRAFICO_TENDENCIA_NIVELES; payload: GraficoTendenciaNiveles[] }
   | { type: AppAction.DATA_ESTADISTICA_EVALUACION; payload: DataEstadisticas[] }
@@ -179,9 +188,8 @@ export type AppActions =
   | { type: AppAction.TIPOS_DE_EVALUACION; payload: TipoDeEvaluacion[] }
   | { type: AppAction.DATA_GRAFICO_PIE_CHART; payload: GraficoPieChart[] }
   | { type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART; payload: boolean }
-  | { type: AppAction.PREGUNTAS_EVALUACION_ESCALA_LIKERT; payload: PreguntasEvaluacionLikert[]}
-    
-  
+  | { type: AppAction.PREGUNTAS_EVALUACION_ESCALA_LIKERT; payload: PreguntasEvaluacionLikert[] };
+
 export type LoginData = {
   usuario: string;
   contrasena: string;
@@ -238,29 +246,28 @@ export type Evaluaciones = {
   grado?: number;
   categoria?: number;
   rol?: number;
-  active?:boolean,
-  timestamp?:Date,
-  mesDelExamen?:string,
-  tipoEvaluacion?:string,
-  tipoDeEvaluacion?:string,
-  nivelYPuntaje?:NivelYPuntaje[],
-
+  active?: boolean;
+  timestamp?: Date;
+  mesDelExamen?: string;
+  tipoEvaluacion?: string;
+  tipoDeEvaluacion?: string;
+  nivelYPuntaje?: NivelYPuntaje[];
 };
 export type Evaluacion = {
-  id?:string,
-  nombre?:string,
-  grado?:number,
-  rol?: number,
-  categoria?:number,
-  active?:boolean,
-  timestamp?:Date,
-  mesDelExamen?:string,
-  tipoSDeEvaluacion?:TipoDeEvaluacion[],
-  tipoEvaluacion?:string,
-  tipoDeEvaluacion?:string
-  nivelYPuntaje?:NivelYPuntaje[],
+  id?: string;
+  nombre?: string;
+  grado?: number;
+  rol?: number;
+  categoria?: number;
+  active?: boolean;
+  timestamp?: Date;
+  mesDelExamen?: string;
+  tipoSDeEvaluacion?: TipoDeEvaluacion[];
+  tipoEvaluacion?: string;
+  tipoDeEvaluacion?: string;
+  nivelYPuntaje?: NivelYPuntaje[];
   idDocente?: string;
-}
+};
 export type UserEstudiante = {
   id?: string;
   nombresApellidos?: string;
@@ -279,7 +286,7 @@ export type UserEstudiante = {
 };
 
 export type Estudiante = {
-  id?:string
+  id?: string;
   respuestas?: PreguntasRespuestas[];
   dni?: string;
   nombresApellidos?: string;
@@ -295,7 +302,7 @@ export type Estudiante = {
   genero?: string;
 };
 export type User = {
-  calificacion?:number,
+  calificacion?: number;
   nombres?: string;
   apellidos?: string;
   dni?: string;
@@ -306,45 +313,52 @@ export type User = {
   rolDirector?: number;
   rol?: number;
   region?: number;
-  caracteristicaCurricular?:string;
-  grados?:number[];
-  secciones?:number[];
-  area?:number;
-  distrito?:string;
-  genero?:string;
-  celular?:string;
-  nivel?:number;
-  observacionCurricular?:AnexosCurricularType;
-  observacionSeguimientoRetroalimentacion?:{
+  grado?: number[];
+  caracteristicaCurricular?: string;
+  grados?: number[];
+  anosExperiencia?: string;
+  /* grado?: number[]; */
+  secciones?: number[];
+  area?: number;
+  distrito?: string;
+  genero?: string;
+  sexo?:{id?: number, name?: string};
+  celular?: string;
+  nivel?: number;
+  edad?: {id?: number, name?: string};
+  observacionCurricular?: AnexosCurricularType;
+  observacionSeguimientoRetroalimentacion?: {
     [key: string]: AnexosCurricularType;
   };
-  preguntasAlternativas?:PaHanilidad[],
-  rolDirectivo?:number,
-  tipoEspecialista?:number,
-  reporteEstudiantes?: DataEstadisticas[]
-  resultados?:DataEstadisticas[],
-  fechaEvaluacion?:Date,
-  docentesDelDirector?:User[]
-  estudiantesDelDocente?:UserEstudiante[],
-  conocimientoPedagogico?:ConocimientoPedagogico
-  resultadosSeguimientoRetroalimentacion?:PRDocentes[],
-  observacionesSeguimientoRetroalimentacion?:string
+  preguntasAlternativas?: PaHanilidad[];
+  rolDirectivo?: number;
+  tipoEspecialista?: number;
+  reporteEstudiantes?: DataEstadisticas[];
+  resultados?: DataEstadisticas[];
+  fechaEvaluacion?: Date;
+  docentesDelDirector?: User[];
+  estudiantesDelDocente?: UserEstudiante[];
+  conocimientoPedagogico?: ConocimientoPedagogico;
+  resultadosSeguimientoRetroalimentacion?: PRDocentes[];
+  observacionesSeguimientoRetroalimentacion?: string;
+  linkDocumentos?: string;
 };
 
 export type ConocimientoPedagogico = {
-  nombres?:string,
-  apellidos?:string,
-  dni?:string,
-  grado?:string[],
-  edad?:{id?:number,name?:string},
-  sexo?:{id?:number,name?:string},
-  institucion?:string,
-  dniDirector?:string,
-  rol?:number,
-  region?:number,
-  anosExperiencia?:string,
-  distrito?:string
-}
+  nombres?: string;
+  apellidos?: string;
+  dni?: string;
+  grado?: string[];
+  edad?: { id?: number; name?: string };
+  sexo?: { id?: number; name?: string };
+  institucion?: string;
+  dniDirector?: string;
+  rol?: number;
+  region?: number;
+  anosExperiencia?: string;
+  distrito?: string;
+  linkDocumentos?: string;
+};
 export type DataEstadisticas = {
   id?: string;
   a?: number;
@@ -355,9 +369,9 @@ export type DataEstadisticas = {
   order?: number;
 };
 export type ResultadosAcumuladosCC = {
-  acumuladoDirector?:DataEstadisticasCurricular[],
-  info?:User
-}
+  acumuladoDirector?: DataEstadisticasCurricular[];
+  info?: User;
+};
 export type DataEstadisticasCurricular = {
   id?: string;
   n?: number;
@@ -422,8 +436,8 @@ export type PRDocentes = {
   alternativas?: AlternativasDocente[];
   order?: number;
   id?: string;
-  calificacion?:number,
-  subOrden?:string
+  calificacion?: number;
+  subOrden?: string;
 };
 
 export interface AlternativasDocente {
@@ -431,183 +445,200 @@ export interface AlternativasDocente {
   descripcion?: string;
   alternativa?: string;
   selected?: boolean;
-  id?:string
+  id?: string;
 }
 
 export type DataEvaluacion = {
-  name?:string;
-  categoria?:string,
-}
-
+  name?: string;
+  categoria?: string;
+};
 
 export type NivelYPuntaje = {
-  nivel?:string,
-  max?:number,
-  min?:number,
-  color?:string,
-  id?:number,
-}
+  nivel?: string;
+  max?: number;
+  min?: number;
+  color?: string;
+  id?: number;
+};
 export type TipoDeEvaluacion = {
-  name?:string,
-  value?:string,
-}
+  name?: string;
+  value?: string;
+};
 export type ReporteDocenteIndividual = {
-  calificacion?:number,
-  dni?:string,
-  dniDirector?:string,
-  info?:User,
-  observacionesMonitoreo?:ObservacionMonitoreoDocente,
-  resultados?:PRDocentes[]
-}
+  calificacion?: number;
+  dni?: string;
+  dniDirector?: string;
+  info?: User;
+  observacionesMonitoreo?: ObservacionMonitoreoDocente;
+  resultados?: PRDocentes[];
+};
 export type ReporteEspecialistaIndividual = {
-  calificacion?:number,
-  dni?:string,
-  dniDirector?:string,
-  info?:User,
-  observacionesMonitoreo?:ObservacionMonitoreoDocente,
-  resultados?:PRDocentes[]
-}
-export type ObservacionMonitoreoDocente ={
-  fortalezasObservadas?:string,
-  oportunidadesDeMejora?:string, 
-  acuerdosYCompomisos?:string,
-}
+  calificacion?: number;
+  dni?: string;
+  dniDirector?: string;
+  info?: User;
+  observacionesMonitoreo?: ObservacionMonitoreoDocente;
+  resultados?: PRDocentes[];
+};
+export type ObservacionMonitoreoDocente = {
+  fortalezasObservadas?: string;
+  oportunidadesDeMejora?: string;
+  acuerdosYCompomisos?: string;
+};
 export type EvaluacionCurricular = {
-  id?:string,
-  name?:string,
-  order?:number,
-  nivelCurricular?:number,
-}
+  id?: string;
+  name?: string;
+  order?: number;
+  nivelCurricular?: number;
+};
 
 export type EvaluacionHabilidad = {
-  id?:string,
-  habilidad?:string,
-  order?:number
-}
+  id?: string;
+  habilidad?: string;
+  order?: number;
+};
 export type AlternativaCurricular = {
-  id?:string,
-  name?:string,
-  order?:number,
-  acronimo?:string,
-  selected?:boolean
-}
+  id?: string;
+  name?: string;
+  order?: number;
+  acronimo?: string;
+  selected?: boolean;
+};
 export type EvaluacionCurricularAlternativa = {
-  id?:string,
-  name?:string,
-  preguntasAlternativas?:PaHanilidad[]
-}
+  id?: string;
+  name?: string;
+  preguntasAlternativas?: PaHanilidad[];
+};
 
 export type PaHanilidad = {
-  alternativas?:AlternativaCurricular[],
-  habilidad?:string,
-  id?:string,
-  order?:number
-}
+  alternativas?: AlternativaCurricular[];
+  habilidad?: string;
+  id?: string;
+  order?: number;
+};
 
 export type CaracteristicaCurricular = {
-  id?:string,
-  name?:string,
-}
+  id?: string;
+  name?: string;
+};
 export type AnexosCurricularType = {
-  fortalezasObservadas?:string,
-  oportunidadesDeMejora?:string,
-  acuerdosYCompomisos?:string,
-  nivelCobertura?:NivelCobertura
-}
+  fortalezasObservadas?: string;
+  oportunidadesDeMejora?: string;
+  acuerdosYCompomisos?: string;
+  nivelCobertura?: NivelCobertura;
+};
 
 export type NivelCobertura = {
   /* cobertura?:string, */
-  alternativas?: AlternativasCobertura[],
-  id?:string,
-  order?:number
-}
+  alternativas?: AlternativasCobertura[];
+  id?: string;
+  order?: number;
+};
 export type AlternativasCobertura = {
-  alternativa?:string,
-  descripcion?:string,
-  selected?:boolean,
-  cobertura?:string,
-}
+  alternativa?: string;
+  descripcion?: string;
+  selected?: boolean;
+  cobertura?: string;
+};
 export type ReporteCurricularDirector = {
-  n?:number,
-  cn?:number,
-  av?:number,
-  f?:number,
-  s?:number,
-}
+  n?: number;
+  cn?: number;
+  av?: number;
+  f?: number;
+  s?: number;
+};
 export type ReporteDataEstadisticasCD = {
-  order?:number,
-  id?:string,
-  data?:ReporteCurricularDirector,
-  total?:number
-}
+  order?: number;
+  id?: string;
+  data?: ReporteCurricularDirector;
+  total?: number;
+};
 
 export type EstandaresCurriculares = {
-  id?:string,
-  nivel?:string,
-  name?:string
-}
+  id?: string;
+  nivel?: string;
+  name?: string;
+};
 
 export type DataGraficoTendencia = {
-  mes: number,
-  puntajeMedia: number
-}
+  mes: number;
+  puntajeMedia: number;
+};
 
 export type GraficoTendenciaNiveles = {
-  mes: number,
+  mes: number;
   niveles: {
-    id?:number,
-    nivel: string,
-    color?:string,
-    cantidadDeEstudiantes: number
-  }[],
-}
+    id?: number;
+    nivel: string;
+    color?: string;
+    cantidadDeEstudiantes: number;
+  }[];
+};
 
 export type GraficoPieChart = {
-  mes: number,
+  mes: number;
   niveles: {
-    color?:string,
-    id?:number,
-    nivel: string,
-    cantidadDeEstudiantes: number
-  }[],
-}
+    color?: string;
+    id?: number;
+    nivel: string;
+    cantidadDeEstudiantes: number;
+  }[];
+};
 
 export type EscalaLikert = {
-  name?:string,
-  value?:number,
-}
+  name?: string;
+  value?: number;
+  total?: number;
+};
 
 export type PreguntasEvaluacionLikert = {
-  pregunta?:string,
-  orden?:number,
-  id?:string,
-  respuesta?:number
-}
-export type EvaluacionLikert = {
-  name?:string,
-  puntaje?:EscalaLikert[],
-  id?:string,
-  mesDelExamen?:string,
-  tipoDeEvaluacion?:string,
-  active?:boolean,
-  rol?:number,
-  descripcionLink?:string
-}
+  pregunta?: string;
+  orden?: number;
+  id?: string;
+  respuesta?: number;
+};
 
+export type PreguntasEvaluacionLikertConResultado = {
+  pregunta?: string;
+  orden?: number;
+  id?: string;
+  respuesta?: number;
+  resultado?: EscalaLikert[];
+};
+export type EvaluacionLikert = {
+  name?: string;
+  puntaje?: EscalaLikert[];
+  id?: string;
+  mesDelExamen?: string;
+  tipoDeEvaluacion?: string;
+  active?: boolean;
+  rol?: number;
+  descripcionLink?: string;
+};
+export type EvaluacionesEscalaLikertUsario = {
+  id?: string;
+  datosDocente: User;
+  evaluacion?: {  
+    preguntas?: PreguntasEvaluacionLikert[];
+    respuestasCompletas?: boolean;
+    totalPreguntas?: number;
+  };
+  linkDocumentos?: string[];
+};
 export type DataUsuarioEvaluacionLikert = {
-  datosUsuario?:User,
-  evaluacion?:{
-    preguntas?:PreguntasEvaluacionLikert[],
-  }
-}
+  datosUsuario?: User;
+  evaluacion?: {
+    preguntas?: PreguntasEvaluacionLikert[];
+  };
+};
 
 export type PromedioGlobalPorGradoEvaluacionPRogresiva = {
-  totalEstudiantes: number,
-  promedioGlobal: number
-}
+  totalEstudiantes: number;
+  promedioGlobal: number;
+};
 
 export type PromedioGlobalPorMes = {
-  mes: number,
-  totalEstudiantes: number,
-  promedioGlobal: number
-}
+  mes: number;
+  totalEstudiantes: number;
+  promedioGlobal: number;
+};

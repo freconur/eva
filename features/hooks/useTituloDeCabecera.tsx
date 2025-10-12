@@ -17,7 +17,7 @@ import {
 } from 'firebase/firestore';
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { useEffect, useState, useRef } from 'react';
-import { DataUsuarioEvaluacionLikert, EscalaLikert, EvaluacionLikert, PreguntasEvaluacionLikert } from '../types/types';
+import { DataUsuarioEvaluacionLikert, EscalaLikert, EvaluacionesEscalaLikertUsario, EvaluacionLikert, PreguntasEvaluacionLikert, PreguntasEvaluacionLikertConResultado } from '../types/types';
 import { AppAction } from '../actions/appAction';
 import { currentYear } from '@/fuctions/dates';
 
@@ -28,7 +28,9 @@ export const useTituloDeCabecera = () => {
   const [tituloDeCabecera, setTituloDeCabecera] = useState<string>('');
   const [evaluacionEscalaLikert, setEvaluacionEscalaLikert] = useState<EvaluacionLikert>({});
   const [preguntasEscalaLikert, setPreguntaEscalaLikert] = useState<PreguntasEvaluacionLikert[]>([]);
-  
+  const [evaluacionesEscalaLikertUsuarios, setEvaluacionesEscalaLikertUsuarios] = useState<EvaluacionesEscalaLikertUsario[]>([]);
+  const [acumuladoDeDatosLikertParaGraficos, setAcumuladoDeDatosLikertParaGraficos] = useState<PreguntasEvaluacionLikertConResultado[]>([]);
+  const [escalaLikertByUsuario, setEscalaLikertByUsuario] = useState<EvaluacionesEscalaLikertUsario>()
   // Ref para guardar la referencia del unsubscribe
   const unsubscribeRef = useRef<(() => void) | null>(null);
   
@@ -227,8 +229,80 @@ export const useTituloDeCabecera = () => {
     const preguntaRef = doc(db, rutaPregunta, preguntaId);
     await deleteDoc(preguntaRef);
   }
+
+
+  const calculoDeDatosParaGraficoEscalaLikert = (data: EvaluacionesEscalaLikertUsario[], evaluacionEscalaLikert: EvaluacionLikert) => {
+    // Obtener las preguntas de la evaluación (asumiendo que todas las evaluaciones tienen las mismas preguntas)
+    const preguntasEvaluacion = data[0]?.evaluacion?.preguntas || [];
+    // Para cada pregunta, calcular los resultados por valor de escala
+    const resultadoPorPregunta = preguntasEvaluacion.map(pregunta => {
+      // Inicializar contadores para esta pregunta
+      const contadoresPorValor = [...(evaluacionEscalaLikert.puntaje || [])].map(item => ({ ...item, total: 0 }));
+      // Contar respuestas para esta pregunta específica
+      data.forEach((usuario) => {
+        if (usuario.evaluacion?.preguntas) {
+          const preguntaUsuario = usuario.evaluacion.preguntas.find(p => p.id === pregunta.id);
+          if (preguntaUsuario) {
+            const elementoEncontrado = contadoresPorValor.find(item => item.value === preguntaUsuario.respuesta);
+            if (elementoEncontrado) {
+              elementoEncontrado.total = (elementoEncontrado.total || 0) + 1;
+            }
+          }
+        }
+      });
+      return {
+        resultado: contadoresPorValor,
+        order: pregunta.orden,
+        pregunta: pregunta.pregunta,
+        id: pregunta.id
+      };
+    });
+    setAcumuladoDeDatosLikertParaGraficos(resultadoPorPregunta);
+    /* console.log('resultado final por pregunta', resultadoPorPregunta);
+    return resultadoPorPregunta; */
+  }
+  const getEvaluacionesEscalaLikert = async (id: string, evaluacionEscalaLikert: EvaluacionLikert) => {
+    const pathRef = collection(db, `/evaluaciones-escala-likert/${id}/${currentYear}-9`);
+    
+    try {
+      const querySnapshot = await getDocs(pathRef);
+      const data: EvaluacionesEscalaLikertUsario[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        const docData = doc.data();
+        data.push({ 
+          ...docData, 
+          id: doc.id,
+          datosDocente: docData.datosDocente || []
+        });
+      });
+      
+      // Actualizar el estado con los datos obtenidos
+      setEvaluacionesEscalaLikertUsuarios(data);
+      
+      // Ejecutar el cálculo solo después de que getDocs termine
+      calculoDeDatosParaGraficoEscalaLikert(data, evaluacionEscalaLikert);
+    } catch (error) {
+      console.error('Error al obtener evaluaciones escala likert:', error);
+      setEvaluacionesEscalaLikertUsuarios([]);
+    }
+  }
+
+  const evaluacionEscalaLikertByUsuario = async(id: string) => {
+    const pathRef = doc(db, `/evaluaciones-escala-likert/${id}/${currentYear}-9/`, `${currentUserData.dni}`);
+    console.log(`/evaluaciones-escala-likert/${id}/${currentYear}-9/`, `${currentUserData.dni}`)
+    onSnapshot(pathRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setEscalaLikertByUsuario(docSnap.data() as EvaluacionesEscalaLikertUsario)
+      }
+    });
+    return escalaLikertByUsuario
+  }
   return {
+    evaluacionEscalaLikertByUsuario,
+    escalaLikertByUsuario,
     getTituloDeCabecera,
+    getEvaluacionesEscalaLikert,
     tituloDeCabecera,
     updateTituloDeCabecera,
     getPreguntasEvaluacionEscalaLikert,
@@ -244,6 +318,8 @@ export const useTituloDeCabecera = () => {
     updatePreguntaTexto,
     updateEvaluacionEscalaLikert,
     deletePreguntaEvaluacionEscalaLikert,
-    preguntasEscalaLikert
+    preguntasEscalaLikert,
+    evaluacionesEscalaLikertUsuarios,
+    acumuladoDeDatosLikertParaGraficos,
   };
 };

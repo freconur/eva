@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './conocimiento-pedagogico.module.css';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import type { ConocimientoPedagogico } from '@/features/types/types';
-import {genero, rangoEdad, gradosDeColegio, regionTexto} from '@/fuctions/regiones'
+import {genero, rangoEdad, gradosDeColegio, regionTexto, regiones} from '@/fuctions/regiones'
 import { distritosPuno } from '@/fuctions/provinciasPuno';
 import { useTituloDeCabecera } from '@/features/hooks/useTituloDeCabecera';
 import { useRouter } from 'next/router';
@@ -24,13 +24,16 @@ const { idEvaluacion } = router.query
     region: 0,
     anosExperiencia: '',
     distrito: '',
+    linkDocumentos: '',
   });
 
   const [distritosDisponibles, setDistritosDisponibles] = useState<string[]>([]);
   const [respuestasEvaluacion, setRespuestasEvaluacion] = useState<{[key: string]: number}>({});
   const [linkDocumentos, setLinkDocumentos] = useState<string>('');
   const [linkError, setLinkError] = useState<string>('');
-  const { getEvaluacionEscalaLikert,getPreguntasEvaluacionEscalaLikert, saveEvaluacionEscalaLikert, evaluacionEscalaLikert } = useTituloDeCabecera()
+  const { getEvaluacionEscalaLikert,getPreguntasEvaluacionEscalaLikert, saveEvaluacionEscalaLikert, evaluacionEscalaLikert,evaluacionEscalaLikertByUsuario,escalaLikertByUsuario } = useTituloDeCabecera()
+
+
   // Función para validar URL
   const validarURL = (url: string): boolean => {
     try {
@@ -40,13 +43,16 @@ const { idEvaluacion } = router.query
       return false;
     }
   };
-
+  
   // Función para obtener distritos según la región
   const obtenerDistritosPorRegion = (regionId: number) => {
     const provincia = distritosPuno.find(p => p.id === regionId);
     return provincia ? provincia.distritos : [];
   };
-
+  
+ 
+  
+  
   // Actualizar distritos cuando cambie la región
   useEffect(() => {
     if (datos.region && datos.region > 0) {
@@ -62,27 +68,34 @@ const { idEvaluacion } = router.query
     }
   }, [datos.region]);
 
-  // Actualizar datos cuando currentUserData esté disponible
+  // Actualizar datos cuando tengamos los 3 datos necesarios
   useEffect(() => {
-    if (currentUserData) {
+    // Solo ejecutar cuando tengamos los 3 datos necesarios
+    if (currentUserData.dni && router.query.idEvaluacion && escalaLikertByUsuario?.datosDocente) {
       setDatos(prev => ({
         ...prev,
         nombres: currentUserData.nombres || prev.nombres,
         apellidos: currentUserData.apellidos || prev.apellidos,
         dni: currentUserData.dni || prev.dni,
-        sexo: currentUserData.conocimientoPedagogico?.sexo || prev.sexo,
+        sexo: currentUserData.conocimientoPedagogico?.sexo || escalaLikertByUsuario?.datosDocente?.sexo || prev.sexo,
         institucion: currentUserData.institucion || prev.institucion,
-        region: currentUserData.region || prev.region,
-        distrito: currentUserData.distrito || prev.distrito,
-        grado: currentUserData.grados ? currentUserData.grados.map(g => g.toString()) : prev.grado,
-        edad: currentUserData.conocimientoPedagogico?.edad || prev.edad,
+        region: currentUserData.region || escalaLikertByUsuario?.datosDocente?.region || prev.region,
+        distrito: currentUserData.distrito || escalaLikertByUsuario?.datosDocente?.distrito || prev.distrito,
+        grado: currentUserData?.grados?.map(g => g.toString()) || escalaLikertByUsuario?.datosDocente?.grado?.map(g => g.toString()) || prev.grado,
+        edad: currentUserData.conocimientoPedagogico?.edad || escalaLikertByUsuario?.datosDocente?.edad || prev.edad,
+        anosExperiencia: currentUserData.anosExperiencia || escalaLikertByUsuario?.datosDocente?.anosExperiencia || prev.anosExperiencia,
+        linkDocumentos: escalaLikertByUsuario?.linkDocumentos 
+          ? (Array.isArray(escalaLikertByUsuario.linkDocumentos) 
+              ? escalaLikertByUsuario.linkDocumentos[0] 
+              : escalaLikertByUsuario.linkDocumentos)
+          : prev.linkDocumentos,
       }));
+      
+      // Ejecutar las peticiones solo cuando tengamos todos los datos
+      getEvaluacionEscalaLikert(`${router.query.idEvaluacion}`)
+      getPreguntasEvaluacionEscalaLikert(`${router.query.idEvaluacion}`)
     }
-    getEvaluacionEscalaLikert(`${idEvaluacion}`)
-    getPreguntasEvaluacionEscalaLikert(`${idEvaluacion}`)
-  }, [currentUserData.dni, router.query.idEvaluacion]);
-console.log('evaluacionEscalaLikert', evaluacionEscalaLikert)
-console.log('preguntaEvaluacionLikert', preguntaEvaluacionLikert)
+  }, [currentUserData.dni, router.query.idEvaluacion, escalaLikertByUsuario?.datosDocente]);
   const handleInputChange = (field: keyof ConocimientoPedagogico, value: string | string[] | {id?:number,name?:string}) => {
     setDatos((prev) => ({
       ...prev,
@@ -110,6 +123,13 @@ console.log('preguntaEvaluacionLikert', preguntaEvaluacionLikert)
     setDatos((prev) => ({
       ...prev,
       sexo: opcion
+    }));
+  };
+
+  const handleRegionChange = (opcion: {id: number, region: string}) => {
+    setDatos((prev) => ({
+      ...prev,
+      region: opcion.id
     }));
   };
 
@@ -165,7 +185,7 @@ console.log('preguntaEvaluacionLikert', preguntaEvaluacionLikert)
       );
 
     // Validar link de documentos
-    const linkDocumentosValido = (linkDocumentos?.trim() || '') !== '' && validarURL(linkDocumentos);
+    const linkDocumentosValido = (datos.linkDocumentos?.trim() || '') !== '' && validarURL(datos.linkDocumentos || '');
 
     return datosPersonalesBasicos && 
            datosPersonalesAdicionales && 
@@ -206,8 +226,39 @@ console.log('preguntaEvaluacionLikert', preguntaEvaluacionLikert)
     // Aquí puedes agregar la lógica para enviar los datos a tu backend
     alert('Autoevaluación enviada correctamente');
   };
-  console.log('currentUserData', currentUserData);
-  /* console.log('datos', datos); */
+  useEffect(() => {
+    evaluacionEscalaLikertByUsuario(`${idEvaluacion}`)
+  },[currentUserData.dni])
+
+
+  // Autocompletar respuestas de evaluación cuando escalaLikertByUsuario existe
+  useEffect(() => {
+    if (escalaLikertByUsuario?.evaluacion?.preguntas && escalaLikertByUsuario.evaluacion.preguntas.length > 0) {
+      const respuestasExistentes: {[key: string]: number} = {};
+      
+      escalaLikertByUsuario.evaluacion.preguntas.forEach(pregunta => {
+        if (pregunta.id && pregunta.respuesta !== undefined) {
+          respuestasExistentes[pregunta.id] = pregunta.respuesta;
+        }
+      });
+      
+      setRespuestasEvaluacion(respuestasExistentes);
+    }
+  }, [escalaLikertByUsuario]);
+
+  // Autocompletar link de documentos cuando escalaLikertByUsuario existe
+  useEffect(() => {
+    if (escalaLikertByUsuario?.linkDocumentos) {
+      const linkValue = Array.isArray(escalaLikertByUsuario.linkDocumentos) 
+        ? escalaLikertByUsuario.linkDocumentos[0] 
+        : escalaLikertByUsuario.linkDocumentos;
+      setLinkDocumentos(linkValue);
+      setDatos(prev => ({
+        ...prev,
+        linkDocumentos: linkValue
+      }));
+    }
+  }, [escalaLikertByUsuario]);
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -227,7 +278,6 @@ console.log('preguntaEvaluacionLikert', preguntaEvaluacionLikert)
               onChange={(e) => handleInputChange('nombres', e.target.value)}
               className={styles.textInput}
               required
-              disabled
             />
           </div>
 
@@ -239,7 +289,6 @@ console.log('preguntaEvaluacionLikert', preguntaEvaluacionLikert)
               onChange={(e) => handleInputChange('apellidos', e.target.value)}
               className={styles.textInput}
               required
-              disabled
             />
           </div>
 
@@ -251,7 +300,6 @@ console.log('preguntaEvaluacionLikert', preguntaEvaluacionLikert)
               onChange={(e) => handleInputChange('dni', e.target.value)}
               className={styles.textInput}
               required
-              disabled
             />
           </div>
 
@@ -330,20 +378,30 @@ console.log('preguntaEvaluacionLikert', preguntaEvaluacionLikert)
                 onChange={(e) => handleInputChange('institucion', e.target.value)}
                 className={styles.textInput}
                 required
-                disabled
               />
             </div>
           )}
            <div className={styles.fieldGroup}>
              <label className={styles.label}>Región:</label>
-             <input
-               type="text"
-               value={regionTexto(datos.region?.toString() || '') || ''}
-               onChange={(e) => handleInputChange('region', e.target.value)}
+             <select
+               value={datos.region || ''}
+               onChange={(e) => {
+                 const regionId = parseInt(e.target.value);
+                 const region = regiones.find(r => r.id === regionId);
+                 if (region) {
+                   handleRegionChange(region);
+                 }
+               }}
                className={styles.textInput}
                required
-               disabled
-             />
+             >
+               <option value="">Seleccione una región</option>
+               {regiones.map((region) => (
+                 <option key={region.id} value={region.id}>
+                   {region.region}
+                 </option>
+               ))}
+             </select>
            </div>
 
           {currentUserData?.rol !== 1 && (
@@ -354,7 +412,6 @@ console.log('preguntaEvaluacionLikert', preguntaEvaluacionLikert)
                 onChange={(e) => handleInputChange('distrito', e.target.value)}
                 className={styles.textInput}
                 required
-                disabled={distritosDisponibles.length === 0}
               >
                 <option value="">Seleccione un distrito</option>
                 {distritosDisponibles.map((distrito) => (
@@ -472,8 +529,12 @@ console.log('preguntaEvaluacionLikert', preguntaEvaluacionLikert)
           <label className={styles.label}>Link de documentos:</label>
           <input
             type="url"
-            value={linkDocumentos}
-            onChange={(e) => handleLinkChange(e.target.value)}
+            value={datos.linkDocumentos || ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              handleInputChange('linkDocumentos', value);
+              handleLinkChange(value);
+            }}
             className={`${styles.textInput} ${linkError ? styles.errorInput : ''}`}
             placeholder="https://ejemplo.com/documentos"
             required

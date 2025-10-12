@@ -1,6 +1,7 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useTituloDeCabecera } from '@/features/hooks/useTituloDeCabecera'
 import { useRouter } from 'next/router'
+import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
 import { HiPencil, HiPlus, HiArrowUp, HiArrowDown, HiEye, HiEyeOff, HiTrash, HiX } from 'react-icons/hi'
 import Loader from '@/components/loader/loader'
@@ -522,6 +523,14 @@ if (isLoadingId) {
                   <HiEyeOff className={styles.visibilityIcon} />
                 )}
               </button>
+              <Link href={`/admin/conocimientos-pedagogicos/autoreporte/reporte/${id}`}>
+                <button 
+                  className={styles.reportButton}
+                  title="Ver reporte"
+                >
+                  Reporte
+                </button>
+              </Link>
             </div>
           </div>
         </div>
