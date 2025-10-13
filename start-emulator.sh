@@ -16,9 +16,9 @@ echo "  - Memoria disponible: $(free -h | grep Mem | awk '{print $7}')"
 echo ""
 
 # Directorio de la base de datos
-#IMPORT_PATH="./eva-ugel-emulator-firestore/2025-08-30T23:48:52_3980"
-IMPORT_PATH="./eva-ugel-emulator-firestore/persistent-data-16"
-EXPORT_DIR="./eva-ugel-emulator-firestore/persistent-data-17"
+#IMPORT_PATH="./eva-ugel-emulator-firestore/2025-10-13T04:03:20_9655"
+IMPORT_PATH="./eva-ugel-emulator-firestore/2025-10-13T04:03:20_9655"
+EXPORT_DIR="./eva-ugel-emulator-firestore/correcion-data-2"
 
 # Verificar que existe la base de datos
 if [ ! -d "$IMPORT_PATH" ]; then

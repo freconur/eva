@@ -30,6 +30,7 @@ import { distritosPuno } from '@/fuctions/provinciasPuno';
 import { exportDirectorDocenteDataToExcel } from '@/features/utils/excelExport';
 import { useGenerarReporte } from '@/features/hooks/useGenerarReporte';
 import { useCrearEstudiantesDeDocente } from '@/features/hooks/useCrearEstudiantesDeDocente';
+import { useCrearPuntajeProgresiva } from '@/features/hooks/useCrearPuntajeProgresiva';
 import AcordeonGraficosTendencia from './AcordeonGraficosTendencia';
 import AcordeonReportePregunta from './AcordeonReportePregunta';
 import PieChartComponent from './PieChartComponent';
@@ -68,6 +69,18 @@ const Reporte = () => {
     obtenerMensajeResumen,
     obtenerEstadisticas
   } = useCrearEstudiantesDeDocente();
+
+  // Hook para crear puntaje progresiva
+  const {
+    loading: loadingCrearPuntajeProgresiva,
+    error: errorCrearPuntajeProgresiva,
+    resultado: resultadoCrearPuntajeProgresiva,
+    progreso: progresoCrearPuntajeProgresiva,
+    ejecutarCrearPuntajeProgresiva,
+    limpiarEstado: limpiarEstadoCrearPuntajeProgresiva,
+    obtenerMensajeResumen: obtenerMensajeResumenPuntajeProgresiva,
+    obtenerEstadisticas: obtenerEstadisticasPuntajeProgresiva
+  } = useCrearPuntajeProgresiva();
 
   const [rangoMes, setRangoMes] = useState<number[]>([]);
 
@@ -123,6 +136,35 @@ const Reporte = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       alert(`❌ Error al crear estudiantes de docentes:\n${errorMessage}`);
+    }
+  };
+
+  // Función para manejar la creación de puntaje progresiva
+  const handleCrearPuntajeProgresiva = async () => {
+    try {
+      // Mostrar confirmación antes de proceder
+      const confirmacion = window.confirm(
+        '⚠️ ADVERTENCIA: Esta operación puede tomar varios minutos.\n\n' +
+        '¿Estás seguro de que quieres continuar con la generación de puntaje progresiva?\n\n' +
+        'Esta acción procesará todos los estudiantes del sistema.'
+      );
+
+      if (!confirmacion) {
+        return;
+      }
+
+      // Limpiar estado anterior
+      limpiarEstadoCrearPuntajeProgresiva();
+      
+      // Ejecutar la función
+      await ejecutarCrearPuntajeProgresiva(`${monthSelected}`, `${route.query.idEvaluacion}`, evaluacion, preguntasRespuestas);
+      
+      // Mostrar mensaje de éxito
+      alert('✅ Puntaje progresiva generado exitosamente!\n\n' + obtenerMensajeResumenPuntajeProgresiva());
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert(`❌ Error al generar puntaje progresiva:\n${errorMessage}`);
     }
   };
 
@@ -521,6 +563,26 @@ useEffect(() => {
                 'Crear estudiantes de docentes'
               )}
             </button>
+
+            {/* Botón para generar puntaje progresiva */}
+            {
+              currentUserData?.rol === 4 && (
+            <button
+              className={styles.exportButton}
+              onClick={handleCrearPuntajeProgresiva}
+              disabled={loadingCrearPuntajeProgresiva}
+            >
+              {loadingCrearPuntajeProgresiva ? (
+                <>
+                  <RiLoader4Line className={styles.loaderIcon} />
+                  Generando puntaje progresiva...
+                </>
+              ) : (
+                'Generar puntaje progresiva'
+              )}
+            </button>
+              )
+            }
             
             {/* Indicador de progreso para crear estudiantes */}
             {loadingCrearEstudiantes && progresoCrearEstudiantes && (
@@ -554,6 +616,41 @@ useEffect(() => {
             {resultadoCrearEstudiantes && !loadingCrearEstudiantes && (
               <div className={styles.successMessage}>
                 ✅ {obtenerMensajeResumen()}
+              </div>
+            )}
+
+            {/* Indicador de progreso para puntaje progresiva */}
+            {loadingCrearPuntajeProgresiva && progresoCrearPuntajeProgresiva && (
+              <div className={styles.progressContainer}>
+                <div className={styles.progressBar}>
+                  <div 
+                    className={styles.progressFill} 
+                    style={{ width: `${progresoCrearPuntajeProgresiva.porcentaje}%` }}
+                  ></div>
+                </div>
+                <div className={styles.progressText}>
+                  Procesando: {progresoCrearPuntajeProgresiva.estudiantesProcesados}/{progresoCrearPuntajeProgresiva.totalEstudiantes} estudiantes 
+                  ({progresoCrearPuntajeProgresiva.porcentaje.toFixed(1)}%)
+                </div>
+                <div className={styles.progressDetails}>
+                  Estudiantes: {progresoCrearPuntajeProgresiva.estudiantesProcesados} | 
+                  Lotes: {progresoCrearPuntajeProgresiva.lotesCompletados} | 
+                  Errores: {progresoCrearPuntajeProgresiva.erroresEncontrados}
+                </div>
+              </div>
+            )}
+
+            {/* Mensaje de error para puntaje progresiva si existe */}
+            {errorCrearPuntajeProgresiva && (
+              <div className={styles.errorMessage}>
+                ❌ Error: {errorCrearPuntajeProgresiva}
+              </div>
+            )}
+
+            {/* Mensaje de éxito para puntaje progresiva si se completó */}
+            {resultadoCrearPuntajeProgresiva && !loadingCrearPuntajeProgresiva && (
+              <div className={styles.successMessage}>
+                ✅ {obtenerMensajeResumenPuntajeProgresiva()}
               </div>
             )}
 

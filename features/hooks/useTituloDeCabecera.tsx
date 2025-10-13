@@ -294,9 +294,9 @@ export const useTituloDeCabecera = () => {
     onSnapshot(pathRef, (docSnap) => {
       if (docSnap.exists()) {
         setEscalaLikertByUsuario(docSnap.data() as EvaluacionesEscalaLikertUsario)
+        return escalaLikertByUsuario
       }
     });
-    return escalaLikertByUsuario
   }
   return {
     evaluacionEscalaLikertByUsuario,

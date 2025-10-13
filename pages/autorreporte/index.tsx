@@ -6,11 +6,13 @@ import {genero, rangoEdad, gradosDeColegio, regionTexto, regiones} from '@/fucti
 import { distritosPuno } from '@/fuctions/provinciasPuno';
 import { useTituloDeCabecera } from '@/features/hooks/useTituloDeCabecera';
 import { useRouter } from 'next/router';
+import useUsuario from '@/features/hooks/useUsuario';
 
 
 
 const ConocimientoPedagogico = () => {
   const { currentUserData, preguntaEvaluacionLikert } = useGlobalContext();
+  const { getUserData } = useUsuario()
 const router = useRouter()
 const { idEvaluacion } = router.query
   const [datos, setDatos] = useState<ConocimientoPedagogico>({
@@ -32,7 +34,6 @@ const { idEvaluacion } = router.query
   const [linkDocumentos, setLinkDocumentos] = useState<string>('');
   const [linkError, setLinkError] = useState<string>('');
   const { getEvaluacionEscalaLikert,getPreguntasEvaluacionEscalaLikert, saveEvaluacionEscalaLikert, evaluacionEscalaLikert,evaluacionEscalaLikertByUsuario,escalaLikertByUsuario } = useTituloDeCabecera()
-
 
   // Función para validar URL
   const validarURL = (url: string): boolean => {
@@ -68,34 +69,75 @@ const { idEvaluacion } = router.query
     }
   }, [datos.region]);
 
-  // Actualizar datos cuando tengamos los 3 datos necesarios
+  // Actualizar datos cuando tengamos los datos necesarios
   useEffect(() => {
-    // Solo ejecutar cuando tengamos los 3 datos necesarios
-    if (currentUserData.dni && router.query.idEvaluacion && escalaLikertByUsuario?.datosDocente) {
-      setDatos(prev => ({
-        ...prev,
-        nombres: currentUserData.nombres || prev.nombres,
-        apellidos: currentUserData.apellidos || prev.apellidos,
-        dni: currentUserData.dni || prev.dni,
-        sexo: currentUserData.conocimientoPedagogico?.sexo || escalaLikertByUsuario?.datosDocente?.sexo || prev.sexo,
-        institucion: currentUserData.institucion || prev.institucion,
-        region: currentUserData.region || escalaLikertByUsuario?.datosDocente?.region || prev.region,
-        distrito: currentUserData.distrito || escalaLikertByUsuario?.datosDocente?.distrito || prev.distrito,
-        grado: currentUserData?.grados?.map(g => g.toString()) || escalaLikertByUsuario?.datosDocente?.grado?.map(g => g.toString()) || prev.grado,
-        edad: currentUserData.conocimientoPedagogico?.edad || escalaLikertByUsuario?.datosDocente?.edad || prev.edad,
-        anosExperiencia: currentUserData.anosExperiencia || escalaLikertByUsuario?.datosDocente?.anosExperiencia || prev.anosExperiencia,
-        linkDocumentos: escalaLikertByUsuario?.linkDocumentos 
-          ? (Array.isArray(escalaLikertByUsuario.linkDocumentos) 
-              ? escalaLikertByUsuario.linkDocumentos[0] 
-              : escalaLikertByUsuario.linkDocumentos)
-          : prev.linkDocumentos,
-      }));
+    // Solo ejecutar cuando tengamos currentUserData y idEvaluacion
+    if (currentUserData.dni && router.query.idEvaluacion) {
+      setDatos(prev => {
+        // Priorizar currentUserData, luego escalaLikertByUsuario si existe
+        const datosCompletos = {
+          ...prev,
+          // Datos básicos siempre de currentUserData
+          nombres: currentUserData.nombres || prev.nombres,
+          apellidos: currentUserData.apellidos || prev.apellidos,
+          dni: currentUserData.dni || prev.dni,
+          institucion: currentUserData.institucion || prev.institucion,
+          region: currentUserData.region || prev.region,
+          distrito: currentUserData.distrito || prev.distrito,
+          anosExperiencia: currentUserData.anosExperiencia || prev.anosExperiencia,
+          
+          // Datos que pueden venir de currentUserData o escalaLikertByUsuario
+          sexo: currentUserData.conocimientoPedagogico?.sexo || 
+                escalaLikertByUsuario?.datosDocente?.sexo || 
+                prev.sexo,
+          grado: currentUserData?.grados?.map(g => g.toString()) || 
+                 escalaLikertByUsuario?.datosDocente?.grado?.map(g => g.toString()) || 
+                 prev.grado,
+          edad: currentUserData.conocimientoPedagogico?.edad || 
+                escalaLikertByUsuario?.datosDocente?.edad || 
+                prev.edad,
+          linkDocumentos: escalaLikertByUsuario?.linkDocumentos 
+            ? (Array.isArray(escalaLikertByUsuario.linkDocumentos) 
+                ? escalaLikertByUsuario.linkDocumentos[0] 
+                : escalaLikertByUsuario.linkDocumentos)
+            : prev.linkDocumentos,
+        };
+        
+        return datosCompletos;
+      });
       
-      // Ejecutar las peticiones solo cuando tengamos todos los datos
+      // Ejecutar las peticiones solo cuando tengamos los datos básicos
       getEvaluacionEscalaLikert(`${router.query.idEvaluacion}`)
       getPreguntasEvaluacionEscalaLikert(`${router.query.idEvaluacion}`)
     }
-  }, [currentUserData.dni, router.query.idEvaluacion, escalaLikertByUsuario?.datosDocente]);
+  }, [currentUserData.dni, router.query.idEvaluacion]);
+
+  // Efecto separado para autocompletar con datos de escalaLikertByUsuario cuando estén disponibles
+  useEffect(() => {
+    if (escalaLikertByUsuario?.datosDocente) {
+      setDatos(prev => {
+        const datosDocente = escalaLikertByUsuario.datosDocente;
+        
+        return {
+          ...prev,
+          // Solo actualizar campos que no estén ya completos con currentUserData
+          sexo: prev.sexo?.id ? prev.sexo : (datosDocente?.sexo || prev.sexo),
+          grado: prev.grado?.length ? prev.grado : (datosDocente?.grado?.map(g => g.toString()) || prev.grado),
+          edad: prev.edad?.id ? prev.edad : (datosDocente?.edad || prev.edad),
+          institucion: prev.institucion || datosDocente?.institucion || prev.institucion,
+          region: prev.region || datosDocente?.region || prev.region,
+          distrito: prev.distrito || datosDocente?.distrito || prev.distrito,
+          anosExperiencia: prev.anosExperiencia || datosDocente?.anosExperiencia || prev.anosExperiencia,
+          linkDocumentos: escalaLikertByUsuario.linkDocumentos 
+            ? (Array.isArray(escalaLikertByUsuario.linkDocumentos) 
+                ? escalaLikertByUsuario.linkDocumentos[0] 
+                : escalaLikertByUsuario.linkDocumentos)
+            : prev.linkDocumentos,
+        };
+      });
+    }
+  }, [escalaLikertByUsuario?.datosDocente]);
+
   const handleInputChange = (field: keyof ConocimientoPedagogico, value: string | string[] | {id?:number,name?:string}) => {
     setDatos((prev) => ({
       ...prev,
@@ -228,7 +270,7 @@ const { idEvaluacion } = router.query
   };
   useEffect(() => {
     evaluacionEscalaLikertByUsuario(`${idEvaluacion}`)
-  },[currentUserData.dni])
+  },[currentUserData.dni, idEvaluacion])
 
 
   // Autocompletar respuestas de evaluación cuando escalaLikertByUsuario existe
@@ -259,6 +301,8 @@ const { idEvaluacion } = router.query
       }));
     }
   }, [escalaLikertByUsuario]);
+
+  console.log('escalaLikertByUsuario', escalaLikertByUsuario)
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -277,6 +321,7 @@ const { idEvaluacion } = router.query
               value={datos.nombres}
               onChange={(e) => handleInputChange('nombres', e.target.value)}
               className={styles.textInput}
+              disabled
               required
             />
           </div>
@@ -288,6 +333,7 @@ const { idEvaluacion } = router.query
               value={datos.apellidos}
               onChange={(e) => handleInputChange('apellidos', e.target.value)}
               className={styles.textInput}
+              disabled
               required
             />
           </div>
@@ -299,6 +345,7 @@ const { idEvaluacion } = router.query
               value={datos.dni}
               onChange={(e) => handleInputChange('dni', e.target.value)}
               className={styles.textInput}
+              disabled
               required
             />
           </div>
@@ -377,6 +424,7 @@ const { idEvaluacion } = router.query
                 value={datos.institucion}
                 onChange={(e) => handleInputChange('institucion', e.target.value)}
                 className={styles.textInput}
+                disabled
                 required
               />
             </div>
@@ -393,6 +441,7 @@ const { idEvaluacion } = router.query
                  }
                }}
                className={styles.textInput}
+               disabled
                required
              >
                <option value="">Seleccione una región</option>
