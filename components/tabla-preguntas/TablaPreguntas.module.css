@@ -418,6 +418,20 @@
   font-weight: 500;
 }
 
+/* Estilos específicos para el texto del DNI del docente */
+.dniDocenteText {
+  color: var(--color-secundario);
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.3s ease;
+}
+
+.dniDocenteText:hover {
+  color: var(--color-quinto);
+}
+
 .warningContainer {
   width: 100%;
   height: 100%;
@@ -511,6 +525,10 @@
     font-size: 0.55rem;
   }
   
+  .dniDocenteText {
+    font-size: 0.65rem;
+  }
+  
   .noDataContainer {
     padding: 0.75rem;
   }
@@ -573,6 +591,10 @@
   .noAnswer {
     height: 24px;
     font-size: 0.5rem;
+  }
+  
+  .dniDocenteText {
+    font-size: 0.6rem;
   }
   
   .noDataContainer {

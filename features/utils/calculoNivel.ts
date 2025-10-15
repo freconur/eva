@@ -1,4 +1,4 @@
-import { Estudiante, Evaluacion, UserEstudiante } from "../types/types";
+import { Estudiante, Evaluacion, PreguntasRespuestas, UserEstudiante } from "../types/types";
 
 export const calculoNivel = (data:UserEstudiante | Estudiante, evaluacion:Evaluacion) => {
     let puntajeAcumulado = 0;
@@ -167,6 +167,43 @@ export const calculoPreguntasCorrectas = (estudiante:UserEstudiante | Estudiante
     // Actualizar la propiedad respuestasCorrectas del estudiante
     /* estudiante.respuestasCorrectas = count.toString(); */
     estudiante.respuestasCorrectas = count;
-    
+    /*  calculoNivel(estudiantes, evaluacion); */
     return estudiante;
 }
+
+
+export function agregarPuntajesARespuestas(
+    estudiante: Estudiante,
+    preguntaRespuestas: PreguntasRespuestas[]
+  ): Estudiante {
+    // Validación temprana para evitar procesamiento innecesario
+    if (!estudiante.respuestas || estudiante.respuestas.length === 0) {
+      return estudiante;
+    }
+  
+    // Crear un objeto simple en lugar de Map para mejor rendimiento
+    // Los objetos son más rápidos que Map para claves numéricas simples
+    const puntajesPorOrder: Record<number, string> = {};
+    for (let i = 0; i < preguntaRespuestas.length; i++) {
+      const pregunta = preguntaRespuestas[i];
+      if (pregunta.order !== undefined && pregunta.puntaje !== undefined) {
+        puntajesPorOrder[pregunta.order] = pregunta.puntaje;
+      }
+    }
+  
+    // Mutar directamente el array de respuestas para evitar crear nuevos objetos
+    const respuestas = estudiante.respuestas;
+    for (let i = 0; i < respuestas.length; i++) {
+      const respuesta = respuestas[i];
+      if (respuesta.order !== undefined) {
+        respuesta.puntaje = puntajesPorOrder[respuesta.order] || "0";
+      } else {
+        respuesta.puntaje = "0";
+      }
+    }
+  
+    // Retornar el estudiante con las respuestas mutadas (más eficiente que spread)
+    estudiante.respuestas = respuestas;
+    console.log('estudiante', estudiante)
+    return estudiante;
+  }

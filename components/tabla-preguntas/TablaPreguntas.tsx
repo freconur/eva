@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { MdDeleteForever, MdChevronLeft, MdChevronRight, MdDragIndicator } from 'react-icons/md';
 import { PreguntasRespuestas, Alternativa, UserEstudiante } from '@/features/types/types';
 import styles from './TablaPreguntas.module.css';
+import { useGlobalContext } from '@/features/context/GlolbalContext';
 
 // Interfaces para las props del componente
 export interface EstudianteTabla {
@@ -13,6 +14,7 @@ export interface EstudianteTabla {
   puntaje?: number;
   nivel?: string;
   respuestas?: PreguntasRespuestas[];
+  dniDocente?: string;
 }
 
 export interface TablaPreguntasProps {
@@ -45,6 +47,11 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
   className = '',
   itemsPerPage = 10
 }) => {
+
+
+  const { currentUserData } = useGlobalContext()
+  /* console.log('tablaestudiantes',estudiantes); */
+  /* console.log('tablaestudiantes',estudiantes); */
   // Estado para la paginación
   const [currentPage, setCurrentPage] = useState(1);
   
@@ -183,6 +190,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                   {showDeleteButton && onDeleteEstudiante && <th></th>}
                   <th>#</th>
                   <th>N-A</th>
+                  { currentUserData.rol === 2 && <th>Dni Docente</th>}
                   <th>r.c</th>
                   <th>t.p.</th>
                   {hasValidPuntaje() && <th>puntaje</th>}
@@ -232,6 +240,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                             </span>
                           )}
                         </td>
+                        { currentUserData.rol === 2 && <td><span className={styles.dniDocenteText}>{estudiante.dniDocente}</span></td>}
                         <td>{estudiante.respuestasCorrectas || 0}</td>
                         <td>{estudiante.totalPreguntas || 0}</td>
                         {hasValidPuntaje() && <td>{estudiante.puntaje || '-'}</td>}

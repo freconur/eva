@@ -3,7 +3,7 @@
  */
 
 import * as functions from 'firebase-functions';
-import { Estudiante, Evaluacion } from './types';
+import { Estudiante } from './types';
 
 // ==========================================================
 // TIPOS Y INTERFACES
@@ -632,58 +632,55 @@ export const limpiarParaFirestore = (obj: any): any => {
 };
 
 
-export const calculoNivel = (data: Estudiante, evaluacion: Evaluacion) => {
-  let puntajeAcumulado = 0;
-  let tienePuntajes = false;
-  
-  data.respuestas?.forEach(pregunta => {
-      pregunta.alternativas?.forEach(alternativas => {
-          if (alternativas.selected) {
-              if (alternativas.alternativa?.toLowerCase() === pregunta.respuesta?.toLowerCase()) {
-                  // Verificar si pregunta.puntaje existe y tiene datos
-                  if (pregunta.puntaje !== undefined && pregunta.puntaje !== null && pregunta.puntaje !== '') {
-                      const puntajePregunta = Number(pregunta.puntaje);
-                      puntajeAcumulado = puntajeAcumulado + puntajePregunta;
-                      tienePuntajes = true;
-                  } else {
-                      console.log('calculoNivel - pregunta sin puntaje válido:', pregunta.puntaje);
-                  }
-              }
-          }
-      });
-  });
-
-  if (puntajeAcumulado > 0) {
-      data.puntaje = puntajeAcumulado;
+export const calculoNivel = (data: Estudiante) => {
+  // Validación temprana para evitar procesamiento innecesario
+  const respuestas = data.respuestas;
+  if (!respuestas?.length) {
+    return data;
   }
 
-  // Solo ejecutar la clasificación si existen puntajes válidos
-  if (tienePuntajes && evaluacion.nivelYPuntaje && evaluacion.nivelYPuntaje.length > 0) {
-      // Ordenar los niveles por puntaje mínimo para asegurar el orden correcto
-      const nivelesOrdenados = [...evaluacion.nivelYPuntaje].sort((a, b) => (a.min || 0) - (b.min || 0));
+  let puntajeAcumulado = 0;
+  const respuestasLength = respuestas.length;
+
+  // Optimización: usar bucle for tradicional para máximo rendimiento
+  for (let i = 0; i < respuestasLength; i++) {
+    const pregunta = respuestas[i];
+    
+    // Validación temprana de la pregunta
+    const alternativas = pregunta.alternativas;
+    if (!alternativas?.length) {
+      continue;
+    }
+
+    // Pre-calcular la respuesta correcta en minúsculas una sola vez
+    const respuestaCorrecta = pregunta.respuesta?.toLowerCase();
+    if (!respuestaCorrecta) {
+      continue;
+    }
+
+    // Optimización: buscar directamente la alternativa correcta sin find()
+    const alternativasLength = alternativas.length;
+    for (let j = 0; j < alternativasLength; j++) {
+      const alternativa = alternativas[j];
       
-      // Buscar el nivel correspondiente al puntaje
-      let nivelEncontrado = null;
-      for (const nivelData of nivelesOrdenados) {
-          const minPuntaje = nivelData.min || 0;
-          const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
-          
-          if (puntajeAcumulado >= minPuntaje && puntajeAcumulado <= maxPuntaje) {
-              nivelEncontrado = nivelData;
-              break;
+      // Verificar si está seleccionada y coincide con la respuesta correcta
+      if (alternativa.selected && alternativa.alternativa?.toLowerCase() === respuestaCorrecta) {
+        // Optimización: validar y convertir puntaje de manera más eficiente
+        const puntajeStr = pregunta.puntaje;
+        if (puntajeStr && puntajeStr !== '') {
+          const puntajeNum = +puntajeStr; // Conversión más rápida que Number()
+          if (puntajeNum > 0) {
+            puntajeAcumulado += puntajeNum;
           }
+        }
+        break; // Salir del bucle interno una vez encontrada la respuesta correcta
       }
-      
-      if (nivelEncontrado) {
-          data.nivel = nivelEncontrado.nivel || "sin clasificar";
-          data.nivelData = nivelEncontrado;
-      } else {
-          data.nivel = "sin clasificar";
-          data.nivelData = undefined;
-      }
-  } else {
-      data.nivel = "sin clasificar";
-      data.nivelData = undefined;
+    }
+  }
+
+  // Solo asignar puntaje si es mayor que 0
+  if (puntajeAcumulado > 0) {
+    data.puntaje = puntajeAcumulado;
   }
   
   return data;

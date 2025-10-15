@@ -40,6 +40,7 @@ import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafic
 import { TablaPreguntas } from '@/components/tabla-preguntas';
 import { calculoNivel } from '@/features/utils/calculoNivel';
 import GraficoTendenciaColegio from '@/components/grafico-tendencia';
+import CorregirPuntajesModal from '@/modals/corregirPuntajes';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -55,6 +56,7 @@ const Reportes = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [showTable, setShowtable] = useState<boolean>(true);
   const [showDeleteEstudiante, setShowDeleteEstudiante] = useState<boolean>(false);
+  const [showCorregirPuntajesModal, setShowCorregirPuntajesModal] = useState<boolean>(false);
   const route = useRouter();
   const {
     estudiantes,
@@ -74,6 +76,12 @@ const Reportes = () => {
     mesesConDataDisponibles,
     promedioGlobal,
     estudiantesQueDieronExamenPorMes,
+    corregirPuntajesEstudiantes,
+    loaderCorreccionPuntajes,
+    correccionPuntajesExitoso,
+    setCorreccionPuntajesExitoso,
+    correccionPuntajesError,
+    setCorreccionPuntajesError
   } = useReporteDocente();
   const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
   const [idEstudiante, setIdEstudiante] = useState<string>('');
@@ -188,7 +196,7 @@ const Reportes = () => {
     const idExamen = route.query.idExamen as string;
     if (idExamen) {
       estudiantesQueDieronExamenPorMes(evaluacion, estudiantes);
-      estadisticasEstudiantesDelDocente(evaluacion, monthSelected);
+      estadisticasEstudiantesDelDocente(evaluacion, monthSelected, preguntasRespuestas);
       getPreguntasRespuestas(idExamen);
       setMonthSelected(currentMonth);
       getEvaluacion(`${idExamen}`);
@@ -199,7 +207,7 @@ const Reportes = () => {
     const idExamen = route.query.idExamen as string;
     if (idExamen) {
       estudiantesQueDieronExamenPorMes(evaluacion, estudiantes);
-      estadisticasEstudiantesDelDocente(evaluacion, monthSelected);
+      estadisticasEstudiantesDelDocente(evaluacion, monthSelected, preguntasRespuestas);
     }
   }, [monthSelected]);
 
@@ -218,6 +226,24 @@ const Reportes = () => {
 
   const handleShowModalDelete = () => {
     setShowDeleteEstudiante(!showDeleteEstudiante);
+  };
+
+  const handleShowCorregirPuntajesModal = () => {
+    setShowCorregirPuntajesModal(!showCorregirPuntajesModal);
+  };
+
+  const handleCorregirPuntajes = () => {
+    corregirPuntajesEstudiantes(`${currentUserData.dni}`, evaluacion, monthSelected, estudiantes, preguntasRespuestas);
+  };
+
+  const handleCerrarModalExito = () => {
+    setCorreccionPuntajesExitoso(false);
+    setShowCorregirPuntajesModal(false);
+  };
+
+  const handleCerrarModalError = () => {
+    setCorreccionPuntajesError(false);
+    setShowCorregirPuntajesModal(false);
   };
   const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setMonthSelected(Number(e.target.value));
@@ -262,8 +288,8 @@ const Reportes = () => {
     );
   };
 
-  console.log('dataEstadisticasOrdenadas', dataEstadisticasOrdenadas)
-  console.log('preguntasMap',preguntasMap)
+  /* console.log('dataEstadisticasOrdenadas', dataEstadisticasOrdenadas)
+  console.log('preguntasMap',preguntasMap) */
   return (
     <>
       {showDeleteEstudiante && (
@@ -275,6 +301,16 @@ const Reportes = () => {
           handleShowModalDelete={handleShowModalDelete}
         />
       )}
+      <CorregirPuntajesModal
+        isOpen={showCorregirPuntajesModal}
+        onClose={handleShowCorregirPuntajesModal}
+        onConfirm={handleCorregirPuntajes}
+        loading={loaderCorreccionPuntajes}
+        success={correccionPuntajesExitoso}
+        onCloseSuccess={handleCerrarModalExito}
+        error={correccionPuntajesError}
+        onCloseError={handleCerrarModalError}
+      />
       {loaderReporteDirector ? (
         <div className={styles.loaderContainer}>
           <div className={styles.loaderContent}>
@@ -329,6 +365,24 @@ const Reportes = () => {
                     </>
                   )}
                 </button>
+                {
+                  evaluacion.tipoDeEvaluacion === '1' && (
+                    <button 
+                      onClick={handleShowCorregirPuntajesModal}
+                      className={styles.corregirButton}
+                    >
+                      <span>🔧</span>
+                      <span>Corregir Puntajes</span>
+                    </button>
+                  )
+                }
+                {/* <button 
+                  onClick={handleShowCorregirPuntajesModal}
+                  className={styles.corregirButton}
+                >
+                  <span>🔧</span>
+                  <span>Corregir Puntajes</span>
+                </button> */}
               </div>
             </div>
             {showTable ? (
