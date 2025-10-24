@@ -1,6 +1,6 @@
 import { collection, deleteDoc, doc, getDocs, getFirestore, onSnapshot, query, setDoc, updateDoc, where } from 'firebase/firestore';
 import { app } from '@/firebase/firebase.config';
-import { EspecialistaData } from '@/pages/admin/especialista-regional/usuarios-especialistas-regional/useEspecialistaForm';
+import { EspecialistaData } from './especialista-regional/useEspecialistaFormUtils';
 import axios from 'axios';
 import { useState } from 'react';
 import { User } from '../types/types';

@@ -1,7 +1,7 @@
 import React from 'react'
 import { HiX } from 'react-icons/hi'
 import styles from './especialistaRegionales.module.css'
-import { useEspecialistaForm, EspecialistaData } from './useEspecialistaForm'
+import { useEspecialistaForm, EspecialistaData } from '@/features/hooks/especialista-regional/useEspecialistaFormUtils'
 import Loader from '@/components/loader/loader'
 interface ModalAgregarEspecialistaProps {
   isOpen: boolean

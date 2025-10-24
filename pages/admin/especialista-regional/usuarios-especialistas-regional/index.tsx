@@ -167,7 +167,7 @@ const EspecialistaRegionales = () => {
                 No hay especialistas regionales registrados
               </p>
               <p className={styles.emptySubMessage}>
-                Haz clic en "Agregar Especialista" para crear el primero
+                Haz clic en Agregar Especialista para crear el primero
               </p>
             </div>
           )}
