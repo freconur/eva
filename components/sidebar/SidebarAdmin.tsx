@@ -47,6 +47,19 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
         <div className={styles.menuContainer}>
           <ul className={styles.menuList}>
             <li className={styles.menuItem}>
+              <div className={styles.menuHeader} onClick={() => toggleDropdown('especialistas-regional')}>
+                <LuListTodo className={styles.icon} />
+                <span className={styles.link}>Especialista Regional</span>
+                <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'especialistas-regional' ? styles.arrowRotate : ''}`} />
+              </div>
+              <ul className={`${styles.submenu} ${openDropdown === 'especialistas-regional' ? styles.show : ''}`}>
+                <li><Link href="/admin/especialista-regional/usuarios-especialistas-regional" className={styles.submenuLink}>Crear usuario</Link></li>
+                {/* <li><Link href="/admin/especialistas/evaluaciones-especialistas" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
+                <li><Link href="/admin/especialistas/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
+                <li><Link href="/admin/conocimientos-pedagogicos?rol=1" className={styles.submenuLink}>Autorreporte</Link></li> */}
+              </ul>
+            </li>
+            <li className={styles.menuItem}>
               <div className={styles.menuHeader} onClick={() => toggleDropdown('especialistas')}>
                 <LuListTodo className={styles.icon} />
                 <span className={styles.link}>Especialistas</span>
@@ -97,10 +110,10 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
             </li>
           </ul>
         </div>
-        
+
         <SidebarInfoUser showSidebar={showSidebar} />
       </div>
-      <div onClick={() => {logout(); redirectLogion()}} className={styles.logoutButton}>
+      <div onClick={() => { logout(); redirectLogion() }} className={styles.logoutButton}>
         <FiLogOut className={styles.logoutIcon} />
         <p>cerrar sesión</p>
       </div>
