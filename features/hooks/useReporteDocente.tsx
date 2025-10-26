@@ -388,6 +388,7 @@ export const useReporteDocente = () => {
           const estudiante = calculoPreguntasCorrectas(dataEstudiante);
 
           console.log('estudiante', estudiante);
+          console.log('dataEstudiante', dataEstudiante);
           //como se ocasiono problemas con los docentes que evaluaron estudiantes con la spreguntas sin puntaje,
           //entonces se agregara una validacion para poder actualzar o crear el documento del estudiuante.
           /* const estudianteExiste = await getDoc(docRefEstudianteEvaluado);
