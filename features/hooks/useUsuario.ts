@@ -31,8 +31,8 @@ import {
 } from 'firebase/firestore';
 import { currentYear } from '@/fuctions/dates';
 const useUsuario = () => {
-  /* const URL_API = 'https://api-ugel-production.up.railway.app/'; */
-  const URL_API = "http://localhost:3001/"
+  const URL_API = 'https://api-ugel-production.up.railway.app/';
+  /* const URL_API = "http://localhost:3001/" */
   const auth = getAuth(app);
   const db = getFirestore(app);
   const { currentUserData } = useGlobalContext();
