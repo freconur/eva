@@ -202,9 +202,10 @@ const useUsuario = () => {
   };
 
   const createNewEspecialista = (data: User) => {
+    console.log('data', data)
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
-      if (currentUserData.rol === 4) {
+      if (currentUserData.rol === 4 || currentUserData.rol === 5) {
         axios
           .post(`${URL_API}crear-director`, {
             email: `${data.dni}@competencelab.com`,
@@ -224,6 +225,7 @@ const useUsuario = () => {
               region: Number(data.region),
               tipoEspecialista: data.tipoEspecialista,
               genero: data.genero,
+              nivelDeInstitucion: data.nivelDeInstitucion,
             });
           })
           .then((res) => {

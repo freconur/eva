@@ -19,7 +19,7 @@ const EspecialistaRegionales = () => {
       // Guardar el especialista en Firebase
       await createEspecialistaRegional(data)
       
-      console.log('Especialista creado con ID:', data.dni)
+      console.log('datita', data)
       
     } catch (error) {
       console.error('Error al crear especialista:', error)

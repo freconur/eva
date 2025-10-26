@@ -25,17 +25,6 @@ const Evaluaciones = () => {
     getEvaluaciones()
   }, [currentUserData.dni])
 
-  // console.log('evaluaciones', evaluaciones)
-  
-  // const handleUpdateEvaluacion = (id: string) => {
-  //   setIdEva(id)
-  // }
-  // useEffect(() => {
-  //   if (idEva.length > 0) {
-  //     getEvaluacion(idEva)
-  //   }
-  // }, [idEva])
-  
   return (
     <>
       {showDelete && <DeleteEvaluacion handleShowModalDelete={handleShowModalDelete}  idEva={idEva} />}
@@ -65,7 +54,13 @@ const Evaluaciones = () => {
                 <tbody className="divide-y divide-gray-100">
                   {
                     evaluaciones.length > 0 ?
-                      evaluaciones?.filter(eva => eva.active === true).map((eva, index) => {
+                      evaluaciones?.filter(eva => {
+                        const isActive = eva.active === true;
+                        const isCorrectLevel = currentUserData.nivelDeInstitucion?.includes(2) 
+                          ? (Array.isArray(eva.nivel) ? eva.nivel.includes(2) : eva.nivel === 2)
+                          : (Array.isArray(eva.nivel) ? !eva.nivel.includes(2) : eva.nivel !== 2);
+                        return isActive && isCorrectLevel;
+                      }).map((eva, index) => {
                         return (
                           <tr key={index} className='h-[60px] hover:bg-blue-100 duration-300 cursor-pointer'>
                             <td className='uppercase text-slate-500 pl-1 md:pl-2 px-1 text-center'>

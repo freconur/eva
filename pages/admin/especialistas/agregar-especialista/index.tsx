@@ -1,17 +1,16 @@
 import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
-import React, { useEffect, useCallback, use, useState } from 'react'
+import React, { useEffect, useCallback, useState } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
-import { RiLoader4Line, RiEdit2Line, RiDeleteBin6Line } from 'react-icons/ri'
+import { RiLoader4Line } from 'react-icons/ri'
 import styles from './agregarEspecialista.module.css'
 import UpdateUsuarioEspecialista from '@/modals/updateUsuarioEspecialista'
 import DeleteUsuario from '@/modals/deleteUsuario'
 import { genero, tipoEspecialista } from '@/fuctions/regiones'
-import UsuariosByRol from '@/components/usuariosByRol'
-import TablaUsuarios from '@/components/curricular/tablas/tablaUsuarios'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import TablaUsuariosAdminEspecialistas from '@/components/curricular/tablas/tablaUsuariosAdmin'
+import {nivelInstitucion} from '@/fuctions/regiones'
 // Tipos para el formulario
 type FormValues = {
   dni: string;
@@ -20,6 +19,7 @@ type FormValues = {
   apellidos: string;
   genero: string;
   tipoEspecialista: number;
+  nivelDeInstitucion: number[];
 }
 
 // Componente de Input reutilizable
@@ -75,6 +75,44 @@ const FormSelect = ({ label, register, errors, name, options }: {
   </div>
 )
 
+// Componente de Checkbox reutilizable para niveles de institución
+const FormCheckbox = ({ label, register, errors, name, options }: {
+  label: string;
+  register: any;
+  errors: any;
+  name: keyof FormValues;
+  options: Array<{ id: number; name: string }>;
+}) => (
+  <div className={styles.formGroup}>
+    <label className={styles.label}>{label}:</label>
+    <div className={styles.checkboxContainer}>
+      {options?.map((option) => (
+        <div key={option.id} className={styles.checkboxItem}>
+          <input
+            type="checkbox"
+            id={`${name}-${option.id}`}
+            value={option.id}
+            disabled={option.name === "inicial"}
+            {...register(name, {
+              setValueAs: (value: string[]) => {
+                // Convertir los valores string a números
+                return value ? value.map(v => Number(v)) : [];
+              }
+            })}
+            className={styles.checkbox}
+          />
+          <label htmlFor={`${name}-${option.id}`} className={styles.checkboxLabel}>
+            {option.name.charAt(0).toUpperCase() + option.name.slice(1)}
+          </label>
+        </div>
+      ))}
+    </div>
+    {errors[name] && (
+      <span className={styles.error}>{errors[name].message as string}</span>
+    )}
+  </div>
+)
+
 const AgregareEspecialista = () => {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>()
   const { getUserData, createNewEspecialista, getRegiones, getAllEspecialistas } = useUsuario()
@@ -105,10 +143,24 @@ const AgregareEspecialista = () => {
     setShowModalDeleteUsuario(!showModalDeleteUsuario)
   }
   const onSubmit: SubmitHandler<FormValues> = useCallback(async (data) => {
-  console.log(data)
+    // Convertir todos los valores a números donde sea necesario
+   /*  console.log('data', data) */
+    const processedData = {
+      ...data,
+      dni: String(data.dni), // Mantener como string según el tipo User
+      region: Number(data.region),
+      genero: String(data.genero), // Mantener como string según el tipo User
+      tipoEspecialista: Number(data.tipoEspecialista),
+      nivelDeInstitucion: Array.isArray(data.nivelDeInstitucion) 
+        ? data.nivelDeInstitucion.map(v => Number(v))
+        : []
+    };
+    
+    /* console.log('Datos procesados:', processedData); */
+    
     try {
       createNewEspecialista({
-        ...data,
+        ...processedData,
         perfil: { rol: 1, nombre: "especialista" }
       })
       reset()
@@ -127,7 +179,7 @@ const AgregareEspecialista = () => {
       </div>
     )
   }
- /*  console.log('docentesDeDirectores', docentesDeDirectores) */
+  console.log('docentesDeDirectores', docentesDeDirectores)
   return (
     <div className={styles.container}>
       {showModalActualizarEspecialista && <UpdateUsuarioEspecialista idUsuario={idUsuario} handleShowModal={handleShowModal} />}
@@ -200,6 +252,14 @@ const AgregareEspecialista = () => {
             register={register}
             errors={errors}
             options={tipoEspecialista?.map(t => ({ codigo: t.id, region: t.name })) || []}
+          />
+
+          <FormCheckbox
+            label="Nivel"
+            name="nivelDeInstitucion"
+            register={register}
+            errors={errors}
+            options={nivelInstitucion}
           />
 
           <button

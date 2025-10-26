@@ -12,13 +12,14 @@ import { FaUserGraduate, FaUserTie } from 'react-icons/fa';
 import { MdAccountBalance, MdAccountCircle } from 'react-icons/md';
 import { LuListTodo } from 'react-icons/lu';
 import styles from './sideBarList.module.css'
+import { useGlobalContext } from '@/features/context/GlolbalContext';
 interface Props {
   showSidebar: boolean
 }
 const SidebarEspecialistas = ({ showSidebar }: Props) => {
   const { logout } = useUsuario()
   const { showSidebarValue } = useRolUsers()
-  // const { showSidebar } = useGlobalContext()
+  const { currentUserData } = useGlobalContext()
   return (
 
     <div className={`z-[2000] grid-rows-gridRows p-2 justify-evenly grid fixed duration-300 drop-shadow-xl h-full w-[250px] bg-graduado-blue-2 ${showSidebar ? "left-[0px]" : "-left-[300px]"}`}>
@@ -63,14 +64,21 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                 </Link>
               </div>
               <ul className={styles.dropdownContent} aria-label="submenu">
-              <li className={styles.containerAncla}><Link
-                  href="/especialistas/evaluaciones-director"
-                  className={styles.anclaje}
-                  id="ancla">Seguimiento y retroalimentación</Link></li>
-                  <li className={styles.containerAncla}><Link
-                  href="/especialistas/cobertura-curricular"
-                  className={styles.anclaje}
-                  id="ancla">Cobertura curricular</Link></li>
+                {
+                  !currentUserData.nivelDeInstitucion?.includes(2) && (
+                    <>
+                    <li className={styles.containerAncla}><Link
+                        href="/especialistas/evaluaciones-director"
+                        className={styles.anclaje}
+                        id="ancla">Seguimiento y retroalimentación</Link></li>
+                        <li className={styles.containerAncla}><Link
+                        href="/especialistas/cobertura-curricular"
+                        className={styles.anclaje}
+                        id="ancla">Cobertura curricular</Link></li>
+                    </>
+
+                  )
+                }
                 <li className={styles.containerAncla}><Link
                   href="/especialistas/agregar-directores"
                   className={styles.anclaje}
@@ -78,6 +86,8 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                 
               </ul>
             </li>
+            {
+              !currentUserData.nivelDeInstitucion?.includes(2) && (
             <li className={styles.dropdown}>
               <div className={styles.containerIcon}>
 
@@ -97,6 +107,9 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                   id="ancla">Cobertura curricular</Link></li>
               </ul>
             </li>
+
+              )
+            }
             <li className={styles.dropdown}>
               <div className={styles.containerIcon}>
 
@@ -117,6 +130,8 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                   className={styles.anclaje} >Agregar evaluacion</Link></li> */}
               </ul>
             </li>
+            {
+              !currentUserData.nivelDeInstitucion?.includes(2) && (
             <li className={styles.dropdown}>
               <div className={styles.containerIcon}>
 
@@ -132,6 +147,8 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                   id="ancla">Evaluaciones</Link></li>
               </ul> */}
             </li>
+              )
+            }
           </ul>
         </div>
         <SidebarInfoUser showSidebar={showSidebar} />

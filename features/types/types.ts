@@ -305,6 +305,7 @@ export type Estudiante = {
   genero?: string;
 };
 export type User = {
+  nivelesInstitucion?: number[];
   calificacion?: number;
   nombres?: string;
   apellidos?: string;
@@ -402,6 +403,7 @@ export type Grades = {
   id?: string;
   nombre?: string;
   grado?: number;
+  nivel?: number;
 };
 
 export type CreaEvaluacion = {

@@ -7,7 +7,7 @@ import { User } from '../types/types';
 
 export const useEspecialistasRegionales = () => {
   const db = getFirestore(app);
-  /* const URL_API = 'http://localhost:3001/'; */
+  /* const URL_API = 'http://localhost:3001/' */;
   const URL_API = 'https://api-ugel-production.up.railway.app/';
 
 
@@ -27,6 +27,7 @@ export const useEspecialistasRegionales = () => {
         perfil: { rol: 5, nombre: 'especialista regional' },
         nombres: data.nombres,
         apellidos: data.apellidos,
+        nivelesInstitucion: data.nivelesInstitucion,
       });
       if(response.data.exists === false && response.data.estado === true) {
         setWarningMessage(`Especialista ${data.dni} creado exitosamente`);

@@ -4,6 +4,7 @@ export interface EspecialistaData {
   dni: string
   nombres: string
   apellidos: string
+  nivelesInstitucion: number[]
 }
 
 interface UseEspecialistaFormProps {
@@ -18,7 +19,8 @@ export const useEspecialistaForm = ({ onSubmit, onClose, onSuccess, onError, set
   const [formData, setFormData] = useState<EspecialistaData>({
     dni: '',
     nombres: '',
-    apellidos: ''
+    apellidos: '',
+    nivelesInstitucion: []
   })
   const [isLoading, setIsLoading] = useState(false)
   const [warningMessage, setWarningMessage] = useState('')
@@ -111,6 +113,36 @@ export const useEspecialistaForm = ({ onSubmit, onClose, onSuccess, onError, set
     }
   }
 
+  // Función para manejar los checkboxes de nivel de institución
+  const handleCheckboxChange = (nivelId: number) => {
+    setFormData(prev => {
+      const currentNiveles = prev.nivelesInstitucion || []
+      const isSelected = currentNiveles.includes(nivelId)
+      
+      if (isSelected) {
+        // Remover el nivel si ya está seleccionado
+        return {
+          ...prev,
+          nivelesInstitucion: currentNiveles.filter(id => id !== nivelId)
+        }
+      } else {
+        // Agregar el nivel si no está seleccionado
+        return {
+          ...prev,
+          nivelesInstitucion: [...currentNiveles, nivelId]
+        }
+      }
+    })
+    
+    // Limpiar mensaje de advertencia cuando el usuario cambie los checkboxes
+    if (warningMessage) {
+      setWarningMessage('')
+    }
+    if (setExternalWarningMessage) {
+      setExternalWarningMessage('')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -127,7 +159,8 @@ export const useEspecialistaForm = ({ onSubmit, onClose, onSuccess, onError, set
       const cleanedData: EspecialistaData = {
         dni: formData.dni.trim(),
         nombres: cleanTextInput(formData.nombres),
-        apellidos: cleanTextInput(formData.apellidos)
+        apellidos: cleanTextInput(formData.apellidos),
+        nivelesInstitucion: formData.nivelesInstitucion || []
       }
       
       // Ejecutar la función onSubmit del componente padre
@@ -169,7 +202,7 @@ export const useEspecialistaForm = ({ onSubmit, onClose, onSuccess, onError, set
   }
 
   const resetForm = () => {
-    setFormData({ dni: '', nombres: '', apellidos: '' })
+    setFormData({ dni: '', nombres: '', apellidos: '', nivelesInstitucion: [] })
     setWarningMessage('')
   }
 
@@ -179,6 +212,7 @@ export const useEspecialistaForm = ({ onSubmit, onClose, onSuccess, onError, set
     warningMessage,
     handleInputChange,
     handleBlur,
+    handleCheckboxChange,
     handleSubmit,
     handleCancel
   }

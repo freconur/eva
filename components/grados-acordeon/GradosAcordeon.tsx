@@ -5,6 +5,7 @@ import { RiLoader4Line } from 'react-icons/ri'
 import { getMonthName } from '@/fuctions/dates'
 import { getAllMonths } from '@/fuctions/dates'
 import Link from 'next/link'
+import { useGlobalContext } from '@/features/context/GlolbalContext'
 import styles from './grados-acordeon.module.css'
 
 interface GradosAcordeonProps {
@@ -40,8 +41,19 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
   setDataEvaluacion,
   baseRoute = '/admin/evaluaciones/evaluacion'
 }) => {
+  const { currentUserData } = useGlobalContext()
   const [expandedGrado, setExpandedGrado] = useState<string | null>(null)
   const [columnas, setColumnas] = useState<number>(4)
+
+  // Filtrar grados según el rol del usuario
+  const gradosFiltrados = React.useMemo(() => {
+    if (currentUserData?.perfil?.rol === 5) {
+      // Si el rol es 5, mostrar solo grados que tengan nivel:2
+      return grados.filter(grado => grado.nivel === 2)
+    }
+    // Para otros roles, mostrar todos los grados
+    return grados
+  }, [grados, currentUserData?.perfil?.rol])
 
   const toggleGrado = (gradoId: string) => {
     setExpandedGrado(expandedGrado === gradoId ? null : gradoId)
@@ -59,6 +71,25 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
     return styles.nivelOtro
   }
 
+  // Función para validar acceso a evaluación
+  const tieneAccesoAEvaluacion = (evaluacion: Evaluaciones) => {
+    const rol = currentUserData?.perfil?.rol
+    const dni = currentUserData?.dni
+    
+    // Rol 4 siempre puede acceder
+    if (rol === 4) {
+      return true
+    }
+    
+    // Rol 5 solo puede acceder si su DNI está en usuariosConPermisos
+    if (rol === 5) {
+      return evaluacion.usuariosConPermisos?.includes(dni || '') || false
+    }
+    
+    // Otros roles no tienen acceso
+    return false
+  }
+
   // Filtrar evaluaciones por grado
   const getEvaluacionesPorGrado = (grado: number) => {
     const evaluacionesFiltradas = evaluaciones.filter(evaluacion => evaluacion.grado === grado)
@@ -71,7 +102,7 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
     
     return evaluacionesFiltradas
   }
-
+console.log('currentUserData', currentUserData) 
   return (
     <div className={styles.acordeonContainer}>
       <div className={styles.acordeonHeader}>
@@ -104,7 +135,7 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
         </div>
       </div>
       <div className={styles.acordeonContent}>
-        {grados.map((grado) => (
+        {gradosFiltrados.map((grado) => (
           <div key={grado.id} className={styles.acordeonItem}>
             <div 
               className={`${styles.acordeonItemHeader} ${getColorNivel(grado.grado || 0)}`}
@@ -136,28 +167,39 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
                           <h3 className={styles.evaluacionesTitle}>Evaluaciones del Grado</h3>
                           <div className={`${styles.evaluacionesList} ${styles[`columns${columnas}`]}`}>
                             {evaluacionesDelGrado.map((evaluacion, index) => {
-                              // Debug para evaluaciones de 4to grado
-                              if (grado.grado === 4) {
-                                console.log(`Evaluación ${index + 1} de 4to grado:`, {
-                                  id: evaluacion.id,
-                                  nombre: evaluacion.nombre,
-                                  mesDelExamen: evaluacion.mesDelExamen,
-                                  active: evaluacion.active,
-                                  grado: evaluacion.grado,
-                                  evaluacionCompleta: evaluacion
-                                })
-                                console.log('Tipo de mesDelExamen:', typeof evaluacion.mesDelExamen)
-                                console.log('Valor de mesDelExamen:', evaluacion.mesDelExamen)
-                                console.log('Resultado de getMonthName:', evaluacion.mesDelExamen ? getMonthName(Number(evaluacion.mesDelExamen)) : 'No especificado')
-                              }
+                              const puedeAcceder = tieneAccesoAEvaluacion(evaluacion)
                               
                               return (
                                 <div key={evaluacion.id} className={styles.evaluacionCardWrapper}>
-                                  <Link 
-                                    href={`${baseRoute}/${evaluacion.id}`}
-                                    className={styles.evaluacionCardLink}
-                                  >
-                                    <div className={`${styles.evaluacionCard} ${evaluacion.tipoDeEvaluacion === '0' ? styles.tipoEvaluacion0 : styles.tipoEvaluacion1}`}>
+                                  {puedeAcceder ? (
+                                    <Link 
+                                      href={`${baseRoute}/${evaluacion.id}`}
+                                      className={styles.evaluacionCardLink}
+                                    >
+                                      <div className={`${styles.evaluacionCard} ${evaluacion.tipoDeEvaluacion === '0' ? styles.tipoEvaluacion0 : styles.tipoEvaluacion1}`}>
+                                        <div className={styles.evaluacionInfo}>
+                                          <div className={styles.evaluacionHeader}>
+                                            <h4 
+                                              className={styles.evaluacionNombre}
+                                              data-tooltip={evaluacion.nombre || 'Sin nombre'}
+                                              title={evaluacion.nombre || 'Sin nombre'}
+                                            >
+                                              {evaluacion.nombre?.toUpperCase() || 'Sin nombre'}
+                                            </h4>
+                                          </div>
+                                          <div className={styles.evaluacionDetails}>
+                                            <span className={styles.evaluacionMes}>
+                                              <strong>Mes:</strong> {evaluacion.mesDelExamen ? getMonthName(Number(evaluacion.mesDelExamen)) : 'No especificado'}
+                                            </span>
+                                            <span className={`${styles.evaluacionEstado} ${evaluacion.active ? styles.activo : styles.inactivo}`}>
+                                              {evaluacion.active ? 'Activa' : 'Inactiva'}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </Link>
+                                  ) : (
+                                    <div className={`${styles.evaluacionCard} ${evaluacion.tipoDeEvaluacion === '0' ? styles.tipoEvaluacion0 : styles.tipoEvaluacion1} ${styles.sinAcceso}`}>
                                       <div className={styles.evaluacionInfo}>
                                         <div className={styles.evaluacionHeader}>
                                           <h4 
@@ -175,13 +217,18 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
                                           <span className={`${styles.evaluacionEstado} ${evaluacion.active ? styles.activo : styles.inactivo}`}>
                                             {evaluacion.active ? 'Activa' : 'Inactiva'}
                                           </span>
+                                          <div className={styles.sinAccesoLabel}>
+                                            <span className={styles.sinAccesoIcon}>🔒</span>
+                                            <span className={styles.sinAccesoText}>Sin acceso</span>
+                                          </div>
                                         </div>
                                       </div>
                                     </div>
-                                  </Link>
+                                  )}
                                   
-                                  {/* Botones de acción posicionados por delante */}
-                                  <div className={styles.evaluacionActions}>
+                                  {/* Botones de acción posicionados por delante - Solo se muestran si tiene acceso y no es rol 5 */}
+                                  {puedeAcceder && currentUserData?.perfil?.rol !== 5 && (
+                                    <div className={styles.evaluacionActions}>
                                   {editingMonth && editingMonthId === evaluacion.id ? (
                                     <div className={styles.monthEditContainer}>
                                       <select
@@ -254,7 +301,8 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
                                       </button>
                                     </div>
                                   )}
-                                  </div>
+                                    </div>
+                                  )}
                                 </div>
                               )
                             })}

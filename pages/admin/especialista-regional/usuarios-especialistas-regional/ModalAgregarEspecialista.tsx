@@ -3,6 +3,7 @@ import { HiX } from 'react-icons/hi'
 import styles from './especialistaRegionales.module.css'
 import { useEspecialistaForm, EspecialistaData } from '@/features/hooks/especialista-regional/useEspecialistaFormUtils'
 import Loader from '@/components/loader/loader'
+import {nivelInstitucion} from '@/fuctions/regiones'
 interface ModalAgregarEspecialistaProps {
   isOpen: boolean
   onClose: () => void
@@ -29,6 +30,7 @@ const ModalAgregarEspecialista: React.FC<ModalAgregarEspecialistaProps> = ({
     warningMessage,
     handleInputChange,
     handleBlur,
+    handleCheckboxChange,
     handleSubmit,
     handleCancel
   } = useEspecialistaForm({ onSubmit, onClose, onSuccess, onError, setExternalWarningMessage })
@@ -96,6 +98,26 @@ const ModalAgregarEspecialista: React.FC<ModalAgregarEspecialistaProps> = ({
               placeholder="Ingrese los apellidos"
               required
             />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>Nivel de Institución</label>
+            <div className={styles.checkboxContainer}>
+              {nivelInstitucion.filter(nivel => nivel.id !== 0).map((nivel) => (
+                <div key={nivel.id} className={styles.checkboxItem}>
+                  <input
+                    type="checkbox"
+                    id={`nivel-${nivel.id}`}
+                    checked={formData.nivelesInstitucion?.includes(nivel.id) || false}
+                    onChange={() => handleCheckboxChange(nivel.id)}
+                    className={styles.checkbox}
+                  />
+                  <label htmlFor={`nivel-${nivel.id}`} className={styles.checkboxLabel}>
+                    {nivel.name.charAt(0).toUpperCase() + nivel.name.slice(1)}
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
             {displayWarningMessage && typeof displayWarningMessage === 'string' && displayWarningMessage.length > 0 && <p className={styles.warningMessage}>{displayWarningMessage}</p>}
           

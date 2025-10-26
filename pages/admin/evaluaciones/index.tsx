@@ -35,6 +35,14 @@ const Evaluaciones = () => {
   const [dataEvaluacion, setDataEvaluacion] = useState(evaluacion)
 
   const toggleActiveStatus = async (eva: any) => {
+    // Si se quiere activar, validar que nivelYPuntaje exista y tenga datos
+    if (!eva.active) {
+      if (!eva.nivelYPuntaje || !Array.isArray(eva.nivelYPuntaje) || eva.nivelYPuntaje.length === 0) {
+        alert('No se puede activar la evaluación. Debe configurar primero los niveles y puntajes.')
+        return
+      }
+    }
+    
     const updatedEva = { ...eva, active: !eva.active }
     await updateEvaluacion(updatedEva, eva.id)
   }
@@ -96,7 +104,7 @@ const Evaluaciones = () => {
             objectFit='fill'
             priority
           />
-          <h1 className={styles.headerTitle}>Seguimiento y retroalimentacion al desempeño del directivo</h1>
+          <h1 className={styles.headerTitle}>Seguimiento y retroalimentacion al desempeño del estudiante</h1>
         </div>
 
         {/* Botón de cambio de vista */}

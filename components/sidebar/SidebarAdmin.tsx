@@ -73,9 +73,15 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
               </div>
               <ul className={`${styles.submenu} ${openDropdown === 'especialistas' ? styles.show : ''}`}>
                 <li><Link href="/admin/especialistas/agregar-especialista" className={styles.submenuLink}>Crear usuario</Link></li>
-                <li><Link href="/admin/especialistas/evaluaciones-especialistas" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
-                <li><Link href="/admin/especialistas/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
-                <li><Link href="/admin/conocimientos-pedagogicos?rol=1" className={styles.submenuLink}>Autorreporte</Link></li>
+                {
+                  currentUserData.rol !== 5 && (
+                    <>
+                    <li><Link href="/admin/especialistas/evaluaciones-especialistas" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
+                    <li><Link href="/admin/especialistas/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
+                    <li><Link href="/admin/conocimientos-pedagogicos?rol=1" className={styles.submenuLink}>Autorreporte</Link></li>
+                    </>
+                  )
+                }
               </ul>
             </li>
            {/*    )
