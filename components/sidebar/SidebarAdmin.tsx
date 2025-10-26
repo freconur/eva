@@ -13,6 +13,7 @@ import { LuListTodo } from "react-icons/lu";
 import { IoIosArrowDown } from "react-icons/io";
 import { useRouter } from 'next/router';
 import { FiLogOut } from 'react-icons/fi';
+import { useGlobalContext } from '@/features/context/GlolbalContext';
 
 interface Props {
   showSidebar: boolean
@@ -22,6 +23,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
   const router = useRouter()
   const { logout } = useUsuario()
   const { showSidebarValue } = useRolUsers()
+  const { currentUserData } = useGlobalContext()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const toggleDropdown = (dropdownName: string) => {
@@ -46,19 +48,23 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
         </div>
         <div className={styles.menuContainer}>
           <ul className={styles.menuList}>
-            <li className={styles.menuItem}>
-              <div className={styles.menuHeader} onClick={() => toggleDropdown('especialistas-regional')}>
-                <LuListTodo className={styles.icon} />
-                <span className={styles.link}>Especialista Regional</span>
-                <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'especialistas-regional' ? styles.arrowRotate : ''}`} />
-              </div>
-              <ul className={`${styles.submenu} ${openDropdown === 'especialistas-regional' ? styles.show : ''}`}>
-                <li><Link href="/admin/especialista-regional/usuarios-especialistas-regional" className={styles.submenuLink}>Crear usuario</Link></li>
-                {/* <li><Link href="/admin/especialistas/evaluaciones-especialistas" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
-                <li><Link href="/admin/especialistas/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
-                <li><Link href="/admin/conocimientos-pedagogicos?rol=1" className={styles.submenuLink}>Autorreporte</Link></li> */}
-              </ul>
-            </li>
+            {currentUserData.rol !== 5 && (
+              <li className={styles.menuItem}>
+                <div className={styles.menuHeader} onClick={() => toggleDropdown('especialistas-regional')}>
+                  <LuListTodo className={styles.icon} />
+                  <span className={styles.link}>Especialista Regional</span>
+                  <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'especialistas-regional' ? styles.arrowRotate : ''}`} />
+                </div>
+                <ul className={`${styles.submenu} ${openDropdown === 'especialistas-regional' ? styles.show : ''}`}>
+                  <li><Link href="/admin/especialista-regional/usuarios-especialistas-regional" className={styles.submenuLink}>Crear usuario</Link></li>
+                  {/* <li><Link href="/admin/especialistas/evaluaciones-especialistas" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
+                  <li><Link href="/admin/especialistas/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
+                  <li><Link href="/admin/conocimientos-pedagogicos?rol=1" className={styles.submenuLink}>Autorreporte</Link></li> */}
+                </ul>
+              </li>
+            )}
+            {/* {
+              currentUserData.rol !== 5 && ( */}
             <li className={styles.menuItem}>
               <div className={styles.menuHeader} onClick={() => toggleDropdown('especialistas')}>
                 <LuListTodo className={styles.icon} />
@@ -72,6 +78,11 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 <li><Link href="/admin/conocimientos-pedagogicos?rol=1" className={styles.submenuLink}>Autorreporte</Link></li>
               </ul>
             </li>
+           {/*    )
+            } */}
+
+            {
+              currentUserData.rol !==5 && (
             <li className={styles.menuItem}>
               <div className={styles.menuHeader} onClick={() => toggleDropdown('directores')}>
                 <MdAccountBalance className={styles.icon} />
@@ -85,6 +96,11 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 <li><Link href="/admin/conocimientos-pedagogicos?rol=2" className={styles.submenuLink}>Autorreporte</Link></li>
               </ul>
             </li>
+              )
+            }
+
+            {
+              currentUserData.rol !== 5 && (
             <li className={styles.menuItem}>
               <div className={styles.menuHeader} onClick={() => toggleDropdown('docentes')}>
                 <FaUserTie className={styles.icon} />
@@ -97,6 +113,8 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 <li><Link href="/admin/conocimientos-pedagogicos?rol=3" className={styles.submenuLink}>Autorreporte</Link></li>
               </ul>
             </li>
+              )
+            }
             <li className={styles.menuItem}>
               <div className={styles.menuHeader} onClick={() => toggleDropdown('estudiantes')}>
                 <FaUserGraduate className={styles.icon} />
@@ -105,7 +123,11 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
               </div>
               <ul className={`${styles.submenu} ${openDropdown === 'estudiantes' ? styles.show : ''}`}>
                 <li><Link href="/admin/evaluaciones" className={styles.submenuLink}>Seguimiento de Aprendizaje</Link></li>
-                <li><Link href="/admin/agregar-evaluaciones" className={styles.submenuLink}>Agregar evaluacion</Link></li>
+                {
+                  currentUserData.rol !== 5 && (
+                    <li><Link href="/admin/agregar-evaluaciones" className={styles.submenuLink}>Agregar evaluacion</Link></li>
+                  )
+                }
               </ul>
             </li>
           </ul>

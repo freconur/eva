@@ -4,44 +4,88 @@ import { categoriaTransform } from '@/fuctions/categorias'
 import { convertGrade } from '@/fuctions/regiones'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { PiFilesFill } from 'react-icons/pi'
+import styles from './pruebas.module.css'
 
 const Pruebas = () => {
-  const { evaluacionesGradoYCategoria } = useGlobalContext()
+  const { evaluacionesGradoYCategoria, loaderPages } = useGlobalContext()
   const { getEvaluacionesGradoYCategoria } = useAgregarEvaluaciones()
   const route = useRouter()
+  
   useEffect(() => {
     getEvaluacionesGradoYCategoria(Number(route.query.grado), Number(route.query.categoria))
   }, [route.query.grado, route.query.categoria])
-  console.log('evaluacionesGradoYCategoria', evaluacionesGradoYCategoria)
-  return (
-
-    <div className='p-10'>
-      <div className='w-full border-b-[2px] border-orange-300 pb-5'>
-        <h1 className='text-3xl font-martianMono text-white text-center capitalize font-bold'>{convertGrade(`${route.query.grado}`)}: {categoriaTransform(Number(route.query.categoria))}</h1>
+  
+  // Algoritmo super eficiente para ordenar evaluaciones alfabéticamente
+  const evaluacionesOrdenadas = useMemo(() => {
+    if (!evaluacionesGradoYCategoria) return []
+    
+    // Filtro y ordenamiento en una sola pasada para máxima eficiencia
+    return evaluacionesGradoYCategoria
+      .filter(eva => eva.active) // Filtrar solo activas
+      .sort((a, b) => {
+        // Normalización para ordenamiento insensible a mayúsculas/minúsculas
+        const nombreA = a.nombre?.toLowerCase().trim() || ''
+        const nombreB = b.nombre?.toLowerCase().trim() || ''
+        
+        // Ordenamiento alfabético usando localeCompare para caracteres especiales
+        return nombreA.localeCompare(nombreB, 'es', { 
+          numeric: true, // Ordenamiento numérico natural (ej: "Evaluación 2" antes que "Evaluación 10")
+          sensitivity: 'base' // Ignorar acentos y mayúsculas
+        })
+      })
+  }, [evaluacionesGradoYCategoria])
+  
+  // Renderizar loader si loaderPages es true
+  if (loaderPages) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>{convertGrade(`${route.query.grado}`)}: {categoriaTransform(Number(route.query.categoria))}</h1>
+        </div>
+        <div className={styles.loaderContainer}>
+          <div className={styles.loader}></div>
+          <p className={styles.loaderText}>Cargando evaluaciones...</p>
+        </div>
       </div>
-      <div className='p-10'>
-        <ul className='grid gap-5 grid-cols-5'>
-          {
-            evaluacionesGradoYCategoria?.map((eva, index) => {
-              return (
-                <li key={index} className='p-1 rounded-md bg-gradient-to-r drop-shadow-lg from-indigo-500 via-purple-500 to-pink-500 hover:opacity-80 duration-400 :hover:duration-400'>
-                  <Link href={`pruebas/prueba?idExamen=${eva.id}`} className='bg-color-boton rounded-md p-3 h-full m-auto grid justify-center items-center'>
-                    <div className='w-full flex items-center justify-center'>
-                      <PiFilesFill className='text-[100px] text-white' />
-                    </div>
-                    <p className='text-lg uppercase text-cyan-100 font-semibold text-center'>{eva.nombre}</p>
+    )
+  }
 
-                  </Link>
-                </li>
-              )
-            })
-          }
-        </ul>
+  // Renderizar contenido cuando loaderPages es false
+  return (
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>{convertGrade(`${route.query.grado}`)}: {categoriaTransform(Number(route.query.categoria))}</h1>
+      </div>
+      <div className={styles.content}>
+        <div className={styles.cardsGrid}>
+          {evaluacionesOrdenadas.map((eva, index) => (
+            <div key={`${eva.id}-${index}`} className={styles.card}>
+              <Link href={`pruebas/prueba?idExamen=${eva.id}`} className={styles.cardLink}>
+                <div className={styles.cardHeader}>
+                  <div className={styles.iconContainer}>
+                    <PiFilesFill className={styles.icon} />
+                  </div>
+                  <div className={styles.cardBadge}>
+                    <span className={styles.badgeText}>Evaluación</span>
+                  </div>
+                </div>
+                <div className={styles.cardBody}>
+                  <h3 className={styles.cardTitle}>{eva.nombre}</h3>
+                  {/* <p className={styles.cardDescription}>
+                    Haz clic para comenzar esta evaluación
+                  </p> */}
+                </div>
+                <div className={styles.cardFooter}>
+                  <span className={styles.startButton}>Comenzar →</span>
+                </div>
+              </Link>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-
   )
 }
 

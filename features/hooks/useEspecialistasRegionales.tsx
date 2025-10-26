@@ -7,7 +7,7 @@ import { User } from '../types/types';
 
 export const useEspecialistasRegionales = () => {
   const db = getFirestore(app);
- /*  const URL_API = 'http://localhost:3001/'; */
+  /* const URL_API = 'http://localhost:3001/'; */
   const URL_API = 'https://api-ugel-production.up.railway.app/';
 
 
@@ -62,6 +62,16 @@ export const useEspecialistasRegionales = () => {
       setEspecialistasRegionales(especialistasRegionales);
     });
   }
+const addPermisosEspecialistasEnEvaluacion = async(idEvaluacion: string, especialistas: string[]) => {
+try {
+  const refPath = doc(db, 'evaluaciones', idEvaluacion)
+  await setDoc(refPath, {usuariosConPermisos: especialistas}, { merge: true })
+  
+} catch (error) {
+  console.log('error', error)
+}
+}
+
 
   const updateEspecialistaRegional = async (dni: string, data: User) => {
     const pathRef = doc(db, 'usuarios', dni);
@@ -89,5 +99,6 @@ export const useEspecialistasRegionales = () => {
     especialistasRegionales,
     updateEspecialistaRegional,
     deleteEspecialistaRegional,
+    addPermisosEspecialistasEnEvaluacion
   };
 };

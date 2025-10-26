@@ -20,7 +20,7 @@ import {
   query,
   getFirestore,
   doc,
-  getDoc,
+  getDoc, 
   setDoc,
   collection,
   getDocs,
@@ -107,6 +107,8 @@ const useUsuario = () => {
           perfil: user.data().perfil || {},
           region: user.data().region || 0,
           rol: user.data().rol || 0,
+          nivelDeInstitucion: user.data().nivelDeInstitucion || [],
+          nivel: user.data().nivel || 0,
         },
       });
     } else {
@@ -268,6 +270,7 @@ const useUsuario = () => {
                   nombres: data.nombres,
                   apellidos: data.apellidos,
                   region: Number(data.region),
+                  nivelDeInstitucion: data.nivelDeInstitucion,
                 };
 
                 // Solo agregar campos opcionales si no son undefined o null
@@ -390,6 +393,7 @@ const useUsuario = () => {
               grados: data.grados,
               secciones: data.secciones,
               genero: data.genero,
+              nivel: data.nivel,
             }).then((res) => {
               dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: '' });
               dispatch({ type: AppAction.LOADER_PAGES, payload: false });

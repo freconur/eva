@@ -9,7 +9,7 @@ import { RiLoader4Line } from 'react-icons/ri'
 
 const AgregarEvaluaciones = () => {
   const initialValues = { evaluacion: "" }
-  const initialValuesForData = { grado: 0, categoria: "", nombreEvaluacion: "", tipoDeEvaluacion: "" }
+  const initialValuesForData = { grado: 0, categoria: "", nombreEvaluacion: "", tipoDeEvaluacion: "", nivel: 0 }
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
   const [showModal, setShowModal] = useState(false)
   const [selectValues, setSelectValues] = useState(initialValuesForData)
@@ -20,11 +20,25 @@ const AgregarEvaluaciones = () => {
   const handleshowModal = () => {
     setShowModal(!showModal)
   }
+  const getNivelGrado = (grado: number) => {
+    if (grado >= 1 && grado <= 6) return 1 // Primaria
+    if (grado >= 7 && grado <= 11) return 2 // Secundaria
+    return 0 // Inicial
+  }
+
   const handleChangeValues = (e: React.ChangeEvent<HTMLSelectElement> | React.ChangeEvent<HTMLInputElement>) => {
-    setSelectValues({
+    const newValues = {
       ...selectValues,
       [e.target.name]: e.target.value
-    })
+    }
+    
+    // Si se está cambiando el grado, también actualizar el nivel
+    if (e.target.name === 'grado') {
+      const gradoSeleccionado = parseInt(e.target.value)
+      newValues.nivel = getNivelGrado(gradoSeleccionado)
+    }
+    
+    setSelectValues(newValues)
   }
   const handleChangeNombreEvalucion = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNombreEvaluacion({
@@ -44,6 +58,7 @@ const AgregarEvaluaciones = () => {
   }, [])
 
   console.log('selectValues', selectValues)
+ /*  console.log('grades', grados) */
   return (
     <>
       {/* <button onClick={handleshowModal} className='p-3 bg-blue-300'>abrir</button> */}

@@ -252,6 +252,8 @@ export type Evaluaciones = {
   tipoEvaluacion?: string;
   tipoDeEvaluacion?: string;
   nivelYPuntaje?: NivelYPuntaje[];
+  usuariosConPermisos?: string[];
+  nivel?:number[]
 };
 export type Evaluacion = {
   id?: string;
@@ -267,6 +269,7 @@ export type Evaluacion = {
   tipoDeEvaluacion?: string;
   nivelYPuntaje?: NivelYPuntaje[];
   idDocente?: string;
+  usuariosConPermisos?: string[];
 };
 export type UserEstudiante = {
   id?: string;
@@ -342,6 +345,7 @@ export type User = {
   resultadosSeguimientoRetroalimentacion?: PRDocentes[];
   observacionesSeguimientoRetroalimentacion?: string;
   linkDocumentos?: string;
+  nivelDeInstitucion?: number[];
 };
 
 export type ConocimientoPedagogico = {
@@ -407,6 +411,7 @@ export type CreaEvaluacion = {
   nombreEvaluacion?: string;
   tipoEvaluacion?: string;
   tipoDeEvaluacion?: string;
+  nivel?: number;
 };
 
 export type respuestaPsicolinguistica = {

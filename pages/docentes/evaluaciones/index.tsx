@@ -10,6 +10,8 @@ import inicial from "../../../assets/inicial.png";
 import { RiLoader4Line, RiArrowRightLine, RiCheckLine } from "react-icons/ri";
 import { FaGraduationCap, FaChalkboardTeacher, FaBaby } from "react-icons/fa";
 import styles from "./evaluaciones.module.css";
+import PermissionGate from "@/components/permissions/PermissionGate";
+import { PERMISSIONS } from "@/features/utils/permissions";
 
 // Datos de los niveles educativos
 const educationLevels = [
@@ -19,6 +21,7 @@ const educationLevels = [
     description: 'Niveles 6 y 7 - Estudiantes de 12 a 17 años',
     icon: FaGraduationCap,
     image: secundaria,
+    nivel:2,
     levels: [
       { number: 6, title: 'Nivel 6', description: 'Estándares de aprendizaje para estudiantes de 1° y 2° de secundaria' },
       { number: 7, title: 'Nivel 7', description: 'Estándares de aprendizaje para estudiantes de 3°, 4° y 5° de secundaria' }
@@ -30,6 +33,7 @@ const educationLevels = [
     title: 'Educación Primaria',
     description: 'Niveles 3, 4 y 5 - Estudiantes de 6 a 11 años',
     icon: FaChalkboardTeacher,
+    nivel:1,
     image: primaria,
     levels: [
       { number: 3, title: 'Nivel 3', description: 'Estándares de aprendizaje para estudiantes de 1° y 2° de primaria' },
@@ -43,6 +47,7 @@ const educationLevels = [
     title: 'Educación Inicial',
     description: 'Niveles 1 y 2 - Niños de 3 a 5 años',
     icon: FaBaby,
+    nivel:0,
     image: inicial,
     levels: [
       { number: 1, title: 'Nivel 1', description: 'Estándares de aprendizaje para estudiantes de 3 años' },
@@ -89,10 +94,23 @@ const Evaluaciones = () => {
       </h1>
       
       <div className={styles.gridContainer}>
-        {educationLevels.map((level) => {
-          const IconComponent = level.icon;
-          console.log(`Renderizando nivel: ${level.id} con ${level.levels.length} subniveles`);
-          
+        {educationLevels
+          .filter((level) => {
+            // Si currentUserData tiene la propiedad nivel y su valor es 2, 
+            // solo mostrar el objeto que tenga nivel 2
+            if (currentUserData?.nivel === 2) {
+              return level.nivel === 2;
+            }
+            // Si currentUserData no tiene nivel, mostrar solo el que tenga nivel 1
+            if (!currentUserData?.nivel) {
+              return level.nivel === 1;
+            }
+            // Si no se cumple ninguna condición, mostrar todos los niveles
+            return true;
+          })
+          .map((level) => {
+
+const IconComponent = level.icon;
           return (
             <div key={level.id} className={`${styles.educationLevel} ${styles[level.id]}`}>
               <div className={styles.levelHeader}>

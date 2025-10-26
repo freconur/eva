@@ -1,0 +1,236 @@
+/* ===== TARJETA DE EVALUACIÓN PROFESIONAL MINIMALISTA ===== */
+
+.evaluationCard {
+  position: relative;
+  display: block;
+  height: 140px;
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #ffffff;
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  min-height: 140px;
+}
+
+.evaluationCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.06);
+  border-color: var(--card-bg, #3b82f6);
+}
+
+.evaluationCard:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* Contenido de la tarjeta */
+.cardContent {
+  position: relative;
+  z-index: 2;
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.evaluationCard:hover .cardTitle {
+  color: var(--card-bg, #3b82f6);
+}
+
+/* Badge de completado */
+.completedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0f9ff;
+  color: #0369a1;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 8px;
+  align-self: flex-start;
+  border: 1px solid #bae6fd;
+}
+
+.evaluationCard:hover .completedBadge {
+  background: #dbeafe;
+  color: var(--card-bg, #3b82f6);
+  border-color: var(--card-bg, #3b82f6);
+}
+
+.checkIcon {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Contenedor de progreso */
+.progressContainer {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progressBar {
+  flex: 1;
+  height: 4px;
+  background: #f3f4f6;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--card-bg, #3b82f6);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 32px;
+  text-align: right;
+}
+
+.evaluationCard:hover .progressText {
+  color: var(--card-bg, #3b82f6);
+}
+
+/* Estado de la tarjeta */
+.cardStatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.statusText {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.evaluationCard:hover .statusText {
+  color: var(--card-bg, #3b82f6);
+}
+
+.arrowIcon {
+  font-size: 1rem;
+  color: #9ca3af;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.evaluationCard:hover .arrowIcon {
+  color: var(--card-bg, #3b82f6);
+  transform: translateX(2px);
+}
+
+/* Estados especiales */
+.evaluationCard.active {
+  border-color: var(--card-bg, #3b82f6);
+  box-shadow: 
+    0 0 0 3px rgba(59, 130, 246, 0.1),
+    0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.evaluationCard.completed {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.evaluationCard.completed:hover {
+  border-color: #059669;
+  box-shadow: 
+    0 4px 6px rgba(16, 185, 129, 0.1),
+    0 2px 4px rgba(16, 185, 129, 0.06);
+}
+
+.evaluationCard.completed .cardTitle {
+  color: #065f46;
+}
+
+.evaluationCard.completed:hover .cardTitle {
+  color: #047857;
+}
+
+.evaluationCard.completed .statusText {
+  color: #059669;
+}
+
+.evaluationCard.completed .arrowIcon {
+  color: #059669;
+}
+
+/* Animaciones de entrada */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.evaluationCard {
+  animation: fadeInUp 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .evaluationCard {
+    height: 120px;
+    min-height: 120px;
+  }
+  
+  .cardContent {
+    padding: 16px;
+  }
+  
+  .cardTitle {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .evaluationCard {
+    height: 110px;
+    min-height: 110px;
+  }
+  
+  .cardContent {
+    padding: 14px;
+  }
+  
+  .cardTitle {
+    font-size: 0.875rem;
+  }
+}

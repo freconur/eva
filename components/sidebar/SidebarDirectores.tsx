@@ -8,13 +8,16 @@ import BackgroundSidebar from './background-sidebar';
 import styles from './sideBarList.module.css'
 import { FaUserGraduate, FaUserTie } from 'react-icons/fa';
 import { MdAccountCircle } from 'react-icons/md';
+import { useGlobalContext } from '@/features/context/GlolbalContext';
+import PermissionGate from '@/components/permissions/PermissionGate';
+import { PERMISSIONS } from '@/features/utils/permissions';
 interface Props {
   showSidebar: boolean
 }
 const SidebarDirectores = ({ showSidebar }: Props) => {
   const { logout } = useUsuario()
   const { showSidebarValue } = useRolUsers()
-  // const { showSidebar } = useGlobalContext()
+  const { currentUserData } = useGlobalContext()
   return (
     <div className={`z-[2000] grid-rows-gridRows p-2 justify-evenly grid fixed duration-300 drop-shadow-xl h-full w-[250px] bg-graduado-blue-2 ${showSidebar ? "left-[0px]" : "-left-[300px]"}`}>
       <BackgroundSidebar />
@@ -64,27 +67,59 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
 
                 </div>
                 <ul className={styles.dropdownContent} aria-label="submenu">
-                  <li className={styles.containerAncla}><Link
-                    href="/directores/evaluaciones-docentes"
-                    className={styles.anclaje}
-                    id="ancla">Mediacion didactica</Link></li>
-                  <li className={styles.containerAncla}><Link
-                    href="/directores/agregar-profesores"
-                    id="ancla"
-                    className={styles.anclaje} >Crear usuario</Link></li>
-                    <li className={styles.containerAncla}><Link
-                    href="/directores/cobertura-curricular"
-                    id="ancla"
-                    className={styles.anclaje} >Cobertura curricular</Link></li>
+                  <PermissionGate permission={PERMISSIONS.VIEW_MEDIACION_DIDACTICA}>
+                    <li className={styles.containerAncla}>
+                      <Link
+                        href="/directores/evaluaciones-docentes"
+                        className={styles.anclaje}
+                        id="ancla"
+                      >
+                        Mediacion didactica
+                      </Link>
+                    </li>
+                  </PermissionGate>
+                  
+                  {/* <PermissionGate permission={PERMISSIONS.CREATE_DOCENTES}>
+                      </PermissionGate> */}
+                    <li className={styles.containerAncla}>
+                      <Link
+                        href="/directores/agregar-profesores"
+                        id="ancla"
+                        className={styles.anclaje}
+                      >
+                        Crear usuario
+                      </Link>
+                    </li>
+
+                  <PermissionGate permission={PERMISSIONS.VIEW_COBERTURA_CURRICULAR}>
+                    <li className={styles.containerAncla}>
+                      <Link
+                        href="/directores/cobertura-curricular"
+                        id="ancla"
+                        className={styles.anclaje}
+                      >
+                        Cobertura curricular
+                      </Link>
+                    </li>
+                  </PermissionGate>
                 </ul>
               </li>
-              <li className={styles.dropdown}>
+              <PermissionGate permission={PERMISSIONS.VIEW_AUTORREPORTE}>
+                <li className={styles.dropdown}>
+                  <div className={styles.containerIcon}>
+                    <Link className={styles.ancla} href="/admin/conocimientos-pedagogicos?rol=2" aria-haspopup="true">
+                      Autorreporte
+                    </Link>
+                  </div>
+                </li>
+              </PermissionGate>
+              {/* <li className={styles.dropdown}>
                 <div className={styles.containerIcon}>
                   <Link className={styles.ancla} href="/admin/conocimientos-pedagogicos?rol=2" aria-haspopup="true">
                     Autorreporte
                   </Link>
                 </div>
-              </li>
+              </li> */}
             </ul>
           </div>
           <SidebarInfoUser showSidebar={showSidebar} />

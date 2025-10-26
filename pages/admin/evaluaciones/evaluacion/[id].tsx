@@ -7,10 +7,11 @@ import EvaluarEstudiante from '@/modals/evaluarEstudiante'
 import UpdatePreguntaRespuesta from '@/modals/updatePreguntaRespuesta'
 import DeletePregunta from '@/modals/deletePregunta'
 import PuntuacionYNivel from '@/modals/PuntuacionYNivel/puntuacionYNivel'
+import AsignarEvaluacionModal from './AsignarEvaluacionModal'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState, useRef, useCallback } from 'react'
-import { MdEditSquare, MdDelete } from 'react-icons/md'
+import { MdEditSquare, MdDelete, MdAssignment, MdAddCircle, MdSettings, MdAssessment, MdTrendingUp, MdEmojiEvents } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 import { FaArrowUp, FaArrowDown } from 'react-icons/fa'
 import styles from './evaluacion.module.css'
@@ -45,6 +46,7 @@ const Evaluacion = () => {
   const [showModalUpdatePReguntaRespuesta, setShowModalUpdatePReguntaRespuesta] = useState(false)
   const [showModalDelete, setShowModalDelete] = useState(false)
   const [showModalPuntuacionYNivel, setShowModalPuntuacionYNivel] = useState(false)
+  const [showModalAsignarEvaluacion, setShowModalAsignarEvaluacion] = useState(false)
   const [preguntaToDelete, setPreguntaToDelete] = useState({ id: '', order: 0 })
 
   // Hook para mantener la posición de scroll
@@ -73,6 +75,10 @@ const Evaluacion = () => {
 
   const handleShowModalPuntuacionYNivel = () => {
     setShowModalPuntuacionYNivel(!showModalPuntuacionYNivel)
+  }
+
+  const handleShowModalAsignarEvaluacion = () => {
+    setShowModalAsignarEvaluacion(!showModalAsignarEvaluacion)
   }
 
   const handleSelectPregunta = (index: number) => {
@@ -165,6 +171,15 @@ const Evaluacion = () => {
         />
       )}
 
+      {showModalAsignarEvaluacion && (
+        <AsignarEvaluacionModal
+          showModal={showModalAsignarEvaluacion}
+          handleShowModal={handleShowModalAsignarEvaluacion}
+          idEvaluacion={`${route.query.id}`}
+          usuariosConPermisos={evaluacion.usuariosConPermisos}
+        />
+      )}
+
       {loaderPages ? (
         <div className={styles.loader}>
           <div className={styles.loaderContent}>
@@ -176,47 +191,85 @@ const Evaluacion = () => {
         <div className={styles.container} ref={containerRef}>
           <div className={styles.content}>
             <h1 className={styles.title}>{evaluacion.nombre}</h1>
-            <div className={styles.actions}>
-              {showModal && (
-                <AgregarPreguntasRespuestas
-                  id={`${route.query.id}`}
-                  showModal={showModal}
-                  handleshowModal={handleshowModal}
-                />
-              )}
-              {currentUserData.rol === 4 && (
-                <button onClick={handleshowModal} className={styles.buttonPrimary}>
-                  agregar preguntas
-                </button>
-              )}
-              <Link
-                href={`reporte?id=${currentUserData.dni}&idEvaluacion=${route.query.id}`}
-                className={styles.buttonSecondary}
-              >
-                
-                reporte de evaluación
-              </Link>
-              <Link
-                href={`seguimiento-evaluaciones`}
-                className={styles.buttonSeguimiento}
-              >
-                
-                seguimiento
-              </Link>
-              {currentUserData.rol === 4 && (
-              <button 
-                onClick={handleShowModalPuntuacionYNivel} 
-                className={styles.buttonRangoNivel}
-              >
-                rango de nivel
-              </button>
-              )}
-              {hayPuntajes && currentUserData.rol === 4 && (
-                <div className={styles.totalPuntaje}>
-                  <span className={styles.totalLabel}>Puntaje Total: </span>
-                  <span className={styles.totalValue}>{totalPuntaje}</span>
+            {/* Modal para agregar preguntas */}
+            {showModal && (
+              <AgregarPreguntasRespuestas
+                id={`${route.query.id}`}
+                showModal={showModal}
+                handleshowModal={handleshowModal}
+              />
+            )}
+
+            {/* Sección de acciones compacta */}
+            <div className={styles.compactActionsContainer}>
+              <div className={styles.compactActionsCard}>
+                {/* Select para acciones de gestión */}
+                <div className={styles.compactSelectGroup}>
+                  <div className={styles.compactSelectIcon}>
+                    <MdSettings />
+                  </div>
+                  <select 
+                    className={styles.compactSelect}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === 'agregar-preguntas') {
+                        handleshowModal();
+                      } else if (value === 'rango-nivel') {
+                        handleShowModalPuntuacionYNivel();
+                      } else if (value === 'asignar-evaluacion') {
+                        handleShowModalAsignarEvaluacion();
+                      }
+                      e.target.value = ''; // Reset select
+                    }}
+                  >
+                    <option value="">⚙️ Gestionar Evaluación</option>
+                    
+                      
+                        {((evaluacion.usuariosConPermisos && currentUserData.dni && evaluacion.usuariosConPermisos.includes(currentUserData.dni)) || currentUserData.rol === 4) && (
+                          <option value="agregar-preguntas">➕ Agregar Preguntas</option>
+                        )}
+                      
+                        {currentUserData.rol === 4 && (
+                        <option value="rango-nivel">⚙️ Configurar Rango de Nivel</option>
+                      
+                    )}
+                    {currentUserData.rol === 4 && (
+                      <option value="asignar-evaluacion">📋 Asignar Evaluación</option>
+                    )}
+                  </select>
                 </div>
-              )}
+
+                {/* Botones de reportes */}
+                <div className={styles.compactButtonsGroup}>
+                  <Link
+                    href={`reporte?id=${currentUserData.dni}&idEvaluacion=${route.query.id}`}
+                    className={styles.compactButton}
+                    title="Ver reporte de evaluación"
+                  >
+                    <MdAssessment />
+                    <span>Reporte</span>
+                  </Link>
+                  
+                  <Link
+                    href={`seguimiento-evaluaciones`}
+                    className={styles.compactButton}
+                    title="Ver seguimiento"
+                  >
+                    <MdTrendingUp />
+                    <span>Seguimiento</span>
+                  </Link>
+                </div>
+
+                {/* Puntaje total compacto */}
+                {hayPuntajes && currentUserData.rol === 4 && (
+                  <div className={styles.compactScore}>
+                    <MdEmojiEvents />
+                    <span className={styles.compactScoreText}>
+                      <strong>{totalPuntaje}</strong> pts
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <h2 className={styles.sectionTitle}>preguntas y respuestas</h2>

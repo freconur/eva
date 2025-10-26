@@ -9,6 +9,7 @@ import styles from './styles.module.css'
 import { useDirectores } from '@/features/hooks/useDirectores'
 import UsuariosByRol from '@/components/usuariosByRol'
 import { User } from '@/features/types/types'
+import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 
 interface FormData {
   nombres: string;
@@ -22,17 +23,26 @@ interface FormData {
 const AgregarDirectores = () => {
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>()
   const { getUserData, crearNuevoDocente } = useUsuario()
-  const { currentUserData, loaderPages, warningUsuarioExiste, usuariosByRol } = useGlobalContext()
+  const { currentUserData, loaderPages, warningUsuarioExiste, usuariosByRol, grados } = useGlobalContext()
 
   useEffect(() => {
     getUserData()
   }, [currentUserData.dni])
 
   const handleAgregarDirector = handleSubmit((data) => {
+    // Función para determinar el nivel basado en el grado
+    const getNivelFromGrado = (grado: number) => {
+      if (grado >= 1 && grado <= 6) return 1; // Primaria
+      if (grado >= 7 && grado <= 11) return 2; // Secundaria
+      return 1; // Por defecto primaria
+    }
+
     const dataConvertida = {
       ...data,
       grados: data.grados.map(grado => Number(grado)),
-      secciones: data.secciones.map(seccion => Number(seccion))
+      secciones: data.secciones.map(seccion => Number(seccion)),
+      // Agregar nivel basado en el primer grado seleccionado
+      nivel: data.grados.length > 0 ? getNivelFromGrado(Number(data.grados[0])) : 1
     }
     console.log("data", dataConvertida)
     crearNuevoDocente({ 
@@ -42,25 +52,17 @@ const AgregarDirectores = () => {
     reset()
   })
 const { getDocentesByDniDirector, gettAllProfesores, fixedgrado } = useDirectores()
+const {getGrades} = useAgregarEvaluaciones()
   useEffect(() => {
     getDocentesByDniDirector(`${currentUserData.dni}`)
   },[currentUserData.dni])
+useEffect(() => {
+  getGrades()
+},[])
 
-  /* const handleAllProfesores = () => {
-    gettAllProfesores()
-  }
-  const handleFixedGrado = () => {00290190
-    fixedgrado(usuariosByRol)
-  } */
-  console.log("usuariosByRol", usuariosByRol)
   return (
     <div className={styles.container}>
-      {/* <div 
-      className='p-3 cursor-pointer h-[60px] bg-blue-400 text-white rounded-md' onClick={handleAllProfesores}
-      >Agregar todos los profesores</div>
-      <div 
-      className='p-3 cursor-pointer h-[60px] bg-blue-400 text-white rounded-md' onClick={handleFixedGrado}
-      >fixed</div> */}
+      
       <UsuariosByRol  usuariosByRol={usuariosByRol}/>
       <div className={styles.formContainer}>
         {loaderPages ? (
@@ -123,13 +125,32 @@ const { getDocentesByDniDirector, gettAllProfesores, fixedgrado } = useDirectore
                 <input
                   {...register("dni", {
                     required: { value: true, message: "El DNI es requerido" },
-                    minLength: { value: 8, message: "El DNI debe tener 8 caracteres" },
-                    maxLength: { value: 8, message: "El DNI debe tener 8 caracteres" },
-                    pattern: { value: /^[0-9]+$/, message: "Solo se permiten números" }
+                    minLength: { value: 8, message: "El DNI debe tener exactamente 8 dígitos" },
+                    maxLength: { value: 8, message: "El DNI debe tener exactamente 8 dígitos" },
+                    pattern: { 
+                      value: /^[0-9]{8}$/, 
+                      message: "El DNI debe contener exactamente 8 dígitos numéricos" 
+                    },
+                    validate: {
+                      exactLength: (value) => value.length === 8 || "El DNI debe tener exactamente 8 dígitos",
+                      onlyNumbers: (value) => /^[0-9]+$/.test(value) || "Solo se permiten números"
+                    }
                   })}
                   className={styles.input}
                   type="text"
-                  placeholder="Ingrese el DNI del docente"
+                  placeholder="Ingrese el DNI del docente (8 dígitos)"
+                  maxLength={8}
+                  onKeyPress={(e) => {
+                    // Solo permitir números
+                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab') {
+                      e.preventDefault();
+                    }
+                  }}
+                  onInput={(e) => {
+                    // Limitar a 8 caracteres y solo números
+                    const target = e.target as HTMLInputElement;
+                    target.value = target.value.replace(/[^0-9]/g, '').slice(0, 8);
+                  }}
                 />
                 {errors.dni && (
                   <span className={styles.error}>{errors.dni.message}</span>
@@ -142,22 +163,39 @@ const { getDocentesByDniDirector, gettAllProfesores, fixedgrado } = useDirectore
                     Grado:
                   </label>
                   <div className={styles.checkboxGroup}>
-                    {gradosDeColegio.map((grado) => (
-                      <div key={grado.id} className={styles.checkboxItem}>
-                        <input
-                          type="checkbox"
-                          id={`grado-${grado.id}`}
-                          value={Number(grado.id)}
-                          {...register("grados", { 
-                            required: { value: true, message: "El grado es requerido" }
-                          })}
-                          className={styles.checkbox}
-                        />
-                        <label htmlFor={`grado-${grado.id}`} className={styles.checkboxLabel}>
-                          {grado.name}
-                        </label>
-                      </div>
-                    ))}
+                    {grados
+                      .filter((grado) => {
+                        // Si el nivel de institución es 2 (secundaria), solo mostrar grados 7-11
+                        if (currentUserData.nivelDeInstitucion?.includes(2)) {
+                          return Number(grado.grado) >= 7 && Number(grado.grado) <= 11;
+                        }
+                        // Si el nivel de institución es 1 (primaria), solo mostrar grados 1-6
+                        if (currentUserData.nivelDeInstitucion?.includes(1)) {
+                          return Number(grado.grado) >= 1 && Number(grado.grado) <= 6;
+                        }
+                        // Si no existe nivelDeInstitucion o no tiene la propiedad, mostrar solo nivel 1 (primaria)
+                        if (!currentUserData.nivelDeInstitucion || currentUserData.nivelDeInstitucion.length === 0) {
+                          return Number(grado.grado) >= 1 && Number(grado.grado) <= 6;
+                        }
+                        // Si no hay nivel específico, mostrar todos los grados
+                        return true;
+                      })
+                      .map((grado) => (
+                        <div key={grado.id} className={styles.checkboxItem}>
+                          <input
+                            type="checkbox"
+                            id={`grado-${grado.id}`}
+                            value={Number(grado.id)}
+                            {...register("grados", { 
+                              required: { value: true, message: "El grado es requerido" }
+                            })}
+                            className={styles.checkbox}
+                          />
+                          <label htmlFor={`grado-${grado.id}`} className={styles.checkboxLabel}>
+                            {grado.nombre}
+                          </label>
+                        </div>
+                      ))}
                   </div>
                   {errors.grados && (
                     <span className={styles.error}>{errors.grados.message}</span>

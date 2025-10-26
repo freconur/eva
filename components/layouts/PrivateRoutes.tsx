@@ -30,7 +30,7 @@ const PrivateRouteAdmins = ({ children }: Props) => {
     // console.log('ruta admin', currentUserData)
     if (currentUserData.dni) {
       if (currentUserData.perfil?.rol !== undefined) {
-        if (Number(currentUserData?.perfil.rol) !== 4) {
+        if (Number(currentUserData?.perfil.rol) !== 4 && Number(currentUserData?.perfil.rol) !== 5) {
           router.push('/login')
         }
         // if (Number(currentUserData?.perfil.rol) === 4) {

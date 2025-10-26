@@ -292,6 +292,7 @@ export const useAgregarEvaluaciones = () => {
         tipoDeEvaluacion: value.tipoDeEvaluacion,
         mesDelExamen: `${currentMonth}`,
         active: false,
+        nivel: Number(value.nivel),
       });
     } catch (error) {
       console.log('error', error);

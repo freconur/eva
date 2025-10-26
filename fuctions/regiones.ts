@@ -43,7 +43,11 @@ export const regionTexto = (id: string) => {
   })
   return rta
 }
-
+export const nivelInstitucion = [
+  { id: 0, name: "inicial" },
+  { id: 1, name: "primaria" },
+  { id: 2, name: "secundaria" },
+]
 export const rolDirectivo = [
   { id: 1, name: "Director" },
   { id: 2, name: "Sub-director" },
@@ -80,12 +84,17 @@ export const converGenero = (genero: string) => {
   if (genero === "2") return "Femenino"
 }
 export const gradosDeColegio = [
-  { id: 1, name: "1ro grado" },
-  { id: 2, name: "2do grado" },
-  { id: 3, name: "3ro grado" },
-  { id: 4, name: "4to grado" },
-  { id: 5, name: "5to grado" },
-  { id: 6, name: "6to grado" },
+  { id: 1, name: "1ro grado", nivel:1 },
+  { id: 2, name: "2do grado", nivel:1 },
+  { id: 3, name: "3ro grado", nivel:1 },
+  { id: 4, name: "4to grado", nivel:1 },
+  { id: 5, name: "5to grado", nivel:1 },
+  { id: 6, name: "6to grado", nivel:1 },
+  { id: 7, name: "1ro sec.", nivel:2 },
+  { id: 8, name: "2ro sec.", nivel:2 },
+  { id: 9, name: "3ro sec.", nivel:2 },
+  { id: 10, name: "4to sec.", nivel:2 },
+  { id: 11, name: "5to sec.", nivel:2 },
 ]
 export const caracteristicasDirectivo = [
   { id: 1, name: "polidocente completa" },

@@ -32,6 +32,9 @@ const Login = () => {
         if (currentUserData.perfil?.rol === 4) {
           router.push('/mi-cuenta')
         }
+        if (currentUserData.perfil?.rol === 5) {
+          router.push('/mi-cuenta')
+        }
       }
     })
   }, [currentUserData.perfil?.rol, loaderLogin, warningLogin])

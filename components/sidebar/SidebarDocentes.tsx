@@ -7,6 +7,8 @@ import { useRolUsers } from '@/features/hooks/useRolUsers';
 import BackgroundSidebar from './background-sidebar';
 import { useTituloDeCabecera } from '@/features/hooks/useTituloDeCabecera';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
+import { PERMISSIONS } from '@/features/utils/permissions';
+import PermissionGate from '../permissions/PermissionGate';
 
 interface Props {
   showSidebar: boolean
@@ -36,13 +38,15 @@ const SidebarDocentes = ({ showSidebar }: Props) => {
             </p>
             </Link>
           </li>
-              <li className='rounded-md text-white   flex items-center gap-x-4 cursor-pointer text-sm  mt-2   hover:border-[1px] hover:border-green-300 hover:text-green-300 duration-300 mx-1 whitespace-nowrap drop-shadow-lg'>
-                <Link href="/admin/conocimientos-pedagogicos?rol=3" className='p-3'>
-                <p className='flex-wrap w-[150px] flex'>
-                  Autorreporte
-                </p>
-                </Link>
-              </li>
+          <PermissionGate permission={PERMISSIONS.VIEW_AUTORREPORTE}>
+            <li className='rounded-md text-white   flex items-center gap-x-4 cursor-pointer text-sm  mt-2   hover:border-[1px] hover:border-green-300 hover:text-green-300 duration-300 mx-1 whitespace-nowrap drop-shadow-lg'>
+              <Link href="/admin/conocimientos-pedagogicos?rol=3" className='p-3'>
+              <p className='flex-wrap w-[150px] flex'>
+                Autorreporte
+              </p>
+              </Link>
+            </li>
+          </PermissionGate>
          
         </ul>
         <SidebarInfoUser showSidebar={showSidebar} />

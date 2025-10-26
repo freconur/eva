@@ -1,0 +1,252 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.modalBody {
+  padding: 20px;
+}
+
+.selectContainer {
+  margin-bottom: 20px;
+}
+
+.selectLabel {
+  display: block;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 12px;
+  font-size: 0.875rem;
+}
+
+.multiSelect {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: white;
+  font-size: 0.875rem;
+  color: #374151;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.multiSelect:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.multiSelect option {
+  padding: 8px 12px;
+  color: #374151;
+}
+
+.multiSelect option:checked {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.selectHint {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.selectedContainer {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+}
+
+.selectedTitle {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0c4a6e;
+}
+
+.selectedList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selectedItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: white;
+  border: 1px solid #7dd3fc;
+  border-radius: 4px;
+  gap: 8px;
+}
+
+.selectedDni {
+  font-weight: 600;
+  color: #0c4a6e;
+  font-size: 0.875rem;
+  min-width: 80px;
+}
+
+.selectedName {
+  color: #374151;
+  font-size: 0.875rem;
+  flex: 1;
+}
+
+.removeButton {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: all 0.2s;
+  min-width: 24px;
+  height: 24px;
+}
+
+.removeButton:hover {
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+.removeButton:active {
+  transform: scale(0.95);
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.cancelButton {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: white;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.saveButton {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: #3b82f6;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.saveButton:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+.saveButton:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .modalContent {
+    width: 95%;
+    margin: 10px;
+  }
+  
+  .modalHeader {
+    padding: 16px;
+  }
+  
+  .modalBody {
+    padding: 16px;
+  }
+  
+  .multiSelect {
+    font-size: 0.8rem;
+  }
+  
+  .modalFooter {
+    padding: 16px;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .cancelButton,
+  .saveButton {
+    width: 100%;
+    padding: 10px 16px;
+  }
+}

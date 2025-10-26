@@ -73,7 +73,7 @@ const LayoutMenu = ({ children }: Props) => {
           <Navbar />
         </>
       )
-    } else if (currentUserData.perfil?.rol === 4) {
+    } else if (currentUserData.perfil?.rol === 4 || currentUserData.perfil?.rol === 5) {
       return (
         <>
           <div className={styles.logoContainer}>
