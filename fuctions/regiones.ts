@@ -132,6 +132,10 @@ export const genero = [
 export const tipoEspecialista = [
   { id: 1, name: "primaria" },
   { id: 2, name: "eib" },
+  { id: 3, name: "secundaria" },  
+  { id: 4, name: "inicial" },  
+
+  
 ]
 export const area = [
   { id: 1, name: "rural" },

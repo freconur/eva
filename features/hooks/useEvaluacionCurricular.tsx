@@ -63,14 +63,27 @@ const useEvaluacionCurricular = () => {
     let lastVisible:any = 0
     const pathRef = collection(db, 'usuarios')
     /* const q = query(pathRef,where("rol","==", rol), limit(5)); */
-    const q = query(pathRef,where("rol","==", rol));
-    onSnapshot(q, (querySnapshot) => {
-      const arrayUsuarios: User[] = []
-      querySnapshot.forEach(doc => {
-        arrayUsuarios.push({ ...doc.data() })
+
+    if(rol === 4) {
+      const q = query(pathRef,where("rol","==", rol));
+      onSnapshot(q, (querySnapshot) => {
+        const arrayUsuarios: User[] = []
+        querySnapshot.forEach(doc => {
+          arrayUsuarios.push({ ...doc.data() })
+        })
+        dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
       })
-      dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
-    })
+    }
+    if(rol === 5) {
+      const q = query(pathRef,where("dniEspecialistaRegional","==", currentUserData.dni));
+      onSnapshot(q, (querySnapshot) => {
+        const arrayUsuarios: User[] = []
+        querySnapshot.forEach(doc => {
+          arrayUsuarios.push({ ...doc.data() })
+        })
+        dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
+      })
+    }
     /* const documentSnapshots = await getDocs(q);
     documentSnapshots.forEach(doc => {
       arrayUsuarios.push({ ...doc.data() })
@@ -220,6 +233,12 @@ const useEvaluacionCurricular = () => {
     const pathRef = collection(db, 'usuarios')
     const q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2), limit(5));
 
+    
+
+
+    if(currentUserData.nivelDeInstitucion?.includes(2)) {
+      const pathRef = collection(db, 'usuarios')
+    const q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2), limit(5),where("nivelDeInstitucion", "array-contains", 2));
     onSnapshot(q, (querySnapshot) => {
       const usuarios: User[] = [];
       querySnapshot.forEach(doc => {
@@ -228,13 +247,26 @@ const useEvaluacionCurricular = () => {
       
       dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: usuarios });
 
-      if (querySnapshot.docs.length > 0) {
-        const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
-        dispatch({ type: AppAction.LAST_VISIBLE, payload: lastVisible });
-        setDocumentSnapshots([lastVisible]);
-        setCurrentPage(0);
-      }
+      
     });
+    }
+    if(!currentUserData.nivelDeInstitucion?.includes(2)) {
+      onSnapshot(q, (querySnapshot) => {
+        const usuarios: User[] = [];
+        querySnapshot.forEach(doc => {
+          usuarios.push({ ...doc.data() });
+        });
+        
+        dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: usuarios });
+  
+        if (querySnapshot.docs.length > 0) {
+          const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+          dispatch({ type: AppAction.LAST_VISIBLE, payload: lastVisible });
+          setDocumentSnapshots([lastVisible]);
+          setCurrentPage(0);
+        }
+      });
+    }
   }
   const getDocentesFromDirectores = async (region: number, dniDirector: string) => {
     //esta funcion tiene que ser dinamica para que pueda recibir datos del director como del espcialista
@@ -605,6 +637,8 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
       rol: docente.rol || '',
       perfil: docente.perfil || '',
       genero: data.genero || '',
+      nivelDeInstitucion: data.nivelDeInstitucion || [],
+      dniEspecialistaRegional: currentUserData.dni || '',
     })
   }
 

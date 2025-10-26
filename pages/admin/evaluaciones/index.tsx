@@ -5,6 +5,7 @@ import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 // import { Evaluaciones } from '@/features/types/types'
 import DeleteEvaluacion from '@/modals/deleteEvaluacion'
 import UpdateEvaluacion from '@/modals/updateEvaluacion'
+import AlertModal from '@/modals/alertModal/AlertModal'
 import GradosAcordeon from '@/components/grados-acordeon/GradosAcordeon'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -15,9 +16,10 @@ import header from '@/assets/evaluacion-docente.jpg'
 import styles from './evaluaciones.module.css'
 import { getMonthName } from '@/fuctions/dates'
 import { getAllMonths } from '@/fuctions/dates'
+import { createPortal } from 'react-dom'
 
 const Evaluaciones = () => {
-  const { getEvaluaciones, getEvaluacion, updateEvaluacion,getGrades } = useAgregarEvaluaciones()
+  const { getEvaluaciones, getEvaluacion, updateEvaluacion,getGrades,totalPreguntas, validacionSiEvaluacionTienePreguntasYPuntuacion } = useAgregarEvaluaciones()
   const { evaluaciones, currentUserData, loaderPages, evaluacion , grados} = useGlobalContext()
   const [showDelete, setShowDelete] = useState<boolean>(false)
   const [inputUpdate, setInputUpdate] = useState<boolean>(false)
@@ -27,8 +29,23 @@ const Evaluaciones = () => {
   const [editingMonthId, setEditingMonthId] = useState<string>("")
   const [updatingMonth, setUpdatingMonth] = useState<boolean>(false)
   const [viewMode, setViewMode] = useState<'acordeon' | 'table'>('acordeon')
+  const [showAlert, setShowAlert] = useState<boolean>(false)
+  const [alertMessage, setAlertMessage] = useState<string>("")
+  const [showSuccessAlert, setShowSuccessAlert] = useState<boolean>(false)
+  const [successData, setSuccessData] = useState<any>(null)
   const handleShowInputUpdate = () => { setInputUpdate(!inputUpdate) }
   const handleShowModalDelete = () => { setShowDelete(!showDelete) }
+  const handleShowAlert = () => { setShowAlert(!showAlert) }
+  const handleShowSuccessAlert = () => { setShowSuccessAlert(!showSuccessAlert) }
+  
+  const handleActivateEvaluacion = async () => {
+    if (successData) {
+      const updatedEva = { ...successData.evaluacion, active: true }
+      await updateEvaluacion(updatedEva, successData.evaluacion.id)
+      setShowSuccessAlert(false)
+      setSuccessData(null)
+    }
+  }
   const toggleViewMode = () => { 
     setViewMode(viewMode === 'acordeon' ? 'table' : 'acordeon') 
   }
@@ -40,9 +57,27 @@ const Evaluaciones = () => {
       // Solo aplicar la validación de nivelYPuntaje si tipoDeEvaluacion es "1"
       if (eva.tipoDeEvaluacion === "1") {
         if (!eva.nivelYPuntaje || !Array.isArray(eva.nivelYPuntaje) || eva.nivelYPuntaje.length === 0) {
-          alert('No se puede activar la evaluación. Debe configurar primero los niveles y puntajes.')
+          setAlertMessage('No se puede activar la evaluación. Debe configurar primero los niveles y puntajes.')
+          setShowAlert(true)
           return
         }
+        
+        // Validar que existan preguntas y que todas tengan puntaje
+        const { tienePuntajeValido, totalPreguntas: total } = await validacionSiEvaluacionTienePreguntasYPuntuacion(eva);
+        if (!tienePuntajeValido) {
+          setAlertMessage('No se puede activar la evaluación. Debe configurar preguntas y asignar puntaje a todas las preguntas.')
+          setShowAlert(true)
+          return
+        }
+        
+        // Si pasa las validaciones, mostrar los datos y activar
+        setSuccessData({
+          nivelYPuntaje: eva.nivelYPuntaje,
+          totalPreguntas: total,
+          evaluacion: eva
+        })
+        setShowSuccessAlert(true)
+        return
       }
     }
     
@@ -97,6 +132,52 @@ const Evaluaciones = () => {
     <>
       {showDelete && <DeleteEvaluacion handleShowModalDelete={handleShowModalDelete} idEva={idEva} />}
       {inputUpdate && nameEva.length > 0 && <UpdateEvaluacion evaluacion={evaluacion} nameEva={nameEva} handleShowInputUpdate={handleShowInputUpdate} idEva={idEva} />}
+      {showAlert && <AlertModal message={alertMessage} handleClose={handleShowAlert} />}
+      {showSuccessAlert && successData && typeof window !== 'undefined' && createPortal(
+        <div className={styles.successModal} onClick={handleShowSuccessAlert}>
+          <div className={styles.successModalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.successModalHeader}>
+              <h3 className={styles.successModalTitle}>Confirmar Activación</h3>
+              <div className={styles.successModalClose} onClick={handleShowSuccessAlert}>×</div>
+            </div>
+            <div className={styles.successModalBody}>
+              <p style={{ marginBottom: '20px' }}>La evaluación cumple con todos los requisitos:</p>
+              
+              <div style={{ marginBottom: '20px' }}>
+                <strong>Total de preguntas:</strong> {successData.totalPreguntas}
+              </div>
+              
+              <div style={{ marginBottom: '20px' }}>
+                <strong>Niveles y Puntajes:</strong>
+                <div style={{ marginTop: '10px' }}>
+                  {successData.nivelYPuntaje?.map((nivel: any, index: number) => (
+                    <div key={index} style={{ 
+                      padding: '8px', 
+                      margin: '5px 0', 
+                      backgroundColor: '#f5f5f5', 
+                      borderRadius: '4px',
+                      display: 'flex',
+                      justifyContent: 'space-between'
+                    }}>
+                      <span><strong>Nivel:</strong> {nivel.nivel}</span>
+                      <span><strong>Puntaje:</strong> max:{nivel.max} - min:{nivel.min}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className={styles.successModalFooter}>
+              <button 
+                onClick={handleActivateEvaluacion}
+                className={styles.successModalButton}
+              >
+                ACEPTAR
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.getElementById('portal-modal') || document.body
+      )}
       <div>
         <div className={styles.header}>
           <div className={styles.headerOverlay}></div>
@@ -111,7 +192,7 @@ const Evaluaciones = () => {
         </div>
 
         {/* Botón de cambio de vista */}
-        <div className={styles.viewToggleContainer}>
+        {/* <div className={styles.viewToggleContainer}>
           <button 
             onClick={toggleViewMode}
             className={styles.viewToggleButton}
@@ -129,7 +210,7 @@ const Evaluaciones = () => {
               </>
             )}
           </button>
-        </div>
+        </div> */}
 
         {loaderPages ? (
           <div className={styles.loader}>

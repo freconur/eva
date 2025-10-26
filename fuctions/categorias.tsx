@@ -6,7 +6,27 @@ export const especialidad = [
   {
     id:2,
     categoria:'resuelve problemas'
-  }
+  },
+  {
+    id:3,
+    categoria:'Comunicación-Secundaria'
+  },
+  {
+    id:4,
+    categoria:'Matemática-Secundaria'
+  },
+  {
+    id:5,
+    categoria:'Ciencia y Tecnología-Secundaria'
+  },
+  {
+    id:6,
+    categoria:'DPCC-Secundaria'
+  },
+  {
+    id:7,
+    categoria:'Ciencias Sociales-Secundaria'
+  },
 ]
 
 export const categoriaTransform = (data:number) => {

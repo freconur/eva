@@ -36,12 +36,13 @@ import {
 import { currentMonth, currentYear } from '@/fuctions/dates';
 import { calculoNivel } from '../utils/calculoNivel';
 import { addNoRespondioAlternative } from '../utils/addNoRespondioAlternative';
+import { useState } from 'react';
 
 export const useAgregarEvaluaciones = () => {
   const dispatch = useGlobalContextDispatch();
   const { currentUserData } = useGlobalContext();
   const db = getFirestore();
-
+  const [totalPreguntas, setTotalPreguntas] = useState<number>(0)
   const getTipoDeEvaluacion = () => {
     const docRef = doc(db, 'options', 'tipos-de-evaluacion');
     
@@ -828,8 +829,41 @@ export const useAgregarEvaluaciones = () => {
     }
   };
 
+
+  const validacionSiEvaluacionTienePreguntasYPuntuacion = async(evaluacion: Evaluaciones) => {
+    const pathRef = collection(db, `evaluaciones/${evaluacion.id}/preguntasRespuestas`);
+    const preguntasRespuestas = await getDocs(pathRef);
+    if (preguntasRespuestas.size > 0) {
+      console.log('entramos a la validación de preguntas y puntajes')
+      const arrayPreguntasRespuestas: PreguntasRespuestas[] = [];
+      preguntasRespuestas.forEach((doc) => {
+        arrayPreguntasRespuestas.push({ ...doc.data(), id: doc.id });
+      });
+      
+      // Validar que todas las preguntas tengan la propiedad puntaje con valor numérico
+      const tienePuntajeValido = arrayPreguntasRespuestas.every(pregunta => {
+        if (pregunta.puntaje === undefined || pregunta.puntaje === null) {
+          return false;
+        }
+        
+        // Convertir a número si es string
+        const puntajeNumerico = typeof pregunta.puntaje === 'string' 
+          ? parseFloat(pregunta.puntaje) 
+          : pregunta.puntaje;
+        
+        // Verificar que sea un número válido
+        return !isNaN(puntajeNumerico) && isFinite(puntajeNumerico);
+      });
+      console.log('tienePuntajeValido', tienePuntajeValido)
+      
+      return { tienePuntajeValido, totalPreguntas: preguntasRespuestas.size };
+    } else {
+      return { tienePuntajeValido: false, totalPreguntas: 0 };
+    }
+  }
   return {
     guardarPreguntasRespuestas,
+    totalPreguntas,
     crearEvaluacion,
     getEvaluaciones,
     getEvaluacion,
@@ -849,5 +883,6 @@ export const useAgregarEvaluaciones = () => {
     obtenerEstudianteDeEvaluacion,
     getTipoDeEvaluacion,
     addRangosNivel,
+    validacionSiEvaluacionTienePreguntasYPuntuacion
   };
 };

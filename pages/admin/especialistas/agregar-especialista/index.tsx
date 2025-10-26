@@ -117,7 +117,7 @@ const AgregareEspecialista = () => {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>()
   const { getUserData, createNewEspecialista, getRegiones, getAllEspecialistas } = useUsuario()
   const [idUsuario, setIdUsuario] = useState<string>("")
-  const { regiones, loaderPages, allEspecialistas, docentesDeDirectores } = useGlobalContext()
+  const { regiones, loaderPages, allEspecialistas, docentesDeDirectores, currentUserData } = useGlobalContext()
   const [showModalActualizarEspecialista, setShowModalActualizarEspecialista] = useState<boolean>(false)
   const { getUsuariosToAdmin } = useEvaluacionCurricular()
   const [showModalDeleteUsuario, setShowModalDeleteUsuario] = useState<boolean>(false)
@@ -125,7 +125,7 @@ const AgregareEspecialista = () => {
     getUserData()
     getRegiones()
     /* getAllEspecialistas() */
-    getUsuariosToAdmin(1)
+    getUsuariosToAdmin(Number(currentUserData.rol))
   }, [])
 
   const handleDelete = async (dni: string) => {
@@ -184,7 +184,11 @@ const AgregareEspecialista = () => {
     <div className={styles.container}>
       {showModalActualizarEspecialista && <UpdateUsuarioEspecialista idUsuario={idUsuario} handleShowModal={handleShowModal} />}
       {showModalDeleteUsuario && <DeleteUsuario idUsuario={idUsuario} handleShowModalDelete={handleShowModalDelete} />}
+      
+      
       <TablaUsuariosAdminEspecialistas rol={1} docentesDeDirectores={docentesDeDirectores}/>
+
+
       <div className={styles.formContainer}>
         <h1 className={styles.title}>
           Registrar Especialista

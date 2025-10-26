@@ -31,8 +31,8 @@ import {
 } from 'firebase/firestore';
 import { currentYear } from '@/fuctions/dates';
 const useUsuario = () => {
-  const URL_API = 'https://api-ugel-production.up.railway.app/';
-  /* const URL_API = "http://localhost:3001/" */
+  /* const URL_API = 'https://api-ugel-production.up.railway.app/'; */
+  const URL_API = "http://localhost:3001/"
   const auth = getAuth(app);
   const db = getFirestore(app);
   const { currentUserData } = useGlobalContext();
@@ -214,19 +214,37 @@ const useUsuario = () => {
           })
           .then(async (res) => {
             console.log('res', res);
-            await setDoc(doc(db, 'usuarios', `${data.dni}`), {
-              dni: `${data.dni}`,
-              // institucion: `${data.institucion}`,
-              perfil: data.perfil,
-              rol: data.perfil?.rol,
-              /* modular: data.modular, */
-              nombres: data.nombres,
-              apellidos: data.apellidos,
-              region: Number(data.region),
-              tipoEspecialista: data.tipoEspecialista,
-              genero: data.genero,
-              nivelDeInstitucion: data.nivelDeInstitucion,
-            });
+            if(currentUserData.rol === 4) {
+              await setDoc(doc(db, 'usuarios', `${data.dni}`), {
+                dni: `${data.dni}`,
+                // institucion: `${data.institucion}`,
+                perfil: data.perfil,
+                rol: data.perfil?.rol,
+                /* modular: data.modular, */
+                nombres: data.nombres,
+                apellidos: data.apellidos,
+                region: Number(data.region),
+                tipoEspecialista: data.tipoEspecialista,
+                genero: data.genero,
+                nivelDeInstitucion: data.nivelDeInstitucion,
+              });
+            }
+            if(currentUserData.rol === 5) {
+              await setDoc(doc(db, 'usuarios', `${data.dni}`), {
+                dni: `${data.dni}`,
+                // institucion: `${data.institucion}`,
+                perfil: data.perfil,
+                rol: data.perfil?.rol,
+                /* modular: data.modular, */
+                nombres: data.nombres,
+                apellidos: data.apellidos,
+                region: Number(data.region),
+                tipoEspecialista: data.tipoEspecialista,
+                genero: data.genero,
+                nivelDeInstitucion: data.nivelDeInstitucion,
+                dniEspecialistaRegional: currentUserData.dni,
+              });
+            }
           })
           .then((res) => {
             dispatch({ type: AppAction.LOADER_PAGES, payload: false });

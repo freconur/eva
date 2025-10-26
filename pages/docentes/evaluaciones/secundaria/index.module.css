@@ -221,3 +221,86 @@
   transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, 
               box-shadow 0.2s ease, transform 0.2s ease;
 }
+
+/* ===== ESTILOS PARA ACORDEONES ===== */
+.accordionContainer {
+  background: #ffffff;
+  border-radius: 0px 0px 16px 16px;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  overflow: hidden;
+  /* margin-bottom: 1.5rem; */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordionItem {
+  border-bottom: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.accordionItem:last-child {
+  border-bottom: none;
+}
+
+.accordionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  cursor: pointer;
+  background: #ffffff;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.accordionHeader:hover {
+  background: #f8fafc;
+}
+
+.accordionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gradoNumber {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.accordionIcon {
+  font-size: 1.5rem;
+  color: #6b7280;
+  transition: transform 0.3s ease;
+}
+
+.accordionBody {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+
+.accordionBody.expanded {
+  max-height: 5000px;
+}
+
+.accordionContent {
+  padding: 0 2rem 1.5rem 2rem;
+}
+
+.accordionItemCount {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
