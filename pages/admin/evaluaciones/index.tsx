@@ -37,9 +37,12 @@ const Evaluaciones = () => {
   const toggleActiveStatus = async (eva: any) => {
     // Si se quiere activar, validar que nivelYPuntaje exista y tenga datos
     if (!eva.active) {
-      if (!eva.nivelYPuntaje || !Array.isArray(eva.nivelYPuntaje) || eva.nivelYPuntaje.length === 0) {
-        alert('No se puede activar la evaluación. Debe configurar primero los niveles y puntajes.')
-        return
+      // Solo aplicar la validación de nivelYPuntaje si tipoDeEvaluacion es "1"
+      if (eva.tipoDeEvaluacion === "1") {
+        if (!eva.nivelYPuntaje || !Array.isArray(eva.nivelYPuntaje) || eva.nivelYPuntaje.length === 0) {
+          alert('No se puede activar la evaluación. Debe configurar primero los niveles y puntajes.')
+          return
+        }
       }
     }
     
