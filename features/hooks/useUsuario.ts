@@ -109,6 +109,7 @@ const useUsuario = () => {
           rol: user.data().rol || 0,
           nivelDeInstitucion: user.data().nivelDeInstitucion || [],
           nivel: user.data().nivel || 0,
+          nivelesInstitucion: user.data().nivelesInstitucion || [],
         },
       });
     } else {

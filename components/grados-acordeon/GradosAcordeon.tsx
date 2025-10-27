@@ -48,12 +48,21 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
   // Filtrar grados según el rol del usuario
   const gradosFiltrados = React.useMemo(() => {
     if (currentUserData?.perfil?.rol === 5) {
-      // Si el rol es 5, mostrar solo grados que tengan nivel:2
-      return grados.filter(grado => grado.nivel === 2)
+      // Si nivelesInstitucion incluye el valor 1, mostrar solo grados con nivel 1
+      console.log('currentUserData?.nivelesInstitucion', currentUserData?.nivelesInstitucion)
+      if (currentUserData?.nivelesInstitucion?.includes(1)) {
+        console.log('grados con nivel 1')
+        return grados.filter(grado => grado.nivel === 1)
+      }else {
+        console.log('grados con nivel 2')
+        return grados.filter(grado => grado.nivel === 2)
+
+      }
+      // Si no incluye 1, mostrar grados con nivel 2
     }
     // Para otros roles, mostrar todos los grados
     return grados
-  }, [grados, currentUserData?.perfil?.rol])
+  }, [grados, currentUserData?.perfil?.rol, currentUserData?.nivelesInstitucion])
 
   const toggleGrado = (gradoId: string) => {
     setExpandedGrado(expandedGrado === gradoId ? null : gradoId)
@@ -326,3 +335,4 @@ console.log('currentUserData', currentUserData)
 }
 
 export default GradosAcordeon
+
