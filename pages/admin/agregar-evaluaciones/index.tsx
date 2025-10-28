@@ -136,10 +136,10 @@ const AgregarEvaluaciones = () => {
                 </div>
                 <button
                   disabled={
-                    `${selectValues?.grado}`.length === 1 && selectValues?.categoria?.length === 1 && selectValues.nombreEvaluacion?.length > 3 && selectValues.tipoDeEvaluacion?.length > 0 ? false : true
+                    selectValues?.grado > 0 && selectValues?.categoria?.length > 0 && selectValues.nombreEvaluacion?.length > 3 && selectValues.tipoDeEvaluacion?.length > 0 ? false : true
                   }
                   // onClick={handleshowModal}
-                  className={`cursor-pointer flex justify-center items-center ${`${selectValues.grado}`.length === 1 && selectValues?.categoria?.length === 1 && selectValues.nombreEvaluacion?.length > 3 && selectValues.tipoDeEvaluacion?.length > 0 ? 'bg-blue-500 hover:bg-blue-300' : 'bg-gray-300'}    duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase`}>
+                  className={`cursor-pointer flex justify-center items-center ${selectValues?.grado > 0 && selectValues?.categoria?.length > 0 && selectValues.nombreEvaluacion?.length > 3 && selectValues.tipoDeEvaluacion?.length > 0 ? 'bg-blue-500 hover:bg-blue-300' : 'bg-gray-300'}    duration-300 p-3 rounded-md w-full text-white hover:text-slate-600 uppercase`}>
                   guardar
                 </button>
               </form>
