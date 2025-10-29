@@ -3,12 +3,11 @@ import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useReporteDocente } from '@/features/hooks/useReporteDocente';
 import {
   Alternativa,
-  DataEstadisticas,
   Estudiante,
   PreguntasRespuestas,
 } from '@/features/types/types';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -19,26 +18,18 @@ import {
   Title,
   Tooltip,
   Legend,
-  ChartData,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { RiLoader4Line } from 'react-icons/ri';
-import * as XLSX from 'xlsx';
-import { MdDeleteForever } from 'react-icons/md';
 import DeleteEstudiante from '@/modals/deleteEstudiante';
 import styles from './reporte.module.css';
 import { currentMonth, getAllMonths, getMonthName } from '@/fuctions/dates';
 import { ordernarAscDsc } from '@/fuctions/regiones';
-import { read, utils, writeFile } from 'xlsx';
 import { exportEstudiantesToExcel } from '@/features/utils/excelExport';
 import { useGenerarPDFReporte } from '@/features/hooks/useGenerarPDFReporte';
-import Link from 'next/link';
 import ReporteEvaluacionPorPregunta from './reporteEvaluacionPorPregunta';
-import PieChartComponent from '@/pages/admin/evaluaciones/evaluacion/reporte/PieChartComponent';
 import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafico-piechart';
 import { TablaPreguntas } from '@/components/tabla-preguntas';
-import { calculoNivel } from '@/features/utils/calculoNivel';
 import GraficoTendenciaColegio from '@/components/grafico-tendencia';
 import CorregirPuntajesModal from '@/modals/corregirPuntajes';
 ChartJS.register(

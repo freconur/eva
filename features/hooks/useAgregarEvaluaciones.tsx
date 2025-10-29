@@ -37,12 +37,61 @@ import { currentMonth, currentYear } from '@/fuctions/dates';
 import { calculoNivel } from '../utils/calculoNivel';
 import { addNoRespondioAlternative } from '../utils/addNoRespondioAlternative';
 import { useState } from 'react';
+import { EstudianteImportado } from '@/features/types/estudiante';
 
 export const useAgregarEvaluaciones = () => {
   const dispatch = useGlobalContextDispatch();
   const { currentUserData } = useGlobalContext();
   const db = getFirestore();
   const [totalPreguntas, setTotalPreguntas] = useState<number>(0)
+  const [loaderCrearEstudiantes, setLoaderCrearEstudiantes] = useState<boolean>(false);
+
+
+const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) => {
+  // Validar parámetros
+  if (!estudiantes || estudiantes.length === 0) {
+    console.warn('No hay estudiantes para crear');
+    return;
+  }
+
+  setLoaderCrearEstudiantes(true);
+  
+  try {
+    const batch = writeBatch(db);
+    const rutaColeccion = `usuarios/${currentUserData.dni}/estudiantes-docentes`;
+    
+    estudiantes.forEach((estudiante) => {
+      // Validar datos del estudiante
+      if (!estudiante.dni || !estudiante.nombresApellidos) {
+        console.warn('Estudiante con datos incompletos:', estudiante);
+        return;
+      }
+
+      // Crear referencia al documento usando el DNI como ID
+      const docRef = doc(db, rutaColeccion, estudiante.dni);
+      
+      // Agregar al batch
+      batch.set(docRef, {
+        dni: estudiante.dni,
+        nombresApellidos: estudiante.nombresApellidos,
+        grado: estudiante.grado,
+        seccion: estudiante.seccion,
+        genero: estudiante.genero,
+        fechaCreacion: serverTimestamp(),
+      });
+    });
+    
+    // Ejecutar todas las operaciones de una vez
+    await batch.commit();
+    console.log(`${estudiantes.length} estudiantes creados exitosamente`);
+  } catch (error) {
+    console.error('Error al crear estudiantes:', error);
+    throw error; // Re-lanzar el error para que el componente pueda manejarlo
+  } finally {
+    setLoaderCrearEstudiantes(false);
+  }
+}
+
   const getTipoDeEvaluacion = () => {
     const docRef = doc(db, 'options', 'tipos-de-evaluacion');
     
@@ -74,9 +123,7 @@ export const useAgregarEvaluaciones = () => {
     seccion: string,
     month: string
   ) => {
-    console.log('test estamos dentro de obtenerEstudianteDeEvaluacion');
-    console.log(`/usuarios/${currentUserData.dni}/${evaluacion.id}/${currentYear}/${currentMonth}`);
-    console.log(`/usuarios/${currentUserData.dni}/estudiantes-docentes`);
+    
     const rutaEstudiantesEvaluados = collection(
       db,
       `/usuarios/${currentUserData.dni}/${evaluacion.id}/${currentYear}/${month}/`
@@ -509,7 +556,7 @@ export const useAgregarEvaluaciones = () => {
     
     // Procesar las alternativas para cambiar "no respondió" por una alternativa aleatoria
     const pqConAlternativasAleatorias = dataConAlternativasNoRespondidas(pq);
-    console.log('pqConAlternativasAleatorias', pqConAlternativasAleatorias);
+    
     //guarda la informacion para el propio docente
     /* const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`); */
     const rutaRef = doc(
@@ -540,18 +587,19 @@ export const useAgregarEvaluaciones = () => {
       seccion: `${data.seccion}`,
       genero: `${data.genero}`,
     });
-
+    
     const rutaEstudianteParaEvaluacion = doc(
       db,
       `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${currentYear}/${evaluacion.mesDelExamen}`,
       `${data.dni}`
     );
     // Incluir las respuestas en el objeto data antes de calcular el nivel
+    
     const dataConRespuestas = {
       ...data,
       respuestas: pqConAlternativasAleatorias,
     };
-
+    
     if (evaluacion.tipoDeEvaluacion === '1') {
       try {
         const dataEstudiante = calculoNivel(dataConRespuestas, evaluacion);
@@ -883,6 +931,8 @@ export const useAgregarEvaluaciones = () => {
     obtenerEstudianteDeEvaluacion,
     getTipoDeEvaluacion,
     addRangosNivel,
-    validacionSiEvaluacionTienePreguntasYPuntuacion
+    validacionSiEvaluacionTienePreguntasYPuntuacion,
+    crearEstudiantesImportados,
+    loaderCrearEstudiantes
   };
 };

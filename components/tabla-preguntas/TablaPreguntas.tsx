@@ -214,8 +214,11 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
               <tbody className={styles.tableBody}>
                 {!warningEvaEstudianteSinRegistro ? (
                   paginationData.currentStudents?.map((estudiante, index) => {
+                    // Crear una clave única combinando DNI, índice y timestamp para evitar duplicados
+                    const uniqueRowKey = `${estudiante.dni || 'no-dni'}-${paginationData.startIndex + index}-${Date.now()}`;
+                    
                     return (
-                      <tr key={estudiante.dni || index}>
+                      <tr key={uniqueRowKey}>
                         {showDeleteButton && onDeleteEstudiante && (
                           <td>
                             <MdDeleteForever
@@ -246,7 +249,9 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                         {hasValidPuntaje() && <td>{estudiante.puntaje || '-'}</td>}
                         {hasValidNivel() && <td>{estudiante.nivel || '-'}</td>}
                         {estudiante.respuestas?.map((res, resIndex) => {
-                          return <td key={res.order || resIndex}>{handleValidateRespuesta(res)}</td>;
+                          // Crear una clave única para cada celda de respuesta
+                          const uniqueCellKey = `${uniqueRowKey}-respuesta-${res.id || resIndex}-${res.order || resIndex}`;
+                          return <td key={uniqueCellKey}>{handleValidateRespuesta(res)}</td>;
                         })}
                       </tr>
                     );

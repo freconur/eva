@@ -92,10 +92,12 @@ export const useReporteDocente = () => {
         `/usuarios/${currentUserData.dni}/${evaluacion.id}/${currentYear}/${mes}`
       );
 
-      const estudiantesDelMes: Estudiante[] = [];
       onSnapshot(
         pathRef,
         (snapshot) => {
+          // Limpiar el array en cada actualización para evitar duplicados
+          const estudiantesDelMes: Estudiante[] = [];
+          
           // Procesar los documentos en tiempo real
           snapshot.forEach((doc) => {
             const estudianteData = {
@@ -106,16 +108,17 @@ export const useReporteDocente = () => {
 
             estudiantesDelMes.push(estudianteData);
           });
-
+          console.log('estudiantesDelMes antes de calcular el nivel', estudiantesDelMes);
           // Aplicar cálculos a los estudiantes
           estudiantesDelMes.forEach((estudiante) => {
             calculoNivel(estudiante, evaluacion);
             calculoPreguntasCorrectas(estudiante);
           });
 
+          console.log('estudiantesDelMes', estudiantesDelMes);
           // Actualizar el estado con los datos del mes
           const resultadosProgresivo = calculoNivelProgresivo(estudiantesDelMes, evaluacion);
-
+          console.log('resultadosProgresivo', resultadosProgresivo);
           // Calcular el promedio global para este mes
           const promedioGlobalDelMes =
             calculoPromedioGlobalPorGradoEvaluacionPRogresiva(estudiantesDelMes);
@@ -234,10 +237,12 @@ export const useReporteDocente = () => {
       `/usuarios/${currentUserData.dni}/${evaluacion.id}/${currentYear}/${month}`
     );
 
-    const arrayEstudiantes: Estudiante[] = [];
     const unsubscribe = onSnapshot(
       queryEstudiantes,
       (snapshot) => {
+        // Limpiar el array en cada actualización para evitar duplicados
+        const arrayEstudiantes: Estudiante[] = [];
+        
         if (snapshot.empty) {
           console.log('estudiantes', snapshot.size);
           dispatch({
@@ -254,6 +259,7 @@ export const useReporteDocente = () => {
               Number(doc.data().totalPreguntas) - Number(doc.data().respuestasCorrectas),
           });
         });
+
         const rta = arrayEstudiantes.map((estudiante) => {
           /* const rta = agregarPuntajesARespuestas(estudiante, preguntaRespuestas); */
           calculoNivel(estudiante, evaluacion);
@@ -275,7 +281,7 @@ export const useReporteDocente = () => {
     );
 
     // Retornar la función de unsubscribe para poder cancelar la suscripción
-    return arrayEstudiantes;
+    return unsubscribe;
 
     //codigo para crear la tabla de estudiantes con las pregunta de actuacion
   };

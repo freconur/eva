@@ -159,6 +159,7 @@ const ActualizarEvaluacion = () => {
           <div className={styles.inputGroup}>
             <label className={styles.label}>Grado:</label>
             <select
+            disabled={true}
               value={datosEstudiante.grado}
               onChange={(e) => handleDatosEstudianteChange('grado', e.target.value)}
               className={styles.select}
@@ -175,6 +176,7 @@ const ActualizarEvaluacion = () => {
           <div className={styles.inputGroup}>
             <label className={styles.label}>Sección:</label>
             <select
+            disabled={true}
               value={datosEstudiante.seccion}
               onChange={(e) => handleDatosEstudianteChange('seccion', e.target.value)}
               className={styles.select}

@@ -3,12 +3,15 @@ import { useForm } from 'react-hook-form';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { PreguntasRespuestas, UserEstudiante } from '@/features/types/types';
-import { RiLoader4Line, RiArrowUpLine, RiPlayFill, RiPauseFill } from 'react-icons/ri';
-import { gradosDeColegio, sectionByGrade, genero } from '../../../../../../../fuctions/regiones';
+import { RiLoader4Line, RiArrowUpLine, RiPlayFill, RiPauseFill, RiUploadLine } from 'react-icons/ri';
+import { gradosDeColegio, sectionByGrade, genero } from '@/fuctions/regiones';
 import { currentYear, getMonthName } from '@/fuctions/dates';
 import { useRouter } from 'next/router';
 import styles from './evaluarEstudiante.module.css';
-
+import ModalImportarEstudiantes from './ModalImportarEstudiantes';
+import Loader from '@/components/loader/loader';
+import { EstudianteImportado } from '@/features/types/estudiante';
+import { convertGrade, converSeccion } from '@/fuctions/regiones';
 /**
  * Componente para evaluar estudiantes en pruebas de tercer nivel
  * Permite responder todas las preguntas de una vez y guardar la evaluación completa
@@ -35,6 +38,21 @@ const EvaluarEstudiante = () => {
   const [contentPadding, setContentPadding] = useState(270); // Estado para el padding del contenido
   const [showFloatingButton, setShowFloatingButton] = useState(false); // Estado para mostrar el botón flotante
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true); // Estado para controlar el avance automático
+  const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar el modal de importar
+  const [showConfirmationMessage, setShowConfirmationMessage] = useState(false); // Estado para mostrar mensaje de confirmación
+  const [isClosingMessage, setIsClosingMessage] = useState(false); // Estado para animación de cierre
+  const [confirmationData, setConfirmationData] = useState<{
+    estudiantes: EstudianteImportado[];
+    grado: string;
+    seccion: string;
+  } | null>(null); // Datos para el mensaje de confirmación
+  const [resetModal, setResetModal] = useState<boolean>(false); // Estado para resetear el modal
+
+  // Función para manejar el reset del modal
+  const handleResetModal = () => {
+    // Esta función se ejecutará cuando resetModal sea true
+    return resetModal;
+  };
 
   // Hooks personalizados
   const {
@@ -44,6 +62,8 @@ const EvaluarEstudiante = () => {
     getEvaluacion,
     getPreguntasRespuestas,
     obtenerEstudianteDeEvaluacion,
+    crearEstudiantesImportados,
+    loaderCrearEstudiantes,
   } = useAgregarEvaluaciones();
 
   // Hook de formulario
@@ -464,9 +484,84 @@ const EvaluarEstudiante = () => {
       });
     }
   };
-  console.log('preguntasRespuestas',preguntasRespuestas)
-  console.log('preguntasRespuestasEstudiante',preguntasRespuestasEstudiante)
-  
+
+  // Funciones para manejar el modal de importar
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
+  // Función para manejar la importación completa de estudiantes
+  const handleImportComplete = (estudiantesImportados: EstudianteImportado[], grado: string, seccion: string) => {
+    console.log('Estudiantes importados:', estudiantesImportados);
+    console.log('Grado seleccionado:', grado);
+    console.log('Sección seleccionada:', seccion);
+    
+    // Mostrar mensaje de confirmación personalizado
+    setConfirmationData({
+      estudiantes: estudiantesImportados,
+      grado: grado,
+      seccion: seccion
+    });
+    setShowConfirmationMessage(true);
+  };
+
+  // Función para cerrar el mensaje con animación
+  const closeMessageWithAnimation = () => {
+    setIsClosingMessage(true);
+    setTimeout(() => {
+      setShowConfirmationMessage(false);
+      setIsClosingMessage(false);
+      setConfirmationData(null);
+    }, 300); // Duración de la animación de cierre
+  };
+
+  // Función para confirmar la importación
+  const handleConfirmImport = async () => {
+    if (confirmationData) {
+      console.log('confirmationData',confirmationData.estudiantes);
+      console.log(`Se importaron ${confirmationData.estudiantes.length} estudiantes exitosamente para ${confirmationData.grado} - ${confirmationData.seccion}`);
+      
+      try {
+        // Pasar los estudiantes importados a la función
+        await crearEstudiantesImportados(confirmationData.estudiantes);
+        console.log('Estudiantes creados exitosamente en la base de datos');
+        
+        // Limpiar los datos de confirmación después de crear exitosamente
+        setConfirmationData(null);
+        
+        // Activar el reset del modal
+        setResetModal(true);
+        
+        // Resetear el estado de reset después de un breve delay
+        setTimeout(() => {
+          setResetModal(false);
+        }, 100);
+        
+      } catch (error) {
+        console.error('Error al crear estudiantes:', error);
+        // Aquí podrías mostrar un mensaje de error al usuario
+      }
+    }
+    
+    // Cerrar mensaje con animación y luego cerrar modal
+    closeMessageWithAnimation();
+    setTimeout(() => {
+      handleCloseModal();
+    }, 300);
+  };
+
+  // Función para cancelar la importación
+  const handleCancelImport = () => {
+    console.log('No se importó');
+    
+    // Solo cerrar el mensaje de confirmación con animación, mantener el modal abierto
+    closeMessageWithAnimation();
+  };
+ 
   return (
     <div className={styles.containerPage}>
       <div className={styles.containerContent}>
@@ -502,18 +597,30 @@ const EvaluarEstudiante = () => {
 
               {/* Selector de sección con toggle de avance automático */}
               <div className={styles.seccionToggleContainer}>
-                <select
-                  className={styles.inputNombresDni}
-                  value={nuevaSeccion}
-                  onChange={handleNuevaSeccionChange}
-                >
-                  <option value="">-- Selecciona una sección --</option>
-                  {sectionByGrade.map((seccion) => (
-                    <option key={seccion.id} value={seccion.id}>
-                      Sección {seccion.name.toUpperCase()}
-                    </option>
-                  ))}
-                </select>
+                <div className={styles.seccionImportContainer}>
+                  <select
+                    className={styles.inputNombresDni}
+                    value={nuevaSeccion}
+                    onChange={handleNuevaSeccionChange}
+                  >
+                    <option value="">-- Selecciona una sección --</option>
+                    {sectionByGrade.map((seccion) => (
+                      <option key={seccion.id} value={seccion.id}>
+                        Sección {seccion.name.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  <button
+                    type="button"
+                    className={styles.importButton}
+                    onClick={handleOpenModal}
+                    title="Importar datos de estudiantes"
+                  >
+                    <RiUploadLine className={styles.importIcon} />
+                    <span>Importar</span>
+                  </button>
+                </div>
                 
                 {/* Toggle para avance automático */}
                 <div className={styles.autoScrollToggle}>
@@ -769,6 +876,204 @@ const EvaluarEstudiante = () => {
       >
         <RiArrowUpLine className={styles.floatingButtonIcon} />
       </button>
+
+      {/* Modal de importar estudiantes */}
+      <ModalImportarEstudiantes
+        evaluacion={evaluacion}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onImportComplete={handleImportComplete}
+        onReset={handleResetModal}
+      />
+
+      {/* Mensaje de confirmación personalizado */}
+      {showConfirmationMessage && confirmationData && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10001,
+            padding: '20px',
+            animation: isClosingMessage ? 'fadeOut 0.3s ease-in' : 'fadeIn 0.3s ease-out'
+          }}
+        >
+          <div 
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '40px',
+              maxWidth: '500px',
+              width: '100%',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+              textAlign: 'center',
+              animation: isClosingMessage ? 'slideOutScale 0.3s ease-in' : 'slideInScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              transform: 'scale(1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}
+          >
+            <h3 style={{
+              marginBottom: '20px',
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#1F2937',
+              marginTop: '0'
+            }}>
+              Confirmar Importación
+            </h3>
+            
+            <p style={{
+              marginBottom: '35px',
+              fontSize: '16px',
+              color: '#6B7280',
+              lineHeight: '1.6'
+            }}>
+              ¿Va a crear <strong style={{ color: '#1F2937' }}>{confirmationData.estudiantes.length}</strong> estudiantes que importo del archivo excel para el<strong style={{ color: '#1F2937' }}> {convertGrade(confirmationData.grado)}</strong> - <strong style={{ color: '#1F2937' }}> Sección {converSeccion(Number(confirmationData.seccion))?.toUpperCase()}</strong>? ,si esta seguro de crear los estudiantes, presione el botón de si, de lo contrario presione el botón de no.
+            </p>
+            
+            <div style={{
+              display: 'flex',
+              gap: '20px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={handleConfirmImport}
+                style={{
+                  padding: '14px 28px',
+                  backgroundColor: '#10B981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  minWidth: '120px',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.3)',
+                  transform: 'translateY(0)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = '#059669';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 8px 25px 0 rgba(16, 185, 129, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = '#10B981';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(16, 185, 129, 0.3)';
+                }}
+              >
+                Sí
+              </button>
+              
+              <button
+                onClick={handleCancelImport}
+                style={{
+                  padding: '14px 28px',
+                  backgroundColor: '#EF4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  minWidth: '120px',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 4px 14px 0 rgba(239, 68, 68, 0.3)',
+                  transform: 'translateY(0)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = '#DC2626';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 8px 25px 0 rgba(239, 68, 68, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = '#EF4444';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(239, 68, 68, 0.3)';
+                }}
+              >
+                No
+              </button>
+            </div>
+            
+            {/* Loader cuando se están creando estudiantes */}
+            {loaderCrearEstudiantes && (
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(2px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '16px',
+                zIndex: 10
+              }}>
+                <Loader 
+                  size="large" 
+                  variant="spinner" 
+                  text="Creando estudiantes..." 
+                  color="#3b82f6"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes slideInScale {
+          from {
+            opacity: 0;
+            transform: scale(0.8) translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+
+        @keyframes fadeOut {
+          from {
+            opacity: 1;
+          }
+          to {
+            opacity: 0;
+          }
+        }
+
+        @keyframes slideOutScale {
+          from {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+          to {
+            opacity: 0;
+            transform: scale(0.8) translateY(20px);
+          }
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,18 +1,22 @@
 import { Estudiante, Evaluacion, PreguntasRespuestas, UserEstudiante } from "../types/types";
 
 export const calculoNivel = (data:UserEstudiante | Estudiante, evaluacion:Evaluacion) => {
+    console.log('estudiantes antes de calcular el nivel', data);
+    
     let puntajeAcumulado = 0;
     let tienePuntajes = false;
     
     data.respuestas?.forEach(pregunta => {
         pregunta.alternativas?.forEach(alternativas => {
             if (alternativas.selected) {
+                // Marcar que el estudiante al menos intentó responder
+                tienePuntajes = true;
+                
                 if (alternativas.alternativa?.toLowerCase() === pregunta.respuesta?.toLowerCase()) {
                     // Verificar si pregunta.puntaje existe y tiene datos
                     if (pregunta.puntaje !== undefined && pregunta.puntaje !== null && pregunta.puntaje !== '') {
                         const puntajePregunta = Number(pregunta.puntaje);
                         puntajeAcumulado = puntajeAcumulado + puntajePregunta;
-                        tienePuntajes = true;
                     } else {
                         console.log('calculoNivel - pregunta sin puntaje válido:', pregunta.puntaje);
                     }
@@ -23,6 +27,8 @@ export const calculoNivel = (data:UserEstudiante | Estudiante, evaluacion:Evalua
 
     if (puntajeAcumulado > 0) {
         data.puntaje = puntajeAcumulado;
+    }else {
+        data.puntaje = 0
     }
 
     // Solo ejecutar la clasificación si existen puntajes válidos
