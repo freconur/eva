@@ -83,6 +83,7 @@ export const converSeccion = (seccion: number) => {
   if (seccion === 13) return "m"
   if (seccion === 14) return "n"
   if (seccion === 15) return "o"
+  if (seccion === 16) return "p"
 }
 export const converGenero = (genero: string) => {
   if (genero === "1") return "Masculino"
@@ -128,6 +129,7 @@ export const sectionByGrade = [
   { id: 13, name: "m" },
   { id: 14, name: "n" },
   { id: 15, name: "o" },
+  { id: 16, name: "p" },
 ]
 export const genero = [
   { id: 1, name: "masculino" },
