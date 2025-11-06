@@ -14,6 +14,7 @@ import {
 import {
   DataEstadisticas,
   DataGraficoTendencia,
+  Evaluaciones,
   GraficoTendenciaNiveles,
   Region,
   User,
@@ -29,7 +30,8 @@ export const useReporteEspecialistas = () => {
   const { currentUserData } = useGlobalContext();
   const db = getFirestore();
 
-  const getDataGraficoPieChart = async (idEvaluacion: string, mes: number) => {
+  const getDataGraficoPieChart = async (idEvaluacion: string, mes: number, evaluacion:Evaluaciones) => {
+    console.log('evaluacion', evaluacion);
     try {
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: true });
       const dataGraficoTendenciaNiveles: GraficoTendenciaNiveles[] = [];
@@ -40,53 +42,65 @@ export const useReporteEspecialistas = () => {
       const cantidadDocumentos = await getCountFromServer(coll);
 
       if (cantidadDocumentos.data().count > 0) {
-        const qPrevioAlInicio = query(
-          collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
-          where('puntaje', '<=', 356),
-          where('puntaje', '>', 0)
-        );
-        const qEnInicio = query(
-          collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
-          where('puntaje', '<=', 445),
-          where('puntaje', '>=', 356)
-        );
-        const qEnProceso = query(
-          collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
-          where('puntaje', '<=', 522),
-          where('puntaje', '>=', 445)
-        );
-        const qSatisfactorio = query(
-          collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
-          where('puntaje', '<=', 800),
-          where('puntaje', '>=', 522)
-        );
+        // Validar que exista nivelYPuntaje en la evaluación
+        if (!evaluacion.nivelYPuntaje || evaluacion.nivelYPuntaje.length === 0) {
+          console.warn('No se encontraron niveles y puntajes en la evaluación');
+          dispatch({
+            type: AppAction.DATA_GRAFICO_PIE_CHART,
+            payload: [],
+          });
+          return;
+        }
 
-        const snapshotPrevioAlInicio = await getCountFromServer(qPrevioAlInicio);
-        const snapshotEnInicio = await getCountFromServer(qEnInicio);
-        const snapshotEnProceso = await getCountFromServer(qEnProceso);
-        const snapshotSatisfactorio = await getCountFromServer(qSatisfactorio);
+        // Crear queries dinámicamente basadas en nivelYPuntaje
+        const queriesPorNivel: Record<string, any> = {};
+        const snapshotsPorNivel: Record<string, any> = {};
+        const nivelesData: Array<{ nivel: string; cantidadDeEstudiantes: number }> = [];
+
+        // Procesar cada nivel de nivelYPuntaje
+        for (const nivelData of evaluacion.nivelYPuntaje) {
+          const nivelNombre = nivelData.nivel?.toLowerCase() || '';
+          const minPuntaje = nivelData.min || 0;
+          const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
+
+          // Crear query según el nivel
+          let q;
+          if (nivelNombre === 'previo al inicio') {
+            // Para "previo al inicio", usar > 0 en lugar de >= min
+            q = query(
+              collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
+              where('puntaje', '<=', maxPuntaje),
+              where('puntaje', '>', 0)
+            );
+          } else {
+            // Para otros niveles, usar el rango completo
+            q = query(
+              collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
+              where('puntaje', '<=', maxPuntaje),
+              where('puntaje', '>=', minPuntaje)
+            );
+          }
+
+          queriesPorNivel[nivelNombre] = q;
+        }
+
+        // Ejecutar todas las queries y obtener los conteos
+        for (const nivelData of evaluacion.nivelYPuntaje) {
+          const nivelNombre = nivelData.nivel?.toLowerCase() || '';
+          if (queriesPorNivel[nivelNombre]) {
+            const snapshot = await getCountFromServer(queriesPorNivel[nivelNombre]);
+            snapshotsPorNivel[nivelNombre] = snapshot.data().count;
+            nivelesData.push({
+              nivel: nivelData.nivel || nivelNombre,
+              cantidadDeEstudiantes: snapshot.data().count,
+            });
+          }
+        }
 
         // Crear objeto para el gráfico de tendencia por niveles
         const objetoGraficoTendenciaNiveles = {
           mes: mes,
-          niveles: [
-            {
-              nivel: 'previo al inicio',
-              cantidadDeEstudiantes: snapshotPrevioAlInicio.data().count,
-            },
-            {
-              nivel: 'en inicio',
-              cantidadDeEstudiantes: snapshotEnInicio.data().count,
-            },
-            {
-              nivel: 'en proceso',
-              cantidadDeEstudiantes: snapshotEnProceso.data().count,
-            },
-            {
-              nivel: 'satisfactorio',
-              cantidadDeEstudiantes: snapshotSatisfactorio.data().count,
-            },
-          ],
+          niveles: nivelesData,
         };
         dataGraficoTendenciaNiveles.push(objetoGraficoTendenciaNiveles);
         const dataGraficoTendenciaNivelesOrdenada = dataGraficoTendenciaNiveles.sort(
@@ -104,7 +118,7 @@ export const useReporteEspecialistas = () => {
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: false });
     }
   };
-  const getDataParaGraficoTendencia = async (rangoMes: number[], idEvaluacion: string) => {
+  const getDataParaGraficoTendencia = async (rangoMes: number[], idEvaluacion: string, evaluacion?: Evaluaciones) => {
     dispatch({ type: AppAction.LOADER_GRAFICOS, payload: true });
     dispatch({ type: AppAction.DATA_GRAFICO_TENDENCIA, payload: [] });
     dispatch({ type: AppAction.DATA_GRAFICO_TENDENCIA_NIVELES, payload: [] });
@@ -116,6 +130,26 @@ export const useReporteEspecialistas = () => {
       return dataGraficoTendencia;
     }
 
+    // Si no se pasa evaluacion, intentar obtenerla
+    let evaluacionData = evaluacion;
+    if (!evaluacionData) {
+      try {
+        const evaluacionDoc = await getDoc(doc(db, 'evaluaciones', idEvaluacion));
+        if (evaluacionDoc.exists()) {
+          evaluacionData = evaluacionDoc.data() as Evaluaciones;
+        }
+      } catch (error) {
+        console.error('Error al obtener evaluación:', error);
+      }
+    }
+
+    // Validar que exista nivelYPuntaje en la evaluación
+    if (!evaluacionData?.nivelYPuntaje || evaluacionData.nivelYPuntaje.length === 0) {
+      console.warn('No se encontraron niveles y puntajes en la evaluación');
+      dispatch({ type: AppAction.LOADER_GRAFICOS, payload: false });
+      return dataGraficoTendencia;
+    }
+
     try {
       const promesas = rangoMes.map(async (mes) => {
         const coll = collection(
@@ -124,54 +158,54 @@ export const useReporteEspecialistas = () => {
         );
         const cantidadDocumentos = await getCountFromServer(coll);
 
-        if (cantidadDocumentos.data().count > 0) {
-          const qPrevioAlInicio = query(
-            collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
-            where('puntaje', '<=', 356),
-            where('puntaje', '>', 0)
-          );
-          const qEnInicio = query(
-            collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
-            where('puntaje', '<=', 445),
-            where('puntaje', '>=', 356)
-          );
-          const qEnProceso = query(
-            collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
-            where('puntaje', '<=', 522),
-            where('puntaje', '>=', 445)
-          );
-          const qSatisfactorio = query(
-            collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
-            where('puntaje', '<=', 800),
-            where('puntaje', '>=', 522)
-          );
+        if (cantidadDocumentos.data().count > 0 && evaluacionData?.nivelYPuntaje) {
+          // Crear queries dinámicamente basadas en nivelYPuntaje
+          const queriesPorNivel: Record<string, any> = {};
+          const nivelesData: Array<{ nivel: string; cantidadDeEstudiantes: number }> = [];
 
-          const snapshotPrevioAlInicio = await getCountFromServer(qPrevioAlInicio);
-          const snapshotEnInicio = await getCountFromServer(qEnInicio);
-          const snapshotEnProceso = await getCountFromServer(qEnProceso);
-          const snapshotSatisfactorio = await getCountFromServer(qSatisfactorio);
+          // Procesar cada nivel de nivelYPuntaje
+          for (const nivelData of evaluacionData.nivelYPuntaje) {
+            const nivelNombre = nivelData.nivel?.toLowerCase() || '';
+            const minPuntaje = nivelData.min || 0;
+            const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
+
+            // Crear query según el nivel
+            let q;
+            if (nivelNombre === 'previo al inicio') {
+              // Para "previo al inicio", usar > 0 en lugar de >= min
+              q = query(
+                collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
+                where('puntaje', '<=', maxPuntaje),
+                where('puntaje', '>', 0)
+              );
+            } else {
+              // Para otros niveles, usar el rango completo
+              q = query(
+                collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
+                where('puntaje', '<=', maxPuntaje),
+                where('puntaje', '>=', minPuntaje)
+              );
+            }
+
+            queriesPorNivel[nivelNombre] = q;
+          }
+
+          // Ejecutar todas las queries y obtener los conteos
+          for (const nivelData of evaluacionData.nivelYPuntaje) {
+            const nivelNombre = nivelData.nivel?.toLowerCase() || '';
+            if (queriesPorNivel[nivelNombre]) {
+              const snapshot = await getCountFromServer(queriesPorNivel[nivelNombre]);
+              nivelesData.push({
+                nivel: nivelData.nivel || nivelNombre,
+                cantidadDeEstudiantes: snapshot.data().count,
+              });
+            }
+          }
 
           // Crear objeto para el gráfico de tendencia por niveles
           const objetoGraficoTendenciaNiveles = {
             mes: mes,
-            niveles: [
-              {
-                nivel: 'previo al inicio',
-                cantidadDeEstudiantes: snapshotPrevioAlInicio.data().count,
-              },
-              {
-                nivel: 'en inicio',
-                cantidadDeEstudiantes: snapshotEnInicio.data().count,
-              },
-              {
-                nivel: 'en proceso',
-                cantidadDeEstudiantes: snapshotEnProceso.data().count,
-              },
-              {
-                nivel: 'satisfactorio',
-                cantidadDeEstudiantes: snapshotSatisfactorio.data().count,
-              },
-            ],
+            niveles: nivelesData,
           };
           dataGraficoTendenciaNiveles.push(objetoGraficoTendenciaNiveles);
           const dataGraficoTendenciaNivelesOrdenada = dataGraficoTendenciaNiveles.sort(
@@ -183,10 +217,6 @@ export const useReporteEspecialistas = () => {
             payload: dataGraficoTendenciaNivelesOrdenada,
           });
         }
-        //satisfactorio  523 a 800
-        //en proceso 446 a 522
-        //en inicio 357 a 445
-        //previo al inicio 0 a 356
 
         // Agregar al array dataGraficoTendenciaNiveles
         const snapshot = await getAggregateFromServer(coll, {

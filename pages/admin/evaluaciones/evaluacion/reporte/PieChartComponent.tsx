@@ -62,13 +62,14 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
         datasets: [{
           data: [1],
           backgroundColor: ['#E5E7EB'],
-          borderColor: ['#9CA3AF'],
-          borderWidth: 2
+          borderColor: '#ffffff',
+          borderWidth: 1,
+          borderAlign: 'inner' as const
         }]
       }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4">
+    <div className="bg-white rounded-lg shadow-lg p-4 mb-5">
       <div className="bg-gray-50 p-3 rounded-lg">
         <div className="h-80 flex items-center justify-center">
           {loaderDataGraficoPieChart ? (
@@ -86,7 +87,10 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
                   ...opcionesGraficoPie,
                   // Configuración adicional para alta calidad
                   devicePixelRatio: 2,
-                  animation: false,
+                  // Mantener animaciones para efectos de hover
+                  animation: {
+                    ...opcionesGraficoPie.animation,
+                  },
                 }}
               />
             </div>

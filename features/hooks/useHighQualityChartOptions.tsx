@@ -21,7 +21,23 @@ export const useHighQualityChartOptions = ({
       // Configuración para alta calidad
       devicePixelRatio: 2, // Doble resolución para pantallas de alta densidad
       animation: {
-        duration: 0, // Deshabilitar animaciones para mejor rendimiento en PDF
+        duration: 400, // Animación suave para efectos de hover
+        easing: 'easeOutQuart' as const,
+      },
+      // Configuración de interacción para efectos de hover
+      interaction: {
+        intersect: false,
+        mode: 'point' as const,
+      },
+      onHover: (event: any, activeElements: any) => {
+        if (event.native) {
+          const target = event.native.target as HTMLElement;
+          if (activeElements && activeElements.length > 0) {
+            target.style.cursor = 'pointer';
+          } else {
+            target.style.cursor = 'default';
+          }
+        }
       },
       // Configuración de renderizado para mejor calidad
       elements: {
@@ -36,7 +52,11 @@ export const useHighQualityChartOptions = ({
           borderWidth: 3,
         },
         arc: {
-          borderWidth: 3, // Bordes más gruesos para gráficos de pie
+          borderWidth: 1, // Bordes mínimos para gráficos de pie
+          borderAlign: 'inner' as const, // Bordes internos para mejor apariencia
+          hoverOffset: 10, // Separación al hacer hover (efecto de "pop-out")
+          hoverBorderWidth: 2, // Borde mínimo al hacer hover
+          hoverBorderColor: '#ffffff', // Color del borde al hacer hover
         },
         bar: {
           borderWidth: 2, // Bordes para barras
@@ -46,6 +66,7 @@ export const useHighQualityChartOptions = ({
         legend: {
           display: showLegend,
           position: legendPosition,
+          borderWidth: 0, // Sin borde en la leyenda
           labels: {
             usePointStyle: true,
             pointStyle: chartType === 'pie' ? 'circle' : 'rect',
@@ -65,13 +86,15 @@ export const useHighQualityChartOptions = ({
                 return data.labels.map((label: string, index: number) => {
                   const value = dataset.data[index];
                   const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                  // Todos los indicadores son cuadrados
+                  const pointStyle = 'rect';
                   
                   return {
                     text: `${label}: ${value} (${percentage}%)`,
                     fillStyle: dataset.backgroundColor[index],
-                    strokeStyle: dataset.borderColor[index],
-                    lineWidth: dataset.borderWidth,
-                    pointStyle: 'circle',
+                    strokeStyle: dataset.backgroundColor[index], // Sin borde, usar el mismo color
+                    lineWidth: 0, // Sin borde en los indicadores
+                    pointStyle: pointStyle,
                     hidden: false,
                     index: index
                   };
@@ -96,10 +119,10 @@ export const useHighQualityChartOptions = ({
           },
         },
         tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
           titleColor: '#ffffff',
           bodyColor: '#ffffff',
-          borderColor: 'rgba(255, 255, 255, 0.2)',
+          borderColor: 'rgba(59, 130, 246, 0.5)',
           borderWidth: 2,
           cornerRadius: 12,
           displayColors: true,
@@ -113,11 +136,31 @@ export const useHighQualityChartOptions = ({
             family: "'Inter', 'Helvetica', 'Arial', sans-serif",
           },
           padding: 16,
+          titleSpacing: 8,
+          bodySpacing: 6,
+          boxPadding: 8,
           callbacks: chartType === 'pie' ? {
+            title: function (context: any) {
+              return `📊 ${context[0].label}`;
+            },
             label: function (context: any) {
               const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
               const percentage = ((context.parsed / total) * 100).toFixed(1);
-              return `${context.label}: ${context.parsed} (${percentage}%)`;
+              const estudiantes = context.parsed;
+              
+              return [
+                `👥 Estudiantes: ${estudiantes.toLocaleString('es-PE')}`,
+                `📈 Porcentaje: ${percentage}%`,
+                `📊 Total: ${total.toLocaleString('es-PE')}`
+              ];
+            },
+            labelColor: function (context: any) {
+              return {
+                borderColor: context.dataset.backgroundColor[context.dataIndex],
+                backgroundColor: context.dataset.backgroundColor[context.dataIndex],
+                borderWidth: 3,
+                borderRadius: 4,
+              };
             },
           } : undefined,
         },

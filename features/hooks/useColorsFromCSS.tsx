@@ -120,6 +120,16 @@ export const useColorsFromCSS = () => {
 
   // Función para preparar datos de gráfico pie con colores de niveles
   const preparePieChartData = useCallback((niveles: any[]) => {
+    // Función auxiliar para ajustar brillo de un color (para hover)
+    const adjustBrightness = (color: string, percent: number): string => {
+      const num = parseInt(color.replace("#", ""), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+      const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
+      const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+      return "#" + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+    };
+
     return {
       labels: niveles.map(nivel => {
         return nivel.nivel
@@ -130,11 +140,17 @@ export const useColorsFromCSS = () => {
       datasets: [{
         data: niveles.map(nivel => nivel.cantidadDeEstudiantes),
         backgroundColor: niveles.map(nivel => getNivelColor(nivel.nivel).bg),
-        borderColor: niveles.map(nivel => getNivelColor(nivel.nivel).border),
-        borderWidth: 2,
-        hoverBackgroundColor: niveles.map(nivel => getNivelColor(nivel.nivel).hoverBg),
-        hoverBorderColor: niveles.map(nivel => getNivelColor(nivel.nivel).hoverBorder),
-        hoverBorderWidth: 3
+        // Bordes mínimos para separación sutil entre segmentos
+        borderColor: '#ffffff',
+        borderWidth: 1,
+        borderAlign: 'inner' as const,
+        // Efecto hover: colores más brillantes y bordes mínimos
+        hoverBackgroundColor: niveles.map(nivel => {
+          const baseColor = getNivelColor(nivel.nivel).bg;
+          return adjustBrightness(baseColor, 15); // Aclarar 15% para hover
+        }),
+        hoverBorderColor: '#ffffff',
+        hoverBorderWidth: 2
       }]
     };
   }, [getNivelColor]);

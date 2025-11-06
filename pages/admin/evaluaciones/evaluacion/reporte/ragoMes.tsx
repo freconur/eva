@@ -116,7 +116,7 @@ const RangoMes: React.FC<RangoMesProps> = ({ onRangoChange, className = '', setR
     }, 0);
   };
   return (
-    <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
+    <div className={`bg-white rounded-lg  p-6 ${className}`}>
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-2">
           Seleccionar Rango de Meses

@@ -6,12 +6,13 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
   Filler
 } from 'chart.js'
-import { Line } from 'react-chartjs-2'
+import { Line, Bar } from 'react-chartjs-2'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import Loader from '@/components/loader/loader'
 
@@ -21,6 +22,7 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -35,18 +37,53 @@ interface GraficoTendenciaProps {
 
 const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: GraficoTendenciaProps) => {
   const { getDataParaGraficoTendencia } = useReporteEspecialistas()
-  const { dataGraficoTendencia, dataGraficoTendenciaNiveles, loaderGraficos } = useGlobalContext()
+  const { dataGraficoTendencia, dataGraficoTendenciaNiveles, loaderGraficos, evaluacion } = useGlobalContext()
 
   useEffect(() => {
     // Solo obtener datos cuando se aplique el rango y haya datos válidos
     if (rangoMesAplicado && rangoMesAplicado.length > 0) {
-      getDataParaGraficoTendencia(rangoMesAplicado, idEvaluacion)
+      getDataParaGraficoTendencia(rangoMesAplicado, idEvaluacion, evaluacion as any)
     }
-  }, [rangoMesAplicado, idEvaluacion])
+  }, [rangoMesAplicado, idEvaluacion, evaluacion])
+
+  // Función para determinar el nivel según el puntaje promedio
+  const obtenerNivelPorPuntaje = (puntaje: number): string => {
+    if (!evaluacion?.nivelYPuntaje || evaluacion.nivelYPuntaje.length === 0) {
+      return 'Nivel no definido';
+    }
+
+    // Ordenar los niveles por puntaje mínimo
+    const nivelesOrdenados = [...evaluacion.nivelYPuntaje].sort((a, b) => (a.min || 0) - (b.min || 0));
+    
+    // Buscar el nivel correspondiente al puntaje
+    for (const nivelData of nivelesOrdenados) {
+      const minPuntaje = nivelData.min || 0;
+      const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
+      
+      // Para "previo al inicio", usar > 0 en lugar de >= min
+      if (nivelData.nivel?.toLowerCase() === 'previo al inicio') {
+        if (puntaje > 0 && puntaje <= maxPuntaje) {
+          return nivelData.nivel || 'Nivel no definido';
+        }
+      } else {
+        if (puntaje >= minPuntaje && puntaje <= maxPuntaje) {
+          return nivelData.nivel || 'Nivel no definido';
+        }
+      }
+    }
+    
+    return 'Nivel no definido';
+  }
 
   // Configuración del gráfico de líneas original (promedios)
   const opcionesGrafico = {
     responsive: true,
+    layout: {
+      padding: {
+        left: 20,
+        right: 20
+      }
+    },
     plugins: {
       legend: {
         position: 'top' as const,
@@ -75,7 +112,22 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
         displayColors: false,
         callbacks: {
           label: function(context: any) {
-            return `Puntaje: ${context.parsed.y.toFixed(1)}`;
+            const index = context.dataIndex;
+            const item = dataGraficoTendencia[index];
+            const puntaje = context.parsed.y;
+            const nivel = obtenerNivelPorPuntaje(puntaje);
+            
+            // Calcular total de estudiantes evaluados desde dataGraficoTendenciaNiveles
+            const nivelData = dataGraficoTendenciaNiveles.find(n => n.mes === item.mes);
+            const totalEstudiantes = nivelData 
+              ? nivelData.niveles.reduce((sum, nivel) => sum + nivel.cantidadDeEstudiantes, 0)
+              : 0;
+            
+            return [
+              `Puntaje: ${puntaje.toFixed(1)}`,
+              `Nivel: ${nivel}`,
+              `Total de estudiantes: ${totalEstudiantes}`
+            ];
           }
         }
       }
@@ -99,7 +151,8 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
           font: {
             size: 12
           }
-        }
+        },
+        offset: true
       },
       y: {
         title: {
@@ -124,11 +177,11 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
     },
     elements: {
       point: {
-        radius: 5,
-        hoverRadius: 7,
+        radius: 8,
+        hoverRadius: 10,
         backgroundColor: '#4F46E5',
         borderColor: '#fff',
-        borderWidth: 2
+        borderWidth: 3
       },
       line: {
         tension: 0,
@@ -140,9 +193,16 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
       mode: 'index' as const
     }
   }
+
   // Configuración del gráfico de líneas para niveles
   const opcionesGraficoNiveles = {
     responsive: true,
+    layout: {
+      padding: {
+        left: 20,
+        right: 20
+      }
+    },
     plugins: {
       legend: {
         position: 'top' as const,
@@ -195,7 +255,8 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
           font: {
             size: 12
           }
-        }
+        },
+        offset: true
       },
       y: {
         title: {
@@ -256,14 +317,54 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
         tension: 0,
         pointBackgroundColor: '#4F46E5',
         pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 7,
+        pointBorderWidth: 3,
+        pointRadius: 8,
+        pointHoverRadius: 10,
         borderWidth: 2,
         pointHoverBackgroundColor: '#6366F1',
         pointHoverBorderColor: '#fff'
       }
     ]
+  }
+
+  // Datos del gráfico de barras (con barras más delgadas)
+  const datosChartBar = {
+    ...datosChart,
+    datasets: datosChart.datasets.map(dataset => ({
+      ...dataset,
+      maxBarThickness: 50
+    }))
+  }
+
+  // Configuración del gráfico de barras (con barras más delgadas y nivel en tooltip)
+  const opcionesGraficoBar = {
+    ...opcionesGrafico,
+    plugins: {
+      ...opcionesGrafico.plugins,
+      tooltip: {
+        ...opcionesGrafico.plugins.tooltip,
+        callbacks: {
+          label: function(context: any) {
+            const index = context.dataIndex;
+            const item = dataGraficoTendencia[index];
+            const puntaje = context.parsed.y;
+            const nivel = obtenerNivelPorPuntaje(puntaje);
+            
+            // Calcular total de estudiantes evaluados desde dataGraficoTendenciaNiveles
+            const nivelData = dataGraficoTendenciaNiveles.find(n => n.mes === item.mes);
+            const totalEstudiantes = nivelData 
+              ? nivelData.niveles.reduce((sum, nivel) => sum + nivel.cantidadDeEstudiantes, 0)
+              : 0;
+            
+            return [
+              `Puntaje: ${puntaje.toFixed(1)}`,
+              `Nivel: ${nivel}`,
+              `Total de estudiantes: ${totalEstudiantes}`
+            ];
+          }
+        }
+      }
+    }
   }
 
   // Datos del gráfico de líneas para niveles (niveles en eje X)
@@ -340,7 +441,7 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
   return (
     <div className="w-full max-w-7xl mx-auto p-4 space-y-6">
       {/* Gráfico de Promedios */}
-      <div className="bg-white rounded-lg shadow-lg p-4">
+      <div className="bg-white rounded-lg  p-4">
         {/* <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
             Gráfico de Tendencia - Puntajes Promedio
@@ -352,6 +453,10 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
         
         <div className="bg-gray-50 p-4 rounded-lg">
           <Line data={datosChart} options={opcionesGrafico} />
+        </div>
+        
+        <div className="bg-gray-50 p-4 rounded-lg mt-4">
+          <Bar data={datosChartBar} options={opcionesGraficoBar} />
         </div>
         
         {/* <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -377,7 +482,7 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
       </div>
 
       {/* Gráfico de Niveles */}
-      <div className="bg-white rounded-lg shadow-lg p-4">
+      <div className="bg-white rounded-lg  p-4">
         {/* <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
             Distribución de Estudiantes por Niveles de Rendimiento
