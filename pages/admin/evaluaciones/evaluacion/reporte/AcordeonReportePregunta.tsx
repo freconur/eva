@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import ReporteEvaluacionPorPregunta from './reporteEvaluacionPorPregunta';
+import ReporteEvaluacionPorPregunta from '@/components/reportes/ReporteEvaluacionPorPregunta';
 import { PreguntasRespuestas, DataEstadisticas } from '@/features/types/types';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import Loader from '@/components/loader/loader';
@@ -11,6 +11,17 @@ interface AcordeonReportePreguntaProps {
   obtenerRespuestaPorId: (idPregunta: string) => string;
   iterateData: (data: DataEstadisticas, respuesta: string) => any;
   options: any;
+  filtros: {
+    region: string;
+    distrito: string;
+    caracteristicaCurricular: string;
+    genero: string;
+    area: string;
+  };
+  distritosDisponibles: string[];
+  handleChangeFiltros: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleFiltrar: () => void;
+  handleRestablecerFiltros: () => void;
 }
 
 const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
@@ -19,7 +30,12 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
   iterarPregunta,
   obtenerRespuestaPorId,
   iterateData,
-  options
+  options,
+  filtros,
+  distritosDisponibles,
+  handleChangeFiltros,
+  handleFiltrar,
+  handleRestablecerFiltros,
 }) => {
   const [mostrarReporte, setMostrarReporte] = useState(true);
   const { loaderReportePorPregunta, reporteDirector } = useGlobalContext();
@@ -152,6 +168,11 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
                 obtenerRespuestaPorId={obtenerRespuestaPorId}
                 iterateData={iterateData}
                 options={options}
+                filtros={filtros}
+                distritosDisponibles={distritosDisponibles}
+                handleChangeFiltros={handleChangeFiltros}
+                handleFiltrar={handleFiltrar}
+                handleRestablecerFiltros={handleRestablecerFiltros}
               />
             )
           )}

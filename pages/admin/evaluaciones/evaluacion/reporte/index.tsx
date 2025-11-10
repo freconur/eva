@@ -13,12 +13,6 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import {
-  genero,
-  regiones,
-  area,
-  caracteristicasDirectivo,
-} from '@/fuctions/regiones';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { Alternativa, DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
 import { RiLoader4Line } from 'react-icons/ri';
@@ -34,6 +28,7 @@ import { useCrearPuntajeProgresiva } from '@/features/hooks/useCrearPuntajeProgr
 import AcordeonGraficosTendencia from './AcordeonGraficosTendencia';
 import AcordeonReportePregunta from './AcordeonReportePregunta';
 import PieChartComponent from './PieChartComponent';
+import FiltrosReporte from '@/components/reportes/FiltrosReporte';
 
 ChartJS.register(
   CategoryScale,
@@ -546,83 +541,13 @@ useEffect(() => {
               ))}
             </select>
           </div>
-          <div className={styles.filtersContainer}>
-            <select
-              name="region"
-              className={styles.select}
-              onChange={handleChangeFiltros}
-              value={filtros.region}
-            >
-              <option value="">Seleccionar Ugel</option>
-              {regiones.map((region, index) => (
-                <option key={index} value={region.id}>
-                  {region.region}
-                </option>
-              ))}
-            </select>
-
-            <select
-              name="distrito"
-              className={styles.select}
-              onChange={handleChangeFiltros}
-              value={filtros.distrito}
-              disabled={!filtros.region}
-            >
-              <option value="">Seleccionar Distrito</option>
-              {distritosDisponibles.map((distrito, index) => (
-                <option key={index} value={distrito}>
-                  {distrito}
-                </option>
-              ))}
-            </select>
-
-            <select
-              name="area"
-              value={filtros.area}
-              onChange={handleChangeFiltros}
-              className={styles.select}
-            >
-              <option value="">Area</option>
-              {area.map((are) => (
-                <option key={are.id} value={are.id}>
-                  {are.name.toUpperCase()}
-                </option>
-              ))}
-            </select>
-            <select
-              name="caracteristicaCurricular"
-              value={filtros.caracteristicaCurricular}
-              onChange={handleChangeFiltros}
-              className={styles.select}
-            >
-              <option value="">Característica Curricular</option>
-              {caracteristicasDirectivo.map((are) => (
-                <option key={are.id} value={are.name}>
-                  {are.name.toUpperCase()}
-                </option>
-              ))}
-            </select>
-            <select
-              name="genero"
-              value={filtros.genero}
-              onChange={handleChangeFiltros}
-              className={styles.select}
-            >
-              <option value="">Género</option>
-              {genero.map((gen) => (
-                <option key={gen.id} value={gen.id}>
-                  {gen.name.toUpperCase()}
-                </option>
-              ))}
-            </select>
-           
-            <button className={styles.filterButton} onClick={handleFiltrar}>
-              Filtrar
-            </button>
-            <button className={styles.filterButton} onClick={handleRestablecerFiltros}>
-              restablecer
-            </button>
-          </div>
+          {/* <FiltrosReporte
+            filtros={filtros}
+            distritosDisponibles={distritosDisponibles}
+            handleChangeFiltros={handleChangeFiltros}
+            handleFiltrar={handleFiltrar}
+            handleRestablecerFiltros={handleRestablecerFiltros}
+          /> */}
 
           <div className={styles.exportContainer}>
             <button
@@ -797,6 +722,11 @@ useEffect(() => {
             obtenerRespuestaPorId={obtenerRespuestaPorId}
             iterateData={iterateData}
             options={options}
+            filtros={filtros}
+            distritosDisponibles={distritosDisponibles}
+            handleChangeFiltros={handleChangeFiltros}
+            handleFiltrar={handleFiltrar}
+            handleRestablecerFiltros={handleRestablecerFiltros}
           />
         </div>
       )}

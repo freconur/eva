@@ -16,6 +16,7 @@ import {
   DataGraficoTendencia,
   Evaluaciones,
   GraficoTendenciaNiveles,
+  GraficoPieChart,
   Region,
   User,
   UserEstudiante,
@@ -30,11 +31,19 @@ export const useReporteEspecialistas = () => {
   const { currentUserData } = useGlobalContext();
   const db = getFirestore();
 
-  const getDataGraficoPieChart = async (idEvaluacion: string, mes: number, evaluacion:Evaluaciones) => {
+  const getDataGraficoPieChart = async (
+    idEvaluacion: string, 
+    mes: number, 
+    evaluacion: Evaluaciones,
+    filtroGenero?: string,
+    filtroRegion?: string
+  ) => {
     console.log('evaluacion', evaluacion);
+    console.log('filtroGenero', filtroGenero);
+    console.log('filtroRegion', filtroRegion);
     try {
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: true });
-      const dataGraficoTendenciaNiveles: GraficoTendenciaNiveles[] = [];
+      const dataGraficoPieChart: GraficoPieChart[] = [];
       const coll = collection(
         db,
         `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`
@@ -63,23 +72,33 @@ export const useReporteEspecialistas = () => {
           const minPuntaje = nivelData.min || 0;
           const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
 
-          // Crear query según el nivel
-          let q;
+          // Construir condiciones de filtro
+          const condicionesWhere: any[] = [];
+          
+          // Agregar condición de puntaje según el nivel
           if (nivelNombre === 'previo al inicio') {
-            // Para "previo al inicio", usar > 0 en lugar de >= min
-            q = query(
-              collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
-              where('puntaje', '<=', maxPuntaje),
-              where('puntaje', '>', 0)
-            );
+            condicionesWhere.push(where('puntaje', '<=', maxPuntaje));
+            condicionesWhere.push(where('puntaje', '>', 0));
           } else {
-            // Para otros niveles, usar el rango completo
-            q = query(
-              collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
-              where('puntaje', '<=', maxPuntaje),
-              where('puntaje', '>=', minPuntaje)
-            );
+            condicionesWhere.push(where('puntaje', '<=', maxPuntaje));
+            condicionesWhere.push(where('puntaje', '>=', minPuntaje));
           }
+
+          // Agregar filtro de género si está presente
+          if (filtroGenero) {
+            condicionesWhere.push(where('genero', '==', filtroGenero));
+          }
+
+          // Agregar filtro de región si está presente
+          if (filtroRegion) {
+            condicionesWhere.push(where('region', '==', Number(filtroRegion)));
+          }
+
+          // Crear query con todas las condiciones
+          const q = query(
+            collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
+            ...condicionesWhere
+          );
 
           queriesPorNivel[nivelNombre] = q;
         }
@@ -97,19 +116,19 @@ export const useReporteEspecialistas = () => {
           }
         }
 
-        // Crear objeto para el gráfico de tendencia por niveles
-        const objetoGraficoTendenciaNiveles = {
+        // Crear objeto para el gráfico de pie chart
+        const objetoGraficoPieChart = {
           mes: mes,
           niveles: nivelesData,
         };
-        dataGraficoTendenciaNiveles.push(objetoGraficoTendenciaNiveles);
-        const dataGraficoTendenciaNivelesOrdenada = dataGraficoTendenciaNiveles.sort(
+        dataGraficoPieChart.push(objetoGraficoPieChart);
+        const dataGraficoPieChartOrdenada = dataGraficoPieChart.sort(
           (a, b) => a.mes - b.mes
         );
 
         dispatch({
           type: AppAction.DATA_GRAFICO_PIE_CHART,
-          payload: dataGraficoTendenciaNivelesOrdenada,
+          payload: dataGraficoPieChartOrdenada,
         });
       }
     } catch (error) {
@@ -349,7 +368,7 @@ export const useReporteEspecialistas = () => {
   ) => {
     console.log('data', data);
     /* se usara la funcion getAllReporteDeDirectoreToAdmin */
-    const dataDirectores = await getAllReporteDeDirectoreToAdmin(idEvaluacion, month);
+    const dataDirectores = await getAllReporteDeDirectoreToAdmin(idEvaluacion, month);//me retorna todos los directores
     const dataFiltrada = dataDirectores?.filter((estudiante) => {
       // Crear un objeto con los filtros que tienen valor
       const filtrosActivos = {

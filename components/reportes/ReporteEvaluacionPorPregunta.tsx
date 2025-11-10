@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
-import styles from './Reporte.module.css';
+import styles from '@/pages/admin/evaluaciones/evaluacion/reporte/Reporte.module.css';
+import FiltrosReporte from './FiltrosReporte';
 
 interface ReporteEvaluacionPorPreguntaProps {
   reporteDirectorOrdenado: DataEstadisticas[];
@@ -10,6 +11,17 @@ interface ReporteEvaluacionPorPreguntaProps {
   obtenerRespuestaPorId: (idPregunta: string) => string;
   iterateData: (data: DataEstadisticas, respuesta: string) => any;
   options: any;
+  filtros: {
+    region: string;
+    distrito: string;
+    caracteristicaCurricular: string;
+    genero: string;
+    area: string;
+  };
+  distritosDisponibles: string[];
+  handleChangeFiltros: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleFiltrar: () => void;
+  handleRestablecerFiltros: () => void;
 }
 
 const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> = ({
@@ -19,6 +31,11 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   obtenerRespuestaPorId,
   iterateData,
   options,
+  filtros,
+  distritosDisponibles,
+  handleChangeFiltros,
+  handleFiltrar,
+  handleRestablecerFiltros,
 }) => {
   const [popoverData, setPopoverData] = useState<{
     preguntaId: string;
@@ -40,6 +57,13 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   };
   return (
     <div className={styles.reportContainer}>
+      <FiltrosReporte
+        filtros={filtros}
+        distritosDisponibles={distritosDisponibles}
+        handleChangeFiltros={handleChangeFiltros}
+        handleFiltrar={handleFiltrar}
+        handleRestablecerFiltros={handleRestablecerFiltros}
+      />
       <h1 className={styles.reportTitle}>reporte de evaluación</h1>
       <div>
         <div>
@@ -126,3 +150,4 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
 };
 
 export default ReporteEvaluacionPorPregunta;
+
