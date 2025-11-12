@@ -1,30 +1,49 @@
 import { User } from '@/features/types/types';
 import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom';
-import { regionTexto, gradosDeColegio, sectionByGrade,genero,area } from '@/fuctions/regiones';
+import { regionTexto, gradosDeColegio, sectionByGrade,genero,area, nivelInstitucion } from '@/fuctions/regiones';
 import styles from './styles.module.css';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular';
 import { distritosPuno } from '@/fuctions/provinciasPuno';
-
+import { useOptions } from '@/features/hooks/useOptions';
 interface Props {
   dataDocente: User;
   onClose: () => void;
 }
 
-interface UserWithCaracteristica extends User {
+interface UserWithCaracteristica extends Omit<User, 'nivelDeInstitucion'> {
   caracteristicaCurricular?: string;
   grados?: number[];
   secciones?: number[];
   area?: number;
   distrito?: string;
+  nivelDeInstitucion?: number;
 }
 
 const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
+  // Inicializar nivelDeInstitucion basado en dataDocente.nivel
+  const getInitialNivelInstitucion = (): number | undefined => {
+    // Si existe dataDocente.nivelDeInstitucion como número único
+    if (dataDocente.nivelDeInstitucion !== undefined && typeof dataDocente.nivelDeInstitucion === 'number') {
+      return dataDocente.nivelDeInstitucion;
+    }
+    // Si existe dataDocente.nivelDeInstitucion como array, tomar el primer valor
+    if (dataDocente.nivelDeInstitucion && Array.isArray(dataDocente.nivelDeInstitucion) && dataDocente.nivelDeInstitucion.length > 0) {
+      return dataDocente.nivelDeInstitucion[0];
+    }
+    // Si existe dataDocente.nivel (número único)
+    if (dataDocente.nivel !== undefined && dataDocente.nivel !== null) {
+      return dataDocente.nivel;
+    }
+    return undefined;
+  };
+
   const [formData, setFormData] = useState<UserWithCaracteristica>({
     ...dataDocente,
     grados: Array.isArray(dataDocente.grados) ? dataDocente.grados : [],
-    secciones: Array.isArray(dataDocente.secciones) ? dataDocente.secciones : []
+    secciones: Array.isArray(dataDocente.secciones) ? dataDocente.secciones : [],
+    nivelDeInstitucion: getInitialNivelInstitucion()
   });
 
   const [distritosDisponibles, setDistritosDisponibles] = useState<string[]>([]);
@@ -43,8 +62,8 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
     container = document.getElementById("portal-modal");
   }
 
-  const { caracteristicaCurricular } = useGlobalContext();
-  const { getCaracteristicasCurricular, updateDocenteParaCoberturaCurricular } = useEvaluacionCurricular();
+  const { updateDocenteParaCoberturaCurricular } = useEvaluacionCurricular();
+  const { getCaracteristicaCurricular, caracteristicaCurricular } = useOptions();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -74,12 +93,24 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('formData',formData);
-    updateDocenteParaCoberturaCurricular(`${dataDocente.dni}`, formData, dataDocente);
+    // Convertir nivelDeInstitucion de number a number[] para cumplir con el tipo User
+    const dataToSubmit: User = {
+      ...formData,
+      nivel: (formData.nivelDeInstitucion) !== undefined 
+        ? Number(formData.nivelDeInstitucion)
+        : undefined,
+      nivelDeInstitucion: formData.nivelDeInstitucion !== undefined 
+        ? [formData.nivelDeInstitucion] 
+        : undefined
+    };
+    console.log('dataToSubmit',dataToSubmit)
+    updateDocenteParaCoberturaCurricular(`${dataDocente.dni}`, dataToSubmit, dataDocente);
     onClose();
   };
   console.log('dataDocente',dataDocente)
+  console.log('caracteristicaCurricular',caracteristicaCurricular)
   useEffect(() => {
-    getCaracteristicasCurricular();
+    getCaracteristicaCurricular();
   }, []);
   return container ? createPortal(
     <div className={styles.modalOverlay}>
@@ -231,19 +262,41 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
                 onChange={handleChange}
                 className={styles.input}
               >
-                <option key={0} value={0}>Seleccione una característica</option>
+                <option>Seleccione una característica</option>
                 {caracteristicaCurricular?.map((item, index) => (
-                  <option key={index+1} value={item.id}>
+                  <option key={item.id} value={item.id}>
+                    {/* <option key="default-caracteristica" value={0}>Seleccione una característica</option>
+                {caracteristicaCurricular?.map((item) => (
+                  <option key={`caracteristica-${item.id}`} value={item.id}> */}
                     {item.name}
                   </option>
                 ))}
               </select>
             </div>
             <div className={styles.formGroup}>
+              <label className={styles.label}>Nivel de Institución</label>
+              <div className={styles.radioGroup}>
+                {nivelInstitucion.map((nivel) => (
+                  <label key={nivel.id} className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="nivelDeInstitucion"
+                      value={nivel.id}
+                      checked={`${formData.nivelDeInstitucion}` === `${nivel.id}`}
+                      onChange={handleChange}
+                      disabled={nivel.id === 0}
+                      className={styles.radio}
+                    />
+                    {nivel.name.charAt(0).toUpperCase() + nivel.name.slice(1)}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className={`${styles.formGroup} ${styles.fullWidth}`}>
               <label className={styles.label}>Grados</label>
               <div className={styles.checkboxGroup}>
-                {gradosDeColegio.map((grado) => (
-                  <label key={grado.id} className={styles.checkboxLabel}>
+                {gradosDeColegio.map((grado, index) => (
+                  <label key={index + 1} className={styles.checkboxLabel}>
                     <input
                       type="checkbox"
                       name="grados"
@@ -252,12 +305,12 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
                       onChange={handleCheckboxChange}
                       className={styles.checkbox}
                     />
-                    {grado.name}
+                    <span>{grado.name}</span>
                   </label>
                 ))}
               </div>
             </div>
-            <div className={styles.formGroup}>
+            <div className={`${styles.formGroup} ${styles.fullWidth}`}>
               <label className={styles.label}>Secciones</label>
               <div className={styles.checkboxGroup}>
                 {sectionByGrade.map((seccion) => (
@@ -270,7 +323,7 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
                       onChange={handleCheckboxChange}
                       className={styles.checkbox}
                     />
-                    {seccion.name}
+                    <span>{seccion.name}</span>
                   </label>
                 ))}
               </div>

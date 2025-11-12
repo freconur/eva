@@ -622,6 +622,7 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
     console.log('data', data)
 
     await setDoc(doc(db, "usuarios", dataDocente), {
+      nivel: data.nivel,
       nombres: data.nombres,
       apellidos: data.apellidos,
       dni: data.dni,
