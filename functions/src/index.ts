@@ -33,6 +33,7 @@ import { crearEstudianteDeDocente } from './crearEstudianteDeDocente';
 // Importar la nueva función para frontend
 import { crearEstudianteDeDocenteFrontend } from './crearEstudianteDeDocenteFrontend';
 import { crearPuntajeEestudiantesProgresiva } from './crearPuntajeEestudiantesProgresiva';
+const { getListCollectionsEvaluacionesPorMes } = require('./getListCollectionsEvaluacionesPorMes');
 
 
 // ==========================================================
@@ -780,6 +781,8 @@ exports.crearEstudianteDeDocenteFrontend = crearEstudianteDeDocenteFrontend;
 
 
 exports.crearPuntajeEestudiantesProgresiva = crearPuntajeEestudiantesProgresiva;
+
+exports.getListCollectionsEvaluacionesPorMes = getListCollectionsEvaluacionesPorMes;
 
 // Configuración global para todas las funciones
 // Nota: setGlobalOptions no está disponible en la versión actual de firebase-functions

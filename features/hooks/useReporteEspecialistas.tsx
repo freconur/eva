@@ -48,7 +48,21 @@ export const useReporteEspecialistas = () => {
         db,
         `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`
       );
-      const cantidadDocumentos = await getCountFromServer(coll);
+      
+      // Crear query para el total con los mismos filtros que se aplicarán a los niveles
+      const condicionesTotal: any[] = [];
+      if (filtroGenero) {
+        condicionesTotal.push(where('genero', '==', filtroGenero));
+      }
+      if (filtroRegion) {
+        condicionesTotal.push(where('region', '==', Number(filtroRegion)));
+      }
+      
+      const queryTotal = condicionesTotal.length > 0 
+        ? query(coll, ...condicionesTotal)
+        : coll;
+      
+      const cantidadDocumentos = await getCountFromServer(queryTotal);
 
       if (cantidadDocumentos.data().count > 0) {
         // Validar que exista nivelYPuntaje en la evaluación
@@ -78,7 +92,7 @@ export const useReporteEspecialistas = () => {
           // Agregar condición de puntaje según el nivel
           if (nivelNombre === 'previo al inicio') {
             condicionesWhere.push(where('puntaje', '<=', maxPuntaje));
-            condicionesWhere.push(where('puntaje', '>', 0));
+            condicionesWhere.push(where('puntaje', '>=', 0));
           } else {
             condicionesWhere.push(where('puntaje', '<=', maxPuntaje));
             condicionesWhere.push(where('puntaje', '>=', minPuntaje));
@@ -112,6 +126,26 @@ export const useReporteEspecialistas = () => {
             nivelesData.push({
               nivel: nivelData.nivel || nivelNombre,
               cantidadDeEstudiantes: snapshot.data().count,
+            });
+          }
+        }
+
+        // Calcular la diferencia entre el total y la suma de estudiantes por nivel
+        // Esta diferencia incluye estudiantes con puntaje null y otros casos no contados
+        const totalDocumentos = cantidadDocumentos.data().count;
+        const sumaPorNiveles = nivelesData.reduce((suma, nivel) => suma + nivel.cantidadDeEstudiantes, 0);
+        const diferencia = totalDocumentos - sumaPorNiveles;
+
+        // Si hay diferencia positiva, agregarla al nivel "previo al inicio"
+        if (diferencia > 0) {
+          const nivelPrevioAlInicio = nivelesData.find(n => n.nivel.toLowerCase() === 'previo al inicio');
+          if (nivelPrevioAlInicio) {
+            nivelPrevioAlInicio.cantidadDeEstudiantes += diferencia;
+          } else {
+            // Si no existe el nivel "previo al inicio", agregarlo
+            nivelesData.push({
+              nivel: 'previo al inicio',
+              cantidadDeEstudiantes: diferencia,
             });
           }
         }
@@ -176,7 +210,7 @@ export const useReporteEspecialistas = () => {
           `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`
         );
         const cantidadDocumentos = await getCountFromServer(coll);
-
+        console.log('cantidadDocumentos', cantidadDocumentos.data().count);
         if (cantidadDocumentos.data().count > 0 && evaluacionData?.nivelYPuntaje) {
           // Crear queries dinámicamente basadas en nivelYPuntaje
           const queriesPorNivel: Record<string, any> = {};
@@ -191,11 +225,11 @@ export const useReporteEspecialistas = () => {
             // Crear query según el nivel
             let q;
             if (nivelNombre === 'previo al inicio') {
-              // Para "previo al inicio", usar > 0 en lugar de >= min
+              // Para "previo al inicio", usar >= 0
               q = query(
                 collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
                 where('puntaje', '<=', maxPuntaje),
-                where('puntaje', '>', 0)
+                where('puntaje', '>=', 0)
               );
             } else {
               // Para otros niveles, usar el rango completo
@@ -217,6 +251,26 @@ export const useReporteEspecialistas = () => {
               nivelesData.push({
                 nivel: nivelData.nivel || nivelNombre,
                 cantidadDeEstudiantes: snapshot.data().count,
+              });
+            }
+          }
+
+          // Calcular la diferencia entre el total y la suma de estudiantes por nivel
+          // Esta diferencia incluye estudiantes con puntaje null y otros casos no contados
+          const totalDocumentos = cantidadDocumentos.data().count;
+          const sumaPorNiveles = nivelesData.reduce((suma, nivel) => suma + nivel.cantidadDeEstudiantes, 0);
+          const diferencia = totalDocumentos - sumaPorNiveles;
+
+          // Si hay diferencia positiva, agregarla al nivel "previo al inicio"
+          if (diferencia > 0) {
+            const nivelPrevioAlInicio = nivelesData.find(n => n.nivel.toLowerCase() === 'previo al inicio');
+            if (nivelPrevioAlInicio) {
+              nivelPrevioAlInicio.cantidadDeEstudiantes += diferencia;
+            } else {
+              // Si no existe el nivel "previo al inicio", agregarlo
+              nivelesData.push({
+                nivel: 'previo al inicio',
+                cantidadDeEstudiantes: diferencia,
               });
             }
           }

@@ -27,7 +27,7 @@ const auth = getAuth(app)
 const FUNCTIONS_TIMEOUT = 570000; // 570 segundos = 9.5 minutos
 
 // Variable para controlar que los emuladores solo se conecten una vez
-/* let emulatorsConnected = false;
+let emulatorsConnected = false;
 
 // --- CONFIGURACIÓN PARA CONECTAR A LOS EMULADORES (¡SOLO EN DESARROLLO!) ---
 // Es CRÍTICO que esta parte del código solo se ejecute cuando estés desarrollando localmente.
@@ -60,7 +60,7 @@ if ((isDevelopment || isLocalhost) && !emulatorsConnected && isClient) {
   } catch (error) {
     console.warn('Los emuladores ya están conectados o hay un error:', error);
   }
-} */
+}
 // -------------------------------------------------------------------------
 
 // Exporta las instancias de Firebase para usarlas en tu aplicación

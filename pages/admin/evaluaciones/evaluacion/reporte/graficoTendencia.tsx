@@ -491,7 +491,7 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
             Comparación de la cantidad de estudiantes en cada nivel de rendimiento por mes
           </p>
         </div> */}
-        
+        <p>asdasd</p>
         <div className="bg-gray-50 p-4 rounded-lg">
           <Line data={datosChartNiveles} options={opcionesGraficoNiveles} />
         </div>

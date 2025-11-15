@@ -105,8 +105,8 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
           transitionProperty: 'opacity, transform',
           transitionDuration: '0.3s'
         }}>
-          <RangoMes setRangoMes={setRangoMes} onRangoChange={handleAplicarRango}/>
           <GraficoTendencia monthSelected={monthSelected} rangoMesAplicado={rangoMesAplicado} idEvaluacion={idEvaluacion}/>
+          <RangoMes setRangoMes={setRangoMes} onRangoChange={handleAplicarRango}/>
         </div>
       </div>
     </div>
