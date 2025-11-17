@@ -1,0 +1,419 @@
+.wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.chartsGrid1Cols {
+  grid-template-columns: 1fr;
+}
+
+.chartsGrid2Cols {
+  grid-template-columns: 1fr;
+}
+
+.chartsGrid3Cols {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .chartsGrid {
+    gap: 24px;
+  }
+  
+  .chartsGrid2Cols {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .chartsGrid3Cols {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .chartsGrid3Cols {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.chartContainer {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 12px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .chartContainer {
+    padding: 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  .chartContainer {
+    padding: 24px;
+  }
+}
+
+.chartWrapper {
+  height: 256px;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .chartWrapper {
+    height: 320px;
+  }
+}
+
+@media (min-width: 768px) {
+  .chartWrapper {
+    height: 384px;
+  }
+}
+
+.tableContainer {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 12px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+@media (min-width: 640px) {
+  .tableContainer {
+    padding: 16px;
+    margin-top: 24px;
+  }
+}
+
+@media (min-width: 768px) {
+  .tableContainer {
+    padding: 24px;
+  }
+}
+
+.tableTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+@media (min-width: 640px) {
+  .tableTitle {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+}
+
+.tableScrollContainer {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.table {
+  border-collapse: collapse;
+  min-width: 700px;
+  width: 100%;
+  table-layout: auto;
+}
+
+.tableHeader {
+  background-color: #f3f4f6;
+  border-bottom: 2px solid #d1d5db;
+}
+
+.tableHeaderCell {
+  padding: 6px 4px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  white-space: nowrap;
+  position: relative;
+}
+
+@media (min-width: 640px) {
+  .tableHeaderCell {
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+}
+
+@media (min-width: 768px) {
+  .tableHeaderCell {
+    padding: 8px 8px;
+    font-size: 12px;
+  }
+}
+
+.tableHeaderCellLeft {
+  text-align: left;
+}
+
+.tableHeaderCellCenter {
+  text-align: center;
+}
+
+.tableHeaderCellHelp {
+  cursor: help;
+}
+
+.tableHeaderCellContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Los acrónimos siempre se muestran, el nombre completo está en el tooltip */
+
+.tableHeaderCellIcon {
+  width: 10px;
+  height: 10px;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .tableHeaderCellIcon {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.tableRow {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s;
+  cursor: move;
+}
+
+.tableRow:hover {
+  background-color: #f9fafb;
+}
+
+.tableRowDragging {
+  opacity: 0.5;
+}
+
+.tableCell {
+  padding: 6px 4px;
+  font-size: 11px;
+  color: #374151;
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .tableCell {
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+}
+
+@media (min-width: 768px) {
+  .tableCell {
+    padding: 8px 8px;
+    font-size: 12px;
+  }
+}
+
+.tableCellDrag {
+  text-align: center;
+  color: #9ca3af;
+  width: 32px;
+  padding: 4px;
+}
+
+@media (min-width: 640px) {
+  .tableCellDrag {
+    width: 36px;
+  }
+}
+
+.tableCellDragIcon {
+  width: 14px;
+  height: 14px;
+  margin: auto;
+}
+
+@media (min-width: 640px) {
+  .tableCellDragIcon {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.tableCellLeft {
+  text-align: left;
+}
+
+.tableCellCenter {
+  text-align: center;
+}
+
+.tableCellEvaluation {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+  min-width: 80px;
+}
+
+@media (min-width: 640px) {
+  .tableCellEvaluation {
+    max-width: 150px;
+    min-width: 120px;
+  }
+}
+
+@media (min-width: 768px) {
+  .tableCellEvaluation {
+    max-width: none;
+    min-width: 150px;
+  }
+}
+
+.tableCellMetric {
+  font-weight: 500;
+  border-left: 2px solid #d1d5db;
+}
+
+.tableCellMetricNull {
+  color: #9ca3af;
+}
+
+.tableCellMetricPositive {
+  color: #16a34a;
+}
+
+.tableCellMetricNegative {
+  color: #dc2626;
+}
+
+.tableCellMetricSubtext {
+  font-size: 9px;
+  color: #6b7280;
+  display: block;
+  line-height: 1.2;
+}
+
+@media (min-width: 640px) {
+  .tableCellMetricSubtext {
+    font-size: 10px;
+  }
+}
+
+.tableCellEmpty {
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+@media (min-width: 640px) {
+  .tableCellEmpty {
+    font-size: 14px;
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.tooltip {
+  position: fixed;
+  background-color: #0f172a;
+  color: #ffffff;
+  font-size: 12px;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 12px;
+  z-index: 99999;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  max-width: 288px;
+  margin-top: -8px;
+}
+
+.tooltipTitle {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #ffffff;
+}
+
+.tooltipText {
+  color: #d1d5db;
+  margin-bottom: 8px;
+}
+
+.tooltipDivider {
+  padding-top: 8px;
+  border-top: 1px solid #374151;
+}
+
+.tooltipItem {
+  margin-bottom: 4px;
+}
+
+.tooltipItem:last-child {
+  margin-bottom: 0;
+}
+
+.tooltipItemPositive {
+  color: #4ade80;
+}
+
+.tooltipItemNegative {
+  color: #f87171;
+}
+
+.tooltipItemNeutral {
+  color: #facc15;
+}
+
+.tooltipItemSmall {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.tooltipItemSmallText {
+  font-size: 12px;
+  color: #d1d5db;
+  margin-bottom: 8px;
+}
+
+.tooltipArrow {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 100%;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #0f172a;
+}
+

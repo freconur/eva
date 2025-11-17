@@ -23,7 +23,6 @@
 .closeButton {
   position: absolute;
   top: 10px;
-
   right: -10px;
   width: 30px;
   height: 30px;
@@ -36,6 +35,8 @@
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: background-color 0.2s ease;
+  z-index: 100;
+  pointer-events: auto;
 }
 
 .closeButton:hover {
@@ -48,6 +49,8 @@
   padding: 1rem 0;
   scrollbar-width: thin;
   scrollbar-color: #4a5568 #2d3748;
+  position: relative;
+  z-index: 10;
 }
 
 .sidebarContent::-webkit-scrollbar {
@@ -72,6 +75,18 @@
 .menuItem {
   margin: 0.5rem 0;
   position: relative;
+}
+
+.menuListCollapsible .menuItem {
+  margin: 0.25rem 0;
+  padding-left: 1.5rem;
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  margin-left: 0.5rem;
+}
+
+.menuListCollapsible .menuHeader {
+  padding: 0.5rem 1rem 0.5rem 0.5rem;
+  font-size: 0.95rem;
 }
 
 .menuHeader {
@@ -101,6 +116,13 @@
   margin-left: auto;
 }
 
+.perfilesArrowIcon {
+  font-size: 1.2rem;
+  color: white;
+  transition: transform 0.3s ease;
+  margin-left: auto;
+}
+
 .arrowRotate {
   transform: rotate(180deg);
 }
@@ -122,6 +144,17 @@
   list-style: none;
   padding: 0;
   margin: 0;
+}
+
+.menuListCollapsible {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.menuListCollapsible.show {
+  max-height: 500px;
+  transition: max-height 0.5s ease-in;
 }
 
 .submenu {
@@ -191,4 +224,45 @@
 
 .logoutButton:hover .logoutIcon {
   transform: translateX(3px);
+}
+
+.dashboardMenuItem {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  transition: opacity 0.2s ease;
+  position: relative;
+  z-index: 20;
+  cursor: pointer;
+}
+
+.dashboardMenuItem:hover {
+  opacity: 0.8;
+}
+
+.dashboardIcon {
+  font-size: 1.5rem;
+  color: white;
+  margin-right: 0.75rem;
+  transition: color 0.2s ease;
+}
+
+.dashboardMenuItem:hover .dashboardIcon {
+  color: #90cdf4;
+}
+
+.dashboardLink {
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: color 0.2s ease;
+  flex: 1;
+  position: relative;
+  z-index: 21;
+  pointer-events: auto;
+}
+
+.dashboardMenuItem:hover .dashboardLink {
+  color: #90cdf4;
 }

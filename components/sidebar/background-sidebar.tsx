@@ -4,7 +4,7 @@ import sidebarImage from '../../assets/sidebar-app-ugel.png'
 const BackgroundSidebar = () => {
   return (
     <Image
-        className='absolute bottom-0 top-0 right-0 left-0 z-1 opacity-50'
+        className='absolute bottom-0 top-0 right-0 left-0 z-1 opacity-50 pointer-events-none'
         src={sidebarImage}
         alt="foto de perfil"
         // fill

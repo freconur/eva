@@ -7,7 +7,7 @@ import { useRolUsers } from '@/features/hooks/useRolUsers';
 import SidebarRegion from './SidebarRegion';
 import BackgroundSidebar from './background-sidebar';
 import styles from './sidebarAdmin.module.css'
-import { MdAccountBalance, MdAccountCircle } from 'react-icons/md';
+import { MdAccountBalance, MdAccountCircle, MdDashboard, MdPeople } from 'react-icons/md';
 import { FaUserGraduate, FaUserNinja, FaUserTie } from 'react-icons/fa';
 import { LuListTodo } from "react-icons/lu";
 import { IoIosArrowDown } from "react-icons/io";
@@ -25,9 +25,21 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
   const { showSidebarValue } = useRolUsers()
   const { currentUserData } = useGlobalContext()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [perfilesOpen, setPerfilesOpen] = useState<boolean>(false);
 
   const toggleDropdown = (dropdownName: string) => {
     setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
+  };
+
+  const togglePerfiles = () => {
+    setPerfilesOpen(!perfilesOpen);
+  };
+
+  const togglePerfilesChild = (dropdownName: string) => {
+    setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
+    if (!perfilesOpen) {
+      setPerfilesOpen(true);
+    }
   };
 
   const redirectLogion = () => {
@@ -40,17 +52,34 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
       <div onClick={() => showSidebarValue(showSidebar)} className={styles.closeButton}>x</div>
       <div className={styles.sidebarContent}>
         <SidebarRegional />
-        <div className={styles.menuItem}>
-          <MdAccountCircle className={styles.icon} />
-          <Link className={styles.link} href="/mi-cuenta" aria-haspopup="true">
+        <div className={styles.dashboardMenuItem}>
+          <MdAccountCircle className={styles.dashboardIcon} />
+          <Link className={styles.dashboardLink} href="/mi-cuenta" aria-haspopup="true">
             Mi cuenta
           </Link>
         </div>
+        <div className={styles.dashboardMenuItem}>
+          <MdDashboard className={styles.dashboardIcon} />
+          <Link className={styles.dashboardLink} href="/dashboard/admin" aria-haspopup="true">
+            Dashboard
+          </Link>
+        </div>
         <div className={styles.menuContainer}>
-          <ul className={styles.menuList}>
+          <div className={styles.menuHeader} onClick={(e) => {
+            e.stopPropagation();
+            togglePerfiles();
+          }}>
+            <MdPeople className={styles.icon} />
+            <span className={styles.link}>Perfiles</span>
+            <IoIosArrowDown className={`${styles.perfilesArrowIcon} ${perfilesOpen ? styles.arrowRotate : ''}`} />
+          </div>
+          <ul className={`${styles.menuList} ${styles.menuListCollapsible} ${perfilesOpen ? styles.show : ''}`}>
             {currentUserData.rol !== 5 && (
               <li className={styles.menuItem}>
-                <div className={styles.menuHeader} onClick={() => toggleDropdown('especialistas-regional')}>
+                <div className={styles.menuHeader} onClick={(e) => {
+                  e.stopPropagation();
+                  togglePerfilesChild('especialistas-regional');
+                }}>
                   <LuListTodo className={styles.icon} />
                   <span className={styles.link}>Especialista Regional</span>
                   <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'especialistas-regional' ? styles.arrowRotate : ''}`} />
@@ -66,7 +95,10 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
             {/* {
               currentUserData.rol !== 5 && ( */}
             <li className={styles.menuItem}>
-              <div className={styles.menuHeader} onClick={() => toggleDropdown('especialistas')}>
+              <div className={styles.menuHeader} onClick={(e) => {
+                e.stopPropagation();
+                togglePerfilesChild('especialistas');
+              }}>
                 <LuListTodo className={styles.icon} />
                 <span className={styles.link}>Especialistas</span>
                 <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'especialistas' ? styles.arrowRotate : ''}`} />
@@ -90,7 +122,10 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
             {
               currentUserData.rol !==5 && (
             <li className={styles.menuItem}>
-              <div className={styles.menuHeader} onClick={() => toggleDropdown('directores')}>
+              <div className={styles.menuHeader} onClick={(e) => {
+                e.stopPropagation();
+                togglePerfilesChild('directores');
+              }}>
                 <MdAccountBalance className={styles.icon} />
                 <span className={styles.link}>Directores</span>
                 <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'directores' ? styles.arrowRotate : ''}`} />
@@ -108,7 +143,10 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
             {
               currentUserData.rol !== 5 && (
             <li className={styles.menuItem}>
-              <div className={styles.menuHeader} onClick={() => toggleDropdown('docentes')}>
+              <div className={styles.menuHeader} onClick={(e) => {
+                e.stopPropagation();
+                togglePerfilesChild('docentes');
+              }}>
                 <FaUserTie className={styles.icon} />
                 <span className={styles.link}>Docentes</span>
                 <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'docentes' ? styles.arrowRotate : ''}`} />
@@ -122,7 +160,10 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
               )
             }
             <li className={styles.menuItem}>
-              <div className={styles.menuHeader} onClick={() => toggleDropdown('estudiantes')}>
+              <div className={styles.menuHeader} onClick={(e) => {
+                e.stopPropagation();
+                togglePerfilesChild('estudiantes');
+              }}>
                 <FaUserGraduate className={styles.icon} />
                 <span className={styles.link}>Estudiantes</span>
                 <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'estudiantes' ? styles.arrowRotate : ''}`} />
