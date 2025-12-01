@@ -39,7 +39,9 @@ firebase emulators:start \
   --project evaluaciones-ugel \
   --import="$IMPORT_PATH" \
   --export-on-exit="$EXPORT_DIR" \
-  --only=firestore,auth,functions
+  #--only=firestore,auth,functions
+  --only=functions
+
 
 echo ""
 echo "✅ Emulador terminado"

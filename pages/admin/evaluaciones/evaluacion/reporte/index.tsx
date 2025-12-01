@@ -15,7 +15,7 @@ import {
 } from 'chart.js';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { Alternativa, DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
-import { RiLoader4Line } from 'react-icons/ri';
+import { RiLoader4Line, RiFileExcel2Line, RiDownloadLine } from 'react-icons/ri';
 import styles from './Reporte.module.css';
 import { currentMonth, getAllMonths } from '@/fuctions/dates';
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista';
@@ -29,6 +29,7 @@ import AcordeonGraficosTendencia from './AcordeonGraficosTendencia';
 import AcordeonReportePregunta from './AcordeonReportePregunta';
 import PieChartComponent from './PieChartComponent';
 import FiltrosReporte from '@/components/reportes/FiltrosReporte';
+import { useExportExcel } from '@/features/hooks/useExportExcel';
 
 ChartJS.register(
   CategoryScale,
@@ -65,6 +66,35 @@ const Reporte = () => {
     obtenerEstadisticas
   } = useCrearEstudiantesDeDocente();
 
+  const { exportEstudiantesToExcel,exportEstudiantesParaExcelFronted, loading: loadingExportEstudiantes, error: errorExportEstudiantes } = useExportExcel();
+
+  const handleExportEstudiantesToExcel = async () => {
+    try {
+      setLoadingExport(true);
+      const rta = await exportEstudiantesToExcel(`${route.query.idEvaluacion}`, monthSelected);
+      console.log(rta);
+      /* console.log(rta); */
+      
+      // Si rta es una URL, abrirla en una nueva pestaña
+      if (rta && typeof rta === 'string' && (rta.startsWith('http://') || rta.startsWith('https://'))) {
+        window.open(rta, '_blank');
+      }
+      
+      alert('✅ Estudiantes obtenidos exitosamente');
+    } catch (error: any) {
+      alert(`❌ Error al obtener estudiantes: ${error.message || 'Error desconocido'}`);
+    } finally {
+      setLoadingExport(false);
+    }
+  }
+
+  const handleExportEstudiantesToExcelFronted = async () => {
+    try {
+      await exportEstudiantesParaExcelFronted(`${route.query.idEvaluacion}`, monthSelected)
+    }catch(error:any) {
+      alert(`❌ Error al obtener estudiantes: ${error.message || 'Error desconocido'}`)
+    }
+  }
   // Hook para crear puntaje progresiva
   const {
     loading: loadingCrearPuntajeProgresiva,
@@ -550,6 +580,24 @@ useEffect(() => {
           /> */}
 
           <div className={styles.exportContainer}>
+            <button 
+              onClick={handleExportEstudiantesToExcel} 
+              //onClick={handleExportEstudiantesToExcelFronted} 
+              className={styles.exportStudentsButton}
+              disabled={loadingExport || loadingExportEstudiantes}
+            >
+              {loadingExport || loadingExportEstudiantes ? (
+                <>
+                  <RiLoader4Line className={styles.loaderIcon} />
+                  <span>Obteniendo estudiantes...</span>
+                </>
+              ) : (
+                <>
+                  <RiFileExcel2Line className={styles.exportIcon} />
+                  <span>Exportar datos estudiantes</span>
+                </>
+              )}
+            </button>
             <button
               className={styles.exportButton}
               onClick={handleExportToExcel}
