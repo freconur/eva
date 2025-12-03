@@ -70,7 +70,6 @@ const Reporte = () => {
 
   const handleExportEstudiantesToExcel = async () => {
     try {
-      setLoadingExport(true);
       const rta = await exportEstudiantesToExcel(`${route.query.idEvaluacion}`, monthSelected);
       console.log(rta);
       /* console.log(rta); */
@@ -83,8 +82,6 @@ const Reporte = () => {
       alert('✅ Estudiantes obtenidos exitosamente');
     } catch (error: any) {
       alert(`❌ Error al obtener estudiantes: ${error.message || 'Error desconocido'}`);
-    } finally {
-      setLoadingExport(false);
     }
   }
 
@@ -584,11 +581,11 @@ useEffect(() => {
               onClick={handleExportEstudiantesToExcel} 
               //onClick={handleExportEstudiantesToExcelFronted} 
               className={styles.exportStudentsButton}
-              disabled={loadingExport || loadingExportEstudiantes}
+              disabled={loadingExportEstudiantes}
             >
-              {loadingExport || loadingExportEstudiantes ? (
+              {loadingExportEstudiantes ? (
                 <>
-                  <RiLoader4Line className={styles.loaderIcon} />
+                  <RiLoader4Line className={styles.loaderIconStudents} />
                   <span>Obteniendo estudiantes...</span>
                 </>
               ) : (

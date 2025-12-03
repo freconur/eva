@@ -20,6 +20,7 @@ import { useColorsFromCSS } from '@/features/hooks/useColorsFromCSS'
 import { genero, regiones } from '@/fuctions/regiones'
 import { useReporteEspecialistas } from '@/features/hooks/useReporteEspecialistas'
 import { useRouter } from 'next/router'
+import styles from './PieChartComponent.module.css'
 
 // Registrar los componentes necesarios de Chart.js
 ChartJS.register(
@@ -115,17 +116,17 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4 mb-5">
+    <div className={styles.container}>
       {/* Selectores de filtro */}
-      <div className="mb-4 flex gap-3 flex-wrap">
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+      <div className={styles.filtersContainer}>
+        <div className={styles.filterWrapper}>
+          <label className={styles.label}>
             Filtrar por Género
           </label>
           <select
             value={filtroGenero}
             onChange={handleChangeGenero}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className={styles.select}
           >
             <option value="">Todos los géneros</option>
             {genero.map((gen) => (
@@ -135,16 +136,16 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
             ))}
           </select>
         </div>
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Filtrar por Región
+        <div className={styles.filterWrapper}>
+          <label className={styles.label}>
+            Filtrar por Ugel
           </label>
           <select
             value={filtroRegion}
             onChange={handleChangeRegion}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className={styles.select}
           >
-            <option value="">Todas las regiones</option>
+            <option value="">Todas las Ugel</option>
             {regiones.map((region) => (
               <option key={region.id} value={region.id}>
                 {region.region}
@@ -154,8 +155,8 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
         </div>
       </div>
       
-      <div className="bg-gray-50 p-3 rounded-lg">
-        <div className="h-80 flex items-center justify-center">
+      <div className={styles.chartContainer}>
+        <div className={styles.chartWrapper}>
           {loaderDataGraficoPieChart ? (
             <Loader 
               size="large" 
@@ -164,7 +165,7 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
               text="Cargando datos del gráfico..."
             />
           ) : (
-            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+            <div className={styles.chartInner}>
               <Pie 
                 data={datosChartPie} 
                 options={{
@@ -184,7 +185,7 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
       
       {/* Estadísticas del mes seleccionado - Solo mostrar si no está cargando */}
      {/*  {!loaderDataGraficoPieChart && datosMesSeleccionado && (
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className={styles.statsContainer}>
           {datosMesSeleccionado.niveles.map((nivel, index) => {
             const totalEstudiantes = datosMesSeleccionado.niveles.reduce((sum, n) => sum + n.cantidadDeEstudiantes, 0)
             const porcentaje = totalEstudiantes > 0 ? ((nivel.cantidadDeEstudiantes / totalEstudiantes) * 100).toFixed(1) : '0.0'
@@ -194,14 +195,14 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
             return (
               <div 
                 key={nivel.nivel} 
-                className="p-3 rounded-lg border-l-4"
+                className={styles.statCard}
                 style={{
                   backgroundColor: color.bg,
                   borderLeftColor: color.border
                 }}
               >
                 <h3 
-                  className="font-medium text-sm mb-1"
+                  className={styles.statTitle}
                   style={{ color: color.text }}
                 >
                   {nivel.nivel.split(' ').map(word => 
@@ -209,13 +210,13 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
                   ).join(' ')}
                 </h3>
                 <p 
-                  className="text-xl font-bold mb-1"
+                  className={styles.statValue}
                   style={{ color: color.textValue }}
                 >
                   {nivel.cantidadDeEstudiantes}
                 </p>
                 <p 
-                  className="text-xs"
+                  className={styles.statPercentage}
                   style={{ color: color.textValue }}
                 >
                   {porcentaje}%

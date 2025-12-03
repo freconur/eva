@@ -17,7 +17,7 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
   idEvaluacion,
   monthSelected
 }) => {
-  const [mostrarGraficos, setMostrarGraficos] = useState(true);
+  const [mostrarGraficos, setMostrarGraficos] = useState(false);
   const [rangoMesAplicado, setRangoMesAplicado] = useState<number[]>([]);
 
   const toggleGraficos = () => {

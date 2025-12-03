@@ -37,7 +37,7 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
   handleFiltrar,
   handleRestablecerFiltros,
 }) => {
-  const [mostrarReporte, setMostrarReporte] = useState(true);
+  const [mostrarReporte, setMostrarReporte] = useState(false);
   const { loaderReportePorPregunta, reporteDirector } = useGlobalContext();
   
   // Determinar qué datos usar: reporteDirector si tiene datos, sino reporteDirectorOrdenado
