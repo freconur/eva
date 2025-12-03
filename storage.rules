@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Permitir a usuarios autenticados subir y leer archivos en excel-exports/
+    match /excel-exports/{fileName} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Permitir acceso a otras carpetas según sea necesario
+    // Por ahora, solo excel-exports está permitido para usuarios autenticados
+    match /{allPaths=**} {
+      allow read, write: if false; // Denegar acceso por defecto a otras rutas
+    }
+  }
+}
+

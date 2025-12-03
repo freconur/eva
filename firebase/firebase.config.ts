@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDli98HId_qZcJq0yez2nr4ueS12aeFQw0",
@@ -19,7 +20,8 @@ export const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app); // Instancia de Firestore
 const functions = getFunctions(app); // Instancia de Cloud Functions
-const auth = getAuth(app)
+const auth = getAuth(app);
+const storage = getStorage(app); // Instancia de Storage
 
 // CONFIGURAR TIMEOUT PERSONALIZADO PARA CLOUD FUNCTIONS
 // Esto debe coincidir con el timeout de la Cloud Function (540 segundos)
@@ -64,4 +66,4 @@ if ((isDevelopment || isLocalhost) && !emulatorsConnected && isClient) {
 // -------------------------------------------------------------------------
 
 // Exporta las instancias de Firebase para usarlas en tu aplicación
-export { db, functions, auth, FUNCTIONS_TIMEOUT };
+export { db, functions, auth, storage, FUNCTIONS_TIMEOUT };

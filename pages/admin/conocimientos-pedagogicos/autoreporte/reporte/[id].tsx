@@ -2,6 +2,8 @@ import { useTituloDeCabecera } from '@/features/hooks/useTituloDeCabecera'
 import { useColumnView } from '@/features/hooks/useColumnView'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState, useMemo } from 'react'
+import { RiFileExcel2Line } from 'react-icons/ri'
+import Loader from '@/components/loader/loader'
 import styles from './reporte.module.css'
 import {
   Chart as ChartJS,
@@ -30,6 +32,7 @@ const ReporteAutorreporte = () => {
   const {id} = route.query
   const { columnView, setColumnView1, setColumnView2, setColumnView3, is1Column, is2Columns, is3Columns } = useColumnView('2-columns')
   const [animationKey, setAnimationKey] = useState(0)
+  const [isExporting, setIsExporting] = useState(false)
   
   
   const handleColumnChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -54,7 +57,8 @@ const ReporteAutorreporte = () => {
     preguntasEscalaLikert,
     evaluacionEscalaLikert,
     evaluacionesEscalaLikertUsuarios,
-    acumuladoDeDatosLikertParaGraficos 
+    acumuladoDeDatosLikertParaGraficos,
+    exportarExcelEvaluacionEscalaLikert
   } = useTituloDeCabecera()
 
   
@@ -64,13 +68,18 @@ const ReporteAutorreporte = () => {
     if (!pregunta.resultado || pregunta.resultado.length === 0) {
       return {
         labels: [],
-        datasets: []
+        datasets: [],
+        nombresCompletos: []
       }
     }
 
     // Obtener los valores de la escala Likert para esta pregunta
-    const labels = pregunta.resultado.map((item: EscalaLikert) => item.name || `Valor ${item.value}`)
+    // Mostrar solo el número en el eje X para evitar que los textos largos se corten
+    // Sumar 1 para que los valores comiencen en 1 en lugar de 0
+    const labels = pregunta.resultado.map((item: EscalaLikert) => String((item.value ?? 0) + 1))
     const data = pregunta.resultado.map((item: EscalaLikert) => item.total || 0)
+    // Almacenar los nombres completos para el tooltip
+    const nombresCompletos = pregunta.resultado.map((item: EscalaLikert) => item.name || `Valor ${item.value}`)
     
     // Generar colores con gradiente para cada barra
     const colors = [
@@ -116,12 +125,13 @@ const ReporteAutorreporte = () => {
         ),
         hoverBorderColor: borderColor,
         hoverBorderWidth: 3,
-      }]
+      }],
+      nombresCompletos: nombresCompletos
     }
   }
   
-  // Opciones del gráfico para cada pregunta
-  const chartOptions = {
+  // Función para generar las opciones del gráfico con acceso a los nombres completos
+  const getChartOptions = (nombresCompletos: string[]) => ({
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
@@ -153,7 +163,9 @@ const ReporteAutorreporte = () => {
         padding: 12,
         callbacks: {
           title: function(context: any) {
-            return 'Nivel: ' + context[0].label;
+            const index = context[0].dataIndex;
+            const nombreCompleto = nombresCompletos[index] || context[0].label;
+            return 'Nivel: ' + nombreCompleto;
           },
           label: function(context: any) {
             return 'Respuestas: ' + context.parsed.y;
@@ -178,7 +190,7 @@ const ReporteAutorreporte = () => {
             weight: 500
           },
           color: '#5a6c7d',
-          maxRotation: 45,
+          maxRotation: 0,
           minRotation: 0
         },
         grid: {
@@ -232,7 +244,7 @@ const ReporteAutorreporte = () => {
       duration: 800,
       easing: 'easeInOutQuart' as const
     }
-  }
+  })
   
   useEffect(() => {
       getEvaluacionesEscalaLikert(`${id}`, evaluacionEscalaLikert)
@@ -252,6 +264,32 @@ const ReporteAutorreporte = () => {
       {preguntasEscalaLikert.length > 0 ? (
         <>
           <div className={styles.columnControls}>
+            <button 
+              onClick={async () => {
+                setIsExporting(true)
+                try {
+                  await exportarExcelEvaluacionEscalaLikert(`${id}`, Number(evaluacionEscalaLikert.mesDelExamen))
+                } catch (error) {
+                  console.error('Error al exportar:', error)
+                } finally {
+                  setIsExporting(false)
+                }
+              }} 
+              className={styles.exportButton}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <>
+                  <Loader size="small" variant="spinner" color="#ffffff" />
+                  <span>Exportando...</span>
+                </>
+              ) : (
+                <>
+                  <RiFileExcel2Line className={styles.exportIcon} />
+                  <span>Exportar Excel</span>
+                </>
+              )}
+            </button>
             <div className={styles.columnSelect}>
               <label htmlFor="column-select" className={styles.columnSelectLabel}>
                 Vista de Columnas
@@ -285,6 +323,7 @@ const ReporteAutorreporte = () => {
               .sort((a, b) => (a.orden || 0) - (b.orden || 0))
               .map((pregunta, index) => {
                 const chartData = procesarDatosParaPregunta(pregunta)
+                const chartOptionsWithNames = getChartOptions(chartData.nombresCompletos || [])
                 return (
                   <div key={pregunta.id || index} className={styles.questionCard}>
                     <div className={styles.questionHeader}>
@@ -308,7 +347,7 @@ const ReporteAutorreporte = () => {
                           Distribución de Respuestas
                         </div>
                         <div className={styles.chartWrapper}>
-                          <Bar data={chartData} options={chartOptions} />
+                          <Bar data={chartData} options={chartOptionsWithNames} />
                         </div>
                       </div>
                     )}

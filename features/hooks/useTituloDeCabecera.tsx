@@ -9,17 +9,24 @@ import {
   query,
   orderBy,
   limit,
+  startAfter,
   getAggregateFromServer,
   count,
   addDoc,
   writeBatch,
   deleteDoc,
+  QueryDocumentSnapshot,
+  DocumentData,
 } from 'firebase/firestore';
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { useEffect, useState, useRef } from 'react';
 import { DataUsuarioEvaluacionLikert, EscalaLikert, EvaluacionesEscalaLikertUsario, EvaluacionLikert, PreguntasEvaluacionLikert, PreguntasEvaluacionLikertConResultado } from '../types/types';
 import { AppAction } from '../actions/appAction';
 import { currentYear } from '@/fuctions/dates';
+import * as XLSX from 'xlsx';
+import { storage } from '@/firebase/firebase.config';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { regionTexto, convertGrade } from '@/fuctions/regiones';
 
 export const useTituloDeCabecera = () => {
   const dispatch = useGlobalContextDispatch();
@@ -298,7 +305,163 @@ export const useTituloDeCabecera = () => {
       }
     });
   }
+
+  const exportarExcelEvaluacionEscalaLikert = async (id: string, month:number) => {
+    try {
+      const pathRef = collection(db, `/evaluaciones-escala-likert/${id}/${currentYear}-${month}`);
+      const data: EvaluacionesEscalaLikertUsario[] = [];
+      const BATCH_SIZE = 500; // Tamaño del lote para evitar problemas de memoria
+      
+      // Función recursiva para obtener todos los documentos
+      const getAllDocuments = async (lastVisible: QueryDocumentSnapshot<DocumentData> | null = null): Promise<void> => {
+        let q;
+        
+        if (lastVisible) {
+          // Si hay un último documento visible, continuar desde ahí
+          q = query(pathRef, limit(BATCH_SIZE), startAfter(lastVisible));
+        } else {
+          // Primera consulta
+          q = query(pathRef, limit(BATCH_SIZE));
+        }
+        
+        const querySnapshot = await getDocs(q);
+        
+        // Agregar los documentos del lote actual al array
+        querySnapshot.forEach((doc) => {
+          const docData = doc.data();
+          data.push({ ...docData, id: doc.id, datosDocente: docData.datosDocente || [] });
+        });
+        
+        // Si hay más documentos (el tamaño del lote es igual al límite), continuar
+        if (querySnapshot.docs.length === BATCH_SIZE) {
+          const newLastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+          await getAllDocuments(newLastVisible);
+        }
+      };
+      
+      // Iniciar la obtención recursiva de documentos
+      await getAllDocuments();
+      console.log('Total documentos obtenidos:', data.length);
+      
+      // Si no hay datos, retornar
+      if (data.length === 0) {
+        console.warn('No hay datos para exportar');
+        return;
+      }
+      
+      // Preparar los datos para la exportación a Excel
+      const dataToExport = data.map((item, index) => {
+        const baseData: any = {
+          'N°': index + 1,
+          'ID': item.id || '',
+          'DNI Docente': item.datosDocente?.dni || '',
+          'Nombres Docente': item.datosDocente?.nombres || '',
+          'Apellidos Docente': item.datosDocente?.apellidos || '',
+          'Grado': Array.isArray(item.datosDocente?.grado) 
+            ? item.datosDocente.grado.map(g => convertGrade(g.toString())).join(' - ')
+            : '',
+          'Sexo': item.datosDocente?.sexo?.name || '',
+          'Edad': item.datosDocente?.edad?.name || '',
+          'Institución': item.datosDocente?.institucion || '',
+          'Region': regionTexto(item.datosDocente?.region?.toString() || ''),
+          'Distrito': item.datosDocente?.distrito || '',
+          'Link Documentos': item.linkDocumentos || '',
+          'Total Preguntas': item.evaluacion?.totalPreguntas ?? '',
+          'Respuestas Completas': item.evaluacion?.respuestasCompletas ? 'Sí' : 'No',
+        };
+        
+        // Agregar las preguntas y respuestas
+        if (item.evaluacion?.preguntas && Array.isArray(item.evaluacion.preguntas)) {
+          item.evaluacion.preguntas.forEach((pregunta, preguntaIndex) => {
+            /* baseData[`Pregunta ${preguntaIndex + 1}`] = pregunta.pregunta || ''; */
+            // Usar ?? para manejar correctamente el valor 0
+            baseData[`Pregunta ${preguntaIndex + 1}`] = pregunta.respuesta ?? '';
+            /* baseData[`Orden ${preguntaIndex + 1}`] = pregunta.orden ?? ''; */
+          });
+        }
+        
+        // Agregar links de documentos si existen
+        if (item.linkDocumentos && Array.isArray(item.linkDocumentos)) {
+          baseData['Links Documentos'] = item.linkDocumentos.join('; ');
+        }
+        
+        return baseData;
+      });
+      
+      // Crear un nuevo libro de Excel
+      const workbook = XLSX.utils.book_new();
+      
+      // Crear una hoja de cálculo con los datos
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      
+      // Ajustar el ancho de las columnas
+      const columnWidths = [
+        { wch: 5 },   // N°
+        { wch: 20 },  // ID
+        { wch: 15 },  // DNI Docente
+        { wch: 25 },  // Nombres Docente
+        { wch: 25 },  // Apellidos Docente
+        { wch: 30 },  // Institución
+        { wch: 20 },  // Distrito
+        { wch: 15 },  // Total Preguntas
+        { wch: 20 },  // Respuestas Completas
+      ];
+      
+      // Agregar anchos para las columnas de preguntas (si hay datos)
+      if (data[0]?.evaluacion?.preguntas) {
+        const numPreguntas = data[0].evaluacion.preguntas.length;
+        for (let i = 0; i < numPreguntas; i++) {
+          columnWidths.push(
+            { wch: 50 }, // Pregunta
+            { wch: 15 }, // Respuesta
+            { wch: 10 }  // Orden
+          );
+        }
+      }
+      
+      columnWidths.push({ wch: 50 }); // Links Documentos
+      worksheet['!cols'] = columnWidths;
+      
+      // Agregar la hoja al libro
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Evaluaciones Escala Likert');
+      
+      // Convertir el workbook a un array buffer
+      const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+      
+      // Crear un blob desde el buffer
+      const blob = new Blob([excelBuffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      
+      // Generar nombre único para el archivo
+      const timestamp = new Date().getTime();
+      const fileName = `evaluaciones-escala-likert-${id}-${currentYear}-${month}-${timestamp}.xlsx`;
+      const storagePath = `excel-exports/${fileName}`;
+      
+      // Crear referencia en Storage
+      const storageRef = ref(storage, storagePath);
+      
+      // Subir el archivo a Storage
+      console.log('Subiendo archivo a Storage...');
+      await uploadBytes(storageRef, blob);
+      
+      // Obtener la URL de descarga
+      console.log('Obteniendo URL de descarga...');
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      console.log('Archivo subido exitosamente. URL:', downloadURL);
+      
+      // Abrir la URL en una nueva pestaña
+      window.open(downloadURL, '_blank');
+      
+      return downloadURL;
+    } catch (error) {
+      console.error('Error al exportar Excel:', error);
+      throw error;
+    }
+  }
   return {
+    exportarExcelEvaluacionEscalaLikert,
     evaluacionEscalaLikertByUsuario,
     escalaLikertByUsuario,
     getTituloDeCabecera,
