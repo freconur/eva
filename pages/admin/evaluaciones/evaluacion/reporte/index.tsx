@@ -66,19 +66,19 @@ const Reporte = () => {
     obtenerEstadisticas
   } = useCrearEstudiantesDeDocente();
 
-  const { exportEstudiantesToExcel,exportEstudiantesParaExcelFronted, loading: loadingExportEstudiantes, error: errorExportEstudiantes } = useExportExcel();
+  const { exportEstudiantesToExcel, exportEstudiantesParaExcelFronted, loading: loadingExportEstudiantes, error: errorExportEstudiantes } = useExportExcel();
 
   const handleExportEstudiantesToExcel = async () => {
     try {
-      const rta = await exportEstudiantesToExcel(`${route.query.idEvaluacion}`, monthSelected);
+      const rta = await exportEstudiantesToExcel(`${route.query.idEvaluacion}`, monthSelected, yearSelected);
       console.log(rta);
       /* console.log(rta); */
-      
+
       // Si rta es una URL, abrirla en una nueva pestaña
       if (rta && typeof rta === 'string' && (rta.startsWith('http://') || rta.startsWith('https://'))) {
         window.open(rta, '_blank');
       }
-      
+
       alert('✅ Estudiantes obtenidos exitosamente');
     } catch (error: any) {
       alert(`❌ Error al obtener estudiantes: ${error.message || 'Error desconocido'}`);
@@ -88,7 +88,7 @@ const Reporte = () => {
   const handleExportEstudiantesToExcelFronted = async () => {
     try {
       await exportEstudiantesParaExcelFronted(`${route.query.idEvaluacion}`, monthSelected)
-    }catch(error:any) {
+    } catch (error: any) {
       alert(`❌ Error al obtener estudiantes: ${error.message || 'Error desconocido'}`)
     }
   }
@@ -147,14 +147,14 @@ const Reporte = () => {
 
       // Limpiar estado anterior
       limpiarEstadoCrearEstudiantes();
-      
+
       // Ejecutar la función
       //le tengo que pasar el parametro de monthSelected y route.query.idEvaluacion
       await ejecutarCrearEstudiantes(`${monthSelected}`, `${route.query.idEvaluacion}`);
-      
+
       // Mostrar mensaje de éxito
       alert('✅ Estudiantes de docentes creados exitosamente!\n\n' + obtenerMensajeResumen());
-      
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       alert(`❌ Error al crear estudiantes de docentes:\n${errorMessage}`);
@@ -177,13 +177,13 @@ const Reporte = () => {
 
       // Limpiar estado anterior
       limpiarEstadoCrearPuntajeProgresiva();
-      
+
       // Ejecutar la función
       await ejecutarCrearPuntajeProgresiva(`${monthSelected}`, `${route.query.idEvaluacion}`, evaluacion, preguntasRespuestas);
-      
+
       // Mostrar mensaje de éxito
       alert('✅ Puntaje progresiva generado exitosamente!\n\n' + obtenerMensajeResumenPuntajeProgresiva());
-      
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       alert(`❌ Error al generar puntaje progresiva:\n${errorMessage}`);
@@ -195,10 +195,10 @@ const Reporte = () => {
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
     const numOpciones = data.d === undefined ? 3 : 4;
     const chartData = prepareBarChartData(data, respuesta, numOpciones);
-    
+
     // Convertir labels a mayúsculas
     chartData.labels = chartData.labels.map((label: string) => label.toUpperCase());
-    
+
     return chartData;
   };
   const {
@@ -222,6 +222,14 @@ const Reporte = () => {
   const { generarReporte, loading: loadingGenerarReporte } = useGenerarReporte();
   const route = useRouter();
   const [monthSelected, setMonthSelected] = useState(currentMonth);
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 2025 + 1 }, (_, i) => 2025 + i);
+  const [yearSelected, setYearSelected] = useState(currentYear);
+
+  const handleChangeYear = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setYearSelected(Number(e.target.value));
+  };
 
   // Memorizar las preguntas ordenadas por la propiedad order
   const preguntasOrdenadas = useMemo(() => {
@@ -273,9 +281,9 @@ const Reporte = () => {
   }, [dataEstadisticaEvaluacion, preguntasOrdenadas]);
 
 
-useEffect(() => {
-  getReporteEspecialistaPorUgel(`${route.query.idEvaluacion}`, monthSelected)
-}, [`${route.query.idEvaluacion}`, monthSelected, currentUserData.region])
+  useEffect(() => {
+    getReporteEspecialistaPorUgel(`${route.query.idEvaluacion}`, monthSelected, yearSelected)
+  }, [`${route.query.idEvaluacion}`, monthSelected, currentUserData.region, yearSelected])
 
   useEffect(() => {
     //me trae las preguntas y respuestas para los graficos
@@ -294,17 +302,18 @@ useEffect(() => {
         distrito: filtros.distrito,
       },
       monthSelected,
-      `${route.query.idEvaluacion}`
+      `${route.query.idEvaluacion}`,
+      yearSelected
     );
   };
   useEffect(() => {
     getDataGraficoPieChart(`${route.query.idEvaluacion}`, monthSelected, evaluacion);
-    getEstadisticaGlobal(`${route.query.idEvaluacion}`, monthSelected);
+    getEstadisticaGlobal(`${route.query.idEvaluacion}`, monthSelected, yearSelected);
   }, [route.query.id, route.query.idEvaluacion, currentUserData.dni, monthSelected]);
 
 
   const handleRestablecerFiltros = () => {
-    restablecerFiltrosDeEspecialista(`${route.query.idEvaluacion}`, monthSelected);
+    restablecerFiltrosDeEspecialista(`${route.query.idEvaluacion}`, monthSelected, yearSelected);
   }
   // Función optimizada para renderizar pregunta usando el mapa
   const iterarPregunta = useCallback(
@@ -387,7 +396,7 @@ useEffect(() => {
           label: function (context: any) {
             const value = context.parsed.y;
             const dataset = context.dataset;
-            const total = Array.isArray(dataset.data) 
+            const total = Array.isArray(dataset.data)
               ? dataset.data.reduce((a: number, b: number) => a + b, 0)
               : 0;
             const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
@@ -400,13 +409,13 @@ useEffect(() => {
           labelColor: function (context: any) {
             const dataset = context.dataset;
             const index = context.dataIndex;
-            const borderColor = Array.isArray(dataset.borderColor) 
-              ? dataset.borderColor[index] 
+            const borderColor = Array.isArray(dataset.borderColor)
+              ? dataset.borderColor[index]
               : (typeof dataset.borderColor === 'string' ? dataset.borderColor : '#6b7280');
-            const backgroundColor = Array.isArray(dataset.backgroundColor) 
-              ? dataset.backgroundColor[index] 
+            const backgroundColor = Array.isArray(dataset.backgroundColor)
+              ? dataset.backgroundColor[index]
               : (typeof dataset.backgroundColor === 'string' ? dataset.backgroundColor : '#6b7280');
-            
+
             return {
               borderColor: borderColor,
               backgroundColor: backgroundColor,
@@ -420,13 +429,13 @@ useEffect(() => {
     scales: {
       x: {
         ticks: {
-          color: function(context: any) {
+          color: function (context: any) {
             // Obtener el color de fondo de la barra correspondiente
             const chart = context.chart;
             const dataset = chart.data.datasets[0];
             const index = context.index;
-            const bgColor = Array.isArray(dataset.backgroundColor) 
-              ? dataset.backgroundColor[index] 
+            const bgColor = Array.isArray(dataset.backgroundColor)
+              ? dataset.backgroundColor[index]
               : (typeof dataset.backgroundColor === 'string' ? dataset.backgroundColor : '');
             // Si el color es verde (rgb(34, 197, 94) o rgba(34, 197, 94)), es la alternativa correcta
             if (bgColor.includes('34, 197, 94') || bgColor.includes('rgb(34, 197, 94)')) {
@@ -461,18 +470,17 @@ useEffect(() => {
     }
 
     setLoadingExport(true);
-    
+
     try {
-      const resultado = await getAllReporteDeDirectoreToAdmin(`${route.query.idEvaluacion}`, monthSelected);
-      
+      const resultado = await getAllReporteDeDirectoreToAdmin(`${route.query.idEvaluacion}`, monthSelected, yearSelected);
+
       if (!resultado || resultado.length === 0) {
         alert('No hay datos disponibles para exportar');
         return;
       }
 
-      const fileName = `evaluaciones_director_docente_${
-        new Date().toISOString().split('T')[0]
-      }.xlsx`;
+      const fileName = `evaluaciones_director_docente_${new Date().toISOString().split('T')[0]
+        }.xlsx`;
       exportDirectorDocenteDataToExcel(resultado, fileName);
 
       alert('Archivo Excel exportado exitosamente');
@@ -493,10 +501,10 @@ useEffect(() => {
     // Mostrar alerta informativa antes de comenzar
     const confirmed = window.confirm(
       '⏱️ Esta operación puede tomar hasta 9 minutos para procesar todos los datos.\n\n' +
-        '• Se procesarán todos los directores y sus docentes\n' +
-        '• Se generarán estadísticas consolidadas\n' +
-        '• Por favor, mantén esta ventana abierta\n\n' +
-        '¿Deseas continuar?'
+      '• Se procesarán todos los directores y sus docentes\n' +
+      '• Se generarán estadísticas consolidadas\n' +
+      '• Por favor, mantén esta ventana abierta\n\n' +
+      '¿Deseas continuar?'
     );
 
     if (!confirmed) return;
@@ -540,7 +548,7 @@ useEffect(() => {
     }
   };
 
-  
+
   return (
     <>
       {loaderReporteDirector ? (
@@ -561,9 +569,22 @@ useEffect(() => {
               id=""
             >
               <option value="">Mes</option>
-              {getAllMonths.slice(0, currentMonth + 1).map((mes) => (
+              {getAllMonths.slice(0, yearSelected < currentYear ? getAllMonths.length : currentMonth + 1).map((mes) => (
                 <option key={mes.id} value={mes.name}>
                   {mes.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.selectContainer}>
+            <select
+              className={styles.select}
+              onChange={handleChangeYear}
+              value={yearSelected}
+            >
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
                 </option>
               ))}
             </select>
@@ -577,8 +598,8 @@ useEffect(() => {
           /> */}
 
           <div className={styles.exportContainer}>
-            <button 
-              onClick={handleExportEstudiantesToExcel} 
+            <button
+              onClick={handleExportEstudiantesToExcel}
               //onClick={handleExportEstudiantesToExcelFronted} 
               className={styles.exportStudentsButton}
               disabled={loadingExportEstudiantes}
@@ -609,7 +630,7 @@ useEffect(() => {
                 'Exportar a Excel'
               )}
             </button>
-            
+
             {/* Botón para crear estudiantes de docentes */}
             {/* <button
               className={styles.exportButton}
@@ -645,23 +666,23 @@ useEffect(() => {
             </button>
               )
             } */}
-            
+
             {/* Indicador de progreso para crear estudiantes */}
             {loadingCrearEstudiantes && progresoCrearEstudiantes && (
               <div className={styles.progressContainer}>
                 <div className={styles.progressBar}>
-                  <div 
-                    className={styles.progressFill} 
+                  <div
+                    className={styles.progressFill}
                     style={{ width: `${progresoCrearEstudiantes.porcentaje}%` }}
                   ></div>
                 </div>
                 <div className={styles.progressText}>
-                  Procesando: {progresoCrearEstudiantes.docentesProcesados}/{progresoCrearEstudiantes.totalDocentes} docentes 
+                  Procesando: {progresoCrearEstudiantes.docentesProcesados}/{progresoCrearEstudiantes.totalDocentes} docentes
                   ({progresoCrearEstudiantes.porcentaje.toFixed(1)}%)
                 </div>
                 <div className={styles.progressDetails}>
-                  Estudiantes: {progresoCrearEstudiantes.estudiantesProcesados} | 
-                  Lotes: {progresoCrearEstudiantes.lotesCompletados} | 
+                  Estudiantes: {progresoCrearEstudiantes.estudiantesProcesados} |
+                  Lotes: {progresoCrearEstudiantes.lotesCompletados} |
                   Errores: {progresoCrearEstudiantes.erroresEncontrados}
                 </div>
               </div>
@@ -685,18 +706,18 @@ useEffect(() => {
             {loadingCrearPuntajeProgresiva && progresoCrearPuntajeProgresiva && (
               <div className={styles.progressContainer}>
                 <div className={styles.progressBar}>
-                  <div 
-                    className={styles.progressFill} 
+                  <div
+                    className={styles.progressFill}
                     style={{ width: `${progresoCrearPuntajeProgresiva.porcentaje}%` }}
                   ></div>
                 </div>
                 <div className={styles.progressText}>
-                  Procesando: {progresoCrearPuntajeProgresiva.estudiantesProcesados}/{progresoCrearPuntajeProgresiva.totalEstudiantes} estudiantes 
+                  Procesando: {progresoCrearPuntajeProgresiva.estudiantesProcesados}/{progresoCrearPuntajeProgresiva.totalEstudiantes} estudiantes
                   ({progresoCrearPuntajeProgresiva.porcentaje.toFixed(1)}%)
                 </div>
                 <div className={styles.progressDetails}>
-                  Estudiantes: {progresoCrearPuntajeProgresiva.estudiantesProcesados} | 
-                  Lotes: {progresoCrearPuntajeProgresiva.lotesCompletados} | 
+                  Estudiantes: {progresoCrearPuntajeProgresiva.estudiantesProcesados} |
+                  Lotes: {progresoCrearPuntajeProgresiva.lotesCompletados} |
                   Errores: {progresoCrearPuntajeProgresiva.erroresEncontrados}
                 </div>
               </div>
@@ -737,8 +758,9 @@ useEffect(() => {
           {/* Componente de gráfico pie chart */}
           {
             evaluacion.tipoDeEvaluacion === '1' ? (
-              <PieChartComponent 
+              <PieChartComponent
                 monthSelected={monthSelected}
+                yearSelected={yearSelected}
                 dataGraficoTendenciaNiveles={dataGraficoTendenciaNiveles}
               />
 
@@ -752,12 +774,13 @@ useEffect(() => {
               <AcordeonGraficosTendencia
                 rangoMes={rangoMes}
                 monthSelected={monthSelected}
+                yearSelected={yearSelected}
                 setRangoMes={setRangoMes}
                 onRangoChange={handleRangoChange}
                 idEvaluacion={`${route.query.idEvaluacion}`}
               />
             )
-            : null
+              : null
           }
           {/* Componente de acordeón para reporte por pregunta */}
           <AcordeonReportePregunta
@@ -772,6 +795,7 @@ useEffect(() => {
             handleChangeFiltros={handleChangeFiltros}
             handleFiltrar={handleFiltrar}
             handleRestablecerFiltros={handleRestablecerFiltros}
+            yearSelected={yearSelected}
           />
         </div>
       )}

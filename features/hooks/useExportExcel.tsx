@@ -11,13 +11,13 @@ export const useExportExcel = () => {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    const exportEstudiantesToExcel = async (idEvaluacion: string, month: number) => {
+    const exportEstudiantesToExcel = async (idEvaluacion: string, month: number, yearSelected: number) => {
         setLoading(true)
         setError(null)
-        
+
         try {
-            console.log('📞 Llamando a traerTodosEstudiantesEvaluados con:', { idEvaluacion, month })
-            
+            console.log('📞 Llamando a traerTodosEstudiantesEvaluados con:', { idEvaluacion, month, yearSelected })
+
             // Crear la función callable con timeout personalizado
             const traerEstudiantesFunction = httpsCallable(
                 functions,
@@ -28,25 +28,12 @@ export const useExportExcel = () => {
             )
 
             // Llamar a la Cloud Function
-            const resultado = await traerEstudiantesFunction({ idEvaluacion, month })
-            
+            const resultado = await traerEstudiantesFunction({ idEvaluacion, month, yearSelected })
+
             // El resultado viene en data
             const data = resultado.data as any
             return data.excelUrl
-            /* if (data.success && Array.isArray(data.data)) {
-                const estudiantesArray: Estudiante[] = data.data.map((est: any) => {
-                    // Remover el id del objeto si existe como propiedad separada
-                    const { id, ...estudianteData } = est
-                    return estudianteData as Estudiante
-                })
-                
-                setEstudiantes(estudiantesArray)
-                console.log(`✅ Estudiantes obtenidos: ${estudiantesArray.length}`)
-                
-                return estudiantesArray
-            } else {
-                throw new Error(data.message || 'No se pudieron obtener los estudiantes')
-            } */
+
         } catch (error: any) {
             const errorMessage = error.message || 'Error desconocido al obtener estudiantes'
             setError(errorMessage)
@@ -61,7 +48,7 @@ export const useExportExcel = () => {
     const exportEstudiantesParaExcelFronted = async (idEvaluacion: string, month: number) => {
         setLoading(true)
         setError(null)
-        
+
         try {
             // Validación de parámetros
             if (!idEvaluacion || !idEvaluacion.trim()) {
@@ -76,7 +63,7 @@ export const useExportExcel = () => {
 
             const estudiantesPad = await getDocs(estudiantesRef)
             const todosLosEstudiantes: Estudiante[] = []
-            
+
             estudiantesPad.forEach((alumno) => {
                 const estudianteData = alumno.data() as Estudiante
                 todosLosEstudiantes.push(estudianteData)
@@ -84,7 +71,7 @@ export const useExportExcel = () => {
 
             setEstudiantes(todosLosEstudiantes)
             console.log('✅ Estudiantes obtenidos:', todosLosEstudiantes)
-            
+
             return todosLosEstudiantes
         } catch (error: any) {
             const errorMessage = error.message || 'Error desconocido al obtener estudiantes'

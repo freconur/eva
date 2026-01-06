@@ -32,11 +32,12 @@ export const useReporteEspecialistas = () => {
   const db = getFirestore();
 
   const getDataGraficoPieChart = async (
-    idEvaluacion: string, 
-    mes: number, 
+    idEvaluacion: string,
+    mes: number,
     evaluacion: Evaluaciones,
     filtroGenero?: string,
-    filtroRegion?: string
+    filtroRegion?: string,
+    yearSelected?: number
   ) => {
     console.log('evaluacion', evaluacion);
     console.log('filtroGenero', filtroGenero);
@@ -46,9 +47,9 @@ export const useReporteEspecialistas = () => {
       const dataGraficoPieChart: GraficoPieChart[] = [];
       const coll = collection(
         db,
-        `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`
+        `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`
       );
-      
+
       // Crear query para el total con los mismos filtros que se aplicarán a los niveles
       const condicionesTotal: any[] = [];
       if (filtroGenero) {
@@ -57,11 +58,11 @@ export const useReporteEspecialistas = () => {
       if (filtroRegion) {
         condicionesTotal.push(where('region', '==', Number(filtroRegion)));
       }
-      
-      const queryTotal = condicionesTotal.length > 0 
+
+      const queryTotal = condicionesTotal.length > 0
         ? query(coll, ...condicionesTotal)
         : coll;
-      
+
       const cantidadDocumentos = await getCountFromServer(queryTotal);
 
       if (cantidadDocumentos.data().count > 0) {
@@ -88,7 +89,7 @@ export const useReporteEspecialistas = () => {
 
           // Construir condiciones de filtro
           const condicionesWhere: any[] = [];
-          
+
           // Agregar condición de puntaje según el nivel
           if (nivelNombre === 'previo al inicio') {
             condicionesWhere.push(where('puntaje', '<=', maxPuntaje));
@@ -110,7 +111,7 @@ export const useReporteEspecialistas = () => {
 
           // Crear query con todas las condiciones
           const q = query(
-            collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
+            collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`),
             ...condicionesWhere
           );
 
@@ -171,7 +172,7 @@ export const useReporteEspecialistas = () => {
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: false });
     }
   };
-  const getDataParaGraficoTendencia = async (rangoMes: number[], idEvaluacion: string, evaluacion?: Evaluaciones) => {
+  const getDataParaGraficoTendencia = async (rangoMes: number[], idEvaluacion: string, evaluacion?: Evaluaciones, yearSelected?: number) => {
     dispatch({ type: AppAction.LOADER_GRAFICOS, payload: true });
     dispatch({ type: AppAction.DATA_GRAFICO_TENDENCIA, payload: [] });
     dispatch({ type: AppAction.DATA_GRAFICO_TENDENCIA_NIVELES, payload: [] });
@@ -207,7 +208,7 @@ export const useReporteEspecialistas = () => {
       const promesas = rangoMes.map(async (mes) => {
         const coll = collection(
           db,
-          `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`
+          `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`
         );
         const cantidadDocumentos = await getCountFromServer(coll);
         console.log('cantidadDocumentos', cantidadDocumentos.data().count);
@@ -227,14 +228,14 @@ export const useReporteEspecialistas = () => {
             if (nivelNombre === 'previo al inicio') {
               // Para "previo al inicio", usar >= 0
               q = query(
-                collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
+                collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`),
                 where('puntaje', '<=', maxPuntaje),
                 where('puntaje', '>=', 0)
               );
             } else {
               // Para otros niveles, usar el rango completo
               q = query(
-                collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/2025/${mes}`),
+                collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`),
                 where('puntaje', '<=', maxPuntaje),
                 where('puntaje', '>=', minPuntaje)
               );
@@ -396,10 +397,10 @@ export const useReporteEspecialistas = () => {
     return resultado;
   };
 
-  const restablecerFiltrosDeEspecialista = (idEvaluacion: string, month: number) => {
+  const restablecerFiltrosDeEspecialista = (idEvaluacion: string, month: number, yearSelected: number) => {
     /*     dispatch({ type: AppAction.DATA_FILTRADA_ESPECIALISTA_DIRECTOR_TABLA, payload: [] }); */
 
-    getEstadisticaGlobal(idEvaluacion, month);
+    getEstadisticaGlobal(idEvaluacion, month, yearSelected);
     dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: [] });
   };
   const reporteParaTablaDeEspecialista = async (
@@ -418,11 +419,12 @@ export const useReporteEspecialistas = () => {
       distrito: string;
     },
     month: number,
-    idEvaluacion: string
+    idEvaluacion: string,
+    yearSelected: number
   ) => {
     console.log('data', data);
     /* se usara la funcion getAllReporteDeDirectoreToAdmin */
-    const dataDirectores = await getAllReporteDeDirectoreToAdmin(idEvaluacion, month);//me retorna todos los directores
+    const dataDirectores = await getAllReporteDeDirectoreToAdmin(idEvaluacion, month, yearSelected);//me retorna todos los directores
     const dataFiltrada = dataDirectores?.filter((estudiante) => {
       // Crear un objeto con los filtros que tienen valor
       const filtrosActivos = {
@@ -602,13 +604,13 @@ export const useReporteEspecialistas = () => {
     return dataFiltrada;
   };
 
-  const getAllReporteDeDirectoreToAdmin = async (idEvaluacion: string, month: number) => {
+  const getAllReporteDeDirectoreToAdmin = async (idEvaluacion: string, month: number, yearSelected: number) => {
     const q = query(collection(db, 'usuarios'), where('rol', '==', 2));
 
     const directores = await getDocs(q);
     console.log('cantidad total de directores', directores.size); //esto se creo solo para saber el total de directores que exite en la coleccion de usuarios
 
-    const pathRef = collection(db, `/evaluaciones/${idEvaluacion}/${currentYear}-${month}`);
+    const pathRef = collection(db, `/evaluaciones/${idEvaluacion}/${yearSelected}-${month}`);
     const querySnapshot = await getDocs(pathRef); //me traigo todos los directores que se encuentran en esta coleccion de una evaluacion especifica
     console.log('tamanio de la coleccion', querySnapshot.size);
     const docentesDelDirector: User[] = [];
@@ -621,12 +623,12 @@ export const useReporteEspecialistas = () => {
     return docentesDelDirector;
   };
 
-  const getEstadisticaGlobal = async (idEvaluacion: string, month: number) => {
+  const getEstadisticaGlobal = async (idEvaluacion: string, month: number, yearSelected: number) => {
     try {
       dispatch({ type: AppAction.LOADER_REPORTE_POR_PREGUNTA, payload: true });
       const pathData = `/evaluaciones/${idEvaluacion}/estadisticas-graficos/`;
 
-      const docRef = doc(db, pathData, `${currentYear}-${month}`);
+      const docRef = doc(db, pathData, `${yearSelected}-${month}`);
       const docSnap = await getDoc(docRef);
 
       // Verificar si el documento existe y tiene datos
@@ -661,10 +663,11 @@ export const useReporteEspecialistas = () => {
   const reporteEspecialistaDeEstudiantes = async (
     idEvaluacion: string,
     month: number,
-    currentUserData: User
+    currentUserData: User,
+    yearSelected: number
   ) => {
     /* const reporteDeEstudiantes = await getAllReporteDeDirectoresToDocentes(idEvaluacion, month) */
-    const reporteDeEstudiantes = await getAllReporteDeDirectoreToAdmin(idEvaluacion, month);
+    const reporteDeEstudiantes = await getAllReporteDeDirectoreToAdmin(idEvaluacion, month, yearSelected);
 
     const acumuladoPorPregunta: Record<
       string,
@@ -898,10 +901,11 @@ export const useReporteEspecialistas = () => {
     /* return resultado */
   };
 
-  const getReporteEspecialistaPorUgel = async (idEvaluacion: string, month: number) => {
+  const getReporteEspecialistaPorUgel = async (idEvaluacion: string, month: number, yearSelected: number) => {
     try {
       if (currentUserData.region) {
-        const pathRef = collection(db, `/evaluaciones/${idEvaluacion}/2025-${month}/`);
+        const pathRef = collection(db, `/evaluaciones/${idEvaluacion}/${yearSelected}-${month}/`);
+        /* const pathRef = collection(db, `/evaluaciones/${idEvaluacion}/${2025}-${10}/`); */
         const q = query(pathRef, where('region', '==', currentUserData.region));
         const querySnapshot = await getDocs(q);
         const directoresUgel: User[] = [];

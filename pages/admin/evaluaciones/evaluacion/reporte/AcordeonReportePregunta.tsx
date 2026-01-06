@@ -22,6 +22,7 @@ interface AcordeonReportePreguntaProps {
   handleChangeFiltros: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   handleFiltrar: () => void;
   handleRestablecerFiltros: () => void;
+  yearSelected: number;
 }
 
 const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
@@ -36,21 +37,22 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
   handleChangeFiltros,
   handleFiltrar,
   handleRestablecerFiltros,
+  yearSelected
 }) => {
   const [mostrarReporte, setMostrarReporte] = useState(false);
   const { loaderReportePorPregunta, reporteDirector } = useGlobalContext();
-  
+
   // Determinar qué datos usar: reporteDirector si tiene datos, sino reporteDirectorOrdenado
-  const datosParaReporte = Array.isArray(reporteDirector) && reporteDirector.length > 0 
-    ? reporteDirector 
+  const datosParaReporte = Array.isArray(reporteDirector) && reporteDirector.length > 0
+    ? reporteDirector
     : (Array.isArray(reporteDirectorOrdenado) ? reporteDirectorOrdenado : []);
-  
+
   const toggleReporte = () => {
     setMostrarReporte(!mostrarReporte);
   };
 
   return (
-    <div style={{ 
+    <div style={{
       marginBottom: '20px',
       border: '1px solid #e9ecef',
       borderRadius: '8px',
@@ -83,9 +85,9 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
           <span style={{ fontSize: '18px' }}>
             {mostrarReporte ? '📋' : '📊'}
           </span>
-          <h3 style={{ 
-            margin: 0, 
-            fontSize: '16px', 
+          <h3 style={{
+            margin: 0,
+            fontSize: '16px',
             fontWeight: '600',
             color: '#495057'
           }}>
@@ -176,8 +178,8 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
               />
             )
           )}
-            
-           {/* <ReporteEvaluacionPorPregunta
+
+          {/* <ReporteEvaluacionPorPregunta
             reporteDirectorOrdenado={reporteDirectorOrdenado}
             preguntasMap={preguntasMap}
             iterarPregunta={iterarPregunta}

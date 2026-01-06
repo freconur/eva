@@ -30,19 +30,20 @@ ChartJS.register(
 )
 
 interface GraficoTendenciaProps {
-  rangoMesAplicado: number[]
+  rangoMesAplicado: number[],
   idEvaluacion: string,
-  monthSelected: number
+  monthSelected: number,
+  yearSelected: number
 }
 
-const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: GraficoTendenciaProps) => {
+const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected, yearSelected }: GraficoTendenciaProps) => {
   const { getDataParaGraficoTendencia } = useReporteEspecialistas()
   const { dataGraficoTendencia, dataGraficoTendenciaNiveles, loaderGraficos, evaluacion } = useGlobalContext()
 
   useEffect(() => {
     // Solo obtener datos cuando se aplique el rango y haya datos válidos
     if (rangoMesAplicado && rangoMesAplicado.length > 0) {
-      getDataParaGraficoTendencia(rangoMesAplicado, idEvaluacion, evaluacion as any)
+      getDataParaGraficoTendencia(rangoMesAplicado, idEvaluacion, evaluacion as any, yearSelected)
     }
   }, [rangoMesAplicado, idEvaluacion, evaluacion])
 
@@ -54,12 +55,12 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
 
     // Ordenar los niveles por puntaje mínimo
     const nivelesOrdenados = [...evaluacion.nivelYPuntaje].sort((a, b) => (a.min || 0) - (b.min || 0));
-    
+
     // Buscar el nivel correspondiente al puntaje
     for (const nivelData of nivelesOrdenados) {
       const minPuntaje = nivelData.min || 0;
       const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
-      
+
       // Para "previo al inicio", usar > 0 en lugar de >= min
       if (nivelData.nivel?.toLowerCase() === 'previo al inicio') {
         if (puntaje > 0 && puntaje <= maxPuntaje) {
@@ -71,7 +72,7 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
         }
       }
     }
-    
+
     return 'Nivel no definido';
   }
 
@@ -111,18 +112,18 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
         cornerRadius: 8,
         displayColors: false,
         callbacks: {
-          label: function(context: any) {
+          label: function (context: any) {
             const index = context.dataIndex;
             const item = dataGraficoTendencia[index];
             const puntaje = context.parsed.y;
             const nivel = obtenerNivelPorPuntaje(puntaje);
-            
+
             // Calcular total de estudiantes evaluados desde dataGraficoTendenciaNiveles
             const nivelData = dataGraficoTendenciaNiveles.find(n => n.mes === item.mes);
-            const totalEstudiantes = nivelData 
+            const totalEstudiantes = nivelData
               ? nivelData.niveles.reduce((sum, nivel) => sum + nivel.cantidadDeEstudiantes, 0)
               : 0;
-            
+
             return [
               `Puntaje: ${puntaje.toFixed(1)}`,
               `Nivel: ${nivel}`,
@@ -230,7 +231,7 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
         cornerRadius: 8,
         displayColors: true,
         callbacks: {
-          label: function(context: any) {
+          label: function (context: any) {
             return `${context.dataset.label}: ${context.parsed.y} estudiantes`;
           }
         }
@@ -344,18 +345,18 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
       tooltip: {
         ...opcionesGrafico.plugins.tooltip,
         callbacks: {
-          label: function(context: any) {
+          label: function (context: any) {
             const index = context.dataIndex;
             const item = dataGraficoTendencia[index];
             const puntaje = context.parsed.y;
             const nivel = obtenerNivelPorPuntaje(puntaje);
-            
+
             // Calcular total de estudiantes evaluados desde dataGraficoTendenciaNiveles
             const nivelData = dataGraficoTendenciaNiveles.find(n => n.mes === item.mes);
-            const totalEstudiantes = nivelData 
+            const totalEstudiantes = nivelData
               ? nivelData.niveles.reduce((sum, nivel) => sum + nivel.cantidadDeEstudiantes, 0)
               : 0;
-            
+
             return [
               `Puntaje: ${puntaje.toFixed(1)}`,
               `Nivel: ${nivel}`,
@@ -376,7 +377,7 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
       ]
       const mesNombre = nombresMeses[item.mes] || `Mes ${item.mes}`
-      
+
       return {
         label: mesNombre,
         data: [
@@ -402,16 +403,16 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
   // Calcular estadísticas por nivel
   const calcularEstadisticasNivel = (nivelNombre: string) => {
     if (dataGraficoTendenciaNiveles.length === 0) return { total: 0, promedio: 0, maximo: 0, minimo: 0 }
-    
-    const datosNivel = dataGraficoTendenciaNiveles.map(item => 
+
+    const datosNivel = dataGraficoTendenciaNiveles.map(item =>
       item.niveles.find(nivel => nivel.nivel === nivelNombre)?.cantidadDeEstudiantes || 0
     )
-    
+
     const total = datosNivel.reduce((sum, valor) => sum + valor, 0)
     const promedio = total / datosNivel.length
     const maximo = Math.max(...datosNivel)
     const minimo = Math.min(...datosNivel)
-    
+
     return { total, promedio, maximo, minimo }
   }
 
@@ -422,18 +423,18 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
 
 
   // Verificar si ambos datos están disponibles
-  const hasData = dataGraficoTendencia && dataGraficoTendencia.length > 0 && 
-                  dataGraficoTendenciaNiveles && dataGraficoTendenciaNiveles.length > 0
+  const hasData = dataGraficoTendencia && dataGraficoTendencia.length > 0 &&
+    dataGraficoTendenciaNiveles && dataGraficoTendenciaNiveles.length > 0
 
   // Si no hay datos, mostrar el loader
   if (loaderGraficos === true) {
     return (
       <div className="w-full max-w-7xl mx-auto p-6 flex justify-center items-center min-h-96">
-        <Loader 
-          size="large" 
-          variant="spinner" 
-          color="#4F46E5" 
-          text="Cargando datos de gráficos..." 
+        <Loader
+          size="large"
+          variant="spinner"
+          color="#4F46E5"
+          text="Cargando datos de gráficos..."
         />
       </div>
     )
@@ -450,15 +451,15 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
             Evolución del puntaje promedio de los estudiantes a lo largo del tiempo
           </p>
         </div> */}
-        
+
         <div className="bg-gray-50 p-4 rounded-lg">
           <Line data={datosChart} options={opcionesGrafico} />
         </div>
-        
+
         <div className="bg-gray-50 p-4 rounded-lg mt-4">
           <Bar data={datosChartBar} options={opcionesGraficoBar} />
         </div>
-        
+
         {/* <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
             <h3 className="font-semibold text-blue-800">Puntaje Más Alto</h3>
@@ -495,7 +496,7 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected }: Gra
         <div className="bg-gray-50 p-4 rounded-lg">
           <Line data={datosChartNiveles} options={opcionesGraficoNiveles} />
         </div>
-        
+
         {/* <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
             <h3 className="font-semibold text-green-800">Satisfactorio</h3>

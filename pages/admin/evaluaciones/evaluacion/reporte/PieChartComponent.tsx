@@ -38,12 +38,13 @@ ChartJS.register(
 interface PieChartComponentProps {
   monthSelected: number
   dataGraficoTendenciaNiveles: GraficoPieChart[]
+  yearSelected: number
 }
-const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieChartComponentProps) => {
+const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles, yearSelected }: PieChartComponentProps) => {
   const [filtroGenero, setFiltroGenero] = useState<string>('')
   const [filtroRegion, setFiltroRegion] = useState<string>('')
   const [dataFiltrada, setDataFiltrada] = useState<GraficoPieChart[]>(dataGraficoTendenciaNiveles)
-  
+
   const route = useRouter()
   const { loaderDataGraficoPieChart, evaluacion, dataGraficoPieChart } = useGlobalContext()
   const { preparePieChartData, getNivelStyles } = useColorsFromCSS()
@@ -56,15 +57,16 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
   useEffect(() => {
     if (idEvaluacion && evaluacion?.nivelYPuntaje) {
       getDataGraficoPieChart(
-        `${idEvaluacion}`, 
-        monthSelected, 
+        `${idEvaluacion}`,
+        monthSelected,
         evaluacion,
         filtroGenero || undefined,
-        filtroRegion || undefined
+        filtroRegion || undefined,
+        yearSelected
       )
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthSelected, filtroGenero, filtroRegion, idEvaluacion])
+  }, [monthSelected, filtroGenero, filtroRegion, idEvaluacion, yearSelected])
 
   // Usar dataGraficoPieChart del contexto global si está disponible, sino usar la prop
   const datosParaGrafico = useMemo(() => {
@@ -79,33 +81,33 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
   }, [datosParaGrafico])
 
   // Buscar datos del mes seleccionado usando find
-  const datosMesSeleccionado = Array.isArray(dataFiltrada) 
+  const datosMesSeleccionado = Array.isArray(dataFiltrada)
     ? dataFiltrada.find(item => item.mes === monthSelected)
     : undefined;
-  
+
   // Usar opciones de alta calidad
   const opcionesGraficoPie = useHighQualityChartOptions({
     chartType: 'pie',
-    title: `Distribución de Estudiantes por Niveles - ${datosMesSeleccionado ? 
+    title: `Distribución de Estudiantes por Niveles - ${datosMesSeleccionado ?
       ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][monthSelected] || `Mes ${monthSelected}` : 'Sin datos'}`,
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][monthSelected] || `Mes ${monthSelected}` : 'Sin datos'}`,
     showLegend: true,
     legendPosition: 'bottom'
   })
 
   // Datos del gráfico de pie para el mes seleccionado
-  const datosChartPie = datosMesSeleccionado 
+  const datosChartPie = datosMesSeleccionado
     ? preparePieChartData(datosMesSeleccionado.niveles)
     : {
-        labels: ['Sin datos'],
-        datasets: [{
-          data: [1],
-          backgroundColor: ['#E5E7EB'],
-          borderColor: '#ffffff',
-          borderWidth: 1,
-          borderAlign: 'inner' as const
-        }]
-      }
+      labels: ['Sin datos'],
+      datasets: [{
+        data: [1],
+        backgroundColor: ['#E5E7EB'],
+        borderColor: '#ffffff',
+        borderWidth: 1,
+        borderAlign: 'inner' as const
+      }]
+    }
 
   const handleChangeGenero = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFiltroGenero(e.target.value)
@@ -154,20 +156,20 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
           </select>
         </div>
       </div>
-      
+
       <div className={styles.chartContainer}>
         <div className={styles.chartWrapper}>
           {loaderDataGraficoPieChart ? (
-            <Loader 
-              size="large" 
-              variant="spinner" 
+            <Loader
+              size="large"
+              variant="spinner"
               color="#3b82f6"
               text="Cargando datos del gráfico..."
             />
           ) : (
             <div className={styles.chartInner}>
-              <Pie 
-                data={datosChartPie} 
+              <Pie
+                data={datosChartPie}
                 options={{
                   ...opcionesGraficoPie,
                   // Configuración adicional para alta calidad
@@ -182,9 +184,9 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles }: PieCh
           )}
         </div>
       </div>
-      
+
       {/* Estadísticas del mes seleccionado - Solo mostrar si no está cargando */}
-     {/*  {!loaderDataGraficoPieChart && datosMesSeleccionado && (
+      {/*  {!loaderDataGraficoPieChart && datosMesSeleccionado && (
         <div className={styles.statsContainer}>
           {datosMesSeleccionado.niveles.map((nivel, index) => {
             const totalEstudiantes = datosMesSeleccionado.niveles.reduce((sum, n) => sum + n.cantidadDeEstudiantes, 0)

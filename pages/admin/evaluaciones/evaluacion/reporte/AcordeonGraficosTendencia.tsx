@@ -8,6 +8,7 @@ interface AcordeonGraficosTendenciaProps {
   onRangoChange: (mesInicio: number, mesFin: number, año: number, mesesIds: number[]) => void;
   idEvaluacion: string;
   monthSelected: number;
+  yearSelected: number;
 }
 
 const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
@@ -15,7 +16,8 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
   setRangoMes,
   onRangoChange,
   idEvaluacion,
-  monthSelected
+  monthSelected,
+  yearSelected
 }) => {
   const [mostrarGraficos, setMostrarGraficos] = useState(false);
   const [rangoMesAplicado, setRangoMesAplicado] = useState<number[]>([]);
@@ -38,7 +40,7 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
   };
 
   return (
-    <div style={{ 
+    <div style={{
       marginBottom: '20px',
       border: '1px solid #e9ecef',
       borderRadius: '8px',
@@ -71,9 +73,9 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
           <span style={{ fontSize: '18px' }}>
             {mostrarGraficos ? '📊' : '📈'}
           </span>
-          <h3 style={{ 
-            margin: 0, 
-            fontSize: '16px', 
+          <h3 style={{
+            margin: 0,
+            fontSize: '16px',
             fontWeight: '600',
             color: '#495057'
           }}>
@@ -105,8 +107,13 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
           transitionProperty: 'opacity, transform',
           transitionDuration: '0.3s'
         }}>
-          <RangoMes setRangoMes={setRangoMes} onRangoChange={handleAplicarRango}/>
-          <GraficoTendencia monthSelected={monthSelected} rangoMesAplicado={rangoMesAplicado} idEvaluacion={idEvaluacion}/>
+          <RangoMes setRangoMes={setRangoMes} onRangoChange={handleAplicarRango} />
+          <GraficoTendencia
+            monthSelected={monthSelected}
+            rangoMesAplicado={rangoMesAplicado}
+            idEvaluacion={idEvaluacion}
+            yearSelected={yearSelected}
+          />
         </div>
       </div>
     </div>
