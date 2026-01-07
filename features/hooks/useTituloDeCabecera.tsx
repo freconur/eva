@@ -38,9 +38,10 @@ export const useTituloDeCabecera = () => {
   const [evaluacionesEscalaLikertUsuarios, setEvaluacionesEscalaLikertUsuarios] = useState<EvaluacionesEscalaLikertUsario[]>([]);
   const [acumuladoDeDatosLikertParaGraficos, setAcumuladoDeDatosLikertParaGraficos] = useState<PreguntasEvaluacionLikertConResultado[]>([]);
   const [escalaLikertByUsuario, setEscalaLikertByUsuario] = useState<EvaluacionesEscalaLikertUsario>()
+  const [isLoadingEvaluaciones, setIsLoadingEvaluaciones] = useState<boolean>(false)
   // Ref para guardar la referencia del unsubscribe
   const unsubscribeRef = useRef<(() => void) | null>(null);
-  
+
   // Limpiar suscripciones cuando el componente se desmonte
   useEffect(() => {
     return () => {
@@ -82,27 +83,27 @@ export const useTituloDeCabecera = () => {
       unsubscribeRef.current();
       unsubscribeRef.current = null;
     }
-    
+
     // Limpiar tanto el estado local como el global
     setPreguntaEscalaLikert([]);
     dispatch({ type: AppAction.PREGUNTAS_EVALUACION_ESCALA_LIKERT, payload: [] });
-    
+
     const pathRef = collection(db, `evaluaciones-escala-likert/${id}/preguntas`);
-    const q = query(pathRef, orderBy('orden','asc'));
-    
+    const q = query(pathRef, orderBy('orden', 'asc'));
+
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       // Verificar que la suscripción no haya sido cancelada
       if (!unsubscribeRef.current) return;
-      
+
       const arrayEvaluacionEscalaLikert: PreguntasEvaluacionLikert[] = [];
       querySnapshot.forEach((doc) => {
         arrayEvaluacionEscalaLikert.push({ ...doc.data(), id: doc.id });
       });
-      
+
       setPreguntaEscalaLikert(arrayEvaluacionEscalaLikert);
       dispatch({ type: AppAction.PREGUNTAS_EVALUACION_ESCALA_LIKERT, payload: arrayEvaluacionEscalaLikert });
     });
-    
+
     // Guardar la referencia del unsubscribe
     unsubscribeRef.current = unsubscribe;
   };
@@ -133,11 +134,11 @@ export const useTituloDeCabecera = () => {
     // Obtener la pregunta con el mayor orden para calcular el siguiente
     const q = query(preguntasRef, orderBy('orden', 'desc'), limit(1));
     const snapshot = await getDocs(q);
-    
+
     if (snapshot.empty) {
       return 1.0; // Primera pregunta
     }
-    
+
     const ultimaPregunta = snapshot.docs[0].data();
     return ultimaPregunta.orden + 1.0;
   };
@@ -149,16 +150,16 @@ export const useTituloDeCabecera = () => {
     // Obtener la pregunta con el mayor orden para calcular el siguiente
     const q = query(preguntasRef, orderBy('orden', 'desc'), limit(1));
     const snapshot = await getDocs(q);
-    
+
     let siguienteOrden = 1.0;
     if (!snapshot.empty) {
       const ultimaPregunta = snapshot.docs[0].data();
       siguienteOrden = ultimaPregunta.orden + 1.0;
     }
-    
-    await addDoc(preguntasRef, { 
+
+    await addDoc(preguntasRef, {
       pregunta,
-      orden: siguienteOrden 
+      orden: siguienteOrden
     });
   };
 
@@ -166,7 +167,7 @@ export const useTituloDeCabecera = () => {
   const reordenarPregunta = async (id: string, preguntaId: string, nuevoOrden: number) => {
     const rutaPregunta = `evaluaciones-escala-likert/${id}/preguntas/${preguntaId}`;
     const preguntaRef = doc(db, rutaPregunta);
-    
+
     await updateDoc(preguntaRef, { orden: nuevoOrden });
   };
 
@@ -175,13 +176,13 @@ export const useTituloDeCabecera = () => {
     if (cambios.size === 0) return;
 
     const batch = writeBatch(db);
-    
+
     for (const [preguntaId, nuevoOrden] of cambios) {
       const rutaPregunta = `evaluaciones-escala-likert/${id}/preguntas/${preguntaId}`;
       const preguntaRef = doc(db, rutaPregunta);
       batch.update(preguntaRef, { orden: nuevoOrden });
     }
-    
+
     await batch.commit();
   };
 
@@ -189,10 +190,10 @@ export const useTituloDeCabecera = () => {
   const reordenarPreguntaOptimizada = async (id: string, preguntaId: string, nuevoOrden: number) => {
     const rutaPregunta = `evaluaciones-escala-likert/${id}/preguntas/${preguntaId}`;
     const preguntaRef = doc(db, rutaPregunta);
-    
+
     await updateDoc(preguntaRef, { orden: nuevoOrden });
   };
-  
+
   const getEvaluacionEscalaLikert = async (id: string) => {
     const pathRef = doc(db, 'evaluaciones-escala-likert', id);
     onSnapshot(pathRef, (docSnap) => {
@@ -213,12 +214,12 @@ export const useTituloDeCabecera = () => {
     if (!evaluacionEscalaLikert.mesDelExamen) {
       throw new Error('mesDelExamen es requerido para guardar la evaluación');
     }
-    
+
     // Verificar que currentUserData.dni esté definido
     if (!currentUserData?.dni) {
       throw new Error('DNI del usuario es requerido para guardar la evaluación');
     }
-    
+
     const pathRef = doc(db, `evaluaciones-escala-likert/${id}/${currentYear}-${evaluacionEscalaLikert.mesDelExamen}`, currentUserData.dni);
     await setDoc(pathRef, data);
   }
@@ -227,7 +228,7 @@ export const useTituloDeCabecera = () => {
   const updatePreguntaTexto = async (id: string, preguntaId: string, nuevoTexto: string) => {
     const rutaPregunta = `evaluaciones-escala-likert/${id}/preguntas/${preguntaId}`;
     const preguntaRef = doc(db, rutaPregunta);
-    
+
     await updateDoc(preguntaRef, { pregunta: nuevoTexto });
   }
 
@@ -268,36 +269,39 @@ export const useTituloDeCabecera = () => {
     /* console.log('resultado final por pregunta', resultadoPorPregunta);
     return resultadoPorPregunta; */
   }
-  const getEvaluacionesEscalaLikert = async (id: string, evaluacionEscalaLikert: EvaluacionLikert) => {
-    const pathRef = collection(db, `/evaluaciones-escala-likert/${id}/${currentYear}-9`);
-    
+  const getEvaluacionesEscalaLikert = async (id: string, evaluacionEscalaLikert: EvaluacionLikert, month: number = 9, year: number = currentYear) => {
+    const pathRef = collection(db, `/evaluaciones-escala-likert/${id}/${year}-${month}`);
+    setIsLoadingEvaluaciones(true)
+
     try {
       const querySnapshot = await getDocs(pathRef);
       const data: EvaluacionesEscalaLikertUsario[] = [];
-      
+
       querySnapshot.forEach((doc) => {
         const docData = doc.data();
-        data.push({ 
-          ...docData, 
+        data.push({
+          ...docData,
           id: doc.id,
           datosDocente: docData.datosDocente || []
         });
       });
-      
+
       // Actualizar el estado con los datos obtenidos
       setEvaluacionesEscalaLikertUsuarios(data);
-      
+
       // Ejecutar el cálculo solo después de que getDocs termine
       calculoDeDatosParaGraficoEscalaLikert(data, evaluacionEscalaLikert);
     } catch (error) {
       console.error('Error al obtener evaluaciones escala likert:', error);
       setEvaluacionesEscalaLikertUsuarios([]);
+    } finally {
+      setIsLoadingEvaluaciones(false)
     }
   }
 
-  const evaluacionEscalaLikertByUsuario = async(id: string) => {
-    const pathRef = doc(db, `/evaluaciones-escala-likert/${id}/${currentYear}-9/`, `${currentUserData.dni}`);
-    console.log(`/evaluaciones-escala-likert/${id}/${currentYear}-9/`, `${currentUserData.dni}`)
+  const evaluacionEscalaLikertByUsuario = async (id: string, month: number = 9, year: number = currentYear) => {
+    const pathRef = doc(db, `/evaluaciones-escala-likert/${id}/${year}-${month}/`, `${currentUserData.dni}`);
+    console.log(`/evaluaciones-escala-likert/${id}/${year}-${month}/`, `${currentUserData.dni}`)
     onSnapshot(pathRef, (docSnap) => {
       if (docSnap.exists()) {
         setEscalaLikertByUsuario(docSnap.data() as EvaluacionesEscalaLikertUsario)
@@ -306,16 +310,16 @@ export const useTituloDeCabecera = () => {
     });
   }
 
-  const exportarExcelEvaluacionEscalaLikert = async (id: string, month:number) => {
+  const exportarExcelEvaluacionEscalaLikert = async (id: string, month: number, year: number = currentYear) => {
     try {
-      const pathRef = collection(db, `/evaluaciones-escala-likert/${id}/${currentYear}-${month}`);
+      const pathRef = collection(db, `/evaluaciones-escala-likert/${id}/${year}-${month}`);
       const data: EvaluacionesEscalaLikertUsario[] = [];
       const BATCH_SIZE = 500; // Tamaño del lote para evitar problemas de memoria
-      
+
       // Función recursiva para obtener todos los documentos
       const getAllDocuments = async (lastVisible: QueryDocumentSnapshot<DocumentData> | null = null): Promise<void> => {
         let q;
-        
+
         if (lastVisible) {
           // Si hay un último documento visible, continuar desde ahí
           q = query(pathRef, limit(BATCH_SIZE), startAfter(lastVisible));
@@ -323,32 +327,32 @@ export const useTituloDeCabecera = () => {
           // Primera consulta
           q = query(pathRef, limit(BATCH_SIZE));
         }
-        
+
         const querySnapshot = await getDocs(q);
-        
+
         // Agregar los documentos del lote actual al array
         querySnapshot.forEach((doc) => {
           const docData = doc.data();
           data.push({ ...docData, id: doc.id, datosDocente: docData.datosDocente || [] });
         });
-        
+
         // Si hay más documentos (el tamaño del lote es igual al límite), continuar
         if (querySnapshot.docs.length === BATCH_SIZE) {
           const newLastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
           await getAllDocuments(newLastVisible);
         }
       };
-      
+
       // Iniciar la obtención recursiva de documentos
       await getAllDocuments();
       console.log('Total documentos obtenidos:', data.length);
-      
+
       // Si no hay datos, retornar
       if (data.length === 0) {
         console.warn('No hay datos para exportar');
-        return;
+        return null;
       }
-      
+
       // Preparar los datos para la exportación a Excel
       const dataToExport = data.map((item, index) => {
         const baseData: any = {
@@ -357,7 +361,7 @@ export const useTituloDeCabecera = () => {
           'DNI Docente': item.datosDocente?.dni || '',
           'Nombres Docente': item.datosDocente?.nombres || '',
           'Apellidos Docente': item.datosDocente?.apellidos || '',
-          'Grado': Array.isArray(item.datosDocente?.grado) 
+          'Grado': Array.isArray(item.datosDocente?.grado)
             ? item.datosDocente.grado.map(g => convertGrade(g.toString())).join(' - ')
             : '',
           'Sexo': item.datosDocente?.sexo?.name || '',
@@ -369,7 +373,7 @@ export const useTituloDeCabecera = () => {
           'Total Preguntas': item.evaluacion?.totalPreguntas ?? '',
           'Respuestas Completas': item.evaluacion?.respuestasCompletas ? 'Sí' : 'No',
         };
-        
+
         // Agregar las preguntas y respuestas
         if (item.evaluacion?.preguntas && Array.isArray(item.evaluacion.preguntas)) {
           item.evaluacion.preguntas.forEach((pregunta, preguntaIndex) => {
@@ -379,21 +383,21 @@ export const useTituloDeCabecera = () => {
             /* baseData[`Orden ${preguntaIndex + 1}`] = pregunta.orden ?? ''; */
           });
         }
-        
+
         // Agregar links de documentos si existen
         if (item.linkDocumentos && Array.isArray(item.linkDocumentos)) {
           baseData['Links Documentos'] = item.linkDocumentos.join('; ');
         }
-        
+
         return baseData;
       });
-      
+
       // Crear un nuevo libro de Excel
       const workbook = XLSX.utils.book_new();
-      
+
       // Crear una hoja de cálculo con los datos
       const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-      
+
       // Ajustar el ancho de las columnas
       const columnWidths = [
         { wch: 5 },   // N°
@@ -406,7 +410,7 @@ export const useTituloDeCabecera = () => {
         { wch: 15 },  // Total Preguntas
         { wch: 20 },  // Respuestas Completas
       ];
-      
+
       // Agregar anchos para las columnas de preguntas (si hay datos)
       if (data[0]?.evaluacion?.preguntas) {
         const numPreguntas = data[0].evaluacion.preguntas.length;
@@ -418,42 +422,42 @@ export const useTituloDeCabecera = () => {
           );
         }
       }
-      
+
       columnWidths.push({ wch: 50 }); // Links Documentos
       worksheet['!cols'] = columnWidths;
-      
+
       // Agregar la hoja al libro
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Evaluaciones Escala Likert');
-      
+
       // Convertir el workbook a un array buffer
       const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
-      
+
       // Crear un blob desde el buffer
-      const blob = new Blob([excelBuffer], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      const blob = new Blob([excelBuffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
-      
+
       // Generar nombre único para el archivo
       const timestamp = new Date().getTime();
-      const fileName = `evaluaciones-escala-likert-${id}-${currentYear}-${month}-${timestamp}.xlsx`;
+      const fileName = `evaluaciones-escala-likert-${id}-${year}-${month}-${timestamp}.xlsx`;
       const storagePath = `excel-exports/${fileName}`;
-      
+
       // Crear referencia en Storage
       const storageRef = ref(storage, storagePath);
-      
+
       // Subir el archivo a Storage
       console.log('Subiendo archivo a Storage...');
       await uploadBytes(storageRef, blob);
-      
+
       // Obtener la URL de descarga
       console.log('Obteniendo URL de descarga...');
       const downloadURL = await getDownloadURL(storageRef);
-      
+
       console.log('Archivo subido exitosamente. URL:', downloadURL);
-      
+
       // Abrir la URL en una nueva pestaña
       window.open(downloadURL, '_blank');
-      
+
       return downloadURL;
     } catch (error) {
       console.error('Error al exportar Excel:', error);
@@ -484,5 +488,6 @@ export const useTituloDeCabecera = () => {
     preguntasEscalaLikert,
     evaluacionesEscalaLikertUsuarios,
     acumuladoDeDatosLikertParaGraficos,
+    isLoadingEvaluaciones
   };
 };

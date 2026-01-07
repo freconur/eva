@@ -1,4 +1,5 @@
 import { useTituloDeCabecera } from '@/features/hooks/useTituloDeCabecera'
+import { currentYear, getAllMonths, currentMonth } from '@/fuctions/dates'
 import { useColumnView } from '@/features/hooks/useColumnView'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState, useMemo } from 'react'
@@ -29,18 +30,51 @@ ChartJS.register(
 
 const ReporteAutorreporte = () => {
   const route = useRouter()
-  const {id} = route.query
+  const { id } = route.query
   const { columnView, setColumnView1, setColumnView2, setColumnView3, is1Column, is2Columns, is3Columns } = useColumnView('2-columns')
   const [animationKey, setAnimationKey] = useState(0)
   const [isExporting, setIsExporting] = useState(false)
-  
-  
+
+  // Estados para los filtros de fecha
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear)
+  const [selectedMonth, setSelectedMonth] = useState<number>(9)
+
+  // Generar lista de años (desde 2025 hasta año actual)
+  const years = useMemo(() => {
+    const startYear = 2025
+    const yearsArray = []
+    for (let i = startYear; i <= currentYear; i++) {
+      yearsArray.push(i)
+    }
+    return yearsArray
+  }, [])
+
+  // Filtrar meses según el año seleccionado
+  const months = useMemo(() => {
+    if (selectedYear === currentYear) {
+      // Si es el año actual, mostramos meses hasta el mes actual (currentMonth + 1 para que coincida con length)
+      // currentMonth en JS es 0-11, getAllMonths.id es 0-11.
+      return getAllMonths.filter(m => m.id <= currentMonth)
+    }
+    // Si es un año anterior, mostramos todos los meses
+    return getAllMonths
+  }, [selectedYear])
+
+  // Efecto para ajustar el mes seleccionado si queda fuera de rango al cambiar de año
+  useEffect(() => {
+    if (selectedYear === currentYear && (selectedMonth - 1) > currentMonth) {
+      setSelectedMonth(currentMonth + 1)
+      /* setSelectedMonth(currentMonth - 1) */
+    }
+  }, [selectedYear, selectedMonth])
+
+
   const handleColumnChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value as '1-column' | '2-columns' | '3-columns'
-    
+
     // Forzar re-renderización para activar la animación
     setAnimationKey(prev => prev + 1)
-    
+
     if (value === '1-column') {
       setColumnView1()
     } else if (value === '2-columns') {
@@ -49,8 +83,8 @@ const ReporteAutorreporte = () => {
       setColumnView3()
     }
   }
-  
-  const { 
+
+  const {
     getEvaluacionesEscalaLikert,
     getEvaluacionEscalaLikert,
     getPreguntasEvaluacionEscalaLikert,
@@ -58,11 +92,12 @@ const ReporteAutorreporte = () => {
     evaluacionEscalaLikert,
     evaluacionesEscalaLikertUsuarios,
     acumuladoDeDatosLikertParaGraficos,
-    exportarExcelEvaluacionEscalaLikert
+    exportarExcelEvaluacionEscalaLikert,
+    isLoadingEvaluaciones
   } = useTituloDeCabecera()
 
-  
-  
+
+
   // Función para procesar los datos del gráfico para una pregunta específica
   const procesarDatosParaPregunta = (pregunta: PreguntasEvaluacionLikertConResultado) => {
     if (!pregunta.resultado || pregunta.resultado.length === 0) {
@@ -80,7 +115,7 @@ const ReporteAutorreporte = () => {
     const data = pregunta.resultado.map((item: EscalaLikert) => item.total || 0)
     // Almacenar los nombres completos para el tooltip
     const nombresCompletos = pregunta.resultado.map((item: EscalaLikert) => item.name || `Valor ${item.value}`)
-    
+
     // Generar colores con gradiente para cada barra
     const colors = [
       'rgba(102, 126, 234, 0.8)',   // Azul
@@ -104,11 +139,11 @@ const ReporteAutorreporte = () => {
       'rgba(153, 102, 255, 1)',
     ]
 
-    const backgroundColor = pregunta.resultado.map((_, index: number) => 
+    const backgroundColor = pregunta.resultado.map((_, index: number) =>
       colors[index % colors.length]
     )
-    
-    const borderColor = pregunta.resultado.map((_, index: number) => 
+
+    const borderColor = pregunta.resultado.map((_, index: number) =>
       borderColors[index % borderColors.length]
     )
 
@@ -120,7 +155,7 @@ const ReporteAutorreporte = () => {
         backgroundColor: backgroundColor,
         borderColor: borderColor,
         borderWidth: 2,
-        hoverBackgroundColor: backgroundColor.map(color => 
+        hoverBackgroundColor: backgroundColor.map(color =>
           color.replace('0.8', '0.9')
         ),
         hoverBorderColor: borderColor,
@@ -129,7 +164,7 @@ const ReporteAutorreporte = () => {
       nombresCompletos: nombresCompletos
     }
   }
-  
+
   // Función para generar las opciones del gráfico con acceso a los nombres completos
   const getChartOptions = (nombresCompletos: string[]) => ({
     responsive: true,
@@ -162,12 +197,12 @@ const ReporteAutorreporte = () => {
         },
         padding: 12,
         callbacks: {
-          title: function(context: any) {
+          title: function (context: any) {
             const index = context[0].dataIndex;
             const nombreCompleto = nombresCompletos[index] || context[0].label;
             return 'Nivel: ' + nombreCompleto;
           },
-          label: function(context: any) {
+          label: function (context: any) {
             return 'Respuestas: ' + context.parsed.y;
           }
         }
@@ -219,7 +254,7 @@ const ReporteAutorreporte = () => {
             weight: 500
           },
           color: '#5a6c7d',
-          callback: function(value: any) {
+          callback: function (value: any) {
             return Number.isInteger(value) ? value : null;
           }
         },
@@ -245,13 +280,22 @@ const ReporteAutorreporte = () => {
       easing: 'easeInOutQuart' as const
     }
   })
-  
+
+  // Efecto para suscripciones (solo depende del ID)
   useEffect(() => {
-      getEvaluacionesEscalaLikert(`${id}`, evaluacionEscalaLikert)
+    if (id) {
       getEvaluacionEscalaLikert(`${id}`)
       getPreguntasEvaluacionEscalaLikert(`${id}`)
-  }, [id, evaluacionEscalaLikert.mesDelExamen])
-  
+    }
+  }, [id])
+
+  // Efecto para obtener datos cuando cambian los filtros o la configuración de la evaluación
+  useEffect(() => {
+    if (id) {
+      getEvaluacionesEscalaLikert(`${id}`, evaluacionEscalaLikert, selectedMonth, selectedYear)
+    }
+  }, [id, selectedMonth, selectedYear, evaluacionEscalaLikert])
+  console.log('selectedMonth', selectedMonth)
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -260,21 +304,25 @@ const ReporteAutorreporte = () => {
           Análisis de preguntas y respuestas de la evaluación
         </p>
       </div>
-      
+
       {preguntasEscalaLikert.length > 0 ? (
         <>
           <div className={styles.columnControls}>
-            <button 
+            {/* agregar select para escoger el mes y año */}
+            <button
               onClick={async () => {
                 setIsExporting(true)
                 try {
-                  await exportarExcelEvaluacionEscalaLikert(`${id}`, Number(evaluacionEscalaLikert.mesDelExamen))
+                  const result = await exportarExcelEvaluacionEscalaLikert(`${id}`, selectedMonth, selectedYear)
+                  if (!result) {
+                    alert('No hay datos para exportar')
+                  }
                 } catch (error) {
                   console.error('Error al exportar:', error)
                 } finally {
                   setIsExporting(false)
                 }
-              }} 
+              }}
               className={styles.exportButton}
               disabled={isExporting}
             >
@@ -290,6 +338,44 @@ const ReporteAutorreporte = () => {
                 </>
               )}
             </button>
+
+            {/* Selectores de Mes y Año */}
+            <div className={styles.columnSelect}>
+              <label htmlFor="month-select" className={styles.columnSelectLabel}>
+                Mes
+              </label>
+              <select
+                id="month-select"
+                className={styles.columnSelectElement}
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              >
+                {months.map((month) => (
+                  <option key={month.id} value={month.id}>
+                    {month.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className={styles.columnSelect}>
+              <label htmlFor="year-select" className={styles.columnSelectLabel}>
+                Año
+              </label>
+              <select
+                id="year-select"
+                className={styles.columnSelectElement}
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className={styles.columnSelect}>
               <label htmlFor="column-select" className={styles.columnSelectLabel}>
                 Vista de Columnas
@@ -306,62 +392,75 @@ const ReporteAutorreporte = () => {
               </select>
             </div>
           </div>
-          
-          <div 
-            key={animationKey}
-            className={
-              is1Column
-                ? styles.questionsContainer1Column
-                : is2Columns 
-                  ? styles.questionsContainer2Columns 
-                  : is3Columns 
-                    ? styles.questionsContainer3Columns 
-                    : styles.questionsContainer
-            }
-          >
-            {acumuladoDeDatosLikertParaGraficos
-              .sort((a, b) => (a.orden || 0) - (b.orden || 0))
-              .map((pregunta, index) => {
-                const chartData = procesarDatosParaPregunta(pregunta)
-                const chartOptionsWithNames = getChartOptions(chartData.nombresCompletos || [])
-                return (
-                  <div key={pregunta.id || index} className={styles.questionCard}>
-                    <div className={styles.questionHeader}>
-                      <div className={styles.questionNumber}>
-                        Pregunta {index + 1}
+
+          {isLoadingEvaluaciones ? (
+            <div className={styles.loadingState}>
+              <Loader size="medium" variant="spinner" color="#667eea" />
+            </div>
+          ) : acumuladoDeDatosLikertParaGraficos.length > 0 ? (
+            <div
+              key={animationKey}
+              className={
+                is1Column
+                  ? styles.questionsContainer1Column
+                  : is2Columns
+                    ? styles.questionsContainer2Columns
+                    : is3Columns
+                      ? styles.questionsContainer3Columns
+                      : styles.questionsContainer
+              }
+            >
+              {acumuladoDeDatosLikertParaGraficos
+                .sort((a, b) => (a.orden || 0) - (b.orden || 0))
+                .map((pregunta, index) => {
+                  const chartData = procesarDatosParaPregunta(pregunta)
+                  const chartOptionsWithNames = getChartOptions(chartData.nombresCompletos || [])
+                  return (
+                    <div key={pregunta.id || index} className={styles.questionCard}>
+                      <div className={styles.questionHeader}>
+                        <div className={styles.questionNumber}>
+                          Pregunta {index + 1}
+                        </div>
+
+                        <div className={styles.questionId}>
+                          ID: {pregunta.id}
+                        </div>
                       </div>
-                      
-                      <div className={styles.questionId}>
-                        ID: {pregunta.id}
-                      </div>
+
+                      <p className={styles.questionText}>
+                        {pregunta.pregunta}
+                      </p>
+
+                      {/* Gráfico individual para esta pregunta */}
+                      {chartData.labels.length > 0 && (
+                        <div className={styles.questionChart}>
+                          <div className={styles.chartTitle}>
+                            Distribución de Respuestas
+                          </div>
+                          <div className={styles.chartWrapper}>
+                            <Bar data={chartData} options={chartOptionsWithNames} />
+                          </div>
+                        </div>
+                      )}
+
+                      {pregunta.respuesta !== undefined && (
+                        <div className={styles.response}>
+                          <div className={styles.responseLabel}>Respuesta</div>
+                          <div className={styles.responseValue}>{pregunta.respuesta}</div>
+                        </div>
+                      )}
                     </div>
-                    
-                    <p className={styles.questionText}>
-                      {pregunta.pregunta}
-                    </p>
-                    
-                    {/* Gráfico individual para esta pregunta */}
-                    {chartData.labels.length > 0 && (
-                      <div className={styles.questionChart}>
-                        <div className={styles.chartTitle}>
-                          Distribución de Respuestas
-                        </div>
-                        <div className={styles.chartWrapper}>
-                          <Bar data={chartData} options={chartOptionsWithNames} />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {pregunta.respuesta !== undefined && (
-                      <div className={styles.response}>
-                        <div className={styles.responseLabel}>Respuesta</div>
-                        <div className={styles.responseValue}>{pregunta.respuesta}</div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-          </div>
+                  )
+                })}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyStateIcon}>🔍</div>
+              <p className={styles.emptyStateText}>
+                No se encontraron resultados de la prueba para la fecha seleccionada
+              </p>
+            </div>
+          )}
         </>
       ) : (
         <div className={styles.emptyState}>
