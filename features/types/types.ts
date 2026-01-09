@@ -95,13 +95,13 @@ export type AppActions =
   | { type: AppAction.PREGUNTAS_RESPUESTAS; payload: PreguntasRespuestas[] }
   | { type: AppAction.SIZE_PREGUNTAS; payload: number }
   | {
-      type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES;
-      payload: PreguntasRespuestas[];
-    }
+    type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES;
+    payload: PreguntasRespuestas[];
+  }
   | {
-      type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES_INITIAL_VALUE;
-      payload: PreguntasRespuestas[];
-    }
+    type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES_INITIAL_VALUE;
+    payload: PreguntasRespuestas[];
+  }
   | { type: AppAction.DIRECTORES; payload: User[] }
   | { type: AppAction.ESTUDIANTES; payload: Estudiante[] | UserEstudiante[] }
   | { type: AppAction.DOCENTES_DIRECTORES; payload: User[] }
@@ -120,13 +120,13 @@ export type AppActions =
   | { type: AppAction.PSICOLINGUISTICA; payload: Psicolinguistica[] }
   | { type: AppAction.PSICOLINGUISTICA_BY_ID; payload: Psicolinguistica }
   | {
-      type: AppAction.PSICOLINGUISTICA_PREGUNTAS;
-      payload: PsicolinguiticaExamen[];
-    }
+    type: AppAction.PSICOLINGUISTICA_PREGUNTAS;
+    payload: PsicolinguiticaExamen[];
+  }
   | {
-      type: AppAction.PSICOLINGUISTICA_PREGUNTAS_ACTUALIZADAS;
-      payload: PsicolinguiticaExamen[];
-    }
+    type: AppAction.PSICOLINGUISTICA_PREGUNTAS_ACTUALIZADAS;
+    payload: PsicolinguiticaExamen[];
+  }
   | { type: AppAction.USUARIOS_DIRECTORES; payload: User[] }
   | { type: AppAction.WARNING_USUARIO_EXISTE; payload: string }
   | { type: AppAction.DATA_DIRECTOR; payload: User }
@@ -141,14 +141,14 @@ export type AppActions =
   | { type: AppAction.EVALUACION_CURRICULAR; payload: EvaluacionCurricular[] }
   | { type: AppAction.PA_HABILIDAD; payload: EvaluacionHabilidad[] }
   | {
-      type: AppAction.EVALUACION_CURRICULAR_ALTERNATIVA;
-      payload: EvaluacionCurricularAlternativa[];
-    }
+    type: AppAction.EVALUACION_CURRICULAR_ALTERNATIVA;
+    payload: EvaluacionCurricularAlternativa[];
+  }
   | { type: AppAction.EVALUACION_CURRICULAR_BY_ID; payload: EvaluacionCurricularAlternativa }
   | {
-      type: AppAction.ALL_EVALUACIONES_CURRICULARES_DOCENTE;
-      payload: EvaluacionCurricularAlternativa[];
-    }
+    type: AppAction.ALL_EVALUACIONES_CURRICULARES_DOCENTE;
+    payload: EvaluacionCurricularAlternativa[];
+  }
   | { type: AppAction.CARACTERISTICA_CURRICULAR; payload: CaracteristicaCurricular[] }
   | { type: AppAction.ALL_ESPECIALISTAS; payload: User[] }
   | { type: AppAction.REPORT_CURRICULAR_DIRECTOR; payload: DataEstadisticasCurricular[] }
@@ -162,9 +162,9 @@ export type AppActions =
   | { type: AppAction.CURRICULAR_DIRECTOR_DATA_FILTER; payload: User[] }
   | { type: AppAction.ALL_EVALUACIONES_ESPECIALISTA_DIRECTOR; payload: ReporteDocenteIndividual[] }
   | {
-      type: AppAction.DATA_FILTRADA_ESPECIALISTA_DIRECTOR_TABLA;
-      payload: ReporteDocenteIndividual[];
-    }
+    type: AppAction.DATA_FILTRADA_ESPECIALISTA_DIRECTOR_TABLA;
+    payload: ReporteDocenteIndividual[];
+  }
   | { type: AppAction.USUARIOS_BY_ROL; payload: User[] }
   | { type: AppAction.RESULTADO_BUSQUEDA_USUARIO; payload: User }
   | { type: AppAction.LAST_VISIBLE; payload: any }
@@ -253,7 +253,7 @@ export type Evaluaciones = {
   tipoDeEvaluacion?: string;
   nivelYPuntaje?: NivelYPuntaje[];
   usuariosConPermisos?: string[];
-  nivel?:number[]
+  nivel?: number[]
 };
 export type Evaluacion = {
   id?: string;
@@ -326,10 +326,10 @@ export type User = {
   area?: number;
   distrito?: string;
   genero?: string;
-  sexo?:{id?: number, name?: string};
+  sexo?: { id?: number, name?: string };
   celular?: string;
   nivel?: number;
-  edad?: {id?: number, name?: string};
+  edad?: { id?: number, name?: string };
   observacionCurricular?: AnexosCurricularType;
   observacionSeguimientoRetroalimentacion?: {
     [key: string]: AnexosCurricularType;
@@ -466,6 +466,7 @@ export type NivelYPuntaje = {
   min?: number;
   color?: string;
   id?: number;
+  value?: number;
 };
 export type TipoDeEvaluacion = {
   name?: string;
@@ -598,6 +599,15 @@ export type EscalaLikert = {
   total?: number;
 };
 
+export type PieChartData = {
+  id?: number;
+  nivel?: string;
+  color?: string;
+  min?: number;
+  max?: number;
+  count?: number;
+};
+
 export type PreguntasEvaluacionLikert = {
   pregunta?: string;
   orden?: number;
@@ -621,16 +631,18 @@ export type EvaluacionLikert = {
   active?: boolean;
   rol?: number;
   descripcionLink?: string;
+  niveles?: NivelYPuntaje[];
 };
 export type EvaluacionesEscalaLikertUsario = {
   id?: string;
   datosDocente: User;
-  evaluacion?: {  
+  evaluacion?: {
     preguntas?: PreguntasEvaluacionLikert[];
     respuestasCompletas?: boolean;
     totalPreguntas?: number;
   };
   linkDocumentos?: string[];
+  puntaje?: number;
 };
 export type DataUsuarioEvaluacionLikert = {
   datosUsuario?: User;

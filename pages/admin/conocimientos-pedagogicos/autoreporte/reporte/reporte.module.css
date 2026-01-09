@@ -53,6 +53,48 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.pieChartContainer {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem auto;
+  max-width: 500px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e8ecf0;
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.pieChartContainer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #f093fb, #f5576c);
+  border-radius: 12px 12px 0 0;
+}
+
+.pieChartTitle {
+  font-size: 1.1rem;
+  color: #2c3e50;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pieChartWrapper {
+  position: relative;
+  height: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .questionsContainer {
   display: grid;
   gap: 1.5rem;
@@ -86,6 +128,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -97,6 +140,7 @@
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -108,10 +152,12 @@
     opacity: 0;
     transform: translateY(10px) scale(0.98);
   }
+
   50% {
     opacity: 0.5;
     transform: translateY(5px) scale(0.99);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -249,15 +295,41 @@
   border-color: #d1d9e0;
 }
 
-.questionCard:nth-child(1) { animation-delay: 0.1s; }
-.questionCard:nth-child(2) { animation-delay: 0.2s; }
-.questionCard:nth-child(3) { animation-delay: 0.3s; }
-.questionCard:nth-child(4) { animation-delay: 0.4s; }
-.questionCard:nth-child(5) { animation-delay: 0.5s; }
-.questionCard:nth-child(6) { animation-delay: 0.6s; }
-.questionCard:nth-child(7) { animation-delay: 0.7s; }
-.questionCard:nth-child(8) { animation-delay: 0.8s; }
-.questionCard:nth-child(9) { animation-delay: 0.9s; }
+.questionCard:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.questionCard:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.questionCard:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.questionCard:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+.questionCard:nth-child(5) {
+  animation-delay: 0.5s;
+}
+
+.questionCard:nth-child(6) {
+  animation-delay: 0.6s;
+}
+
+.questionCard:nth-child(7) {
+  animation-delay: 0.7s;
+}
+
+.questionCard:nth-child(8) {
+  animation-delay: 0.8s;
+}
+
+.questionCard:nth-child(9) {
+  animation-delay: 0.9s;
+}
 
 
 .questionHeader {
@@ -411,8 +483,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive */
@@ -426,16 +503,16 @@
   .container {
     padding: 1rem;
   }
-  
+
   .title {
     font-size: 2rem;
   }
-  
+
   .chartContainer {
     padding: 1.5rem;
     margin-bottom: 2rem;
   }
-  
+
   .questionsContainer,
   .questionsContainer1Column,
   .questionsContainer2Columns,
@@ -443,31 +520,31 @@
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .questionCard {
     padding: 1.5rem;
   }
-  
+
   .questionHeader {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .chartWrapper {
     height: 250px;
   }
-  
+
   /* Ajustar altura en móviles para vista de 1 columna */
   .questionsContainer1Column .chartWrapper {
     height: 300px;
   }
-  
+
   .columnControls {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .columnSelect {
     min-width: 100%;
   }
@@ -477,35 +554,35 @@
   .container {
     padding: 0.5rem;
   }
-  
+
   .chartContainer {
     padding: 1rem;
     margin-bottom: 1.5rem;
   }
-  
+
   .questionCard {
     padding: 1rem;
   }
-  
+
   .questionChart {
     padding: 0.75rem;
     margin: 1rem 0;
   }
-  
+
   .chartWrapper {
     height: 200px;
   }
-  
+
   /* Ajustar altura en móviles pequeños para vista de 1 columna */
   .questionsContainer1Column .chartWrapper {
     height: 250px;
   }
-  
+
   .chartTitle {
     font-size: 0.8rem;
     margin-bottom: 0.75rem;
   }
-  
+
   .title {
     font-size: 1.75rem;
   }

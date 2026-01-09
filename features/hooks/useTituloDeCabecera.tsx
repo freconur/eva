@@ -17,10 +17,11 @@ import {
   deleteDoc,
   QueryDocumentSnapshot,
   DocumentData,
+  where,
 } from 'firebase/firestore';
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { useEffect, useState, useRef } from 'react';
-import { DataUsuarioEvaluacionLikert, EscalaLikert, EvaluacionesEscalaLikertUsario, EvaluacionLikert, PreguntasEvaluacionLikert, PreguntasEvaluacionLikertConResultado } from '../types/types';
+import { DataUsuarioEvaluacionLikert, EscalaLikert, EvaluacionesEscalaLikertUsario, EvaluacionLikert, PieChartData, PreguntasEvaluacionLikert, PreguntasEvaluacionLikertConResultado } from '../types/types';
 import { AppAction } from '../actions/appAction';
 import { currentYear } from '@/fuctions/dates';
 import * as XLSX from 'xlsx';
@@ -39,6 +40,8 @@ export const useTituloDeCabecera = () => {
   const [acumuladoDeDatosLikertParaGraficos, setAcumuladoDeDatosLikertParaGraficos] = useState<PreguntasEvaluacionLikertConResultado[]>([]);
   const [escalaLikertByUsuario, setEscalaLikertByUsuario] = useState<EvaluacionesEscalaLikertUsario>()
   const [isLoadingEvaluaciones, setIsLoadingEvaluaciones] = useState<boolean>(false)
+  const [isCalculatingScore, setIsCalculatingScore] = useState<boolean>(false)
+  const [resultadoGraficoPie, setResultadoGraficoPie] = useState<PieChartData[]>([])
   // Ref para guardar la referencia del unsubscribe
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
@@ -199,13 +202,14 @@ export const useTituloDeCabecera = () => {
     onSnapshot(pathRef, (docSnap) => {
       if (docSnap.exists()) {
         /* dispatch({ type: AppAction.EVALUACION_ESCALA_LIKERT, payload: docSnap.data() }); */
-        console.log('docSnap.data()', docSnap.data())
-        setEvaluacionEscalaLikert(docSnap.data())
+        console.log('docSnap.data()', { ...docSnap.data(), id: docSnap.id })
+        setEvaluacionEscalaLikert({ ...docSnap.data(), id: docSnap.id })
       }
     });
   }
 
   const updateEvaluacionEscalaLikert = async (id: string, data: EvaluacionLikert) => {
+    console.log('ver detalle', data)
     const pathRef = doc(db, 'evaluaciones-escala-likert', id);
     await updateDoc(pathRef, data);
   }
@@ -299,9 +303,97 @@ export const useTituloDeCabecera = () => {
     }
   }
 
+  const calculoPuntajeDeEvaluacionEscalaLikert = async (data: EvaluacionesEscalaLikertUsario[], evaluacionEscalaLikert: EvaluacionLikert) => {
+    setIsCalculatingScore(true)
+    // Verificar que existan los niveles para calcular
+    if (!evaluacionEscalaLikert?.niveles || evaluacionEscalaLikert.niveles.length === 0) {
+      console.warn('No hay niveles configurados para calcular puntajes')
+      setIsCalculatingScore(false)
+      return
+    }
+
+    if (!evaluacionEscalaLikert.id) {
+      console.warn('No hay ID de evaluación para guardar los puntajes')
+      setIsCalculatingScore(false)
+      return
+    }
+
+    const dataConPuntajes = data.map(usuario => {
+      let puntajeTotal = 0
+
+      if (usuario.evaluacion?.preguntas) {
+        usuario.evaluacion.preguntas.forEach(pregunta => {
+          // Si hay respuesta definida (puede ser 0)
+          if (pregunta.respuesta !== undefined && pregunta.respuesta !== null) {
+            // Buscar el nivel que coincide con la respuesta
+            const nivelCorrespondiente = evaluacionEscalaLikert.niveles?.find(
+              nivel => nivel.id === pregunta.respuesta
+            )
+
+            // Si se encuentra el nivel y tiene valor, sumar al total
+            if (nivelCorrespondiente && typeof nivelCorrespondiente.value === 'number') {
+              puntajeTotal += nivelCorrespondiente.value
+            }
+          }
+        })
+      }
+
+      // Retornar usuario con la nueva propiedad puntaje
+      return {
+        ...usuario,
+        puntaje: puntajeTotal
+      }
+    })
+
+    // Actualizar estado local
+    setEvaluacionesEscalaLikertUsuarios(dataConPuntajes)
+
+    try {
+      // Escritura por lotes (Batch Write)
+      const tamanoLote = 500 // Límite de Firestore es 500 operaciones por batch
+      const lotes = []
+
+      for (let i = 0; i < dataConPuntajes.length; i += tamanoLote) {
+        lotes.push(dataConPuntajes.slice(i, i + tamanoLote))
+      }
+
+      console.log(`Iniciando escritura en masa. Total registros: ${dataConPuntajes.length}. Total lotes: ${lotes.length}`)
+
+      for (let i = 0; i < lotes.length; i++) {
+        const batch = writeBatch(db)
+        const loteActual = lotes[i]
+
+        loteActual.forEach(usuario => {
+          if (usuario.datosDocente?.dni) {
+            // Ruta: /evaluaciones-escala-likert/{evaluacionId}/2025-9/{dni}
+            const docRef = doc(db, 'evaluaciones-escala-likert', evaluacionEscalaLikert.id as string, '2025-9', usuario.datosDocente.dni)
+
+            // Actualizamos solo el puntaje
+            batch.update(docRef, {
+              puntaje: usuario.puntaje
+            })
+          }
+        })
+
+        await batch.commit()
+        console.log(`Lote ${i + 1}/${lotes.length} guardado exitosamente.`)
+      }
+
+      console.log('Todos los puntajes han sido guardados en Firestore.')
+      alert('Puntajes calculados y guardados exitosamente.')
+
+    } catch (error) {
+      console.error('Error al guardar puntajes en masa:', error)
+      alert('Ocurrió un error al guardar los puntajes en base de datos. Ver consola para más detalles.')
+    } finally {
+      setIsCalculatingScore(false)
+    }
+  }
+
+
   const evaluacionEscalaLikertByUsuario = async (id: string, month: number = 9, year: number = currentYear) => {
-    const pathRef = doc(db, `/evaluaciones-escala-likert/${id}/${year}-${month}/`, `${currentUserData.dni}`);
-    console.log(`/evaluaciones-escala-likert/${id}/${year}-${month}/`, `${currentUserData.dni}`)
+    const pathRef = doc(db, `/evaluaciones-escala-likert/${id}/${2025}-${month}/`, `${currentUserData.dni}`);//deberiamos de usar el valore de year que es dinamico ya veremos como lo resolvermos
+    console.log(`/evaluaciones-escala-likert/${id}/${2025}-${month}/`, `${currentUserData.dni}`)
     onSnapshot(pathRef, (docSnap) => {
       if (docSnap.exists()) {
         setEscalaLikertByUsuario(docSnap.data() as EvaluacionesEscalaLikertUsario)
@@ -464,6 +556,69 @@ export const useTituloDeCabecera = () => {
       throw error;
     }
   }
+
+
+  const getDataParaGraficoPie = async (evaluacion: EvaluacionLikert, mesSelected: number, yearSelected: number) => {
+    console.log('evaluacion', evaluacion)
+    console.log('mesSelected', mesSelected)
+    console.log('yearSelected', yearSelected)
+    if (!evaluacion.id || !evaluacion.niveles || evaluacion.niveles.length === 0) {
+      console.warn('Faltan datos de evaluación o niveles para generar gráfico')
+      return []
+    }
+
+    try {
+      const collectionPath = `evaluaciones-escala-likert/${evaluacion.id}/${yearSelected}-${mesSelected}`
+      console.log('Querying collection path:', collectionPath)
+      const collectionRef = collection(db, collectionPath)
+
+      // DEBUG: Contar total de documentos en la colección sin filtros
+      // Esto nos dirá si la colección existe y tiene datos
+      const qTotal = query(collectionRef)
+      const metaSnapshot = await getAggregateFromServer(qTotal, { count: count() })
+      console.log('Total documents in collection (no filters):', metaSnapshot.data().count)
+
+
+
+
+
+      const promises = evaluacion.niveles.map(async (nivel) => {
+        if (typeof nivel.min !== 'number' || typeof nivel.max !== 'number') return null
+
+        // Consulta para contar documentos en el rango del nivel
+        const q = query(
+          collectionRef,
+          where('puntaje', '>=', nivel.min),
+          where('puntaje', '<=', nivel.max)
+        )
+
+        const snapshot = await getAggregateFromServer(q, {
+          count: count()
+        })
+
+        return {
+          id: nivel.id,
+          nivel: nivel.nivel,
+          color: nivel.color,
+          min: nivel.min,
+          max: nivel.max,
+          count: snapshot.data().count
+        }
+      })
+
+      const results = await Promise.all(promises)
+      const validResults = results.filter(r => r !== null)
+
+      console.log('Datos Gráfico Pie:', validResults)
+      setResultadoGraficoPie(validResults)
+      return validResults
+
+    } catch (error) {
+      console.error('Error al obtener datos para gráfico pie:', error)
+      return []
+    }
+  }
+
   return {
     exportarExcelEvaluacionEscalaLikert,
     evaluacionEscalaLikertByUsuario,
@@ -488,6 +643,10 @@ export const useTituloDeCabecera = () => {
     preguntasEscalaLikert,
     evaluacionesEscalaLikertUsuarios,
     acumuladoDeDatosLikertParaGraficos,
-    isLoadingEvaluaciones
+    isLoadingEvaluaciones,
+    calculoPuntajeDeEvaluacionEscalaLikert,
+    isCalculatingScore,
+    getDataParaGraficoPie,
+    resultadoGraficoPie
   };
 };

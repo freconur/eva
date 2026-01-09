@@ -14,8 +14,9 @@ import {
   Title,
   Tooltip,
   Legend,
+  ArcElement,
 } from 'chart.js'
-import { Bar } from 'react-chartjs-2'
+import { Bar, Pie } from 'react-chartjs-2'
 import { PreguntasEvaluacionLikertConResultado, EscalaLikert } from '@/features/types/types'
 
 // Registrar los componentes de Chart.js
@@ -25,7 +26,8 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  ArcElement
 )
 
 const ReporteAutorreporte = () => {
@@ -93,7 +95,11 @@ const ReporteAutorreporte = () => {
     evaluacionesEscalaLikertUsuarios,
     acumuladoDeDatosLikertParaGraficos,
     exportarExcelEvaluacionEscalaLikert,
-    isLoadingEvaluaciones
+    isLoadingEvaluaciones,
+    calculoPuntajeDeEvaluacionEscalaLikert,
+    isCalculatingScore,
+    getDataParaGraficoPie,
+    resultadoGraficoPie
   } = useTituloDeCabecera()
 
 
@@ -295,7 +301,34 @@ const ReporteAutorreporte = () => {
       getEvaluacionesEscalaLikert(`${id}`, evaluacionEscalaLikert, selectedMonth, selectedYear)
     }
   }, [id, selectedMonth, selectedYear, evaluacionEscalaLikert])
-  console.log('selectedMonth', selectedMonth)
+
+  const handleCalculoPuntaje = () => {
+    calculoPuntajeDeEvaluacionEscalaLikert(evaluacionesEscalaLikertUsuarios, evaluacionEscalaLikert)
+    console.log('selectedMonth', selectedMonth)
+    console.log('evaluacionEscalaLikert', evaluacionEscalaLikert)
+    console.log('evaluacionesEscalaLikertUsuarios', evaluacionesEscalaLikertUsuarios)
+  }
+  let rta: any = []
+  useEffect(() => {
+    getDataParaGraficoPie(evaluacionEscalaLikert, selectedMonth, selectedYear)
+
+  }, [evaluacionEscalaLikert, selectedMonth, selectedYear])
+
+  const pieData = useMemo(() => {
+    return {
+      labels: resultadoGraficoPie.map((d) => d.nivel),
+      datasets: [
+        {
+          data: resultadoGraficoPie.map((d) => d.count),
+          backgroundColor: resultadoGraficoPie.map((d) => d.color),
+          borderColor: '#ffffff',
+          borderWidth: 2,
+        },
+      ],
+    }
+  }, [resultadoGraficoPie])
+
+  /* console.log('getDataParaGraficoPie', getDataParaGraficoPie) */
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -338,7 +371,21 @@ const ReporteAutorreporte = () => {
                 </>
               )}
             </button>
-
+            {/* <button
+              onClick={handleCalculoPuntaje}
+              className={styles.exportButton} // Reutilizando estilo del botón de exportar por simplicidad o se puede crear uno nuevo
+              disabled={isCalculatingScore}
+              style={{ marginLeft: '1rem', backgroundColor: '#eab308' }} // Amarillo para diferenciar
+            >
+              {isCalculatingScore ? (
+                <>
+                  <Loader size="small" variant="spinner" color="#ffffff" />
+                  <span>Calculando...</span>
+                </>
+              ) : (
+                <span>Calcular Puntaje</span>
+              )}
+            </button> */}
             {/* Selectores de Mes y Año */}
             <div className={styles.columnSelect}>
               <label htmlFor="month-select" className={styles.columnSelectLabel}>
@@ -392,7 +439,69 @@ const ReporteAutorreporte = () => {
               </select>
             </div>
           </div>
+          {/* justo aqui hay que crear el grafico de pie */}
+          {resultadoGraficoPie.length > 0 && (
+            <div className={styles.pieChartContainer}>
+              <h3 className={styles.pieChartTitle}>Distribución por Niveles</h3>
+              <div className={styles.pieChartWrapper}>
+                <Pie
+                  data={pieData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'bottom',
+                        labels: {
+                          font: {
+                            size: 11,
+                            family: "'Inter', sans-serif"
+                          },
+                          usePointStyle: true,
+                          padding: 20,
+                          generateLabels: (chart) => {
+                            const data = chart.data;
+                            if (data.labels && data.datasets.length) {
+                              return data.labels.map((label, i) => {
+                                const meta = chart.getDatasetMeta(0);
+                                const style = meta.controller.getStyle(i, false);
+                                const value = (chart.data.datasets[0].data[i] as number) || 0;
+                                // @ts-ignore
+                                const total = meta.total;
+                                const percentage = Math.round((value / total) * 100) + '%';
 
+                                return {
+                                  text: `${label}: ${value} (${percentage})`,
+                                  fillStyle: style.backgroundColor,
+                                  strokeStyle: style.borderColor,
+                                  lineWidth: style.borderWidth,
+                                  hidden: isNaN(value) || (meta.data[i] as any).hidden,
+                                  index: i
+                                };
+                              });
+                            }
+                            return [];
+                          }
+                        }
+                      },
+                      tooltip: {
+                        callbacks: {
+                          label: function (context) {
+                            const label = context.label || '';
+                            const value = (context.raw as number) || 0;
+                            // @ts-ignore
+                            const total = (context.chart as any)._metasets[context.datasetIndex].total;
+                            const percentage = Math.round((value / total) * 100) + '%';
+                            return `${label}: ${value} (${percentage})`;
+                          }
+                        }
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          )}
           {isLoadingEvaluaciones ? (
             <div className={styles.loadingState}>
               <Loader size="medium" variant="spinner" color="#667eea" />
