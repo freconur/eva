@@ -1,5 +1,6 @@
 import { useTituloDeCabecera } from '@/features/hooks/useTituloDeCabecera'
 import { currentYear, getAllMonths, currentMonth } from '@/fuctions/dates'
+import { regiones } from '@/fuctions/regiones'
 import { useColumnView } from '@/features/hooks/useColumnView'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState, useMemo } from 'react'
@@ -18,7 +19,7 @@ import {
 } from 'chart.js'
 import { Bar, Pie } from 'react-chartjs-2'
 import { PreguntasEvaluacionLikertConResultado, EscalaLikert } from '@/features/types/types'
-
+/*  */
 // Registrar los componentes de Chart.js
 ChartJS.register(
   CategoryScale,
@@ -40,6 +41,7 @@ const ReporteAutorreporte = () => {
   // Estados para los filtros de fecha
   const [selectedYear, setSelectedYear] = useState<number>(currentYear)
   const [selectedMonth, setSelectedMonth] = useState<number>(9)
+  const [selectedRegion, setSelectedRegion] = useState<number>(0)
 
   // Generar lista de años (desde 2025 hasta año actual)
   const years = useMemo(() => {
@@ -310,9 +312,9 @@ const ReporteAutorreporte = () => {
   }
   let rta: any = []
   useEffect(() => {
-    getDataParaGraficoPie(evaluacionEscalaLikert, selectedMonth, selectedYear)
+    getDataParaGraficoPie(evaluacionEscalaLikert, selectedMonth, selectedYear, selectedRegion)
 
-  }, [evaluacionEscalaLikert, selectedMonth, selectedYear])
+  }, [evaluacionEscalaLikert, selectedMonth, selectedYear, selectedRegion])
 
   const pieData = useMemo(() => {
     return {
@@ -341,102 +343,110 @@ const ReporteAutorreporte = () => {
       {preguntasEscalaLikert.length > 0 ? (
         <>
           <div className={styles.columnControls}>
-            {/* agregar select para escoger el mes y año */}
-            <button
-              onClick={async () => {
-                setIsExporting(true)
-                try {
-                  const result = await exportarExcelEvaluacionEscalaLikert(`${id}`, selectedMonth, selectedYear)
-                  if (!result) {
-                    alert('No hay datos para exportar')
+            <div className={styles.filtersGroup}>
+              {/* Selectores de Mes y Año */}
+              <div className={styles.columnSelect}>
+                <label htmlFor="month-select" className={styles.columnSelectLabel}>
+                  Mes
+                </label>
+                <select
+                  id="month-select"
+                  className={styles.columnSelectElement}
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                >
+                  {months.map((month) => (
+                    <option key={month.id} value={month.id}>
+                      {month.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.columnSelect}>
+                <label htmlFor="year-select" className={styles.columnSelectLabel}>
+                  Año
+                </label>
+                <select
+                  id="year-select"
+                  className={styles.columnSelectElement}
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                >
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.columnSelect}>
+                <label htmlFor="region-select" className={styles.columnSelectLabel}>
+                  Región
+                </label>
+                <select
+                  id="region-select"
+                  className={styles.columnSelectElement}
+                  value={selectedRegion}
+                  onChange={(e) => setSelectedRegion(Number(e.target.value))}
+                >
+                  <option value={0}>Todas</option>
+                  {regiones.map((region) => (
+                    <option key={region.id} value={region.id}>
+                      {region.region}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className={styles.actionsGroup}>
+              <div className={styles.columnSelect}>
+                <label htmlFor="column-select" className={styles.columnSelectLabel}>
+                  Vista
+                </label>
+                <select
+                  id="column-select"
+                  className={styles.columnSelectElement}
+                  value={columnView}
+                  onChange={handleColumnChange}
+                >
+                  <option value="1-column">1 Columna</option>
+                  <option value="2-columns">2 Columnas</option>
+                  <option value="3-columns">3 Columnas</option>
+                </select>
+              </div>
+
+              <button
+                onClick={async () => {
+                  setIsExporting(true)
+                  try {
+                    const result = await exportarExcelEvaluacionEscalaLikert(`${id}`, selectedMonth, selectedYear)
+                    if (!result) {
+                      alert('No hay datos para exportar')
+                    }
+                  } catch (error) {
+                    console.error('Error al exportar:', error)
+                  } finally {
+                    setIsExporting(false)
                   }
-                } catch (error) {
-                  console.error('Error al exportar:', error)
-                } finally {
-                  setIsExporting(false)
-                }
-              }}
-              className={styles.exportButton}
-              disabled={isExporting}
-            >
-              {isExporting ? (
-                <>
-                  <Loader size="small" variant="spinner" color="#ffffff" />
-                  <span>Exportando...</span>
-                </>
-              ) : (
-                <>
-                  <RiFileExcel2Line className={styles.exportIcon} />
-                  <span>Exportar Excel</span>
-                </>
-              )}
-            </button>
-            {/* <button
-              onClick={handleCalculoPuntaje}
-              className={styles.exportButton} // Reutilizando estilo del botón de exportar por simplicidad o se puede crear uno nuevo
-              disabled={isCalculatingScore}
-              style={{ marginLeft: '1rem', backgroundColor: '#eab308' }} // Amarillo para diferenciar
-            >
-              {isCalculatingScore ? (
-                <>
-                  <Loader size="small" variant="spinner" color="#ffffff" />
-                  <span>Calculando...</span>
-                </>
-              ) : (
-                <span>Calcular Puntaje</span>
-              )}
-            </button> */}
-            {/* Selectores de Mes y Año */}
-            <div className={styles.columnSelect}>
-              <label htmlFor="month-select" className={styles.columnSelectLabel}>
-                Mes
-              </label>
-              <select
-                id="month-select"
-                className={styles.columnSelectElement}
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                }}
+                className={styles.exportButton}
+                disabled={isExporting}
               >
-                {months.map((month) => (
-                  <option key={month.id} value={month.id}>
-                    {month.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className={styles.columnSelect}>
-              <label htmlFor="year-select" className={styles.columnSelectLabel}>
-                Año
-              </label>
-              <select
-                id="year-select"
-                className={styles.columnSelectElement}
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-              >
-                {years.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className={styles.columnSelect}>
-              <label htmlFor="column-select" className={styles.columnSelectLabel}>
-                Vista de Columnas
-              </label>
-              <select
-                id="column-select"
-                className={styles.columnSelectElement}
-                value={columnView}
-                onChange={handleColumnChange}
-              >
-                <option value="1-column">1 Columna</option>
-                <option value="2-columns">2 Columnas</option>
-                <option value="3-columns">3 Columnas</option>
-              </select>
+                {isExporting ? (
+                  <>
+                    <Loader size="small" variant="spinner" color="#ffffff" />
+                    <span>Exportando...</span>
+                  </>
+                ) : (
+                  <>
+                    <RiFileExcel2Line className={styles.exportIcon} />
+                    <span>Exportar Excel</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
           {/* justo aqui hay que crear el grafico de pie */}
@@ -454,11 +464,12 @@ const ReporteAutorreporte = () => {
                         position: 'bottom',
                         labels: {
                           font: {
-                            size: 11,
-                            family: "'Inter', sans-serif"
+                            size: 14,
+                            family: "'Inter', sans-serif",
+                            weight: 'bold'
                           },
                           usePointStyle: true,
-                          padding: 20,
+                          padding: 25,
                           generateLabels: (chart) => {
                             const data = chart.data;
                             if (data.labels && data.datasets.length) {

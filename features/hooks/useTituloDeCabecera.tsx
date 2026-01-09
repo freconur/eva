@@ -558,10 +558,11 @@ export const useTituloDeCabecera = () => {
   }
 
 
-  const getDataParaGraficoPie = async (evaluacion: EvaluacionLikert, mesSelected: number, yearSelected: number) => {
+  const getDataParaGraficoPie = async (evaluacion: EvaluacionLikert, mesSelected: number, yearSelected: number, regionId?: number) => {
     console.log('evaluacion', evaluacion)
     console.log('mesSelected', mesSelected)
     console.log('yearSelected', yearSelected)
+    console.log('regionId', regionId)
     if (!evaluacion.id || !evaluacion.niveles || evaluacion.niveles.length === 0) {
       console.warn('Faltan datos de evaluación o niveles para generar gráfico')
       return []
@@ -582,10 +583,50 @@ export const useTituloDeCabecera = () => {
 
 
 
+      // Si hay una región seleccionada, usamos filtrado en cliente para evitar índices compuestos dinámicos
+      if (regionId && regionId > 0) {
+        console.log(`Fetching docs for region ${regionId} using client-side aggregation`)
+        // Consulta simple por región (no requiere índice compuesto)
+        const q = query(collectionRef, where('datosDocente.region', '==', regionId))
+        const snapshot = await getDocs(q)
+
+        // Mapear documentos
+        const docs = snapshot.docs.map(d => d.data())
+
+        // Calcular distribución en memoria
+        const validResults = evaluacion.niveles.map((nivel) => {
+          if (typeof nivel.min !== 'number' || typeof nivel.max !== 'number') return null
+
+          const min = nivel.min
+          const max = nivel.max
+
+          const count = docs.filter((d: any) => {
+            const puntaje = d.puntaje || 0
+            return puntaje >= min && puntaje <= max
+          }).length
+
+          return {
+            id: nivel.id,
+            nivel: nivel.nivel,
+            color: nivel.color,
+            min: nivel.min,
+            max: nivel.max,
+            count: count
+          }
+        }).filter(r => r !== null) as PieChartData[]
+
+        console.log('Datos Gráfico Pie (Cliente):', validResults)
+        setResultadoGraficoPie(validResults)
+        return validResults
+      }
+
+      // Si NO hay región, usamos agregación del servidor (rápida para visión global)
       const promises = evaluacion.niveles.map(async (nivel) => {
         if (typeof nivel.min !== 'number' || typeof nivel.max !== 'number') return null
 
         // Consulta para contar documentos en el rango del nivel
+        // Esta es la query original que funciona sin indices compuestos extraños
+        // porque son queries simples en paralelo, o si hay indices son estandar
         const q = query(
           collectionRef,
           where('puntaje', '>=', nivel.min),
@@ -609,7 +650,7 @@ export const useTituloDeCabecera = () => {
       const results = await Promise.all(promises)
       const validResults = results.filter(r => r !== null)
 
-      console.log('Datos Gráfico Pie:', validResults)
+      console.log('Datos Gráfico Pie (Servidor):', validResults)
       setResultadoGraficoPie(validResults)
       return validResults
 

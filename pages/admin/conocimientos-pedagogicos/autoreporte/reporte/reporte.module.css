@@ -58,7 +58,8 @@
   border-radius: 12px;
   padding: 2rem;
   margin: 2rem auto;
-  max-width: 500px;
+  max-width: 800px;
+  /* Increased from 500px */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   border: 1px solid #e8ecf0;
   position: relative;
@@ -89,7 +90,8 @@
 
 .pieChartWrapper {
   position: relative;
-  height: 300px;
+  height: 450px;
+  /* Increased from 300px */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -166,113 +168,128 @@
 
 .columnControls {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding: 1rem;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+  padding: 1.5rem 2rem;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  border: 1px solid #e8ecf0;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f1f3f4;
+}
+
+.filtersGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.actionsGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
 }
 
 .exportButton {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1.5rem;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 9999px;
+  /* Pill shape */
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
-  text-transform: capitalize;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  min-width: 160px;
+  height: 48px;
+  /* Match height of inputs approximate */
 }
 
 .exportButton:hover {
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
 }
 
 .exportButton:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
 
 .exportButton:disabled {
-  background: #94a3b8;
-  cursor: not-allowed;
+  background: #cbd5e1;
+  cursor: wait;
   transform: none;
   box-shadow: none;
-  opacity: 0.6;
 }
 
 .exportIcon {
-  font-size: 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 1.2rem;
 }
 
 .columnSelect {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
   position: relative;
-  min-width: 200px;
+  min-width: 160px;
 }
 
 .columnSelectLabel {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-left: 0.25rem;
 }
 
 .columnSelectElement {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border: 2px solid #e8ecf0;
-  background: white;
-  border-radius: 8px;
-  cursor: pointer;
+  padding: 0.7rem 2.5rem 0.7rem 1rem;
+  /* Space for arrow */
+  border: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  font-size: 0.95rem;
   font-weight: 500;
-  color: #2c3e50;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #334155;
+  cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  transition: all 0.2s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   background-size: 1rem;
-  padding-right: 2.5rem;
-  animation: slideIn 0.3s ease-out;
+  height: 48px;
 }
 
 .columnSelectElement:hover {
-  border-color: #667eea;
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  background-color: white;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .columnSelectElement:focus {
   outline: none;
   border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  transform: translateY(-1px);
-}
-
-.columnSelectElement:active {
-  transform: translateY(0) scale(0.98);
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
 }
 
 .columnSelectElement option {
-  padding: 0.5rem;
-  color: #2c3e50;
+  color: #1e293b;
+  padding: 8px;
 }
 
 .questionCard {
