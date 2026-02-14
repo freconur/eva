@@ -442,7 +442,7 @@ const DirectorModal = ({ onClose }: Props) => {
                             <p>El archivo excel debe tener las siguientes columnas:</p>
                             <ul>
                                 <li>dni, nombres, apellidos</li>
-                                <li>nivel (ej. "1" o "1,2")</li>
+                                <li>nivel (ej. &quot;1&quot; o &quot;1,2&quot;)</li>
                                 <li>institucion, ugel, distrito</li>
                                 <li>rol directivo, genero, caracteristica curricular, area</li>
                             </ul>
