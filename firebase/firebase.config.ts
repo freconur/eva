@@ -29,40 +29,37 @@ const storage = getStorage(app); // Instancia de Storage
 const FUNCTIONS_TIMEOUT = 570000; // 570 segundos = 9.5 minutos
 
 // Variable para controlar que los emuladores solo se conecten una vez
-/* let emulatorsConnected = false;
+let emulatorsConnected = false;
 
 // --- CONFIGURACIÓN PARA CONECTAR A LOS EMULADORES (¡SOLO EN DESARROLLO!) ---
 // Es CRÍTICO que esta parte del código solo se ejecute cuando estés desarrollando localmente.
-// Una forma común es verificar el entorno (process.env.NODE_ENV) o el hostname.
 
 // Verificar si estamos en el navegador y en desarrollo
 const isClient = typeof window !== 'undefined';
 const isDevelopment = process.env.NODE_ENV === 'development';
-const isLocalhost = isClient && window.location.hostname === 'localhost';
+const isLocalhost = isClient && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 if ((isDevelopment || isLocalhost) && !emulatorsConnected && isClient) {
   console.log('--- CONECTANDO LA APLICACIÓN A LOS EMULADORES DE FIREBASE ---');
 
   try {
     // Conecta Firestore al emulador
-    // El puerto por defecto para Firestore es 8080 (no está en tu salida, pero es el estándar)
     connectFirestoreEmulator(db, 'localhost', 8080);
 
     // Conecta Cloud Functions al emulador
-    // Tu salida indica 'Functions | 127.0.0.1:5001', así que usamos 5001
     connectFunctionsEmulator(functions, 'localhost', 5001);
 
-    // Conecta Authentication al emulador (si lo usas)
-    // El puerto por defecto para Auth es 9099 (no está en tu salida, pero es el estándar)
+    // Conecta Authentication al emulador
     connectAuthEmulator(auth, 'http://localhost:9099');
 
     emulatorsConnected = true;
     console.log('Emuladores conectados exitosamente');
-    
+
   } catch (error) {
     console.warn('Los emuladores ya están conectados o hay un error:', error);
   }
-} */
+}
+
 // -------------------------------------------------------------------------
 
 // Exporta las instancias de Firebase para usarlas en tu aplicación

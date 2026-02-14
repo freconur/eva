@@ -1,7 +1,7 @@
 import { User } from '@/features/types/types';
 import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom';
-import { regionTexto, gradosDeColegio, sectionByGrade,genero,area, nivelInstitucion } from '@/fuctions/regiones';
+import { regionTexto, gradosDeColegio, sectionByGrade, genero, area, nivelInstitucion } from '@/fuctions/regiones';
 import styles from './styles.module.css';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular';
@@ -18,25 +18,25 @@ interface UserWithCaracteristica extends Omit<User, 'nivelDeInstitucion'> {
   secciones?: number[];
   area?: number;
   distrito?: string;
-  nivelDeInstitucion?: number;
+  nivelDeInstitucion?: number[];
 }
 
 const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
   // Inicializar nivelDeInstitucion basado en dataDocente.nivel
-  const getInitialNivelInstitucion = (): number | undefined => {
-    // Si existe dataDocente.nivelDeInstitucion como número único
-    if (dataDocente.nivelDeInstitucion !== undefined && typeof dataDocente.nivelDeInstitucion === 'number') {
+  const getInitialNivelInstitucion = (): number[] => {
+    // Si existe dataDocente.nivelDeInstitucion como array
+    if (dataDocente.nivelDeInstitucion && Array.isArray(dataDocente.nivelDeInstitucion)) {
       return dataDocente.nivelDeInstitucion;
     }
-    // Si existe dataDocente.nivelDeInstitucion como array, tomar el primer valor
-    if (dataDocente.nivelDeInstitucion && Array.isArray(dataDocente.nivelDeInstitucion) && dataDocente.nivelDeInstitucion.length > 0) {
-      return dataDocente.nivelDeInstitucion[0];
+    // Si existe dataDocente.nivelDeInstitucion como número único (legacy)
+    if (dataDocente.nivelDeInstitucion !== undefined && typeof dataDocente.nivelDeInstitucion === 'number') {
+      return [dataDocente.nivelDeInstitucion];
     }
     // Si existe dataDocente.nivel (número único)
     if (dataDocente.nivel !== undefined && dataDocente.nivel !== null) {
-      return dataDocente.nivel;
+      return [dataDocente.nivel];
     }
-    return undefined;
+    return [];
   };
 
   const [formData, setFormData] = useState<UserWithCaracteristica>({
@@ -64,6 +64,7 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
 
   const { updateDocenteParaCoberturaCurricular } = useEvaluacionCurricular();
   const { getCaracteristicaCurricular, caracteristicaCurricular } = useOptions();
+  const { currentUserData } = useGlobalContext();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -76,39 +77,66 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, checked } = e.target;
     const numericValue = Number(value);
-    
+
     setFormData(prev => {
       const currentArray = prev[name as keyof UserWithCaracteristica] as number[] || [];
       const newArray = checked
         ? [...currentArray, numericValue]
         : currentArray.filter(item => item !== numericValue);
-      
-      return {
+
+      let updatedData = {
         ...prev,
         [name]: newArray
       };
+
+      // Cascada de limpieza
+      if (name === 'nivelDeInstitucion') {
+        if (newArray.length === 0) {
+          updatedData.grados = [];
+          updatedData.secciones = [];
+        } else {
+          // Filtrar grados que ya no corresponden a los niveles seleccionados
+          updatedData.grados = (prev.grados || []).filter(gradoId => {
+            const gradoObj = gradosDeColegio.find(g => g.id === gradoId);
+            if (!gradoObj) return false;
+            const isPrimary = Number(gradoObj.nivel) === 1 || (Number(gradoObj.id) >= 1 && Number(gradoObj.id) <= 6);
+            const isSecondary = Number(gradoObj.nivel) === 2 || (Number(gradoObj.id) >= 7 && Number(gradoObj.id) <= 11);
+            if (newArray.includes(1) && isPrimary) return true;
+            if (newArray.includes(2) && isSecondary) return true;
+            return false;
+          });
+        }
+      }
+
+      if (name === 'grados') {
+        if (newArray.length === 0) {
+          updatedData.secciones = [];
+        }
+      }
+
+      return updatedData;
     });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('formData',formData);
+    console.log('formData', formData);
     // Convertir nivelDeInstitucion de number a number[] para cumplir con el tipo User
     const dataToSubmit: User = {
       ...formData,
-      nivel: (formData.nivelDeInstitucion) !== undefined 
-        ? Number(formData.nivelDeInstitucion)
+      area: currentUserData?.area,
+      distrito: currentUserData?.distrito,
+      nivel: (formData.nivelDeInstitucion && formData.nivelDeInstitucion.length > 0)
+        ? formData.nivelDeInstitucion[0]
         : undefined,
-      nivelDeInstitucion: formData.nivelDeInstitucion !== undefined 
-        ? [formData.nivelDeInstitucion] 
-        : undefined
+      nivelDeInstitucion: formData.nivelDeInstitucion
     };
-    console.log('dataToSubmit',dataToSubmit)
+    console.log('dataToSubmit', dataToSubmit)
     updateDocenteParaCoberturaCurricular(`${dataDocente.dni}`, dataToSubmit, dataDocente);
     onClose();
   };
-  console.log('dataDocente',dataDocente)
-  console.log('caracteristicaCurricular',caracteristicaCurricular)
+  console.log('dataDocente', dataDocente)
+  console.log('caracteristicaCurricular', caracteristicaCurricular)
   useEffect(() => {
     getCaracteristicaCurricular();
   }, []);
@@ -200,24 +228,7 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
                 </select>
               </div>
             )}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Área</label>
-              <div className={styles.radioGroup}>
-                {area.map((item) => (
-                  <label key={item.id} className={styles.radioLabel}>
-                    <input
-                      type="radio"
-                      name="area"
-                      value={item.id}
-                      checked={`${formData.area}` === `${item.id}`}
-                      onChange={handleChange}
-                      className={styles.radio}
-                    />
-                    {item.name}
-                  </label>
-                ))}
-              </div>
-            </div>
+            {/* Area is inherited from director */}
             <div className={styles.formGroup}>
               <label className={styles.label}>Género</label>
               <div className={styles.radioGroup}>
@@ -255,79 +266,79 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
               />
             </div>
             <div className={styles.formGroup}>
-              <label className={styles.label}>Característica Curricular</label>
-              <select
-                name="caracteristicaCurricular"
-                value={formData.caracteristicaCurricular || ''}
-                onChange={handleChange}
-                className={styles.input}
-              >
-                <option>Seleccione una característica</option>
-                {caracteristicaCurricular?.map((item, index) => (
-                  <option key={item.id} value={item.id}>
-                    {/* <option key="default-caracteristica" value={0}>Seleccione una característica</option>
-                {caracteristicaCurricular?.map((item) => (
-                  <option key={`caracteristica-${item.id}`} value={item.id}> */}
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className={styles.formGroup}>
               <label className={styles.label}>Nivel de Institución</label>
-              <div className={styles.radioGroup}>
-                {nivelInstitucion.map((nivel) => (
-                  <label key={nivel.id} className={styles.radioLabel}>
-                    <input
-                      type="radio"
-                      name="nivelDeInstitucion"
-                      value={nivel.id}
-                      checked={`${formData.nivelDeInstitucion}` === `${nivel.id}`}
-                      onChange={handleChange}
-                      disabled={nivel.id === 0}
-                      className={styles.radio}
-                    />
-                    {nivel.name.charAt(0).toUpperCase() + nivel.name.slice(1)}
-                  </label>
-                ))}
+              <div className={styles.chipGroup}>
+                {nivelInstitucion
+                  .filter(nivel => currentUserData.nivelDeInstitucion?.includes(nivel.id))
+                  .map((nivel) => (
+                    <label key={nivel.id} className={styles.chip}>
+                      <input
+                        type="checkbox"
+                        name="nivelDeInstitucion"
+                        value={nivel.id}
+                        checked={formData.nivelDeInstitucion?.includes(nivel.id)}
+                        onChange={handleCheckboxChange}
+                        disabled={nivel.id === 0}
+                        className={styles.chipInput}
+                      />
+                      <span className={styles.chipLabel}>{nivel.name.charAt(0).toUpperCase() + nivel.name.slice(1)}</span>
+                    </label>
+                  ))}
               </div>
             </div>
-            <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-              <label className={styles.label}>Grados</label>
-              <div className={styles.checkboxGroup}>
-                {gradosDeColegio.map((grado, index) => (
-                  <label key={index + 1} className={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      name="grados"
-                      value={grado.id}
-                      checked={formData.grados?.includes(grado.id)}
-                      onChange={handleCheckboxChange}
-                      className={styles.checkbox}
-                    />
-                    <span>{grado.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-              <label className={styles.label}>Secciones</label>
-              <div className={styles.checkboxGroup}>
-                {sectionByGrade.map((seccion) => (
-                  <label key={seccion.id} className={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      name="secciones"
-                      value={seccion.id}
-                      checked={formData.secciones?.includes(seccion.id)}
-                      onChange={handleCheckboxChange}
-                      className={styles.checkbox}
-                    />
-                    <span>{seccion.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+            {formData.rol !== 2 && (
+              <>
+                {formData.nivelDeInstitucion && formData.nivelDeInstitucion.length > 0 && (
+                  <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+                    <label className={styles.label}>Grados</label>
+                    <div className={styles.chipGroup}>
+                      {gradosDeColegio
+                        .filter((grado) => {
+                          const isPrimary = Number(grado.nivel) === 1 || (Number(grado.id) >= 1 && Number(grado.id) <= 6);
+                          const isSecondary = Number(grado.nivel) === 2 || (Number(grado.id) >= 7 && Number(grado.id) <= 11);
+                          if (formData.nivelDeInstitucion?.includes(1) && isPrimary) return true;
+                          if (formData.nivelDeInstitucion?.includes(2) && isSecondary) return true;
+                          return false;
+                        })
+                        .map((grado, index) => (
+                          <label key={index + 1} className={styles.chip}>
+                            <input
+                              type="checkbox"
+                              name="grados"
+                              value={grado.id}
+                              checked={formData.grados?.includes(grado.id)}
+                              onChange={handleCheckboxChange}
+                              className={styles.chipInput}
+                            />
+                            <span className={styles.chipLabel}>{grado.name}</span>
+                          </label>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {formData.grados && formData.grados.length > 0 && (
+                  <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+                    <label className={styles.label}>Secciones</label>
+                    <div className={styles.chipGroup}>
+                      {sectionByGrade.map((seccion) => (
+                        <label key={seccion.id} className={styles.chip}>
+                          <input
+                            type="checkbox"
+                            name="secciones"
+                            value={seccion.id}
+                            checked={formData.secciones?.includes(seccion.id)}
+                            onChange={handleCheckboxChange}
+                            className={styles.chipInput}
+                          />
+                          <span className={styles.chipLabel}>{seccion.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
           <div className={styles.formFooter}>
             <button

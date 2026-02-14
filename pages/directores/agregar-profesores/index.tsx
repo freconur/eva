@@ -1,273 +1,62 @@
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
-import React, { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
-import { RiLoader4Line } from 'react-icons/ri'
-import { gradosDeColegio, sectionByGrade, genero } from '@/fuctions/regiones'
+import React, { useEffect, useState } from 'react'
+import { RiAddLine } from 'react-icons/ri'
 import styles from './styles.module.css'
 import { useDirectores } from '@/features/hooks/useDirectores'
 import UsuariosByRol from '@/components/usuariosByRol'
-import { User } from '@/features/types/types'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
-
-interface FormData {
-  nombres: string;
-  apellidos: string;
-  dni: string;
-  grados: number[];
-  secciones: number[];
-  genero: string;
-}
+import DocenteModal from '@/components/modals/DocenteModal'
 
 const AgregarDirectores = () => {
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>()
-  const { getUserData, crearNuevoDocente } = useUsuario()
-  const { currentUserData, loaderPages, warningUsuarioExiste, usuariosByRol, grados } = useGlobalContext()
+  const [showModal, setShowModal] = useState(false)
+  const { getUserData } = useUsuario()
+  const { currentUserData, usuariosByRol } = useGlobalContext()
+  const { getDocentesByDniDirector } = useDirectores()
+  const { getGrades } = useAgregarEvaluaciones()
 
   useEffect(() => {
     getUserData()
   }, [currentUserData.dni])
 
-  const handleAgregarDirector = handleSubmit((data) => {
-    // Función para determinar el nivel basado en el grado
-    const getNivelFromGrado = (grado: number) => {
-      if (grado >= 1 && grado <= 6) return 1; // Primaria
-      if (grado >= 7 && grado <= 11) return 2; // Secundaria
-      return 1; // Por defecto primaria
-    }
-
-    const dataConvertida = {
-      ...data,
-      grados: data.grados.map(grado => Number(grado)),
-      secciones: data.secciones.map(seccion => Number(seccion)),
-      // Agregar nivel basado en el primer grado seleccionado
-      nivel: data.grados.length > 0 ? getNivelFromGrado(Number(data.grados[0])) : 1
-    }
-    console.log("data", dataConvertida)
-    crearNuevoDocente({ 
-      ...dataConvertida,
-      perfil: { rol: 3, nombre: "docente" } 
-    })
-    reset()
-  })
-const { getDocentesByDniDirector, gettAllProfesores, fixedgrado } = useDirectores()
-const {getGrades} = useAgregarEvaluaciones()
   useEffect(() => {
-    getDocentesByDniDirector(`${currentUserData.dni}`)
-  },[currentUserData.dni])
-useEffect(() => {
-  getGrades()
-},[])
+    if (currentUserData.dni) {
+      getDocentesByDniDirector(`${currentUserData.dni}`)
+    }
+  }, [currentUserData.dni])
+
+  useEffect(() => {
+    getGrades()
+  }, [])
 
   return (
     <div className={styles.container}>
-      
-      <UsuariosByRol  usuariosByRol={usuariosByRol}/>
-      <div className={styles.formContainer}>
-        {loaderPages ? (
-          <div className={styles.loaderContainer}>
-            <div className={styles.loader}>
-              <RiLoader4Line className="animate-spin text-3xl" />
-              <span className={styles.loaderText}>...creando usuario docente</span>
-            </div>
-          </div>
-        ) : (
-          <>
-            <h1 className={styles.title}>
-              Registrar Profesor
-            </h1>
-            <form onSubmit={handleAgregarDirector} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label className={styles.label}>
-                  Nombres del docente:
-                </label>
-                <input
-                  {...register("nombres", {
-                    required: { value: true, message: "Los nombres son requeridos" },
-                    minLength: { value: 2, message: "El nombre debe tener un mínimo de 2 caracteres" },
-                    maxLength: { value: 100, message: "El nombre debe tener un máximo de 100 caracteres" },
-                    pattern: { value: /^[A-Za-zÁáÉéÍíÓóÚúÑñ\s]+$/, message: "Solo se permiten letras y espacios" }
-                  })}
-                  className={styles.input}
-                  type="text"
-                  placeholder="Ingrese los nombres del docente"
-                />
-                {errors.nombres && (
-                  <span className={styles.error}>{errors.nombres.message}</span>
-                )}
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label}>
-                  Apellidos del docente:
-                </label>
-                <input
-                  {...register("apellidos", {
-                    required: { value: true, message: "Los apellidos son requeridos" },
-                    minLength: { value: 3, message: "Los apellidos deben tener un mínimo de 3 caracteres" },
-                    maxLength: { value: 40, message: "Los apellidos deben tener un máximo de 40 caracteres" },
-                    pattern: { value: /^[A-Za-zÁáÉéÍíÓóÚúÑñ\s]+$/, message: "Solo se permiten letras y espacios" }
-                  })}
-                  className={styles.input}
-                  type="text"
-                  placeholder="Ingrese los apellidos del docente"
-                />
-                {errors.apellidos && (
-                  <span className={styles.error}>{errors.apellidos.message}</span>
-                )}
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label}>
-                  DNI:
-                </label>
-                <input
-                  {...register("dni", {
-                    required: { value: true, message: "El DNI es requerido" },
-                    minLength: { value: 8, message: "El DNI debe tener exactamente 8 dígitos" },
-                    maxLength: { value: 8, message: "El DNI debe tener exactamente 8 dígitos" },
-                    pattern: { 
-                      value: /^[0-9]{8}$/, 
-                      message: "El DNI debe contener exactamente 8 dígitos numéricos" 
-                    },
-                    validate: {
-                      exactLength: (value) => value.length === 8 || "El DNI debe tener exactamente 8 dígitos",
-                      onlyNumbers: (value) => /^[0-9]+$/.test(value) || "Solo se permiten números"
-                    }
-                  })}
-                  className={styles.input}
-                  type="text"
-                  placeholder="Ingrese el DNI del docente (8 dígitos)"
-                  maxLength={8}
-                  onKeyPress={(e) => {
-                    // Solo permitir números
-                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab') {
-                      e.preventDefault();
-                    }
-                  }}
-                  onInput={(e) => {
-                    // Limitar a 8 caracteres y solo números
-                    const target = e.target as HTMLInputElement;
-                    target.value = target.value.replace(/[^0-9]/g, '').slice(0, 8);
-                  }}
-                />
-                {errors.dni && (
-                  <span className={styles.error}>{errors.dni.message}</span>
-                )}
-              </div>
-
-              <div className={styles.formRow}>
-                <div className={styles.formColumn}>
-                  <label className={styles.label}>
-                    Grado:
-                  </label>
-                  <div className={styles.checkboxGroup}>
-                    {grados
-                      .filter((grado) => {
-                        // Si el nivel de institución es 2 (secundaria), solo mostrar grados 7-11
-                        if (currentUserData.nivelDeInstitucion?.includes(2)) {
-                          return Number(grado.grado) >= 7 && Number(grado.grado) <= 11;
-                        }
-                        // Si el nivel de institución es 1 (primaria), solo mostrar grados 1-6
-                        if (currentUserData.nivelDeInstitucion?.includes(1)) {
-                          return Number(grado.grado) >= 1 && Number(grado.grado) <= 6;
-                        }
-                        // Si no existe nivelDeInstitucion o no tiene la propiedad, mostrar solo nivel 1 (primaria)
-                        if (!currentUserData.nivelDeInstitucion || currentUserData.nivelDeInstitucion.length === 0) {
-                          return Number(grado.grado) >= 1 && Number(grado.grado) <= 6;
-                        }
-                        // Si no hay nivel específico, mostrar todos los grados
-                        return true;
-                      })
-                      .map((grado) => (
-                        <div key={grado.id} className={styles.checkboxItem}>
-                          <input
-                            type="checkbox"
-                            id={`grado-${grado.id}`}
-                            value={Number(grado.id)}
-                            {...register("grados", { 
-                              required: { value: true, message: "El grado es requerido" }
-                            })}
-                            className={styles.checkbox}
-                          />
-                          <label htmlFor={`grado-${grado.id}`} className={styles.checkboxLabel}>
-                            {grado.nombre}
-                          </label>
-                        </div>
-                      ))}
-                  </div>
-                  {errors.grados && (
-                    <span className={styles.error}>{errors.grados.message}</span>
-                  )}
-                </div>
-
-                <div className={styles.formColumn}>
-                  <label className={styles.label}>
-                    Sección:
-                  </label>
-                  <div className={styles.checkboxGroup}>
-                    {sectionByGrade.map((seccion) => (
-                      <div key={seccion.id} className={styles.checkboxItem}>
-                        <input
-                          type="checkbox"
-                          id={`seccion-${seccion.id}`}
-                          value={Number(seccion.id)}
-                          {...register("secciones", { 
-                            required: { value: true, message: "La sección es requerida" }
-                          })}
-                          className={styles.checkbox}
-                        />
-                        <label htmlFor={`seccion-${seccion.id}`} className={styles.checkboxLabel}>
-                          {seccion.name}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                  {errors.secciones && (
-                    <span className={styles.error}>{errors.secciones.message}</span>
-                  )}
-                </div>
-
-                <div className={styles.formColumn}>
-                  <label className={styles.label}>
-                    Género:
-                  </label>
-                  <select
-                    {...register("genero", { 
-                      required: { value: true, message: "El género es requerido" }
-                    })}
-                    className={styles.select}
-                  >
-                    <option value="">Seleccione género</option>
-                    {genero.map((gen) => (
-                      <option key={gen.id} value={gen.id}>
-                        {gen.name}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.genero && (
-                    <span className={styles.error}>{errors.genero.message}</span>
-                  )}
-                </div>
-              </div>
-
-              {warningUsuarioExiste?.length > 0 && (
-                <div className={styles.warning}>
-                  <p>{warningUsuarioExiste}</p>
-                </div>
-              )}
-
-              <button 
-                type="submit"
-                className={styles.button}
-              >
-                Registrar
-              </button>
-            </form>
-          </>
-        )}
+      <div className={styles.header}>
+        <div className={styles.headerInfo}>
+          <h1 className={styles.pageTitle}>Gestión de Profesores</h1>
+          <p className={styles.pageSubtitle}>Administra y registra a los docentes de tu institución</p>
+        </div>
+        <button
+          className={styles.addBtn}
+          onClick={() => setShowModal(true)}
+        >
+          <RiAddLine size={24} />
+          <span>Registrar Profesor</span>
+        </button>
       </div>
+
+      <div className={styles.mainContent}>
+        <UsuariosByRol usuariosByRol={usuariosByRol} />
+      </div>
+
+      <div id="portal-modal" />
+
+      {showModal && (
+        <DocenteModal
+          onClose={() => setShowModal(false)}
+        />
+      )}
     </div>
   )
 }

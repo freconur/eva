@@ -300,3 +300,5 @@ migrations/
 deploy/
 deployment/
 *.deploy
+latest-db-export/
+latest-subset-export/

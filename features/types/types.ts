@@ -347,6 +347,7 @@ export type User = {
   observacionesSeguimientoRetroalimentacion?: string;
   linkDocumentos?: string;
   nivelDeInstitucion?: number[];
+  dniEspecialistaRegional?: string;
 };
 
 export type ConocimientoPedagogico = {

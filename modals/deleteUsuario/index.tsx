@@ -24,19 +24,32 @@ const DeleteUsuario = ({ idUsuario, handleShowModalDelete }: Props) => {
     container = document.getElementById("portal-modal");
   }
 
-  const handleDeleteEvaluacion = () => {
-    deleteUsuarioById(idUsuario)
-  }
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDeleteEvaluacion = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await deleteUsuarioById(idUsuario);
+      handleShowModalDelete();
+    } catch (err: any) {
+      console.error("Error en handleDeleteEvaluacion:", err);
+      setError(err.message || "Parece que algo falló, inténtalo después 🤯");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   console.log('idUsuario', idUsuario)
   return container
     ? createPortal(
       <div className={styles.containerModal}>
         <div className={styles.containerSale}>
-          {loaderSalvarPregunta ? (
+          {loading || loaderSalvarPregunta ? (
             <div className={styles.loaderContainer}>
               <RiLoader4Line className={styles.loaderIcon} />
-              <span className={styles.loaderText}>...borrando evaluación</span>
+              <span className={styles.loaderText}>...borrando usuario</span>
             </div>
           ) : (
             <>
@@ -48,9 +61,10 @@ const DeleteUsuario = ({ idUsuario, handleShowModalDelete }: Props) => {
                   <p className={styles.advertenciaEliminar}>
                     Esta acción no se puede deshacer y el usuario se eliminará para siempre. Si estas seguro, dale a continuar
                   </p>
+                  {error && <p className={styles.errorText}>{error}</p>}
                   <div className={styles.buttonContainer}>
-                    <button onClick={handleShowModalDelete} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
-                    <button onClick={() => { handleDeleteEvaluacion(); handleShowModalDelete(); setReValidar(false) }} className={styles.buttonDelete}>CONTINUAR</button>
+                    <button onClick={handleShowModalDelete} className={styles.buttonCrearEvaluacion} disabled={loading}>CANCELAR</button>
+                    <button onClick={handleDeleteEvaluacion} className={styles.buttonDelete} disabled={loading}>CONTINUAR</button>
                   </div>
                 </div>
               ) : (

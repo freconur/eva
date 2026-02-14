@@ -12,8 +12,8 @@ async function createAdminUser() {
 
 
     const userRecord = await admin.auth().createUser({
-        uid: '01304940',
-        email: '01304940@eva.com',
+        uid: '00489498',
+        email: '00489498@eva.com',
         password: '123456',
         displayName: 'admin',
         emailVerified: true, // Ideal para desarrollo, evita la necesidad de verificación por email

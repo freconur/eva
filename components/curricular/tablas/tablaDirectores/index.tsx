@@ -47,33 +47,7 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 		}
 	}
 
-	const handleNext = async () => {
-		setIsLoading(true)
-		try {
-			const hasMore = getNextUsuariosEspecialista(lastVisible, rol)
-			if (!hasMore) {
-				// Aquí podrías mostrar un mensaje de que no hay más registros
-			}
-		} catch (error) {
-			console.error('Error al cargar más usuarios:', error)
-		} finally {
-			setIsLoading(false)
-		}
-	}
 
-	const handlePrevious = async () => {
-		setIsLoading(true)
-		try {
-			const hasPrevious = await getPreviousUsuariosEspecialista(lastVisible, rol)
-			if (!hasPrevious) {
-				// Aquí podrías mostrar un mensaje de que no hay registros anteriores
-			}
-		} catch (error) {
-			console.error('Error al cargar usuarios anteriores:', error)
-		} finally {
-			setIsLoading(false)
-		}
-	}
 
 	return (
 		<div className={styles.tableSection}>
@@ -162,22 +136,6 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 					}
 				</tbody>
 			</table>
-			<div className={styles.paginationButtons}>
-				<button
-					onClick={handlePrevious}
-					className={styles.paginationButton}
-					disabled={isLoading}
-				>
-					{isLoading ? 'Cargando...' : 'Anterior'}
-				</button>
-				<button
-					onClick={handleNext}
-					className={styles.paginationButton}
-					disabled={isLoading}
-				>
-					{isLoading ? 'Cargando...' : 'Siguiente'}
-				</button>
-			</div>
 		</div>
 	)
 }

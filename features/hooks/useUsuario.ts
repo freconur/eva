@@ -20,7 +20,7 @@ import {
   query,
   getFirestore,
   doc,
-  getDoc, 
+  getDoc,
   setDoc,
   collection,
   getDocs,
@@ -110,6 +110,8 @@ const useUsuario = () => {
           nivelDeInstitucion: user.data().nivelDeInstitucion || [],
           nivel: user.data().nivel || 0,
           nivelesInstitucion: user.data().nivelesInstitucion || [],
+          area: user.data().area,
+          distrito: user.data().distrito || '',
         },
       });
     } else {
@@ -202,177 +204,94 @@ const useUsuario = () => {
     }
   };
 
-  const createNewEspecialista = (data: User) => {
+  const createNewEspecialista = async (data: User) => {
     console.log('data', data)
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
-      if (currentUserData.rol === 4 || currentUserData.rol === 5) {
-        axios
-          .post(`${URL_API}crear-director`, {
-            email: `${data.dni}@competencelab.com`,
-            password: `${data.dni}`,
-            dni: `${data.dni}`,
-          })
-          .then(async (res) => {
-            console.log('res', res);
-            if(currentUserData.rol === 4) {
-              await setDoc(doc(db, 'usuarios', `${data.dni}`), {
-                dni: `${data.dni}`,
-                // institucion: `${data.institucion}`,
-                perfil: data.perfil,
-                rol: data.perfil?.rol,
-                /* modular: data.modular, */
-                nombres: data.nombres,
-                apellidos: data.apellidos,
-                region: Number(data.region),
-                tipoEspecialista: data.tipoEspecialista,
-                genero: data.genero,
-                nivelDeInstitucion: data.nivelDeInstitucion,
-              });
-            }
-            if(currentUserData.rol === 5) {
-              await setDoc(doc(db, 'usuarios', `${data.dni}`), {
-                dni: `${data.dni}`,
-                // institucion: `${data.institucion}`,
-                perfil: data.perfil,
-                rol: data.perfil?.rol,
-                /* modular: data.modular, */
-                nombres: data.nombres,
-                apellidos: data.apellidos,
-                region: Number(data.region),
-                tipoEspecialista: data.tipoEspecialista,
-                genero: data.genero,
-                nivelDeInstitucion: data.nivelDeInstitucion,
-                dniEspecialistaRegional: currentUserData.dni,
-              });
-            }
-          })
-          .then((res) => {
-            dispatch({ type: AppAction.LOADER_PAGES, payload: false });
-          });
+      const { functions } = await import('@/firebase/firebase.config');
+      const { httpsCallable } = await import('firebase/functions');
+      const crearUsuarioFn = httpsCallable(functions, 'crearUsuario');
+
+      const result = await crearUsuarioFn({
+        email: `${data.dni}@competencelab.com`,
+        password: `${data.dni}`,
+        dni: `${data.dni}`,
+        rol: data.perfil?.rol || 4, // Rol de especialista
+        data: {
+          ...data,
+          dniEspecialistaRegional: currentUserData.rol === 5 ? currentUserData.dni : undefined,
+        }
+      });
+
+      const resData = result.data as any;
+      if (resData.exists === true) {
+        // Podrías manejar el warning aquí si fuera necesario
       }
+
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
     } catch (error) {
       console.log('error', error);
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
     }
   };
-  const createNewDirector = (data: User) => {
+
+  const createNewDirector = async (data: User): Promise<{ success: boolean; exists?: boolean; message?: string }> => {
     console.log('data', data);
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
-      if (currentUserData.perfil?.rol === 1) {
-        console.log('agregando director');
-        try {
-          axios
-            .post(`${URL_API}crear-director`, {
-              email: `${data.dni}@competencelab.com`,
-              password: `${data.dni}`,
-              dni: `${data.dni}`,
-              rol: currentUserData.perfil?.rol,
-              institucion: `${data.institucion}`,
-              perfil: data.perfil,
-              nombres: `${data.nombres}`,
-              apellidos: `${data.apellidos}`,
-            })
-            .then(async (res) => {
-              if (res.data.exists === true) {
-                console.log('ya existe el usuario');
-                dispatch({
-                  type: AppAction.WARNING_USUARIO_EXISTE,
-                  payload: `${data.dni} ${res.data.warning}`,
-                });
-                dispatch({ type: AppAction.LOADER_PAGES, payload: false });
-              } else {
-                console.log('no existe se creara el usuario');
-                const userData: any = {
-                  dni: `${data.dni}`,
-                  institucion: `${data.institucion}`,
-                  perfil: data.perfil,
-                  rol: data.perfil?.rol,
-                  nombres: data.nombres,
-                  apellidos: data.apellidos,
-                  region: Number(data.region),
-                  nivelDeInstitucion: data.nivelDeInstitucion,
-                };
+      const { functions } = await import('@/firebase/firebase.config');
+      const { httpsCallable } = await import('firebase/functions');
+      const crearUsuarioFn = httpsCallable(functions, 'crearUsuario');
 
-                // Solo agregar campos opcionales si no son undefined o null
-                if (data.genero !== undefined && data.genero !== null) {
-                  userData.genero = data.genero;
-                }
-                if (data.distrito !== undefined && data.distrito !== null) {
-                  userData.distrito = data.distrito;
-                }
-                if (data.rolDirectivo !== undefined && data.rolDirectivo !== null) {
-                  userData.rolDirectivo = data.rolDirectivo;
-                }
-
-                await setDoc(doc(db, 'usuarios', `${data.dni}`), userData).then((res) => {
-                  dispatch({
-                    type: AppAction.WARNING_USUARIO_EXISTE,
-                    payload: '',
-                  });
-                  dispatch({ type: AppAction.LOADER_PAGES, payload: false });
-                });
-              }
-            });
-        } catch (error) {
-          console.log('error', error);
+      const result = await crearUsuarioFn({
+        email: `${data.dni}@competencelab.com`,
+        password: `${data.dni}`,
+        dni: `${data.dni}`,
+        rol: data.perfil?.rol || 2, // Rol de director
+        data: {
+          ...data,
+          // Campos específicos si fueran necesarios
         }
-      } else if (currentUserData.perfil?.rol === 4) {
-        console.log('agregando director como admin');
+      });
 
-        try {
-          axios
-            .post(`${URL_API}crear-director`, {
-              email: `${data.dni}@competencelab.com`,
-              password: `${data.dni}`,
-              dni: `${data.dni}`,
-              rol: currentUserData.perfil?.rol,
-              institucion: `${data.institucion}`,
-              modular: `${data.modular}`,
-              perfil: data.perfil,
-              nombres: `${data.nombres}`,
-              apellidos: `${data.apellidos}`,
-            })
-            .then(async (res) => {
-              if (res.data.exists === true) {
-                console.log('ya existe el usuario');
-                dispatch({
-                  type: AppAction.WARNING_USUARIO_EXISTE,
-                  payload: `${data.dni} ${res.data.warning}`,
-                });
-                dispatch({ type: AppAction.LOADER_PAGES, payload: false });
-              } else {
-                console.log('no existe se creara el usuario');
-                const userData: any = {
-                  dni: `${data.dni}`,
-                  institucion: `${data.institucion}`,
-                  perfil: data.perfil,
-                  rol: data.perfil?.rol,
-                  nombres: data.nombres,
-                  apellidos: data.apellidos,
-                  region: Number(data.region),
-                };
+      const resData = result.data as any;
 
-                // Solo agregar modular si no es undefined o null
-                if (data.modular !== undefined && data.modular !== null) {
-                  userData.modular = data.modular;
-                }
-
-                await setDoc(doc(db, 'usuarios', `${data.dni}`), userData).then((res) => {
-                  dispatch({
-                    type: AppAction.WARNING_USUARIO_EXISTE,
-                    payload: '',
-                  });
-                  dispatch({ type: AppAction.LOADER_PAGES, payload: false });
-                });
-              }
-            });
-        } catch (error) {
-          console.log('error', error);
-        }
+      if (resData.exists === true) {
+        dispatch({
+          type: AppAction.WARNING_USUARIO_EXISTE,
+          payload: `${data.dni} ${resData.warning || 'ya existe'}`,
+        });
+        dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+        return { success: false, exists: true, message: resData.warning };
+      } else {
+        dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: '' });
+        dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+        return { success: true };
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log('error', error);
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return { success: false, message: error.message || 'Error desconocido' };
+    }
+  };
+
+  const createMassiveDirectors = async (directores: any[]): Promise<{ success: boolean; message?: string; detalles?: any }> => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    try {
+      const { functions } = await import('@/firebase/firebase.config');
+      const { httpsCallable } = await import('firebase/functions');
+      const crearDirectoresMasivoFn = httpsCallable(functions, 'crearDirectoresMasivo');
+
+      const result = await crearDirectoresMasivoFn({ directores });
+      const resData = result.data as any;
+
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return { success: resData.success, message: resData.message, detalles: resData.detalles };
+
+    } catch (error: any) {
+      console.error('Error createMassiveDirectors', error);
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return { success: false, message: error.message || 'Error desconocido' };
     }
   };
 
@@ -380,80 +299,110 @@ const useUsuario = () => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     console.log('data', data);
     try {
-      axios
-        .post(`${URL_API}crear-docente`, {
-          email: `${data.dni}@competencelab.com`,
-          password: `${data.dni}`,
-          dni: `${data.dni}`,
-          rol: currentUserData.perfil?.rol,
-          institucion: `${data.institucion}`,
-          modular: `${data.modular}`,
-          perfil: data.perfil,
-          nombres: `${data.nombres}`,
-          apellidos: `${data.apellidos}`,
-        })
-        .then(async (res) => {
-          if (res.data.exists === true) {
-            console.log('ya existe el usuario');
-            dispatch({
-              type: AppAction.WARNING_USUARIO_EXISTE,
-              payload: `${data.dni} ${res.data.warning}`,
-            });
-            dispatch({ type: AppAction.LOADER_PAGES, payload: false });
-          } else {
-            console.log('no existe se creara el usuario');
-            await setDoc(doc(db, 'usuarios', `${data.dni}`), {
-              dni: `${data.dni}`,
-              rol: data.perfil?.rol,
-              institucion: currentUserData.institucion,
-              dniDirector: currentUserData.dni,
-              perfil: data.perfil,
-              nombres: `${data.nombres}`,
-              apellidos: `${data.apellidos}`,
-              region: currentUserData.region,
-              grados: data.grados,
-              secciones: data.secciones,
-              genero: data.genero,
-              nivel: data.nivel,
-            }).then((res) => {
-              dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: '' });
-              dispatch({ type: AppAction.LOADER_PAGES, payload: false });
-            });
-          }
+      const { functions } = await import('@/firebase/firebase.config');
+      const { httpsCallable } = await import('firebase/functions');
+      const crearUsuarioFn = httpsCallable(functions, 'crearUsuario');
+
+      const result = await crearUsuarioFn({
+        email: `${data.dni}@competencelab.com`,
+        password: `${data.dni}`,
+        dni: `${data.dni}`,
+        rol: 3, // Rol de docente
+        data: {
+          ...data,
+          institucion: currentUserData.institucion,
+          dniDirector: currentUserData.dni,
+          region: currentUserData.region,
+          area: currentUserData.area,
+          distrito: currentUserData.distrito,
+        }
+      });
+
+      const resData = result.data as any;
+
+      if (resData.exists === true) {
+        console.log('ya existe el usuario');
+        dispatch({
+          type: AppAction.WARNING_USUARIO_EXISTE,
+          payload: `${data.dni} ${resData.warning || 'ya existe'}`,
         });
-    } catch (error) {
+      } else {
+        console.log('usuario creado exitosamente via Cloud Function');
+        dispatch({ type: AppAction.WARNING_USUARIO_EXISTE, payload: '' });
+      }
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+    } catch (error: any) {
       console.log('error', error);
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      // Aquí podrías manejar errores de la Cloud Function
     }
   };
-  const deleteUsuarioById = (idUsuario: string) => {
+
+  const createMassiveTeachers = async (docentes: any[], dataComun: any) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    try {
+      const { functions } = await import('@/firebase/firebase.config');
+      const { httpsCallable } = await import('firebase/functions');
+      const crearDocentesMasivoFn = httpsCallable(functions, 'crearDocentesMasivo');
+
+      const result = await crearDocentesMasivoFn({
+        docentes,
+        dataComun
+      });
+
+      console.log('Carga masiva de docentes completada:', result.data);
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return result.data as any;
+    } catch (error: any) {
+      console.error('Error en carga masiva de docentes:', error);
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return {
+        success: false,
+        message: error.message || 'Error en la comunicación con el servidor'
+      };
+    }
+  };
+  const deleteUsuarioById = async (idUsuario: string) => {
     console.log('idUsuario', idUsuario);
-    const newPromise = new Promise<boolean>((resolve, reject) => {
+    return new Promise<boolean>(async (resolve, reject) => {
       try {
-        axios
-          .post(
-            `${URL_API}borrar-usuario`,
-            { dni: idUsuario },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              withCredentials: true, // si usas cookies/sesiones
-            }
-          )
-          .then((res) => {
-            console.log('resDelete', res);
-            resolve(true);
-          });
+        const { functions } = await import('@/firebase/firebase.config');
+        const { httpsCallable } = await import('firebase/functions');
+        const borrarUsuarioFn = httpsCallable(functions, 'borrarUsuario');
+
+        await borrarUsuarioFn({ dni: idUsuario });
+        console.log('Usuario eliminado exitosamente vía Cloud Function');
+        resolve(true);
       } catch (error) {
-        console.log('error', error);
-        reject(false);
+        console.error('Error al eliminar usuario:', error);
+        reject(error);
       }
     });
-    toast.promise(newPromise, {
-      pending: 'Eliminando usuario',
-      success: 'Se ha eliminado usuario con exito 👌',
-      error: 'Parece que algo fallo, intentalo despues 🤯',
-    });
+  };
+
+  const updateUsuarioById = async (dni: string, data: Partial<User>) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    try {
+      const { functions } = await import('@/firebase/firebase.config');
+      const { httpsCallable } = await import('firebase/functions');
+      const actualizarUsuarioFn = httpsCallable(functions, 'actualizarUsuario');
+
+      await actualizarUsuarioFn({
+        dni,
+        data: {
+          ...data,
+          // Asegurar que campos críticos se mantengan o se formateen correctamente si es necesario
+        }
+      });
+
+      console.log('Usuario actualizado exitosamente vía Cloud Function');
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return true;
+    } catch (error) {
+      console.error('Error al actualizar usuario:', error);
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return false;
+    }
   };
 
   const deleteEvaluacionEstudiante = async (
@@ -588,11 +537,14 @@ const useUsuario = () => {
     getUsersDirectores,
     updateDirector,
     deleteUsuarioById,
+    updateUsuarioById,
     deleteEstudianteById,
     getAllEspecialistas,
     updateEspecialista,
     deleteEvaluacionEstudiante,
     checkCustomClaims,
+    createMassiveDirectors,
+    createMassiveTeachers,
   };
 };
 

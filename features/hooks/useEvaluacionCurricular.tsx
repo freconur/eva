@@ -4,11 +4,13 @@ import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalCo
 import { AnexosCurricularType, CaracteristicaCurricular, DataEstadisticas, DataEstadisticasCurricular, EstandaresCurriculares, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, PaHanilidad, ResultadosAcumuladosCC, User } from '../types/types';
 import { AppAction } from '../actions/appAction';
 import { currentYear } from '@/fuctions/dates';
+import useUsuario from './useUsuario';
 
 const useEvaluacionCurricular = () => {
   const db = getFirestore()
   const dispatch = useGlobalContextDispatch()
   const { currentUserData } = useGlobalContext()
+  const { updateUsuarioById } = useUsuario()
 
   const [documentSnapshots, setDocumentSnapshots] = useState<QueryDocumentSnapshot<DocumentData>[]>([])
   const [currentPage, setCurrentPage] = useState<number>(0)
@@ -59,13 +61,13 @@ const useEvaluacionCurricular = () => {
           })
       })
   }
-  const getUsuariosToAdmin = async (rol:number) => {
-    let lastVisible:any = 0
+  const getUsuariosToAdmin = async (rol: number) => {
+    let lastVisible: any = 0
     const pathRef = collection(db, 'usuarios')
     /* const q = query(pathRef,where("rol","==", rol), limit(5)); */
 
-    if(rol === 4) {
-      const q = query(pathRef,where("rol","==", rol));
+    if (rol === 4) {
+      const q = query(pathRef, where("rol", "==", rol));
       onSnapshot(q, (querySnapshot) => {
         const arrayUsuarios: User[] = []
         querySnapshot.forEach(doc => {
@@ -74,8 +76,8 @@ const useEvaluacionCurricular = () => {
         dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
       })
     }
-    if(rol === 5) {
-      const q = query(pathRef,where("dniEspecialistaRegional","==", currentUserData.dni));
+    if (rol === 5) {
+      const q = query(pathRef, where("dniEspecialistaRegional", "==", currentUserData.dni));
       onSnapshot(q, (querySnapshot) => {
         const arrayUsuarios: User[] = []
         querySnapshot.forEach(doc => {
@@ -95,25 +97,25 @@ const useEvaluacionCurricular = () => {
     setDocumentSnapshots([lastVisible])
     setCurrentPage(0) */
   }
-  const getDocentesToTable = async (dniDirector:string) => {
+  const getDocentesToTable = async (dniDirector: string) => {
     console.log('dniDirector', dniDirector)
-      const arrayUsuarios: User[] = []
-      const pathRef = collection(db, 'usuarios')
-      const q = query(pathRef, where("dniDirector", "==", dniDirector),limit(5));
-      const documentSnapshots = await getDocs(q);
-      documentSnapshots.forEach(doc => {
-        arrayUsuarios.push({ ...doc.data() })
-      });
-      dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
+    const arrayUsuarios: User[] = []
+    const pathRef = collection(db, 'usuarios')
+    const q = query(pathRef, where("dniDirector", "==", dniDirector), limit(5));
+    const documentSnapshots = await getDocs(q);
+    documentSnapshots.forEach(doc => {
+      arrayUsuarios.push({ ...doc.data() })
+    });
+    dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
 
-      const lastVisible = documentSnapshots.docs[documentSnapshots.docs.length - 1]
-      dispatch({ type: AppAction.LAST_VISIBLE, payload: lastVisible })
+    const lastVisible = documentSnapshots.docs[documentSnapshots.docs.length - 1]
+    dispatch({ type: AppAction.LAST_VISIBLE, payload: lastVisible })
 
-      // Guardar el primer snapshot
-      setDocumentSnapshots([lastVisible])
-      setCurrentPage(0)
+    // Guardar el primer snapshot
+    setDocumentSnapshots([lastVisible])
+    setCurrentPage(0)
   }
-  const getNextUsuariosDocentes = async(lastVisible:any) => {
+  const getNextUsuariosDocentes = async (lastVisible: any) => {
     console.log('next usuarios')
     const arrayUsuarios: User[] = []
     const pathRef = collection(db, 'usuarios')
@@ -137,14 +139,14 @@ const useEvaluacionCurricular = () => {
     setCurrentPage(prev => prev + 1)
     /* return true */
   }
-  const getNextUsuariosEspecialista = async(lastVisible:any,rol:number) => {
+  const getNextUsuariosEspecialista = async (lastVisible: any, rol: number) => {
     const arrayUsuarios: User[] = []
     const pathRef = collection(db, 'usuarios')
     const nextUsuarios = query(
-      pathRef, 
+      pathRef,
       where("rol", "==", rol),
-      where("region", "==", currentUserData.region), 
-      limit(5), 
+      where("region", "==", currentUserData.region),
+      limit(5),
       startAfter(lastVisible)
     )
 
@@ -227,44 +229,33 @@ const useEvaluacionCurricular = () => {
 
     return unsubscribe
   }
- 
-  const getDirectoresTabla = async (usuario:User) => {
-    const arrayUsuarios: User[] = []
+
+  const getDirectoresTabla = async (usuario: User) => {
+    // Modificado para traer siempre la región 1 sin límite
     const pathRef = collection(db, 'usuarios')
-    const q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2), limit(5));
+    const q = query(pathRef, where("region", "==", 1), where("rol", "==", 2));
 
-    
-
-
-    if(currentUserData.nivelDeInstitucion?.includes(2)) {
+    if (currentUserData.nivelDeInstitucion?.includes(2)) {
       const pathRef = collection(db, 'usuarios')
-    const q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2), limit(5),where("nivelDeInstitucion", "array-contains", 2));
-    onSnapshot(q, (querySnapshot) => {
-      const usuarios: User[] = [];
-      querySnapshot.forEach(doc => {
-        usuarios.push({ ...doc.data() });
-      });
-      
-      dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: usuarios });
-
-      
-    });
-    }
-    if(!currentUserData.nivelDeInstitucion?.includes(2)) {
+      // Modificado para traer siempre la región 1 sin límite
+      const q = query(pathRef, where("region", "==", 1), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains", 2));
       onSnapshot(q, (querySnapshot) => {
         const usuarios: User[] = [];
         querySnapshot.forEach(doc => {
           usuarios.push({ ...doc.data() });
         });
-        
+
         dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: usuarios });
-  
-        if (querySnapshot.docs.length > 0) {
-          const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
-          dispatch({ type: AppAction.LAST_VISIBLE, payload: lastVisible });
-          setDocumentSnapshots([lastVisible]);
-          setCurrentPage(0);
-        }
+      });
+    }
+    if (!currentUserData.nivelDeInstitucion?.includes(2)) {
+      onSnapshot(q, (querySnapshot) => {
+        const usuarios: User[] = [];
+        querySnapshot.forEach(doc => {
+          usuarios.push({ ...doc.data() });
+        });
+
+        dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: usuarios });
       });
     }
   }
@@ -275,7 +266,7 @@ const useEvaluacionCurricular = () => {
     if (currentUserData.rol === 1) {// el rol 1 es el especialista
       const arrayUsuarios: User[] = []
       const pathRef = collection(db, 'usuarios')
-      const q = query(pathRef, where("region", "==", region),where("rol", "==", 2), limit(5));
+      const q = query(pathRef, where("region", "==", region), where("rol", "==", 2), limit(5));
 
       const documentSnapshots = await getDocs(q);
       documentSnapshots.forEach(doc => {
@@ -296,7 +287,7 @@ const useEvaluacionCurricular = () => {
       console.log('entre a directores')
       const arrayUsuarios: User[] = []
       const pathRef = collection(db, 'usuarios')
-      const q = query(pathRef, where("dniDirector", "==", dniDirector),limit(1));
+      const q = query(pathRef, where("dniDirector", "==", dniDirector), limit(1));
       await getDocs(q)
         .then(async (response) => {
           console.log(response.size)
@@ -389,7 +380,7 @@ const useEvaluacionCurricular = () => {
   const getDirectorFromEspecialistaCurricular = async (rol: number, dniDirector: string) => {
     const pathRef = collection(db, 'usuarios')
     const q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector));
-    
+
     onSnapshot(q, (querySnapshot) => {
       if (querySnapshot.size > 0) {
         dispatch({ type: AppAction.RESULTADO_BUSQUEDA_USUARIO, payload: querySnapshot.docs[0]?.data() })
@@ -411,19 +402,19 @@ const useEvaluacionCurricular = () => {
       if (querySnapshot.size > 0) {
         console.log('querySnapshot.docs[0]?.data()', querySnapshot.docs[0]?.data())
         dispatch({ type: AppAction.RESULTADO_BUSQUEDA_USUARIO, payload: querySnapshot.docs[0]?.data() })
-      }else {
+      } else {
         dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: 'No se encontró ningún resultado' })
       }
     })
   }
-const getUsuarioMaster = (dni: string) => {
-  const pathRef = doc(db, 'usuarios', dni)
-  onSnapshot(pathRef, (querySnapshot) => {
-    if (querySnapshot.exists()) {
-      dispatch({ type: AppAction.DATA_DOCENTE_MASTER, payload: querySnapshot.data() })
-    }
-  })
-}
+  const getUsuarioMaster = (dni: string) => {
+    const pathRef = doc(db, 'usuarios', dni)
+    onSnapshot(pathRef, (querySnapshot) => {
+      if (querySnapshot.exists()) {
+        dispatch({ type: AppAction.DATA_DOCENTE_MASTER, payload: querySnapshot.data() })
+      }
+    })
+  }
   const getUsuarioTablasLimit = async (region: number) => {
     const first = query(collection(db, "usuarios"), where("region", "==", region), limit(10));
     const documentSnapshots = await getDocs(first);
@@ -515,12 +506,12 @@ const getUsuarioMaster = (dni: string) => {
     }
   }
 
-const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
-  console.log('estandar', estandar)
-  if (estandar.nivel && estandar.name) {
-    dispatch({ type: AppAction.TITULO_COBERTURA_CURRICULAR, payload: estandar.name })
+  const tituloCoberturaCurricular = (estandar: EstandaresCurriculares) => {
+    console.log('estandar', estandar)
+    if (estandar.nivel && estandar.name) {
+      dispatch({ type: AppAction.TITULO_COBERTURA_CURRICULAR, payload: estandar.name })
+    }
   }
-}
   const getEvaluacionByIdCurricular = async (idCurricular: string) => {
     const docRef = doc(db, "/evaluacion-curricular", idCurricular);
     const docSnap = await getDoc(docRef);
@@ -541,7 +532,7 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
       const arrayEvaluaciones: EvaluacionCurricularAlternativa[] = [];
       querySnapshot.forEach((doc) => {
         console.log(doc.data())
-        arrayEvaluaciones.push({...doc.data(), id: doc.id});
+        arrayEvaluaciones.push({ ...doc.data(), id: doc.id });
       });
       console.log('arrayEvaluaciones', arrayEvaluaciones)
       dispatch({ type: AppAction.ALL_EVALUACIONES_CURRICULARES_DOCENTE, payload: arrayEvaluaciones })
@@ -549,7 +540,7 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
     });
   }
   const salvarEvaluacionCurricular = async (idCurricular: string, dataDocente: User, data: PaHanilidad[], nivel: string) => {
-    console.log('id',idCurricular, 'nivel',nivel)
+    console.log('id', idCurricular, 'nivel', nivel)
     /* console.log(`/usuarios/${dataDocente}/evaluacion-curricular/${idCurricular}`) */
     //tengo que traerme todas las evaluaciones curriculares de un docente por lo que usare collection
 
@@ -565,31 +556,31 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
     //esto es para guardar la evaluacion curricular de un docente o director pero para los datos estadísticos
 
     //si es un usuario de director
-    if(currentUserData.rol ===2 ) {
+    if (currentUserData.rol === 2) {
       /* const path = `usuarios/${dniDirector}/evaluacion-curricular/${currentYear}-cobertura-curricular/${nivel}/${idCurricular}` */
       await setDoc(doc(db, `/usuarios/${currentUserData.dni}/${currentYear}-cobertura-curricular/${nivel}/${idCurricular}`, `${dataDocente.dni}`), {
         ...dataDocente,
         preguntasAlternativas: data,
         nivel: nivel
       });
-    } else if(currentUserData.rol ===1 || currentUserData.rol === 4) {//si el usuario es especialista
-      if(dataDocente.rol === 2) {
+    } else if (currentUserData.rol === 1 || currentUserData.rol === 4) {//si el usuario es especialista
+      if (dataDocente.rol === 2) {
         await setDoc(doc(db, `/usuarios/${dataDocente.dni}/${currentYear}-cobertura-curricular/${nivel}/${idCurricular}`, `${dataDocente.dni}`), {
           ...dataDocente,
           preguntasAlternativas: data,
           nivel: nivel
         });
-      }else if(dataDocente.rol === 3) {
+      } else if (dataDocente.rol === 3) {
         await setDoc(doc(db, `/usuarios/${dataDocente.dniDirector}/${currentYear}-cobertura-curricular/${nivel}/${idCurricular}`, `${dataDocente.dni}`), {
           ...dataDocente,
           preguntasAlternativas: data,
           /* nivel: dataDocente.grados?.find(grado => grado === 1 || grado === 2) ? 1 : dataDocente.grados?.find(grado => grado === 3 || grado === 4) ? 2 : 3 */
-          nivel:nivel
+          nivel: nivel
         });
       }
     }
   }
-  
+
 
   const getCaracteristicasCurricular = async () => {
     const pathRef = collection(db, '/caracteristica-curricular')
@@ -608,10 +599,10 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
     try {
       const docRef = doc(db, "/evaluacion-curricular", idCurricular);
       await updateDoc(docRef, data);
-      
+
       // Actualizar la lista de evaluaciones después de la actualización
       getEvaluacionCurricular();
-      
+
       return true;
     } catch (error) {
       console.error("Error al actualizar la evaluación curricular:", error);
@@ -620,23 +611,22 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
   }
   const updateDocenteParaCoberturaCurricular = async (dataDocente: string, data: User, docente: User) => {
     console.log('data', data)
-
-    await setDoc(doc(db, "usuarios", dataDocente), {
+    await updateUsuarioById(dataDocente, {
       nivel: data.nivel,
       nombres: data.nombres,
       apellidos: data.apellidos,
       dni: data.dni,
       institucion: data.institucion || '',
       region: data.region,
-      area: data.area || '',
+      area: data.area,
       grados: data.grados || [],
       secciones: data.secciones || [],
       caracteristicaCurricular: data.caracteristicaCurricular || '',
       distrito: data.distrito || '',
       celular: data.celular || '',
       dniDirector: docente.dniDirector || '',
-      rol: docente.rol || '',
-      perfil: docente.perfil || '',
+      rol: Number(docente.rol || docente.perfil?.rol || 3),
+      perfil: docente.perfil || { rol: 3, nombre: "docente" },
       genero: data.genero || '',
       nivelDeInstitucion: data.nivelDeInstitucion || [],
       dniEspecialistaRegional: currentUserData.dni || '',
@@ -667,7 +657,7 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
     dispatch({ type: AppAction.EVALUACION_CURRICULAR_ALTERNATIVA, payload: [] })
   }
 
-  const reporteCurricularDirectorFilter = (data: User[], { grado, seccion, genero, orden }: { grado: string, seccion: string, genero: string,orden:string }) => {
+  const reporteCurricularDirectorFilter = (data: User[], { grado, seccion, genero, orden }: { grado: string, seccion: string, genero: string, orden: string }) => {
     const filteredData = data.reduce((acc: User[], docente) => {
       // Verificar si el docente tiene los grados y secciones necesarios
       const hasGrado = grado ? Array.isArray(docente.grados) && docente.grados.includes(Number(grado)) : true;
@@ -684,7 +674,7 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
 
     dispatch({ type: AppAction.CURRICULAR_DIRECTOR_DATA_FILTER, payload: filteredData });
   }
-  const reporteCCDirectorFilterEspecialista = (data:ResultadosAcumuladosCC[], { area, distrito, genero, caracteristicaCurricular }: { area: string, distrito: string, genero: string,caracteristicaCurricular:string }) => {
+  const reporteCCDirectorFilterEspecialista = (data: ResultadosAcumuladosCC[], { area, distrito, genero, caracteristicaCurricular }: { area: string, distrito: string, genero: string, caracteristicaCurricular: string }) => {
     // Si no hay datos, retornar
     if (!data || data.length === 0) {
       console.log('no hay datos')
@@ -747,9 +737,9 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
         const idB = parseInt(b.id || '0');
         return idA - idB;
       });
-      
+
       dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: resultadosOrdenados });
-    } 
+    }
     /* else {
       dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: [] });
     } */
@@ -761,10 +751,10 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
     dispatch({ type: AppAction.CURRICULAR_DIRECTOR_DATA_FILTER, payload: [] })
   }
 
-  const getDirectoresDeLaRegionEvaluadosCC = async (usuario:User, nivel:string, idCurricular:string) => {
+  const getDirectoresDeLaRegionEvaluadosCC = async (usuario: User, nivel: string, idCurricular: string) => {
     const pathRef = collection(db, `/evaluacion-curricular/${idCurricular}/${currentYear}-cobertura-curricular/${nivel}/${nivel}`)
     const q = query(pathRef, where('info.region', '==', usuario.region))
-    const q2 = query(collection(db,'usuarios'), where('region', '==', 2), where('rol', '==', 2), limit(2))
+    const q2 = query(collection(db, 'usuarios'), where('region', '==', 2), where('rol', '==', 2), limit(2))
 
     const directores = await getDocs(q)
     /* const directores2 = await getDocs(q2) */
@@ -776,8 +766,8 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
     })
     return arrayResultadosDirectore
   }
-  const reporteEspecialistaCCDocentes = async(usuario:User, nivel:string, idCurricular:string) => {
-     
+  const reporteEspecialistaCCDocentes = async (usuario: User, nivel: string, idCurricular: string) => {
+
     const pathRefHabilidad = collection(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`)
     const arrayEvaluacionHabilidad: EvaluacionHabilidad[] = []
     await getDocs(pathRefHabilidad)
@@ -787,60 +777,60 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
         })
         dispatch({ type: AppAction.REPORT_PREGUNTA_HABILIDAD, payload: arrayEvaluacionHabilidad.sort((a: any, b: any) => a.order - b.order) })
       })
-     const allDirectores = await getDirectoresDeLaRegionEvaluadosCC(usuario, nivel, idCurricular)
-     console.log('allDirectores', allDirectores)
-     dispatch({ type: AppAction.REPORT_CCA_DATA_ESPECIALISTA, payload: allDirectores })
-     // Validar que existan datos
-     if (!allDirectores || allDirectores.length === 0) {
-       console.log('No hay directores para procesar');
-       //si no hay directores, se limpia  el payload y se envia mensaje de no hay registros.
-       dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: []})
-       return [];
-     }
+    const allDirectores = await getDirectoresDeLaRegionEvaluadosCC(usuario, nivel, idCurricular)
+    console.log('allDirectores', allDirectores)
+    dispatch({ type: AppAction.REPORT_CCA_DATA_ESPECIALISTA, payload: allDirectores })
+    // Validar que existan datos
+    if (!allDirectores || allDirectores.length === 0) {
+      console.log('No hay directores para procesar');
+      //si no hay directores, se limpia  el payload y se envia mensaje de no hay registros.
+      dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: [] })
+      return [];
+    }
 
-     // Sumar los valores de acumuladoDirector
-     const resultadosAcumulados = allDirectores.reduce((acumulador, director) => {
-       // Validar que el director tenga acumuladoDirector
-       if (!director?.acumuladoDirector?.length) {
-         return acumulador;
-       }
+    // Sumar los valores de acumuladoDirector
+    const resultadosAcumulados = allDirectores.reduce((acumulador, director) => {
+      // Validar que el director tenga acumuladoDirector
+      if (!director?.acumuladoDirector?.length) {
+        return acumulador;
+      }
 
-       director.acumuladoDirector.forEach((estadistica, index) => {
-         // Asegurarnos de que el objeto exista en el acumulador
-         if (!acumulador[index]) {
-           acumulador[index] = {
-             id: estadistica?.id || '',
-             n: 0,
-             cn: 0,
-             av: 0,
-             f: 0,
-             s: 0,
-             total: 0
-           };
-         }
+      director.acumuladoDirector.forEach((estadistica, index) => {
+        // Asegurarnos de que el objeto exista en el acumulador
+        if (!acumulador[index]) {
+          acumulador[index] = {
+            id: estadistica?.id || '',
+            n: 0,
+            cn: 0,
+            av: 0,
+            f: 0,
+            s: 0,
+            total: 0
+          };
+        }
 
-         const acumuladorActual = acumulador[index];
-         if (acumuladorActual) {
-           // Usar Math.max para evitar números negativos
-           acumuladorActual.n = Math.max(0, (acumuladorActual.n ?? 0) + (estadistica?.n ?? 0));
-           acumuladorActual.cn = Math.max(0, (acumuladorActual.cn ?? 0) + (estadistica?.cn ?? 0));
-           acumuladorActual.av = Math.max(0, (acumuladorActual.av ?? 0) + (estadistica?.av ?? 0));
-           acumuladorActual.f = Math.max(0, (acumuladorActual.f ?? 0) + (estadistica?.f ?? 0));
-           acumuladorActual.s = Math.max(0, (acumuladorActual.s ?? 0) + (estadistica?.s ?? 0));
-           acumuladorActual.total = Math.max(0, (acumuladorActual.total ?? 0) + (estadistica?.total ?? 0));
-         }
-       });
-       return acumulador;
-      }, [] as DataEstadisticasCurricular[]);
-      
-      // Ordenar los resultados por id
-      const resultadosOrdenados = resultadosAcumulados.sort((a, b) => {
-        const idA = parseInt(a.id || '0');
-        const idB = parseInt(b.id || '0');
-        return idA - idB;
+        const acumuladorActual = acumulador[index];
+        if (acumuladorActual) {
+          // Usar Math.max para evitar números negativos
+          acumuladorActual.n = Math.max(0, (acumuladorActual.n ?? 0) + (estadistica?.n ?? 0));
+          acumuladorActual.cn = Math.max(0, (acumuladorActual.cn ?? 0) + (estadistica?.cn ?? 0));
+          acumuladorActual.av = Math.max(0, (acumuladorActual.av ?? 0) + (estadistica?.av ?? 0));
+          acumuladorActual.f = Math.max(0, (acumuladorActual.f ?? 0) + (estadistica?.f ?? 0));
+          acumuladorActual.s = Math.max(0, (acumuladorActual.s ?? 0) + (estadistica?.s ?? 0));
+          acumuladorActual.total = Math.max(0, (acumuladorActual.total ?? 0) + (estadistica?.total ?? 0));
+        }
       });
-      dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: resultadosAcumulados})
-     return resultadosOrdenados;
+      return acumulador;
+    }, [] as DataEstadisticasCurricular[]);
+
+    // Ordenar los resultados por id
+    const resultadosOrdenados = resultadosAcumulados.sort((a, b) => {
+      const idA = parseInt(a.id || '0');
+      const idB = parseInt(b.id || '0');
+      return idA - idB;
+    });
+    dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: resultadosAcumulados })
+    return resultadosOrdenados;
   }
   const reporteCD = async (idCurricular: string, dniDirector: string, nivel: string, filter: { grado: string, seccion: string, genero: string } = { grado: "", seccion: "", genero: "" }) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true }) // Activar loader
@@ -919,12 +909,12 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
       dispatch({ type: AppAction.REPORT_CURRICULAR_DIRECTOR, payload: acc.sort((a: any, b: any) => a.id - b.id) })
       return acc;
     }, [] as DataEstadisticasCurricular[]);
-    console.log('rutita',`/evaluacion-curricular/${idCurricular}/${currentYear}-cobertura-curricular/${nivel}/${nivel}`)
-    await setDoc(doc(db, `/evaluacion-curricular/${idCurricular}/${currentYear}-cobertura-curricular/${nivel}/${nivel}`, `${dniDirector}`), {acumuladoDirector:rta, info: dataDirector.data()})
+    console.log('rutita', `/evaluacion-curricular/${idCurricular}/${currentYear}-cobertura-curricular/${nivel}/${nivel}`)
+    await setDoc(doc(db, `/evaluacion-curricular/${idCurricular}/${currentYear}-cobertura-curricular/${nivel}/${nivel}`, `${dniDirector}`), { acumuladoDirector: rta, info: dataDirector.data() })
     dispatch({ type: AppAction.LOADER_PAGES, payload: false }) // Desactivar loader
   }
 
-  const getEstandaresCurriculares = async (nivel:string) => {
+  const getEstandaresCurriculares = async (nivel: string) => {
     `/evaluacion-curricular-preguntas-alternativas`
     const pathRef = collection(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`)
     const q = query(pathRef, orderBy('order', 'asc'))
@@ -932,7 +922,7 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
       const arrayPreguntaEstandar: PaHanilidad[] = []
       querySnapshot.forEach(doc => {
         /* arrayPreguntaEstandar.push(doc.data()) */
-        arrayPreguntaEstandar.push({...doc.data(), id: doc.id})
+        arrayPreguntaEstandar.push({ ...doc.data(), id: doc.id })
       })
       dispatch({ type: AppAction.PREGUNTAS_ESTANDAR, payload: arrayPreguntaEstandar })
     })
@@ -960,7 +950,7 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
         order: newOrder,
         id: `${newOrder}`
       });
-      
+
       // Actualizar la lista después de crear
       getEstandaresCurriculares(nivel)
     } catch (error) {
@@ -973,11 +963,11 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
       const pathRef = collection(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`)
       const q = query(pathRef, orderBy('order', 'asc'))
       const querySnapshot = await getDocs(q)
-      const preguntas: Array<{id: string, order: number, habilidad: string}> = querySnapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
-      } as {id: string, order: number, habilidad: string}))
-      
+      const preguntas: Array<{ id: string, order: number, habilidad: string }> = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as { id: string, order: number, habilidad: string }))
+
       console.log('preguntas', preguntas)
       // Encontrar la pregunta que se está moviendo
       const preguntaActual = preguntas.find(p => p.id === preguntaId)
@@ -988,10 +978,10 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
 
       // Actualizar el orden de todas las preguntas afectadas
       const batch = writeBatch(db)
-      
+
       if (oldOrder < newOrder) {
         // Mover hacia abajo: decrementar el orden de las preguntas entre oldOrder y newOrder
-        preguntas.forEach((pregunta: {id: string, order: number, habilidad: string}) => {
+        preguntas.forEach((pregunta: { id: string, order: number, habilidad: string }) => {
           if (pregunta.order > oldOrder && pregunta.order <= newOrder) {
             const docRef = doc(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`, pregunta.id)
             batch.update(docRef, { order: pregunta.order - 1 })
@@ -999,7 +989,7 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
         })
       } else {
         // Mover hacia arriba: incrementar el orden de las preguntas entre newOrder y oldOrder
-        preguntas.forEach((pregunta: {id: string, order: number, habilidad: string}) => {
+        preguntas.forEach((pregunta: { id: string, order: number, habilidad: string }) => {
           if (pregunta.order >= newOrder && pregunta.order < oldOrder) {
             const docRef = doc(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`, pregunta.id)
             batch.update(docRef, { order: pregunta.order + 1 })
@@ -1013,7 +1003,7 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
 
       // Ejecutar todas las actualizaciones
       await batch.commit()
-      
+
       // Actualizar la lista después de reordenar
       getEstandaresCurriculares(nivel)
     } catch (error) {
@@ -1025,23 +1015,23 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
     try {
       // Eliminar la evaluación curricular principal
       await deleteDoc(doc(db, "/evaluacion-curricular", idCurricular));
-      
+
       // Obtener todos los usuarios que tienen esta evaluación
       const usuariosRef = collection(db, "usuarios");
       const usuariosSnapshot = await getDocs(usuariosRef);
-      
+
       // Eliminar la evaluación de cada usuario que la tenga
       const batch = writeBatch(db);
       usuariosSnapshot.forEach((usuarioDoc) => {
         const evaluacionRef = doc(db, `usuarios/${usuarioDoc.id}/evaluacion-curricular/${idCurricular}`);
         batch.delete(evaluacionRef);
       });
-      
+
       await batch.commit();
-      
+
       // Actualizar la lista de evaluaciones
       getEvaluacionCurricular();
-      
+
       return true;
     } catch (error) {
       console.error("Error al eliminar la evaluación curricular:", error);
@@ -1053,15 +1043,15 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
     try {
       // Eliminar la pregunta
       await deleteDoc(doc(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`, preguntaId));
-      
+
       // Reordenar las preguntas restantes
       const pathRef = collection(db, `/evaluacion-curricular-preguntas-alternativas/nivel-${nivel}/preguntas`);
       const q = query(pathRef, orderBy('order', 'asc'));
       const querySnapshot = await getDocs(q);
-      
+
       const batch = writeBatch(db);
       let newOrder = 1;
-      
+
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         if (data.order > parseInt(preguntaId)) {
@@ -1069,12 +1059,12 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
           newOrder++;
         }
       });
-      
+
       await batch.commit();
-      
+
       // Actualizar la lista de preguntas
       getEstandaresCurriculares(nivel);
-      
+
       return true;
     } catch (error) {
       console.error("Error al eliminar la pregunta estándar:", error);
@@ -1082,7 +1072,7 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
     }
   };
 
-  const crearNuevoInstrumento = async(instrumento:string) => {
+  const crearNuevoInstrumento = async (instrumento: string) => {
     const pathRef = collection(db, `/evaluacion-curricular-preguntas-alternativas`)
     const querySnapshot = await getDocs(pathRef)
     await setDoc(doc(db, `/evaluacion-curricular-preguntas-alternativas`, `${querySnapshot.size + 1}`), {
@@ -1090,20 +1080,20 @@ const tituloCoberturaCurricular = (estandar:EstandaresCurriculares) => {
       nivel: querySnapshot.size + 1
     })
   }
-  const getInstrumentos = async() => {
+  const getInstrumentos = async () => {
     const pathRef = collection(db, `/evaluacion-curricular-preguntas-alternativas`)
     const querySnapshot = await getDocs(pathRef)
     onSnapshot(pathRef, (querySnapshot) => {
       const arrayPreguntaEstandar: EstandaresCurriculares[] = []
       querySnapshot.forEach(doc => {
-        arrayPreguntaEstandar.push({...doc.data(), id: doc.id})
+        arrayPreguntaEstandar.push({ ...doc.data(), id: doc.id })
       })
       dispatch({ type: AppAction.ESTADRES_CURRICULARES, payload: arrayPreguntaEstandar })
     })
-    
+
   }
   return {
-    createEvaluacionCurricular, 
+    createEvaluacionCurricular,
     getEvaluacionCurricular,
     addPreguntasAlternativasCurricular,
     getDocentesFromDirectores,
