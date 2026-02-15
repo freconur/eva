@@ -231,14 +231,32 @@ const useEvaluacionCurricular = () => {
   }
 
   const getDirectoresTabla = async (usuario: User) => {
-    // Modificado para traer siempre la región 1 sin límite
     const pathRef = collection(db, 'usuarios')
-    const q = query(pathRef, where("region", "==", 1), where("rol", "==", 2));
+
+    // Si es Administrador (rol 4), trae todos los directores sin importar la región con paginación
+    if (usuario.rol === 4) {
+      const q = query(pathRef, where("rol", "==", 2), orderBy("apellidos"), limit(50));
+      const querySnapshot = await getDocs(q);
+      const usuarios: User[] = [];
+      querySnapshot.forEach(doc => {
+        usuarios.push({ ...doc.data() });
+      });
+
+      const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1]
+      dispatch({ type: AppAction.LAST_VISIBLE, payload: lastVisible })
+      setDocumentSnapshots([lastVisible])
+      setCurrentPage(0)
+
+      dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: usuarios });
+      return;
+    }
+
+    // Lógica existente para Especialistas (rol 1) y otros
+    const q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2));
 
     if (currentUserData.nivelDeInstitucion?.includes(2)) {
-      const pathRef = collection(db, 'usuarios')
-      // Modificado para traer siempre la región 1 sin límite
-      const q = query(pathRef, where("region", "==", 1), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains", 2));
+      // Se obtiene la región de manera dinámica del usuario
+      const q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains", 2));
       onSnapshot(q, (querySnapshot) => {
         const usuarios: User[] = [];
         querySnapshot.forEach(doc => {
@@ -377,9 +395,130 @@ const useEvaluacionCurricular = () => {
     return true
   }
 
+  const getNextDirectoresAdmin = async (lastVisible: any) => {
+    const arrayUsuarios: User[] = []
+    const pathRef = collection(db, 'usuarios')
+    const nextUsuarios = query(pathRef, where("rol", "==", 2), orderBy("apellidos"), limit(50), startAfter(lastVisible))
+    const documentSnapshots = await getDocs(nextUsuarios);
+
+    if (documentSnapshots.empty) {
+      return false
+    }
+
+    documentSnapshots.forEach(doc => {
+      arrayUsuarios.push({ ...doc.data() })
+    });
+
+    const newLastVisible = documentSnapshots.docs[documentSnapshots.docs.length - 1]
+    dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
+    dispatch({ type: AppAction.LAST_VISIBLE, payload: newLastVisible })
+
+    setDocumentSnapshots(prev => [...prev, newLastVisible])
+    setCurrentPage(prev => prev + 1)
+    return true
+  }
+
+  const getPreviousDirectoresAdmin = async () => {
+    if (currentPage <= 0) {
+      return false
+    }
+
+    const arrayUsuarios: User[] = []
+    const pathRef = collection(db, 'usuarios')
+    const previousSnapshot = documentSnapshots[currentPage - 1]
+
+    let previousUsuarios;
+
+    if (currentPage === 1) {
+      previousUsuarios = query(pathRef, where("rol", "==", 2), orderBy("apellidos"), limit(50))
+    } else {
+      const beforeSnapshot = documentSnapshots[currentPage - 2]
+      previousUsuarios = query(pathRef, where("rol", "==", 2), orderBy("apellidos"), limit(50), startAfter(beforeSnapshot))
+    }
+
+    const newDocumentSnapshots = await getDocs(previousUsuarios)
+    newDocumentSnapshots.forEach(doc => {
+      arrayUsuarios.push({ ...doc.data() })
+    })
+
+    dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: arrayUsuarios })
+
+    // For previous, we set the last visible to the one BEFORE the current page's end, 
+    // but actually we just need to adhere to the stack logic. 
+    // The stack logic in `documentSnapshots` stores the END of each page.
+    // So for page `i`, `documentSnapshots[i]` is the last doc of that page.
+    // When going back from page `i` to `i-1`, we need the end of page `i-1`.
+
+    const newLastVisible = newDocumentSnapshots.docs[newDocumentSnapshots.docs.length - 1]
+    dispatch({ type: AppAction.LAST_VISIBLE, payload: newLastVisible }) // This might not be strictly needed for next step but enables consistency
+
+    setCurrentPage(prev => prev - 1)
+
+    // We should probably pop the last element from documentSnapshots to keep state clean, 
+    // OR just use index. The existing logic doesn't seem to pop, it just uses index.
+    // But wait, `getPreviousUsuarios` implementation in this file uses `startAfter(previousSnapshot)`.
+    // Let's look at `getPreviousUsuarios` implementation again.
+    // It mocks "pagination" by using the snapshot of page `currentPage - 1`.
+    // Wait, `documentSnapshots[0]` is the end of Page 0.
+    // If I am on Page 1 (index 1), `documentSnapshots` has [EndPage0, EndPage1].
+    // To go back to Page 0, I need queries startAfter(????).
+    // Actually, to get Page 0, I just query from start.
+    // To get Page 1, I query startAfter(EndPage0).
+
+    // Correct logic for Previous in this specific app pattern:
+    // If going back to Page 0 -> simple query.
+    // If going back to Page K (where K > 0) -> query startAfter(EndPage(K-1)).
+    // EndPage(K-1) is at `documentSnapshots[K-1]`.
+
+
+    // Let's refine based on the discovered pattern in `getPreviousUsuarios` (lines 348-378).
+    // In `getPreviousUsuarios`: 
+    // `previousSnapshot = documentSnapshots[currentPage - 1]`
+    // Query uses `startAfter(previousSnapshot)`.
+    // This seems WRONG if `previousSnapshot` is the end of the current page's predecessor? 
+    // No, `documentSnapshots` accumulates `lastVisible` of each page.
+    // Index 0 = End of Page 0.
+    // Index 1 = End of Page 1.
+    // Current Page = 1. `documentSnapshots` has 2 elements.
+    // `previousSnapshot` = `documentSnapshots[0]` = End of Page 0.
+    // Query `startAfter(EndPage0)` returns Page 1! 
+    // It seems `getPreviousUsuarios` re-fetches the CURRENT page? Or does it fetch the previous one?
+    // If I am at Page 2. `documentSnapshots` has [EndPage0, EndPage1, EndPage2].
+    // `currentPage` should be 2.
+    // I want to go to Page 1.
+    // Page 1 is defined as `startAfter(EndPage0)`.
+    // `EndPage0` is `documentSnapshots[0]`.
+    // So I need to use `documentSnapshots[currentPage - 2]`.
+
+    // Let's align with the pattern I see in `getPreviousUsuarios` which uses `currentPage - 1`.
+    // If `currentPage` is the index of the page I am viewing...
+    // If I am viewing Page 0. `currentPage` = 0.
+    // If I am viewing Page 1. `currentPage` = 1.
+    // `getNext` increments `currentPage`.
+    // `getPrevious` decrements `currentPage`.
+
+    // If I am at Page 1 (viewing 2nd page). I want to go to Page 0.
+    // Page 0 query is just `limit(50)`.
+    // If I am at Page 2 (viewing 3rd page). I want to go to Page 1.
+    // Page 1 query is `startAfter(EndPage0)`.
+
+  }
+
   const getDirectorFromEspecialistaCurricular = async (rol: number, dniDirector: string) => {
     const pathRef = collection(db, 'usuarios')
-    const q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector));
+    let q;
+
+    // Si es Administrador (rol 4), busca el director por DNI globalmente (sin restricción de región)
+    if (currentUserData.rol === 4) {
+      q = query(pathRef, where("rol", "==", rol), where("dni", "==", dniDirector));
+    } else {
+      // Lógica existente para Especialistas: restringe por región
+      q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector));
+
+      if (currentUserData.nivelDeInstitucion?.includes(2)) {
+        q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector), where("nivelDeInstitucion", "array-contains", 2));
+      }
+    }
 
     onSnapshot(q, (querySnapshot) => {
       if (querySnapshot.size > 0) {
@@ -1135,7 +1274,9 @@ const useEvaluacionCurricular = () => {
     getInstrumentos,
     tituloCoberturaCurricular,
     reporteEspecialistaCCDocentes,
-    reporteCCDirectorFilterEspecialista
+    reporteCCDirectorFilterEspecialista,
+    getNextDirectoresAdmin,
+    getPreviousDirectoresAdmin
   }
 }
 export default useEvaluacionCurricular

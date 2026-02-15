@@ -9,6 +9,8 @@ import { RiDeleteBinLine } from 'react-icons/ri'
 import { MdEditSquare } from 'react-icons/md'
 import UpdateDataDocente from '@/modals/updateDocente'
 import DeleteUsuario from '@/modals/deleteUsuario'
+import Loader from '@/components/loader/loader'
+import { useEffect } from 'react'
 
 
 interface TablaUsuariosProps {
@@ -20,16 +22,24 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 	const [dniUsuario, setDniUsuario] = useState<string>("")
 	const [error, setError] = useState<string>("")
 	const [isLoading, setIsLoading] = useState<boolean>(false)
-	const { getDirectorFromEspecialistaCurricular, getNextUsuarios, getPreviousUsuarios, getNextUsuariosEspecialista, getPreviousUsuariosEspecialista } = useEvaluacionCurricular()
+	const { getDirectorFromEspecialistaCurricular, getNextUsuarios, getPreviousUsuarios, getNextUsuariosEspecialista, getPreviousUsuariosEspecialista, getNextDirectoresAdmin, getPreviousDirectoresAdmin } = useEvaluacionCurricular()
 	const [docente, setDocente] = useState<User>({})
 	const [showUpdateDataDocente, setShowUpdateDataDocente] = useState(false)
 	const [showDeleteUsuario, setShowDeleteUsuario] = useState(false)
+
+	useEffect(() => {
+		if (Object.keys(resultadoBusquedaUsuario).length > 0 || warningDataDocente) {
+			setIsLoading(false)
+		}
+	}, [resultadoBusquedaUsuario, warningDataDocente])
+
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
 		if (dniUsuario.length !== 8) {
 			setError("El DNI debe tener 8 dígitos")
 			return
 		} else {
+			setIsLoading(true)
 			//aqui va la funcion que va a buscar al director
 			getDirectorFromEspecialistaCurricular(rol, dniUsuario)
 			console.log(dniUsuario)
@@ -87,7 +97,11 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 					</div>
 				</form>
 
-				{Object.keys(resultadoBusquedaUsuario).length > 0 ? (
+				{isLoading ? (
+					<div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
+						<Loader variant="spinner" size="medium" text="Buscando directivo..." />
+					</div>
+				) : Object.keys(resultadoBusquedaUsuario).length > 0 ? (
 					<div className={styles.resultadoBusqueda}>
 						<div className={styles.resultadoBusquedaHeader}>
 							<h3>Resultado de la búsqueda</h3>
@@ -109,6 +123,7 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 				<thead className={styles.tableHeader}>
 					<tr>
 						<th>#</th>
+						<th>DNI</th>
 						<th>Directores</th>
 						<th></th>
 					</tr>
@@ -120,6 +135,9 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 								<tr key={index} className={styles.tableRow}>
 									<td className={styles.tableCell}>
 										{index + 1}
+									</td>
+									<td className={styles.tableCell}>
+										{director.dni}
 									</td>
 									<td className={styles.tableCell}>
 										{director.nombres?.toLocaleUpperCase()} {director.apellidos?.toLocaleUpperCase()}
@@ -136,6 +154,27 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 					}
 				</tbody>
 			</table>
+			{/* Paginación solo para administradores */}
+			{currentUserData.rol === 4 && (
+				<div className={styles.paginationContainer} style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '10px' }}>
+					<button
+						className={styles.button}
+						onClick={() => getPreviousDirectoresAdmin()}
+						disabled={!lastVisible} // Ajustar lógica si es necesario, pero getPrevious maneja internamente si puede retroceder
+						style={{ opacity: 1, cursor: 'pointer' }}
+					>
+						Anterior
+					</button>
+					<button
+						className={styles.button}
+						onClick={() => getNextDirectoresAdmin(lastVisible)}
+						disabled={docentesDeDirectores.length < 50}
+						style={{ opacity: docentesDeDirectores.length < 50 ? 0.5 : 1, cursor: docentesDeDirectores.length < 50 ? 'not-allowed' : 'pointer' }}
+					>
+						Siguiente
+					</button>
+				</div>
+			)}
 		</div>
 	)
 }

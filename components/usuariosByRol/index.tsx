@@ -9,9 +9,10 @@ import DocenteModal from '@/components/modals/DocenteModal'
 
 interface Props {
     usuariosByRol: User[]
+    showSearch?: boolean
 }
 
-const UsuariosByRol = ({ usuariosByRol }: Props) => {
+const UsuariosByRol = ({ usuariosByRol, showSearch = true }: Props) => {
     const [showModalEdit, setShowModalEdit] = useState(false)
     const [showModalDelete, setShowModalDelete] = useState(false)
     const [dataDocente, setDataDocente] = useState<User>({} as User)
@@ -34,18 +35,20 @@ const UsuariosByRol = ({ usuariosByRol }: Props) => {
 
     return (
         <div className={styles.container}>
-            <div className={styles.tableActions}>
-                <div className={styles.searchBar}>
-                    <RiSearchLine className={styles.searchIcon} />
-                    <input
-                        type="text"
-                        placeholder="Buscar por nombre o DNI..."
-                        className={styles.searchInput}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+            {showSearch && (
+                <div className={styles.tableActions}>
+                    <div className={styles.searchBar}>
+                        <RiSearchLine className={styles.searchIcon} />
+                        <input
+                            type="text"
+                            placeholder="Buscar por nombre o DNI..."
+                            className={styles.searchInput}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                 </div>
-            </div>
+            )}
 
             <div className={styles.tableContainer}>
                 <table className={styles.table}>

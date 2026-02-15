@@ -8,6 +8,7 @@ import UpdatePreguntaRespuesta from '@/modals/updatePreguntaRespuesta'
 import DeletePregunta from '@/modals/deletePregunta'
 import PuntuacionYNivel from '@/modals/PuntuacionYNivel/puntuacionYNivel'
 import AsignarEvaluacionModal from './AsignarEvaluacionModal'
+import AsignarEvaluacionUgelModal from './AsignarEvaluacionUgelModal'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState, useRef, useCallback } from 'react'
@@ -47,6 +48,7 @@ const Evaluacion = () => {
   const [showModalDelete, setShowModalDelete] = useState(false)
   const [showModalPuntuacionYNivel, setShowModalPuntuacionYNivel] = useState(false)
   const [showModalAsignarEvaluacion, setShowModalAsignarEvaluacion] = useState(false)
+  const [showModalAsignarEvaluacionUgel, setShowModalAsignarEvaluacionUgel] = useState(false)
   const [preguntaToDelete, setPreguntaToDelete] = useState({ id: '', order: 0 })
 
   // Hook para mantener la posición de scroll
@@ -60,6 +62,13 @@ const Evaluacion = () => {
 
   // Verificar si alguna pregunta tiene la propiedad puntaje
   const hayPuntajes = preguntasRespuestas.some(pregunta => pregunta.puntaje !== undefined && pregunta.puntaje !== null)
+
+  // Lógica de permisos centralizada
+  const isOwnerOrAdmin = currentUserData.rol === 4
+  const isAssignedRegional = evaluacion.usuariosConPermisos?.includes(currentUserData.dni || '')
+  const isAssignedUgel = evaluacion.usuariosConPermisosUgel?.includes(currentUserData.dni || '')
+
+  const canManageEvaluation = isOwnerOrAdmin || isAssignedRegional || isAssignedUgel
 
   const handleshowModal = () => {
     setShowModal(!showModal)
@@ -79,6 +88,10 @@ const Evaluacion = () => {
 
   const handleShowModalAsignarEvaluacion = () => {
     setShowModalAsignarEvaluacion(!showModalAsignarEvaluacion)
+  }
+
+  const handleShowModalAsignarEvaluacionUgel = () => {
+    setShowModalAsignarEvaluacionUgel(!showModalAsignarEvaluacionUgel)
   }
 
   const handleSelectPregunta = (index: number) => {
@@ -105,7 +118,7 @@ const Evaluacion = () => {
 
   const handleMoveQuestion = async (index: number, direction: 'up' | 'down') => {
     saveScrollPosition() // Guardar posición antes de mover
-    
+
     const newIndex = direction === 'up' ? index - 1 : index + 1
 
     if (newIndex < 0 || newIndex >= preguntasRespuestas.length) return
@@ -180,6 +193,15 @@ const Evaluacion = () => {
         />
       )}
 
+      {showModalAsignarEvaluacionUgel && (
+        <AsignarEvaluacionUgelModal
+          showModal={showModalAsignarEvaluacionUgel}
+          handleShowModal={handleShowModalAsignarEvaluacionUgel}
+          idEvaluacion={`${route.query.id}`}
+          usuariosConPermisosUgel={evaluacion.usuariosConPermisosUgel}
+        />
+      )}
+
       {loaderPages ? (
         <div className={styles.loader}>
           <div className={styles.loaderContent}>
@@ -208,7 +230,7 @@ const Evaluacion = () => {
                   <div className={styles.compactSelectIcon}>
                     <MdSettings />
                   </div>
-                  <select 
+                  <select
                     className={styles.compactSelect}
                     onChange={(e) => {
                       const value = e.target.value;
@@ -218,23 +240,28 @@ const Evaluacion = () => {
                         handleShowModalPuntuacionYNivel();
                       } else if (value === 'asignar-evaluacion') {
                         handleShowModalAsignarEvaluacion();
+                      } else if (value === 'asignar-evaluacion-ugel') {
+                        handleShowModalAsignarEvaluacionUgel();
                       }
                       e.target.value = ''; // Reset select
                     }}
                   >
                     <option value="">⚙️ Gestionar Evaluación</option>
-                    
-                      
-                        {((evaluacion.usuariosConPermisos && currentUserData.dni && evaluacion.usuariosConPermisos.includes(currentUserData.dni)) || currentUserData.rol === 4) && (
-                          <option value="agregar-preguntas">➕ Agregar Preguntas</option>
-                        )}
-                      
-                        {currentUserData.rol === 4 && (
-                        <option value="rango-nivel">⚙️ Configurar Rango de Nivel</option>
-                      
+
+
+                    {canManageEvaluation && (
+                      <option value="agregar-preguntas">➕ Agregar Preguntas</option>
+                    )}
+
+                    {currentUserData.rol === 4 && (
+                      <option value="rango-nivel">⚙️ Configurar Rango de Nivel</option>
+
                     )}
                     {currentUserData.rol === 4 && (
                       <option value="asignar-evaluacion">📋 Asignar Evaluación</option>
+                    )}
+                    {currentUserData.rol === 4 && (
+                      <option value="asignar-evaluacion-ugel">📋 Asignar Evaluación UGEL</option>
                     )}
                   </select>
                 </div>
@@ -249,7 +276,7 @@ const Evaluacion = () => {
                     <MdAssessment />
                     <span>Reporte</span>
                   </Link>
-                  
+
                   <Link
                     href={`seguimiento-evaluaciones`}
                     className={styles.compactButton}
@@ -279,7 +306,7 @@ const Evaluacion = () => {
                   <div className={styles.questionHeader}>
                     <span className={styles.questionNumber}>{index + 1}.</span>
                     <p className={styles.questionText}>{pr.pregunta}</p>
-                    {currentUserData.rol === 4 &&
+                    {canManageEvaluation &&
                       <div className={styles.orderButtons}>
                         <button
                           onClick={() => handleMoveQuestion(index, 'up')}
@@ -302,7 +329,7 @@ const Evaluacion = () => {
                   <div className={styles.teacherAction}>
                     <span className={styles.actionLabel}>Actuación:</span>
                     <p className={styles.actionText}>{pr.preguntaDocente}</p>
-                    {currentUserData.rol === 4 &&
+                    {canManageEvaluation &&
                       <div className={styles.actionButtons}>
                         <MdEditSquare
                           onClick={() => {

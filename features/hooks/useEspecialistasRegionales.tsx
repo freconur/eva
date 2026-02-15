@@ -14,11 +14,12 @@ export const useEspecialistasRegionales = () => {
   const [loader, setLoader] = useState<boolean>(false);
   const [warningMessage, setWarningMessage] = useState<string>("")
   const [especialistasRegionales, setEspecialistasRegionales] = useState<User[]>([]);
+  const [especialistasUgel, setEspecialistasUgel] = useState<User[]>([]);
   const createEspecialistaRegional = async (data: EspecialistaData) => {
-      //aqui tendria que colocar activar el loader ara creacion de especialista regional
-      try {
-        setLoader(true);
-        console.log('activando loader');
+    //aqui tendria que colocar activar el loader ara creacion de especialista regional
+    try {
+      setLoader(true);
+      console.log('activando loader');
       const response = await axios.post(`${URL_API}crear-especialista-regional`, {
         email: `${data.dni}@competencelab.com`,
         password: `${data.dni}`,
@@ -29,11 +30,11 @@ export const useEspecialistasRegionales = () => {
         apellidos: data.apellidos,
         nivelesInstitucion: data.nivelesInstitucion,
       });
-      if(response.data.exists === false && response.data.estado === true) {
+      if (response.data.exists === false && response.data.estado === true) {
         setWarningMessage(`Especialista ${data.dni} creado exitosamente`);
         setLoader(false);
       }
-      if(response.data.exists === true) {
+      if (response.data.exists === true) {
         console.log('usuario ya existe');
         setWarningMessage(`El usuario ${data.dni} ya existe`);
         setLoader(false);
@@ -54,8 +55,8 @@ export const useEspecialistasRegionales = () => {
   const getEspecialistasRegionales = () => {
     const pathRef = collection(db, 'usuarios');
     const q = query(pathRef, where('rol', '==', 5));
-    
-   onSnapshot(q, (querySnapshot) => {
+
+    onSnapshot(q, (querySnapshot) => {
       const especialistasRegionales: User[] = [];
       querySnapshot.forEach(doc => {
         especialistasRegionales.push(doc.data() as User);
@@ -63,15 +64,39 @@ export const useEspecialistasRegionales = () => {
       setEspecialistasRegionales(especialistasRegionales);
     });
   }
-const addPermisosEspecialistasEnEvaluacion = async(idEvaluacion: string, especialistas: string[]) => {
-try {
-  const refPath = doc(db, 'evaluaciones', idEvaluacion)
-  await setDoc(refPath, {usuariosConPermisos: especialistas}, { merge: true })
-  
-} catch (error) {
-  console.log('error', error)
-}
-}
+
+  const getEspecialistasUgel = () => {
+    const pathRef = collection(db, 'usuarios');
+    const q = query(pathRef, where('rol', '==', 1));
+
+    onSnapshot(q, (querySnapshot) => {
+      const ugelUsers: User[] = [];
+      querySnapshot.forEach(doc => {
+        ugelUsers.push(doc.data() as User);
+      });
+      setEspecialistasUgel(ugelUsers);
+    });
+  }
+
+  const addPermisosEspecialistasEnEvaluacion = async (idEvaluacion: string, especialistas: string[]) => {
+    try {
+      const refPath = doc(db, 'evaluaciones', idEvaluacion)
+      await setDoc(refPath, { usuariosConPermisos: especialistas }, { merge: true })
+
+    } catch (error) {
+      console.log('error', error)
+    }
+  }
+
+  const addPermisosUgelEnEvaluacion = async (idEvaluacion: string, especialistas: string[]) => {
+    try {
+      const refPath = doc(db, 'evaluaciones', idEvaluacion)
+      await setDoc(refPath, { usuariosConPermisosUgel: especialistas }, { merge: true })
+
+    } catch (error) {
+      console.log('error', error)
+    }
+  }
 
 
   const updateEspecialistaRegional = async (dni: string, data: User) => {
@@ -79,12 +104,12 @@ try {
     await updateDoc(pathRef, data);
   }
   const deleteEspecialistaRegional = async (dni: string) => {
-    
+
 
     axios.post(`${URL_API}borrar-usuario`, {
-        dni: dni
+      dni: dni
     },
-    {
+      {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -98,8 +123,11 @@ try {
     loader,
     setWarningMessage,
     especialistasRegionales,
+    especialistasUgel,
     updateEspecialistaRegional,
     deleteEspecialistaRegional,
-    addPermisosEspecialistasEnEvaluacion
+    addPermisosEspecialistasEnEvaluacion,
+    getEspecialistasUgel,
+    addPermisosUgelEnEvaluacion
   };
 };

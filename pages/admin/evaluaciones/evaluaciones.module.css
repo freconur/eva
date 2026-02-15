@@ -1,15 +1,14 @@
 .header {
   position: relative;
   display: flex;
-  flex-direction: column;  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding: 4rem 3rem;
-  background: linear-gradient(135deg, var(--color-paleta1), var(--color-paleta2));
+  padding: 5rem 2rem;
+  background: linear-gradient(to bottom, #ffffff, #f1f5f9);
   overflow: hidden;
-  margin-bottom: 3rem;
-  border-bottom-left-radius: 2rem;
-  border-bottom-right-radius: 2rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .header::before,
@@ -40,6 +39,7 @@
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -62,7 +62,7 @@
   object-fit: cover;
   height: 100%;
   width: 100%;
-  opacity: 0.2;
+  opacity: 0.05;
   transform: scale(1.1);
   transition: transform 0.5s ease;
 }
@@ -74,15 +74,15 @@
 .headerTitle {
   position: relative;
   z-index: 20;
-  height: 100%;
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: white;
-  font-family: 'Poppins', sans-serif;
-  letter-spacing: -0.025em;
-  line-height: 1.2;
-  margin-bottom: 2rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 2.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  font-family: 'Inter', -apple-system, sans-serif;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin-bottom: 2.5rem;
+  text-align: center;
+  max-width: 900px;
 }
 
 .headerContent {
@@ -180,36 +180,109 @@
   0% {
     transform: translateY(0) rotate(0deg) scale(1);
   }
+
   25% {
     transform: translateY(-30px) rotate(90deg) scale(1.1);
   }
+
   50% {
     transform: translateY(0) rotate(180deg) scale(1);
   }
+
   75% {
     transform: translateY(30px) rotate(270deg) scale(0.9);
   }
+
   100% {
     transform: translateY(0) rotate(360deg) scale(1);
   }
 }
 
-.createButton {
+.headerActions {
   position: relative;
   z-index: 50;
-  padding: 0.75rem;
-  border-radius: 0.25rem;
-  background: #4ade80;
-  color: var(--text-titles);
-  width: 150px;
-  height: 50px;
-  border: none;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.yearFilterContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  background: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.filterLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.yearBadge {
+  padding: 0.4rem 1.25rem;
+  border-radius: 8px;
+  background: white;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.yearBadge:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+.yearBadgeActive {
+  background: #3b82f6;
+  color: white;
+  border-color: #2563eb;
+}
+
+.createButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.8rem 1.75rem;
+  border-radius: 12px;
+  background: white;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .createButton:hover {
-  background: #22c55e;
+  background: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+}
+
+.createButton svg {
+  font-size: 1.25rem;
+  color: #3b82f6;
 }
 
 .loader {
@@ -291,10 +364,13 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.3;
   }
+
   50% {
     transform: scale(1.2);
     opacity: 0.6;
@@ -305,9 +381,11 @@
   0% {
     transform: scaleX(0);
   }
+
   50% {
     transform: scaleX(1);
   }
+
   100% {
     transform: scaleX(0);
   }
@@ -318,8 +396,10 @@
   flex-direction: column;
   width: 100%;
   position: relative;
-  margin-top: 0.75rem;
-  padding: 0 1rem;
+  margin-top: 1rem;
+  padding: 0 2rem 4rem 2rem;
+  background: #f8fafc;
+  min-height: 100vh;
 }
 
 /* Botón de cambio de vista */
@@ -334,25 +414,26 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, var(--color-paleta1), var(--color-paleta2));
-  color: white;
-  border: none;
-  border-radius: 0.75rem;
-  font-family: 'Poppins', sans-serif;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .viewToggleButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-  background: linear-gradient(135deg, var(--color-paleta2), var(--color-paleta1));
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
 }
 
 .viewToggleIcon {
@@ -381,20 +462,20 @@
   width: 100%;
   max-width: 100%;
   background: white;
-  border-radius: 1rem;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   overflow: hidden;
-  border: 1px solid rgba(226, 232, 240, 0.6);
+  border: 1px solid #e2e8f0;
 }
 
 .tableTitle {
-  color: var(--color-paleta1);
-  font-weight: 700;
-  font-size: 1.875rem;
-  font-family: 'Poppins', sans-serif;
-  margin-bottom: 2.5rem;
-  text-transform: capitalize;
-  text-align: center;
+  color: #334155;
+  font-weight: 600;
+  font-size: 1.5rem;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 2rem;
+  text-align: left;
+  letter-spacing: -0.02em;
 }
 
 .table {
@@ -405,18 +486,19 @@
 }
 
 .tableHeader {
-  background: linear-gradient(135deg, var(--color-paleta1), var(--color-paleta2));
+  background: #f8fafc;
   position: sticky;
   top: 0;
   z-index: 10;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .tableHeaderRow {
-  color: white;
-  text-transform: capitalize;
-  font-family: 'Poppins', sans-serif;
+  color: #64748b;
+  text-transform: uppercase;
+  font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   letter-spacing: 0.05em;
 }
 
@@ -461,18 +543,14 @@
 }
 
 .tableRow {
-  height: 72px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 64px;
+  transition: all 0.2s ease;
   cursor: pointer;
-  border-bottom: 1px solid rgba(241, 245, 249, 0.8);
-  position: relative;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .tableRow:hover {
-  background: linear-gradient(135deg, rgba(241, 245, 249, 0.8), rgba(248, 250, 252, 0.9));
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.1);
-  border-left: 4px solid var(--color-tercero);
+  background: #f8fafc;
 }
 
 .tableRow:last-child {
@@ -488,14 +566,11 @@
 }
 
 .tableCell {
-  text-transform: none;
-  color: var(--color-paleta1);
-  padding: 1.25rem 1.5rem;
+  color: #334155;
+  padding: 1rem 1.5rem;
   font-size: 0.875rem;
   font-weight: 500;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  line-height: 1.5;
-  transition: all 0.2s ease;
+  font-family: 'Inter', sans-serif;
 }
 
 .tableCell:first-child {
@@ -521,56 +596,27 @@
 }
 
 .actionIcon {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  padding: 0.5rem;
-  border-radius: 0.5rem;
+  padding: 0.4rem;
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin: 0 0.25rem;
+  margin: 0 0.2rem;
   background: transparent;
-  border: none;
-  color: inherit;
-  width: 2.5rem;
-  height: 2.5rem;
-  position: relative;
-  overflow: hidden;
+  border: 1px solid transparent;
+  color: #64748b;
+  width: 2.2rem;
+  height: 2.2rem;
 }
 
-.actionIcon svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  display: block;
-  fill: currentColor;
-  flex-shrink: 0;
-}
-
-.actionIcon::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 0.5rem;
-  background: currentColor;
-  opacity: 0.08;
-  transform: scale(0);
-  transition: transform 0.2s ease;
-}
-
-.actionIcon:hover::before {
-  transform: scale(1);
-}
-
-/* Estilos específicos para iconos de react-icons */
-.actionIcon svg[data-icon] {
-  width: 1.25rem !important;
-  height: 1.25rem !important;
-  display: block !important;
-  fill: currentColor !important;
+.actionIcon:hover {
+  background: white;
+  border-color: #e2e8f0;
+  color: #334155;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* Asegurar que los iconos tengan el color correcto */
@@ -806,15 +852,19 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -826,12 +876,12 @@
     width: 100%;
     margin: 0 1rem;
   }
-  
+
   .tableHeaderCell,
   .tableCell {
     padding: 1rem;
   }
-  
+
   .actionsContainer {
     flex-direction: column;
     gap: 0.5rem;
@@ -867,6 +917,7 @@
     transform: translateY(-20px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -948,28 +999,28 @@
   .content {
     padding: 0 0.5rem;
   }
-  
+
   .tableContainer {
     margin: 0 0.5rem;
     border-radius: 0.75rem;
   }
-  
+
   .tableHeaderCell,
   .tableCell {
     padding: 0.75rem 0.5rem;
     font-size: 0.8rem;
   }
-  
+
   .monthEditContainer {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .monthEditActions {
     justify-content: center;
   }
-  
+
   .successModalContent {
     max-width: 100%;
   }
-} 
+}

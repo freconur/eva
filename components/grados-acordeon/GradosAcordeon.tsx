@@ -7,6 +7,11 @@ import { getAllMonths } from '@/fuctions/dates'
 import Link from 'next/link'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import styles from './grados-acordeon.module.css'
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DesktopDatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
 
 interface GradosAcordeonProps {
   grados: Grades[]
@@ -14,7 +19,7 @@ interface GradosAcordeonProps {
   onToggleActive?: (evaluacion: Evaluaciones) => void
   onEditMonth?: (evaluacion: Evaluaciones) => void
   onCancelEditMonth?: () => void
-  onSaveMonth?: (newMonth: string) => void
+  onSaveMonth?: (newMonth: string, newYear: string) => void
   onEdit?: (evaluacion: Evaluaciones) => void
   onDelete?: (evaluacion: Evaluaciones) => void
   editingMonth?: boolean
@@ -25,9 +30,9 @@ interface GradosAcordeonProps {
   baseRoute?: string
 }
 
-const GradosAcordeon: React.FC<GradosAcordeonProps> = ({ 
-  grados, 
-  evaluaciones, 
+const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
+  grados,
+  evaluaciones,
   onToggleActive,
   onEditMonth,
   onCancelEditMonth,
@@ -53,7 +58,7 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
       if (currentUserData?.nivelesInstitucion?.includes(1)) {
         console.log('grados con nivel 1')
         return grados.filter(grado => grado.nivel === 1)
-      }else {
+      } else {
         console.log('grados con nivel 2')
         return grados.filter(grado => grado.nivel === 2)
 
@@ -84,17 +89,21 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
   const tieneAccesoAEvaluacion = (evaluacion: Evaluaciones) => {
     const rol = currentUserData?.perfil?.rol
     const dni = currentUserData?.dni
-    
+
     // Rol 4 siempre puede acceder
     if (rol === 4) {
       return true
     }
-    
+
     // Rol 5 solo puede acceder si su DNI está en usuariosConPermisos
     if (rol === 5) {
       return evaluacion.usuariosConPermisos?.includes(dni || '') || false
     }
-    
+
+    if (rol === 1) {
+      return evaluacion.usuariosConPermisosUgel?.includes(dni || '') || false
+    }
+
     // Otros roles no tienen acceso
     return false
   }
@@ -102,16 +111,16 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
   // Filtrar evaluaciones por grado
   const getEvaluacionesPorGrado = (grado: number) => {
     const evaluacionesFiltradas = evaluaciones.filter(evaluacion => evaluacion.grado === grado)
-    
+
     // Debug para 4to grado
     if (grado === 4) {
       console.log('Evaluaciones de 4to grado:', evaluacionesFiltradas)
       console.log('Todas las evaluaciones:', evaluaciones)
     }
-    
+
     return evaluacionesFiltradas
   }
-console.log('currentUserData', currentUserData) 
+  console.log('currentUserData', currentUserData)
   return (
     <div className={styles.acordeonContainer}>
       <div className={styles.acordeonHeader}>
@@ -119,21 +128,21 @@ console.log('currentUserData', currentUserData)
         <div className={styles.columnSelector}>
           <span className={styles.columnLabel}>Columnas:</span>
           <div className={styles.columnButtons}>
-            <button 
+            <button
               className={`${styles.columnButton} ${columnas === 2 ? styles.active : ''}`}
               onClick={() => setColumnas(2)}
               title="2 columnas"
             >
               2
             </button>
-            <button 
+            <button
               className={`${styles.columnButton} ${columnas === 3 ? styles.active : ''}`}
               onClick={() => setColumnas(3)}
               title="3 columnas"
             >
               3
             </button>
-            <button 
+            <button
               className={`${styles.columnButton} ${columnas === 4 ? styles.active : ''}`}
               onClick={() => setColumnas(4)}
               title="4 columnas"
@@ -146,7 +155,7 @@ console.log('currentUserData', currentUserData)
       <div className={styles.acordeonContent}>
         {gradosFiltrados.map((grado) => (
           <div key={grado.id} className={styles.acordeonItem}>
-            <div 
+            <div
               className={`${styles.acordeonItemHeader} ${getColorNivel(grado.grado || 0)}`}
               onClick={() => toggleGrado(grado.id || '')}
             >
@@ -163,7 +172,7 @@ console.log('currentUserData', currentUserData)
                 )}
               </div>
             </div>
-            
+
             <div className={`${styles.acordeonBody} ${expandedGrado === grado.id ? styles.expanded : ''}`}>
               <div className={styles.acordeonBodyContent}>
                 {(() => {
@@ -177,18 +186,18 @@ console.log('currentUserData', currentUserData)
                           <div className={`${styles.evaluacionesList} ${styles[`columns${columnas}`]}`}>
                             {evaluacionesDelGrado.map((evaluacion, index) => {
                               const puedeAcceder = tieneAccesoAEvaluacion(evaluacion)
-                              
+
                               return (
                                 <div key={evaluacion.id} className={styles.evaluacionCardWrapper}>
                                   {puedeAcceder ? (
-                                    <Link 
+                                    <Link
                                       href={`${baseRoute}/${evaluacion.id}`}
                                       className={styles.evaluacionCardLink}
                                     >
                                       <div className={`${styles.evaluacionCard} ${evaluacion.tipoDeEvaluacion === '0' ? styles.tipoEvaluacion0 : styles.tipoEvaluacion1}`}>
                                         <div className={styles.evaluacionInfo}>
                                           <div className={styles.evaluacionHeader}>
-                                            <h4 
+                                            <h4
                                               className={styles.evaluacionNombre}
                                               data-tooltip={evaluacion.nombre || 'Sin nombre'}
                                               title={evaluacion.nombre || 'Sin nombre'}
@@ -211,7 +220,7 @@ console.log('currentUserData', currentUserData)
                                     <div className={`${styles.evaluacionCard} ${evaluacion.tipoDeEvaluacion === '0' ? styles.tipoEvaluacion0 : styles.tipoEvaluacion1} ${styles.sinAcceso}`}>
                                       <div className={styles.evaluacionInfo}>
                                         <div className={styles.evaluacionHeader}>
-                                          <h4 
+                                          <h4
                                             className={styles.evaluacionNombre}
                                             data-tooltip={evaluacion.nombre || 'Sin nombre'}
                                             title={evaluacion.nombre || 'Sin nombre'}
@@ -234,82 +243,93 @@ console.log('currentUserData', currentUserData)
                                       </div>
                                     </div>
                                   )}
-                                  
-                                  {/* Botones de acción posicionados por delante - Solo se muestran si tiene acceso y no es rol 5 */}
-                                  {puedeAcceder && currentUserData?.perfil?.rol !== 5 && (
+
+                                  {/* Botones de acción posicionados por delante - Solo se muestran si es rol 4 (Admin) */}
+                                  {puedeAcceder && currentUserData?.perfil?.rol === 4 && (
                                     <div className={styles.evaluacionActions}>
-                                  {editingMonth && editingMonthId === evaluacion.id ? (
-                                    <div className={styles.monthEditContainer}>
-                                      <select
-                                        className={styles.monthSelect}
-                                        value={dataEvaluacion?.mesDelExamen || "0"}
-                                        onChange={(e) => setDataEvaluacion && setDataEvaluacion({...dataEvaluacion, mesDelExamen: e.target.value} as Evaluaciones)}
-                                      >
-                                        {getAllMonths.map((mes) => (
-                                          <option key={mes.id} value={mes.id.toString()}>
-                                            {mes.name}
-                                          </option>
-                                        ))}
-                                      </select>
-                                      <div className={styles.monthEditActions}>
-                                        <button
-                                          onClick={() => onSaveMonth && onSaveMonth(dataEvaluacion?.mesDelExamen || "0")}
-                                          className={styles.saveMonthButton}
-                                          title="Guardar mes"
-                                        >
-                                          {updatingMonth ? <RiLoader4Line className={styles.loaderIcon} /> : "✓"}
-                                        </button>
-                                        <button
-                                          onClick={onCancelEditMonth}
-                                          className={styles.cancelMonthButton}
-                                          title="Cancelar"
-                                        >
-                                          ✕
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className={styles.actionsContainer}>
-                                      <button
-                                        onClick={() => onEditMonth && onEditMonth(evaluacion)}
-                                        className={`${styles.actionButton} ${styles.calendarButton}`}
-                                        title="Editar mes del examen"
-                                      >
-                                        <MdCalendarToday className={styles.actionIcon} />
-                                      </button>
-                                      {evaluacion.active ? (
-                                        <button
-                                          onClick={() => onToggleActive && onToggleActive(evaluacion)} 
-                                          className={`${styles.actionButton} ${styles.toggleButton}`}
-                                          title="Desactivar evaluación"
-                                        >
-                                          <MdVisibility className={styles.actionIcon} />
-                                        </button>
+                                      {editingMonth && editingMonthId === evaluacion.id ? (
+                                        <div className={styles.monthEditContainer}>
+                                          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+                                            <DesktopDatePicker
+                                              views={['year', 'month']}
+                                              label="Mes y Año"
+                                              value={dataEvaluacion?.mesDelExamen ? dayjs().month(Number(dataEvaluacion.mesDelExamen)).year(Number(dataEvaluacion.añoDelExamen || dayjs().year())) : dayjs()}
+                                              onChange={(newValue: any) => {
+                                                if (newValue && setDataEvaluacion) {
+                                                  setDataEvaluacion({
+                                                    ...dataEvaluacion,
+                                                    mesDelExamen: newValue.month().toString(),
+                                                    añoDelExamen: newValue.year().toString()
+                                                  } as Evaluaciones)
+                                                }
+                                              }}
+                                              slotProps={{
+                                                textField: {
+                                                  size: 'small',
+                                                  className: styles.datePickerInput
+                                                }
+                                              }}
+                                            />
+                                          </LocalizationProvider>
+                                          <div className={styles.monthEditActions}>
+                                            <button
+                                              onClick={() => onSaveMonth && onSaveMonth(dataEvaluacion?.mesDelExamen || "0", dataEvaluacion?.añoDelExamen || dayjs().year().toString())}
+                                              className={styles.saveMonthButton}
+                                              title="Guardar mes y año"
+                                            >
+                                              {updatingMonth ? <RiLoader4Line className={styles.loaderIcon} /> : "✓"}
+                                            </button>
+                                            <button
+                                              onClick={onCancelEditMonth}
+                                              className={styles.cancelMonthButton}
+                                              title="Cancelar"
+                                            >
+                                              ✕
+                                            </button>
+                                          </div>
+                                        </div>
                                       ) : (
-                                        <button
-                                          onClick={() => onToggleActive && onToggleActive(evaluacion)} 
-                                          className={`${styles.actionButton} ${styles.toggleButton}`}
-                                          title="Activar evaluación"
-                                        >
-                                          <MdVisibilityOff className={styles.actionIcon} />
-                                        </button>
+                                        <div className={styles.actionsContainer}>
+                                          <button
+                                            onClick={() => onEditMonth && onEditMonth(evaluacion)}
+                                            className={`${styles.actionButton} ${styles.calendarButton}`}
+                                            title="Editar mes del examen"
+                                          >
+                                            <MdCalendarToday className={styles.actionIcon} />
+                                          </button>
+                                          {evaluacion.active ? (
+                                            <button
+                                              onClick={() => onToggleActive && onToggleActive(evaluacion)}
+                                              className={`${styles.actionButton} ${styles.toggleButton}`}
+                                              title="Desactivar evaluación"
+                                            >
+                                              <MdVisibility className={styles.actionIcon} />
+                                            </button>
+                                          ) : (
+                                            <button
+                                              onClick={() => onToggleActive && onToggleActive(evaluacion)}
+                                              className={`${styles.actionButton} ${styles.toggleButton}`}
+                                              title="Activar evaluación"
+                                            >
+                                              <MdVisibilityOff className={styles.actionIcon} />
+                                            </button>
+                                          )}
+                                          <button
+                                            onClick={() => onEdit && onEdit(evaluacion)}
+                                            className={`${styles.actionButton} ${styles.editButton}`}
+                                            title="Editar evaluación"
+                                          >
+                                            <MdEditSquare className={styles.actionIcon} />
+                                          </button>
+                                          <button
+                                            onClick={() => onDelete && onDelete(evaluacion)}
+                                            className={`${styles.actionButton} ${styles.deleteButton}`}
+                                            title="Eliminar evaluación"
+                                          >
+                                            <MdDeleteForever className={styles.actionIcon} />
+                                          </button>
+                                        </div>
                                       )}
-                                      <button
-                                        onClick={() => onEdit && onEdit(evaluacion)} 
-                                        className={`${styles.actionButton} ${styles.editButton}`}
-                                        title="Editar evaluación"
-                                      >
-                                        <MdEditSquare className={styles.actionIcon} />
-                                      </button>
-                                      <button
-                                        onClick={() => onDelete && onDelete(evaluacion)} 
-                                        className={`${styles.actionButton} ${styles.deleteButton}`}
-                                        title="Eliminar evaluación"
-                                      >
-                                        <MdDeleteForever className={styles.actionIcon} />
-                                      </button>
-                                    </div>
-                                  )}
                                     </div>
                                   )}
                                 </div>

@@ -249,10 +249,12 @@ export type Evaluaciones = {
   active?: boolean;
   timestamp?: Date;
   mesDelExamen?: string;
+  añoDelExamen?: string;
   tipoEvaluacion?: string;
   tipoDeEvaluacion?: string;
   nivelYPuntaje?: NivelYPuntaje[];
   usuariosConPermisos?: string[];
+  usuariosConPermisosUgel?: string[];
   nivel?: number[]
 };
 export type Evaluacion = {
@@ -270,6 +272,7 @@ export type Evaluacion = {
   nivelYPuntaje?: NivelYPuntaje[];
   idDocente?: string;
   usuariosConPermisos?: string[];
+  usuariosConPermisosUgel?: string[];
 };
 export type UserEstudiante = {
   id?: string;

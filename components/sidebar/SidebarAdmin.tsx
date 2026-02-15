@@ -108,55 +108,56 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 {
                   currentUserData.rol !== 5 && (
                     <>
-                    <li><Link href="/admin/especialistas/evaluaciones-especialistas" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
-                    <li><Link href="/admin/especialistas/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
-                    <li><Link href="/admin/conocimientos-pedagogicos?rol=1" className={styles.submenuLink}>Autorreporte</Link></li>
+                      <li><Link href="/admin/especialistas/evaluaciones-especialistas" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
+                      <li><Link href="/admin/especialistas/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
+                      <li><Link href="/admin/conocimientos-pedagogicos?rol=1" className={styles.submenuLink}>Autorreporte</Link></li>
                     </>
                   )
                 }
               </ul>
             </li>
-           {/*    )
+            {/*    )
             } */}
 
             {
-              currentUserData.rol !==5 && (
-            <li className={styles.menuItem}>
-              <div className={styles.menuHeader} onClick={(e) => {
-                e.stopPropagation();
-                togglePerfilesChild('directores');
-              }}>
-                <MdAccountBalance className={styles.icon} />
-                <span className={styles.link}>Directores</span>
-                <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'directores' ? styles.arrowRotate : ''}`} />
-              </div>
-              <ul className={`${styles.submenu} ${openDropdown === 'directores' ? styles.show : ''}`}>
-                <li><Link href="/especialistas/agregar-directores" className={styles.submenuLink}>Crear usuario</Link></li>
-                <li><Link href="/especialistas/evaluaciones-director" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
-                <li><Link href="/especialistas/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
-                <li><Link href="/admin/conocimientos-pedagogicos?rol=2" className={styles.submenuLink}>Autorreporte</Link></li>
-              </ul>
-            </li>
+              currentUserData.rol !== 5 && (
+                <li className={styles.menuItem}>
+                  <div className={styles.menuHeader} onClick={(e) => {
+                    e.stopPropagation();
+                    togglePerfilesChild('directores');
+                  }}>
+                    <MdAccountBalance className={styles.icon} />
+                    <span className={styles.link}>Directores</span>
+                    <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'directores' ? styles.arrowRotate : ''}`} />
+                  </div>
+                  <ul className={`${styles.submenu} ${openDropdown === 'directores' ? styles.show : ''}`}>
+                    <li><Link href="/especialistas/agregar-directores" className={styles.submenuLink}>Crear usuario</Link></li>
+                    <li><Link href="/especialistas/evaluaciones-director" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
+                    <li><Link href="/especialistas/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
+                    <li><Link href="/admin/conocimientos-pedagogicos?rol=2" className={styles.submenuLink}>Autorreporte</Link></li>
+                  </ul>
+                </li>
               )
             }
 
             {
               currentUserData.rol !== 5 && (
-            <li className={styles.menuItem}>
-              <div className={styles.menuHeader} onClick={(e) => {
-                e.stopPropagation();
-                togglePerfilesChild('docentes');
-              }}>
-                <FaUserTie className={styles.icon} />
-                <span className={styles.link}>Docentes</span>
-                <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'docentes' ? styles.arrowRotate : ''}`} />
-              </div>
-              <ul className={`${styles.submenu} ${openDropdown === 'docentes' ? styles.show : ''}`}>
-                <li><Link href="/directores/evaluaciones-docentes" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
-                <li><Link href="/directores/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
-                <li><Link href="/admin/conocimientos-pedagogicos?rol=3" className={styles.submenuLink}>Autorreporte</Link></li>
-              </ul>
-            </li>
+                <li className={styles.menuItem}>
+                  <div className={styles.menuHeader} onClick={(e) => {
+                    e.stopPropagation();
+                    togglePerfilesChild('docentes');
+                  }}>
+                    <FaUserTie className={styles.icon} />
+                    <span className={styles.link}>Docentes</span>
+                    <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'docentes' ? styles.arrowRotate : ''}`} />
+                  </div>
+                  <ul className={`${styles.submenu} ${openDropdown === 'docentes' ? styles.show : ''}`}>
+                    <li><Link href="/admin/docentes/usuarios" className={styles.submenuLink}>Usuarios</Link></li>
+                    <li><Link href="/directores/evaluaciones-docentes" className={styles.submenuLink}>Seguimiento y retroalimentacion</Link></li>
+                    <li><Link href="/directores/cobertura-curricular" className={styles.submenuLink}>Cobertura curricular</Link></li>
+                    <li><Link href="/admin/conocimientos-pedagogicos?rol=3" className={styles.submenuLink}>Autorreporte</Link></li>
+                  </ul>
+                </li>
               )
             }
             <li className={styles.menuItem}>
@@ -170,11 +171,6 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
               </div>
               <ul className={`${styles.submenu} ${openDropdown === 'estudiantes' ? styles.show : ''}`}>
                 <li><Link href="/admin/evaluaciones" className={styles.submenuLink}>Seguimiento de Aprendizaje</Link></li>
-                {
-                  currentUserData.rol !== 5 && (
-                    <li><Link href="/admin/agregar-evaluaciones" className={styles.submenuLink}>Agregar evaluacion</Link></li>
-                  )
-                }
               </ul>
             </li>
           </ul>

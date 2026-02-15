@@ -309,12 +309,12 @@ const useUsuario = () => {
         dni: `${data.dni}`,
         rol: 3, // Rol de docente
         data: {
-          ...data,
           institucion: currentUserData.institucion,
           dniDirector: currentUserData.dni,
           region: currentUserData.region,
           area: currentUserData.area,
           distrito: currentUserData.distrito,
+          ...data,
         }
       });
 
