@@ -3,12 +3,13 @@ import { useForm } from 'react-hook-form';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { PreguntasRespuestas, UserEstudiante } from '@/features/types/types';
-import { RiLoader4Line, RiArrowUpLine, RiPlayFill, RiPauseFill, RiUploadLine } from 'react-icons/ri';
+import { RiLoader4Line, RiArrowUpLine, RiPlayFill, RiPauseFill, RiUploadLine, RiEditLine, RiDeleteBinLine, RiUserAddLine } from 'react-icons/ri';
 import { gradosDeColegio, sectionByGrade, genero } from '@/fuctions/regiones';
 import { currentYear, getMonthName } from '@/fuctions/dates';
 import { useRouter } from 'next/router';
 import styles from './evaluarEstudiante.module.css';
 import ModalImportarEstudiantes from './ModalImportarEstudiantes';
+import ModalCrearEstudiante from './ModalCrearEstudiante';
 import Loader from '@/components/loader/loader';
 import { EstudianteImportado } from '@/features/types/estudiante';
 import { convertGrade, converSeccion } from '@/fuctions/regiones';
@@ -28,6 +29,7 @@ const EvaluarEstudiante = () => {
     loaderSalvarPregunta,
     evaluacion,
     estudiantesDeEvaluacion,
+    currentUserData,
   } = useGlobalContext();
 
   // Estados locales
@@ -39,6 +41,9 @@ const EvaluarEstudiante = () => {
   const [showFloatingButton, setShowFloatingButton] = useState(false); // Estado para mostrar el botón flotante
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true); // Estado para controlar el avance automático
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar el modal de importar
+  const [isCrearEstudianteModalOpen, setIsCrearEstudianteModalOpen] = useState(false); // Estado para controlar el modal de crear estudiante
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create'); // Estado para el modo del modal
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false); // Estado para mostrar confirmación de eliminación
   const [showConfirmationMessage, setShowConfirmationMessage] = useState(false); // Estado para mostrar mensaje de confirmación
   const [isClosingMessage, setIsClosingMessage] = useState(false); // Estado para animación de cierre
   const [confirmationData, setConfirmationData] = useState<{
@@ -63,6 +68,7 @@ const EvaluarEstudiante = () => {
     getPreguntasRespuestas,
     obtenerEstudianteDeEvaluacion,
     crearEstudiantesImportados,
+    eliminarEstudiante,
     loaderCrearEstudiantes,
   } = useAgregarEvaluaciones();
 
@@ -259,18 +265,18 @@ const EvaluarEstudiante = () => {
   const scrollToNextQuestion = (preguntaIndex: number) => {
     // Solo hacer scroll automático si está habilitado
     if (!autoScrollEnabled) return;
-    
+
     // Esperar un pequeño delay para que la UI se actualice
     setTimeout(() => {
       const nextQuestionIndex = preguntaIndex + 1;
       const nextQuestionElement = document.getElementById(`pregunta-${nextQuestionIndex}`);
-      
+
       if (nextQuestionElement) {
         // Calcular la posición considerando el header fijo
         const headerHeight = 260; // Altura aproximada del header fijo
         const elementPosition = nextQuestionElement.offsetTop;
         const offsetPosition = elementPosition - headerHeight - 20; // 20px de margen adicional
-        
+
         window.scrollTo({
           top: offsetPosition,
           behavior: 'smooth'
@@ -285,13 +291,13 @@ const EvaluarEstudiante = () => {
    */
   const scrollToQuestion = (preguntaIndex: number) => {
     const questionElement = document.getElementById(`pregunta-${preguntaIndex}`);
-    
+
     if (questionElement) {
       // Calcular la posición considerando el header fijo
       const headerHeight = 260; // Altura aproximada del header fijo
       const elementPosition = questionElement.offsetTop;
       const offsetPosition = elementPosition - headerHeight - 20; // 20px de margen adicional
-      
+
       window.scrollTo({
         top: offsetPosition,
         behavior: 'smooth'
@@ -358,11 +364,11 @@ const EvaluarEstudiante = () => {
   }, [estudiantesDeEvaluacion, nuevaSeccion, evaluacion?.grado, reset]);
 
   useEffect(() => {
-   
+
     const fetchEstudiantes = async () => {
       try {
         if (evaluacion?.id && evaluacion?.grado) {
-           obtenerEstudianteDeEvaluacion(evaluacion, nuevaSeccion, `${evaluacion.mesDelExamen}`);
+          obtenerEstudianteDeEvaluacion(evaluacion, nuevaSeccion, `${evaluacion.mesDelExamen}`);
         }
       } catch (error) {
         console.error('Error al obtener estudiantes:', error);
@@ -448,30 +454,60 @@ const EvaluarEstudiante = () => {
 
   // Estado para el estudiante seleccionado
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState<UserEstudiante | null>(null);
-  
+
   // Estado para la nueva sección seleccionada
- 
-  
-  // Función para manejar la selección de estudiante
+
+  /**
+   * Maneja la selección de un estudiante desde el selector
+   * @param estudiante - Estudiante seleccionado
+   */
   const handleEstudianteSeleccionado = (estudiante: UserEstudiante) => {
     setEstudianteSeleccionado(estudiante);
-    
-    // Pre-llenar el formulario con los datos del estudiante
     reset({
-      dni: estudiante.dni || '',
-      nombresApellidos: estudiante.nombresApellidos || '',
-      grado: estudiante.grado || '',
-      seccion: estudiante.seccion || '',
-      genero: estudiante.genero || ''
+      dni: estudiante.dni,
+      nombresApellidos: estudiante.nombresApellidos,
+      grado: estudiante.grado,
+      seccion: estudiante.seccion,
+      genero: estudiante.genero,
     });
   };
-  
+
+  /**
+   * Refresca los datos del estudiante seleccionado desde Firestore
+   * Se llama después de editar para obtener los datos actualizados
+   */
+  const handleRefreshEstudiante = async () => {
+    if (estudianteSeleccionado?.dni && currentUserData?.dni) {
+      try {
+        // Importar las funciones necesarias de Firestore
+        const { getFirestore, doc, getDoc } = await import('firebase/firestore');
+        const db = getFirestore();
+
+        // Obtener el estudiante actualizado directamente desde Firestore
+        const estudianteRef = doc(db, `usuarios/${currentUserData.dni}/estudiantes-docentes`, estudianteSeleccionado.dni);
+        const estudianteSnap = await getDoc(estudianteRef);
+
+        if (estudianteSnap.exists()) {
+          const estudianteActualizado = {
+            ...estudianteSnap.data(),
+            id: estudianteSnap.id
+          } as UserEstudiante;
+
+          // Actualizar el estado con los datos frescos
+          handleEstudianteSeleccionado(estudianteActualizado);
+        }
+      } catch (error) {
+        console.error('Error al refrescar estudiante:', error);
+      }
+    }
+  };
+
   // Función para manejar el cambio de la nueva sección
   const handleNuevaSeccionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const seccionSeleccionada = e.target.value;
     setNuevaSeccion(seccionSeleccionada);
     console.log('Nueva sección seleccionada:', seccionSeleccionada);
-    
+
     // Si se selecciona una sección, limpiar el estudiante seleccionado y el formulario
     if (seccionSeleccionada) {
       setEstudianteSeleccionado(null);
@@ -499,7 +535,7 @@ const EvaluarEstudiante = () => {
     console.log('Estudiantes importados:', estudiantesImportados);
     console.log('Grado seleccionado:', grado);
     console.log('Sección seleccionada:', seccion);
-    
+
     // Mostrar mensaje de confirmación personalizado
     setConfirmationData({
       estudiantes: estudiantesImportados,
@@ -522,31 +558,31 @@ const EvaluarEstudiante = () => {
   // Función para confirmar la importación
   const handleConfirmImport = async () => {
     if (confirmationData) {
-      console.log('confirmationData',confirmationData.estudiantes);
+      console.log('confirmationData', confirmationData.estudiantes);
       console.log(`Se importaron ${confirmationData.estudiantes.length} estudiantes exitosamente para ${confirmationData.grado} - ${confirmationData.seccion}`);
-      
+
       try {
         // Pasar los estudiantes importados a la función
         await crearEstudiantesImportados(confirmationData.estudiantes);
         console.log('Estudiantes creados exitosamente en la base de datos');
-        
+
         // Limpiar los datos de confirmación después de crear exitosamente
         setConfirmationData(null);
-        
+
         // Activar el reset del modal
         setResetModal(true);
-        
+
         // Resetear el estado de reset después de un breve delay
         setTimeout(() => {
           setResetModal(false);
         }, 100);
-        
+
       } catch (error) {
         console.error('Error al crear estudiantes:', error);
         // Aquí podrías mostrar un mensaje de error al usuario
       }
     }
-    
+
     // Cerrar mensaje con animación y luego cerrar modal
     closeMessageWithAnimation();
     setTimeout(() => {
@@ -557,12 +593,12 @@ const EvaluarEstudiante = () => {
   // Función para cancelar la importación
   const handleCancelImport = () => {
     console.log('No se importó');
-    
+
     // Solo cerrar el mensaje de confirmación con animación, mantener el modal abierto
     closeMessageWithAnimation();
   };
- 
-  
+
+
   return (
     <div className={styles.containerPage}>
       <div className={styles.containerContent}>
@@ -580,7 +616,7 @@ const EvaluarEstudiante = () => {
             {/* Header fijo con información del estudiante */}
             <div className={styles.stickyHeader} style={{ top: `${headerTop}px` }}>
               {/* <h3 className={styles.title}>Evaluar Estudiante</h3> */}
-              
+
               {/* Indicador de progreso */}
               <div className={styles.progressIndicator}>
                 <div className={styles.progressText}>
@@ -611,7 +647,7 @@ const EvaluarEstudiante = () => {
                       </option>
                     ))}
                   </select>
-                  
+
                   <button
                     type="button"
                     className={styles.importButton}
@@ -621,8 +657,22 @@ const EvaluarEstudiante = () => {
                     <RiUploadLine className={styles.importIcon} />
                     <span>Importar</span>
                   </button>
+
+                  <button
+                    type="button"
+                    className={styles.importButton}
+                    onClick={() => {
+                      setModalMode('create');
+                      setIsCrearEstudianteModalOpen(true);
+                    }}
+                    title="Crear un estudiante individual"
+                    style={{ marginLeft: '10px', backgroundColor: '#8B5CF6' }}
+                  >
+                    <RiUserAddLine className={styles.importIcon} />
+                    <span>Crear Estudiante</span>
+                  </button>
                 </div>
-                
+
                 {/* Toggle para avance automático */}
                 <div className={styles.autoScrollToggle}>
                   <label className={styles.toggleLabel}>
@@ -643,8 +693,9 @@ const EvaluarEstudiante = () => {
                   </label>
                 </div>
               </div>
-              {/* Selector de estudiantes */}
+              {/* Selector de estudiantes con botones de acción */}
               {nuevaSeccion && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0 && (
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <select
                     className={styles.inputNombresDni}
                     value={estudianteSeleccionado?.id || ''}
@@ -659,6 +710,7 @@ const EvaluarEstudiante = () => {
                         }
                       }
                     }}
+                    style={{ flex: 1 }}
                   >
                     <option value="">-- Selecciona un estudiante --</option>
                     {estudiantesDeEvaluacion.map((estudiante) => (
@@ -667,6 +719,61 @@ const EvaluarEstudiante = () => {
                       </option>
                     ))}
                   </select>
+
+                  {/* Botones de editar y eliminar - Solo se muestran cuando hay un estudiante seleccionado */}
+                  {estudianteSeleccionado && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setModalMode('edit');
+                          setIsCrearEstudianteModalOpen(true);
+                        }}
+                        title="Editar estudiante"
+                        style={{
+                          padding: '10px 12px',
+                          backgroundColor: '#3B82F6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '18px',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563EB'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3B82F6'}
+                      >
+                        <RiEditLine />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteConfirmation(true)}
+                        title="Eliminar estudiante"
+                        style={{
+                          padding: '10px 12px',
+                          backgroundColor: '#EF4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '18px',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#DC2626'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#EF4444'}
+                      >
+                        <RiDeleteBinLine />
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
 
               {/* Campos de información del estudiante - Solo se muestran cuando NO hay estudiantes disponibles Y se ha seleccionado una sección */}
@@ -765,9 +872,8 @@ const EvaluarEstudiante = () => {
                   return (
                     <span
                       key={index}
-                      className={`${styles.numeroPreguntaEstado} ${
-                        preguntaRespondida ? styles.respondida : styles.sinResponder
-                      }`}
+                      className={`${styles.numeroPreguntaEstado} ${preguntaRespondida ? styles.respondida : styles.sinResponder
+                        }`}
                       onClick={() => scrollToQuestion(index)}
                       title={`Ir a la pregunta ${index + 1}`}
                     >
@@ -776,7 +882,7 @@ const EvaluarEstudiante = () => {
                   );
                 })}
               </div>
-              
+
             </div>
 
             {/* Contenido principal con margen superior para el header fijo */}
@@ -802,9 +908,8 @@ const EvaluarEstudiante = () => {
                           return (
                             <li key={index} className={styles.respuestas}>
                               <div
-                                className={`${styles.respuestaItem} ${
-                                  alternativa.selected ? styles.selected : ''
-                                }`}
+                                className={`${styles.respuestaItem} ${alternativa.selected ? styles.selected : ''
+                                  }`}
                                 onClick={() => {
                                   handleContenedorClick(
                                     pregunta.order || 0,
@@ -851,15 +956,15 @@ const EvaluarEstudiante = () => {
                 </div>
 
                 {/* Botón de guardar con validación */}
-                <button 
-                  disabled={!todasRespondidas || (!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0)} 
+                <button
+                  disabled={!todasRespondidas || (!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0)}
                   className={styles.saveButton}
                 >
                   {!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0
                     ? 'Selecciona un estudiante para continuar'
                     : !todasRespondidas
-                    ? 'Complete todas las preguntas para guardar'
-                    : 'Guardar Evaluación'
+                      ? 'Complete todas las preguntas para guardar'
+                      : 'Guardar Evaluación'
                   }
                 </button>
               </form>
@@ -887,9 +992,28 @@ const EvaluarEstudiante = () => {
         onReset={handleResetModal}
       />
 
+      {/* Modal de crear estudiante */}
+      <ModalCrearEstudiante
+        isOpen={isCrearEstudianteModalOpen}
+        onClose={() => {
+          setIsCrearEstudianteModalOpen(false);
+          setModalMode('create');
+        }}
+        gradoEvaluacion={evaluacion?.grado?.toString() || ''}
+        mode={modalMode}
+        estudianteData={modalMode === 'edit' && estudianteSeleccionado ? {
+          dni: estudianteSeleccionado.dni || '',
+          nombresApellidos: estudianteSeleccionado.nombresApellidos || '',
+          grado: estudianteSeleccionado.grado?.toString() || '',
+          seccion: estudianteSeleccionado.seccion || '',
+          genero: estudianteSeleccionado.genero || '',
+        } : undefined}
+        onSuccess={handleRefreshEstudiante}
+      />
+
       {/* Mensaje de confirmación personalizado */}
       {showConfirmationMessage && confirmationData && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             top: 0,
@@ -907,7 +1031,7 @@ const EvaluarEstudiante = () => {
             animation: isClosingMessage ? 'fadeOut 0.3s ease-in' : 'fadeIn 0.3s ease-out'
           }}
         >
-          <div 
+          <div
             style={{
               backgroundColor: 'white',
               borderRadius: '16px',
@@ -930,7 +1054,7 @@ const EvaluarEstudiante = () => {
             }}>
               Confirmar Importación
             </h3>
-            
+
             <p style={{
               marginBottom: '35px',
               fontSize: '16px',
@@ -939,7 +1063,7 @@ const EvaluarEstudiante = () => {
             }}>
               ¿Va a crear <strong style={{ color: '#1F2937' }}>{confirmationData.estudiantes.length}</strong> estudiantes que importo del archivo excel para el<strong style={{ color: '#1F2937' }}> {convertGrade(confirmationData.grado)}</strong> - <strong style={{ color: '#1F2937' }}> Sección {converSeccion(Number(confirmationData.seccion))?.toUpperCase()}</strong>? ,si esta seguro de crear los estudiantes, presione el botón de si, de lo contrario presione el botón de no.
             </p>
-            
+
             <div style={{
               display: 'flex',
               gap: '20px',
@@ -974,7 +1098,7 @@ const EvaluarEstudiante = () => {
               >
                 Sí
               </button>
-              
+
               <button
                 onClick={handleCancelImport}
                 style={{
@@ -1005,7 +1129,7 @@ const EvaluarEstudiante = () => {
                 No
               </button>
             </div>
-            
+
             {/* Loader cuando se están creando estudiantes */}
             {loaderCrearEstudiantes && (
               <div style={{
@@ -1022,14 +1146,114 @@ const EvaluarEstudiante = () => {
                 borderRadius: '16px',
                 zIndex: 10
               }}>
-                <Loader 
-                  size="large" 
-                  variant="spinner" 
-                  text="Creando estudiantes..." 
+                <Loader
+                  size="large"
+                  variant="spinner"
+                  text="Creando estudiantes..."
                   color="#3b82f6"
                 />
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Diálogo de confirmación para eliminar estudiante */}
+      {showDeleteConfirmation && estudianteSeleccionado && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10002,
+            padding: '20px',
+          }}
+          onClick={() => setShowDeleteConfirmation(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '30px',
+              maxWidth: '450px',
+              width: '100%',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              color: '#1F2937',
+              marginBottom: '12px',
+              marginTop: 0,
+            }}>
+              ¿Eliminar estudiante?
+            </h3>
+
+            <p style={{
+              fontSize: '15px',
+              color: '#6B7280',
+              marginBottom: '24px',
+              lineHeight: '1.5',
+            }}>
+              ¿Está seguro de eliminar al estudiante <strong>{estudianteSeleccionado.nombresApellidos}</strong>? Esta acción no se puede deshacer.
+            </p>
+
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end',
+            }}>
+              <button
+                onClick={() => setShowDeleteConfirmation(false)}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#F3F4F6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={async () => {
+                  try {
+                    await eliminarEstudiante(estudianteSeleccionado.dni || '');
+                    setShowDeleteConfirmation(false);
+                    setEstudianteSeleccionado(null);
+                    reset();
+                  } catch (error: any) {
+                    alert(error.message || 'Error al eliminar el estudiante');
+                  }
+                }}
+                disabled={loaderCrearEstudiantes}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: loaderCrearEstudiantes ? '#9CA3AF' : '#EF4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: loaderCrearEstudiantes ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {loaderCrearEstudiantes ? 'Eliminando...' : 'Sí, eliminar'}
+              </button>
+            </div>
           </div>
         </div>
       )}

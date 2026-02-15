@@ -47,31 +47,72 @@ export const useAgregarEvaluaciones = () => {
   const [loaderCrearEstudiantes, setLoaderCrearEstudiantes] = useState<boolean>(false);
 
 
-const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) => {
-  // Validar parámetros
-  if (!estudiantes || estudiantes.length === 0) {
-    console.warn('No hay estudiantes para crear');
-    return;
+  const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) => {
+    // Validar parámetros
+    if (!estudiantes || estudiantes.length === 0) {
+      console.warn('No hay estudiantes para crear');
+      return;
+    }
+
+    setLoaderCrearEstudiantes(true);
+
+    try {
+      const batch = writeBatch(db);
+      const rutaColeccion = `usuarios/${currentUserData.dni}/estudiantes-docentes`;
+
+      estudiantes.forEach((estudiante) => {
+        // Validar datos del estudiante
+        if (!estudiante.dni || !estudiante.nombresApellidos) {
+          console.warn('Estudiante con datos incompletos:', estudiante);
+          return;
+        }
+
+        // Crear referencia al documento usando el DNI como ID
+        const docRef = doc(db, rutaColeccion, estudiante.dni);
+
+        // Agregar al batch
+        batch.set(docRef, {
+          dni: estudiante.dni,
+          nombresApellidos: estudiante.nombresApellidos,
+          grado: estudiante.grado,
+          seccion: estudiante.seccion,
+          genero: estudiante.genero,
+          fechaCreacion: serverTimestamp(),
+        });
+      });
+
+      // Ejecutar todas las operaciones de una vez
+      await batch.commit();
+      console.log(`${estudiantes.length} estudiantes creados exitosamente`);
+    } catch (error) {
+      console.error('Error al crear estudiantes:', error);
+      throw error; // Re-lanzar el error para que el componente pueda manejarlo
+    } finally {
+      setLoaderCrearEstudiantes(false);
+    }
   }
 
-  setLoaderCrearEstudiantes(true);
-  
-  try {
-    const batch = writeBatch(db);
-    const rutaColeccion = `usuarios/${currentUserData.dni}/estudiantes-docentes`;
-    
-    estudiantes.forEach((estudiante) => {
-      // Validar datos del estudiante
-      if (!estudiante.dni || !estudiante.nombresApellidos) {
-        console.warn('Estudiante con datos incompletos:', estudiante);
-        return;
+  // Función para crear un estudiante individual
+  const crearEstudianteIndividual = async (estudiante: EstudianteImportado) => {
+    // Validar parámetros
+    if (!estudiante.dni || !estudiante.nombresApellidos || !estudiante.grado || !estudiante.seccion || !estudiante.genero) {
+      throw new Error('Todos los campos son requeridos');
+    }
+
+    setLoaderCrearEstudiantes(true);
+
+    try {
+      const rutaColeccion = `usuarios/${currentUserData.dni}/estudiantes-docentes`;
+      const docRef = doc(db, rutaColeccion, estudiante.dni);
+
+      // Verificar si el estudiante ya existe
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        throw new Error('Ya existe un estudiante con este DNI');
       }
 
-      // Crear referencia al documento usando el DNI como ID
-      const docRef = doc(db, rutaColeccion, estudiante.dni);
-      
-      // Agregar al batch
-      batch.set(docRef, {
+      // Crear el documento del estudiante
+      await setDoc(docRef, {
         dni: estudiante.dni,
         nombresApellidos: estudiante.nombresApellidos,
         grado: estudiante.grado,
@@ -79,22 +120,90 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
         genero: estudiante.genero,
         fechaCreacion: serverTimestamp(),
       });
-    });
-    
-    // Ejecutar todas las operaciones de una vez
-    await batch.commit();
-    console.log(`${estudiantes.length} estudiantes creados exitosamente`);
-  } catch (error) {
-    console.error('Error al crear estudiantes:', error);
-    throw error; // Re-lanzar el error para que el componente pueda manejarlo
-  } finally {
-    setLoaderCrearEstudiantes(false);
+
+      console.log('Estudiante creado exitosamente:', estudiante.dni);
+      return { success: true, message: 'Estudiante creado exitosamente' };
+    } catch (error: any) {
+      console.error('Error al crear estudiante:', error);
+      throw error;
+    } finally {
+      setLoaderCrearEstudiantes(false);
+    }
   }
-}
+
+  // Función para actualizar un estudiante individual
+  const actualizarEstudiante = async (estudiante: EstudianteImportado) => {
+    // Validar parámetros
+    if (!estudiante.dni || !estudiante.nombresApellidos || !estudiante.grado || !estudiante.seccion || !estudiante.genero) {
+      throw new Error('Todos los campos son requeridos');
+    }
+
+    setLoaderCrearEstudiantes(true);
+
+    try {
+      const rutaColeccion = `usuarios/${currentUserData.dni}/estudiantes-docentes`;
+      const docRef = doc(db, rutaColeccion, estudiante.dni);
+
+      // Verificar si el estudiante existe
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
+        throw new Error('El estudiante no existe');
+      }
+
+      // Actualizar el documento del estudiante
+      await updateDoc(docRef, {
+        nombresApellidos: estudiante.nombresApellidos,
+        grado: estudiante.grado,
+        seccion: estudiante.seccion,
+        genero: estudiante.genero,
+        fechaActualizacion: serverTimestamp(),
+      });
+
+      console.log('Estudiante actualizado exitosamente:', estudiante.dni);
+      return { success: true, message: 'Estudiante actualizado exitosamente' };
+    } catch (error: any) {
+      console.error('Error al actualizar estudiante:', error);
+      throw error;
+    } finally {
+      setLoaderCrearEstudiantes(false);
+    }
+  }
+
+  // Función para eliminar un estudiante individual
+  const eliminarEstudiante = async (dni: string) => {
+    // Validar parámetro
+    if (!dni) {
+      throw new Error('El DNI es requerido');
+    }
+
+    setLoaderCrearEstudiantes(true);
+
+    try {
+      const rutaColeccion = `usuarios/${currentUserData.dni}/estudiantes-docentes`;
+      const docRef = doc(db, rutaColeccion, dni);
+
+      // Verificar si el estudiante existe
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
+        throw new Error('El estudiante no existe');
+      }
+
+      // Eliminar el documento del estudiante
+      await deleteDoc(docRef);
+
+      console.log('Estudiante eliminado exitosamente:', dni);
+      return { success: true, message: 'Estudiante eliminado exitosamente' };
+    } catch (error: any) {
+      console.error('Error al eliminar estudiante:', error);
+      throw error;
+    } finally {
+      setLoaderCrearEstudiantes(false);
+    }
+  }
 
   const getTipoDeEvaluacion = () => {
     const docRef = doc(db, 'options', 'tipos-de-evaluacion');
-    
+
     // Usar onSnapshot para actualizaciones en tiempo real
     const unsubscribe = onSnapshot(
       docRef,
@@ -123,7 +232,7 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
     seccion: string,
     month: string
   ) => {
-    
+
     const rutaEstudiantesEvaluados = collection(
       db,
       `/usuarios/${currentUserData.dni}/${evaluacion.id}/${currentYear}/${month}/`
@@ -136,10 +245,10 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
     const q =
       seccion && seccion.trim() !== '' && seccion !== '-- Selecciona una sección --'
         ? query(
-            rutaEstudiantesRef,
-            where('grado', '==', `${evaluacion.grado}`),
-            where('seccion', '==', `${seccion}`)
-          )
+          rutaEstudiantesRef,
+          where('grado', '==', `${evaluacion.grado}`),
+          where('seccion', '==', `${seccion}`)
+        )
         : query(rutaEstudiantesRef, where('grado', '==', `${evaluacion.grado}`));
 
     let unsubscribeEstudiantes: (() => void) | null = null;
@@ -178,9 +287,9 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
             dispatch({ type: AppAction.LOADER_PAGES, payload: false });
             estudiantesDeEvaluacion.length > 0
               ? dispatch({
-                  type: AppAction.ESTUDIANTES_DE_EVALUACION,
-                  payload: estudiantesDeEvaluacion,
-                })
+                type: AppAction.ESTUDIANTES_DE_EVALUACION,
+                payload: estudiantesDeEvaluacion,
+              })
               : dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
           },
           (error: Error) => {
@@ -254,7 +363,7 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
     if (!grado || !categoria) {
       dispatch({ type: AppAction.EVALUACIONES_GRADO_CATEGORIA, payload: [] });
       dispatch({ type: AppAction.LOADER_PAGES, payload: false });
-      return () => {}; // Retorna función vacía si no hay parámetros válidos
+      return () => { }; // Retorna función vacía si no hay parámetros válidos
     }
 
     const refGrados = collection(db, 'evaluaciones');
@@ -468,8 +577,8 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
     return preguntasRespuestas.map((pregunta) => {
       // Verificar si alguna alternativa tiene descripción "no respondio" y está seleccionada
       const tieneNoRespondioSeleccionado = pregunta.alternativas?.some(
-        (alternativa) => 
-          alternativa.descripcion?.toLowerCase() === "no respondio" && 
+        (alternativa) =>
+          alternativa.descripcion?.toLowerCase() === "no respondio" &&
           alternativa.selected === true
       );
 
@@ -478,10 +587,10 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
         console.log('Pregunta:', pregunta.pregunta);
         console.log('Respuesta correcta:', pregunta.respuesta);
         console.log('Alternativas originales:', pregunta.alternativas);
-        
+
         // Crear una copia de las alternativas
         const alternativasModificadas = [...pregunta.alternativas];
-        
+
         // Filtrar las alternativas que NO son "no respondio" y que NO coinciden con la respuesta
         const alternativasElegibles = alternativasModificadas.filter((alternativa) => {
           const esNoRespondio = alternativa.descripcion?.toLowerCase() === "no respondio";
@@ -502,14 +611,14 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
           // Seleccionar una alternativa aleatoria de las elegibles
           const indiceAleatorio = Math.floor(Math.random() * alternativasElegibles.length);
           const alternativaSeleccionada = alternativasElegibles[indiceAleatorio];
-          
+
           console.log('Alternativa seleccionada aleatoriamente:', alternativaSeleccionada);
-          
+
           // Encontrar y seleccionar la alternativa en el array original
           const indiceEnArrayOriginal = alternativasModificadas.findIndex(
             (alt) => alt.descripcion === alternativaSeleccionada.descripcion
           );
-          
+
           if (indiceEnArrayOriginal !== -1) {
             alternativasModificadas[indiceEnArrayOriginal].selected = true;
             console.log('Alternativa seleccionada en el array modificado:', alternativasModificadas[indiceEnArrayOriginal]);
@@ -519,13 +628,13 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
           const alternativasSinNoRespondio = alternativasModificadas.filter(
             (alt) => alt.descripcion?.toLowerCase() !== "no respondio"
           );
-          
+
           console.log('Alternativas después de eliminar "no respondió":', alternativasSinNoRespondio);
-          
+
           // Actualizar el array de alternativas modificadas
           alternativasModificadas.length = 0;
           alternativasModificadas.push(...alternativasSinNoRespondio);
-          
+
         } else {
           console.log('No hay alternativas elegibles (todas son "no respondió" o coinciden con la respuesta correcta)');
         }
@@ -553,10 +662,10 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
   ) => {
     let puntajeAcumulado = 0;
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
-    
+
     // Procesar las alternativas para cambiar "no respondió" por una alternativa aleatoria
     const pqConAlternativasAleatorias = dataConAlternativasNoRespondidas(pq);
-    
+
     //guarda la informacion para el propio docente
     /* const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`); */
     const rutaRef = doc(
@@ -587,19 +696,19 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
       seccion: `${data.seccion}`,
       genero: `${data.genero}`,
     });
-    
+
     const rutaEstudianteParaEvaluacion = doc(
       db,
       `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${currentYear}/${evaluacion.mesDelExamen}`,
       `${data.dni}`
     );
     // Incluir las respuestas en el objeto data antes de calcular el nivel
-    
+
     const dataConRespuestas = {
       ...data,
       respuestas: pqConAlternativasAleatorias,
     };
-    
+
     if (evaluacion.tipoDeEvaluacion === '1') {
       try {
         const dataEstudiante = calculoNivel(dataConRespuestas, evaluacion);
@@ -638,7 +747,7 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
       }
     }
     if (evaluacion.tipoDeEvaluacion === '0') {
-      
+
       try {
         await setDoc(rutaEstudianteParaEvaluacion, dataConRespuestas);
       } catch (error) {
@@ -647,7 +756,7 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
         dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
       }
     }
-    
+
   };
   const prEstudiantes = (data: PreguntasRespuestas[]) => {
     dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS_ESTUDIANTES, payload: data });
@@ -878,7 +987,7 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
   };
 
 
-  const validacionSiEvaluacionTienePreguntasYPuntuacion = async(evaluacion: Evaluaciones) => {
+  const validacionSiEvaluacionTienePreguntasYPuntuacion = async (evaluacion: Evaluaciones) => {
     const pathRef = collection(db, `evaluaciones/${evaluacion.id}/preguntasRespuestas`);
     const preguntasRespuestas = await getDocs(pathRef);
     if (preguntasRespuestas.size > 0) {
@@ -887,23 +996,23 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
       preguntasRespuestas.forEach((doc) => {
         arrayPreguntasRespuestas.push({ ...doc.data(), id: doc.id });
       });
-      
+
       // Validar que todas las preguntas tengan la propiedad puntaje con valor numérico
       const tienePuntajeValido = arrayPreguntasRespuestas.every(pregunta => {
         if (pregunta.puntaje === undefined || pregunta.puntaje === null) {
           return false;
         }
-        
+
         // Convertir a número si es string
-        const puntajeNumerico = typeof pregunta.puntaje === 'string' 
-          ? parseFloat(pregunta.puntaje) 
+        const puntajeNumerico = typeof pregunta.puntaje === 'string'
+          ? parseFloat(pregunta.puntaje)
           : pregunta.puntaje;
-        
+
         // Verificar que sea un número válido
         return !isNaN(puntajeNumerico) && isFinite(puntajeNumerico);
       });
       console.log('tienePuntajeValido', tienePuntajeValido)
-      
+
       return { tienePuntajeValido, totalPreguntas: preguntasRespuestas.size };
     } else {
       return { tienePuntajeValido: false, totalPreguntas: 0 };
@@ -933,6 +1042,9 @@ const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) =>
     addRangosNivel,
     validacionSiEvaluacionTienePreguntasYPuntuacion,
     crearEstudiantesImportados,
+    crearEstudianteIndividual,
+    actualizarEstudiante,
+    eliminarEstudiante,
     loaderCrearEstudiantes
   };
 };
