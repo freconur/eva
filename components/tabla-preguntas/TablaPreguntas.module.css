@@ -8,117 +8,86 @@
   width: 100%;
   overflow-x: auto;
   overflow-y: visible;
-  margin-bottom: 2.5rem;
-  margin-top: 2rem; /* Espacio superior para el popover */
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  background-color: white;
-  position: relative; /* Para posicionamiento absoluto de popovers */
-  border: 1px solid var(--color-azul-claro2);
+  margin-bottom: 2rem;
+  margin-top: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  position: relative;
 }
 
 /* Estilos para el scrollbar horizontal */
 .tableWrapper::-webkit-scrollbar {
-  height: 8px;
+  height: 6px;
 }
 
 .tableWrapper::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
+  background: #f9fafb;
 }
 
 .tableWrapper::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
+  background: #d1d5db;
+  border-radius: 3px;
 }
 
 .tableWrapper::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #9ca3af;
 }
 
-/* Mejora visual para las columnas de respuestas */
-.tableWrapper .table th:nth-child(n+8),
-.tableWrapper .table td:nth-child(n+8) {
-  text-align: center;
-  /* padding: 0.5rem 0.25rem; */
-  padding: 0.7rem;
-  border-left: 1px solid var(--color-azul-claro2);
-}
-
+/* Tabla */
 .table {
   width: 100%;
-  min-width: 800px; /* Ancho mínimo para evitar compresión excesiva */
-  background-color: white;
+  min-width: 800px;
+  background-color: #ffffff;
   border-collapse: collapse;
 }
 
 .tableHeader {
-  background: linear-gradient(135deg, var(--color-azul-oscuro) 0%, var(--color-secundario) 50%, var(--color-quinto) 100%);
-  border-bottom: 3px solid var(--color-azul-oscuro);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
   position: sticky;
   top: 0;
   z-index: 10;
 }
 
 .tableHeader th {
-  color: white;
+  color: #374151;
   text-transform: uppercase;
-  font-family: 'Inter', 'Nunito', sans-serif;
-  padding: 1rem 0.75rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 0.875rem 0.75rem;
   text-align: center;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.025em;
   min-width: 50px;
   white-space: nowrap;
-  position: relative;
-  border-right: 1px solid var(--color-azul-claro2);
-  transition: all 0.2s ease;
-}
-
-.tableHeader th:first-child {
-  border-top-left-radius: 0.5rem;
+  border-right: 1px solid #f3f4f6;
 }
 
 .tableHeader th:last-child {
-  border-top-right-radius: 0.5rem;
   border-right: none;
-}
-
-.tableHeader th:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-1px);
 }
 
 .tableBody tr {
   height: 40px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  border-bottom: 1px solid var(--color-azul-claro);
-}
-
-.tableBody tr:nth-child(even) {
-  background-color: var(--tertiary);
+  transition: background-color 0.15s;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .tableBody tr:hover {
-  background: linear-gradient(90deg, var(--color-azul-claro) 0%, var(--color-cuarto) 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background-color: #f9fafb;
 }
 
 .tableBody td {
-  color: var(--color-azul-oscuro);
-  text-transform: uppercase;
-  padding: 0.75rem 0.5rem;
-  font-size: 0.65rem;
-  font-weight: 500;
+  color: #6b7280;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 400;
   text-align: center;
   min-width: 50px;
   white-space: nowrap;
-  border-right: 1px solid var(--color-azul-claro);
-  transition: all 0.2s ease;
+  border-right: 1px solid #f9fafb;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .tableBody td:last-child {
@@ -126,71 +95,46 @@
 }
 
 .deleteIcon {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   color: #ef4444;
   cursor: pointer;
-  transition: color 0.3s;
+  transition: color 0.2s;
 }
 
 .deleteIcon:hover {
   color: #dc2626;
 }
 
+/* Botón de pregunta en el header */
 .questionButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 28px;
-  width: 28px;
+  height: 24px;
+  width: 24px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: #ffffff;
+  border: 1px solid #d1d5db;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  color: white;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.025em;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.2s ease;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
-.questionButton::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.questionButton:hover::before {
-  left: 100%;
+.questionButton:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #374151;
 }
 
 .questionButton:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.25);
-  border-color: var(--color-azul-claro2);
-  box-shadow: 0 0 0 3px var(--color-tercero);
-  transform: scale(1.05);
+  border-color: #6b7280;
+  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
 }
 
-.questionButton:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.6);
-  transform: scale(1.1) translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.questionButton:active {
-  transform: scale(0.95);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
+/* Popover de pregunta */
 .questionPopover {
   position: fixed;
   top: 50%;
@@ -199,23 +143,22 @@
   display: flex;
   justify-content: flex-start;
   text-align: left;
-  width: 300px;
+  width: 320px;
   min-height: 120px;
   max-height: 400px;
-  border-radius: 0.5rem;
+  border-radius: 8px;
   background-color: #ffffff;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   border: 1px solid #e5e7eb;
   padding: 0;
   font-size: 0.875rem;
   text-transform: none;
-  font-family: 'Comfortaa', sans-serif;
-  transition: all 0.3s ease-in-out;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: all 0.2s ease;
   z-index: 9999;
   overflow: hidden;
 }
 
-/* Efectos de fade para el popover */
 .fadeIn {
   opacity: 1;
   transform: translateY(-50%) scale(1);
@@ -224,27 +167,8 @@
 
 .fadeOut {
   opacity: 0;
-  transform: translateY(-50%) scale(0.95);
+  transform: translateY(-50%) scale(0.98);
   visibility: hidden;
-}
-
-/* Responsive para pantallas pequeñas */
-@media (max-width: 768px) {
-  .questionPopover {
-    right: 15px;
-    width: 280px;
-    max-width: calc(100vw - 30px);
-    font-size: 0.8rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .questionPopover {
-    right: 10px;
-    width: 260px;
-    max-width: calc(100vw - 20px);
-    font-size: 0.75rem;
-  }
 }
 
 .popoverContent {
@@ -252,7 +176,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 0.75rem;
+  padding: 1rem;
   box-sizing: border-box;
 }
 
@@ -261,8 +185,8 @@
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.5rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
   user-select: none;
 }
 
@@ -278,11 +202,10 @@
   gap: 0.25rem;
 }
 
-
 .questionNumber {
   font-weight: 600;
-  color: #1d4ed8;
-  font-size: 0.75rem;
+  color: #111827;
+  font-size: 0.875rem;
 }
 
 .closeButton {
@@ -297,7 +220,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: 4px;
   transition: all 0.2s;
   line-height: 1;
 }
@@ -308,232 +231,320 @@
 }
 
 .closeButton:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.2);
 }
 
 .popoverBody {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
   overflow-y: auto;
-  max-height: 200px;
+  max-height: 250px;
 }
 
 .questionLabel {
   font-weight: 600;
   color: #374151;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.025em;
   margin-bottom: 0.25rem;
 }
 
 .questionText {
-  color: #64748b;
-  font-size: 0.7rem;
+  color: #6b7280;
+  font-size: 0.875rem;
   line-height: 1.5;
   margin: 0;
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: normal;
-  hyphens: auto;
 }
 
+/* Respuestas Correctas/Incorrectas */
 .correctAnswer {
-  font-size: 0.625rem;
-  /* background-color: var(--color-pastel2); */
-  background-color:#00c96e;
-  
+  font-size: 0.75rem;
+  background-color: #d1fae5;
   width: 100%;
-  height: 30px;
+  height: 32px;
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: all 0.3s;
+  transition: all 0.2s;
   border-radius: 4px;
-  font-weight: 600;
-  color: var(--color-azul-oscuro);
+  font-weight: 500;
+  color: #065f46;
   min-width: 25px;
-  border: 1px solid var(--color-beneficios);
+  border: 1px solid #a7f3d0;
 }
 
 .correctAnswer:hover {
-  background-color: var(--color-beneficios);
-  transform: translateY(1px);
+  background-color: #a7f3d0;
 }
 
 .incorrectAnswer {
-  font-size: 0.625rem;
-  background-color: #ff1b1b;
+  font-size: 0.75rem;
+  background-color: #fee2e2;
   width: 100%;
-  height: 30px;
+  height: 32px;
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: all 0.3s;
+  transition: all 0.2s;
   border-radius: 4px;
-  font-weight: 600;
+  font-weight: 500;
   color: #991b1b;
   min-width: 25px;
-  border: 1px solid #f87171;
+  border: 1px solid #fecaca;
 }
 
 .incorrectAnswer:hover {
-  background-color: #f87171;
-  transform: translateY(1px);
+  background-color: #fecaca;
 }
 
 .noAnswer {
-  font-size: 0.625rem;
-  background-color: var(--tertiary);
+  font-size: 0.75rem;
+  background-color: #f3f4f6;
   width: 100%;
-  height: 30px;
+  height: 32px;
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: all 0.3s;
+  transition: all 0.2s;
   border-radius: 4px;
-  font-weight: 600;
-  color: var(--color-azul-oscuro);
+  font-weight: 500;
+  color: #6b7280;
   min-width: 25px;
-  border: 1px solid var(--color-azul-claro);
+  border: 1px solid #e5e7eb;
 }
 
+/* Links */
 .studentLink {
-  color: var(--color-secundario);
+  color: #3b82f6;
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.3s;
+  transition: color 0.2s;
 }
 
 .studentLink:hover {
-  color: var(--color-quinto);
+  color: #2563eb;
   text-decoration: underline;
 }
 
 .studentName {
-  color: var(--color-azul-oscuro);
+  color: #374151;
   font-weight: 500;
 }
 
-/* Estilos específicos para el texto del DNI del docente */
 .dniDocenteText {
-  color: var(--color-secundario);
-  font-weight: 600;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  transition: color 0.3s ease;
+  color: #3b82f6;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
 }
 
 .dniDocenteText:hover {
-  color: var(--color-quinto);
+  color: #2563eb;
 }
 
+/* Warning y No Data */
 .warningContainer {
   width: 100%;
   height: 100%;
-  background-color: var(--tertiary);
-  color: var(--color-azul-oscuro);
+  background-color: #fef3c7;
+  color: #92400e;
   text-align: center;
   margin: auto;
   padding: 2rem;
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  border: 1px solid var(--color-azul-claro);
-  border-radius: 0.5rem;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
 }
 
-/* Estilos para el mensaje de "no hay datos" */
 .noDataContainer {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
-  background-color: var(--tertiary);
-  border: 1px solid var(--color-azul-claro);
-  border-radius: 0.5rem;
-  margin: 0.5rem 0;
+  padding: 2rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin: 1rem 0;
 }
 
 .noDataMessage {
   text-align: center;
-  color: var(--color-azul-oscuro);
+  color: #6b7280;
   font-size: 0.875rem;
-  font-weight: 500;
-  font-family: 'Inter', 'Nunito', sans-serif;
-  opacity: 0.7;
+  font-weight: 400;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   margin: 0;
 }
 
-/* Responsive design */
+/* Paginación - Diseño minimalista */
+.paginationContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.paginationInfo {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 400;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  text-align: center;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.paginationArrow {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1.125rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.paginationArrow:hover:not(.disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.paginationArrow.disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+  border-color: #e5e7eb;
+}
+
+.paginationArrow.disabled:hover {
+  background: #ffffff;
+  border-color: #e5e7eb;
+}
+
+.pageNumbers {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pageNumber {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pageNumber:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.pageNumber.active {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+.pageNumber.active:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
   .tableWrapper {
     margin-bottom: 1.5rem;
-    border-radius: 0.5rem;
+    border-radius: 6px;
   }
-  
+
   .table {
     min-width: 600px;
   }
-  
+
   .tableHeader th {
-    font-size: 0.6rem;
+    font-size: 0.7rem;
     padding: 0.75rem 0.5rem;
-    font-weight: 700;
   }
-  
+
   .tableBody td {
-    font-size: 0.55rem;
-    padding: 0.5rem 0.25rem;
+    font-size: 0.8rem;
+    padding: 0.625rem 0.5rem;
   }
-  
+
   .questionButton {
     height: 22px;
     width: 22px;
-    font-size: 0.6rem;
-    font-weight: 700;
+    font-size: 0.7rem;
   }
-  
+
   .questionPopover {
     width: 280px;
     max-width: calc(100vw - 30px);
+  }
+
+  .questionNumber {
     font-size: 0.8rem;
   }
-  
-  .questionNumber {
-    font-size: 0.65rem;
+
+  .questionLabel {
+    font-size: 0.7rem;
   }
-  
-  .questionLabel,
+
   .questionText {
-    font-size: 0.6rem;
+    font-size: 0.8rem;
   }
-  
+
   .closeButton {
-    font-size: 1rem;
-    width: 20px;
-    height: 20px;
+    font-size: 1.125rem;
+    width: 22px;
+    height: 22px;
   }
-  
+
   .correctAnswer,
   .incorrectAnswer,
   .noAnswer {
-    height: 28px;
-    font-size: 0.55rem;
+    height: 30px;
+    font-size: 0.7rem;
   }
-  
-  .dniDocenteText {
-    font-size: 0.65rem;
+
+  .paginationArrow {
+    width: 1.875rem;
+    height: 1.875rem;
+    font-size: 1rem;
   }
-  
-  .noDataContainer {
-    padding: 0.75rem;
-  }
-  
-  .noDataMessage {
+
+  .pageNumber {
+    width: 1.875rem;
+    height: 1.875rem;
     font-size: 0.8rem;
   }
 }
@@ -542,237 +553,66 @@
   .table {
     min-width: 500px;
   }
-  
+
   .tableHeader th {
-    font-size: 0.5rem;
-    padding: 0.5rem 0.25rem;
-    font-weight: 700;
+    font-size: 0.65rem;
+    padding: 0.625rem 0.375rem;
   }
-  
+
   .tableBody td {
-    font-size: 0.5rem;
-    padding: 0.4rem 0.2rem;
+    font-size: 0.75rem;
+    padding: 0.5rem 0.375rem;
   }
-  
+
   .questionButton {
     height: 20px;
     width: 20px;
-    font-size: 0.5rem;
-    font-weight: 700;
+    font-size: 0.65rem;
   }
-  
+
   .questionPopover {
     width: 260px;
     max-width: calc(100vw - 20px);
+  }
+
+  .popoverContent {
+    padding: 0.75rem;
+  }
+
+  .questionNumber {
     font-size: 0.75rem;
   }
-  
-  .questionNumber {
-    font-size: 0.6rem;
+
+  .questionLabel {
+    font-size: 0.65rem;
   }
-  
-  .questionLabel,
+
   .questionText {
-    font-size: 0.55rem;
+    font-size: 0.75rem;
   }
-  
+
   .closeButton {
-    font-size: 0.875rem;
-    width: 18px;
-    height: 18px;
+    font-size: 1rem;
+    width: 20px;
+    height: 20px;
   }
-  
-  .popoverContent {
-    padding: 0.5rem;
-  }
-  
+
   .correctAnswer,
   .incorrectAnswer,
   .noAnswer {
-    height: 24px;
-    font-size: 0.5rem;
+    height: 28px;
+    font-size: 0.65rem;
   }
-  
-  .dniDocenteText {
-    font-size: 0.6rem;
-  }
-  
-  .noDataContainer {
-    padding: 0.5rem;
-  }
-  
-  .noDataMessage {
-    font-size: 0.75rem;
-  }
-}
 
-/* Estilos para la paginación - Diseño minimalista */
-.paginationContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  /* padding: 1.5rem; */
-  /* background: white;
-  border: 1px solid var(--color-azul-claro2);
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); */
- /*  margin-top: 1rem; */
-}
-
-.paginationInfo {
-  font-size: 0.875rem;
-  color: var(--color-azul-oscuro);
-  font-weight: 500;
-  font-family: 'Inter', 'Nunito', sans-serif;
-  text-align: center;
-  margin-bottom: 0.5rem;
-}
-
-.paginationControls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.paginationArrow {
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  color: var(--color-azul-oscuro);
-  border: none;
-  border-radius: 50%;
-  font-size: 1.5rem;
-  font-weight: 300;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Inter', 'Nunito', sans-serif;
-}
-
-.paginationArrow:hover:not(.disabled) {
-  background: var(--color-azul-claro);
-  color: var(--color-secundario);
-  transform: scale(1.1);
-}
-
-.paginationArrow.disabled {
-  color: #9ca3af;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.paginationArrow.disabled:hover {
-  background: transparent;
-  color: #9ca3af;
-  transform: none;
-}
-
-.pageNumbers {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.pageNumber {
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  color: var(--color-azul-oscuro);
-  border: none;
-  border-radius: 50%;
-  font-size: 0.875rem;
-  font-weight: 500;
-  font-family: 'Inter', 'Nunito', sans-serif;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.pageNumber:hover {
-  background: var(--color-azul-claro);
-  color: var(--color-secundario);
-  transform: scale(1.05);
-}
-
-.pageNumber.active {
-  background: var(--color-secundario);
-  color: white;
-  transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(10, 71, 196, 0.3);
-}
-
-.pageNumber.active:hover {
-  background: var(--color-quinto);
-  color: white;
-  transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(10, 71, 196, 0.4);
-}
-
-/* Responsive para paginación */
-@media (max-width: 768px) {
-  .paginationContainer {
-    padding: 1rem;
-    gap: 0.75rem;
-  }
-  
-  .paginationInfo {
-    font-size: 0.8rem;
-  }
-  
-  .paginationControls {
-    gap: 0.75rem;
-  }
-  
   .paginationArrow {
-    width: 2.25rem;
-    height: 2.25rem;
-    font-size: 1.25rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.875rem;
   }
-  
-  .pageNumbers {
-    gap: 0.375rem;
-  }
-  
-  .pageNumber {
-    width: 2.25rem;
-    height: 2.25rem;
-    font-size: 0.8rem;
-  }
-}
 
-@media (max-width: 480px) {
-  .paginationContainer {
-    padding: 0.75rem;
-    gap: 0.5rem;
-  }
-  
-  .paginationInfo {
-    font-size: 0.75rem;
-    margin-bottom: 0.25rem;
-  }
-  
-  .paginationControls {
-    gap: 0.5rem;
-  }
-  
-  .paginationArrow {
-    width: 2rem;
-    height: 2rem;
-    font-size: 1.125rem;
-  }
-  
-  .pageNumbers {
-    gap: 0.25rem;
-  }
-  
   .pageNumber {
-    width: 2rem;
-    height: 2rem;
+    width: 1.75rem;
+    height: 1.75rem;
     font-size: 0.75rem;
   }
 }

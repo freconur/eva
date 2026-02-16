@@ -5,6 +5,11 @@ import { especialidad } from '@/fuctions/categorias'
 import { MdClose } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 import styles from './createEvaluacionModal.module.css'
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DesktopDatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
 
 interface CreateEvaluacionModalProps {
     showModal: boolean
@@ -28,6 +33,8 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
     const [selectValues, setSelectValues] = useState(initialValuesForData)
     const { grados, loaderPages, tiposDeEvaluacion } = useGlobalContext()
     const { crearEvaluacion, getGrades, getTipoDeEvaluacion } = useAgregarEvaluaciones()
+
+    const [selectedDate, setSelectedDate] = useState(dayjs());
 
     useEffect(() => {
         getGrades()
@@ -55,11 +62,23 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
         setSelectValues(newValues)
     }
 
+    const handleDateChange = (newValue: any) => {
+        setSelectedDate(newValue);
+        if (newValue) {
+            setSelectValues({
+                ...selectValues,
+                mesDelExamen: newValue.month().toString(),
+                añoDelExamen: newValue.year().toString()
+            });
+        }
+    };
+
     const handleAgregarEvaluacion = async (e: React.FormEvent) => {
         e.preventDefault()
         try {
             await crearEvaluacion(selectValues)
             setSelectValues(initialValuesForData)
+            setSelectedDate(dayjs())
             handleShowModal() // Cerrar modal tras éxito
         } catch (error) {
             console.error('Error al crear evaluación:', error)
@@ -96,6 +115,39 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
                             value={selectValues.nombreEvaluacion}
                             required
                         />
+                    </div>
+
+                    <div className={styles.inputGroup}>
+                        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+                            <label className={styles.label}>Mes y Año</label>
+                            <DesktopDatePicker
+                                views={['year', 'month']}
+                                value={selectedDate}
+                                onChange={handleDateChange}
+                                slotProps={{
+                                    textField: {
+                                        size: 'small',
+                                        fullWidth: true,
+                                        className: styles.input,
+                                        sx: {
+                                            backgroundColor: '#f8f9fa',
+                                            borderRadius: '8px',
+                                            '& .MuiOutlinedInput-root': {
+                                                '& fieldset': {
+                                                    borderColor: '#e0e0e0',
+                                                },
+                                                '&:hover fieldset': {
+                                                    borderColor: '#4dabf5',
+                                                },
+                                                '&.Mui-focused fieldset': {
+                                                    borderColor: '#2196f3',
+                                                },
+                                            },
+                                        }
+                                    }
+                                }}
+                            />
+                        </LocalizationProvider>
                     </div>
 
                     <div className={styles.inputGroup}>
@@ -169,3 +221,4 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
 }
 
 export default CreateEvaluacionModal
+

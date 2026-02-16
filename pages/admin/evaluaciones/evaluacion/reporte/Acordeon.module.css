@@ -1,0 +1,116 @@
+.accordionContainer {
+    margin-bottom: 1.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background-color: white;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.accordionContainer:hover {
+    border-color: #cbd5e1;
+}
+
+.header {
+    padding: 1rem 1.25rem;
+    background-color: #f8fafc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.header:hover {
+    background-color: #f1f5f9;
+}
+
+.headerOpen {
+    composes: header;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.titleGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.icon {
+    font-size: 1.125rem;
+}
+
+.title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.chevron {
+    font-size: 0.75rem;
+    color: #64748b;
+    transition: transform 0.3s ease;
+}
+
+.chevronOpen {
+    composes: chevron;
+    transform: rotate(180deg);
+}
+
+.contentWrapper {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease;
+}
+
+.contentWrapperOpen {
+    max-height: 2000px;
+    /* Large enough for content */
+    padding: 1.5rem;
+}
+
+.contentInner {
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.innerVisible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Empty State / Loader in Accordion */
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: #64748b;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    border: 1px dashed #e2e8f0;
+}
+
+.emptyIcon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.emptyTitle {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.emptyText {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}

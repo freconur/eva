@@ -78,17 +78,37 @@ const Evaluaciones = () => {
         }
 
         // Validar que existan preguntas y que todas tengan puntaje
-        const { tienePuntajeValido, totalPreguntas: total } = await validacionSiEvaluacionTienePreguntasYPuntuacion(eva);
-        if (!tienePuntajeValido) {
+        const { tienePuntajeValido: tienePuntaje, totalPreguntas: totalPreg, sumaTotalPuntajes } = await validacionSiEvaluacionTienePreguntasYPuntuacion(eva) as any;
+
+        if (!tienePuntaje) {
           setAlertMessage('No se puede activar la evaluación. Debe configurar preguntas y asignar puntaje a todas las preguntas.')
           setShowAlert(true)
           return
         }
 
+        // VALIDACIÓN DE SUMA COMPLETA
+        // 1. Obtener el nivel "satisfactorio"
+        const nivelSatisfactorio = eva.nivelYPuntaje.find((n: any) => n.nivel.toLowerCase() === 'satisfactorio');
+
+        if (!nivelSatisfactorio) {
+          setAlertMessage('No se puede activar la evaluación. No se encontró el nivel "Satisfactorio" en la configuración.');
+          setShowAlert(true);
+          return;
+        }
+
+        const puntajeMaximoSatisfactorio = Number(nivelSatisfactorio.max);
+        const sumaPuntajesRegex = Number(sumaTotalPuntajes);
+
+        if (sumaPuntajesRegex !== puntajeMaximoSatisfactorio) {
+          setAlertMessage(`No se puede activar. La suma de los puntajes de las preguntas (${sumaPuntajesRegex}) debe ser igual al puntaje máximo del nivel Satisfactorio (${puntajeMaximoSatisfactorio}).`);
+          setShowAlert(true);
+          return;
+        }
+
         // Si pasa las validaciones, mostrar los datos y activar
         setSuccessData({
           nivelYPuntaje: eva.nivelYPuntaje,
-          totalPreguntas: total,
+          totalPreguntas: totalPreg,
           evaluacion: eva
         })
         setShowSuccessAlert(true)

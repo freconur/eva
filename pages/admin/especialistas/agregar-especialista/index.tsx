@@ -2,15 +2,15 @@ import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
 import React, { useEffect, useCallback, useState } from 'react'
-import { useForm, SubmitHandler } from 'react-hook-form'
-import { RiLoader4Line } from 'react-icons/ri'
+import { RiLoader4Line, RiAddLine } from 'react-icons/ri'
 import styles from './agregarEspecialista.module.css'
 import UpdateUsuarioEspecialista from '@/modals/updateUsuarioEspecialista'
 import DeleteUsuario from '@/modals/deleteUsuario'
+import AdminEspecialistaModal from '@/components/modals/AdminEspecialistaModal'
 import { genero, tipoEspecialista } from '@/fuctions/regiones'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import TablaUsuariosAdminEspecialistas from '@/components/curricular/tablas/tablaUsuariosAdmin'
-import {nivelInstitucion} from '@/fuctions/regiones'
+import { nivelInstitucion } from '@/fuctions/regiones'
 // Tipos para el formulario
 type FormValues = {
   dni: string;
@@ -114,13 +114,14 @@ const FormCheckbox = ({ label, register, errors, name, options }: {
 )
 
 const AgregareEspecialista = () => {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>()
-  const { getUserData, createNewEspecialista, getRegiones, getAllEspecialistas } = useUsuario()
+  const { getUserData, getRegiones } = useUsuario()
   const [idUsuario, setIdUsuario] = useState<string>("")
-  const { regiones, loaderPages, allEspecialistas, docentesDeDirectores, currentUserData } = useGlobalContext()
+  const { loaderPages, docentesDeDirectores, currentUserData } = useGlobalContext()
   const [showModalActualizarEspecialista, setShowModalActualizarEspecialista] = useState<boolean>(false)
   const { getUsuariosToAdmin } = useEvaluacionCurricular()
   const [showModalDeleteUsuario, setShowModalDeleteUsuario] = useState<boolean>(false)
+  const [showModalCrearEspecialista, setShowModalCrearEspecialista] = useState<boolean>(false)
+
   useEffect(() => {
     getUserData()
     getRegiones()
@@ -128,53 +129,23 @@ const AgregareEspecialista = () => {
     getUsuariosToAdmin(Number(currentUserData.rol))
   }, [])
 
-  const handleDelete = async (dni: string) => {
-
-  }
-
-  const handleEdit = (especialista: any) => {
-    // Aquí puedes implementar la lógica para editar
-    console.log('Editar especialista:', especialista)
-  }
   const handleShowModal = () => {
     setShowModalActualizarEspecialista(!showModalActualizarEspecialista)
   }
   const handleShowModalDelete = () => {
     setShowModalDeleteUsuario(!showModalDeleteUsuario)
   }
-  const onSubmit: SubmitHandler<FormValues> = useCallback(async (data) => {
-    // Convertir todos los valores a números donde sea necesario
-   /*  console.log('data', data) */
-    const processedData = {
-      ...data,
-      dni: String(data.dni), // Mantener como string según el tipo User
-      region: Number(data.region),
-      genero: String(data.genero), // Mantener como string según el tipo User
-      tipoEspecialista: Number(data.tipoEspecialista),
-      nivelDeInstitucion: Array.isArray(data.nivelDeInstitucion) 
-        ? data.nivelDeInstitucion.map(v => Number(v))
-        : []
-    };
-    
-    /* console.log('Datos procesados:', processedData); */
-    
-    try {
-      createNewEspecialista({
-        ...processedData,
-        perfil: { rol: 1, nombre: "especialista" }
-      })
-      reset()
-    } catch (error) {
-      console.error('Error al crear especialista:', error)
-    }
-  }, [createNewEspecialista, reset])
+
+  const handleShowModalCrear = () => {
+    setShowModalCrearEspecialista(!showModalCrearEspecialista)
+  }
 
   if (loaderPages) {
     return (
       <div className={styles.loaderContainer}>
         <div className={styles.loaderContent}>
           <RiLoader4Line className={styles.loaderIcon} />
-          <span className={styles.loaderText}>...creando usuario especialista</span>
+          <span className={styles.loaderText}>...cargando</span>
         </div>
       </div>
     )
@@ -184,95 +155,21 @@ const AgregareEspecialista = () => {
     <div className={styles.container}>
       {showModalActualizarEspecialista && <UpdateUsuarioEspecialista idUsuario={idUsuario} handleShowModal={handleShowModal} />}
       {showModalDeleteUsuario && <DeleteUsuario idUsuario={idUsuario} handleShowModalDelete={handleShowModalDelete} />}
-      
-      
-      <TablaUsuariosAdminEspecialistas rol={1} docentesDeDirectores={docentesDeDirectores}/>
+      {showModalCrearEspecialista && <AdminEspecialistaModal onClose={handleShowModalCrear} />}
 
+      <div className={styles.header}>
+        <div className={styles.headerInfo}>
+          <h1 className={styles.pageTitle}>Especialistas</h1>
+          <p className={styles.pageSubtitle}>Administra y registra a los especialistas de la institución</p>
+        </div>
+        <button onClick={handleShowModalCrear} className={styles.addBtn}>
+          <RiAddLine size={20} />
+          <span>Registrar Especialista</span>
+        </button>
+      </div>
 
-      <div className={styles.formContainer}>
-        <h1 className={styles.title}>
-          Registrar Especialista
-        </h1>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <FormInput
-            label="Dni"
-            name="dni"
-            register={register}
-            errors={errors}
-            type="number"
-            placeholder="DNI de usuario"
-            validation={{
-              required: { value: true, message: "DNI es requerido" },
-              minLength: { value: 8, message: "DNI debe tener 8 caracteres" },
-              maxLength: { value: 8, message: "DNI debe tener 8 caracteres" },
-            }}
-          />
-
-          <FormSelect
-            label="Ugel"
-            name="region"
-            register={register}
-            errors={errors}
-            options={regiones?.map(r => ({ codigo: r.codigo || 0, region: r.region || '' })) || []}
-          />
-
-          <FormInput
-            label="Nombres"
-            name="nombres"
-            register={register}
-            errors={errors}
-            placeholder="Nombre de usuario"
-            validation={{
-              required: { value: true, message: "Nombres son requeridos" },
-              minLength: { value: 2, message: "Nombres deben tener mínimo 2 caracteres" },
-              maxLength: { value: 40, message: "Nombres deben tener máximo 40 caracteres" },
-            }}
-          />
-
-          <FormInput
-            label="Apellidos"
-            name="apellidos"
-            register={register}
-            errors={errors}
-            placeholder="Apellido de usuario"
-            validation={{
-              required: { value: true, message: "Apellidos son requeridos" },
-              minLength: { value: 2, message: "Apellidos deben tener mínimo 2 caracteres" },
-              maxLength: { value: 40, message: "Apellidos deben tener máximo 40 caracteres" },
-            }}
-          />
-
-          <FormSelect
-            label="Género"
-            name="genero"
-            register={register}
-            errors={errors}
-            options={genero?.map(g => ({ codigo: g.id, region: g.name })) || []}
-          />
-
-          <FormSelect
-            label="Tipo de Especialista"
-            name="tipoEspecialista"
-            register={register}
-            errors={errors}
-            options={tipoEspecialista?.map(t => ({ codigo: t.id, region: t.name })) || []}
-          />
-
-          <FormCheckbox
-            label="Nivel"
-            name="nivelDeInstitucion"
-            register={register}
-            errors={errors}
-            options={nivelInstitucion}
-          />
-
-          <button
-            type="submit"
-            className={styles.submitButton}
-          >
-            Registrar
-          </button>
-        </form>
+      <div className={styles.mainContent}>
+        <TablaUsuariosAdminEspecialistas rol={1} docentesDeDirectores={docentesDeDirectores} />
       </div>
     </div>
   )

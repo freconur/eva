@@ -1,0 +1,261 @@
+.reportContainer {
+    padding: 1rem;
+}
+
+.reportTitle {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.questionContainer {
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    transition: border-color 0.2s ease;
+}
+
+.questionContainer:hover {
+    border-color: #cbd5e1;
+}
+
+.questionHeader {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.questionNumber {
+    font-weight: 700;
+    color: #3b82f6;
+    font-size: 1.125rem;
+}
+
+.questionContent {
+    flex: 1;
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.statItemWrapper {
+    position: relative;
+}
+
+.statItem {
+    padding: 0.75rem 1rem;
+    background-color: #f8fafc;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #475569;
+    cursor: help;
+    transition: all 0.2s ease;
+    margin: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.statItem:hover {
+    background-color: #f1f5f9;
+    transform: translateY(-1px);
+}
+
+.statValue {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.statPercentage {
+    color: #3b82f6;
+    font-size: 0.75rem;
+}
+
+.answerContainer {
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.answerText {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background-color: #10b981;
+    color: white;
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.chartContainer {
+    margin: 2rem 0;
+    display: flex;
+    justify-content: center;
+}
+
+.chartWrapper {
+    height: 320px;
+    width: 100%;
+    max-width: 800px;
+}
+
+/* Popover styles */
+.popover {
+    position: absolute;
+    z-index: 50;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 10px;
+    width: 240px;
+    animation: fadeIn 0.2s ease;
+}
+
+.popoverContent {
+    background-color: #1e293b;
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.popoverHeader {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: #3b82f6;
+    text-transform: uppercase;
+}
+
+.popoverArrow {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #1e293b;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Filters specific within the report */
+.filtersSection {
+    margin-bottom: 2rem;
+    background-color: #f8fafc;
+    padding: 1.25rem;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+}
+
+.filtersGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+}
+
+.filterGroup {
+    flex: 1;
+    min-width: 160px;
+}
+
+.filterLabel {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.375rem;
+}
+
+.filterSelect {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background-color: white;
+    color: #475569;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.filterSelect:hover {
+    border-color: #cbd5e1;
+}
+
+.filterSelect:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.filterActions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.actionButton {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.primaryAction {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.primaryAction:hover {
+    background-color: #2563eb;
+}
+
+.secondaryAction {
+    background-color: white;
+    color: #64748b;
+    border-color: #e2e8f0;
+}
+
+.secondaryAction:hover {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+}

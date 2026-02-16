@@ -203,167 +203,159 @@ const Evaluacion = () => {
       )}
 
       {loaderPages ? (
-        <div className={styles.loader}>
-          <div className={styles.loaderContent}>
-            <RiLoader4Line className={styles.loaderIcon} />
-            <span className={styles.loaderText}>...cargando</span>
-          </div>
+        <div className={styles.loaderContainer}>
+          <RiLoader4Line className={styles.spinner} />
+          <span>Cargando evaluación...</span>
         </div>
       ) : (
         <div className={styles.container} ref={containerRef}>
           <div className={styles.content}>
-            <h1 className={styles.title}>{evaluacion.nombre}</h1>
-            {/* Modal para agregar preguntas */}
-            {showModal && (
-              <AgregarPreguntasRespuestas
-                id={`${route.query.id}`}
-                showModal={showModal}
-                handleshowModal={handleshowModal}
-              />
-            )}
 
-            {/* Sección de acciones compacta */}
-            <div className={styles.compactActionsContainer}>
-              <div className={styles.compactActionsCard}>
-                {/* Select para acciones de gestión */}
-                <div className={styles.compactSelectGroup}>
-                  <div className={styles.compactSelectIcon}>
-                    <MdSettings />
-                  </div>
+            {/* Header Section */}
+            <header className={styles.header}>
+              <h1 className={styles.title}>{evaluacion.nombre}</h1>
+              <span className={styles.subtitle}>Gestión y configuración de la evaluación</span>
+            </header>
+
+            {/* Actions Bar */}
+            <div className={styles.actionsBar}>
+              <div className={styles.actionGroup}>
+                <div className={styles.selectWrapper}>
                   <select
-                    className={styles.compactSelect}
+                    className={styles.selectAction}
                     onChange={(e) => {
                       const value = e.target.value;
-                      if (value === 'agregar-preguntas') {
-                        handleshowModal();
-                      } else if (value === 'rango-nivel') {
-                        handleShowModalPuntuacionYNivel();
-                      } else if (value === 'asignar-evaluacion') {
-                        handleShowModalAsignarEvaluacion();
-                      } else if (value === 'asignar-evaluacion-ugel') {
-                        handleShowModalAsignarEvaluacionUgel();
-                      }
-                      e.target.value = ''; // Reset select
+                      if (value === 'agregar-preguntas') handleshowModal();
+                      else if (value === 'rango-nivel') handleShowModalPuntuacionYNivel();
+                      else if (value === 'asignar-evaluacion') handleShowModalAsignarEvaluacion();
+                      else if (value === 'asignar-evaluacion-ugel') handleShowModalAsignarEvaluacionUgel();
+                      e.target.value = '';
                     }}
                   >
-                    <option value="">⚙️ Gestionar Evaluación</option>
-
-
-                    {canManageEvaluation && (
-                      <option value="agregar-preguntas">➕ Agregar Preguntas</option>
-                    )}
-
-                    {currentUserData.rol === 4 && (
-                      <option value="rango-nivel">⚙️ Configurar Rango de Nivel</option>
-
-                    )}
-                    {currentUserData.rol === 4 && (
-                      <option value="asignar-evaluacion">📋 Asignar Evaluación</option>
-                    )}
-                    {currentUserData.rol === 4 && (
-                      <option value="asignar-evaluacion-ugel">📋 Asignar Evaluación UGEL</option>
-                    )}
+                    <option value="">⚙️ Herramientas de Gestión</option>
+                    {canManageEvaluation && <option value="agregar-preguntas">➕ Agregar Preguntas</option>}
+                    {currentUserData.rol === 4 && <option value="rango-nivel">📊 Configurar Niveles</option>}
+                    {currentUserData.rol === 4 && <option value="asignar-evaluacion">📋 Asignar a Región</option>}
+                    {currentUserData.rol === 4 && <option value="asignar-evaluacion-ugel">🏢 Asignar a UGEL</option>}
                   </select>
+                  <span className={styles.selectIcon}>▼</span>
                 </div>
 
-                {/* Botones de reportes */}
-                <div className={styles.compactButtonsGroup}>
-                  <Link
-                    href={`reporte?id=${currentUserData.dni}&idEvaluacion=${route.query.id}`}
-                    className={styles.compactButton}
-                    title="Ver reporte de evaluación"
-                  >
-                    <MdAssessment />
-                    <span>Reporte</span>
-                  </Link>
+                <Link
+                  href={`reporte?id=${currentUserData.dni}&idEvaluacion=${route.query.id}`}
+                  className={styles.linkButton}
+                >
+                  <MdAssessment /> Reporte
+                </Link>
 
-                  <Link
-                    href={`seguimiento-evaluaciones`}
-                    className={styles.compactButton}
-                    title="Ver seguimiento"
-                  >
-                    <MdTrendingUp />
-                    <span>Seguimiento</span>
-                  </Link>
-                </div>
-
-                {/* Puntaje total compacto */}
-                {hayPuntajes && currentUserData.rol === 4 && (
-                  <div className={styles.compactScore}>
-                    <MdEmojiEvents />
-                    <span className={styles.compactScoreText}>
-                      <strong>{totalPuntaje}</strong> pts
-                    </span>
-                  </div>
-                )}
+                <Link
+                  href={`seguimiento-evaluaciones`}
+                  className={styles.linkButton}
+                >
+                  <MdTrendingUp /> Seguimiento
+                </Link>
               </div>
+
+              {/* Score Badge */}
+              {hayPuntajes && currentUserData.rol === 4 && (
+                <div className={styles.totalScore}>
+                  <span className={styles.scoreLabel}>Puntaje Total</span>
+                  <span className={styles.scoreValue}>{totalPuntaje}</span>
+                </div>
+              )}
             </div>
 
-            <h2 className={styles.sectionTitle}>preguntas y respuestas</h2>
-            <ul className={styles.questionsList}>
-              {preguntasRespuestas.map((pr, index) => (
-                <li key={index} className={styles.questionItem}>
-                  <div className={styles.questionHeader}>
-                    <span className={styles.questionNumber}>{index + 1}.</span>
-                    <p className={styles.questionText}>{pr.pregunta}</p>
-                    {canManageEvaluation &&
-                      <div className={styles.orderButtons}>
-                        <button
-                          onClick={() => handleMoveQuestion(index, 'up')}
-                          disabled={index === 0}
-                          className={styles.orderButton}
-                        >
-                          <FaArrowUp />
-                        </button>
-                        <button
-                          onClick={() => handleMoveQuestion(index, 'down')}
-                          disabled={index === preguntasRespuestas.length - 1}
-                          className={styles.orderButton}
-                        >
-                          <FaArrowDown />
-                        </button>
-                      </div>
-                    }
-                  </div>
+            {/* Questions List */}
+            <section>
+              <h2 className={styles.sectionTitle}>Preguntas ({preguntasRespuestas.length})</h2>
+              <ul className={styles.questionsList}>
+                {preguntasRespuestas.map((pr, index) => (
+                  <li key={index} className={styles.questionCard}>
 
-                  <div className={styles.teacherAction}>
-                    <span className={styles.actionLabel}>Actuación:</span>
-                    <p className={styles.actionText}>{pr.preguntaDocente}</p>
-                    {canManageEvaluation &&
-                      <div className={styles.actionButtons}>
-                        <MdEditSquare
-                          onClick={() => {
-                            handleSelectPregunta(index);
-                            handleShowModalUpdatePreguntaRespuesta()
-                          }}
-                          className={styles.editIcon}
-                        />
-                        <MdDelete
-                          onClick={() => handleSelectPreguntaToDelete(index)}
-                          className={styles.deleteIcon}
-                        />
+                    <div className={styles.questionHeader}>
+                      <div className={styles.questionMeta}>
+                        <span className={styles.questionNumber}>{index + 1}</span>
+                        <p className={styles.questionText}>{pr.pregunta}</p>
                       </div>
-                    }
-                  </div>
 
-                  {pr.alternativas && pr.alternativas.map((al, index) => (
-                    <div key={index} className={styles.alternative}>
-                      <p className={styles.alternativeLabel}>{al.alternativa} - </p>
-                      <p className={styles.alternativeText}>{al.descripcion}</p>
+                      {canManageEvaluation && (
+                        <div className={styles.controls}>
+                          <button
+                            onClick={() => handleMoveQuestion(index, 'up')}
+                            disabled={index === 0}
+                            className={styles.controlButton}
+                            title="Mover arriba"
+                          >
+                            <FaArrowUp />
+                          </button>
+                          <button
+                            onClick={() => handleMoveQuestion(index, 'down')}
+                            disabled={index === preguntasRespuestas.length - 1}
+                            className={styles.controlButton}
+                            title="Mover abajo"
+                          >
+                            <FaArrowDown />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  ))}
 
-                  <div className={styles.answerContainer}>
-                    <div className={styles.answer}>respuesta: {pr.respuesta}</div>
-                    {pr.puntaje !== undefined && pr.puntaje !== null && currentUserData.rol === 4 && (
-                      <div className={pr.puntaje !== undefined && Number(pr.puntaje) <= 0 ? styles.puntajeBajo : styles.puntaje}>
-                        puntaje: {pr.puntaje}
+                    <div className={styles.teacherAction}>
+                      <div className={styles.actionContent}>
+                        <span className={styles.actionLabel}>Actuación Docente</span>
+                        <p className={styles.actionText}>{pr.preguntaDocente}</p>
                       </div>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
+
+                      {canManageEvaluation && (
+                        <div className={styles.actionButtons}>
+                          <div
+                            className={`${styles.iconButton} ${styles.editBtn}`}
+                            onClick={() => {
+                              handleSelectPregunta(index);
+                              handleShowModalUpdatePreguntaRespuesta();
+                            }}
+                            title="Editar"
+                          >
+                            <MdEditSquare />
+                          </div>
+                          <div
+                            className={`${styles.iconButton} ${styles.deleteBtn}`}
+                            onClick={() => handleSelectPreguntaToDelete(index)}
+                            title="Eliminar"
+                          >
+                            <MdDelete />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={styles.alternativesList}>
+                      {pr.alternativas && pr.alternativas.map((al, idx) => (
+                        <div key={idx} className={styles.alternativeItem}>
+                          <span className={styles.altBadge}>{al.alternativa}</span>
+                          <p className={styles.altText}>{al.descripcion}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className={styles.cardFooter}>
+                      <div className={styles.correctAnswer}>
+                        <span>Respuesta Correcta:</span>
+                        <strong>{pr.respuesta}</strong>
+                      </div>
+
+                      {pr.puntaje !== undefined && pr.puntaje !== null && currentUserData.rol === 4 && (
+                        <div className={`${styles.scoreBadge} ${Number(pr.puntaje) <= 0 ? styles.low : ''}`}>
+                          <MdEmojiEvents />
+                          <span>{pr.puntaje} pts</span>
+                        </div>
+                      )}
+                    </div>
+
+                  </li>
+                ))}
+              </ul>
+            </section>
           </div>
         </div>
       )}

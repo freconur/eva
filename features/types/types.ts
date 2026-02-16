@@ -418,6 +418,8 @@ export type CreaEvaluacion = {
   tipoEvaluacion?: string;
   tipoDeEvaluacion?: string;
   nivel?: number;
+  mesDelExamen?: string;
+  añoDelExamen?: string;
 };
 
 export type respuestaPsicolinguistica = {

@@ -3,12 +3,12 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { currentYear } from '@/fuctions/dates';
 import { getAuth } from 'firebase/auth';
 import { app, functions as firebaseFunctions, FUNCTIONS_TIMEOUT } from '@/firebase/firebase.config'; // Usar la instancia configurada
-import { 
+import {
   EstimacionTiempo,
-  calcularTiempoEstimado, 
-  formatearEstimacion, 
+  calcularTiempoEstimado,
+  formatearEstimacion,
   mostrarConfirmacionEstimacion,
-  ESTIMACIONES_PREDETERMINADAS 
+  ESTIMACIONES_PREDETERMINADAS
 } from '@/fuctions/timeEstimation';
 
 interface FiltrosReporte {
@@ -64,14 +64,14 @@ export const useGenerarReporte = () => {
   const calcularEstimacionPrevia = (numeroDirectoresEstimado: number = 100) => {
     const estimacion = calcularTiempoEstimado(numeroDirectoresEstimado);
     setEstimacionPrevia(estimacion);
-    
+
     console.log('⏱️  ESTIMACIÓN PREVIA CALCULADA:');
     console.log(`   📈 Directores estimados: ${estimacion.totalDirectores}`);
     console.log(`   ⏰ Tiempo estimado: ${estimacion.tiempoEstimadoMinutos} minutos`);
     console.log(`   🚦 Clasificación: ${estimacion.clasificacion}`);
     console.log(`   💡 ${estimacion.recomendacion}`);
     console.log(`   📊 Uso del timeout: ${estimacion.porcentajeDelTimeout}%`);
-    
+
     return estimacion;
   };
 
@@ -83,7 +83,7 @@ export const useGenerarReporte = () => {
   const mostrarConfirmacionConEstimacion = (numeroDirectoresEstimado: number = 100): boolean => {
     console.log('numeroDirectoresEstimado', numeroDirectoresEstimado)
     const estimacion = calcularTiempoEstimado(numeroDirectoresEstimado);
-    
+
     const mensaje = `
 🔍 ESTIMACIÓN DE TIEMPO DE PROCESAMIENTO:
 
@@ -95,10 +95,10 @@ export const useGenerarReporte = () => {
 
 💡 ${estimacion.recomendacion}
 
-${estimacion.excederaTimeout ? 
-  '⚠️ ADVERTENCIA: Puede exceder el tiempo límite de 8 minutos.\n' : 
-  '✅ El tiempo estimado está dentro del límite.\n'
-}
+${estimacion.excederaTimeout ?
+        '⚠️ ADVERTENCIA: Puede exceder el tiempo límite de 8 minutos.\n' :
+        '✅ El tiempo estimado está dentro del límite.\n'
+      }
 
 ¿Deseas continuar con la generación del reporte?`;
 
@@ -125,29 +125,30 @@ ${estimacion.excederaTimeout ?
   const actualizarEstimacionConDatosReales = (numeroRealDirectores: number) => {
     const estimacionReal = calcularTiempoEstimado(numeroRealDirectores);
     setEstimacionPrevia(estimacionReal);
-    
+
     console.log('🔄 Estimación actualizada con datos reales:');
     console.log(`   📊 Directores reales: ${numeroRealDirectores}`);
     console.log(`   ⏰ Tiempo estimado actualizado: ${estimacionReal.tiempoEstimadoMinutos} minutos`);
     console.log(`   🚦 Clasificación: ${estimacionReal.clasificacion}`);
-    
+
     return estimacionReal;
   };
 
   const generarReporte = async (
     idEvaluacion: string,
     month: number,
-    filtros: FiltrosReporte
+    filtros: FiltrosReporte,
+    year: number
   ) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Calcular y mostrar estimación previa antes de proceder
       console.log('🧮 Calculando estimación previa...');
       const estimacionInicial = calcularTiempoEstimado(100); // Usar 1200 como estimación por defecto
       setEstimacionPrevia(estimacionInicial);
-      
+
       // Mostrar confirmación con estimación al usuario
       const continuar = mostrarConfirmacionConEstimacion(100);
       if (!continuar) {
@@ -158,13 +159,13 @@ ${estimacion.excederaTimeout ?
       // Verificar autenticación y refrescar token
       const auth = getAuth(app);
       const currentUser = auth.currentUser;
-      
+
       console.log('🔍 Current user:', currentUser);
-      
+
       if (!currentUser) {
         throw new Error('Usuario no autenticado');
       }
-      
+
       // Refrescar el token para asegurar que tenga los custom claims actualizados
       const idTokenResult = await currentUser.getIdTokenResult(true);
       console.log('🔍 Custom claims del usuario actual:', idTokenResult.claims);
@@ -173,10 +174,10 @@ ${estimacion.excederaTimeout ?
       console.log('🔍 UID del usuario:', currentUser.uid);
       console.log('🔍 Email del usuario:', currentUser.email);
       console.log('Token refrescado antes de generar reporte');
-      
+
       // Usar la instancia de Functions ya configurada con timeout personalizado
       console.log('🔍 Using functions instance from config with custom timeout:', FUNCTIONS_TIMEOUT / 1000, 'segundos');
-      
+
       // Configurar la función callable con timeout personalizado
       const generarReporteFunction = httpsCallable(firebaseFunctions, 'leerEvaluacionesParaAdmin', {
         timeout: FUNCTIONS_TIMEOUT // 9.5 minutos
@@ -198,19 +199,19 @@ ${estimacion.excederaTimeout ?
         idEvaluacion,
         month,
         filtros,
-        currentYear
+        currentYear: year
       });
 
       console.log('✅ Resultado de la función:', result.data);
 
-      const { data } = result.data as { 
-        success: boolean; 
-        message: string; 
-        data: ResultadoReporte 
+      const { data } = result.data as {
+        success: boolean;
+        message: string;
+        data: ResultadoReporte
       };
 
       setResultado(data);
-      
+
       // Mostrar información detallada de la estimación de tiempo
       /* if (data.estimacionTiempo) {
         const est = data.estimacionTiempo;
@@ -227,7 +228,7 @@ ${estimacion.excederaTimeout ?
           console.warn(`⚠️  El tiempo estimado podría haber excedido el timeout`);
         }
       } */
-      
+
       // Mostrar información de tiempo real si está disponible
       /* if (data.estadisticas.tiempoReal) {
         const real = data.estadisticas.tiempoReal;
@@ -238,22 +239,21 @@ ${estimacion.excederaTimeout ?
         console.log(`   ✅ ${real.masRapidoQueEstimacion ? 'Más rápido que lo estimado' : 'Más lento que lo estimado'}`);
         console.log(`   🎯 Eficiencia de estimación: ${real.eficienciaEstimacion}`);
       } */
-      
+
       // Mostrar mensaje de éxito con información de estimación
-      const mensajeExito = `Reporte generado exitosamente. ${(result.data as any).message}${
-        data.estimacionTiempo ? 
-        `\n\n📊 Estimación: ${data.estimacionTiempo.tiempoEstimadoMinutos} min (${data.estimacionTiempo.clasificacion})` : 
-        ''
-      }`;
+      const mensajeExito = `Reporte generado exitosamente. ${(result.data as any).message}${data.estimacionTiempo ?
+          `\n\n📊 Estimación: ${data.estimacionTiempo.tiempoEstimadoMinutos} min (${data.estimacionTiempo.clasificacion})` :
+          ''
+        }`;
       alert(mensajeExito);
-      
+
       return data;
 
     } catch (error: any) {
       console.error('❌ Error al generar reporte:', error);
-      
+
       let errorMessage = 'Error desconocido al generar el reporte';
-      
+
       if (error.code === 'functions/deadline-exceeded') {
         errorMessage = 'El reporte está tardando más de lo esperado. Esto puede ocurrir con grandes volúmenes de datos. Por favor, intenta nuevamente o contacta al administrador del sistema.';
         console.log('⚠️  Timeout del cliente - la función podría seguir ejecutándose en el servidor');
@@ -272,7 +272,7 @@ ${estimacion.excederaTimeout ?
       setError(errorMessage);
       alert(`Error: ${errorMessage}`);
       throw error;
-      
+
     } finally {
       setLoading(false);
     }

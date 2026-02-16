@@ -228,6 +228,7 @@ const Reporte = () => {
   const [yearSelected, setYearSelected] = useState(currentYear);
 
   const handleChangeYear = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    console.log('Select Año value:', e.target.value);
     setYearSelected(Number(e.target.value));
   };
 
@@ -453,6 +454,7 @@ const Reporte = () => {
     },
   };
   const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    console.log('Select Mes value:', e.target.value);
     const selectedMonth = getAllMonths.find((mes) => mes.name === e.target.value);
     setMonthSelected(selectedMonth ? selectedMonth.id : currentMonth);
   };
@@ -516,7 +518,7 @@ const Reporte = () => {
         caracteristicaCurricular: filtros.caracteristicaCurricular,
         genero: filtros.genero,
         area: filtros.area,
-      });
+      }, yearSelected);
 
       if (resultado) {
         const data = resultado as any;
@@ -561,34 +563,91 @@ const Reporte = () => {
       ) : (
         <div className={styles.mainContainer}>
           <h1 className={styles.title}>{evaluacion.nombre?.toUpperCase()}</h1>
-          <div className={styles.selectContainer}>
-            <select
-              className={styles.select}
-              onChange={handleChangeMonth}
-              value={getAllMonths[monthSelected]?.name || ''}
-              id=""
-            >
-              <option value="">Mes</option>
-              {getAllMonths.slice(0, yearSelected < currentYear ? getAllMonths.length : currentMonth + 1).map((mes) => (
-                <option key={mes.id} value={mes.name}>
-                  {mes.name}
-                </option>
-              ))}
-            </select>
+
+          <div className={styles.toolbar}>
+            <div className={styles.controlsGroup}>
+              <select
+                className={styles.select}
+                onChange={handleChangeMonth}
+                value={getAllMonths[monthSelected]?.name || ''}
+              >
+                <option value="">Mes</option>
+                {getAllMonths.slice(0, yearSelected < currentYear ? getAllMonths.length : currentMonth + 1).map((mes) => (
+                  <option key={mes.id} value={mes.name}>
+                    {mes.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className={styles.select}
+                onChange={handleChangeYear}
+                value={yearSelected}
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className={styles.exportGroup}>
+              <button
+                onClick={handleExportEstudiantesToExcel}
+                className={styles.primaryButton}
+                disabled={loadingExportEstudiantes}
+              >
+                {loadingExportEstudiantes ? (
+                  <>
+                    <RiLoader4Line className={styles.loaderIcon} />
+                    <span>Procesando...</span>
+                  </>
+                ) : (
+                  <>
+                    <RiFileExcel2Line />
+                    <span>Estudiantes</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                className={styles.secondaryButton}
+                onClick={handleExportToExcel}
+                disabled={loadingExport}
+              >
+                {loadingExport ? (
+                  <>
+                    <RiLoader4Line className={styles.loaderIcon} />
+                    <span>Exportando...</span>
+                  </>
+                ) : (
+                  <>
+                    <RiDownloadLine />
+                    <span>Exportar Excel</span>
+                  </>
+                )}
+              </button>
+
+              {currentUserData?.rol === 4 && (
+                <button
+                  className={styles.warningButton}
+                  onClick={handleGenerarReporte}
+                  disabled={loadingGenerarReporte || !route.query.idEvaluacion}
+                >
+                  {loadingGenerarReporte ? (
+                    <>
+                      <RiLoader4Line className={styles.loaderIcon} />
+                      <span>Procesando...</span>
+                    </>
+                  ) : (
+                    'Generar consolidado'
+                  )}
+                </button>
+              )}
+            </div>
           </div>
-          <div className={styles.selectContainer}>
-            <select
-              className={styles.select}
-              onChange={handleChangeYear}
-              value={yearSelected}
-            >
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
+
           {/* <FiltrosReporte
             filtros={filtros}
             distritosDisponibles={distritosDisponibles}
@@ -597,163 +656,7 @@ const Reporte = () => {
             handleRestablecerFiltros={handleRestablecerFiltros}
           /> */}
 
-          <div className={styles.exportContainer}>
-            <button
-              onClick={handleExportEstudiantesToExcel}
-              //onClick={handleExportEstudiantesToExcelFronted} 
-              className={styles.exportStudentsButton}
-              disabled={loadingExportEstudiantes}
-            >
-              {loadingExportEstudiantes ? (
-                <>
-                  <RiLoader4Line className={styles.loaderIconStudents} />
-                  <span>Obteniendo estudiantes...</span>
-                </>
-              ) : (
-                <>
-                  <RiFileExcel2Line className={styles.exportIcon} />
-                  <span>Exportar datos estudiantes</span>
-                </>
-              )}
-            </button>
-            <button
-              className={styles.exportButton}
-              onClick={handleExportToExcel}
-              disabled={loadingExport}
-            >
-              {loadingExport ? (
-                <>
-                  <RiLoader4Line className={styles.loaderIcon} />
-                  Exportando...
-                </>
-              ) : (
-                'Exportar a Excel'
-              )}
-            </button>
 
-            {/* Botón para crear estudiantes de docentes */}
-            {/* <button
-              className={styles.exportButton}
-              onClick={handleCrearEstudiantes}
-              disabled={loadingCrearEstudiantes}
-            >
-              {loadingCrearEstudiantes ? (
-                <>
-                  <RiLoader4Line className={styles.loaderIcon} />
-                  Creando estudiantes... (hasta 9 min)
-                </>
-              ) : (
-                'Crear estudiantes de docentes'
-              )}
-            </button> */}
-
-            {/* Botón para generar puntaje progresiva */}
-            {/* {
-              currentUserData?.rol === 4 && (
-            <button
-              className={styles.exportButton}
-              onClick={handleCrearPuntajeProgresiva}
-              disabled={loadingCrearPuntajeProgresiva}
-            >
-              {loadingCrearPuntajeProgresiva ? (
-                <>
-                  <RiLoader4Line className={styles.loaderIcon} />
-                  Generando puntaje progresiva...
-                </>
-              ) : (
-                'Generar puntaje progresiva'
-              )}
-            </button>
-              )
-            } */}
-
-            {/* Indicador de progreso para crear estudiantes */}
-            {loadingCrearEstudiantes && progresoCrearEstudiantes && (
-              <div className={styles.progressContainer}>
-                <div className={styles.progressBar}>
-                  <div
-                    className={styles.progressFill}
-                    style={{ width: `${progresoCrearEstudiantes.porcentaje}%` }}
-                  ></div>
-                </div>
-                <div className={styles.progressText}>
-                  Procesando: {progresoCrearEstudiantes.docentesProcesados}/{progresoCrearEstudiantes.totalDocentes} docentes
-                  ({progresoCrearEstudiantes.porcentaje.toFixed(1)}%)
-                </div>
-                <div className={styles.progressDetails}>
-                  Estudiantes: {progresoCrearEstudiantes.estudiantesProcesados} |
-                  Lotes: {progresoCrearEstudiantes.lotesCompletados} |
-                  Errores: {progresoCrearEstudiantes.erroresEncontrados}
-                </div>
-              </div>
-            )}
-
-            {/* Mensaje de error si existe */}
-            {errorCrearEstudiantes && (
-              <div className={styles.errorMessage}>
-                ❌ Error: {errorCrearEstudiantes}
-              </div>
-            )}
-
-            {/* Mensaje de éxito si se completó */}
-            {resultadoCrearEstudiantes && !loadingCrearEstudiantes && (
-              <div className={styles.successMessage}>
-                ✅ {obtenerMensajeResumen()}
-              </div>
-            )}
-
-            {/* Indicador de progreso para puntaje progresiva */}
-            {loadingCrearPuntajeProgresiva && progresoCrearPuntajeProgresiva && (
-              <div className={styles.progressContainer}>
-                <div className={styles.progressBar}>
-                  <div
-                    className={styles.progressFill}
-                    style={{ width: `${progresoCrearPuntajeProgresiva.porcentaje}%` }}
-                  ></div>
-                </div>
-                <div className={styles.progressText}>
-                  Procesando: {progresoCrearPuntajeProgresiva.estudiantesProcesados}/{progresoCrearPuntajeProgresiva.totalEstudiantes} estudiantes
-                  ({progresoCrearPuntajeProgresiva.porcentaje.toFixed(1)}%)
-                </div>
-                <div className={styles.progressDetails}>
-                  Estudiantes: {progresoCrearPuntajeProgresiva.estudiantesProcesados} |
-                  Lotes: {progresoCrearPuntajeProgresiva.lotesCompletados} |
-                  Errores: {progresoCrearPuntajeProgresiva.erroresEncontrados}
-                </div>
-              </div>
-            )}
-
-            {/* Mensaje de error para puntaje progresiva si existe */}
-            {errorCrearPuntajeProgresiva && (
-              <div className={styles.errorMessage}>
-                ❌ Error: {errorCrearPuntajeProgresiva}
-              </div>
-            )}
-
-            {/* Mensaje de éxito para puntaje progresiva si se completó */}
-            {resultadoCrearPuntajeProgresiva && !loadingCrearPuntajeProgresiva && (
-              <div className={styles.successMessage}>
-                ✅ {obtenerMensajeResumenPuntajeProgresiva()}
-              </div>
-            )}
-
-            {currentUserData?.rol === 4 && (
-              <button
-                className={styles.generateReportButton}
-                onClick={handleGenerarReporte}
-                disabled={loadingGenerarReporte || !route.query.idEvaluacion}
-              >
-                {loadingGenerarReporte ? (
-                  <>
-                    <RiLoader4Line className={styles.loaderIcon} />
-                    Procesando datos... (hasta 9 min)
-                  </>
-                ) : (
-                  'Generar reporte consolidado'
-                )}
-              </button>
-            )}
-          </div>
 
           {/* Componente de gráfico pie chart */}
           {

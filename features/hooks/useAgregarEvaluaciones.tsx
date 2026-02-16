@@ -447,7 +447,8 @@ export const useAgregarEvaluaciones = () => {
         categoria: Number(value.categoria),
         rol: 4,
         tipoDeEvaluacion: value.tipoDeEvaluacion,
-        mesDelExamen: `${currentMonth}`,
+        mesDelExamen: value.mesDelExamen || `${currentMonth}`,
+        añoDelExamen: value.añoDelExamen || `${currentYear}`,
         active: false,
         nivel: Number(value.nivel),
       });
@@ -1013,9 +1014,20 @@ export const useAgregarEvaluaciones = () => {
       });
       console.log('tienePuntajeValido', tienePuntajeValido)
 
-      return { tienePuntajeValido, totalPreguntas: preguntasRespuestas.size };
+      // Calcular la suma total de puntajes
+      const sumaTotalPuntajes = arrayPreguntasRespuestas.reduce((sum, pregunta) => {
+        const puntaje = typeof pregunta.puntaje === 'string'
+          ? parseFloat(pregunta.puntaje)
+          : (pregunta.puntaje || 0);
+
+        return sum + (isNaN(puntaje) ? 0 : puntaje);
+      }, 0);
+
+      console.log('sumaTotalPuntajes', sumaTotalPuntajes);
+
+      return { tienePuntajeValido, totalPreguntas: preguntasRespuestas.size, sumaTotalPuntajes, preguntas: arrayPreguntasRespuestas };
     } else {
-      return { tienePuntajeValido: false, totalPreguntas: 0 };
+      return { tienePuntajeValido: false, totalPreguntas: 0, sumaTotalPuntajes: 0, preguntas: [] };
     }
   }
   return {

@@ -7,7 +7,7 @@ import { convertRolToPath, convertRolToTitle } from '@/fuctions/regiones'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import { RiDeleteBinLine } from 'react-icons/ri'
 import { MdEditSquare } from 'react-icons/md'
-import UpdateDataDocente from '@/modals/updateDocente'
+import UpdateUsuarioDirector from '@/modals/updateUsuarioDirector'
 import DeleteUsuario from '@/modals/deleteUsuario'
 import Loader from '@/components/loader/loader'
 import { useEffect } from 'react'
@@ -24,7 +24,8 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const { getDirectorFromEspecialistaCurricular, getNextUsuarios, getPreviousUsuarios, getNextUsuariosEspecialista, getPreviousUsuariosEspecialista, getNextDirectoresAdmin, getPreviousDirectoresAdmin } = useEvaluacionCurricular()
 	const [docente, setDocente] = useState<User>({})
-	const [showUpdateDataDocente, setShowUpdateDataDocente] = useState(false)
+	const [showUpdateDirector, setShowUpdateDirector] = useState(false)
+	const [idDirector, setIdDirector] = useState<string>("")
 	const [showDeleteUsuario, setShowDeleteUsuario] = useState(false)
 
 	useEffect(() => {
@@ -62,10 +63,10 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 	return (
 		<div className={styles.tableSection}>
 			{
-				showUpdateDataDocente &&
-				<UpdateDataDocente
-					dataDocente={docente}
-					onClose={() => setShowUpdateDataDocente(false)}
+				showUpdateDirector &&
+				<UpdateUsuarioDirector
+					idUsuario={idDirector}
+					handleShowModal={() => setShowUpdateDirector(false)}
 				/>
 			}
 			{
@@ -106,7 +107,7 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 						<div className={styles.resultadoBusquedaHeader}>
 							<h3>Resultado de la búsqueda</h3>
 							<div className={styles.actions}>
-								<MdEditSquare onClick={() => { setDocente(resultadoBusquedaUsuario); setShowUpdateDataDocente(!showUpdateDataDocente) }} className={styles.editButton} />
+								<MdEditSquare onClick={() => { setIdDirector(resultadoBusquedaUsuario.dni || ""); setShowUpdateDirector(true) }} className={styles.editButton} />
 								<RiDeleteBinLine onClick={() => { setShowDeleteUsuario(!showDeleteUsuario); setDocente(resultadoBusquedaUsuario) }} className={styles.deleteButton} />
 							</div>
 
@@ -144,7 +145,7 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 									</td>
 									<td >
 										<div className={styles.actions}>
-											<MdEditSquare onClick={() => { setDocente(director); setShowUpdateDataDocente(!showUpdateDataDocente) }} className={styles.editButton} />
+											<MdEditSquare onClick={() => { setIdDirector(director.dni || ""); setShowUpdateDirector(true) }} className={styles.editButton} />
 											<RiDeleteBinLine onClick={() => { setShowDeleteUsuario(!showDeleteUsuario); setDocente(director) }} className={styles.deleteButton} />
 										</div>
 									</td>

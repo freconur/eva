@@ -19,6 +19,7 @@ export { actualizarUsuario } from './actualizarUsuario';
 export { borrarUsuario } from './borrarUsuario';
 export { crearDirectoresMasivo } from './crearDirectoresMasivo';
 export { crearDocentesMasivo } from './crearDocentesMasivo';
+export { leerEvaluacionesParaAdmin } from './leerEvaluacionesParaAdmin';
 
 try {
   const { getListCollectionsEvaluacionesPorMes } = require('./getListCollectionsEvaluacionesPorMes');

@@ -67,7 +67,7 @@ const useEvaluacionCurricular = () => {
     /* const q = query(pathRef,where("rol","==", rol), limit(5)); */
 
     if (rol === 4) {
-      const q = query(pathRef, where("rol", "==", rol));
+      const q = query(pathRef, where("rol", "==", 1));
       onSnapshot(q, (querySnapshot) => {
         const arrayUsuarios: User[] = []
         querySnapshot.forEach(doc => {
@@ -534,7 +534,15 @@ const useEvaluacionCurricular = () => {
     console.log('rol', rol)
     console.log('dniDirector', dniDirector)
     const pathRef = collection(db, 'usuarios')
-    const q = query(pathRef, where("rol", "==", rol), where("dni", "==", dniDirector));
+    let q;
+
+    if (currentUserData.rol === 4) {
+      q = query(pathRef, where("rol", "==", 1), where("dni", "==", dniDirector));
+    } else if (currentUserData.rol === 5) {
+      q = query(pathRef, where("dniEspecialistaRegional", "==", currentUserData.dni), where("dni", "==", dniDirector));
+    } else {
+      q = query(pathRef, where("rol", "==", rol), where("dni", "==", dniDirector));
+    }
 
     onSnapshot(q, (querySnapshot) => {
       console.log('querySnapshot', querySnapshot.size)

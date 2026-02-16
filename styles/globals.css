@@ -16,7 +16,7 @@
   --color-quinto: #1D24CA;
   --color-secundario: #0a47c4;
   --color-cuarto: #A7E6FF;
-  --color-graduado-blue-1: rgb(5,100,245);
+  --color-graduado-blue-1: rgb(5, 100, 245);
   --color-pastel13: #d7ff61;
   --color-pastel2: #cafde6;
   --color-pastel5: #e1fdca;
@@ -33,14 +33,13 @@
   display: grid;
   grid-template-rows: auto 1fr;
 }
-#__next > main {
-  margin: 1rem auto 0;
-  max-width: 80ch;
+
+#__next>main {
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
 }
-/* #__next > main {
-  margin: 1rem auto 0;
-  max-width: 80ch;
-} */
 
 body {
   color: "black";
