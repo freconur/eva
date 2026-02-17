@@ -70,10 +70,14 @@ const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles, yearSel
 
   // Usar dataGraficoPieChart del contexto global si está disponible, sino usar la prop
   const datosParaGrafico = useMemo(() => {
+    // Si hay filtros activos, usar dataGraficoPieChart directamente (incluso si está vacío) para evitar mostrar datos generales
+    if (filtroGenero || filtroRegion) {
+      return dataGraficoPieChart
+    }
     return Array.isArray(dataGraficoPieChart) && dataGraficoPieChart.length > 0
       ? dataGraficoPieChart
       : dataGraficoTendenciaNiveles
-  }, [dataGraficoPieChart, dataGraficoTendenciaNiveles])
+  }, [dataGraficoPieChart, dataGraficoTendenciaNiveles, filtroGenero, filtroRegion])
 
   // Actualizar datos filtrados cuando cambien los datos originales
   useEffect(() => {

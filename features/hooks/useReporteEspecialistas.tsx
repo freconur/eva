@@ -165,6 +165,12 @@ export const useReporteEspecialistas = () => {
           type: AppAction.DATA_GRAFICO_PIE_CHART,
           payload: dataGraficoPieChartOrdenada,
         });
+      } else {
+        // Si no hay documentos, limpiar el gráfico
+        dispatch({
+          type: AppAction.DATA_GRAFICO_PIE_CHART,
+          payload: [],
+        });
       }
     } catch (error) {
       console.error('Error al obtener datos para gráfico de tendencia:', error);
