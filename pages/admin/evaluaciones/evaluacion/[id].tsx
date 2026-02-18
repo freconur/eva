@@ -157,6 +157,14 @@ const Evaluacion = () => {
   }, [preguntasRespuestas, restoreScrollPosition])
   return (
     <>
+      {showModal && (
+        <AgregarPreguntasRespuestas
+          id={`${route.query.id}`}
+          showModal={showModal}
+          handleshowModal={handleshowModal}
+        />
+      )}
+
       {showModalUpdatePReguntaRespuesta && (
         <UpdatePreguntaRespuesta
           id={`${route.query.id}`}
