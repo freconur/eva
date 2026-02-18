@@ -768,6 +768,7 @@ const useEvaluacionCurricular = () => {
       area: data.area,
       grados: data.grados || [],
       secciones: data.secciones || [],
+      asignaciones: data.asignaciones || [],
       caracteristicaCurricular: data.caracteristicaCurricular || '',
       distrito: data.distrito || '',
       celular: data.celular || '',

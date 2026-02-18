@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useForm } from 'react-hook-form'
 import { RiCloseLine, RiLoader4Line, RiFileExcel2Line } from 'react-icons/ri'
-import { User } from '@/features/types/types'
+import { AsignacionGradoSeccion, User } from '@/features/types/types'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import { useOptions } from '@/features/hooks/useOptions'
-import { sectionByGrade, genero as generoOptions, nivelInstitucion, genero } from '@/fuctions/regiones'
+import { sectionByGrade, genero as generoOptions, nivelInstitucion, genero, gradosDeColegio } from '@/fuctions/regiones'
 import styles from './DocenteModal.module.css'
 import { read, utils } from 'xlsx'
 
@@ -16,11 +16,12 @@ interface Props {
     onClose: () => void;
 }
 
-interface FormData extends Omit<User, 'nivelDeInstitucion' | 'grados' | 'secciones' | 'caracteristicaCurricular'> {
+interface FormData extends Omit<User, 'nivelDeInstitucion' | 'grados' | 'secciones' | 'caracteristicaCurricular' | 'asignaciones'> {
     nivelDeInstitucion?: string[];
     grados?: string[];
     secciones?: string[];
     caracteristicaCurricular?: string;
+    asignaciones?: { gradoId: string; secciones: string[] }[];
 }
 
 const DocenteModal = ({ dataDocente, onClose }: Props) => {
@@ -29,14 +30,21 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
         defaultValues: {
             nivelDeInstitucion: [],
             grados: [],
-            secciones: []
+            secciones: [],
+            asignaciones: []
         }
     })
 
-    const nivelesSeleccionados = watch("nivelDeInstitucion") || [];
-    const gradosSeleccionados = watch("grados") || [];
+    const watchNiveles = watch("nivelDeInstitucion");
+    const nivelesSeleccionados = useMemo(() => watchNiveles || [], [watchNiveles]);
 
-    const { currentUserData, loaderPages, warningUsuarioExiste, grados } = useGlobalContext()
+    const watchGrados = watch("grados");
+    const gradosSeleccionados = useMemo(() => watchGrados || [], [watchGrados]);
+
+    const watchAsignaciones = watch("asignaciones");
+    const asignaciones = useMemo(() => watchAsignaciones || [], [watchAsignaciones]);
+
+    const { currentUserData, loaderPages, warningUsuarioExiste } = useGlobalContext()
     const { crearNuevoDocente, createMassiveTeachers } = useUsuario()
     const { updateDocenteParaCoberturaCurricular } = useEvaluacionCurricular()
     const { getCaracteristicaCurricular, caracteristicaCurricular } = useOptions()
@@ -49,7 +57,7 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
 
     useEffect(() => {
         getCaracteristicaCurricular()
-    }, [])
+    }, [getCaracteristicaCurricular])
 
     useEffect(() => {
         if (dataDocente) return; // Skip cleanup if editing (initial load)
@@ -60,26 +68,31 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
         } else {
             // Limpiar grados que ya no corresponden a los niveles seleccionados
             const filteredGrados = gradosSeleccionados.filter(gradoId => {
-                const gradoObj = grados.find(g => String(g.id) === gradoId);
+                const gradoObj = gradosDeColegio.find(g => String(g.id) === gradoId);
                 if (!gradoObj) return false;
-                const isPrimary = Number(gradoObj.grado) >= 1 && Number(gradoObj.grado) <= 6;
-                const isSecondary = Number(gradoObj.grado) >= 7 && Number(gradoObj.grado) <= 11;
-                if (nivelesSeleccionados.includes("1") && isPrimary) return true;
-                if (nivelesSeleccionados.includes("2") && isSecondary) return true;
+                if (nivelesSeleccionados.includes("1") && gradoObj.nivel === 1) return true;
+                if (nivelesSeleccionados.includes("2") && gradoObj.nivel === 2) return true;
                 return false;
             });
             if (filteredGrados.length !== gradosSeleccionados.length) {
                 setValue("grados", filteredGrados);
             }
         }
-    }, [nivelesSeleccionados, setValue, dataDocente]);
+    }, [nivelesSeleccionados, setValue, dataDocente, gradosSeleccionados]);
 
     useEffect(() => {
         if (dataDocente) return; // Skip cleanup if editing
         if (gradosSeleccionados.length === 0) {
             setValue("secciones", []);
+            setValue("asignaciones", []);
+        } else {
+            // Eliminar asignaciones de grados que ya no están seleccionados
+            const nuevasAsignaciones = asignaciones.filter(a => gradosSeleccionados.includes(a.gradoId));
+            if (nuevasAsignaciones.length !== asignaciones.length) {
+                setValue("asignaciones", nuevasAsignaciones);
+            }
         }
-    }, [gradosSeleccionados, setValue, dataDocente]);
+    }, [gradosSeleccionados, setValue, dataDocente, asignaciones]);
 
     useEffect(() => {
         if (isEdit && dataDocente && caracteristicaCurricular.length > 0) {
@@ -117,7 +130,16 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
                 caracteristicaCurricular: dataDocente.caracteristicaCurricular ? String(dataDocente.caracteristicaCurricular).trim() : '',
                 nivelDeInstitucion: nivelesComoString,
                 grados: Array.isArray(dataDocente.grados) ? dataDocente.grados.map(g => String(g)) : [],
-                secciones: Array.isArray(dataDocente.secciones) ? dataDocente.secciones.map(s => String(s)) : []
+                secciones: Array.isArray(dataDocente.secciones) ? dataDocente.secciones.map(s => String(s)) : [],
+                asignaciones: Array.isArray(dataDocente.asignaciones)
+                    ? dataDocente.asignaciones.map(a => ({
+                        gradoId: String(a.gradoId),
+                        secciones: a.secciones.map(s => String(s))
+                    }))
+                    : (Array.isArray(dataDocente.grados) ? dataDocente.grados.map(g => ({
+                        gradoId: String(g),
+                        secciones: Array.isArray(dataDocente.secciones) ? dataDocente.secciones.map(s => String(s)) : []
+                    })) : [])
             })
         } else {
             reset({
@@ -138,6 +160,10 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
             distrito: currentUserData.distrito,
             grados: (data.grados || []).map(g => Number(g)),
             secciones: (data.secciones || []).map(s => Number(s)),
+            asignaciones: (data.asignaciones || []).map(a => ({
+                gradoId: Number(a.gradoId),
+                secciones: a.secciones.map(s => Number(s))
+            })),
             nivel: (data.nivelDeInstitucion && data.nivelDeInstitucion.length > 0)
                 ? Number(data.nivelDeInstitucion[0])
                 : undefined,
@@ -187,11 +213,50 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
             return item ? item.id : null
         }
 
+        // Parseo de Asignaciones Jerárquicas (Ej: "1:A,B; 2:A")
+        const asignacionesRaw = String(normalizedRow['asignaciones'] || '').trim()
+        const asignaciones: AsignacionGradoSeccion[] = []
+        const gradosPlanos = new Set<number>()
+        const seccionesPlanos = new Set<number>()
+
+        if (asignacionesRaw) {
+            const bloques = asignacionesRaw.split(';')
+            bloques.forEach(bloque => {
+                const [gradoIdStr, seccionesStr] = bloque.split(':')
+                const gradoId = Number(gradoIdStr?.trim())
+
+                if (!isNaN(gradoId) && seccionesStr) {
+                    const letrasSecciones = seccionesStr.split(',').map(s => s.trim().toLowerCase())
+                    const idsSecciones: number[] = []
+
+                    letrasSecciones.forEach(letra => {
+                        const seccionObj = sectionByGrade.find(s => s.name.toLowerCase() === letra)
+                        if (seccionObj) {
+                            idsSecciones.push(seccionObj.id)
+                            seccionesPlanos.add(seccionObj.id)
+                        }
+                    })
+
+                    if (idsSecciones.length > 0) {
+                        asignaciones.push({
+                            gradoId,
+                            secciones: idsSecciones
+                        })
+                        gradosPlanos.add(gradoId)
+                    }
+                }
+            })
+        }
+
         return {
             dni: String(normalizedRow['dni'] || '').trim(),
-            nombres: normalizedRow['nombres'],
-            apellidos: normalizedRow['apellidos'],
+            nombres: String(normalizedRow['nombres'] || '').trim(),
+            apellidos: String(normalizedRow['apellidos'] || '').trim(),
             genero: findIdByName(genero, normalizedRow['genero'])?.toString() || "1",
+            grados: Array.from(gradosPlanos),
+            secciones: Array.from(seccionesPlanos),
+            asignaciones: asignaciones,
+            perfil: { rol: 3, nombre: "docente" }
         }
     }
 
@@ -366,55 +431,89 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
                                 </div>
                             </div>
 
-
-                            {nivelesSeleccionados.length > 0 && (
-                                <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-                                    <label className={styles.label}>Grados Asignados</label>
-                                    <div className={styles.chipGroup}>
-                                        {grados
-                                            .filter((grado) => {
-                                                const isPrimary = Number(grado.grado) >= 1 && Number(grado.grado) <= 6;
-                                                const isSecondary = Number(grado.grado) >= 7 && Number(grado.grado) <= 11;
-                                                // Mostrar solo grados de los niveles que el director POSEE Y ha SELECCIONADO ahora
-                                                if (nivelesSeleccionados.includes("1") && isPrimary) return true;
-                                                if (nivelesSeleccionados.includes("2") && isSecondary) return true;
-                                                return false;
-                                            })
-                                            .map((grado) => (
-                                                <label key={grado.id} className={styles.chip}>
-                                                    <input
-                                                        type="checkbox"
-                                                        value={String(grado.id)}
-                                                        {...register("grados", { required: "Seleccione al menos uno" })}
-                                                        className={styles.chipInput}
-                                                    />
-                                                    <span className={styles.chipLabel}>{grado.nombre}</span>
-                                                </label>
-                                            ))}
-                                    </div>
-                                    {errors.grados && <span className={styles.error}>{errors.grados.message}</span>}
-                                </div>
-                            )}
-
-                            {gradosSeleccionados.length > 0 && (
-                                <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-                                    <label className={styles.label}>Secciones Asignadas</label>
-                                    <div className={styles.chipGroup}>
-                                        {sectionByGrade.map((seccion) => (
-                                            <label key={seccion.id} className={styles.chip}>
+                            <div className={`${styles.fullWidth} ${styles.gradosAsignadosGroup}`}>
+                                <h3 className={styles.gradosTitle}>Grados Asignados</h3>
+                                <div className={styles.chipGroup}>
+                                    {gradosDeColegio
+                                        .filter((grado) => {
+                                            if (nivelesSeleccionados.includes("1") && grado.nivel === 1) return true;
+                                            if (nivelesSeleccionados.includes("2") && grado.nivel === 2) return true;
+                                            return false;
+                                        })
+                                        .map((grado) => (
+                                            <label key={grado.id} className={styles.chip}>
                                                 <input
                                                     type="checkbox"
-                                                    value={String(seccion.id)}
-                                                    {...register("secciones", { required: "Seleccione al menos una" })}
+                                                    value={String(grado.id)}
+                                                    {...register("grados", { required: "Seleccione al menos uno" })}
                                                     className={styles.chipInput}
                                                 />
-                                                <span className={styles.chipLabel}>{seccion.name}</span>
+                                                <span className={styles.chipLabel}>{grado.name}</span>
                                             </label>
                                         ))}
-                                    </div>
-                                    {errors.secciones && <span className={styles.error}>{errors.secciones.message}</span>}
                                 </div>
-                            )}
+                                {errors.grados && <span className={styles.error}>{errors.grados.message}</span>}
+                            </div>
+
+                            <div className={`${styles.fullWidth}`}>
+                                <h3 className={styles.sectionSubtitle}>Asignación de Secciones por Grado</h3>
+                                <div className={styles.asignacionesContainer}>
+                                    {gradosSeleccionados.map((gradoId) => {
+                                        const gradoObj = gradosDeColegio.find(g => String(g.id) === gradoId);
+                                        if (!gradoObj) return null;
+
+                                        const asignacionActual = asignaciones.find(a => a.gradoId === gradoId);
+                                        const seccionesParaEsteGrado = asignacionActual?.secciones || [];
+
+                                        return (
+                                            <div key={gradoId} className={styles.gradoAsignacionCard}>
+                                                <div className={styles.gradoHeader}>
+                                                    <span className={styles.gradoBadge}>{gradoObj.name}</span>
+                                                </div>
+                                                <div className={styles.chipGroup}>
+                                                    {sectionByGrade.map((seccion) => {
+                                                        const isChecked = seccionesParaEsteGrado.includes(String(seccion.id));
+
+                                                        return (
+                                                            <label key={seccion.id} className={styles.chip}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={isChecked}
+                                                                    onChange={(e) => {
+                                                                        const newSecciones = e.target.checked
+                                                                            ? [...seccionesParaEsteGrado, String(seccion.id)]
+                                                                            : seccionesParaEsteGrado.filter(id => id !== String(seccion.id));
+
+                                                                        let nuevasAsignaciones;
+                                                                        if (asignacionActual) {
+                                                                            nuevasAsignaciones = asignaciones.map(a =>
+                                                                                a.gradoId === gradoId ? { ...a, secciones: newSecciones } : a
+                                                                            );
+                                                                        } else {
+                                                                            nuevasAsignaciones = [...asignaciones, { gradoId, secciones: newSecciones }];
+                                                                        }
+
+                                                                        setValue("asignaciones", nuevasAsignaciones);
+
+                                                                        // Actualizar también el campo plano 'secciones' para compatibilidad
+                                                                        const todasLasSeccionesPlanos = Array.from(new Set(
+                                                                            nuevasAsignaciones.flatMap(a => a.secciones)
+                                                                        ));
+                                                                        setValue("secciones", todasLasSeccionesPlanos);
+                                                                    }}
+                                                                    className={styles.chipInput}
+                                                                />
+                                                                <span className={styles.chipLabel}>{seccion.name}</span>
+                                                            </label>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                {errors.secciones && <span className={styles.error}>{errors.secciones.message}</span>}
+                            </div>
                         </div>
                     </form>
                 ) : (
@@ -436,10 +535,11 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
                             <h4>Instrucciones:</h4>
                             <p>El archivo excel debe tener las siguientes columnas:</p>
                             <ul>
-                                <li><strong>dni</strong> (8 dígitos)</li>
-                                <li><strong>nombres</strong></li>
-                                <li><strong>apellidos</strong></li>
-                                <li><strong>genero</strong> (Masculino / Femenino)</li>
+                                <li><strong>DNI</strong>: 8 dígitos numéricos</li>
+                                <li><strong>NOMBRES</strong>: Nombres del profesor</li>
+                                <li><strong>APELLIDOS</strong>: Apellidos del profesor</li>
+                                <li><strong>GENERO</strong>: masculino / femenino</li>
+                                <li><strong>ASIGNACIONES</strong>: Formato &quot;GradoID:Seccion1,Seccion2; ...&quot; (Ej: 9:a,b; 10:a)</li>
                             </ul>
                             <p className={styles.warning}>* Los datos de la institución se heredarán automáticamente del director.</p>
                             <p className={styles.warning}>* Máximo 500 profesores por archivo.</p>

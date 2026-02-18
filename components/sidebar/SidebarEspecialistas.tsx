@@ -24,7 +24,7 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
 
     <div className={`z-[2000] grid-rows-gridRows p-2 justify-evenly grid fixed duration-300 drop-shadow-xl h-full w-[250px] bg-graduado-blue-2 ${showSidebar ? "left-[0px]" : "-left-[300px]"}`}>
       {/* <div onClick={() => showSidebarValue(showSidebar)} className='capitalize p-2 w-[30px] h-[30px] bg-red-400 justify-center items-center flex rounded-full text-white l-10 cursor-pointer relative'>x</div> */}
-      <BackgroundSidebar/>
+      <BackgroundSidebar />
       <div onClick={() => showSidebarValue(showSidebar)} className='absolute capitalize p-2 w-[30px] h-[30px] bg-colorBrand1 justify-center items-center flex rounded-full text-white l-10 cursor-pointer left-[235px] top-[30px] shadow-md'>x</div>
       <div>
         <SidebarRegional />
@@ -67,11 +67,11 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                 {
                   !currentUserData.nivelDeInstitucion?.includes(2) && (
                     <>
-                    <li className={styles.containerAncla}><Link
+                      <li className={styles.containerAncla}><Link
                         href="/especialistas/evaluaciones-director"
                         className={styles.anclaje}
                         id="ancla">Seguimiento y retroalimentación</Link></li>
-                        <li className={styles.containerAncla}><Link
+                      <li className={styles.containerAncla}><Link
                         href="/especialistas/cobertura-curricular"
                         className={styles.anclaje}
                         id="ancla">Cobertura curricular</Link></li>
@@ -83,33 +83,53 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                   href="/especialistas/agregar-directores"
                   className={styles.anclaje}
                   id="ancla">Crear directivo</Link></li>
-                
+
               </ul>
             </li>
             {
               !currentUserData.nivelDeInstitucion?.includes(2) && (
-            <li className={styles.dropdown}>
-              <div className={styles.containerIcon}>
+                <li className={styles.dropdown}>
+                  <div className={styles.containerIcon}>
 
-                <FaUserTie className={styles.icons} />
-                <Link className={styles.ancla} href="#" aria-haspopup="true">
-                  Docentes
-                </Link>
-              </div>
-              <ul className={styles.dropdownContent} aria-label="submenu">
-                  <li className={styles.containerAncla}><Link
-                  href="/especialistas/evaluaciones-docentes"
-                  className={styles.anclaje}
-                  id="ancla">Seguimiento y retroalimentación</Link></li>
-                  <li className={styles.containerAncla}><Link
-                  href="/especialistas/cobertura-curricular-master"
-                  className={styles.anclaje}
-                  id="ancla">Cobertura curricular</Link></li>
-              </ul>
-            </li>
+                    <FaUserTie className={styles.icons} />
+                    <Link className={styles.ancla} href="#" aria-haspopup="true">
+                      Docentes
+                    </Link>
+                  </div>
+                  <ul className={styles.dropdownContent} aria-label="submenu">
+                    <li className={styles.containerAncla}><Link
+                      href="/especialistas/evaluaciones-docentes"
+                      className={styles.anclaje}
+                      id="ancla">Seguimiento y retroalimentación</Link></li>
+                    <li className={styles.containerAncla}><Link
+                      href="/especialistas/cobertura-curricular-master"
+                      className={styles.anclaje}
+                      id="ancla">Cobertura curricular</Link></li>
+                  </ul>
+                </li>
 
               )
             }
+            <li className={styles.dropdown}>
+              <div className={styles.containerIcon}>
+
+                <FaUserGraduate className={styles.icons} />
+                <Link className={styles.ancla} href="#" aria-haspopup="true">
+                  Docentes
+                  {/* <label>Estudiantes</label> */}
+                </Link>
+              </div>
+              <ul className={styles.dropdownContent} aria-label="submenu">
+                <li className={styles.containerAncla}><Link
+                  href="/admin/docentes/usuarios"
+                  className={styles.anclaje}
+                  id="ancla">Usuarios</Link></li>
+                {/* <li className={styles.containerAncla}><Link
+                  href="/especialistas/agregar-evaluaciones"
+                  id="ancla"
+                  className={styles.anclaje} >Agregar evaluacion</Link></li> */}
+              </ul>
+            </li>
             <li className={styles.dropdown}>
               <div className={styles.containerIcon}>
 
@@ -132,21 +152,21 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
             </li>
             {
               !currentUserData.nivelDeInstitucion?.includes(2) && (
-            <li className={styles.dropdown}>
-              <div className={styles.containerIcon}>
+                <li className={styles.dropdown}>
+                  <div className={styles.containerIcon}>
 
-                <Link className={styles.ancla} href="/admin/conocimientos-pedagogicos?rol=1" aria-haspopup="true">
-                  Autorreporte
-                  {/* <label>Estudiantes</label> */}
-                </Link>
-              </div>
-              {/* <ul className={styles.dropdownContent} aria-label="submenu">
+                    <Link className={styles.ancla} href="/admin/conocimientos-pedagogicos?rol=1" aria-haspopup="true">
+                      Autorreporte
+                      {/* <label>Estudiantes</label> */}
+                    </Link>
+                  </div>
+                  {/* <ul className={styles.dropdownContent} aria-label="submenu">
                 <li className={styles.containerAncla}><Link
                   href="/especialistas/evaluaciones"
                   className={styles.anclaje}
                   id="ancla">Evaluaciones</Link></li>
               </ul> */}
-            </li>
+                </li>
               )
             }
           </ul>

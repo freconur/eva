@@ -307,6 +307,12 @@ export type Estudiante = {
   seccion?: string;
   genero?: string;
 };
+
+export type AsignacionGradoSeccion = {
+  gradoId: number;
+  secciones: number[];
+};
+
 export type User = {
   nivelesInstitucion?: number[];
   calificacion?: number;
@@ -351,6 +357,7 @@ export type User = {
   linkDocumentos?: string;
   nivelDeInstitucion?: number[];
   dniEspecialistaRegional?: string;
+  asignaciones?: AsignacionGradoSeccion[];
 };
 
 export type ConocimientoPedagogico = {

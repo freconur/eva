@@ -40,25 +40,48 @@ const DocentesUsuariosPage = () => {
         setLoading(true)
         try {
             const pathRef = collection(db, 'usuarios')
+            let docs: User[] = []
 
-            // Usamos una consulta de rango para simular "empieza con" (prefix search)
-            // Esto permite ver resultados mientras el usuario escribe los últimos dígitos (desde 5 dígitos)
-            const q = query(
+            // 1. Búsqueda normal por prefijo de DNI (para encontrar docentes directamente)
+            const qPrefix = query(
                 pathRef,
                 where('dni', '>=', dni),
                 where('dni', '<=', dni + '\uf8ff'),
                 limit(15)
             )
 
-            const querySnapshot = await getDocs(q)
-            const docs: User[] = []
-            querySnapshot.forEach((doc) => {
+            const prefixSnapshot = await getDocs(qPrefix)
+            prefixSnapshot.forEach((doc) => {
                 const data = doc.data() as User
-                // Filtramos por rol de docente (3) para asegurar que el resultado sea correcto
                 if (data.perfil?.rol === 3 || data.rol === 3) {
                     docs.push(data)
                 }
             })
+
+            // 2. Búsqueda inteligente: Si el DNI es de un Director, traer a sus docentes
+            // Solo lo hacemos cuando el DNI tiene visos de ser completo (8 dígitos) para optimizar
+            if (dni.length === 8) {
+                const qDirector = query(pathRef, where('dni', '==', dni), limit(1))
+                const directorSnapshot = await getDocs(qDirector)
+
+                if (!directorSnapshot.empty) {
+                    const directorData = directorSnapshot.docs[0].data() as User
+                    const isDirector = directorData.perfil?.rol === 2 || directorData.rol === 2
+
+                    if (isDirector) {
+                        const qDocentesByDirector = query(pathRef, where('dniDirector', '==', dni))
+                        const docentesSnapshot = await getDocs(qDocentesByDirector)
+
+                        docentesSnapshot.forEach(doc => {
+                            const teacherData = doc.data() as User
+                            // Evitar duplicados si ya fueron encontrados por el prefijo
+                            if (!docs.some(d => d.dni === teacherData.dni)) {
+                                docs.push(teacherData)
+                            }
+                        })
+                    }
+                }
+            }
 
             setResults(docs)
         } catch (error) {
