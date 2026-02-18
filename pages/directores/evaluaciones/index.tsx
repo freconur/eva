@@ -24,22 +24,11 @@ const Evaluaciones = () => {
 
         if (!isActive || !isCurrentYear) return false;
 
-        // Si el usuario no tiene nivelDeInstitucion o está vacío, mostrar todas las evaluaciones EXCEPTO las que tienen nivel 2
-        if (!currentUserData?.nivelDeInstitucion ||
-          (Array.isArray(currentUserData?.nivelDeInstitucion) && currentUserData.nivelDeInstitucion.length === 0)) {
-          const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel;
-          return nivelEva !== 2;
-        }
-
-        // Si el usuario tiene nivelDeInstitucion que incluye 2, solo mostrar evaluaciones nivel 2
         const nivelDeInstitucion = currentUserData?.nivelDeInstitucion;
-        if (Array.isArray(nivelDeInstitucion) && nivelDeInstitucion.includes(2)) {
-          const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel;
-          return nivelEva === 2;
-        }
+        if (!Array.isArray(nivelDeInstitucion) || nivelDeInstitucion.length === 0) return false;
 
-        // Para otros casos, mostrar todas las evaluaciones
-        return true;
+        const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel;
+        return nivelDeInstitucion.includes(Number(nivelEva));
       }) || []
   }, [evaluaciones, currentUserData, currentYear])
 
