@@ -29,15 +29,15 @@ const Evaluaciones = () => {
 
   const filteredEvaluaciones = evaluaciones?.filter((eva) => {
     const isActive = eva.active === true;
-    const isCorrectLevel = currentUserData.nivelDeInstitucion?.includes(2)
-      ? (Array.isArray(eva.nivel) ? eva.nivel.includes(2) : eva.nivel === 2)
-      : (Array.isArray(eva.nivel) ? !eva.nivel.includes(2) : eva.nivel !== 2);
+    const nivelDeInstitucion = currentUserData?.nivelDeInstitucion;
+    if (!Array.isArray(nivelDeInstitucion) || nivelDeInstitucion.length === 0) return false;
 
-    // Filter by current year
+    const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel;
+    const isCorrectLevel = nivelDeInstitucion.includes(Number(nivelEva));
     const isCurrentYear = Number(eva.añoDelExamen) === currentYear;
 
     return isActive && isCorrectLevel && isCurrentYear;
-  });
+  }) || [];
 
   return (
     <>
