@@ -66,8 +66,8 @@
 }
 
 .contentWrapperOpen {
-    max-height: 2000px;
-    /* Large enough for content */
+    max-height: none;
+    /* Suficientemente grande para el contenido */
     padding: 1.5rem;
 }
 
