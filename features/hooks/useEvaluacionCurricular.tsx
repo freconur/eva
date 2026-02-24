@@ -251,31 +251,27 @@ const useEvaluacionCurricular = () => {
       return;
     }
 
-    // Lógica existente para Especialistas (rol 1) y otros
-    const q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2));
+    // Lógica para Especialistas (rol 1) y otros
+    const nivelesEspecialista = usuario.nivelDeInstitucion || [];
 
-    if (currentUserData.nivelDeInstitucion?.includes(2)) {
-      // Se obtiene la región de manera dinámica del usuario
-      const q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains", 2));
-      onSnapshot(q, (querySnapshot) => {
-        const usuarios: User[] = [];
-        querySnapshot.forEach(doc => {
-          usuarios.push({ ...doc.data() });
-        });
+    let q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2));
 
-        dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: usuarios });
-      });
+    if (nivelesEspecialista.includes(1) && nivelesEspecialista.includes(2)) {
+      q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains-any", [1, 2]));
+    } else if (nivelesEspecialista.includes(1)) {
+      q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains", 1));
+    } else if (nivelesEspecialista.includes(2)) {
+      q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains", 2));
     }
-    if (!currentUserData.nivelDeInstitucion?.includes(2)) {
-      onSnapshot(q, (querySnapshot) => {
-        const usuarios: User[] = [];
-        querySnapshot.forEach(doc => {
-          usuarios.push({ ...doc.data() });
-        });
 
-        dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: usuarios });
+    onSnapshot(q, (querySnapshot) => {
+      const usuarios: User[] = [];
+      querySnapshot.forEach(doc => {
+        usuarios.push({ ...doc.data() });
       });
-    }
+
+      dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: usuarios });
+    });
   }
   const getDocentesFromDirectores = async (region: number, dniDirector: string) => {
     //esta funcion tiene que ser dinamica para que pueda recibir datos del director como del espcialista
@@ -513,10 +509,16 @@ const useEvaluacionCurricular = () => {
       q = query(pathRef, where("rol", "==", rol), where("dni", "==", dniDirector));
     } else {
       // Lógica existente para Especialistas: restringe por región
-      q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector));
+      const nivelesEspecialista = currentUserData.nivelDeInstitucion || [];
 
-      if (currentUserData.nivelDeInstitucion?.includes(2)) {
+      if (nivelesEspecialista.includes(1) && nivelesEspecialista.includes(2)) {
+        q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector), where("nivelDeInstitucion", "array-contains-any", [1, 2]));
+      } else if (nivelesEspecialista.includes(1)) {
+        q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector), where("nivelDeInstitucion", "array-contains", 1));
+      } else if (nivelesEspecialista.includes(2)) {
         q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector), where("nivelDeInstitucion", "array-contains", 2));
+      } else {
+        q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector));
       }
     }
 
