@@ -9,7 +9,7 @@ import UseEvaluacionEspecialistas from "@/features/hooks/UseEvaluacionEspecialis
 interface Props {
   dataUpdate: PRDocentes,
   handleShowUpdateModal: () => void,
-  id:string
+  id: string
 }
 const initialValue = {
   id: "",
@@ -20,9 +20,14 @@ const initialValue = {
 const initialValueAlternativas = { descripcion: "", alternativa: "", value: 0 }
 
 const UpdatePreguntaRespuestaEspecialistas = ({ dataUpdate, handleShowUpdateModal, id }: Props) => {
-  const { loaderSalvarPregunta, } = useGlobalContext()
-  const { updatePreResEspecialistas } = UseEvaluacionEspecialistas()
+  const { loaderSalvarPregunta, dimensionesEspecialistas } = useGlobalContext()
+  const { updatePreResEspecialistas, getDimensionesEspecialistas } = UseEvaluacionEspecialistas()
   const [inputValue, setInputValue] = useState<PRDocentes>(initialValue)
+  const [dimensionId, setDimensionId] = useState<string>('')
+
+  useEffect(() => {
+    getDimensionesEspecialistas(id)
+  }, [id])
   const [dataA, setDataA] = useState<AlternativasDocente>(initialValueAlternativas)
   const [dataB, setDataB] = useState<AlternativasDocente>(initialValueAlternativas)
   const [dataC, setDataC] = useState<AlternativasDocente>(initialValueAlternativas)
@@ -33,28 +38,20 @@ const UpdatePreguntaRespuestaEspecialistas = ({ dataUpdate, handleShowUpdateModa
   }
 
   const handleOnChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => { setInputValue({ ...inputValue, criterio: e.target.value }) }
-  const handleOnChangeA = (e: React.ChangeEvent<HTMLTextAreaElement>) => { setDataA({ ...dataA, descripcion: e.target.value }) }
-  const handleOnChangeB = (e: React.ChangeEvent<HTMLTextAreaElement>) => { setDataB({ ...dataB, descripcion: e.target.value }) }
-  const handleOnChangeC = (e: React.ChangeEvent<HTMLTextAreaElement>) => { setDataC({ ...dataC, descripcion: e.target.value }) }
-  const handleOnChangeD = (e: React.ChangeEvent<HTMLTextAreaElement>) => { setDataD({ ...dataD, descripcion: e.target.value }) }
+  const handleDimensionChange = (e: React.ChangeEvent<HTMLSelectElement>) => { setDimensionId(e.target.value) }
 
-const handleUpdatePRDirector = () => {
-  // console.log('data', dataA, dataB,dataC, dataD,inputValue)
-  const allData:AlternativasDocente[] = []
-  allData.push(dataA)
-  allData.push(dataB)
-  allData.push(dataC)
-  allData.push(dataD)
-  updatePreResEspecialistas({...inputValue, alternativas:[...allData]}, id)
-} 
+  const handleUpdatePRDirector = () => {
+    updatePreResEspecialistas({
+      ...inputValue,
+      dimensionId: dimensionId,
+      alternativas: dataUpdate.alternativas // Keep existing scale
+    }, id)
+  }
 
   useEffect(() => {
-    if (dataUpdate?.alternativas) {
-      setInputValue({criterio:dataUpdate.criterio, order:dataUpdate.order, id:dataUpdate.id})
-      setDataA(dataUpdate?.alternativas[0])
-      setDataB(dataUpdate?.alternativas[1])
-      setDataC(dataUpdate?.alternativas[2])
-      setDataD(dataUpdate?.alternativas[3])
+    if (dataUpdate) {
+      setInputValue({ criterio: dataUpdate.criterio, order: dataUpdate.order, id: dataUpdate.id })
+      setDimensionId(dataUpdate.dimensionId || '')
     }
   }, [dataUpdate])
   return container
@@ -76,42 +73,37 @@ const handleUpdatePRDirector = () => {
                 </div>
                 <h3 className={styles.modalTitle}>Editar pregunta</h3>
                 <div className={styles.modalContent}>
-                  <textarea
-                    className={styles.inputField}
-                    name="criterio"
-                    value={inputValue.criterio}
-                    onChange={handleOnChange}
-                  />
-                  <div className={styles.alternativesContainer}>
+                  <div className={styles.formGroup}>
+                    <p className={styles.label}>Dominio</p>
+                    <select
+                      className={styles.inputField}
+                      value={dimensionId}
+                      onChange={handleDimensionChange}
+                    >
+                      <option value="">Seleccione un dominio</option>
+                      {dimensionesEspecialistas?.map((dim) => (
+                        <option key={dim.id} value={dim.id}>
+                          {dim.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <p className={styles.label}>Criterio / Pregunta</p>
                     <textarea
                       className={styles.inputField}
-                      name="descripcion"
-                      value={dataA.descripcion}
-                      onChange={handleOnChangeA}
+                      name="criterio"
+                      value={inputValue.criterio}
+                      onChange={handleOnChange}
                     />
-                    <textarea
-                      className={styles.inputField}
-                      name="descripcion"
-                      value={dataB.descripcion}
-                      onChange={handleOnChangeB}
-                    />
-                    <textarea
-                      className={styles.inputField}
-                      name="descripcion"
-                      value={dataC.descripcion}
-                      onChange={handleOnChangeC}
-                    />
-                    <textarea
-                      className={styles.inputField}
-                      name="descripcion"
-                      value={dataD.descripcion}
-                      onChange={handleOnChangeD}
-                    />
+                  </div>
+                  <div className={styles.infoScale}>
+                    <p>Escala: 0=No evidencia, 1=En proceso, 2=Logrado</p>
                   </div>
                   <p className={styles.confirmationText}>¿Quieres actualizar esta pregunta y sus alternativas?</p>
                   <div className={styles.buttonContainer}>
                     <button onClick={() => handleShowUpdateModal()} className={styles.cancelButton}>CANCELAR</button>
-                    <button onClick={() => {handleUpdatePRDirector(); handleShowUpdateModal()}} className={styles.confirmButton}>SI</button>
+                    <button onClick={() => { handleUpdatePRDirector(); handleShowUpdateModal() }} className={styles.confirmButton}>SI</button>
                   </div>
                 </div>
               </>

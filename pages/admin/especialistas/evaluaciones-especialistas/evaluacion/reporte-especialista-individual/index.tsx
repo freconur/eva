@@ -20,8 +20,8 @@ const ReporteDocenteIndividual = () => {
 
   const route = useRouter()
   const { buscarEspecialistaReporteDeEvaluacion } = UseEvaluacionEspecialistas()
-  const {  getDocente} = useEvaluacionCurricular()
-  const { reporteIndividualDocente, currentUserData,dataDocente } = useGlobalContext()
+  const { getDocente } = useEvaluacionCurricular()
+  const { reporteIndividualDocente, currentUserData, dataDocente } = useGlobalContext()
 
   const printRef = useRef(null)
 
@@ -31,7 +31,7 @@ const ReporteDocenteIndividual = () => {
     if (!element) {
       return;
     }
-    const canvas = await html2canvas(element, {scale:2})
+    const canvas = await html2canvas(element, { scale: 2 })
     const imgData = canvas.toDataURL('image/png')
     const pdf = new jsPDF({
       orientation: "portrait",
@@ -57,7 +57,7 @@ const ReporteDocenteIndividual = () => {
   }, [`${route.query.idEvaluacion}`, `${route.query.idDirector}`, currentUserData.dni])
   return (
     <div className={styles.container}>
-      
+
       <button onClick={handleDownloadPdf} className={styles.downloadButton}>descargar pdf</button>
       {
         reporteIndividualDocente?.dni ?
@@ -66,8 +66,8 @@ const ReporteDocenteIndividual = () => {
             <div className={styles.title}>
               <h3>RÚBRICA DE MONITOREO DE SEGUIMIENTO Y RETROALIMENTACIÓN (DEL ESPECIALISTA DE DREP AL ESPECIALISTA DE UGEL)</h3>
             </div>
-            <DatosInstitucion dataDocente={dataDocente}/>
-            <DatosMonitor dataMonitor={currentUserData}/>
+            <DatosInstitucion dataDocente={dataDocente} />
+            <DatosMonitor dataMonitor={currentUserData} />
 
             <div className={styles.sectionTitle}>
               <h5>Detalle de evaluación y calificación</h5>
@@ -82,14 +82,14 @@ const ReporteDocenteIndividual = () => {
                 </tr>
               </thead>
               <tbody>
-              {
+                {
                   reporteIndividualDocente.resultados?.map((al, index) => {
                     return (
                       <tr key={index} className={styles.tableRow}>
                         <td className={styles.tableCell}>{al.subOrden || al.order}</td>
                         <td className={styles.tableCellLeft}>{al.criterio}</td>
-                        <td className={styles.tableCell}>{al.alternativas?.map(select => select.selected ? select.value : null).filter(Boolean)[0]}</td>
-                        <td className={styles.tableCell}>{al.alternativas?.map(select => select.selected ? select.value : null).filter(Boolean)[0]}</td>
+                        <td className={styles.tableCell}>{al.alternativas?.find(alt => alt.selected)?.value ?? '-'}</td>
+                        <td className={styles.tableCell}>{al.alternativas?.find(alt => alt.selected)?.value ?? '-'}</td>
                       </tr>
                     )
                   })
@@ -102,7 +102,7 @@ const ReporteDocenteIndividual = () => {
                 </tr>
               </tbody>
             </table>
-            <AnexosSeguimientoRetroalimentacion dataDocente={dataDocente} idEvaluacion={`${route.query.idEvaluacion}`}/>
+            <AnexosSeguimientoRetroalimentacion dataDocente={dataDocente} idEvaluacion={`${route.query.idEvaluacion}`} />
           </div>
           :
           null

@@ -1,7 +1,10 @@
 .container {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   position: relative;
   z-index: 10;
+  min-height: 100vh;
+  background-color: #f8fafc;
 }
 
 .header {
@@ -17,7 +20,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.7));
   z-index: 1;
 }
 
@@ -41,53 +44,113 @@
   color: white;
   font-size: 2.5rem;
   font-weight: 600;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   font-family: 'Montserrat', sans-serif;
 }
 
 .tableContainer {
-  padding: 2rem;
-  background-color: #f8f9fa;
+  padding: 3rem 2rem;
+  background-color: #f8fafc;
 }
 
 .tableSection {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  padding: 1.5rem;
-  margin-top: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+  padding: 2.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .filtersContainer {
   display: flex;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 1.5rem;
+  padding: 1.5rem;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  margin-bottom: 2rem;
+  border: 1px solid #edf2f7;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filterLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.selectWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .select {
   padding: 0.75rem 1rem;
+  padding-right: 2.5rem;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  background: white;
-  color: #4a5568;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #2d3748;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'Montserrat', sans-serif;
-  min-width: 200px;
+  min-width: 220px;
+  appearance: none;
+  font-size: 0.95rem;
 }
 
 .select:hover {
-  border-color: #00b4d8;
+  border-color: #cbd5e0;
+  background: white;
 }
 
 .select:focus {
   outline: none;
-  border-color: #00b4d8;
-  box-shadow: 0 0 0 3px rgba(0,180,216,0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: white;
+}
+
+.selectIcon {
+  position: absolute;
+  right: 1rem;
+  pointer-events: none;
+  color: #a0aec0;
+  display: flex;
+  align-items: center;
+}
+
+.clearFilterBtn {
+  margin-left: auto;
+  padding: 0.75rem 1.5rem;
+  background-color: transparent;
+  color: #718096;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  height: 45px;
+}
+
+.clearFilterBtn:hover {
+  background-color: #f7fafc;
+  color: #2d3748;
+  border-color: #cbd5e0;
 }
 
 .filterButton {
@@ -144,7 +207,7 @@
   color: white;
   background: #2d3748;
   border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   white-space: normal;
   max-width: 300px;
   bottom: 100%;
@@ -155,34 +218,90 @@
 
 .chartContainer {
   background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-top: 2rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  border-radius: 12px;
+  padding: 2rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chartContainer:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
 }
 
 .sectionTitle {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  color: #2d3748;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  color: #1e293b;
   font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 1.1rem;
 }
 
 .sectionTitleIndicator {
   width: 4px;
-  height: 20px;
-  background: #00b4d8;
+  height: 24px;
+  background: #3b82f6;
   border-radius: 2px;
 }
 
 .chartWrapper {
-  display: grid;
+  display: flex;
   justify-content: center;
   align-items: center;
-  width: 500px;
+  width: 100%;
+  max-width: 600px;
   margin: 0 auto;
+}
+
+.globalChartsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.pieChartWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
 }
 
 .statsContainer {
@@ -204,46 +323,39 @@
 
 .loaderIcon {
   font-size: 2rem;
-  color: #00b4d8;
+  color: #3b82f6;
   animation: spin 1s linear infinite;
 }
 
 .loaderText {
-  margin-top: 1rem;
-  color: #4a5568;
+  margin-top: 1.5rem;
+  color: #475569;
   font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
 }
 
 @keyframes spin {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
 }
 
-/* Colores de fondo para las calificaciones */
-.bgGray {
-  background-color: #e2e8f0;
-  padding: 0.5rem;
-  border-radius: 4px;
+.perQuestionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
 }
 
-.bgOrange {
-  background-color: #fbd38d;
-  padding: 0.5rem;
-  border-radius: 4px;
+.totalBadge {
+  margin-top: 1rem;
+  text-align: right;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #718096;
+  padding-right: 1rem;
 }
-
-.bgGreen {
-  background-color: #9ae6b4;
-  padding: 0.5rem;
-  border-radius: 4px;
-}
-
-.bgCyan {
-  background-color: #90cdf4;
-  padding: 0.5rem;
-  border-radius: 4px;
-} 

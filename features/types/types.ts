@@ -83,6 +83,7 @@ export type AppReducerValues = {
   dataGraficoPieChart: GraficoPieChart[];
   loaderDataGraficoPieChart: boolean;
   preguntaEvaluacionLikert: PreguntasEvaluacionLikert[];
+  dimensionesEspecialistas: DimensionEspecialista[];
 };
 
 export type AppActions =
@@ -188,7 +189,8 @@ export type AppActions =
   | { type: AppAction.TIPOS_DE_EVALUACION; payload: TipoDeEvaluacion[] }
   | { type: AppAction.DATA_GRAFICO_PIE_CHART; payload: GraficoPieChart[] }
   | { type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART; payload: boolean }
-  | { type: AppAction.PREGUNTAS_EVALUACION_ESCALA_LIKERT; payload: PreguntasEvaluacionLikert[] };
+  | { type: AppAction.PREGUNTAS_EVALUACION_ESCALA_LIKERT; payload: PreguntasEvaluacionLikert[] }
+  | { type: AppAction.DIMENSIONES_ESPECIALISTAS; payload: DimensionEspecialista[] };
 
 export type LoginData = {
   usuario: string;
@@ -354,10 +356,21 @@ export type User = {
   conocimientoPedagogico?: ConocimientoPedagogico;
   resultadosSeguimientoRetroalimentacion?: PRDocentes[];
   observacionesSeguimientoRetroalimentacion?: string;
+  avancesRetroalimentacion?: string;
+  dificultadesRetroalimentacion?: string;
+  compromisosRetroalimentacion?: string;
   linkDocumentos?: string;
   nivelDeInstitucion?: number[];
   dniEspecialistaRegional?: string;
   asignaciones?: AsignacionGradoSeccion[];
+  email?: string;
+  cargo?: string;
+  ugel?: string;
+  fechaMonitoreo?: string;
+  horaInicio?: string;
+  horaFinal?: string;
+  datosMonitor?: any;
+  fechaCreacion?: any;
 };
 
 export type ConocimientoPedagogico = {
@@ -441,6 +454,7 @@ export type CrearEvaluacionDocente = {
   categoria?: string;
   id?: string;
   tipoDeEvaluacion?: string;
+  escala?: AlternativasDocente[];
 };
 
 export type PreviewPRDocentes = {
@@ -458,6 +472,7 @@ export type PRDocentes = {
   id?: string;
   calificacion?: number;
   subOrden?: string;
+  dimensionId?: string;
 };
 
 export interface AlternativasDocente {
@@ -471,6 +486,7 @@ export interface AlternativasDocente {
 export type DataEvaluacion = {
   name?: string;
   categoria?: string;
+  escala?: AlternativasDocente[];
 };
 
 export type NivelYPuntaje = {
@@ -673,4 +689,10 @@ export type PromedioGlobalPorMes = {
   mes: number;
   totalEstudiantes: number;
   promedioGlobal: number;
+};
+
+export type DimensionEspecialista = {
+  id?: string;
+  nombre?: string;
+  order?: number;
 };

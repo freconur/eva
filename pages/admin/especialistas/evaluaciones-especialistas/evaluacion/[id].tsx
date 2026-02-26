@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
 import header from '@/assets/evaluacion-docente.jpg';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
-import { MdEditSquare } from 'react-icons/md';
+import { MdEditSquare, MdDelete, MdAddCircle, MdSettings, MdPlaylistAdd, MdAssignment, MdDescription, MdKeyboardArrowDown } from 'react-icons/md';
 import { PRDocentes } from '@/features/types/types';
 import Link from 'next/link';
 import { RiLoader4Line } from 'react-icons/ri';
@@ -11,6 +11,10 @@ import styles from './index.module.css';
 import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas';
 import AgregarPreguntasRespuestasEspecialistas from '@/modals/AgregarPreguntasRespuestasEspecialistas';
 import UpdatePreguntaRespuestaEspecialistas from '@/modals/updatePrEspecialistas';
+import AgregarDimensionEspecialistas from '@/modals/AgregarDimensionEspecialistas';
+import UpdateDimensionEspecialistas from '@/modals/UpdateDimensionEspecialistas';
+import ConfigurarEscalaEspecialistas from '@/modals/ConfigurarEscalaEspecialistas';
+import { DimensionEspecialista } from '@/features/types/types';
 
 const EvaluacionDocente = () => {
   const [showAgregarPreguntas, setShowAgregarPreguntas] = useState<boolean>(false);
@@ -22,12 +26,24 @@ const EvaluacionDocente = () => {
     loaderPages,
     dataDirector,
     warningDataDocente,
+    dimensionesEspecialistas,
   } = useGlobalContext();
-  const { getPreguntasRespuestasEspecialistas, getDataEvaluacion, buscarEspecialista } =
-    UseEvaluacionEspecialistas();
+  const {
+    getPreguntasRespuestasEspecialistas,
+    getDataEvaluacion,
+    buscarEspecialista,
+    getDimensionesEspecialistas,
+    deletePreguntaRespuestaEspecialista,
+    deleteDimensionEspecialista,
+  } = UseEvaluacionEspecialistas();
   const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false);
+  const [showAgregarDimension, setShowAgregarDimension] = useState<boolean>(false);
+  const [showUpdateDimension, setShowUpdateDimension] = useState<boolean>(false);
+  const [showConfigurarEscala, setShowConfigurarEscala] = useState<boolean>(false);
+  const [dimensionToUpdate, setDimensionToUpdate] = useState<DimensionEspecialista>({});
   const [valueDni, setValueDni] = useState<string>('');
   const [dataUpdate, setDataUpdate] = useState<PRDocentes>({});
+  const [showConfigDropdown, setShowConfigDropdown] = useState<boolean>(false);
 
   const handleShowModalPreguntas = () => {
     setShowAgregarPreguntas(!showAgregarPreguntas);
@@ -35,8 +51,29 @@ const EvaluacionDocente = () => {
   const handleShowUpdateModal = () => {
     setShowUpdateModal(!showUpdateModal);
   };
+  const handleShowModalDimension = () => {
+    setShowAgregarDimension(!showAgregarDimension);
+  };
+  const handleShowUpdateDimension = () => {
+    setShowUpdateDimension(!showUpdateDimension);
+  };
+  const handleShowConfigurarEscala = () => {
+    setShowConfigurarEscala(!showConfigurarEscala);
+  };
   const handleChangeDniDocente = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValueDni(e.target.value);
+  };
+
+  const handleDeletePregunta = async (idPregunta: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta pregunta?')) {
+      await deletePreguntaRespuestaEspecialista(`${router.query.id}`, idPregunta);
+    }
+  };
+
+  const handleDeleteDimension = async (idDimension: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este dominio? Esta acción no eliminará las preguntas, pero quedarán sin dominio asignado.')) {
+      await deleteDimensionEspecialista(`${router.query.id}`, idDimension);
+    }
   };
 
   useEffect(() => {
@@ -48,10 +85,11 @@ const EvaluacionDocente = () => {
   useEffect(() => {
     getDataEvaluacion(`${router.query.id}`);
     getPreguntasRespuestasEspecialistas(`${router.query.id}`);
+    getDimensionesEspecialistas(`${router.query.id}`);
   }, [`${router.query.id}`]);
 
   return (
-    <div>
+    <div className={styles.container}>
       {showUpdateModal && (
         <UpdatePreguntaRespuestaEspecialistas
           id={`${router.query.id}`}
@@ -65,21 +103,43 @@ const EvaluacionDocente = () => {
           handleShowModalPreguntas={handleShowModalPreguntas}
         />
       )}
+      {showAgregarDimension && (
+        <AgregarDimensionEspecialistas
+          idEvaluacion={`${router.query.id}`}
+          handleShowModalDimension={handleShowModalDimension}
+        />
+      )}
+      {showUpdateDimension && (
+        <UpdateDimensionEspecialistas
+          idEvaluacion={`${router.query.id}`}
+          dimensionUpdate={dimensionToUpdate}
+          handleShowUpdateDimension={handleShowUpdateDimension}
+        />
+      )}
+      {showConfigurarEscala && (
+        <ConfigurarEscalaEspecialistas
+          idEvaluacion={`${router.query.id}`}
+          escalaActual={dataEvaluacionDocente?.escala}
+          handleShowConfigurarEscala={handleShowConfigurarEscala}
+        />
+      )}
 
       <div className={styles.header}>
-        <div className={styles.headerOverlay}></div>
-        <Image
-          className={styles.headerImage}
-          src={header}
-          alt="imagen de cabecera"
-          objectFit="fill"
-          priority
-        />
+        <div className={styles.headerBackground}>
+          <div className={styles.headerOverlay}></div>
+          <Image
+            className={styles.headerImage}
+            src={header}
+            alt="imagen de cabecera"
+            objectFit="fill"
+            priority
+          />
+        </div>
         <div className={styles.headerContent}>
           <h1 className={styles.headerTitle}>
             Evaluación {dataEvaluacionDocente?.name?.toLocaleLowerCase()}
           </h1>
-          <div className={styles.searchContainer}>
+          {/* <div className={styles.searchContainer}>
             <input
               type="number"
               className={styles.searchInput}
@@ -106,30 +166,57 @@ const EvaluacionDocente = () => {
                 <p>{warningDataDocente}</p>
               </div>
             )}
-          </div>
+          </div> */}
         </div>
         <div className={styles.buttonContainer}>
-         {/*  <button
-            onClick={() => handleShowModalPreguntas()}
-            className={`${styles.button} ${styles.buttonPrimary}`}
-          >
-            Agregar
-          </button> */}
-          <button
-            onClick={() => handleShowModalPreguntas()}
-            className={`${styles.button} ${styles.buttonPrimary}`}
-          >
-            Agregar preguntas
-          </button>
+          <div className={styles.dropdown}>
+            <button
+              onClick={() => setShowConfigDropdown(!showConfigDropdown)}
+              className={`${styles.button} ${styles.buttonPrimary}`}
+            >
+              <MdSettings /> Configuración <MdKeyboardArrowDown className={showConfigDropdown ? styles.iconRotate : ''} />
+            </button>
+            {showConfigDropdown && (
+              <div className={styles.dropdownMenu}>
+                <button
+                  onClick={() => {
+                    handleShowModalDimension();
+                    setShowConfigDropdown(false);
+                  }}
+                  className={styles.dropdownItem}
+                >
+                  <MdAddCircle /> Agregar dominio
+                </button>
+                <button
+                  onClick={() => {
+                    handleShowConfigurarEscala();
+                    setShowConfigDropdown(false);
+                  }}
+                  className={styles.dropdownItem}
+                >
+                  <MdSettings /> Configurar Escala
+                </button>
+                <button
+                  onClick={() => {
+                    handleShowModalPreguntas();
+                    setShowConfigDropdown(false);
+                  }}
+                  className={styles.dropdownItem}
+                >
+                  <MdPlaylistAdd /> Agregar preguntas
+                </button>
+              </div>
+            )}
+          </div>
           <Link
             href={`evaluar-especialista?id=${router.query.id}`}
             className={`${styles.button} ${styles.buttonSecondary}`}
           >
-            Evaluar especialista
+            <MdAssignment /> Evaluar especialista
           </Link>
           <div className={`${styles.button} ${styles.buttonPrimary}`}>
             <Link href={`reporte?idEvaluacion=${router.query.id}`} className={styles.buttonLink}>
-              Reporte ugel
+              <MdDescription /> Reporte ugel
             </Link>
           </div>
         </div>
@@ -142,38 +229,92 @@ const EvaluacionDocente = () => {
             <p className={styles.loaderText}>buscando resultados...</p>
           </div>
         ) : (
-          <ul className={styles.preguntasList}>
-            {getPreguntaRespuestaDocentes?.map((pq, index) => {
+          <div className={styles.preguntasContainer}>
+            {dimensionesEspecialistas?.map((dimension, dimIndex) => {
+              const preguntasDeDimension = getPreguntaRespuestaDocentes?.filter(
+                (pq) => pq.dimensionId === dimension.id
+              );
+
               return (
-                <li key={index} className={styles.preguntaItem}>
-                  <div className={styles.preguntaHeader}>
-                    <div className={styles.preguntaHeader}>
-                      <p className={styles.preguntaNumber}>{index + 1}.</p>
-                      <h3 className={styles.preguntaTitle}>{pq.criterio}</h3>
-                    </div>
-                    <div className={styles.editButton}>
+                <div key={dimension.id} className={styles.dimensionSection}>
+                  <h2 className={styles.dimensionTitle}>
+                    {dimension.nombre}
+                    <div className={styles.editButton} style={{ marginLeft: '1rem', display: 'inline-flex' }}>
                       <MdEditSquare
                         onClick={() => {
-                          handleShowUpdateModal();
-                          setDataUpdate(pq);
+                          setDimensionToUpdate(dimension);
+                          handleShowUpdateDimension();
                         }}
                       />
                     </div>
-                  </div>
-                  <ul className={styles.alternativasList}>
-                    {pq.alternativas?.map((alt, index) => {
+                    {preguntasDeDimension?.length === 0 && (
+                      <div className={styles.deleteButton} style={{ marginLeft: '0.5rem', display: 'inline-flex' }}>
+                        <MdDelete onClick={() => dimension.id && handleDeleteDimension(dimension.id)} />
+                      </div>
+                    )}
+                  </h2>
+                  <ul className={styles.preguntasList}>
+                    {preguntasDeDimension?.length === 0 && (
+                      <li className={styles.preguntaItem} style={{ opacity: 0.6, borderStyle: 'dashed' }}>
+                        <p className={styles.preguntaTitle}>Sin preguntas en este dominio aún.</p>
+                      </li>
+                    )}
+                    {preguntasDeDimension?.map((pq, index) => {
                       return (
-                        <li key={index} className={styles.alternativaItem}>
-                          <span className={styles.alternativaNumber}>{alt.alternativa}.</span>
-                          <p className={styles.alternativaText}>{alt.descripcion}</p>
+                        <li key={index} className={styles.preguntaItem}>
+                          <div className={styles.preguntaHeader}>
+                            <p className={styles.preguntaNumber}>{index + 1}.</p>
+                            <h3 className={styles.preguntaTitle}>{pq.criterio}</h3>
+                            <div className={styles.editButton}>
+                              <MdEditSquare
+                                onClick={() => {
+                                  handleShowUpdateModal();
+                                  setDataUpdate(pq);
+                                }}
+                              />
+                            </div>
+                            <div className={styles.deleteButton}>
+                              <MdDelete onClick={() => handleDeletePregunta(`${pq.id}`)} />
+                            </div>
+                          </div>
                         </li>
                       );
                     })}
                   </ul>
-                </li>
+                </div>
               );
             })}
-          </ul>
+
+            {/* Preguntas sin dominio asignado (opcional, para retrocompatibilidad) */}
+            {getPreguntaRespuestaDocentes?.some((pq) => !pq.dimensionId) && (
+              <div className={styles.dimensionSection}>
+                <h2 className={styles.dimensionTitle}>Sin Dominio Asignado</h2>
+                <ul className={styles.preguntasList}>
+                  {getPreguntaRespuestaDocentes
+                    ?.filter((pq) => !pq.dimensionId)
+                    ?.map((pq, index) => (
+                      <li key={index} className={styles.preguntaItem}>
+                        <div className={styles.preguntaHeader}>
+                          <p className={styles.preguntaNumber}>{index + 1}.</p>
+                          <h3 className={styles.preguntaTitle}>{pq.criterio}</h3>
+                          <div className={styles.editButton}>
+                            <MdEditSquare
+                              onClick={() => {
+                                handleShowUpdateModal();
+                                setDataUpdate(pq);
+                              }}
+                            />
+                          </div>
+                          <div className={styles.deleteButton}>
+                            <MdDelete onClick={() => handleDeletePregunta(`${pq.id}`)} />
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

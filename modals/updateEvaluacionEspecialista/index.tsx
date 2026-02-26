@@ -9,7 +9,7 @@ interface Props {
   handleShowInputUpdate: () => void
 }
 
-const UpdateEvaluacionEspecialista = ({evaluacion, handleShowInputUpdate}:Props) => { 
+const UpdateEvaluacionEspecialista = ({ evaluacion, handleShowInputUpdate }: Props) => {
   const [name, setName] = useState(evaluacion.name || '');
   const { updateEvaluacionEspecialista } = UseEvaluacionEspecialistas()
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -29,37 +29,39 @@ const UpdateEvaluacionEspecialista = ({evaluacion, handleShowInputUpdate}:Props)
   if (typeof window !== "undefined") {
     container = document.getElementById("portal-modal");
   }
-  return container 
-  ? createPortal(
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
-        <div onClick={handleShowInputUpdate} className={styles.modalClose}>
-          cerrar
-        </div>
-        <div className={styles.modalHeader}>
-          <h1 className={styles.modalTitle}>Actualizar evaluación de desempeño</h1>
-        </div>
-        <div className={styles.modalBody}>
-          <div className={styles.inputContainer}>
-            <label className={styles.modalText}>Nombre:</label>
-            <textarea 
-              value={name}
-              onChange={handleChange}
-              className={styles.modalInput}
-            />
+  return container
+    ? createPortal(
+      <div className={styles.modalOverlay}>
+        <div className={styles.modalContent}>
+          <div onClick={handleShowInputUpdate} className={styles.modalClose}>
+            cerrar
           </div>
-          <button 
-            onClick={handleSubmit}
-            className={styles.submitButton}
-          >
-            Actualizar
-          </button>
+          <div className={styles.modalHeader}>
+            <h1 className={styles.modalTitle}>Actualizar evaluación de desempeño</h1>
+          </div>
+          <div className={styles.modalBody}>
+            <div className={styles.inputContainer}>
+              <label className={styles.modalText}>Nombre de la evaluación</label>
+              <textarea
+                value={name}
+                onChange={handleChange}
+                className={styles.modalInput}
+                placeholder="Ej. Evaluación de Desempeño Q1"
+              />
+            </div>
+            <button
+              onClick={handleSubmit}
+              className={styles.submitButton}
+            >
+              Actualizar Cambios
+            </button>
+          </div>
+
         </div>
-      </div>
-    </div>,
-    container
-  )
-  : null
+      </div>,
+      container
+    )
+    : null
 }
 
 export default UpdateEvaluacionEspecialista

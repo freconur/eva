@@ -3,7 +3,12 @@ import { AppActions, AppReducerValues } from "../types/types";
 
 
 export const appReducer = (state: AppReducerValues, action: AppActions) => {
-  switch (action.type) { 
+  switch (action.type) {
+    case AppAction.DIMENSIONES_ESPECIALISTAS:
+      return {
+        ...state,
+        dimensionesEspecialistas: action.payload
+      }
     case AppAction.PREGUNTAS_EVALUACION_ESCALA_LIKERT:
       return {
         ...state,
@@ -217,62 +222,62 @@ export const appReducer = (state: AppReducerValues, action: AppActions) => {
     case AppAction.LOADER_MODALES:
       return {
         ...state,
-        loaderModales:action.payload
+        loaderModales: action.payload
       }
-    case AppAction.REPORTE_INDIVIDUAL_DOCENTE :
+    case AppAction.REPORTE_INDIVIDUAL_DOCENTE:
       return {
         ...state,
-        reporteIndividualDocente:action.payload
+        reporteIndividualDocente: action.payload
       }
     case AppAction.DATA_EVALUACION_DOCENTE:
-      return{
+      return {
         ...state,
-        dataEvaluacionDocente:action.payload
+        dataEvaluacionDocente: action.payload
       }
     case AppAction.WARNING_DATA_DOCENTE:
       return {
         ...state,
-        warningDataDocente:action.payload
+        warningDataDocente: action.payload
       }
     case AppAction.DATA_DOCENTE:
       return {
         ...state,
-        dataDocente:action.payload
+        dataDocente: action.payload
       }
     case AppAction.GET_PREGUNTA_RESPUESTA_DOCENTE:
       return {
         ...state,
-        getPreguntaRespuestaDocentes:action.payload
+        getPreguntaRespuestaDocentes: action.payload
       }
     case AppAction.EVALUACIONES_DOCENTES:
       return {
         ...state,
-        evaluacionDesempeñoDocente:action.payload
+        evaluacionDesempeñoDocente: action.payload
       }
     case AppAction.EVALUACIONES_DIRECTOR:
       return {
         ...state,
-        evaluacionesDirector:action.payload
+        evaluacionesDirector: action.payload
       }
     case AppAction.WARNING_USUARIO_NO_ENCONTRADO:
       return {
         ...state,
-        warningUsuarioNoEncontrado:action.payload
+        warningUsuarioNoEncontrado: action.payload
       }
     case AppAction.DATA_DIRECTOR:
       return {
         ...state,
-        dataDirector:action.payload
+        dataDirector: action.payload
       }
     case AppAction.WARNING_USUARIO_EXISTE:
       return {
         ...state,
-        warningUsuarioExiste:action.payload
+        warningUsuarioExiste: action.payload
       }
     case AppAction.USUARIOS_DIRECTORES:
       return {
         ...state,
-        usuariosDirectores:action.payload
+        usuariosDirectores: action.payload
       }
     case AppAction.PSICOLINGUISTICA_PREGUNTAS_ACTUALIZADAS:
       return {

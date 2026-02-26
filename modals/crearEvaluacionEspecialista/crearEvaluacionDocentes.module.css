@@ -1,6 +1,8 @@
 .containerModal {
   position: fixed;
-  background-color: rgba(0, 0, 0, 0.23);
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 2000;
   top: 0;
   bottom: 0;
@@ -8,22 +10,48 @@
   right: 0;
   display: grid;
   place-content: center;
-  
+  animation: fadeIn 0.3s ease-out;
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUpScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .containerPreguntasAlternativas {
   display: grid;
   gap: 5px;
 }
+
 .containerAlternativas {
   display: flex;
   gap: 5px;
   /* margin-left: 30px; */
 }
+
 .tituloPregunta {
   color: #1F6E8C;
   font-size: 20px;
   text-transform: uppercase;
 }
+
 .respuestas {
   display: grid;
   margin-right: 20px;
@@ -32,26 +60,32 @@
   margin-top: 20px;
   border-bottom: 1px solid #b4b4b5;
 }
+
 .descripcion {
   color: #344CB7;
   text-transform: uppercase;
 }
+
 .closeModalContainer {
   width: 100%;
   justify-content: flex-end;
   display: flex;
+  margin-bottom: 8px;
 }
+
 .close {
-  font-weight: 600;
-  color: #4953f6;
-  text-decoration: underline;
+  font-weight: 500;
+  color: #64748b;
+  text-decoration: none;
   cursor: pointer;
-  transition: 0.2s ease;
+  transition: color 0.2s ease;
+  font-size: 0.9rem;
 }
+
 .close:hover {
-  color: #ffcf4c;
-  transition: 0.2s ease;
+  color: #1e293b;
 }
+
 .closeModal {
   border-radius: 100%;
   background-color: red;
@@ -63,47 +97,53 @@
   justify-content: center;
   align-items: center;
 }
+
 .containerSale {
-  background-color: #ffff;
-  width: 100%;
-  /* width: 400px; */
-  /* background-color: #f6fdff; */
-  border-radius: 5px;
-  margin-bottom: 10px;
-  /* cursor: pointer; */
-  padding: 20px;
-  margin: 0px;
+  background-color: #ffffff;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 16px;
+  padding: 32px;
+  margin: 20px auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUpScale 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
 @media (min-width: 400px) {
   .containerSale {
     width: 390px;
   }
 }
+
 @media (min-width: 500px) {
   .containerSale {
     width: 490px;
   }
 }
+
 @media (min-width: 600px) {
   .containerSale {
     width: 590px;
   }
 }
+
 @media (min-width: 768px) {
   .containerSale {
     width: 750px;
   }
 }
+
 .title {
-  font-family: "Montserrat";
-  font-size: x-large;
-  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
   text-align: center;
-  margin-bottom: 20px;
-  /* color: #182c18; */
-  text-transform: capitalize;
-  color: #5e68ff;
+  margin-bottom: 24px;
+  color: #1e293b;
+  letter-spacing: -0.025em;
 }
+
 .options {
   display: flex;
   justify-content: center;
@@ -111,6 +151,7 @@
   width: 100%;
   gap: 20px;
 }
+
 .optionButtonAgree {
   display: flex;
   justify-content: center;
@@ -127,6 +168,7 @@
   font-family: "DM Mono";
   cursor: pointer;
 }
+
 .optionButtonCancel {
   display: flex;
   justify-content: center;
@@ -142,6 +184,7 @@
   font-family: "Nunito";
   font-weight: 700;
 }
+
 .list {
   display: grid;
   grid-template-columns: auto;
@@ -174,10 +217,12 @@
 
   border-color: rgba(129, 140, 248);
 }
+
 .inputLabel {
   color: white;
   margin-bottom: 10px;
 }
+
 .select {
   background-color: #121f3d;
   width: 100%;
@@ -188,58 +233,69 @@
   margin-bottom: 10px;
   color: white;
 }
+
 .inputNombresDni {
-  background-color: #e4eefd;
+  background-color: #f8fafc;
   width: 100%;
-  padding: 10px;
-  border: 1px solid #cae1fd;
-  border-color: #3ABEF9;
-  border-radius: 5px;
-  margin-bottom: 10px;
-  color: #3572EF;
+  padding: 12px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  color: #0f172a;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
 }
+
 .inputNombresDni:focus {
   outline: none;
-  border-color: #a7e6ff;
+  border-color: #4953f6;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(73, 83, 246, 0.1);
 }
+
 .containerPregunta {
   /* height: 130px; */
 }
+
 .buttonCrearEvaluacion {
-  /* background: rgb(49, 174, 176); */
-  background: #4953f6;
-  /* background: linear-gradient(
-    90deg,
-    rgba(49, 174, 176, 1) 0%,
-    rgba(0, 97, 255, 1) 100%
-  ); */
+  background: #1e293b;
   width: 100%;
-  margin-top:20px;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  border-radius: 3px;
-  color: #ffff;
-  font-size: 15px;
-  font-weight: 600;
+  margin-top: 24px;
+  padding: 14px;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer;
   text-align: center;
-  box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.3);
-  transition: 0.5s ease;
+  border: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
+
 .buttonCrearEvaluacion:hover {
-  background: #f9b72c;
-  transition: 0.5s ease;
+  background: #334155;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
-.containerBuscarDocente{
-  display:flex;
-  gap:10px;
+
+.buttonCrearEvaluacion:active {
+  background: #0f172a;
+  transform: translateY(0px);
 }
+
+
+.containerBuscarDocente {
+  display: flex;
+  gap: 10px;
+}
+
 .buscarDocentebutton {
   background-color: #ffcf4c;
   border-radius: 3px;
   height: 47px;
-  padding-right:10px;
-  padding-left:10px;
+  padding-right: 10px;
+  padding-left: 10px;
   font-family: monospace;
   font-weight: 600;
   cursor: pointer;
@@ -247,6 +303,7 @@
   box-shadow: #00f7ff;
   transition: 0.5s ease;
 }
+
 .buscarDocentebutton:hover {
   background-color: #4cccff;
   color: #ffff;
@@ -262,17 +319,20 @@
   font-size: 15px;
   font-weight: 600;
 }
+
 .buttonsContainer {
-  display:flex;
+  display: flex;
   justify-content: end;
   align-items: center;
   margin-top: 10px;
 }
+
 .buttonsContainerSiguiente {
-  display:flex;
+  display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 .selectOption {
   width: 100%;
   height: 45px;
@@ -287,21 +347,25 @@
   transition: 0.5s ease;
   border-color: rgba(129, 140, 248);
 }
+
 .ttt::placeholder {
   color: #94a3b8;
 }
+
 .ttt:focus {
   outline: none;
   border-color: rgba(129, 140, 248);
   background-color: #fff;
   box-shadow: 0 0 0 5px rgb(129 140 248 / 30%);
 }
+
 .ttt:hover {
   outline: none;
   border-color: rgba(129, 140, 248);
   background-color: #fff;
   box-shadow: 0 0 0 5px rgb(129 140 248 / 30%);
 }
+
 .buttonSubmit {
   color: rgba(129, 140, 248) !important;
   width: 100%;
@@ -313,6 +377,7 @@
   display: inline-block;
   transition: all 0.3s ease 0s;
 }
+
 .buttonSubmit:hover {
   color: #20bf6b !important;
   border-radius: 50px;
@@ -329,16 +394,19 @@
   flex-wrap: wrap;
   text-transform: capitalize;
 }
+
 .titleCursos {
   text-transform: capitalize;
   font-weight: 600;
   color: #75cff8;
 }
+
 .labelLista:hover {
   position: relative;
   /* top: -50px; */
   /* left: 50%; */
 }
+
 .lista {
   display: flex;
   gap: 5px;
@@ -360,7 +428,7 @@
   transition: all 0.3s ease 0s;
   box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  
+
 }
 
 .deleteCurso {
@@ -389,6 +457,7 @@
   color: #72717e;
   margin-bottom: 10px;
 }
+
 .textAreaPregunta {
   padding: 10px;
   outline: none;
@@ -398,12 +467,14 @@
   color: #72717e;
   height: 150px;
 }
+
 .alternativa {
   text-transform: uppercase;
   color: #578FCA;
   font-weight: bold;
   /* margin-right: 5x; */
 }
+
 .alternativaInput {
   width: 100%;
   border-radius: 10px;
@@ -411,6 +482,7 @@
   padding: 10px;
   box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
+
 .inputAlternativa {
   width: 100%;
   border-radius: 10px;

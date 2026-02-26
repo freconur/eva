@@ -28,11 +28,12 @@ const CrearEvaluacionEspecialista = ({ handleShowModalCrearEvaluacion }: Props) 
   }
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
 
-  const { createEvaluacionesEspecialistas } = UseEvaluacionEspecialistas()
+  const { createEvaluacionesEspecialistas, valueLoader } = UseEvaluacionEspecialistas()
 
 
-  const handleCreateEvaluacion = handleSubmit((data) => {
-    createEvaluacionesEspecialistas(data)
+  const handleCreateEvaluacion = handleSubmit(async (data) => {
+    await createEvaluacionesEspecialistas(data)
+    handleShowModalCrearEvaluacion()
     reset()
   })
   return container
@@ -55,11 +56,11 @@ const CrearEvaluacionEspecialista = ({ handleShowModalCrearEvaluacion }: Props) 
                 <div className={styles.closeModalContainer}>
                   <div className={styles.close} onClick={handleShowModalCrearEvaluacion} >cerrar</div>
                 </div>
-                <h3 className={styles.title}>Crear Evaluación Desempeño del docente</h3>
+                <h3 className={styles.title}>Crear Evaluación de Especialista</h3>
                 <form onSubmit={handleCreateEvaluacion}>
 
-                  <div className='w-full my-2'>
-                    <p className={styles.inputLabel}>Nombre de evaluación: </p>
+                  <div className='w-full my-4'>
+                    <p className="text-sm font-medium text-slate-700 mb-2">Nombre de la evaluación</p>
                     <input
                       {...register("name",
                         {
@@ -70,27 +71,40 @@ const CrearEvaluacionEspecialista = ({ handleShowModalCrearEvaluacion }: Props) 
                       )}
                       className={styles.inputNombresDni}
                       type="text"
-                      placeholder="nombres de evaluacion"
+                      placeholder="Ej. Evaluación de Desempeño Q1"
                     />
-                    {errors.nombre && <span className='text-red-400 text-sm'>{errors.nombre.message as string}</span>}
+                    {errors.name && <span className='text-red-500 text-xs mt-1 block'>{errors.name.message as string}</span>}
                   </div>
-                  <div className="mb-3">
+                  <div className="mb-4">
+                    <p className="text-sm font-medium text-slate-700 mb-2">Categoría</p>
                     <select
                       {...register("categoria",
                         {
                           required: { value: true, message: "categoria es requerido" },
                         }
                       )}
-                      className="w-full rounded-md outline-none p-3 mb-2"
+                      className="w-full rounded-lg border-1.5 border-slate-200 outline-none p-3 bg-slate-50 text-slate-900 focus:bg-white focus:border-indigo-500 transition-all text-sm appearance-none"
+                      style={{ border: '1.5px solid #e2e8f0' }}
                     >
-                      <option value="">--CATEGORIA--</option>
+                      <option value="">Seleccione una categoría</option>
                       <option value="SEGUIMIENTO">SEGUIMIENTO</option>
                       <option value="RETROALIMENTACIÓN">RETROALIMENTACIÓN</option>
                     </select>
-                    {errors.categoria && <span className='text-red-400 text-sm'>{errors.categoria.message as string}</span>}
+                    {errors.categoria && <span className='text-red-500 text-xs mt-1 block'>{errors.categoria.message as string}</span>}
                   </div>
+
                   <button
-                    className={styles.buttonCrearEvaluacion}>Guardar</button>
+                    disabled={valueLoader}
+                    className={styles.buttonCrearEvaluacion}>
+                    {valueLoader ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <RiLoader4Line className="animate-spin text-xl" />
+                        <span>Guardando...</span>
+                      </div>
+                    ) : (
+                      "Guardar"
+                    )}
+                  </button>
                 </form>
               </>
           }

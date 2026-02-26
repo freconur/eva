@@ -1,6 +1,8 @@
 .containerModal {
   position: fixed;
-  background-color: rgba(0, 0, 0, 0.23);
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 2000;
   top: 0;
   bottom: 0;
@@ -8,29 +10,60 @@
   right: 0;
   display: grid;
   place-content: center;
+  animation: fadeIn 0.3s ease-out;
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUpScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 
 .closeModalContainer {
   width: 100%;
   justify-content: flex-end;
   display: flex;
+  margin-bottom: 8px;
 }
+
 .close {
-  font-weight: 600;
-  color: #fffce3;
-  text-decoration: underline;
+  font-weight: 500;
+  color: #64748b;
+  text-decoration: none;
   cursor: pointer;
-  transition: 0.2s ease;
+  transition: color 0.2s ease;
+  font-size: 0.9rem;
 }
+
 .close:hover {
-  color: #ffcf4c;
-  transition: 0.2s ease;
+  color: #1e293b;
 }
-.advertenciaEliminar{
-  color:#ffff;
+
+.advertenciaEliminar {
+  color: #64748b;
   text-align: center;
-  margin-bottom: 10px;
+  margin-bottom: 24px;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
+
 .closeModal {
   border-radius: 100%;
   background-color: red;
@@ -42,47 +75,53 @@
   justify-content: center;
   align-items: center;
 }
+
 .containerSale {
-  background-color: #0f253b;
-  width: 100%;
-  /* width: 400px; */
-  /* background-color: #f6fdff; */
-  border-radius: 5px;
-  margin-bottom: 10px;
-  /* cursor: pointer; */
-  padding: 20px;
-  margin: 0px;
+  background-color: #ffffff;
+  width: 90%;
+  max-width: 450px;
+  border-radius: 16px;
+  padding: 32px;
+  margin: 20px auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUpScale 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
 @media (min-width: 400px) {
   .containerSale {
     width: 390px;
   }
 }
+
 @media (min-width: 500px) {
   .containerSale {
     width: 490px;
   }
 }
+
 @media (min-width: 600px) {
   .containerSale {
     width: 590px;
   }
 }
+
 @media (min-width: 768px) {
   .containerSale {
     width: 750px;
   }
 }
+
 .title {
-  font-family: "Montserrat";
-  font-size: x-large;
-  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
   text-align: center;
-  margin-bottom: 20px;
-  /* color: #182c18; */
-  text-transform: capitalize;
-  color: #a7e6ff;
+  margin-bottom: 16px;
+  color: #1e293b;
+  letter-spacing: -0.025em;
 }
+
 .options {
   display: flex;
   justify-content: center;
@@ -90,6 +129,7 @@
   width: 100%;
   gap: 20px;
 }
+
 .optionButtonAgree {
   display: flex;
   justify-content: center;
@@ -106,6 +146,7 @@
   font-family: "DM Mono";
   cursor: pointer;
 }
+
 .optionButtonCancel {
   display: flex;
   justify-content: center;
@@ -121,6 +162,7 @@
   font-family: "Nunito";
   font-weight: 700;
 }
+
 .list {
   display: grid;
   grid-template-columns: auto;
@@ -153,10 +195,12 @@
 
   border-color: rgba(129, 140, 248);
 }
+
 .inputLabel {
   color: white;
   margin-bottom: 10px;
 }
+
 .inputNombresDni {
   background-color: #121f3d;
   width: 100%;
@@ -167,45 +211,48 @@
   margin-bottom: 10px;
   color: white;
 }
+
 .inputNombresDni:focus {
   outline: none;
   border-color: #a7e6ff;
 }
 
 .buttonDelete {
-  background: rgb(228, 35, 115);
-  width: 100px;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  border-radius: 10px;
-  color: #ffff;
-  font-size:15px;
+  background: #ef4444;
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
 }
-.buttonCrearEvaluacion {
-  background: rgb(247, 243, 36);
-  width: 100px;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  border-radius: 10px;
-  color: #0f253b;
-  font-size:15px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.buttonCrearEvaluacion:hover {
-  color: #20bf6b !important;
-  border-radius: 50px;
-  border-color: #20bf6b !important;
-  transition: all 0.3s ease 0s;
-}
+
 .buttonDelete:hover {
-  color: #20bf6b !important;
-  border-radius: 50px;
-  border-color: #00f7ff !important;
-  transition: all 0.3s ease 0s;
+  background: #dc2626;
+  transform: translateY(-1px);
 }
+
+.buttonCrearEvaluacion {
+  background: #f1f5f9;
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.buttonCrearEvaluacion:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
 .selectOption {
   width: 100%;
   height: 45px;
@@ -220,21 +267,25 @@
   transition: 0.5s ease;
   border-color: rgba(129, 140, 248);
 }
+
 .ttt::placeholder {
   color: #94a3b8;
 }
+
 .ttt:focus {
   outline: none;
   border-color: rgba(129, 140, 248);
   background-color: #fff;
   box-shadow: 0 0 0 5px rgb(129 140 248 / 30%);
 }
+
 .ttt:hover {
   outline: none;
   border-color: rgba(129, 140, 248);
   background-color: #fff;
   box-shadow: 0 0 0 5px rgb(129 140 248 / 30%);
 }
+
 .buttonSubmit {
   color: rgba(129, 140, 248) !important;
   width: 100%;
@@ -246,6 +297,7 @@
   display: inline-block;
   transition: all 0.3s ease 0s;
 }
+
 .buttonSubmit:hover {
   color: #20bf6b !important;
   border-radius: 50px;
@@ -262,16 +314,19 @@
   flex-wrap: wrap;
   text-transform: capitalize;
 }
+
 .titleCursos {
   text-transform: capitalize;
   font-weight: 600;
   color: #75cff8;
 }
+
 .labelLista:hover {
   position: relative;
   /* top: -50px; */
   /* left: 50%; */
 }
+
 .lista {
   display: flex;
   gap: 5px;
@@ -325,6 +380,7 @@
   color: #72717e;
   margin-bottom: 10px;
 }
+
 .textAreaPregunta {
   padding: 10px;
   outline: none;
@@ -334,11 +390,13 @@
   color: #72717e;
   height: 150px;
 }
+
 .alternativa {
   text-transform: uppercase;
   color: #ff1e00;
   /* margin-right: 5x; */
 }
+
 .alternativaInput {
   width: 100%;
   border-radius: 10px;
@@ -346,6 +404,7 @@
   padding: 10px;
   box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
+
 .inputAlternativa {
   width: 100%;
   border-radius: 10px;
