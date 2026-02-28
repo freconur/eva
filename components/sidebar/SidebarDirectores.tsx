@@ -1,155 +1,169 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import SidebarInfoUser from './SidebarInfoUser';
 import Link from 'next/link';
 import useUsuario from '@/features/hooks/useUsuario';
 import { useRolUsers } from '@/features/hooks/useRolUsers';
 import SidebarRegional from './SidebarRegional';
-import BackgroundSidebar from './background-sidebar';
-import styles from './sideBarList.module.css'
+import styles from './sidebar.module.css'
 import { FaUserGraduate, FaUserTie } from 'react-icons/fa';
 import { MdAccountCircle } from 'react-icons/md';
+import { LuListTodo } from "react-icons/lu";
+import { IoIosArrowDown, IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
+import { FiLogOut } from 'react-icons/fi';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import PermissionGate from '@/components/permissions/PermissionGate';
 import { PERMISSIONS } from '@/features/utils/permissions';
+import { useRouter } from 'next/router';
+
 interface Props {
   showSidebar: boolean
 }
+
 const SidebarDirectores = ({ showSidebar }: Props) => {
+  const router = useRouter();
   const { logout } = useUsuario()
-  const { showSidebarValue } = useRolUsers()
-  const { currentUserData } = useGlobalContext()
+  const { showSidebarValue, toggleSidebarCollapsed } = useRolUsers()
+  const { currentUserData, isSidebarCollapsed } = useGlobalContext()
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  // Close sidebar on route change (Mobile only logic)
+  useEffect(() => {
+    const p = router.pathname;
+
+    if (p.includes('/directores/evaluaciones')) {
+      setOpenDropdown('estudiantes');
+    } else if (p.includes('/directores/evaluaciones-docentes') || p.includes('/directores/agregar-profesores') || p.includes('/directores/cobertura-curricular')) {
+      setOpenDropdown('docentes');
+    }
+  }, [router.pathname]);
+
+  useEffect(() => {
+    const handleRouteChange = () => {
+      if (showSidebar) {
+        showSidebarValue(showSidebar);
+      }
+    };
+
+    router.events.on('routeChangeStart', handleRouteChange);
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChange);
+    };
+  }, [showSidebar, router.events, showSidebarValue]);
+
+  const toggleDropdown = (dropdownName: string) => {
+    setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
+  };
+
+  const redirectLogin = () => {
+    router.push('/login');
+  }
+
   return (
-    <div className={`z-[2000] grid-rows-gridRows p-2 justify-evenly grid fixed duration-300 drop-shadow-xl h-full w-[250px] bg-graduado-blue-2 ${showSidebar ? "left-[0px]" : "-left-[300px]"}`}>
-      <BackgroundSidebar />
-      <div onClick={() => showSidebarValue(showSidebar)} className='absolute capitalize p-2 w-[30px] h-[30px] bg-red-400 justify-center items-center flex rounded-full text-white l-10 cursor-pointer left-[235px] top-[30px] shadow-md'>x</div>
-      {/* <div onClick={() => showSidebarValue(showSidebar)} className='capitalize p-2 w-[30px] h-[30px] bg-red-400 justify-center items-center flex rounded-full text-white l-10 cursor-pointer relative'>x</div> */}
-      <div>
-        <SidebarRegional />
-        {/* <div className={styles.containerIcon}> */}
-        <div className="relative z-[100] flex  items-center ml-[17px] my-[10px]">
+    <>
+      <div
+        className={`${styles.backdrop} ${showSidebar ? styles.show : styles.hide}`}
+        onClick={() => showSidebarValue(showSidebar)}
+      />
 
-                  <MdAccountCircle className={styles.icons} />
-                  <Link className={styles.ancla} href="/mi-cuenta" aria-haspopup="true">
-                    Mi cuenta
-                    {/* <label>Estudiantes</label> */}
-                  </Link>
-                </div>
-        <div id='menuDesplegable' className={styles.containerLista}>
-          <div className={styles.test} role="navigation">
-            <ul >
-              <li className={styles.dropdown}>
-                
-              </li>
-              <li className={styles.dropdown}>
-                <div className={styles.containerIcon}>
+      <div className={`${styles.sidebar} ${showSidebar ? styles.show : styles.hide} ${isSidebarCollapsed ? styles.collapsed : ''}`}>
 
-                  <FaUserGraduate className={styles.icons} />
-                  <Link className={styles.ancla} href="#" aria-haspopup="true">
-                    Estudiantes
-                    {/* <label>Estudiantes</label> */}
-                  </Link>
-                </div>
-                <ul className={styles.dropdownContent} aria-label="submenu">
-                  <li className={styles.containerAncla}><Link
-                    href="/directores/evaluaciones"
-                    className={styles.anclaje}
-                    id="ancla">Seguimiento de aprendizaje</Link></li>
-                </ul>
-              </li>
-              <li className={styles.dropdown}>
-                <div className={styles.containerIcon}>
+        {/* Toggle Collapse Button for Desktop */}
+        <div
+          className={styles.collapseToggleBtn}
+          onClick={() => toggleSidebarCollapsed(isSidebarCollapsed)}
+          title={isSidebarCollapsed ? "Expandir" : "Contraer"}
+        >
+          {isSidebarCollapsed ? <IoIosArrowForward /> : <IoIosArrowBack />}
+        </div>
 
-                  <FaUserTie className={styles.icons} />
-                  <Link className={styles.ancla} href="#" aria-haspopup="true">
-                    Docentes
-                    {/* <label>Estudiantes</label> */}
-                  </Link>
+        <div onClick={() => showSidebarValue(showSidebar)} className={styles.closeButton}>x</div>
 
-                </div>
-                <ul className={styles.dropdownContent} aria-label="submenu">
-                  <PermissionGate permission={PERMISSIONS.VIEW_MEDIACION_DIDACTICA}>
-                    <li className={styles.containerAncla}>
-                      <Link
-                        href="/directores/evaluaciones-docentes"
-                        className={styles.anclaje}
-                        id="ancla"
-                      >
-                        Mediacion didactica
-                      </Link>
-                    </li>
-                  </PermissionGate>
-                  
-                  {/* <PermissionGate permission={PERMISSIONS.CREATE_DOCENTES}>
-                      </PermissionGate> */}
-                    <li className={styles.containerAncla}>
-                      <Link
-                        href="/directores/agregar-profesores"
-                        id="ancla"
-                        className={styles.anclaje}
-                      >
+        <div className={styles.sidebarContent}>
+          <SidebarRegional />
+          <SidebarInfoUser showSidebar={showSidebar} />
+
+          <div onClick={() => isSidebarCollapsed && toggleSidebarCollapsed(isSidebarCollapsed)}>
+            <div className={`${styles.dashboardMenuItem} ${router.pathname === '/mi-cuenta' ? styles.activeLink : ''}`}>
+              <MdAccountCircle className={styles.dashboardIcon} />
+              <Link className={styles.dashboardLink} href="/mi-cuenta" aria-haspopup="true">
+                Mi cuenta
+              </Link>
+            </div>
+
+            <div className={styles.menuContainer}>
+              <ul className={styles.menuList}>
+                {/* Estudiantes */}
+                <li className={styles.menuItem}>
+                  <div className={styles.menuHeader} onClick={(e) => {
+                    e.stopPropagation();
+                    toggleDropdown('estudiantes');
+                  }}>
+                    <FaUserGraduate className={styles.icon} />
+                    <span className={styles.link}>Estudiantes</span>
+                    <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'estudiantes' ? styles.arrowRotate : ''}`} />
+                  </div>
+                  <ul className={`${styles.submenu} ${openDropdown === 'estudiantes' ? styles.show : ''}`}>
+                    <li><Link href="/directores/evaluaciones" className={`${styles.submenuLink} ${router.pathname.includes('/directores/evaluaciones') && !router.pathname.includes('docentes') ? styles.activeLink : ''}`}>Seguimiento de aprendizaje</Link></li>
+                  </ul>
+                </li>
+
+                {/* Docentes */}
+                <li className={styles.menuItem}>
+                  <div className={styles.menuHeader} onClick={(e) => {
+                    e.stopPropagation();
+                    toggleDropdown('docentes');
+                  }}>
+                    <FaUserTie className={styles.icon} />
+                    <span className={styles.link}>Docentes</span>
+                    <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'docentes' ? styles.arrowRotate : ''}`} />
+                  </div>
+                  <ul className={`${styles.submenu} ${openDropdown === 'docentes' ? styles.show : ''}`}>
+                    <PermissionGate permission={PERMISSIONS.VIEW_MEDIACION_DIDACTICA}>
+                      <li>
+                        <Link href="/directores/evaluaciones-docentes" className={`${styles.submenuLink} ${router.pathname.includes('/directores/evaluaciones-docentes') ? styles.activeLink : ''}`}>
+                          Mediación didáctica
+                        </Link>
+                      </li>
+                    </PermissionGate>
+
+                    <li>
+                      <Link href="/directores/agregar-profesores" className={`${styles.submenuLink} ${router.pathname.includes('/directores/agregar-profesores') ? styles.activeLink : ''}`}>
                         Crear usuario
                       </Link>
                     </li>
 
-                  <PermissionGate permission={PERMISSIONS.VIEW_COBERTURA_CURRICULAR}>
-                    <li className={styles.containerAncla}>
-                      <Link
-                        href="/directores/cobertura-curricular"
-                        id="ancla"
-                        className={styles.anclaje}
-                      >
-                        Cobertura curricular
-                      </Link>
-                    </li>
-                  </PermissionGate>
-                </ul>
-              </li>
-              <PermissionGate permission={PERMISSIONS.VIEW_AUTORREPORTE}>
-                <li className={styles.dropdown}>
-                  <div className={styles.containerIcon}>
-                    <Link className={styles.ancla} href="/admin/conocimientos-pedagogicos?rol=2" aria-haspopup="true">
-                      Autorreporte
-                    </Link>
-                  </div>
+                    <PermissionGate permission={PERMISSIONS.VIEW_COBERTURA_CURRICULAR}>
+                      <li>
+                        <Link href="/directores/cobertura-curricular" className={`${styles.submenuLink} ${router.pathname.includes('/directores/cobertura-curricular') ? styles.activeLink : ''}`}>
+                          Cobertura curricular
+                        </Link>
+                      </li>
+                    </PermissionGate>
+                  </ul>
                 </li>
-              </PermissionGate>
-              {/* <li className={styles.dropdown}>
-                <div className={styles.containerIcon}>
-                  <Link className={styles.ancla} href="/admin/conocimientos-pedagogicos?rol=2" aria-haspopup="true">
-                    Autorreporte
-                  </Link>
-                </div>
-              </li> */}
-            </ul>
+
+                {/* Autorreporte */}
+                <PermissionGate permission={PERMISSIONS.VIEW_AUTORREPORTE}>
+                  <li className={styles.menuItem}>
+                    <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/conocimientos-pedagogicos') && router.query.rol === '2' ? styles.activeLink : ''}`} style={{ margin: 0, padding: "12px 20px" }}>
+                      <LuListTodo className={styles.dashboardIcon} />
+                      <Link className={styles.dashboardLink} href="/admin/conocimientos-pedagogicos?rol=2" aria-haspopup="true">
+                        Autorreporte
+                      </Link>
+                    </div>
+                  </li>
+                </PermissionGate>
+              </ul>
+            </div>
           </div>
-          <SidebarInfoUser showSidebar={showSidebar} />
         </div>
 
-        {/* <ul className='capitalize font-montserrat border-b-[1px] border-slate-200 pb-5 mb-5'>
-          <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-violet-300 hover:text-violet-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/mi-cuenta" className='p-3'>
-              Mi cuenta
-            </Link>
-          </li>
-          <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-green-300 hover:text-green-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/directores/evaluaciones" className='p-3'>
-              Evaluaciones
-            </Link>
-          </li>
-         
-          <li className='rounded-md text-white pl-2 text-sm flex items-center gap-x-4 cursor-pointer   mt-2 capitalize   hover:border-[1px] hover:border-amber-300 hover:text-amber-300 duration-300 mx-2 whitespace-nowrap drop-shadow-lg'>
-            <Link href="/directores/agregar-profesores" className='p-3'>
-              Agregar Profesores
-            </Link>
-          </li>
-        </ul> */}
-
+        <div onClick={() => { logout(); redirectLogin(); }} className={styles.logoutButton}>
+          <FiLogOut className={styles.logoutIcon} />
+          <p>cerrar sesión</p>
+        </div>
       </div>
-
-      <div onClick={logout} className="relative z-[20] ml-2 border rounded-sm border-white  duration-300 hover:border-red-300 p-3 h-[50px] font-montserrat hover:text-red-300 text-white w-[200px] cursor-pointer">
-        cerrar sesión
-      </div>
-    </div>
+    </>
   )
 }
 

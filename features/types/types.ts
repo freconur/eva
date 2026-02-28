@@ -3,6 +3,7 @@ import { AppAction } from '../actions/appAction';
 export type AppReducerValues = {
   testValue: boolean;
   showSidebar: boolean;
+  isSidebarCollapsed: boolean;
   currentUserData: User;
   evaluaciones: Evaluaciones[];
   evaluacion: Evaluaciones;
@@ -84,11 +85,13 @@ export type AppReducerValues = {
   loaderDataGraficoPieChart: boolean;
   preguntaEvaluacionLikert: PreguntasEvaluacionLikert[];
   dimensionesEspecialistas: DimensionEspecialista[];
+  evaluadosEspecialista: User[];
 };
 
 export type AppActions =
   | { type: AppAction.TEST_VALUE; payload: boolean }
   | { type: AppAction.SHOW_SIDEBAR; payload: boolean }
+  | { type: AppAction.TOGGLE_SIDEBAR_COLLAPSED; payload: boolean }
   | { type: AppAction.CURRENT_USER_DATA; payload: User }
   | { type: AppAction.DATA_DOCENTE; payload: User }
   | { type: AppAction.EVALUACIONES; payload: Evaluaciones[] }
@@ -190,7 +193,8 @@ export type AppActions =
   | { type: AppAction.DATA_GRAFICO_PIE_CHART; payload: GraficoPieChart[] }
   | { type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART; payload: boolean }
   | { type: AppAction.PREGUNTAS_EVALUACION_ESCALA_LIKERT; payload: PreguntasEvaluacionLikert[] }
-  | { type: AppAction.DIMENSIONES_ESPECIALISTAS; payload: DimensionEspecialista[] };
+  | { type: AppAction.DIMENSIONES_ESPECIALISTAS; payload: DimensionEspecialista[] }
+  | { type: AppAction.EVALUADOS_ESPECIALISTA; payload: User[] };
 
 export type LoginData = {
   usuario: string;
@@ -371,6 +375,7 @@ export type User = {
   horaFinal?: string;
   datosMonitor?: any;
   fechaCreacion?: any;
+  id?: string;
 };
 
 export type ConocimientoPedagogico = {

@@ -6,13 +6,17 @@ import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import DeleteEvaluacion from '@/modals/deleteEvaluacion'
 import UpdateEvaluacion from '@/modals/updateEvaluacion'
 import AlertModal from '@/modals/alertModal/AlertModal'
-import GradosAcordeon from '@/components/grados-acordeon/GradosAcordeon'
+
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
-import { MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff, MdViewList, MdViewModule, MdAddCircle } from 'react-icons/md'
+import { MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff, MdAddCircle, MdCalendarToday } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
-import header from '@/assets/evaluacion-docente.jpg'
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DesktopDatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
 import styles from './evaluaciones.module.css'
 import { getMonthName } from '@/fuctions/dates'
 import { getAllMonths } from '@/fuctions/dates'
@@ -36,6 +40,44 @@ const Evaluaciones = () => {
   const [successData, setSuccessData] = useState<any>(null)
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false)
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
+  const [selectedGrado, setSelectedGrado] = useState<string>('all')
+
+  // Helper para mostrar nivel
+  const getNivelGrado = (gradoNum: number) => {
+    if (gradoNum >= 1 && gradoNum <= 6) return 'Primaria'
+    if (gradoNum >= 7 && gradoNum <= 11) return 'Secundaria'
+    return 'Otro'
+  }
+
+  // Filtrar grados según el rol del usuario (sacado de GradosAcordeon)
+  const gradosFiltrados = React.useMemo(() => {
+    if (currentUserData?.perfil?.rol === 5) {
+      if (currentUserData?.nivelesInstitucion?.includes(1)) {
+        return grados.filter(grado => grado.nivel === 1)
+      } else {
+        return grados.filter(grado => grado.nivel === 2)
+      }
+    }
+    return grados
+  }, [grados, currentUserData?.perfil?.rol, currentUserData?.nivelesInstitucion])
+
+  // Función para validar acceso a evaluación (sacado de GradosAcordeon)
+  const tieneAccesoAEvaluacion = (evaluacion: any) => {
+    const rol = currentUserData?.perfil?.rol
+    const dni = currentUserData?.dni
+
+    if (rol === 4) return true
+
+    if (rol === 5) {
+      return evaluacion.usuariosConPermisos?.includes(dni || '') || false
+    }
+
+    if (rol === 1) {
+      return evaluacion.usuariosConPermisosUgel?.includes(dni || '') || false
+    }
+
+    return false
+  }
 
   const years = React.useMemo(() => {
     const startYear = 2025
@@ -60,9 +102,6 @@ const Evaluaciones = () => {
       setShowSuccessAlert(false)
       setSuccessData(null)
     }
-  }
-  const toggleViewMode = () => {
-    setViewMode(viewMode === 'acordeon' ? 'table' : 'acordeon')
   }
   const [dataEvaluacion, setDataEvaluacion] = useState(evaluacion)
 
@@ -173,8 +212,21 @@ const Evaluaciones = () => {
 
   const currentYear = new Date().getFullYear().toString()
   const filteredEvaluaciones = evaluaciones.filter(eva => {
-    // Si no tiene añoDelExamen, asumimos que es del año actual para no ocultar datos existentes
-    return (eva.añoDelExamen || currentYear) === selectedYear
+    // 1. Filtrar año
+    const matchesYear = (eva.añoDelExamen || currentYear) === selectedYear
+
+    // 2. Filtrar grado
+    let matchesGrado = true
+    if (selectedGrado !== 'all') {
+      matchesGrado = eva.grado === Number(selectedGrado)
+    } else {
+      // Si la opcion es 'all', el administrador/usuario solo debe ver los grados filtrados según su rol/nivel
+      // Para ROL 5 o inferiores:
+      const idsDeGradosPermitidos = gradosFiltrados.map(g => g.grado)
+      matchesGrado = idsDeGradosPermitidos.includes(eva.grado)
+    }
+
+    return matchesYear && matchesGrado
   })
 
   return (
@@ -234,50 +286,20 @@ const Evaluaciones = () => {
         document.getElementById('portal-modal') || document.body
       )}
       <div>
-        <div className={styles.header}>
-          <div className={styles.headerOverlay}></div>
-          <Image
-            className={styles.headerImage}
-            src={header}
-            alt="imagen de cabecera"
-            objectFit='fill'
-            priority
-          />
-          <h1 className={styles.headerTitle}>Seguimiento y retroalimentacion al desempeño del estudiante</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '2rem 2rem 0 2rem' }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>Seguimiento y retroalimentación al desempeño del estudiante</h1>
 
-          <div className={styles.headerActions}>
-            <button
-              onClick={handleShowCreateModal}
-              className={styles.createButton}
-              title="Crear nueva evaluación"
-            >
-              <MdAddCircle />
-              <span>Crear Evaluación</span>
-            </button>
-          </div>
+          <button
+            onClick={handleShowCreateModal}
+            className={styles.createButton}
+            title="Crear nueva evaluación"
+          >
+            <MdAddCircle />
+            <span>Crear Evaluación</span>
+          </button>
         </div>
 
-        {/* Botón de cambio de vista */}
-        {/* <div className={styles.viewToggleContainer}>
-          <button 
-            onClick={toggleViewMode}
-            className={styles.viewToggleButton}
-            title={viewMode === 'acordeon' ? 'Cambiar a vista de tabla' : 'Cambiar a vista de acordeón'}
-          >
-            {viewMode === 'acordeon' ? (
-              <>
-                <MdViewList className={styles.viewToggleIcon} />
-                <span>Vista de Tabla</span>
-              </>
-            ) : (
-              <>
-                <MdViewModule className={styles.viewToggleIcon} />
-                <span>Vista de Acordeón</span>
-              </>
-            )}
-          </button>
-        </div> */}
-
+        {/* Controles de filtro (Año y Grados) */}
         {loaderPages ? (
           <div className={styles.loader}>
             <div className={styles.loaderContent}>
@@ -288,92 +310,116 @@ const Evaluaciones = () => {
         ) : (
           <div className={styles.content}>
             <div className={styles.toolbar}>
-              <div className={styles.yearFilterContainer}>
-                <span className={styles.filterLabel}>Año:</span>
-                {years.map(year => (
-                  <button
-                    key={year}
-                    className={`${styles.yearBadge} ${selectedYear === year ? styles.yearBadgeActive : ''}`}
-                    onClick={() => setSelectedYear(year)}
+              <div className={styles.filtersContainer} style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+                <div className={styles.yearFilterContainer} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span className={styles.filterLabel}>Año:</span>
+                  <select
+                    className={styles.monthSelect}
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    style={{ padding: '0.4rem 1.25rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                   >
-                    {year}
-                  </button>
-                ))}
+                    {years.map(year => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={styles.gradoFilterContainer} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span className={styles.filterLabel}>Grado:</span>
+                  <select
+                    className={styles.monthSelect}
+                    value={selectedGrado}
+                    onChange={(e) => setSelectedGrado(e.target.value)}
+                    style={{ padding: '0.4rem 1.25rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                  >
+                    <option value="all">Todos los grados permitidos</option>
+                    {gradosFiltrados.map(grado => (
+                      <option key={grado.id} value={grado.grado?.toString()}>
+                        {grado.nombre} - Nivel {getNivelGrado(grado.grado || 0)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
-            {/* Vista de Acordeón */}
-            {viewMode === 'acordeon' && grados && grados.length > 0 && (
-              <div className={styles.acordeonViewContainer}>
-                <GradosAcordeon
-                  grados={grados}
-                  evaluaciones={filteredEvaluaciones}
-                  onToggleActive={toggleActiveStatus}
-                  onEditMonth={handleEditMonth}
-                  onCancelEditMonth={handleCancelEditMonth}
-                  onSaveMonth={handleSaveMonth}
-                  onEdit={(evaluacion) => {
-                    setNameEva(`${evaluacion.nombre}`)
-                    handleShowInputUpdate()
-                    setIdEva(`${evaluacion.id}`)
-                  }}
-                  onDelete={(evaluacion) => {
-                    handleShowModalDelete()
-                    setIdEva(`${evaluacion.id}`)
-                  }}
-                  editingMonth={editingMonth}
-                  editingMonthId={editingMonthId}
-                  updatingMonth={updatingMonth}
-                  dataEvaluacion={dataEvaluacion}
-                  setDataEvaluacion={setDataEvaluacion}
-                  baseRoute="/admin/evaluaciones/evaluacion"
-                />
-              </div>
-            )}
+            {/* Vista de Tabla Unificada */}
+            <div className={styles.tableViewContainer}>
+              <div className={styles.tableContainer}>
+                <table className={styles.table}>
+                  <thead className={styles.tableHeader}>
+                    <tr className={styles.tableHeaderRow}>
+                      <th className={styles.tableHeaderCell}>#</th>
+                      <th className={styles.tableHeaderCell}>nombre de evaluación</th>
+                      <th className={styles.tableHeaderCell}>grado / nivel</th>
+                      <th className={styles.tableHeaderCell}>mes y año</th>
+                      <th className={styles.tableHeaderCell}>estado</th>
+                      <th className={styles.tableHeaderCell}>acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className={styles.tableBody}>
+                    {filteredEvaluaciones.length > 0 ? (
+                      filteredEvaluaciones?.map((eva, index) => {
+                        const puedeAcceder = tieneAccesoAEvaluacion(eva)
+                        const gradoObj = grados.find(g => g.grado === eva.grado)
 
-            {/* Vista de Tabla */}
-            {viewMode === 'table' && (
-              <div className={styles.tableViewContainer}>
-                <div className={styles.tableContainer}>
-                  {/* <h1 className={styles.tableTitle}>evaluaciones</h1> */}
-                  <table className={styles.table}>
-                    <thead className={styles.tableHeader}>
-                      <tr className={styles.tableHeaderRow}>
-                        <th className={styles.tableHeaderCell}>#</th>
-                        <th className={styles.tableHeaderCell}>nombre de evaluación</th>
-                        <th className={styles.tableHeaderCell}>mes</th>
-                        <th className={styles.tableHeaderCell}>estado</th>
-                        <th className={styles.tableHeaderCell}>acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody className={styles.tableBody}>
-                      {filteredEvaluaciones.length > 0 ? (
-                        filteredEvaluaciones?.map((eva, index) => (
-                          <tr key={index} className={styles.tableRow}>
+                        return (
+                          <tr key={index} className={styles.tableRow} style={{ opacity: puedeAcceder ? 1 : 0.6, background: puedeAcceder ? 'inherit' : '#f8fafc' }}>
                             <td className={styles.tableCell}>
-                              <Link href={`/admin/evaluaciones/evaluacion/${eva.id}`}>
-                                {index + 1}
-                              </Link>
+                              {puedeAcceder ? (
+                                <Link href={`/admin/evaluaciones/evaluacion/${eva.id}`}>
+                                  {index + 1}
+                                </Link>
+                              ) : (
+                                <span>{index + 1}</span>
+                              )}
                             </td>
                             <td className={styles.tableCell}>
-                              <Link href={`/admin/evaluaciones/evaluacion/${eva.id}`}>
-                                {eva.nombre?.toUpperCase() || ''}
-                              </Link>
+                              {puedeAcceder ? (
+                                <Link href={`/admin/evaluaciones/evaluacion/${eva.id}`}>
+                                  {eva.nombre?.toUpperCase() || ''}
+                                </Link>
+                              ) : (
+                                <span>{eva.nombre?.toUpperCase() || ''}</span>
+                              )}
                             </td>
                             <td className={styles.tableCell}>
-                              {editingMonth && editingMonthId === eva.id ? (
-                                <div className={styles.monthEditContainer}>
-                                  <select
-                                    className={styles.monthSelect}
-                                    value={dataEvaluacion.mesDelExamen || "0"}
-                                    onChange={(e) => setDataEvaluacion({ ...dataEvaluacion, mesDelExamen: e.target.value })}
-                                  >
-                                    {getAllMonths.map((mes) => (
-                                      <option key={mes.id} value={mes.id.toString()}>
-                                        {mes.name}
-                                      </option>
-                                    ))}
-                                  </select>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                <span style={{ fontWeight: 600 }}>{gradoObj?.nombre || `Grado ${eva.grado}`}</span>
+                                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{getNivelGrado(eva.grado || 0)}</span>
+                              </div>
+                            </td>
+                            <td className={styles.tableCell}>
+                              {(!puedeAcceder) ? (
+                                <span className={styles.monthText}>
+                                  {getMonthName(Number(eva.mesDelExamen))} {eva.añoDelExamen || currentYear}
+                                </span>
+                              ) : editingMonth && editingMonthId === eva.id ? (
+                                <div className={styles.monthEditContainer} style={{ minWidth: 'min-content' }}>
+                                  <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+                                    <DesktopDatePicker
+                                      views={['year', 'month']}
+                                      label="Mes y Año"
+                                      value={dataEvaluacion?.mesDelExamen ? dayjs().month(Number(dataEvaluacion.mesDelExamen)).year(Number(dataEvaluacion.añoDelExamen || currentYear)) : dayjs()}
+                                      onChange={(newValue: any) => {
+                                        if (newValue) {
+                                          setDataEvaluacion({
+                                            ...dataEvaluacion,
+                                            mesDelExamen: newValue.month().toString(),
+                                            añoDelExamen: newValue.year().toString()
+                                          } as any)
+                                        }
+                                      }}
+                                      slotProps={{
+                                        textField: {
+                                          size: 'small',
+                                        }
+                                      }}
+                                    />
+                                  </LocalizationProvider>
                                   <div className={styles.monthEditActions}>
                                     <button
                                       onClick={() => handleSaveMonth(dataEvaluacion.mesDelExamen || "0", dataEvaluacion.añoDelExamen || currentYear)}
@@ -394,20 +440,24 @@ const Evaluaciones = () => {
                               ) : (
                                 <div className={styles.monthContainer}>
                                   <span className={styles.monthText}>
-                                    {getMonthName(Number(eva.mesDelExamen))}
+                                    {getMonthName(Number(eva.mesDelExamen))} {eva.añoDelExamen || currentYear}
                                   </span>
-                                  <button
-                                    onClick={() => handleEditMonth(eva)}
-                                    className={styles.editMonthButton}
-                                    title="Editar mes del examen"
-                                  >
-                                    <MdEditSquare className={styles.editMonthIcon} />
-                                  </button>
+                                  {currentUserData?.perfil?.rol === 4 && (
+                                    <button
+                                      onClick={() => handleEditMonth(eva)}
+                                      className={styles.editMonthButton}
+                                      title="Editar mes del examen"
+                                    >
+                                      <MdCalendarToday className={styles.editMonthIcon} />
+                                    </button>
+                                  )}
                                 </div>
                               )}
                             </td>
                             <td>
-                              {eva.active ? (
+                              {!puedeAcceder ? (
+                                <span className={styles.inactiveIcon} style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🔒 Sin acceso</span>
+                              ) : eva.active ? (
                                 <MdVisibility
                                   onClick={() => toggleActiveStatus(eva)}
                                   className={`${styles.actionIcon} ${styles.activeIcon}`}
@@ -422,32 +472,40 @@ const Evaluaciones = () => {
                               )}
                             </td>
                             <td>
-                              <div className={styles.actionsContainer}>
-                                <MdEditSquare
-                                  onClick={() => {
-                                    setNameEva(`${eva.nombre}`);
-                                    handleShowInputUpdate();
-                                    setIdEva(`${eva.id}`)
-                                  }}
-                                  className={`${styles.actionIcon} ${styles.editIcon}`}
-                                />
-                                <MdDeleteForever
-                                  onClick={() => {
-                                    handleShowModalDelete();
-                                    setIdEva(`${eva.id}`)
-                                  }}
-                                  className={`${styles.actionIcon} ${styles.deleteIcon}`}
-                                />
-                              </div>
+                              {puedeAcceder && currentUserData?.perfil?.rol === 4 ? (
+                                <div className={styles.actionsContainer}>
+                                  <MdEditSquare
+                                    onClick={() => {
+                                      setNameEva(`${eva.nombre}`);
+                                      handleShowInputUpdate();
+                                      setIdEva(`${eva.id}`)
+                                    }}
+                                    className={`${styles.actionIcon} ${styles.editIcon}`}
+                                  />
+                                  <MdDeleteForever
+                                    onClick={() => {
+                                      handleShowModalDelete();
+                                      setIdEva(`${eva.id}`)
+                                    }}
+                                    className={`${styles.actionIcon} ${styles.deleteIcon}`}
+                                  />
+                                </div>
+                              ) : null}
                             </td>
                           </tr>
-                        ))
-                      ) : null}
-                    </tbody>
-                  </table>
-                </div>
+                        )
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                          No se encontraron evaluaciones para los filtros seleccionados.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>

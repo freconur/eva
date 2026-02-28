@@ -16,7 +16,7 @@ interface Props {
 }
 
 const LayoutMenu = ({ children }: Props) => {
-  const { showSidebar, currentUserData } = useGlobalContext()
+  const { showSidebar, currentUserData, isSidebarCollapsed } = useGlobalContext()
   const { getUserData } = useUsuario()
   const router = useRouter()
   useEffect(() => {
@@ -39,8 +39,6 @@ const LayoutMenu = ({ children }: Props) => {
             />
           </div>
           <SidebarEspecialistas showSidebar={showSidebar} />
-          {/* <SidebarAdmin showSidebar={showSidebar} /> */}
-          <Navbar />
         </>
       )
     } else if (currentUserData.perfil?.rol === 2) {
@@ -55,7 +53,6 @@ const LayoutMenu = ({ children }: Props) => {
             />
           </div>
           <SidebarDirectores showSidebar={showSidebar} />
-          <Navbar />
         </>
       )
     } else if (currentUserData.perfil?.rol === 3) {
@@ -70,7 +67,6 @@ const LayoutMenu = ({ children }: Props) => {
             />
           </div>
           <SidebarDocentes showSidebar={showSidebar} />
-          <Navbar />
         </>
       )
     } else if (currentUserData.perfil?.rol === 4 || currentUserData.perfil?.rol === 5) {
@@ -86,18 +82,26 @@ const LayoutMenu = ({ children }: Props) => {
             />
           </div>
           <SidebarAdmin showSidebar={showSidebar} />
-          <Navbar />
         </>
       )
     }
   }
+
+  const hasSidebar = Boolean(currentUserData.perfil?.rol && router.pathname !== '/login');
+
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${hasSidebar ? styles.withSidebar : ''} ${isSidebarCollapsed ? styles.collapsedSidebar : ''}`}>
       {currentUserData.perfil?.rol &&
         siderbarSegunPerfil()
-        // <div className='grid h-loader place-content-center justify-center items-center m-auto'>cargando .....</div>
       }
-      {children}
+      <div className={styles.contentWrapper}>
+        {currentUserData.perfil?.rol && router.pathname !== '/login' && (
+          <Navbar />
+        )}
+        <main className={styles.mainContent}>
+          {children}
+        </main>
+      </div>
     </div>
   )
 }

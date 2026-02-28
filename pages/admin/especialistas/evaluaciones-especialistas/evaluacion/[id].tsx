@@ -1,9 +1,7 @@
-import Image from 'next/image';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
-import header from '@/assets/evaluacion-docente.jpg';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
-import { MdEditSquare, MdDelete, MdAddCircle, MdSettings, MdPlaylistAdd, MdAssignment, MdDescription, MdKeyboardArrowDown } from 'react-icons/md';
+import { MdEditSquare, MdDelete, MdAddCircle, MdSettings, MdPlaylistAdd, MdAssignment, MdDescription, MdKeyboardArrowDown, MdPeople } from 'react-icons/md';
 import { PRDocentes } from '@/features/types/types';
 import Link from 'next/link';
 import { RiLoader4Line } from 'react-icons/ri';
@@ -27,6 +25,7 @@ const EvaluacionDocente = () => {
     dataDirector,
     warningDataDocente,
     dimensionesEspecialistas,
+    evaluadosEspecialista,
   } = useGlobalContext();
   const {
     getPreguntasRespuestasEspecialistas,
@@ -35,6 +34,7 @@ const EvaluacionDocente = () => {
     getDimensionesEspecialistas,
     deletePreguntaRespuestaEspecialista,
     deleteDimensionEspecialista,
+    getEspecialistasEvaluados,
   } = UseEvaluacionEspecialistas();
   const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false);
   const [showAgregarDimension, setShowAgregarDimension] = useState<boolean>(false);
@@ -86,6 +86,7 @@ const EvaluacionDocente = () => {
     getDataEvaluacion(`${router.query.id}`);
     getPreguntasRespuestasEspecialistas(`${router.query.id}`);
     getDimensionesEspecialistas(`${router.query.id}`);
+    getEspecialistasEvaluados(`${router.query.id}`);
   }, [`${router.query.id}`]);
 
   return (
@@ -125,20 +126,16 @@ const EvaluacionDocente = () => {
       )}
 
       <div className={styles.header}>
-        <div className={styles.headerBackground}>
-          <div className={styles.headerOverlay}></div>
-          <Image
-            className={styles.headerImage}
-            src={header}
-            alt="imagen de cabecera"
-            objectFit="fill"
-            priority
-          />
-        </div>
         <div className={styles.headerContent}>
           <h1 className={styles.headerTitle}>
             Evaluación {dataEvaluacionDocente?.name?.toLocaleLowerCase()}
           </h1>
+          <div className={styles.evaluadosBadge}>
+            <MdPeople />
+            <span>
+              {evaluadosEspecialista?.length ?? 0} especialista{evaluadosEspecialista?.length !== 1 ? 's' : ''} evaluado{evaluadosEspecialista?.length !== 1 ? 's' : ''}
+            </span>
+          </div>
           {/* <div className={styles.searchContainer}>
             <input
               type="number"
@@ -213,6 +210,12 @@ const EvaluacionDocente = () => {
             className={`${styles.button} ${styles.buttonSecondary}`}
           >
             <MdAssignment /> Evaluar especialista
+          </Link>
+          <Link
+            href={`${router.query.id}/evaluados`}
+            className={`${styles.button} ${styles.buttonSuccess}`}
+          >
+            <MdPeople /> Ver evaluados
           </Link>
           <div className={`${styles.button} ${styles.buttonPrimary}`}>
             <Link href={`reporte?idEvaluacion=${router.query.id}`} className={styles.buttonLink}>

@@ -5,8 +5,10 @@ import AgregarPreguntasRespuestas from '@/modals/agregarPreguntasYRespuestas';
 import EvaluarEstudiante from '@/modals/evaluarEstudiante';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState } from 'react';
-import { RiLoader4Line } from 'react-icons/ri';
+import React, { useEffect, useState, useRef } from 'react';
+import { RiLoader4Line, RiFileList3Line, RiUserStarLine, RiCheckDoubleLine, RiArrowUpLine } from 'react-icons/ri';
+import styles from './EvaluacionDocente.module.css';
+import QuestionNavigator from '@/components/QuestionNavigator/QuestionNavigator';
 
 const Evaluacion = () => {
   const initialValue = { a: false, b: false, c: false };
@@ -16,6 +18,33 @@ const Evaluacion = () => {
   const [showModal, setShowModal] = useState(false);
   const [checkedValues, setCheckedValues] = useState(initialValue);
   const [showModalEstudiante, setShowModalEstudiante] = useState(false);
+  const [activeQuestion, setActiveQuestion] = useState(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Track which question is currently visible
+  useEffect(() => {
+    const handleScroll = () => {
+      const questionElements = document.querySelectorAll('[id^="question-"]');
+      let visibleQuestionIndex = 0;
+
+      for (let i = 0; i < questionElements.length; i++) {
+        const rect = questionElements[i].getBoundingClientRect();
+        if (rect.top >= 0 && rect.top <= 300) {
+          visibleQuestionIndex = i;
+          break;
+        } else if (rect.top < 0) {
+          visibleQuestionIndex = i;
+        }
+      }
+
+      setActiveQuestion(visibleQuestionIndex);
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [preguntasRespuestas]);
+
   const handleshowModal = () => {
     setShowModal(!showModal);
   };
@@ -23,65 +52,18 @@ const Evaluacion = () => {
   const handleShowModalEstudiante = () => {
     setShowModalEstudiante(!showModalEstudiante);
   };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     getEvaluacion(`${route.query.idExamen}`);
     if (route.query.idExamen) {
       getPreguntasRespuestas(`${route.query.idExamen}`);
     }
   }, [route.query.idExamen]);
-  console.log('preguntasRespuestas', preguntasRespuestas);
 
-  const verificarPuntajePreguntas = () => {
-    // Verificar que preguntasRespuestas no esté vacío
-    if (!preguntasRespuestas || preguntasRespuestas.length === 0) {
-      console.log('');
-      return { todasValidas: false, contadorValidas: 0, preguntasInvalidas: [] };
-    }
-
-    // Contar cuántas preguntas tienen puntaje válido (mayor a 0)
-    let contadorValidas = 0;
-    const preguntasInvalidas: Array<{indice: number, pregunta: string, puntaje: string | number}> = [];
-    
-    preguntasRespuestas.forEach((pregunta, index) => {
-      // Verificar que la propiedad puntaje existe
-      if (pregunta.puntaje) {
-        // Convertir a número y verificar que sea mayor a 0
-        const puntajeNumerico = Number(pregunta.puntaje);
-        if (!isNaN(puntajeNumerico) && puntajeNumerico > 0) {
-          contadorValidas++;
-        } else {
-          preguntasInvalidas.push({
-            indice: index + 1,
-            pregunta: pregunta.pregunta || 'Pregunta sin texto',
-            puntaje: pregunta.puntaje
-          });
-        }
-      } else {
-        preguntasInvalidas.push({
-          indice: index + 1,
-          pregunta: pregunta.pregunta || 'Pregunta sin texto',
-          puntaje: 'Sin puntaje'
-        });
-      }
-    });
-
-    // Verificar que todas las preguntas tengan puntaje válido
-    const todasValidas = contadorValidas === preguntasRespuestas.length;
-    
-    return { todasValidas, contadorValidas, preguntasInvalidas };
-  };
-  
-  const resultadoPuntajes = verificarPuntajePreguntas();
-  console.log('Puntajes válidos:', resultadoPuntajes.contadorValidas, 'de', preguntasRespuestas?.length || 0);
-  
-  if (resultadoPuntajes.preguntasInvalidas.length > 0) {
-    console.log('Preguntas que NO cumplen con puntaje válido:');
-    resultadoPuntajes.preguntasInvalidas.forEach((pregunta) => {
-      console.log(`- Pregunta ${pregunta.indice}: "${pregunta.pregunta}" - Puntaje: ${pregunta.puntaje}`);
-    });
-  } else {
-    console.log('✅ Todas las preguntas tienen puntajes válidos');
-  }
   return (
     <>
       {showModal && (
@@ -99,90 +81,94 @@ const Evaluacion = () => {
         />
       )}
       {loaderPages ? (
-        <div className="grid grid-rows-loader">
-          <div className="flex justify-center items-center">
-            <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-            <span className="text-colorTercero animate-pulse">...cargando</span>
-          </div>
+        <div className={styles.loaderContainer}>
+          <RiLoader4Line className={styles.spinner} />
+          <span className={styles.loadingText}>Cargando evaluación...</span>
         </div>
       ) : (
-        <div className="grid justify-center items-center relative mt-3">
-          <div className="w-[1024px] bg-white  p-20">
-            <h1 className="text-2xl text-colorSexto font-semibold uppercase mb-10">
-              {evaluacion.nombre}
-            </h1>
-            <div className="flex gap-3 justify-end">
-              {/* <button onClick={handleshowModal} className='bg-green-500 p-3 rounded-md shadow text-white capitalize font-semibold'>agregar preguntas</button> */}
+        <>
+          <QuestionNavigator
+            totalQuestions={preguntasRespuestas.length}
+            activeQuestion={activeQuestion}
+            onQuestionClick={setActiveQuestion}
+          />
+          <div className={styles.container}>
+            <div className={styles.content}>
+              <div className={styles.card}>
+                <div className={styles.header}>
+                  <h1 className={styles.title}>{evaluacion.nombre}</h1>
+                  <div className={styles.actions}>
+                    <Link
+                      className={styles.reportButton}
+                      style={{ backgroundColor: 'var(--primary-color)' }}
+                      href={`prueba/evaluar-estudiante?idExamen=${route.query.idExamen}`}
+                    >
+                      <RiUserStarLine size={18} />
+                      Evaluar Estudiante
+                    </Link>
+                    <Link
+                      href={`prueba/reporte?idExamen=${route.query.idExamen}`}
+                      className={styles.reportButton}
+                    >
+                      <RiFileList3Line size={18} />
+                      Reporte
+                    </Link>
+                  </div>
+                </div>
 
-              {/* {resultadoPuntajes.todasValidas ? (
-                <Link
-                  className="border-iconColor border-[1px] p-3 rounded-md shadow text-iconColor hover:bg-iconColor hover:text-white duration-300 hover:duration-300 capitalize font-semibold"
-                  href={`prueba/evaluar-estudiante?idExamen=${route.query.idExamen}`}
-                >
-                  evaluar estudiante
-                </Link>
-              ) : (
-                <button
-                  onClick={handleShowModalEstudiante}
-                  className="border-iconColor border-[1px] p-3 rounded-md shadow text-iconColor hover:bg-iconColor hover:text-white duration-300 hover:duration-300 capitalize font-semibold"
-                >
-                  evaluar estudiante
-                </button>
-              )} */}
-              <Link
-                  className="border-iconColor border-[1px] p-3 rounded-md shadow text-iconColor hover:bg-iconColor hover:text-white duration-300 hover:duration-300 capitalize font-semibold"
-                  href={`prueba/evaluar-estudiante?idExamen=${route.query.idExamen}`}
-                >
-                  evaluar estudiante
-                </Link>
-              <div className="bg-colorTercero p-3 rounded-md shadow text-white capitalize font-semibold cursor-pointer hover:bg-colorCuarto hover:text-colorQuinto duration-300 hover:duration-300">
-                <Link href={`prueba/reporte?idExamen=${route.query.idExamen}`}>reporte</Link>
+                <h2 className={styles.sectionTitle}>Preguntas y Respuestas</h2>
+
+                <ul className={styles.questionsList}>
+                  {preguntasRespuestas.map((pr, index) => (
+                    <li key={index} id={`question-${index}`} className={styles.questionItem}>
+                      <div className={styles.questionMeta}>
+                        <p className={styles.questionText}>
+                          <span className={styles.questionNumber}>{index + 1}.</span>
+                          {pr.pregunta}
+                        </p>
+                        <div className={styles.actuacionText}>
+                          <span className={styles.actuacionLabel}>Actuación:</span>
+                          <span>{pr.preguntaDocente}</span>
+                        </div>
+                      </div>
+
+                      {pr.alternativas && pr.alternativas.length > 0 && (
+                        <div className={styles.alternativasList}>
+                          {pr.alternativas.map((al, altIndex) => (
+                            <div key={altIndex} className={styles.alternativaItem}>
+                              {al.descripcion?.length === 0 ? null : (
+                                <>
+                                  <div className={styles.alternativaLetter}>{al.alternativa}</div>
+                                  <p className={styles.alternativaDesc}>{al.descripcion}</p>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Optional: Show answer if needed, currently commented in original */}
+                      {/* <div className={styles.respuestaWrapper}>
+                        <RiCheckDoubleLine size={16} />
+                        Respuesta: {pr.respuesta}
+                      </div> */}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
-            <div className="flex gap-3 justify-end">
-              {/* <button onClick={handleshowModal} className='bg-green-500 p-3 rounded-md shadow text-white capitalize font-semibold'>agregar preguntas</button> */}
-              {/* <Link href={`reporte?id=${currentUserData.dni}&idEvaluacion=${route.query.id}`} className='bg-colorTercero p-3 rounded-md duration-300 hover:bg-colorCuarto hover:text-colorSegundo text-white shadow-md capitalize font-semibold'>repote de evaluación</Link> */}
-            </div>
-            <h2 className="text-2xl text-colorSexto capitalize mb-2 mt-5">
-              preguntas y respuestas
-            </h2>
-            <ul className="mt-1">
-              {preguntasRespuestas.map((pr, index) => {
-                return (
-                  <li key={index} className="border-t-2 border-blue-200 pb-3 pt-3">
-                    <div className="flex gap-3 mb-3">
-                      <span className="text-slate-600 font-semibold">{index + 1}.</span>
-                      <p className="text-slate-500 text-lg"> {pr.pregunta}</p>
-                    </div>
-                    <div className="grid gap-3 mb-3">
-                      <span className="text-slate-600 font-semibold">Actuación: </span>
-                      <p className="text-slate-500 text-lg"> {pr.preguntaDocente}</p>
-                    </div>
-                    {pr.alternativas &&
-                      pr.alternativas.map((al, index) => {
-                        return (
-                          <div
-                            key={index}
-                            className="flex gap-5 pl-5 justify-start items-center mb-2"
-                          >
-                            {al.descripcion?.length === 0 ? null : (
-                              <>
-                                <p className="uppercase text-sm text-colorSegundo">
-                                  {al.alternativa} -{' '}
-                                </p>
-                                <p className="text-colorPrincipal">{al.descripcion}</p>
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
-                    {/* <div className='text-green-500 border border-green-500 p-3 rounded-md w-[120px] mt-4'>respuesta: {pr.respuesta}</div> */}
-                  </li>
-                );
-              })}
-            </ul>
           </div>
-        </div>
+
+          {showScrollTop && (
+            <button
+              onClick={scrollToTop}
+              className={styles.scrollTopButton}
+              title="Volver arriba"
+            >
+              <RiArrowUpLine size={24} />
+            </button>
+          )}
+        </>
       )}
     </>
   );

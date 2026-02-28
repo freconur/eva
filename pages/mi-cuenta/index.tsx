@@ -23,30 +23,28 @@ const MiCuenta = () => {
           </div>
         </div>
         <div className={styles.content}>
-          <h3 className={styles.title}>Información Personal</h3>
           <div className={styles.section}>
-            <h4 className={styles.sectionTitle}>Mis Datos</h4>
-            <p className={styles.dataRow}>
-              <span className={styles.label}>Nombre completo:</span>
+            <div className={styles.dataRow}>
+              <span className={styles.label}>Nombre completo</span>
               <span className={styles.value}>{currentUserData.nombres} {currentUserData.apellidos}</span>
-            </p>
-            <p className={styles.dataRow}>
-              <span className={styles.label}>ID:</span>
+            </div>
+            <div className={styles.dataRow}>
+              <span className={styles.label}>Documento (ID)</span>
               <span className={styles.value}>{currentUserData.dni}</span>
-            </p>
-            <p className={styles.dataRow}>
-              <span className={styles.label}>Cargo:</span>
+            </div>
+            <div className={styles.dataRow}>
+              <span className={styles.label}>Cargo</span>
               <span className={styles.value}>{currentUserData.perfil?.nombre}</span>
-            </p>
-            <p className={styles.dataRow}>
-              <span className={styles.label}>Usuario:</span>
+            </div>
+            <div className={styles.dataRow}>
+              <span className={styles.label}>Usuario</span>
               <span className={styles.value}>{currentUserData.dni}</span>
-            </p>
+            </div>
             {currentUserData.institucion && (
-              <p className={styles.dataRow}>
-                <span className={styles.label}>Institución:</span>
+              <div className={styles.dataRow}>
+                <span className={styles.label}>Institución</span>
                 <span className={styles.value}>{currentUserData.institucion}</span>
-              </p>
+              </div>
             )}
           </div>
         </div>

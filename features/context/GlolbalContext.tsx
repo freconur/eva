@@ -7,6 +7,7 @@ interface Props {
 const initialState: AppReducerValues = {
   testValue: true,
   showSidebar: false,
+  isSidebarCollapsed: false,
   currentUserData: {},
   evaluaciones: [],
   evaluacion: {},
@@ -87,7 +88,8 @@ const initialState: AppReducerValues = {
   dataGraficoPieChart: [],
   loaderDataGraficoPieChart: false,
   preguntaEvaluacionLikert: [],
-  dimensionesEspecialistas: []
+  dimensionesEspecialistas: [],
+  evaluadosEspecialista: []
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

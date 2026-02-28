@@ -17,7 +17,7 @@ interface Props {
 }
 const initialValue = { nombre: "", categoria: 0, grado: 0, idDocente: "" }
 const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
-  const { loaderSalvarPregunta,evaluacion, tiposDeEvaluacion } = useGlobalContext()
+  const { loaderSalvarPregunta, evaluacion, tiposDeEvaluacion } = useGlobalContext()
   const { updateEvaluacion, getTipoDeEvaluacion } = useAgregarEvaluaciones()
   const [valueInput, setValueInput] = useState<Evaluaciones>(evaluacion)
   // const [valueInput, setValueInput] = useState<Evaluaciones>(initialValue)
@@ -58,8 +58,8 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
     setUpdating(true)
     try {
       await updateEvaluacion({
-        ...evaluacion, 
-        nombre: valueInput.nombre, 
+        ...evaluacion,
+        nombre: valueInput.nombre,
         mesDelExamen: valueInput.mesDelExamen,
         tipoDeEvaluacion: valueInput.tipoDeEvaluacion,
         active: valueInput.active
@@ -77,26 +77,26 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
   useEffect(() => {
     if (evaluacion.id && evaluacion.id !== valueInput.id) {
       setValueInput({
-        idDocente: evaluacion.idDocente || "", 
-        grado: evaluacion.grado || 0, 
-        nombre: evaluacion.nombre || "", 
-        categoria: evaluacion.categoria || 0, 
+        idDocente: evaluacion.idDocente || "",
+        grado: evaluacion.grado || 0,
+        nombre: evaluacion.nombre || "",
+        categoria: evaluacion.categoria || 0,
         mesDelExamen: evaluacion.mesDelExamen || "0",
         tipoDeEvaluacion: evaluacion.tipoDeEvaluacion || "",
         active: evaluacion.active || false,
       })
       setIsActive(evaluacion.active || false)
     }
-  },[evaluacion.id, evaluacion.nombre, evaluacion.mesDelExamen, evaluacion.tipoDeEvaluacion, evaluacion.active])
+  }, [evaluacion.id, evaluacion.nombre, evaluacion.mesDelExamen, evaluacion.tipoDeEvaluacion, evaluacion.active])
 
   // Sincronizar cuando se carga una nueva evaluación
   useEffect(() => {
     if (evaluacion.id) {
       setValueInput({
-        idDocente: evaluacion.idDocente || "", 
-        grado: evaluacion.grado || 0, 
-        nombre: evaluacion.nombre || "", 
-        categoria: evaluacion.categoria || 0, 
+        idDocente: evaluacion.idDocente || "",
+        grado: evaluacion.grado || 0,
+        nombre: evaluacion.nombre || "",
+        categoria: evaluacion.categoria || 0,
         mesDelExamen: evaluacion.mesDelExamen || "0",
         tipoDeEvaluacion: evaluacion.tipoDeEvaluacion || "",
         active: evaluacion.active || false,
@@ -138,7 +138,7 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
                     onChange={handleChangeInput}
                     placeholder={nameEva}
                   />
-                  
+
                   <div className={styles.inputContainer}>
                     <label className={styles.label}>Mes del examen:</label>
                     <select
@@ -170,24 +170,12 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
                     </select>
                   </div>
 
-                  <div className={styles.checkboxContainer}>
-                    <input
-                      type="checkbox"
-                      checked={isActive}
-                      onChange={handleActiveChange}
-                      className={styles.checkbox}
-                    />
-                    <label className={styles.checkboxLabel}>
-                      Evaluación activa
-                    </label>
-                  </div>
-                  
                   <p className={styles.tituloBotones}>¿Quieres actualizar esta evaluación?</p>
                   <div className={styles.buttonGroup}>
 
                     <button onClick={() => { handleShowInputUpdate(); setValueInput(initialValue) }} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
-                    <button 
-                      onClick={() => { handleActualizar();handleShowInputUpdate();setValueInput(initialValue) }} 
+                    <button
+                      onClick={() => { handleActualizar(); handleShowInputUpdate(); setValueInput(initialValue) }}
                       className={styles.buttonDelete}
                       disabled={updating}
                     >

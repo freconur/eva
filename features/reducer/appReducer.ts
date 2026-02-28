@@ -4,6 +4,11 @@ import { AppActions, AppReducerValues } from "../types/types";
 
 export const appReducer = (state: AppReducerValues, action: AppActions) => {
   switch (action.type) {
+    case AppAction.EVALUADOS_ESPECIALISTA:
+      return {
+        ...state,
+        evaluadosEspecialista: action.payload
+      }
     case AppAction.DIMENSIONES_ESPECIALISTAS:
       return {
         ...state,
@@ -413,6 +418,11 @@ export const appReducer = (state: AppReducerValues, action: AppActions) => {
       return {
         ...state,
         showSidebar: action.payload
+      }
+    case AppAction.TOGGLE_SIDEBAR_COLLAPSED:
+      return {
+        ...state,
+        isSidebarCollapsed: action.payload
       }
     case AppAction.CURRENT_USER_DATA:
       return {

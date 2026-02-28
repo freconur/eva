@@ -36,8 +36,7 @@ const EvaluarEstudiante = () => {
   const [nuevaSeccion, setNuevaSeccion] = useState<string>('');
   const [repuestasCorrectas, setRespuestasCorrectas] = useState(0);
   const [todasRespondidas, setTodasRespondidas] = useState(false);
-  const [headerTop, setHeaderTop] = useState(60); // Estado para el top del header
-  const [contentPadding, setContentPadding] = useState(270); // Estado para el padding del contenido
+  const [headerTop, setHeaderTop] = useState(64); // Estado para el top del header
   const [showFloatingButton, setShowFloatingButton] = useState(false); // Estado para mostrar el botón flotante
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true); // Estado para controlar el avance automático
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar el modal de importar
@@ -384,19 +383,14 @@ const EvaluarEstudiante = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
           const scrollY = window.scrollY;
-          const maxScroll = 60; // Distancia en px para hacer la transición completa
+          const maxScroll = 64; // Distancia en px para hacer la transición completa (altura navbar)
 
-          // Calcular el top progresivamente: de 60px a 0px
-          // Cuando scrollY = 0, newTop = 60px
-          // Cuando scrollY >= 60, newTop = 0px
-          const newTop = Math.max(0, 60 - (scrollY / maxScroll) * 60);
-
-          // Calcular el padding del contenido: de 270px a 210px
-          // Ajustar el padding para compensar el movimiento del header
-          const newPadding = Math.max(210, 270 - (scrollY / maxScroll) * 60);
+          // Calcular el top progresivamente: de 64px a 0px
+          // Cuando scrollY = 0, newTop = 64px
+          // Cuando scrollY >= 64, newTop = 0px
+          const newTop = Math.max(0, 64 - (scrollY / maxScroll) * 64);
 
           setHeaderTop(newTop);
-          setContentPadding(newPadding);
 
           ticking = false;
         });
@@ -613,7 +607,7 @@ const EvaluarEstudiante = () => {
         ) : (
           <>
             {/* Header con botón de regreso */}
-            {/* Header fijo con información del estudiante */}
+            {/* Header sticky con información del estudiante */}
             <div className={styles.stickyHeader} style={{ top: `${headerTop}px` }}>
               {/* <h3 className={styles.title}>Evaluar Estudiante</h3> */}
 
@@ -886,7 +880,7 @@ const EvaluarEstudiante = () => {
             </div>
 
             {/* Contenido principal con margen superior para el header fijo */}
-            <div className={styles.mainContent} style={{ paddingTop: `${contentPadding}px` }}>
+            <div className={styles.mainContent}>
               <h2 className={styles.evaluacionTitle}>{evaluacion?.nombre} - {getMonthName(Number(evaluacion?.mesDelExamen))}</h2>
               <form onSubmit={handleSubmitform} onChange={handleFormChange}>
                 {/* Sección de preguntas y respuestas */}

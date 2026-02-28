@@ -647,6 +647,20 @@
   transform: translateY(-1px);
 }
 
+.inactiveIcon {
+  color: #6b7280 !important;
+}
+
+.inactiveIcon:hover {
+  background: rgba(107, 114, 128, 0.08) !important;
+  transform: translateY(-1px);
+}
+
+.sinAccesoIcon {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .actionsContainer {
   display: flex;
   align-items: center;

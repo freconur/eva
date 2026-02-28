@@ -545,71 +545,61 @@ const EvaluacionEscalaLikert = () => {
   }
 
   return (
-    <div>
-      <section className={styles.header}>
+    <div className={styles.container}>
+      <div className={styles.header}>
         <div className={styles.headerContent}>
-          {/*  <nav className={styles.breadcrumb}>
-            <a href="/admin" className={styles.breadcrumbItem}>Admin</a>
-            <span className={styles.breadcrumbSeparator}>/</span>
-            <a href="/admin/docentes" className={styles.breadcrumbItem}>Docentes</a>
-            <span className={styles.breadcrumbSeparator}>/</span>
-            <span className={styles.breadcrumbItem}>Conocimiento Pedagógico</span>
-          </nav> */}
+          <div className={styles.titleWrapper}>
+            <p className={styles.welcomeText}>Detalle del Autorreporte</p>
 
-          <div className={styles.titleContainer}>
             {tituloDeCabecera ? (
-              <>
-                <div className={styles.titleContainerOptions}>
-                  <h1 className={styles.title}>{evaluacionEscalaLikert.name}</h1>
-                  <button
-                    className={styles.editButton}
-                    onClick={handleEdit}
-                    title="Editar título"
-                  >
-                    <HiPencil className={styles.editIcon} />
-                  </button>
-
-                </div>
-                {/* <p className={styles.subtitle}>Evaluación de conocimiento pedagógico docente</p> */}
-              </>
+              <div className={styles.titleRow}>
+                <h1 className={styles.headerTitle}>{evaluacionEscalaLikert.name}</h1>
+                <button
+                  className={styles.headerEditButton}
+                  onClick={handleEdit}
+                  title="Editar título"
+                >
+                  <HiPencil className={styles.editIcon} />
+                </button>
+              </div>
             ) : (
               <div className={styles.loading}>
                 <div className={styles.loadingSpinner}></div>
-                Cargando título...
+                <span className={styles.loadingText}>Cargando título...</span>
               </div>
             )}
+          </div>
 
-            <div className={styles.titleButtons}>
+          <div className={styles.titleButtons}>
+            <button
+              className={styles.actionIconButton}
+              onClick={() => setShowScoreModal(true)}
+              title="Ver puntajes"
+            >
+              <HiChartBar className={styles.actionIcon} />
+            </button>
+            <button
+              className={`${styles.actionIconButton} ${evaluacionEscalaLikert?.active ? styles.activeState : styles.inactiveState}`}
+              onClick={handleToggleVisibility}
+              title={evaluacionEscalaLikert?.active ? "Ocultar evaluación" : "Mostrar evaluación"}
+            >
+              {evaluacionEscalaLikert?.active ? (
+                <HiEye className={styles.actionIcon} />
+              ) : (
+                <HiEyeOff className={styles.actionIcon} />
+              )}
+            </button>
+            <Link href={`/admin/conocimientos-pedagogicos/autoreporte/reporte/${id}`}>
               <button
-                className={styles.visibilityButton}
-                onClick={() => setShowScoreModal(true)}
-                title="Ver puntajes"
+                className={styles.reportButton}
+                title="Ver reporte"
               >
-                <HiChartBar className={styles.visibilityIcon} />
+                Reporte de Resultados
               </button>
-              <button
-                className={styles.visibilityButton}
-                onClick={handleToggleVisibility}
-                title={evaluacionEscalaLikert?.active ? "Ocultar evaluación" : "Mostrar evaluación"}
-              >
-                {evaluacionEscalaLikert?.active ? (
-                  <HiEye className={styles.visibilityIcon} />
-                ) : (
-                  <HiEyeOff className={styles.visibilityIcon} />
-                )}
-              </button>
-              <Link href={`/admin/conocimientos-pedagogicos/autoreporte/reporte/${id}`}>
-                <button
-                  className={styles.reportButton}
-                  title="Ver reporte"
-                >
-                  Reporte
-                </button>
-              </Link>
-            </div>
+            </Link>
           </div>
         </div>
-      </section>
+      </div>
 
       {/* Sección de descripción del link */}
       <section className={styles.descripcionSection}>
@@ -659,45 +649,17 @@ const EvaluacionEscalaLikert = () => {
         </div>
       </section>
       {/* Resumen de Niveles y Puntajes */}
-      <section className={styles.questionsSection} style={{ marginBottom: '2rem' }}>
-        <div className={styles.questionsHeader}>
-          <h2 className={styles.questionsTitle}>Resumen de Niveles y Puntajes</h2>
+      <section className={styles.levelsSummarySection}>
+        <div className={styles.levelsHeader}>
+          <h2 className={styles.levelsTitle}>Resumen de Niveles y Puntajes</h2>
         </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-          gap: '1rem',
-          padding: '0 0.5rem'
-        }}>
+        <div className={styles.levelsGrid}>
           {niveles.map((nivel, index) => (
-            <div key={index} style={{
-              background: 'white',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              padding: '1rem',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              borderTop: `4px solid ${nivel.color}`,
-              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-            }}>
-              <span style={{
-                fontWeight: 600,
-                color: '#1e293b',
-                marginBottom: '0.5rem',
-                fontSize: '1rem'
-              }}>
+            <div key={index} className={styles.levelCard} style={{ borderTop: `4px solid ${nivel.color}` }}>
+              <span className={styles.levelName}>
                 {nivel.nivel}
               </span>
-              <div style={{
-                background: '#f8fafc',
-                padding: '0.25rem 0.75rem',
-                borderRadius: '12px',
-                fontSize: '0.9rem',
-                color: '#475569',
-                fontWeight: 500,
-                border: '1px solid #e2e8f0'
-              }}>
+              <div className={styles.levelScoreBadge}>
                 {nivel.min} - {nivel.max} pts
               </div>
             </div>
@@ -1021,131 +983,78 @@ const EvaluacionEscalaLikert = () => {
       {/* Modal de Rango de Nivel */}
       {showScoreModal && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modalContent} style={{ maxWidth: '600px', padding: '0' }}>
-            <div style={{ padding: '2rem 2rem 1rem 2rem', borderBottom: '1px solid #e2e8f0' }}>
-              <h3 className={styles.modalTitle} style={{ marginBottom: '0.5rem', textAlign: 'left' }}>Rango de niveles</h3>
-              <p style={{ margin: 0, color: '#64748b', fontSize: '0.95rem' }}>
+          <div className={`${styles.modalContent} ${styles.scoreModalContent}`}>
+            <div className={styles.scoreModalHeader}>
+              <h3 className={styles.scoreModalHeaderTitle}>Rango de niveles</h3>
+              <p className={styles.scoreModalHeaderDesc}>
                 {isEditingNiveles
                   ? 'Edite los rangos de puntaje para cada nivel de logro.'
                   : 'Visualización de los rangos de puntaje configurados.'}
               </p>
             </div>
 
-            <div className={styles.nivelesContainer} style={{ padding: '2rem', maxHeight: '60vh', overflowY: 'auto' }}>
+            <div className={styles.nivelesContainer}>
               {isEditingNiveles ? (
                 // MODO EDICIÓN
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '1rem', padding: '0 0.5rem', marginBottom: '0.5rem' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>Nivel</span>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>Mínimo</span>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>Máximo</span>
+                <>
+                  <div className={styles.nivelEditHeader}>
+                    <span className={styles.nivelHeaderCol}>Nivel</span>
+                    <span className={styles.nivelHeaderCol}>Mínimo</span>
+                    <span className={styles.nivelHeaderCol}>Máximo</span>
                   </div>
 
                   {niveles.map((nivel, index) => (
-                    <div key={index} style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1.5fr 1fr 1fr',
-                      gap: '1rem',
-                      alignItems: 'center',
-                      padding: '1rem',
-                      background: '#f8fafc',
-                      borderRadius: '8px',
-                      border: '1px solid #e2e8f0'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div style={{
-                          width: '16px',
-                          height: '16px',
-                          borderRadius: '4px',
-                          backgroundColor: nivel.color,
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                        }}></div>
-                        <span style={{ fontWeight: 600, color: '#334155', fontSize: '0.95rem' }}>{nivel.nivel}</span>
+                    <div key={index} className={styles.nivelEditRow}>
+                      <div className={styles.nivelInfo}>
+                        <div className={styles.nivelColorBox} style={{ backgroundColor: nivel.color }}></div>
+                        <span className={styles.nivelNameText}>{nivel.nivel}</span>
                       </div>
                       <input
                         type="number"
                         value={nivel.min}
                         onChange={(e) => handleNivelChange(index, 'min', e.target.value)}
-                        className={styles.editInput}
+                        className={styles.nivelInput}
                         placeholder="0"
-                        style={{ padding: '0.5rem', height: 'auto', textAlign: 'center' }}
                       />
                       <input
                         type="number"
                         value={nivel.max}
                         onChange={(e) => handleNivelChange(index, 'max', e.target.value)}
-                        className={styles.editInput}
+                        className={styles.nivelInput}
                         placeholder="100"
-                        style={{ padding: '0.5rem', height: 'auto', textAlign: 'center' }}
                       />
                     </div>
                   ))}
-                </div>
+                </>
               ) : (
                 // MODO VISUALIZACIÓN
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <>
                   {niveles.map((nivel, index) => (
-                    <div key={index} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '1rem 1.25rem',
-                      background: 'white',
-                      borderRadius: '8px',
-                      borderLeft: `4px solid ${nivel.color}`,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                      transition: 'transform 0.2s ease',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          backgroundColor: `${nivel.color}20`,
-                          color: nivel.color,
-                          fontWeight: 'bold',
-                          fontSize: '0.9rem'
-                        }}>
+                    <div key={index} className={styles.nivelViewRow} style={{ borderLeft: `6px solid ${nivel.color}` }}>
+                      <div className={styles.nivelViewInfo}>
+                        <div className={styles.nivelNumber} style={{ backgroundColor: `${nivel.color}15`, color: nivel.color }}>
                           {index + 1}
                         </div>
-                        <div>
-                          <h4 style={{ margin: 0, color: '#1e293b', fontSize: '1rem', fontWeight: 600 }}>{nivel.nivel}</h4>
-                        </div>
+                        <h4 className={styles.nivelViewTitle}>{nivel.nivel}</h4>
                       </div>
 
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        background: '#f1f5f9',
-                        padding: '0.4rem 1rem',
-                        borderRadius: '20px',
-                        fontWeight: 500,
-                        color: '#475569',
-                        fontSize: '0.9rem'
-                      }}>
-                        <span>{nivel.min} pts</span>
+                      <div className={styles.nivelScoreBadgeView}>
+                        <span>{nivel.min}</span>
                         <HiArrowDown style={{ transform: 'rotate(-90deg)', color: '#94a3b8' }} />
                         <span>{nivel.max} pts</span>
                       </div>
                     </div>
                   ))}
-                </div>
+                </>
               )}
             </div>
 
-            <div className={styles.modalActions} style={{ padding: '1rem 2rem 2rem 2rem', borderTop: '1px solid #e2e8f0', marginTop: 0 }}>
+            <div className={styles.scoreModalFooter}>
               {isEditingNiveles ? (
                 <>
                   <button
                     className={styles.cancelButton}
-                    onClick={() => {
-                      setIsEditingNiveles(false)
-                      // Restaurar valores originales si se cancela podría ser una mejora futura
-                    }}
+                    onClick={() => setIsEditingNiveles(false)}
                     disabled={isSavingNiveles}
                   >
                     Cancelar

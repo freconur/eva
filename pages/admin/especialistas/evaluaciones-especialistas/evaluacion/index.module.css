@@ -17,69 +17,31 @@
 }
 
 .header {
-  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 2.5rem;
-  padding: 4rem 10% 6rem;
-  background: #0f172a;
-  overflow: visible;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.headerBackground {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  z-index: 5;
-}
-
-.headerOverlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 20% 50%, rgba(37, 99, 235, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
-  z-index: 15;
-}
-
-.headerImage {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.15;
-  filter: grayscale(100%) brightness(0.8);
-  z-index: 10;
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.header:hover .headerImage {
-  transform: scale(1.05);
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 2rem 10%;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
 }
 
 .headerContent {
-  position: relative;
-  z-index: 20;
-  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .headerTitle {
   font-family: 'Outfit', sans-serif;
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: 700;
-  color: white;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  margin-bottom: 2rem;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
   text-transform: capitalize;
+  margin: 0;
 }
 
 .searchContainer {
@@ -153,16 +115,16 @@
 }
 
 .button {
-  height: 48px;
+  height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 1.5rem;
-  border-radius: 10px;
+  padding: 0 1.25rem;
+  border-radius: 8px;
   font-weight: 500;
   font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
   cursor: pointer;
   border: none;
   white-space: nowrap;
@@ -171,28 +133,58 @@
 
 .buttonPrimary {
   background: white;
-  color: #0f172a;
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .buttonPrimary:hover {
-  background: #f1f5f9;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(255, 255, 255, 0.3);
+  background: #f8fafc;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .buttonSecondary {
   background: var(--primary);
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  border: 1px solid transparent;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
 }
 
 .buttonSecondary:hover {
   background: #1d4ed8;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.buttonSuccess {
+  background: #059669;
+  color: white;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 2px rgba(5, 150, 105, 0.15);
+  text-decoration: none;
+}
+
+.buttonSuccess:hover {
+  background: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.25);
+}
+
+.evaluadosBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+  border-radius: 999px;
+  color: #065f46;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  width: fit-content;
 }
 
 .dropdown {
@@ -274,7 +266,7 @@
 }
 
 .content {
-  padding: 4rem 10%;
+  padding: 2.5rem 10%;
   background: var(--bg-main);
   min-height: 50vh;
 }
@@ -434,11 +426,14 @@
 
 @media (max-width: 768px) {
   .header {
-    padding: 3rem 5%;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2rem 5%;
+    gap: 1.5rem;
   }
 
   .headerTitle {
-    font-size: 2.25rem;
+    font-size: 1.5rem;
   }
 
   .content {

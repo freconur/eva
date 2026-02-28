@@ -1,12 +1,13 @@
 .navbar {
   width: 100%;
   display: flex;
-  justify-content: space-between;
-  height: 60px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  align-items: center;
+  height: 64px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   z-index: 50;
   position: relative;
-  background: linear-gradient(to right, var(--color-principal), var(--color-paleta2));
 }
 
 .navbarContainer {
@@ -14,24 +15,152 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  padding: 0 1.5rem;
+}
+
+.leftSection {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.rightSection {
+  display: flex;
+  align-items: center;
+}
+
+.nivelBadge {
+  display: flex;
+  align-items: center;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  gap: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+.nivelBadge:hover {
+  background: rgba(56, 189, 248, 0.15);
+  transform: translateY(-1px);
+}
+
+.nivelLabel {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.nivelValue {
+  font-size: 0.9rem;
+  color: #0369a1;
+  /* Sky 700 */
+  font-weight: 600;
 }
 
 .menuButton {
-  width: 60px;
+  width: 40px;
+  height: 40px;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  background-color: transparent;
+}
+
+@media (min-width: 1024px) {
+  .menuButton {
+    display: none;
+  }
+}
+
+.menuButton:hover {
+  background-color: #f3f4f6;
 }
 
 .menuIcon {
-  color: white;
-  font-size: 2.5rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
+  color: #4b5563;
+  font-size: 1.5rem;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
-.menuIcon:hover {
-  font-size: 2.8rem;
-  transform: rotate(2deg);
+.menuButton:hover .menuIcon {
+  color: var(--color-principal);
+  transform: scale(1.05);
+}
+
+/* ── Breadcrumbs ───────────────────────────────────────── */
+.breadcrumbNav {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  margin-left: 20px;
+}
+
+.breadcrumbList {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.breadcrumbItem {
+  display: flex;
+  align-items: center;
+}
+
+.breadcrumbSeparator {
+  display: flex;
+  align-items: center;
+  color: #94a3b8;
+  /* Slate 400 */
+  margin: 0 8px;
+  font-size: 0.85rem;
+}
+
+.homeIcon {
+  color: #64748b;
+  /* Slate 500 */
+  font-size: 1.2rem;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.homeIcon:hover {
+  color: #38bdf8;
+  transform: scale(1.1);
+}
+
+.breadcrumbLinkText {
+  color: #64748b;
+  /* Slate 500 */
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: color 0.2s ease;
+}
+
+.breadcrumbLinkText:hover {
+  color: #38bdf8;
+}
+
+.breadcrumbCurrent {
+  color: #0f172a;
+  /* Deep Slate 900 */
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 768px) {
+  .breadcrumbNav {
+    display: none;
+    /* Hide breadcrumbs on small screens to save space */
+  }
 }

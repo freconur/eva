@@ -5,10 +5,12 @@ import React from 'react'
 import logo from '@/assets/cl-logo.png'
 import styles from './layout.module.css'
 const SidebarRegional = () => {
-  const { currentUserData } = useGlobalContext()
+  const { currentUserData, isSidebarCollapsed } = useGlobalContext()
   return (
-    <div className='z-relative z-[10] border-b-[1px] border-slate-200 pb-2 '>
-      <h1 className='uppercase text-lg text-center font-dmMono text-white'>Competence-Lab</h1>
+    <div className='z-relative z-[10] border-b-[1px] border-[rgba(255,255,255,0.08)] pb-2 '>
+      {!isSidebarCollapsed && (
+        <h1 className='uppercase text-lg text-center font-dmMono text-white flex-shrink-0 animate-fade-in'>Competence-Lab</h1>
+      )}
       <div className={styles.logoContainer}>
         <Image
           alt="foto de perfil"
@@ -19,9 +21,11 @@ const SidebarRegional = () => {
           height={70}
         />
       </div>
-      <p className='capitalize text-sm text-center p-2 text-white text-md '>
-      ugel {regionTexto(`${currentUserData.region}`)}
-      </p>
+      {!isSidebarCollapsed && (
+        <p className='capitalize text-sm text-center p-2 text-white text-md animate-fade-in'>
+          ugel {regionTexto(`${currentUserData.region}`)}
+        </p>
+      )}
     </div>
   )
 }

@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import Image from 'next/image'
-import header from '@/assets/evaluacion-docente.jpg'
 import styles from './conocimientoPedagogicos.module.css'
 import { useEvaluacionesEscalaLikert } from '@/features/hooks/useEvaluacionesEscalaLikert'
 import { EvaluacionLikert } from '@/features/types/types'
 import { HiEye, HiEyeOff, HiPlus, HiPencil, HiTrash } from 'react-icons/hi'
-import {getAllMonths} from '@/fuctions/dates'
+import { getAllMonths } from '@/fuctions/dates'
 import Link from 'next/link'
 import useUsuario from '@/features/hooks/useUsuario'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
@@ -14,217 +12,212 @@ import { useRouter } from 'next/router'
 const ConocimientoPedagogicosMain = () => {
 
 
-const route = useRouter()
+  const route = useRouter()
 
-    const {evaluacionesEscalaLikert, getEvaluacionesEscalaLikert, updateEvaluacionEscalaLikert, createEvaluacionEscalaLikert, optionsEvaluacion, getOptionsEvaluacion, deleteEvaluacionEscalaLikert} = useEvaluacionesEscalaLikert()
-    const [updatingId, setUpdatingId] = useState<string | null>(null)
-    const [showModal, setShowModal] = useState(false)
-    const [showUpdateModal, setShowUpdateModal] = useState(false)
-    const [showDeleteModal, setShowDeleteModal] = useState(false)
-    const [isCreating, setIsCreating] = useState(false)
-    const [isUpdating, setIsUpdating] = useState(false)
-    const [isDeleting, setIsDeleting] = useState(false)
-    const [formData, setFormData] = useState<Partial<EvaluacionLikert>>({
-        name: '',
-        mesDelExamen: '',
-        tipoDeEvaluacion: '',
-        active: true,
-        rol: 0,
-        descripcionLink: 'Link de tu Documento'
+  const { evaluacionesEscalaLikert, getEvaluacionesEscalaLikert, updateEvaluacionEscalaLikert, createEvaluacionEscalaLikert, optionsEvaluacion, getOptionsEvaluacion, deleteEvaluacionEscalaLikert } = useEvaluacionesEscalaLikert()
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [showUpdateModal, setShowUpdateModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [formData, setFormData] = useState<Partial<EvaluacionLikert>>({
+    name: '',
+    mesDelExamen: '',
+    tipoDeEvaluacion: '',
+    active: true,
+    rol: 0,
+    descripcionLink: 'Link de tu Documento'
+  })
+  const [updateFormData, setUpdateFormData] = useState<Partial<EvaluacionLikert>>({
+    name: '',
+    mesDelExamen: '',
+    tipoDeEvaluacion: '',
+    active: true,
+    rol: 0,
+    descripcionLink: 'Link de tu Documento'
+  })
+  const [selectedEvaluationId, setSelectedEvaluationId] = useState<string | null>(null)
+  const { currentUserData } = useGlobalContext()
+
+  // Opciones para el select "Dirigido a"
+  const opcionesDirigidoA = [
+    { rol: 1, name: 'Especialista' },
+    { rol: 2, name: 'Director' },
+    { rol: 3, name: 'Docente' }
+  ]
+  const handleToggleVisibility = async (evaluacionId: string, currentActive: boolean) => {
+    setUpdatingId(evaluacionId)
+    try {
+      await updateEvaluacionEscalaLikert(evaluacionId, { active: !currentActive })
+      // No necesitamos actualizar manualmente la lista ya que onSnapshot lo hace automáticamente
+    } catch (error) {
+      console.error('Error al actualizar el estado:', error)
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  const handleAddEvaluation = () => {
+    setShowModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setShowModal(false)
+    setFormData({
+      name: '',
+      mesDelExamen: '',
+      tipoDeEvaluacion: '',
+      active: true,
+      rol: 0,
+      descripcionLink: 'Link de tu Documento'
     })
-    const [updateFormData, setUpdateFormData] = useState<Partial<EvaluacionLikert>>({
-        name: '',
-        mesDelExamen: '',
-        tipoDeEvaluacion: '',
-        active: true,
-        rol: 0,
-        descripcionLink: 'Link de tu Documento'
+  }
+
+  const handleOpenUpdateModal = (evaluacion: EvaluacionLikert) => {
+    setSelectedEvaluationId(evaluacion.id || null)
+    setUpdateFormData({
+      name: evaluacion.name || '',
+      mesDelExamen: evaluacion.mesDelExamen || '',
+      tipoDeEvaluacion: evaluacion.tipoDeEvaluacion || '',
+      active: evaluacion.active ?? true,
+      rol: evaluacion.rol || 0,
+      descripcionLink: evaluacion.descripcionLink || 'Link de tu Documento'
     })
-    const [selectedEvaluationId, setSelectedEvaluationId] = useState<string | null>(null)
-    const { currentUserData } = useGlobalContext()
-    
-    // Opciones para el select "Dirigido a"
-    const opcionesDirigidoA = [
-        { rol: 1, name: 'Especialista' },
-        { rol: 2, name: 'Director' },
-        { rol: 3, name: 'Docente' }
-    ]
-    const handleToggleVisibility = async (evaluacionId: string, currentActive: boolean) => {
-        setUpdatingId(evaluacionId)
-        try {
-            await updateEvaluacionEscalaLikert(evaluacionId, { active: !currentActive })
-            // No necesitamos actualizar manualmente la lista ya que onSnapshot lo hace automáticamente
-        } catch (error) {
-            console.error('Error al actualizar el estado:', error)
-        } finally {
-            setUpdatingId(null)
-        }
+    setShowUpdateModal(true)
+  }
+
+  const handleCloseUpdateModal = () => {
+    setShowUpdateModal(false)
+    setSelectedEvaluationId(null)
+    setUpdateFormData({
+      name: '',
+      mesDelExamen: '',
+      tipoDeEvaluacion: '',
+      active: true,
+      rol: 0,
+      descripcionLink: 'Link de tu Documento'
+    })
+  }
+
+  const handleOpenDeleteModal = (evaluacion: EvaluacionLikert) => {
+    setSelectedEvaluationId(evaluacion.id || null)
+    setShowDeleteModal(true)
+  }
+
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false)
+    setSelectedEvaluationId(null)
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+    }))
+  }
+
+  const handleUpdateInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target
+    setUpdateFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+    }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.name?.trim()) {
+      alert('El nombre de la evaluación es requerido')
+      return
     }
 
-    const handleAddEvaluation = () => {
-        setShowModal(true)
+    setIsCreating(true)
+    try {
+      await createEvaluacionEscalaLikert(formData as EvaluacionLikert)
+      handleCloseModal()
+    } catch (error) {
+      console.error('Error al crear la evaluación:', error)
+      alert('Error al crear la evaluación. Intente nuevamente.')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  const handleUpdateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!updateFormData.name?.trim()) {
+      alert('El nombre de la evaluación es requerido')
+      return
     }
 
-    const handleCloseModal = () => {
-        setShowModal(false)
-        setFormData({
-            name: '',
-            mesDelExamen: '',
-            tipoDeEvaluacion: '',
-            active: true,
-            rol: 0,
-            descripcionLink: 'Link de tu Documento'
-        })
+    if (!selectedEvaluationId) {
+      alert('Error: No se ha seleccionado una evaluación')
+      return
     }
 
-    const handleOpenUpdateModal = (evaluacion: EvaluacionLikert) => {
-        setSelectedEvaluationId(evaluacion.id || null)
-        setUpdateFormData({
-            name: evaluacion.name || '',
-            mesDelExamen: evaluacion.mesDelExamen || '',
-            tipoDeEvaluacion: evaluacion.tipoDeEvaluacion || '',
-            active: evaluacion.active ?? true,
-            rol: evaluacion.rol || 0,
-            descripcionLink: evaluacion.descripcionLink || 'Link de tu Documento'
-        })
-        setShowUpdateModal(true)
+    setIsUpdating(true)
+    try {
+      await updateEvaluacionEscalaLikert(selectedEvaluationId, updateFormData)
+      handleCloseUpdateModal()
+    } catch (error) {
+      console.error('Error al actualizar la evaluación:', error)
+      alert('Error al actualizar la evaluación. Intente nuevamente.')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!selectedEvaluationId) {
+      alert('Error: No se ha seleccionado una evaluación')
+      return
     }
 
-    const handleCloseUpdateModal = () => {
-        setShowUpdateModal(false)
-        setSelectedEvaluationId(null)
-        setUpdateFormData({
-            name: '',
-            mesDelExamen: '',
-            tipoDeEvaluacion: '',
-            active: true,
-            rol: 0,
-            descripcionLink: 'Link de tu Documento'
-        })
+    setIsDeleting(true)
+    try {
+      await deleteEvaluacionEscalaLikert(selectedEvaluationId)
+      handleCloseDeleteModal()
+    } catch (error) {
+      console.error('Error al eliminar la evaluación:', error)
+      alert('Error al eliminar la evaluación. Intente nuevamente.')
+    } finally {
+      setIsDeleting(false)
     }
+  }
 
-    const handleOpenDeleteModal = (evaluacion: EvaluacionLikert) => {
-        setSelectedEvaluationId(evaluacion.id || null)
-        setShowDeleteModal(true)
+  useEffect(() => {
+    const unsubscribeEvaluaciones = getEvaluacionesEscalaLikert(Number(route.query.rol))
+    const unsubscribeOptions = getOptionsEvaluacion()
+    return () => {
+      if (unsubscribeEvaluaciones) {
+        unsubscribeEvaluaciones()
+      }
+      if (unsubscribeOptions) {
+        unsubscribeOptions()
+      }
     }
-
-    const handleCloseDeleteModal = () => {
-        setShowDeleteModal(false)
-        setSelectedEvaluationId(null)
-    }
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value, type } = e.target
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-        }))
-    }
-
-    const handleUpdateInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value, type } = e.target
-        setUpdateFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-        }))
-    }
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!formData.name?.trim()) {
-            alert('El nombre de la evaluación es requerido')
-            return
-        }
-
-        setIsCreating(true)
-        try {
-            await createEvaluacionEscalaLikert(formData as EvaluacionLikert)
-            handleCloseModal()
-        } catch (error) {
-            console.error('Error al crear la evaluación:', error)
-            alert('Error al crear la evaluación. Intente nuevamente.')
-        } finally {
-            setIsCreating(false)
-        }
-    }
-
-    const handleUpdateSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!updateFormData.name?.trim()) {
-            alert('El nombre de la evaluación es requerido')
-            return
-        }
-
-        if (!selectedEvaluationId) {
-            alert('Error: No se ha seleccionado una evaluación')
-            return
-        }
-
-        setIsUpdating(true)
-        try {
-            await updateEvaluacionEscalaLikert(selectedEvaluationId, updateFormData)
-            handleCloseUpdateModal()
-        } catch (error) {
-            console.error('Error al actualizar la evaluación:', error)
-            alert('Error al actualizar la evaluación. Intente nuevamente.')
-        } finally {
-            setIsUpdating(false)
-        }
-    }
-
-    const handleConfirmDelete = async () => {
-        if (!selectedEvaluationId) {
-            alert('Error: No se ha seleccionado una evaluación')
-            return
-        }
-
-        setIsDeleting(true)
-        try {
-            await deleteEvaluacionEscalaLikert(selectedEvaluationId)
-            handleCloseDeleteModal()
-        } catch (error) {
-            console.error('Error al eliminar la evaluación:', error)
-            alert('Error al eliminar la evaluación. Intente nuevamente.')
-        } finally {
-            setIsDeleting(false)
-        }
-    }
-
-    useEffect(() => {
-        const unsubscribeEvaluaciones = getEvaluacionesEscalaLikert(Number(route.query.rol))
-        const unsubscribeOptions = getOptionsEvaluacion()
-        return () => {
-            if (unsubscribeEvaluaciones) {
-                unsubscribeEvaluaciones()
-            }
-            if (unsubscribeOptions) {
-                unsubscribeOptions()
-            }
-        }
-    }, [route.query.rol])
+  }, [route.query.rol])
 
   return (
-    <div>
+    <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.headerOverlay}></div>
-        <Image
-          className={styles.headerImage}
-          src={header}
-          alt="imagen de cabecera"
-          objectFit='fill'
-          fetchPriority='high'
-        />
-        <h1 className={styles.headerTitle}>Autorreporte</h1>
+        <div className={styles.headerContent}>
+          <p className={styles.welcomeText}>Gestión de Evaluaciones</p>
+          <h1 className={styles.headerTitle}>Autorreporte</h1>
+        </div>
       </div>
 
       {/* Tabla de evaluaciones */}
       <div className={styles.tableContainer}>
         <div className={styles.tableHeaderContainer}>
           <h2 className={styles.tableTitle}>Evaluaciones de Conocimiento Pedagógico</h2>
-          
+
           {
             currentUserData.rol === 4 &&
-            <button 
+            <button
               className={styles.addEvaluationButton}
               onClick={handleAddEvaluation}
               title="Agregar nueva evaluación"
@@ -242,7 +235,7 @@ const route = useRouter()
             Evaluación
           </button> */}
         </div>
-        
+
         <div className={styles.tableWrapper}>
           <table className={styles.table}>
             <thead>
@@ -269,69 +262,69 @@ const route = useRouter()
                     return true
                   })
                   .map((evaluacion, index) => (
-                  <tr key={evaluacion.id || index} className={styles.tableRow}>
-                    <td className={styles.tableCell}>
-                      <Link href={`${currentUserData.rol === 4 ? `/admin/conocimientos-pedagogicos/autoreporte/${evaluacion.id}` : `/autorreporte?idEvaluacion=${evaluacion.id}`}`}>
-                      {/* <Link href={`${currentUserData.rol === 3 ? `/docentes/conocimiento-pedagogico?idEvaluacion=${evaluacion.id}` : `/admin/docentes/conocimiento-pedagogico/${evaluacion.id}`}`}> */}
-                      <div className={styles.evaluationName}>
-                        {evaluacion.name || 'Sin nombre'}
-                      </div>
-                      </Link>
-                     {/*  <Link href={`/admin/docentes/conocimiento-pedagogico/${evaluacion.id}`}>
+                    <tr key={evaluacion.id || index} className={styles.tableRow}>
+                      <td className={styles.tableCell}>
+                        <Link href={`${currentUserData.rol === 4 ? `/admin/conocimientos-pedagogicos/autoreporte/${evaluacion.id}` : `/autorreporte?idEvaluacion=${evaluacion.id}`}`}>
+                          {/* <Link href={`${currentUserData.rol === 3 ? `/docentes/conocimiento-pedagogico?idEvaluacion=${evaluacion.id}` : `/admin/docentes/conocimiento-pedagogico/${evaluacion.id}`}`}> */}
+                          <div className={styles.evaluationName}>
+                            {evaluacion.name || 'Sin nombre'}
+                          </div>
+                        </Link>
+                        {/*  <Link href={`/admin/docentes/conocimiento-pedagogico/${evaluacion.id}`}>
                       </Link> */}
-                    </td>
-                    {
-                      currentUserData.rol === 4 ?
-<>
-                    <td className={styles.tableCell}>
-                      <div className={styles.statusContainer}>
-                        {evaluacion.active ? (
-                          <div 
-                            className={`${styles.statusActive} ${updatingId === evaluacion.id ? styles.updating : ''}`}
-                            onClick={() => evaluacion.id && handleToggleVisibility(evaluacion.id, evaluacion.active ?? false)}
-                            style={{ cursor: updatingId === evaluacion.id ? 'not-allowed' : 'pointer' }}
-                            title={updatingId === evaluacion.id ? 'Actualizando...' : 'Hacer clic para desactivar'}
-                          >
-                            <HiEye className={styles.eyeIcon} />
-                            <span>{updatingId === evaluacion.id ? 'Actualizando...' : 'Activa'}</span>
-                          </div>
-                        ) : (
-                          <div 
-                            className={`${styles.statusInactive} ${updatingId === evaluacion.id ? styles.updating : ''}`}
-                            onClick={() => evaluacion.id && handleToggleVisibility(evaluacion.id, evaluacion.active ?? false)}
-                            style={{ cursor: updatingId === evaluacion.id ? 'not-allowed' : 'pointer' }}
-                            title={updatingId === evaluacion.id ? 'Actualizando...' : 'Hacer clic para activar'}
-                          >
-                            <HiEyeOff className={styles.eyeIcon} />
-                            <span>{updatingId === evaluacion.id ? 'Actualizando...' : 'Inactiva'}</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className={styles.tableCell}>
-                      <div className={styles.actionsContainer}>
-                        <button 
-                          className={styles.actionButton}
-                          title="Editar evaluación"
-                          onClick={() => handleOpenUpdateModal(evaluacion)}
-                        >
-                          <HiPencil className={styles.actionIcon} />
-                        </button>
-                        <button 
-                          className={`${styles.actionButton} ${styles.deleteButton}`}
-                          title="Eliminar evaluación"
-                          onClick={() => handleOpenDeleteModal(evaluacion)}
-                        >
-                          <HiTrash className={styles.actionIcon} />
-                        </button>
-                      </div>
-                    </td>
-                    </>
-                      :
-                        currentUserData.rol === 3 && null
-                    }
-                  </tr>
-                ))
+                      </td>
+                      {
+                        currentUserData.rol === 4 ?
+                          <>
+                            <td className={styles.tableCell}>
+                              <div className={styles.statusContainer}>
+                                {evaluacion.active ? (
+                                  <div
+                                    className={`${styles.statusActive} ${updatingId === evaluacion.id ? styles.updating : ''}`}
+                                    onClick={() => evaluacion.id && handleToggleVisibility(evaluacion.id, evaluacion.active ?? false)}
+                                    style={{ cursor: updatingId === evaluacion.id ? 'not-allowed' : 'pointer' }}
+                                    title={updatingId === evaluacion.id ? 'Actualizando...' : 'Hacer clic para desactivar'}
+                                  >
+                                    <HiEye className={styles.eyeIcon} />
+                                    <span>{updatingId === evaluacion.id ? 'Actualizando...' : 'Activa'}</span>
+                                  </div>
+                                ) : (
+                                  <div
+                                    className={`${styles.statusInactive} ${updatingId === evaluacion.id ? styles.updating : ''}`}
+                                    onClick={() => evaluacion.id && handleToggleVisibility(evaluacion.id, evaluacion.active ?? false)}
+                                    style={{ cursor: updatingId === evaluacion.id ? 'not-allowed' : 'pointer' }}
+                                    title={updatingId === evaluacion.id ? 'Actualizando...' : 'Hacer clic para activar'}
+                                  >
+                                    <HiEyeOff className={styles.eyeIcon} />
+                                    <span>{updatingId === evaluacion.id ? 'Actualizando...' : 'Inactiva'}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td className={styles.tableCell}>
+                              <div className={styles.actionsContainer}>
+                                <button
+                                  className={styles.actionButton}
+                                  title="Editar evaluación"
+                                  onClick={() => handleOpenUpdateModal(evaluacion)}
+                                >
+                                  <HiPencil className={styles.actionIcon} />
+                                </button>
+                                <button
+                                  className={`${styles.actionButton} ${styles.deleteButton}`}
+                                  title="Eliminar evaluación"
+                                  onClick={() => handleOpenDeleteModal(evaluacion)}
+                                >
+                                  <HiTrash className={styles.actionIcon} />
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                          :
+                          currentUserData.rol === 3 && null
+                      }
+                    </tr>
+                  ))
               )}
             </tbody>
           </table>
@@ -343,7 +336,7 @@ const route = useRouter()
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
             <h3 className={styles.modalTitle}>Crear Nueva Evaluación</h3>
-            
+
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.inputGroup}>
                 <label className={styles.inputLabel} htmlFor="name">
@@ -461,7 +454,7 @@ const route = useRouter()
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
             <h3 className={styles.modalTitle}>Actualizar Evaluación</h3>
-            
+
             <form onSubmit={handleUpdateSubmit} className={styles.form}>
               <div className={styles.inputGroup}>
                 <label className={styles.inputLabel} htmlFor="updateName">
@@ -579,7 +572,7 @@ const route = useRouter()
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
             <h3 className={styles.modalTitle}>Confirmar Eliminación</h3>
-            
+
             <div className={styles.confirmationContent}>
               <p>¿Está seguro de que desea eliminar esta evaluación?</p>
               <p className={styles.warningText}>

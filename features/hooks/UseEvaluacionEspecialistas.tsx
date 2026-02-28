@@ -142,6 +142,20 @@ const UseEvaluacionEspecialistas = () => {
     });
   };
 
+  const getEspecialistasEvaluados = (idEvaluacion: string) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    const path = `/evaluaciones-especialista/${idEvaluacion}/evaluados`;
+    const q = query(collection(db, path));
+    onSnapshot(q, (querySnapshot) => {
+      const arrayEvaluados: User[] = [];
+      querySnapshot.forEach((doc) => {
+        arrayEvaluados.push({ ...doc.data() as User, id: doc.id });
+      });
+      dispatch({ type: AppAction.EVALUADOS_ESPECIALISTA, payload: arrayEvaluados });
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+    });
+  };
+
   const deleteDimensionEspecialista = async (idEvaluacion: string, idDimension: string) => {
     await deleteDoc(doc(db, `/evaluaciones-especialista/${idEvaluacion}/dominios`, idDimension));
   };
@@ -1180,6 +1194,7 @@ const UseEvaluacionEspecialistas = () => {
     createEvaluacionesEspecialistas,
     reporteEvaluacionEspecialistas,
     getEvaluacionesEspecialistas,
+    getEspecialistasEvaluados,
     deleteEvaluacionEspecilistas,
     addPreguntasEvaluacionEspecialistas,
     getPreguntasRespuestasEspecialistas,
