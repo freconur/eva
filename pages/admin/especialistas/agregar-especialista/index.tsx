@@ -126,8 +126,13 @@ const AgregareEspecialista = () => {
     getUserData()
     getRegiones()
     /* getAllEspecialistas() */
-    getUsuariosToAdmin(Number(currentUserData.rol))
   }, [])
+
+  useEffect(() => {
+    if (currentUserData && currentUserData.rol) {
+      getUsuariosToAdmin(Number(currentUserData.rol))
+    }
+  }, [currentUserData?.rol, currentUserData?.dni])
 
   const handleShowModal = () => {
     setShowModalActualizarEspecialista(!showModalActualizarEspecialista)

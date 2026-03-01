@@ -20,10 +20,13 @@ const initialValue = {
 const initialValueAlternativas = { descripcion: "", alternativa: "", value: 0 }
 
 const UpdatePreguntaRespuestaEspecialistas = ({ dataUpdate, handleShowUpdateModal, id }: Props) => {
-  const { loaderSalvarPregunta, dimensionesEspecialistas } = useGlobalContext()
+  const { loaderSalvarPregunta, dimensionesEspecialistas, dataEvaluacionDocente } = useGlobalContext()
   const { updatePreResEspecialistas, getDimensionesEspecialistas } = UseEvaluacionEspecialistas()
   const [inputValue, setInputValue] = useState<PRDocentes>(initialValue)
   const [dimensionId, setDimensionId] = useState<string>('')
+  const [requiereEvidencia, setRequiereEvidencia] = useState<boolean>(false)
+  const [descripcionEvidencia, setDescripcionEvidencia] = useState<string>('')
+
 
   useEffect(() => {
     getDimensionesEspecialistas(id)
@@ -44,16 +47,22 @@ const UpdatePreguntaRespuestaEspecialistas = ({ dataUpdate, handleShowUpdateModa
     updatePreResEspecialistas({
       ...inputValue,
       dimensionId: dimensionId,
-      alternativas: dataUpdate.alternativas // Keep existing scale
+      alternativas: dataUpdate.alternativas, // Keep existing scale
+      requiereEvidencia,
+      descripcionEvidencia
     }, id)
   }
+
 
   useEffect(() => {
     if (dataUpdate) {
       setInputValue({ criterio: dataUpdate.criterio, order: dataUpdate.order, id: dataUpdate.id })
       setDimensionId(dataUpdate.dimensionId || '')
+      setRequiereEvidencia(dataUpdate.requiereEvidencia || false)
+      setDescripcionEvidencia(dataUpdate.descripcionEvidencia || '')
     }
   }, [dataUpdate])
+
   return container
     ? createPortal(
       <div className={styles.modalOverlay}>
@@ -97,6 +106,31 @@ const UpdatePreguntaRespuestaEspecialistas = ({ dataUpdate, handleShowUpdateModa
                       onChange={handleOnChange}
                     />
                   </div>
+                  {dataEvaluacionDocente?.activarEvidencias && (
+                    <>
+                      <div className={styles.formGroupCheckbox}>
+                        <input
+                          type="checkbox"
+                          id="requiereEvidenciaUpdate"
+                          checked={requiereEvidencia}
+                          onChange={(e) => setRequiereEvidencia(e.target.checked)}
+                        />
+                        <label htmlFor="requiereEvidenciaUpdate">¿Requiere evidencia?</label>
+                      </div>
+                      {requiereEvidencia && (
+                        <div className={styles.formGroup}>
+                          <p className={styles.label}>Descripción de la evidencia</p>
+                          <textarea
+                            className={styles.inputField}
+                            placeholder="Ej: Plan de trabajo, fotos de la asistencia..."
+                            value={descripcionEvidencia}
+                            onChange={(e) => setDescripcionEvidencia(e.target.value)}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+
                   <div className={styles.infoScale}>
                     <p>Escala: 0=No evidencia, 1=En proceso, 2=Logrado</p>
                   </div>

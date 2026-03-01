@@ -243,6 +243,193 @@
     color: #2563eb;
 }
 
+/* ── Specialist Info ───────────────── */
+.specialistInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.specialistName {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.95rem;
+}
+
+.specialistDni {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.05em;
+}
+
+.expandIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.rowExpanded .expandIcon {
+    background: #2563eb;
+    color: white;
+}
+
+.evalCountBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 0.5rem;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.8rem;
+}
+
+/* ── Trends ────────────────────────── */
+.trendWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.trendUp {
+    color: #10b981;
+}
+
+.trendDown {
+    color: #ef4444;
+}
+
+.trendNeutral {
+    color: #94a3b8;
+}
+
+/* ── Action Buttons ────────────────── */
+.historyButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.historyButton:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #eff6ff;
+}
+
+/* ── Detail Row ────────────────────── */
+.detailRow {
+    background: #fcfdfe;
+}
+
+.detailContent {
+    padding: 1.5rem 2rem 2rem 4rem;
+    border-bottom: 1px solid #f1f5f9;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.detailTitle {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
+
+.detailGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.evaluationItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.evaluationItem:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+}
+
+.evalMainInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.evalDateWrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.evalDate {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.evalTime {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.evalScore {
+    font-size: 0.8rem;
+    color: #2563eb;
+    font-weight: 700;
+}
+
+.viewReportLink {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #2563eb;
+    text-decoration: none;
+    padding: 0.35rem 0.75rem;
+    background: #eff6ff;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.viewReportLink:hover {
+    background: #2563eb;
+    color: white;
+}
+
+.textMuted {
+    color: #cbd5e1;
+}
+
 /* ── Empty / Loader states ────────────────── */
 .loaderContainer {
     display: flex;
@@ -299,20 +486,138 @@
     }
 }
 
-/* ── Responsive ──────────────────────── */
-@media (max-width: 768px) {
+/* ── Action Buttons ────────────────── */
+.actionButtons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
 
-    .header,
-    .content {
-        padding-left: 5%;
-        padding-right: 5%;
+.evolutionButton {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.8rem;
+    border-radius: 6px;
+    border: 1px solid #dcfce7;
+    background: #f0fdf4;
+    color: #166534;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.evolutionButton:hover {
+    background: #dcfce7;
+    border-color: #22c55e;
+    transform: translateY(-1px);
+}
+
+/* ── Modal ─────────────────────────── */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modalContent {
+    background: white;
+    width: 90%;
+    max-width: 800px;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modalHeader {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+}
+
+.modalTitle {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.modalClose {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #94a3b8;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+}
+
+.modalClose:hover {
+    color: #1e293b;
+}
+
+.modalBody {
+    padding: 2rem;
+}
+
+.modalLoading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    gap: 1rem;
+    color: #64748b;
+}
+
+.chartContainer {
+    width: 100%;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.noHistory {
+    text-align: center;
+    color: #64748b;
+    font-style: italic;
+    padding: 2rem;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
     }
 
-    .headerTitle {
-        font-size: 1.4rem;
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
     }
 
-    .searchInputWrapper {
-        max-width: 100%;
+    to {
+        transform: translateY(0);
+        opacity: 1;
     }
 }

@@ -74,6 +74,30 @@ const AgregarPreguntasRespuestasEspecialistas = ({ handleShowModalPreguntas, idE
                 />
                 {errors.criterio && <span className={styles.error}>{errors.criterio.message as string}</span>}
               </div>
+
+              {dataEvaluacionDocente?.activarEvidencias && (
+                <>
+                  <div className={styles.formGroupCheckbox}>
+                    <input
+                      type="checkbox"
+                      id="requiereEvidencia"
+                      {...register("requiereEvidencia")}
+                    />
+                    <label htmlFor="requiereEvidencia">¿Requiere evidencia?</label>
+                  </div>
+                  {watch("requiereEvidencia") && (
+                    <div className={styles.formGroup}>
+                      <p className={styles.titlePregunta}>Descripción de la evidencia</p>
+                      <textarea
+                        className={styles.textAreaPregunta}
+                        placeholder="Ej: Plan de trabajo, fotos de la asistencia..."
+                        {...register("descripcionEvidencia")}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
               <div className={styles.infoScale}>
                 <p>Nota: Esta evaluación utiliza la siguiente escala:</p>
                 <ul>

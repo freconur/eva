@@ -168,16 +168,14 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                 </li>
 
                 {/* Autorreporte */}
-                {!currentUserData.nivelDeInstitucion?.includes(2) && (
-                  <li className={styles.menuItem}>
-                    <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/conocimientos-pedagogicos') && router.query.rol === '1' ? styles.activeLink : ''}`} style={{ margin: 0, padding: "12px 20px" }}>
-                      <LuListTodo className={styles.dashboardIcon} />
-                      <Link className={styles.dashboardLink} href="/admin/conocimientos-pedagogicos?rol=1" aria-haspopup="true">
-                        Autorreporte
-                      </Link>
-                    </div>
-                  </li>
-                )}
+                <li className={styles.menuItem}>
+                  <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/especialistas/autoreporte') ? styles.activeLink : ''}`} style={{ margin: 0, padding: "12px 20px" }}>
+                    <LuListTodo className={styles.dashboardIcon} />
+                    <Link className={styles.dashboardLink} href="/especialistas/autoreporte" aria-haspopup="true">
+                      Autorreporte
+                    </Link>
+                  </div>
+                </li>
               </ul>
             </div>
           </div>

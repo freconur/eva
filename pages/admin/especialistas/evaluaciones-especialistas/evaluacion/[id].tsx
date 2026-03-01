@@ -1,7 +1,8 @@
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
-import { MdEditSquare, MdDelete, MdAddCircle, MdSettings, MdPlaylistAdd, MdAssignment, MdDescription, MdKeyboardArrowDown, MdPeople } from 'react-icons/md';
+import { MdEditSquare, MdDelete, MdAddCircle, MdSettings, MdPlaylistAdd, MdAssignment, MdDescription, MdKeyboardArrowDown, MdPeople, MdToggleOn, MdToggleOff } from 'react-icons/md';
+
 import { PRDocentes } from '@/features/types/types';
 import Link from 'next/link';
 import { RiLoader4Line } from 'react-icons/ri';
@@ -12,6 +13,8 @@ import UpdatePreguntaRespuestaEspecialistas from '@/modals/updatePrEspecialistas
 import AgregarDimensionEspecialistas from '@/modals/AgregarDimensionEspecialistas';
 import UpdateDimensionEspecialistas from '@/modals/UpdateDimensionEspecialistas';
 import ConfigurarEscalaEspecialistas from '@/modals/ConfigurarEscalaEspecialistas';
+import ConfigurarNivelesEspecialistas from '@/modals/ConfigurarNivelesEspecialistas';
+import ConfigurarFaseEspecialistas from '@/modals/ConfigurarFaseEspecialistas';
 import { DimensionEspecialista } from '@/features/types/types';
 
 const EvaluacionDocente = () => {
@@ -35,15 +38,19 @@ const EvaluacionDocente = () => {
     deletePreguntaRespuestaEspecialista,
     deleteDimensionEspecialista,
     getEspecialistasEvaluados,
+    updateActivacionEvidencias,
   } = UseEvaluacionEspecialistas();
+
   const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false);
   const [showAgregarDimension, setShowAgregarDimension] = useState<boolean>(false);
   const [showUpdateDimension, setShowUpdateDimension] = useState<boolean>(false);
   const [showConfigurarEscala, setShowConfigurarEscala] = useState<boolean>(false);
+  const [showConfigurarNiveles, setShowConfigurarNiveles] = useState<boolean>(false);
   const [dimensionToUpdate, setDimensionToUpdate] = useState<DimensionEspecialista>({});
   const [valueDni, setValueDni] = useState<string>('');
   const [dataUpdate, setDataUpdate] = useState<PRDocentes>({});
   const [showConfigDropdown, setShowConfigDropdown] = useState<boolean>(false);
+  const [showConfigurarFase, setShowConfigurarFase] = useState<boolean>(false);
 
   const handleShowModalPreguntas = () => {
     setShowAgregarPreguntas(!showAgregarPreguntas);
@@ -60,6 +67,12 @@ const EvaluacionDocente = () => {
   const handleShowConfigurarEscala = () => {
     setShowConfigurarEscala(!showConfigurarEscala);
   };
+  const handleShowConfigurarNiveles = () => {
+    setShowConfigurarNiveles(!showConfigurarNiveles);
+  };
+  const handleShowConfigurarFase = () => {
+    setShowConfigurarFase(!showConfigurarFase);
+  };
   const handleChangeDniDocente = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValueDni(e.target.value);
   };
@@ -75,6 +88,13 @@ const EvaluacionDocente = () => {
       await deleteDimensionEspecialista(`${router.query.id}`, idDimension);
     }
   };
+  const handleToggleEvidencias = async () => {
+    if (router.query.id) {
+      const newStatus = !dataEvaluacionDocente?.activarEvidencias;
+      await updateActivacionEvidencias(`${router.query.id}`, newStatus);
+    }
+  };
+
 
   useEffect(() => {
     if (valueDni.toString().length === 8) {
@@ -124,6 +144,20 @@ const EvaluacionDocente = () => {
           handleShowConfigurarEscala={handleShowConfigurarEscala}
         />
       )}
+      {showConfigurarNiveles && (
+        <ConfigurarNivelesEspecialistas
+          idEvaluacion={`${router.query.id}`}
+          nivelesActuales={dataEvaluacionDocente?.niveles}
+          handleShowConfigurarNiveles={handleShowConfigurarNiveles}
+        />
+      )}
+      {showConfigurarFase && (
+        <ConfigurarFaseEspecialistas
+          idEvaluacion={`${router.query.id}`}
+          faseActual={dataEvaluacionDocente?.faseNombre}
+          handleShowConfigurarFase={handleShowConfigurarFase}
+        />
+      )}
 
       <div className={styles.header}>
         <div className={styles.headerContent}>
@@ -136,6 +170,12 @@ const EvaluacionDocente = () => {
               {evaluadosEspecialista?.length ?? 0} especialista{evaluadosEspecialista?.length !== 1 ? 's' : ''} evaluado{evaluadosEspecialista?.length !== 1 ? 's' : ''}
             </span>
           </div>
+          {dataEvaluacionDocente?.faseNombre && (
+            <div className={styles.phaseBadge}>
+              <MdAssignment />
+              <span>Fase Actual: {dataEvaluacionDocente.faseNombre}</span>
+            </div>
+          )}
           {/* <div className={styles.searchContainer}>
             <input
               type="number"
@@ -195,6 +235,24 @@ const EvaluacionDocente = () => {
                 </button>
                 <button
                   onClick={() => {
+                    handleShowConfigurarNiveles();
+                    setShowConfigDropdown(false);
+                  }}
+                  className={styles.dropdownItem}
+                >
+                  <MdSettings /> Configurar Niveles de Logro
+                </button>
+                <button
+                  onClick={() => {
+                    handleShowConfigurarFase();
+                    setShowConfigDropdown(false);
+                  }}
+                  className={styles.dropdownItem}
+                >
+                  <MdAssignment /> Nueva Etapa de Evaluación
+                </button>
+                <button
+                  onClick={() => {
                     handleShowModalPreguntas();
                     setShowConfigDropdown(false);
                   }}
@@ -202,7 +260,20 @@ const EvaluacionDocente = () => {
                 >
                   <MdPlaylistAdd /> Agregar preguntas
                 </button>
+                <div style={{ height: '1px', background: '#f1f5f9', margin: '0.25rem 0.5rem' }}></div>
+                <button
+                  onClick={handleToggleEvidencias}
+                  className={styles.dropdownItem}
+                >
+                  {dataEvaluacionDocente?.activarEvidencias ? (
+                    <MdToggleOn style={{ color: '#10b981', fontSize: '1.5rem' }} />
+                  ) : (
+                    <MdToggleOff style={{ fontSize: '1.5rem' }} />
+                  )}
+                  Evidencias: {dataEvaluacionDocente?.activarEvidencias ? 'Activado' : 'Desactivado'}
+                </button>
               </div>
+
             )}
           </div>
           <Link

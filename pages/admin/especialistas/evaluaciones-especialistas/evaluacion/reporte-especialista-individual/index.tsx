@@ -12,7 +12,7 @@ import styles from './reporteEspecialista.module.css';
 
 const ReporteEspecialistaIndividual = () => {
   const router = useRouter();
-  const { idEvaluacion, idDirector } = router.query;
+  const { idEvaluacion, idDirector, sessionId } = router.query;
 
   const {
     getPreguntaRespuestaDocentes,
@@ -42,10 +42,11 @@ const ReporteEspecialistaIndividual = () => {
   }, [idEvaluacion]);
 
   useEffect(() => {
-    if (idEvaluacion && idDirector) {
-      getDataSeguimientoRetroalimentacionEspecialista(`${idEvaluacion}`, `${idDirector}`);
+    const targetId = (sessionId || idDirector) as string;
+    if (idEvaluacion && targetId) {
+      getDataSeguimientoRetroalimentacionEspecialista(`${idEvaluacion}`, targetId);
     }
-  }, [idEvaluacion, idDirector]);
+  }, [idEvaluacion, idDirector, sessionId]);
 
   const defaultEscala: AlternativasDocente[] = [
     { value: 0, alternativa: '0', descripcion: 'No evidencia' },
@@ -330,32 +331,46 @@ const ReporteEspecialistaIndividual = () => {
                   </table>
                 </div>
 
-                {/* ── Retroalimentación Cualitativa ─────────────────── */}
+                {/* ── Retroalimentación Cualitativa Dinámica ─────────────────── */}
                 <div className={styles.feedbackSection}>
-                  <div className={styles.feedbackGroup}>
-                    <label className={styles.feedbackLabel}>AVANCES:</label>
-                    <div className={styles.feedbackReadonly}>
-                      {dataEspecialista?.avancesRetroalimentacion || (
-                        <span className={styles.empty}>Sin avances registrados.</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className={styles.feedbackGroup}>
-                    <label className={styles.feedbackLabel}>DIFICULTADES:</label>
-                    <div className={styles.feedbackReadonly}>
-                      {dataEspecialista?.dificultadesRetroalimentacion || (
-                        <span className={styles.empty}>Sin dificultades registradas.</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className={styles.feedbackGroup}>
-                    <label className={styles.feedbackLabel}>COMPROMISOS:</label>
-                    <div className={styles.feedbackReadonly}>
-                      {dataEspecialista?.compromisosRetroalimentacion || (
-                        <span className={styles.empty}>Sin compromisos registrados.</span>
-                      )}
-                    </div>
-                  </div>
+                  {dataEspecialista?.retroalimentacionDinamica && dataEspecialista.retroalimentacionDinamica.length > 0 ? (
+                    dataEspecialista.retroalimentacionDinamica.map((item, index) => (
+                      <div key={index} className={styles.feedbackGroup}>
+                        <label className={styles.feedbackLabel}>{item.etiqueta}:</label>
+                        <div className={styles.feedbackReadonly}>
+                          {item.contenido || <span className={styles.empty}>Sin información registrada.</span>}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    // Fallback para datos legacy
+                    <>
+                      <div className={styles.feedbackGroup}>
+                        <label className={styles.feedbackLabel}>AVANCES:</label>
+                        <div className={styles.feedbackReadonly}>
+                          {dataEspecialista?.avancesRetroalimentacion || (
+                            <span className={styles.empty}>Sin avances registrados.</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className={styles.feedbackGroup}>
+                        <label className={styles.feedbackLabel}>DIFICULTADES:</label>
+                        <div className={styles.feedbackReadonly}>
+                          {dataEspecialista?.dificultadesRetroalimentacion || (
+                            <span className={styles.empty}>Sin dificultades registradas.</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className={styles.feedbackGroup}>
+                        <label className={styles.feedbackLabel}>COMPROMISOS:</label>
+                        <div className={styles.feedbackReadonly}>
+                          {dataEspecialista?.compromisosRetroalimentacion || (
+                            <span className={styles.empty}>Sin compromisos registrados.</span>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </>
             )}

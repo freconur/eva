@@ -261,7 +261,8 @@ export type Evaluaciones = {
   nivelYPuntaje?: NivelYPuntaje[];
   usuariosConPermisos?: string[];
   usuariosConPermisosUgel?: string[];
-  nivel?: number[]
+  nivel?: number[];
+  activarEvidencias?: boolean;
 };
 export type Evaluacion = {
   id?: string;
@@ -279,6 +280,7 @@ export type Evaluacion = {
   idDocente?: string;
   usuariosConPermisos?: string[];
   usuariosConPermisosUgel?: string[];
+  activarEvidencias?: boolean;
 };
 export type UserEstudiante = {
   id?: string;
@@ -374,8 +376,11 @@ export type User = {
   horaInicio?: string;
   horaFinal?: string;
   datosMonitor?: any;
+  retroalimentacionDinamica?: RetroalimentacionDinamica[];
   fechaCreacion?: any;
   id?: string;
+  idFase?: string;
+  numeroEvaluacion?: number;
 };
 
 export type ConocimientoPedagogico = {
@@ -460,6 +465,7 @@ export type CrearEvaluacionDocente = {
   id?: string;
   tipoDeEvaluacion?: string;
   escala?: AlternativasDocente[];
+  camposRetroalimentacion?: string[];
 };
 
 export type PreviewPRDocentes = {
@@ -478,7 +484,18 @@ export type PRDocentes = {
   calificacion?: number;
   subOrden?: string;
   dimensionId?: string;
+  requiereEvidencia?: boolean;
+  descripcionEvidencia?: string;
+  evidencias?: Evidencia[];
 };
+
+export type Evidencia = {
+  nombre: string;
+  url: string;
+  tipo: string;
+  fechaSubida: string;
+};
+
 
 export interface AlternativasDocente {
   value?: number;
@@ -488,10 +505,26 @@ export interface AlternativasDocente {
   id?: string;
 }
 
+export type RetroalimentacionDinamica = {
+  etiqueta: string;
+  descripcion?: string;
+  contenido: string;
+};
+
+export type CampoRetroalimentacionConfig = {
+  etiqueta: string;
+  descripcion: string;
+};
+
 export type DataEvaluacion = {
   name?: string;
   categoria?: string;
   escala?: AlternativasDocente[];
+  niveles?: NivelYPuntaje[];
+  activarEvidencias?: boolean;
+  camposRetroalimentacion?: Array<string | CampoRetroalimentacionConfig>;
+  faseActualID?: string;
+  faseNombre?: string;
 };
 
 export type NivelYPuntaje = {

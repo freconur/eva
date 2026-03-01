@@ -8,7 +8,11 @@ import {
   ReporteDocenteIndividual,
   User,
   DimensionEspecialista,
+  Evidencia,
+  RetroalimentacionDinamica,
+  DataEvaluacion
 } from '../types/types';
+import { db, storage } from '@/firebase/firebase.config';
 import {
   onSnapshot,
   addDoc,
@@ -18,17 +22,20 @@ import {
   doc,
   collection,
   getDocs,
-  getFirestore,
   setDoc,
   updateDoc,
   getDoc,
   increment,
   orderBy,
+  arrayUnion,
+  arrayRemove,
+  serverTimestamp,
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AppAction } from '../actions/appAction';
 import { } from 'firebase/firestore/lite';
-import { currentMonth, currentYear } from '@/fuctions/dates';
+import { currentMonth, currentYear, getMonthName } from '@/fuctions/dates';
 import { addNoRespondioAlternative } from '../utils/addNoRespondioAlternative';
 
 // Función para calcular estadísticas de especialistas
@@ -102,8 +109,7 @@ import { useState } from 'react';
 
 const UseEvaluacionEspecialistas = () => {
   const dispatch = useGlobalContextDispatch();
-  const { currentUserData } = useGlobalContext();
-  const db = getFirestore();
+  const { currentUserData, dataEvaluacionDocente } = useGlobalContext();
 
   const [evaluacionEspecialista, setEvaluacionEspecialista] = useState<CrearEvaluacionDocente>({});
   const [dataEvaluaciones, setDataEvaluaciones] = useState<DataEstadisticas[]>([]);
@@ -201,6 +207,44 @@ const UseEvaluacionEspecialistas = () => {
       dispatch({ type: AppAction.LOADER_MODALES, payload: false });
     }
   };
+
+  const updateNivelesEvaluacion = async (idEvaluacion: string, niveles: any[]) => {
+    dispatch({ type: AppAction.LOADER_MODALES, payload: true });
+    try {
+      const pathRef = doc(db, `/evaluaciones-especialista`, idEvaluacion);
+      await updateDoc(pathRef, { niveles });
+    } catch (error) {
+      console.error("Error updating levels:", error);
+    } finally {
+      dispatch({ type: AppAction.LOADER_MODALES, payload: false });
+    }
+  };
+
+
+  const updateActivacionEvidencias = async (idEvaluacion: string, status: boolean) => {
+    dispatch({ type: AppAction.LOADER_MODALES, payload: true });
+    try {
+      const pathRef = doc(db, `/evaluaciones-especialista`, idEvaluacion);
+      await updateDoc(pathRef, { activarEvidencias: status });
+    } catch (error) {
+      console.error("Error updating evidence activation:", error);
+    } finally {
+      dispatch({ type: AppAction.LOADER_MODALES, payload: false });
+    }
+  };
+
+  const updateConfiguracionCamposRetro = async (idEvaluacion: string, campos: NonNullable<DataEvaluacion['camposRetroalimentacion']>, silent?: boolean) => {
+    if (!silent) dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
+    try {
+      const pathRef = doc(db, `/evaluaciones-especialista`, idEvaluacion);
+      await updateDoc(pathRef, { camposRetroalimentacion: campos });
+    } catch (error) {
+      console.error("Error updating feedback config:", error);
+    } finally {
+      if (!silent) dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
+    }
+  };
+
 
   const getAllReporteDeDirectoreToEspecialistas = async (
     idEvaluacion: string,
@@ -468,7 +512,7 @@ const UseEvaluacionEspecialistas = () => {
     await deleteDoc(doc(db, 'evaluaciones-especialista', id));
   };
   const addPreguntasEvaluacionEspecialistas = async (
-    data: PreviewPRDocentes & { dimensionId?: string },
+    data: PreviewPRDocentes & { dimensionId?: string, requiereEvidencia?: boolean, descripcionEvidencia?: string },
     idEvaluacion: string,
     escalaCustom?: AlternativasDocente[]
   ) => {
@@ -487,11 +531,14 @@ const UseEvaluacionEspecialistas = () => {
         criterio: data.criterio,
         order: response.size + 1,
         dimensionId: data.dimensionId || '',
+        requiereEvidencia: data.requiereEvidencia || false,
+        descripcionEvidencia: data.descripcionEvidencia || '',
       }).then((rta) => {
         dispatch({ type: AppAction.LOADER_MODALES, payload: false });
       });
     });
   };
+
 
   const getPreguntasRespuestasEspecialistas = async (idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
@@ -581,6 +628,41 @@ const UseEvaluacionEspecialistas = () => {
       dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: 'no se encontro especialista' });
     }
   };
+
+  const getTodosLosEspecialistas = async () => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    const q = query(collection(db, 'usuarios'), where('rol', '==', 1));
+    try {
+      const querySnapshot = await getDocs(q);
+      const especialistas: User[] = [];
+      querySnapshot.forEach((doc) => {
+        especialistas.push({ ...doc.data() as User, id: doc.id });
+      });
+      return especialistas;
+    } catch (error) {
+      console.error("Error fetching all specialists:", error);
+      return [];
+    } finally {
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+    }
+  };
+
+  const updateFaseEvaluacion = async (idEvaluacion: string, nombreFase: string) => {
+    dispatch({ type: AppAction.LOADER_MODALES, payload: true });
+    try {
+      const docRef = doc(db, 'evaluaciones-especialista', idEvaluacion);
+      const faseActualID = `${nombreFase.toUpperCase().replace(/\s+/g, '_')}_${Date.now()}`;
+      await updateDoc(docRef, {
+        faseActualID,
+        faseNombre: nombreFase
+      });
+    } catch (error) {
+      console.error("Error updating phase:", error);
+    } finally {
+      dispatch({ type: AppAction.LOADER_MODALES, payload: false });
+    }
+  };
+
   const buscarEspecialistaReporteDeEvaluacion = async (idEvaluacion: string, idDocente: string) => {
     console.log('currentUserData?.dni', currentUserData?.dni);
     if (idEvaluacion.length > 0 && idDocente.length > 0) {
@@ -628,40 +710,71 @@ const UseEvaluacionEspecialistas = () => {
     idEvaluacion: string,
     data: PRDocentes[],
     especialista: User,
-    avances?: string,
-    dificultades?: string,
-    compromisos?: string,
+    retroalimentacionDinamica?: RetroalimentacionDinamica[],
     fechaMonitoreo?: string,
     horaInicio?: string,
     horaFinal?: string,
-    datosMonitor?: any
+    datosMonitor?: any,
+    silent?: boolean,
+    sessionId?: string
   ) => {
 
     console.log('entrando a guardar datos')
-    dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
+    if (!silent) dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
     try {
       // Calcular la calificación del especialista
       const calificacion = calcularCalificacionEspecialista(data);
-      const path = doc(
-        db,
-        `/evaluaciones-especialista/${idEvaluacion}/evaluados`,
-        `${especialista.dni}`
-      );
+      const path = sessionId
+        ? doc(db, `/evaluaciones-especialista/${idEvaluacion}/evaluados`, sessionId)
+        : doc(collection(db, `/evaluaciones-especialista/${idEvaluacion}/evaluados`));
+
+      const finalSessionId = path.id;
+
+      // --- LOGICA SENIOR: ID DE FASE Y CONTADOR INDIVIDUAL ---
+      const nombreMes = getMonthName(currentMonth).toUpperCase();
+      const idFaseAuto = `${nombreMes}_${currentYear}`;
+
+      let idFase = dataEvaluacionDocente?.faseActualID || idFaseAuto;
+      let numeroEvaluacion = 1;
+
+      if (sessionId) {
+        // Si ya tiene sessionID, recuperamos la fase y el número que ya tenía
+        const docSnap = await getDoc(path);
+        if (docSnap.exists()) {
+          const docData = docSnap.data();
+          idFase = docData.idFase || idFase;
+          numeroEvaluacion = docData.numeroEvaluacion || 1;
+        }
+      } else {
+        // Si es nueva, calculamos el número correlativo para este especialista
+        const evaluadosRef = collection(db, `/evaluaciones-especialista/${idEvaluacion}/evaluados`);
+        const qCount = query(evaluadosRef, where("especialistaDni", "==", especialista.dni || ''));
+        const querySnapshot = await getDocs(qCount);
+        numeroEvaluacion = querySnapshot.size + 1;
+      }
 
       // Guardar la evaluación con la calificación calculada
       const dataToSave = JSON.parse(JSON.stringify({
         ...especialista,
+        especialistaDni: especialista.dni || '',
+        id: finalSessionId,
+        idFase,
+        numeroEvaluacion,
         resultadosSeguimientoRetroalimentacion: data,
         calificacion: calificacion,
-        fechaCreacion: new Date(),
-        avancesRetroalimentacion: avances || '',
-        dificultadesRetroalimentacion: dificultades || '',
-        compromisosRetroalimentacion: compromisos || '',
+        // fechaCreacion will be set below with serverTimestamp
+        avancesRetroalimentacion: retroalimentacionDinamica?.find(r => r.etiqueta === 'AVANCES')?.contenido || '',
+        dificultadesRetroalimentacion: retroalimentacionDinamica?.find(r => r.etiqueta === 'DIFICULTADES')?.contenido || '',
+        compromisosRetroalimentacion: retroalimentacionDinamica?.find(r => r.etiqueta === 'COMPROMISOS')?.contenido || '',
+        retroalimentacionDinamica: retroalimentacionDinamica || [],
         fechaMonitoreo: fechaMonitoreo || '',
         horaInicio: horaInicio || '',
         horaFinal: horaFinal || '',
         datosMonitor: datosMonitor || {},
       }));
+
+      // Inyectar serverTimestamp separadamente para evitar JSON.stringify issues
+      dataToSave.fechaCreacion = serverTimestamp();
 
       await setDoc(path, dataToSave);
 
@@ -674,10 +787,11 @@ const UseEvaluacionEspecialistas = () => {
         }, { merge: true });
       }
 
-      dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
+      return finalSessionId;
     } catch (error) {
       console.error("Error al guardar evaluación:", error);
-      dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
+    } finally {
+      if (!silent) dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
     }
   };
   const reporteEvaluacionDocenteAdmin = (idEvaluacion: string, dniDirector: string) => {
@@ -1050,7 +1164,7 @@ const UseEvaluacionEspecialistas = () => {
 
   const filtrarReporteEspecialistas = (
     dataEspecialistas: User[],
-    filtros: { region: string; genero: string; mes: string }
+    filtros: { region: string; genero: string; idFase: string }
   ) => {
     let dataFiltrada = [...dataEspecialistas];
 
@@ -1066,22 +1180,10 @@ const UseEvaluacionEspecialistas = () => {
       );
     }
 
-    if (filtros.mes) {
-      dataFiltrada = dataFiltrada.filter((especialista) => {
-        if (!especialista.fechaCreacion) return false;
-
-        // fechaCreacion could be a Firestore Timestamp or an ISO string
-        let dateString = '';
-        if (typeof especialista.fechaCreacion === 'string') {
-          dateString = especialista.fechaCreacion;
-        } else if (especialista.fechaCreacion instanceof Date) {
-          dateString = especialista.fechaCreacion.toISOString();
-        } else if ((especialista.fechaCreacion as any).toDate) {
-          dateString = (especialista.fechaCreacion as any).toDate().toISOString();
-        }
-
-        return dateString.startsWith(filtros.mes);
-      });
+    if (filtros.idFase) {
+      dataFiltrada = dataFiltrada.filter(
+        (especialista) => (especialista as any).idFase === filtros.idFase
+      );
     }
 
     const dataEstadisticasEspecialistas = calcularEstadisticasEspecialistas(dataFiltrada);
@@ -1089,6 +1191,10 @@ const UseEvaluacionEspecialistas = () => {
 
     setDataEvaluaciones(dataEstadisticasEspecialistas);
     setDataConsolidadoGlobal(consolidadoGlobal);
+    dispatch({
+      type: AppAction.DATA_FILTRADA_ESPECIALISTA_DIRECTOR_TABLA,
+      payload: dataFiltrada,
+    });
   };
 
   const getAllEvaluacionesEspecialistas = (idEvaluacion: string) => {
@@ -1142,16 +1248,31 @@ const UseEvaluacionEspecialistas = () => {
   };
 
 
-  const getDataSeguimientoRetroalimentacionEspecialista = (idEvaluacion: string, especialista: string) => {
+  const getDataSeguimientoRetroalimentacionEspecialista = (idEvaluacion: string, sessionId: string) => {
     const path = `/evaluaciones-especialista/${idEvaluacion}/evaluados/`
 
-    onSnapshot(doc(db, path, especialista), (doc) => {
+    onSnapshot(doc(db, path, sessionId), (doc) => {
       console.log("Current data: ", doc.data());
       if (doc.exists() && doc.data()) {
         setDataEspecialista(doc.data() as User);
       }
     });
   }
+
+  const getHistorialEspecialista = (idEvaluacion: string, dni: string) => {
+    const path = `/evaluaciones-especialista/${idEvaluacion}/evaluados`;
+    const q = query(collection(db, path), where('especialistaDni', '==', dni), orderBy('fechaCreacion', 'desc'));
+
+    return new Promise<User[]>((resolve) => {
+      onSnapshot(q, (querySnapshot) => {
+        const history: User[] = [];
+        querySnapshot.forEach((doc) => {
+          history.push({ ...doc.data() as User, id: doc.id });
+        });
+        resolve(history);
+      });
+    });
+  };
 
   const updateEvaluacionEspecialistaSeguimientoRetroalimentacion = async (idEvaluacion: string, especialista: string, data: User) => {
     try {
@@ -1183,8 +1304,40 @@ const UseEvaluacionEspecialistas = () => {
     }
   }
 
+  const uploadEvidencia = async (file: File, evaluacionId: string, especialistaDni: string, preguntaId: string) => {
+    try {
+      const storageRef = ref(storage, `evidencias_especialistas/${evaluacionId}/${especialistaDni}/${preguntaId}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      const nuevaEvidencia: Evidencia = {
+        nombre: file.name,
+        url: url,
+        tipo: file.type,
+        fechaSubida: new Date().toISOString()
+      };
+      return nuevaEvidencia;
+    } catch (error) {
+      console.error("Error al subir evidencia:", error);
+      throw error;
+    }
+  };
+
+  const deleteEvidencia = async (url: string) => {
+    try {
+      const storageRef = ref(storage, url);
+      await deleteObject(storageRef);
+    } catch (error) {
+      console.error("Error al eliminar evidencia:", error);
+      throw error;
+    }
+  };
+
+
+
+
   return {
     getDataSeguimientoRetroalimentacionEspecialista,
+    getHistorialEspecialista,
     updateEvaluacionEspecialistaSeguimientoRetroalimentacion,
     dataEspecialista,
     createDimensionEspecialista,
@@ -1196,11 +1349,18 @@ const UseEvaluacionEspecialistas = () => {
     getEvaluacionesEspecialistas,
     getEspecialistasEvaluados,
     deleteEvaluacionEspecilistas,
+
+    updateActivacionEvidencias,
+    uploadEvidencia,
+    deleteEvidencia,
+
     addPreguntasEvaluacionEspecialistas,
     getPreguntasRespuestasEspecialistas,
+    getPREspecialistaDirector,
     updatePreResEspecialistas,
     deletePreguntaRespuestaEspecialista,
     buscarDocente,
+
     guardarEvaluacionEspecialistas,
     getPRDocentes,
     getDataEvaluacion,
@@ -1214,14 +1374,15 @@ const UseEvaluacionEspecialistas = () => {
     resetEspecialista,
     updateEvaluacionEspecialista,
     updateEscalaEvaluacion,
+    updateNivelesEvaluacion,
     reporteEvaluacionesDirectores,
     getPreguntasRespuestasDesempeñoDirectivo,
     filtrarDataEspecialistaDirectorTabla,
     buscarDirectorReporteDeEvaluacion,
     reporteTablaEvaluacionEspecialista,
     updateEvaluacionDesempeñoDirectivo,
-    getPREspecialistaDirector,
     reporteDeEspecialistaToDirectore,
+
     getReporteDeDirectoresToEspecialistaTabla,
     evaluacionEspecialista,
     dataEvaluaciones,
@@ -1232,6 +1393,9 @@ const UseEvaluacionEspecialistas = () => {
     warning,
     setDataEspecialista,
     filtrarReporteEspecialistas,
+    updateConfiguracionCamposRetro,
+    getTodosLosEspecialistas,
+    updateFaseEvaluacion,
   };
 };
 

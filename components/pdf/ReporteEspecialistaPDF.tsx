@@ -774,10 +774,19 @@ const ReporteEspecialistaPDF = ({
             {/* ══ PÁGINA 2: Retroalimentación, Firmas ══════════════════════ */}
             <Page size="A4" style={s.page}>
 
-                {/* ── Retroalimentación ──────────────────────────────────── */}
-                <FeedbackBlock label="AVANCES" value={especialista?.avancesRetroalimentacion} />
-                <FeedbackBlock label="DIFICULTADES" value={especialista?.dificultadesRetroalimentacion} />
-                <FeedbackBlock label="COMPROMISOS" value={especialista?.compromisosRetroalimentacion} />
+                {/* ── Retroalimentación Dinámica ──────────────────────────── */}
+                {especialista?.retroalimentacionDinamica && especialista.retroalimentacionDinamica.length > 0 ? (
+                    especialista.retroalimentacionDinamica.map((item, index) => (
+                        <FeedbackBlock key={index} label={item.etiqueta} value={item.contenido} />
+                    ))
+                ) : (
+                    // Fallback para datos antiguos
+                    <>
+                        <FeedbackBlock label="AVANCES" value={especialista?.avancesRetroalimentacion} />
+                        <FeedbackBlock label="DIFICULTADES" value={especialista?.dificultadesRetroalimentacion} />
+                        <FeedbackBlock label="COMPROMISOS" value={especialista?.compromisosRetroalimentacion} />
+                    </>
+                )}
 
                 {/* ── Firmas ──────────────────────────────────────────── */}
                 <View style={s.signatureSection}>
