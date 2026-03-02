@@ -17,6 +17,8 @@ export interface ReporteEspecialistaPDFProps {
     dimensiones: DimensionEspecialista[];
     escala: AlternativasDocente[];
     ugel: string;
+    tituloReporte?: string;
+    descripcion?: string;
 }
 
 // ── Palette ──────────────────────────────────────────────────────────────────
@@ -542,6 +544,8 @@ const ReporteEspecialistaPDF = ({
     dimensiones,
     escala,
     ugel,
+    tituloReporte,
+    descripcion,
 }: ReporteEspecialistaPDFProps) => {
     const monitor = (especialista as any)?.datosMonitor ?? {};
 
@@ -582,7 +586,7 @@ const ReporteEspecialistaPDF = ({
 
                 {/* Page title */}
                 <Text style={s.pageTitle}>
-                    Ficha de Monitoreo al Especialista en el Uso del CompetenceLAB V. 2.0
+                    {descripcion ? descripcion : tituloReporte ? tituloReporte : "Ficha de Monitoreo al Especialista en el Uso del CompetenceLAB V. 2.0"}
                 </Text>
 
                 {/* ── Datos del Monitoreado ──────────────────────────────── */}

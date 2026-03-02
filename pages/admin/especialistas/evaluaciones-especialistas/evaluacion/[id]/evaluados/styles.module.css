@@ -132,6 +132,29 @@
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.selectWrapper {
+    position: relative;
+    min-width: 180px;
+}
+
+.phaseSelect {
+    width: 100%;
+    padding: 0.65rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #1e293b;
+    background: white;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+}
+
+.phaseSelect:focus {
+    border-color: #2563eb;
+}
+
 .resultCount {
     font-size: 0.85rem;
     color: #64748b;
@@ -220,6 +243,22 @@
     font-weight: 700;
     color: #1d4ed8;
     font-size: 0.9rem;
+}
+
+.scoreContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.levelBadgeMini {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 .viewButton {
@@ -404,6 +443,31 @@
     font-weight: 500;
 }
 
+.evalFaseBadge {
+    font-size: 0.7rem;
+    background: #f1f5f9;
+    color: #475569;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    margin-top: 0.25rem;
+    display: inline-block;
+}
+
+.evalScoreGroup {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.15rem;
+}
+
+.evalLevelText {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
 .evalScore {
     font-size: 0.8rem;
     color: #2563eb;
@@ -573,6 +637,40 @@
 
 .modalBody {
     padding: 2rem;
+}
+
+.modalTabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+
+.tabButton {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.tabButton:hover {
+    color: #1e293b;
+}
+
+.activeTab {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+    font-weight: 600;
+}
+
+.tabContent {
+    min-height: 350px;
 }
 
 .modalLoading {

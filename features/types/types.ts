@@ -376,6 +376,7 @@ export type User = {
   horaInicio?: string;
   horaFinal?: string;
   datosMonitor?: any;
+  tituloReporte?: string;
   retroalimentacionDinamica?: RetroalimentacionDinamica[];
   fechaCreacion?: any;
   id?: string;
@@ -525,6 +526,7 @@ export type DataEvaluacion = {
   camposRetroalimentacion?: Array<string | CampoRetroalimentacionConfig>;
   faseActualID?: string;
   faseNombre?: string;
+  descripcion?: string;
 };
 
 export type NivelYPuntaje = {

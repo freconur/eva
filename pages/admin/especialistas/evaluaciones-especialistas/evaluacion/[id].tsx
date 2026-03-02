@@ -15,6 +15,7 @@ import UpdateDimensionEspecialistas from '@/modals/UpdateDimensionEspecialistas'
 import ConfigurarEscalaEspecialistas from '@/modals/ConfigurarEscalaEspecialistas';
 import ConfigurarNivelesEspecialistas from '@/modals/ConfigurarNivelesEspecialistas';
 import ConfigurarFaseEspecialistas from '@/modals/ConfigurarFaseEspecialistas';
+import ConfigurarDescripcionEspecialistas from '@/modals/ConfigurarDescripcionEspecialistas';
 import { DimensionEspecialista } from '@/features/types/types';
 
 const EvaluacionDocente = () => {
@@ -51,6 +52,7 @@ const EvaluacionDocente = () => {
   const [dataUpdate, setDataUpdate] = useState<PRDocentes>({});
   const [showConfigDropdown, setShowConfigDropdown] = useState<boolean>(false);
   const [showConfigurarFase, setShowConfigurarFase] = useState<boolean>(false);
+  const [showConfigurarDescripcion, setShowConfigurarDescripcion] = useState<boolean>(false);
 
   const handleShowModalPreguntas = () => {
     setShowAgregarPreguntas(!showAgregarPreguntas);
@@ -72,6 +74,9 @@ const EvaluacionDocente = () => {
   };
   const handleShowConfigurarFase = () => {
     setShowConfigurarFase(!showConfigurarFase);
+  };
+  const handleShowConfigurarDescripcion = () => {
+    setShowConfigurarDescripcion(!showConfigurarDescripcion);
   };
   const handleChangeDniDocente = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValueDni(e.target.value);
@@ -156,6 +161,13 @@ const EvaluacionDocente = () => {
           idEvaluacion={`${router.query.id}`}
           faseActual={dataEvaluacionDocente?.faseNombre}
           handleShowConfigurarFase={handleShowConfigurarFase}
+        />
+      )}
+      {showConfigurarDescripcion && (
+        <ConfigurarDescripcionEspecialistas
+          idEvaluacion={`${router.query.id}`}
+          descripcionActual={dataEvaluacionDocente?.descripcion}
+          handleShowConfigurarDescripcion={handleShowConfigurarDescripcion}
         />
       )}
 
@@ -253,6 +265,15 @@ const EvaluacionDocente = () => {
                 </button>
                 <button
                   onClick={() => {
+                    handleShowConfigurarDescripcion();
+                    setShowConfigDropdown(false);
+                  }}
+                  className={styles.dropdownItem}
+                >
+                  <MdDescription /> Título PDF
+                </button>
+                <button
+                  onClick={() => {
                     handleShowModalPreguntas();
                     setShowConfigDropdown(false);
                   }}
@@ -297,6 +318,11 @@ const EvaluacionDocente = () => {
       </div>
 
       <div className={styles.content}>
+        {dataEvaluacionDocente?.descripcion && (
+          <div className={styles.evaluationDescription}>
+            <p>{dataEvaluacionDocente.descripcion}</p>
+          </div>
+        )}
         {loaderPages ? (
           <div className={styles.loaderContainer}>
             <RiLoader4Line className={styles.loaderIcon} />

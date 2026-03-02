@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { IoArrowBack } from 'react-icons/io5';
+import { IoArrowBack, IoLink } from 'react-icons/io5';
 import { RiLoader4Line } from 'react-icons/ri';
 import { MdDownload } from 'react-icons/md';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
@@ -9,6 +9,55 @@ import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialis
 import { regionTexto } from '@/fuctions/regiones';
 import { AlternativasDocente } from '@/features/types/types';
 import styles from './reporteEspecialista.module.css';
+
+const TextWithLinks = ({ text, emptyText = "Sin información registrada." }: { text: string | null | undefined, emptyText?: string }) => {
+  if (!text) return <span className={styles.empty}>{emptyText}</span>;
+
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (part.match(urlRegex)) {
+          return (
+            <a
+              key={index}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                color: '#0066CC',
+                fontWeight: 600,
+                textDecoration: 'none',
+                backgroundColor: '#F0F8FF',
+                padding: '2px 8px',
+                borderRadius: '6px',
+                border: '1px solid #CCE5FF',
+                margin: '0 4px',
+                transition: 'all 0.2s ease-in-out'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#E5F3FF';
+                e.currentTarget.style.borderColor = '#B3D7FF';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#F0F8FF';
+                e.currentTarget.style.borderColor = '#CCE5FF';
+              }}
+            >
+              <IoLink /> Enlace adjunto
+            </a>
+          );
+        }
+        return <span key={index} style={{ whiteSpace: 'pre-wrap' }}>{part}</span>;
+      })}
+    </>
+  );
+};
 
 const ReporteEspecialistaIndividual = () => {
   const router = useRouter();
@@ -74,10 +123,15 @@ const ReporteEspecialistaIndividual = () => {
               (a) => a.alternativa === alt.alternativa
             )?.selected || false,
         })),
+        evidencias: respuestaGuardada.evidencias || pregunta.evidencias || [],
+        requiereEvidencia: respuestaGuardada.requiereEvidencia !== undefined ? respuestaGuardada.requiereEvidencia : pregunta.requiereEvidencia,
       };
     }
     return pregunta;
   }) ?? [];
+
+  const hasEvidencias = !!dataEvaluacionDocente?.activarEvidencias;
+  const colSpanTotal = 2 + currentEscala.length + (hasEvidencias ? 1 : 0);
 
   const ugel: string = dataEspecialista?.region
     ? regionTexto(String(dataEspecialista.region)) ?? ''
@@ -105,6 +159,8 @@ const ReporteEspecialistaIndividual = () => {
           dimensiones={dimensionesEspecialistas ?? []}
           escala={currentEscala}
           ugel={ugel}
+          tituloReporte={dataEspecialista?.tituloReporte}
+          descripcion={dataEvaluacionDocente?.descripcion}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
@@ -262,6 +318,7 @@ const ReporteEspecialistaIndividual = () => {
                             {e.alternativa}
                           </th>
                         ))}
+                        {hasEvidencias && <th className={styles.colValue} style={{ width: '180px' }}>EVIDENCIA</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -274,7 +331,7 @@ const ReporteEspecialistaIndividual = () => {
                           return (
                             <React.Fragment key={dimension.id}>
                               <tr className={styles.dimensionRow}>
-                                <td colSpan={currentEscala.length + 2} className={styles.dimensionTitle}>
+                                <td colSpan={colSpanTotal} className={styles.dimensionTitle}>
                                   {dimension.nombre}
                                 </td>
                               </tr>
@@ -298,6 +355,31 @@ const ReporteEspecialistaIndividual = () => {
                                       </td>
                                     );
                                   })}
+                                  {hasEvidencias && (
+                                    <td className={styles.cellRadio} style={{ padding: '8px', textAlign: 'left', borderLeft: '1px solid #eee' }}>
+                                      {pregunta.requiereEvidencia ? (
+                                        pregunta.evidencias && pregunta.evidencias.length > 0 ? (
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                            {pregunta.evidencias.map((ev: any, idx: number) => (
+                                              <a
+                                                key={idx}
+                                                href={ev.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{ fontSize: '0.8rem', color: '#0066CC', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                              >
+                                                <IoLink /> {ev.nombre.length > 15 ? ev.nombre.substring(0, 15) + '...' : ev.nombre}
+                                              </a>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <span style={{ fontSize: '0.8rem', color: '#666' }}>Sin evidencia</span>
+                                        )
+                                      ) : (
+                                        <span style={{ fontSize: '0.8rem', color: '#999' }}>No requiere</span>
+                                      )}
+                                    </td>
+                                  )}
                                 </tr>
                               ))}
                             </React.Fragment>
@@ -324,6 +406,31 @@ const ReporteEspecialistaIndividual = () => {
                                 </td>
                               );
                             })}
+                            {hasEvidencias && (
+                              <td className={styles.cellRadio} style={{ padding: '8px', textAlign: 'left', borderLeft: '1px solid #eee' }}>
+                                {pregunta.requiereEvidencia ? (
+                                  pregunta.evidencias && pregunta.evidencias.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                      {pregunta.evidencias.map((ev: any, idx: number) => (
+                                        <a
+                                          key={idx}
+                                          href={ev.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          style={{ fontSize: '0.8rem', color: '#0066CC', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                        >
+                                          <IoLink /> {ev.nombre.length > 15 ? ev.nombre.substring(0, 15) + '...' : ev.nombre}
+                                        </a>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span style={{ fontSize: '0.8rem', color: '#666' }}>Sin evidencia</span>
+                                  )
+                                ) : (
+                                  <span style={{ fontSize: '0.8rem', color: '#999' }}>No requiere</span>
+                                )}
+                              </td>
+                            )}
                           </tr>
                         ))
                       )}
@@ -338,7 +445,7 @@ const ReporteEspecialistaIndividual = () => {
                       <div key={index} className={styles.feedbackGroup}>
                         <label className={styles.feedbackLabel}>{item.etiqueta}:</label>
                         <div className={styles.feedbackReadonly}>
-                          {item.contenido || <span className={styles.empty}>Sin información registrada.</span>}
+                          <TextWithLinks text={item.contenido} />
                         </div>
                       </div>
                     ))
@@ -348,25 +455,19 @@ const ReporteEspecialistaIndividual = () => {
                       <div className={styles.feedbackGroup}>
                         <label className={styles.feedbackLabel}>AVANCES:</label>
                         <div className={styles.feedbackReadonly}>
-                          {dataEspecialista?.avancesRetroalimentacion || (
-                            <span className={styles.empty}>Sin avances registrados.</span>
-                          )}
+                          <TextWithLinks text={dataEspecialista?.avancesRetroalimentacion} emptyText="Sin avances registrados." />
                         </div>
                       </div>
                       <div className={styles.feedbackGroup}>
                         <label className={styles.feedbackLabel}>DIFICULTADES:</label>
                         <div className={styles.feedbackReadonly}>
-                          {dataEspecialista?.dificultadesRetroalimentacion || (
-                            <span className={styles.empty}>Sin dificultades registradas.</span>
-                          )}
+                          <TextWithLinks text={dataEspecialista?.dificultadesRetroalimentacion} emptyText="Sin dificultades registradas." />
                         </div>
                       </div>
                       <div className={styles.feedbackGroup}>
                         <label className={styles.feedbackLabel}>COMPROMISOS:</label>
                         <div className={styles.feedbackReadonly}>
-                          {dataEspecialista?.compromisosRetroalimentacion || (
-                            <span className={styles.empty}>Sin compromisos registrados.</span>
-                          )}
+                          <TextWithLinks text={dataEspecialista?.compromisosRetroalimentacion} emptyText="Sin compromisos registrados." />
                         </div>
                       </div>
                     </>

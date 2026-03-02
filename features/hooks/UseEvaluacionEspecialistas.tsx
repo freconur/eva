@@ -233,6 +233,18 @@ const UseEvaluacionEspecialistas = () => {
     }
   };
 
+  const updateDescripcionEvaluacion = async (idEvaluacion: string, descripcion: string) => {
+    dispatch({ type: AppAction.LOADER_MODALES, payload: true });
+    try {
+      const pathRef = doc(db, `/evaluaciones-especialista`, idEvaluacion);
+      await updateDoc(pathRef, { descripcion });
+    } catch (error) {
+      console.error("Error updating description:", error);
+    } finally {
+      dispatch({ type: AppAction.LOADER_MODALES, payload: false });
+    }
+  };
+
   const updateConfiguracionCamposRetro = async (idEvaluacion: string, campos: NonNullable<DataEvaluacion['camposRetroalimentacion']>, silent?: boolean) => {
     if (!silent) dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
     try {
@@ -715,6 +727,7 @@ const UseEvaluacionEspecialistas = () => {
     horaInicio?: string,
     horaFinal?: string,
     datosMonitor?: any,
+    tituloReporte?: string,
     silent?: boolean,
     sessionId?: string
   ) => {
@@ -771,6 +784,7 @@ const UseEvaluacionEspecialistas = () => {
         horaInicio: horaInicio || '',
         horaFinal: horaFinal || '',
         datosMonitor: datosMonitor || {},
+        tituloReporte: tituloReporte || '',
       }));
 
       // Inyectar serverTimestamp separadamente para evitar JSON.stringify issues
@@ -1351,6 +1365,7 @@ const UseEvaluacionEspecialistas = () => {
     deleteEvaluacionEspecilistas,
 
     updateActivacionEvidencias,
+    updateDescripcionEvaluacion,
     uploadEvidencia,
     deleteEvidencia,
 

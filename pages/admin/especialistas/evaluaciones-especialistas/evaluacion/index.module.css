@@ -449,6 +449,7 @@
     width: 100%;
   }
 }
+
 .phaseBadge {
   display: inline-flex;
   align-items: center;
@@ -462,4 +463,25 @@
   font-size: 0.8rem;
   font-weight: 600;
   width: fit-content;
+}
+
+.evaluationDescription {
+  background: white;
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 2rem;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: var(--shadow-sm);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.evaluationDescription p {
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
 }

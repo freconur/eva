@@ -521,8 +521,8 @@ const Reportes = () => {
                           </div>
                           <div className={styles.statsGrid}>
                             <div className={styles.statItem}>
-                              <span className={styles.statLabel}>Total Respuestas</span>
-                              <span className={styles.statValue}>{dataConsolidadoGlobal?.total || 0}</span>
+                              <span className={styles.statLabel}>Total Evaluados</span>
+                              <span className={styles.statValue}>{dataFiltradaEspecialistaDirectorTabla?.length || 0}</span>
                             </div>
                             {dataEvaluacionDocente.escala?.map((item, index) => {
                               const values = [dataConsolidadoGlobal?.a, dataConsolidadoGlobal?.b, dataConsolidadoGlobal?.c, dataConsolidadoGlobal?.d];
