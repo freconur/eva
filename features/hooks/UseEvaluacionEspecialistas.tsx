@@ -181,7 +181,10 @@ const UseEvaluacionEspecialistas = () => {
   const createEvaluacionesEspecialistas = async (data: CrearEvaluacionDocente) => {
     setValueLoader(true);
     try {
-      await addDoc(collection(db, 'evaluaciones-especialista'), data);
+      await addDoc(collection(db, 'evaluaciones-especialista'), {
+        ...data,
+        active: false,
+      });
     } catch (error) {
       console.error("Error creating evaluation:", error);
     } finally {
@@ -228,6 +231,18 @@ const UseEvaluacionEspecialistas = () => {
       await updateDoc(pathRef, { activarEvidencias: status });
     } catch (error) {
       console.error("Error updating evidence activation:", error);
+    } finally {
+      dispatch({ type: AppAction.LOADER_MODALES, payload: false });
+    }
+  };
+
+  const updateEstadoEvaluacion = async (idEvaluacion: string, status: boolean) => {
+    dispatch({ type: AppAction.LOADER_MODALES, payload: true });
+    try {
+      const pathRef = doc(db, `/evaluaciones-especialista`, idEvaluacion);
+      await updateDoc(pathRef, { active: status });
+    } catch (error) {
+      console.error("Error updating evaluation state:", error);
     } finally {
       dispatch({ type: AppAction.LOADER_MODALES, payload: false });
     }
@@ -1365,6 +1380,7 @@ const UseEvaluacionEspecialistas = () => {
     deleteEvaluacionEspecilistas,
 
     updateActivacionEvidencias,
+    updateEstadoEvaluacion,
     updateDescripcionEvaluacion,
     uploadEvidencia,
     deleteEvidencia,

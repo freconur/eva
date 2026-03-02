@@ -467,6 +467,7 @@ export type CrearEvaluacionDocente = {
   tipoDeEvaluacion?: string;
   escala?: AlternativasDocente[];
   camposRetroalimentacion?: string[];
+  active?: boolean;
 };
 
 export type PreviewPRDocentes = {

@@ -41,7 +41,7 @@
 }
 
 .createIcon {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
 }
 
 .createButton:hover {
@@ -168,12 +168,20 @@
 }
 
 .actionIcon {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   cursor: pointer;
   padding: 0.4rem;
   border-radius: 0.5rem;
   transition: all 0.2s ease;
   color: #64748b;
+}
+
+.viewIcon {
+  color: #0066CC;
+}
+
+.viewOffIcon {
+  color: #94a3b8;
 }
 
 .editIcon:hover {

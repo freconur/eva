@@ -2,7 +2,7 @@ import Image from 'next/image'
 import React, { useEffect, useState } from 'react'
 import header from '@/assets/evaluacion-docente.jpg'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
-import { MdDeleteForever, MdEditSquare, MdAddCircle } from 'react-icons/md'
+import { MdDeleteForever, MdEditSquare, MdAddCircle, MdVisibility, MdVisibilityOff } from 'react-icons/md'
 import Link from 'next/link'
 import { RiLoader4Line } from 'react-icons/ri'
 import CrearEvaluacionEspecialista from '@/modals/crearEvaluacionEspecialista'
@@ -13,7 +13,7 @@ import UpdateEvaluacionEspecialista from '@/modals/updateEvaluacionEspecialista'
 import { CrearEvaluacionDocente } from '@/features/types/types'
 
 const EvaluacionesDesempeñoDocentes = () => {
-  const { getEvaluacionesEspecialistas } = UseEvaluacionEspecialistas()
+  const { getEvaluacionesEspecialistas, updateEstadoEvaluacion } = UseEvaluacionEspecialistas()
   const { evaluacionDesempeñoDocente, loaderPages } = useGlobalContext()
   const [showModalCrearEvaluacion, setShowCrearEvaluacion] = useState<boolean>(false)
   const [idEva, setIdEva] = useState<string>("")
@@ -62,6 +62,7 @@ const EvaluacionesDesempeñoDocentes = () => {
                 <th className={`${styles.tableHeaderCell} ${styles.tableHeaderCellNumber}`}>#</th>
                 <th className={styles.tableHeaderCell}>Nombre de Evaluación</th>
                 <th className={styles.tableHeaderCell}>Categoría</th>
+                <th className={styles.tableHeaderCell}>Activo</th>
                 <th className={styles.tableHeaderCell}></th>
               </tr>
             </thead>
@@ -83,6 +84,23 @@ const EvaluacionesDesempeñoDocentes = () => {
                     <span className={styles.categoryBadge}>
                       {evaluacion.categoria}
                     </span>
+                  </td>
+                  <td className={styles.tableCell}>
+                    <div className={styles.actionsCell} style={{ justifyContent: 'center' }}>
+                      {evaluacion.active ? (
+                        <MdVisibility
+                          onClick={() => updateEstadoEvaluacion(evaluacion.id!, false)}
+                          className={`${styles.actionIcon} ${styles.viewIcon}`}
+                          title="Desactivar (Ocultar para especialistas)"
+                        />
+                      ) : (
+                        <MdVisibilityOff
+                          onClick={() => updateEstadoEvaluacion(evaluacion.id!, true)}
+                          className={`${styles.actionIcon} ${styles.viewOffIcon}`}
+                          title="Activar (Visible para especialistas)"
+                        />
+                      )}
+                    </div>
                   </td>
                   <td className={styles.tableCell}>
                     <div className={styles.actionsCell}>

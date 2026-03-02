@@ -40,31 +40,33 @@ const AutoreporteEspecialista = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {evaluacionDesempeñoDocente?.map((evaluacion, index) => (
-                                <tr key={evaluacion.id || index} className={styles.tableRow}>
-                                    <td className={`${styles.tableCell} ${styles.tableCellNumber}`}>
-                                        {index + 1}
-                                    </td>
-                                    <td className={styles.tableCell}>
-                                        {evaluacion.name}
-                                    </td>
-                                    <td className={styles.tableCell}>
-                                        {evaluacion.categoria && (
-                                            <span className={styles.categoryBadge}>
-                                                {evaluacion.categoria}
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className={styles.tableCell}>
-                                        <Link
-                                            href={`/admin/especialistas/evaluaciones-especialistas/evaluacion/evaluar-especialista?id=${evaluacion.id}`}
-                                            className={styles.viewButton}
-                                        >
-                                            Ver evaluación
-                                        </Link>
-                                    </td>
-                                </tr>
-                            ))}
+                            {evaluacionDesempeñoDocente
+                                ?.filter(evaluacion => evaluacion.active === true)
+                                .map((evaluacion, index) => (
+                                    <tr key={evaluacion.id || index} className={styles.tableRow}>
+                                        <td className={`${styles.tableCell} ${styles.tableCellNumber}`}>
+                                            {index + 1}
+                                        </td>
+                                        <td className={styles.tableCell}>
+                                            {evaluacion.name}
+                                        </td>
+                                        <td className={styles.tableCell}>
+                                            {evaluacion.categoria && (
+                                                <span className={styles.categoryBadge}>
+                                                    {evaluacion.categoria}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className={styles.tableCell}>
+                                            <Link
+                                                href={`/admin/especialistas/evaluaciones-especialistas/evaluacion/evaluar-especialista?id=${evaluacion.id}`}
+                                                className={styles.viewButton}
+                                            >
+                                                Ver evaluación
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))}
                         </tbody>
                     </table>
                 </div>

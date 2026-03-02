@@ -120,7 +120,7 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                 </li>
 
                 {/* Docentes */}
-                {!currentUserData.nivelDeInstitucion?.includes(2) && (
+                {/* {!currentUserData.nivelDeInstitucion?.includes(2) && (
                   <li className={styles.menuItem}>
                     <div className={styles.menuHeader} onClick={(e) => {
                       e.stopPropagation();
@@ -135,7 +135,7 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                       <li><Link href="/especialistas/cobertura-curricular-master" className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/cobertura-curricular-master') ? styles.activeLink : ''}`}>Cobertura curricular</Link></li>
                     </ul>
                   </li>
-                )}
+                )}  */}
 
                 {/* Docentes (Usuarios) */}
                 <li className={styles.menuItem}>
