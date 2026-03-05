@@ -286,6 +286,37 @@
   font-weight: 800;
   color: #1e293b;
   letter-spacing: 0.025em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.updateButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #3b82f6;
+  color: white;
+  border: 1px solid #2563eb;
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-transform: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.updateButton:hover {
+  background-color: #2563eb;
+  border-color: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.updateButton svg {
+  font-size: 1.1rem;
 }
 
 .infoTable {

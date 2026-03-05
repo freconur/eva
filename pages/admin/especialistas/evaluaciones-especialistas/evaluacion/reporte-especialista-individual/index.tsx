@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { IoArrowBack, IoLink } from 'react-icons/io5';
 import { RiLoader4Line } from 'react-icons/ri';
-import { MdDownload } from 'react-icons/md';
+import { MdDownload, MdUpdate } from 'react-icons/md';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas';
 import { regionTexto } from '@/fuctions/regiones';
@@ -68,6 +68,7 @@ const ReporteEspecialistaIndividual = () => {
     dimensionesEspecialistas,
     dataEvaluacionDocente,
     loaderSalvarPregunta,
+    currentUserData,
   } = useGlobalContext();
 
   const {
@@ -76,6 +77,7 @@ const ReporteEspecialistaIndividual = () => {
     getDimensionesEspecialistas,
     getDataSeguimientoRetroalimentacionEspecialista,
     dataEspecialista,
+    updateMonitorEvaluation,
   } = UseEvaluacionEspecialistas();
 
   const [pdfGenerating, setPdfGenerating] = useState(false);
@@ -106,7 +108,9 @@ const ReporteEspecialistaIndividual = () => {
   const currentEscala: AlternativasDocente[] =
     dataEvaluacionDocente?.escala && dataEvaluacionDocente.escala.length > 0
       ? dataEvaluacionDocente.escala
-      : defaultEscala;
+      : getPreguntaRespuestaDocentes?.[0]?.alternativas && getPreguntaRespuestaDocentes[0].alternativas.length > 0
+        ? getPreguntaRespuestaDocentes[0].alternativas
+        : defaultEscala;
 
   // Merge respuestas del especialista sobre las preguntas base
   const preguntasConRespuestas = getPreguntaRespuestaDocentes?.map((pregunta) => {
@@ -136,6 +140,25 @@ const ReporteEspecialistaIndividual = () => {
   const ugel: string = dataEspecialista?.region
     ? regionTexto(String(dataEspecialista.region)) ?? ''
     : dataEspecialista?.ugel ?? '';
+
+  const handleUpdateMonitor = async () => {
+    if (!idEvaluacion || !currentUserData) return;
+    const confirmUpdate = window.confirm(
+      '¿Estás seguro de que deseas actualizar masivamente los nombres y apellidos del monitor en TODOS los evaluados de esta evaluación?'
+    );
+    if (!confirmUpdate) return;
+
+    try {
+      const monitorData = {
+        apellidos: currentUserData.apellidos || '',
+        nombres: currentUserData.nombres || '',
+      };
+      await updateMonitorEvaluation(`${idEvaluacion}`, monitorData as any);
+      alert('Datos del monitor actualizados masivamente en todos los evaluados.');
+    } catch (error) {
+      alert('Error al realizar la actualización masiva.');
+    }
+  };
 
   const monitor = (dataEspecialista as any)?.datosMonitor ?? {};
 
@@ -254,7 +277,17 @@ const ReporteEspecialistaIndividual = () => {
                   </div>
 
                   {/* ── Datos del Monitor ─────────────────────────────── */}
-                  <div className={styles.infoSectionDivider}>DATOS DEL MONITOR:</div>
+                  <div className={styles.infoSectionDivider}>
+                    <span>DATOS DEL MONITOR:</span>
+                    <button
+                      onClick={handleUpdateMonitor}
+                      className={styles.updateButton}
+                      title="Actualizar con mis datos"
+                      type="button"
+                    >
+                      <MdUpdate style={{ fontSize: '1.1rem' }} /> Actualizar Monitor
+                    </button>
+                  </div>
 
                   <div className={styles.infoTable}>
                     <div className={styles.infoRow}>
@@ -272,7 +305,7 @@ const ReporteEspecialistaIndividual = () => {
                       </div>
                       <div className={styles.infoRowItem}>
                         <div className={styles.infoLabelSmall}>CARGO:</div>
-                        <div className={styles.infoValueSmall}>{monitor.cargo || 'MONITOR'}</div>
+                        <div className={styles.infoValueSmall}>MONITOR</div>
                       </div>
                       <div className={styles.verticalRowItem}>
                         <div className={styles.labelVertical}>E-MAIL:</div>
@@ -313,9 +346,9 @@ const ReporteEspecialistaIndividual = () => {
                       <tr>
                         <th className={styles.colNumber}>№</th>
                         <th className={styles.colCriterio}>CRITERIO</th>
-                        {currentEscala.map((e) => (
-                          <th key={e.alternativa} className={styles.colValue}>
-                            {e.alternativa}
+                        {currentEscala.map((e, index) => (
+                          <th key={e.id || e.alternativa || index} className={styles.colValue}>
+                            {e.value !== undefined ? e.value : e.alternativa}
                           </th>
                         ))}
                         {hasEvidencias && <th className={styles.colValue} style={{ width: '180px' }}>EVIDENCIA</th>}
@@ -339,11 +372,11 @@ const ReporteEspecialistaIndividual = () => {
                                 <tr key={pregunta.id} className={styles.questionRow}>
                                   <td className={styles.cellNumber}>{pregunta.order}</td>
                                   <td className={styles.cellCriterio}>{pregunta.criterio}</td>
-                                  {currentEscala.map((e) => {
+                                  {currentEscala.map((e, index) => {
                                     const val = e.alternativa || '';
                                     const alt = pregunta.alternativas?.find((a) => a.alternativa === val);
                                     return (
-                                      <td key={val} className={styles.cellRadio}>
+                                      <td key={e.id || e.alternativa || index} className={styles.cellRadio}>
                                         <input
                                           type="radio"
                                           name={`q-${pregunta.id}`}
@@ -390,11 +423,11 @@ const ReporteEspecialistaIndividual = () => {
                           <tr key={pregunta.id} className={styles.questionRow}>
                             <td className={styles.cellNumber}>{index + 1}</td>
                             <td className={styles.cellCriterio}>{pregunta.criterio}</td>
-                            {currentEscala.map((e) => {
+                            {currentEscala.map((e, index) => {
                               const val = e.alternativa || '';
                               const alt = pregunta.alternativas?.find((a) => a.alternativa === val);
                               return (
-                                <td key={val} className={styles.cellRadio}>
+                                <td key={e.id || e.alternativa || index} className={styles.cellRadio}>
                                   <input
                                     type="radio"
                                     name={`q-${pregunta.id}`}

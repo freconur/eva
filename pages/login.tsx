@@ -57,7 +57,7 @@ const Login = () => {
             />
           </div>
           <div className={styles.titleContainer}>
-            <h1 className={styles.title}>BIENVENIDO AL COMPETENCE</h1>
+            <h1 className={styles.title}>BIENVENIDO A COMPETENCE</h1>
             <p className={styles.subtitle}>
               Plataforma integral para el seguimiento y evaluación del desarrollo de competencias, con las mejores herramientas digitales actualizadas.
             </p>

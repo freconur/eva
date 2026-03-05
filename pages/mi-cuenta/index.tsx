@@ -1,14 +1,20 @@
 import PrivateRoute from '@/components/layouts/PrivateRoutesAdmin'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import styles from './micuenta.module.css'
 import { FaUserCircle } from 'react-icons/fa'
+import ModalUpdateCliente from '@/modals/ModalUpdateCliente'
+import useUsuario from '@/features/hooks/useUsuario'
 
 const MiCuenta = () => {
   const { currentUserData } = useGlobalContext()
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const { getUserData } = useUsuario()
 
   useEffect(() => {
   }, [currentUserData.dni])
+
+  const isClient = currentUserData.perfil?.rol === 4
 
   return (
     <div className={styles.container}>
@@ -20,6 +26,14 @@ const MiCuenta = () => {
           <div className={styles.headerContent}>
             <p className={styles.welcomeText}>Bienvenido a tu cuenta</p>
             <h1 className={styles.userName}>{currentUserData.nombres} {currentUserData.apellidos}</h1>
+            {isClient && (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className={styles.editButton}
+              >
+                Editar nombres y apellidos
+              </button>
+            )}
           </div>
         </div>
         <div className={styles.content}>
@@ -49,6 +63,13 @@ const MiCuenta = () => {
           </div>
         </div>
       </div>
+      {isModalOpen && (
+        <ModalUpdateCliente
+          userData={currentUserData}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={() => getUserData()}
+        />
+      )}
     </div>
   )
 }

@@ -653,10 +653,10 @@ const ReporteEspecialistaPDF = ({
                 <View style={s.legendBlock}>
                     <Text style={s.legendTitle}>Escala de valoración</Text>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                        {escala.map((e) => (
-                            <View key={String(e.alternativa)} style={s.legendRow}>
+                        {escala.map((e, index) => (
+                            <View key={e.id || e.alternativa || String(index)} style={s.legendRow}>
                                 <Text style={s.legendBullet}>•</Text>
-                                <Text style={s.legendTextBold}>{e.alternativa}</Text>
+                                <Text style={s.legendTextBold}>{e.value !== undefined ? e.value : e.alternativa}</Text>
                                 <Text style={s.legendText}>{' = '}{e.descripcion}</Text>
                             </View>
                         ))}
@@ -670,8 +670,8 @@ const ReporteEspecialistaPDF = ({
                         <View style={s.thNumber}><Text style={s.thText}>№</Text></View>
                         <View style={s.thCriterio}><Text style={s.thText}>Criterio</Text></View>
                         {escala.map((e, i) => (
-                            <View key={String(e.alternativa)} style={i < escala.length - 1 ? s.thValue : s.thValueLast}>
-                                <Text style={s.thText}>{e.alternativa}</Text>
+                            <View key={e.id || e.alternativa || String(i)} style={i < escala.length - 1 ? s.thValue : s.thValueLast}>
+                                <Text style={s.thText}>{e.value !== undefined ? e.value : e.alternativa}</Text>
                             </View>
                         ))}
                     </View>
@@ -703,7 +703,7 @@ const ReporteEspecialistaPDF = ({
                                                     )?.selected;
                                                     return (
                                                         <View
-                                                            key={String(e.alternativa)}
+                                                            key={e.id || e.alternativa || String(ei)}
                                                             style={ei < escala.length - 1 ? s.tdRadio : s.tdRadioLast}
                                                         >
                                                             {isSelected
@@ -736,7 +736,7 @@ const ReporteEspecialistaPDF = ({
                                         )?.selected;
                                         return (
                                             <View
-                                                key={String(e.alternativa)}
+                                                key={e.id || e.alternativa || String(ei)}
                                                 style={ei < escala.length - 1 ? s.tdRadio : s.tdRadioLast}
                                             >
                                                 {isSelected
@@ -760,17 +760,6 @@ const ReporteEspecialistaPDF = ({
                         {' '}e ingresando la siguiente clave:{' '}
                         <Text style={s.footerLegalBold}>90VDMPT&quot;</Text>
                     </Text>
-                    <View style={s.footerQrPlaceholder}>
-                        <Text style={{ fontSize: 5, color: '#94a3b8' }}>QR</Text>
-                    </View>
-                    <View style={{ width: 90 }}>
-                        <Text style={s.footerAddress}>
-                            Jr. Bustamante Dueñas 881 - Urb II{'\n'}Etapa Chanu Chanu – Puno
-                        </Text>
-                        <Text style={{ ...s.footerAddress, marginTop: 4 }}>
-                            <Text style={s.footerAddressBold}>Nro. Exp: </Text>
-                        </Text>
-                    </View>
                 </View>
 
             </Page>
@@ -810,7 +799,6 @@ const ReporteEspecialistaPDF = ({
 
                 {/* ── Footer fijo — aparece en todas las páginas */}
                 <View style={s.footer} fixed>
-                    {/* Texto legal */}
                     <Text style={s.footerLegal}>
                         <Text style={s.footerLegalBold}>&quot;</Text>
                         Esta es una representación impresa cuya autenticidad puede ser contrastada con la representación imprimible localizada en la sede digital del Gobierno Regional Puno, aplicando lo dispuesto por el Art. 25 de D.S. 070–2013-PCM y la Tercera Disposición Complementaria Final del D.S. 026-2016-PCM. Su autenticidad e integridad pueden ser contrastadas a través de la siguiente dirección web:{' '}
@@ -818,21 +806,6 @@ const ReporteEspecialistaPDF = ({
                         {' '}e ingresando la siguiente clave:{' '}
                         <Text style={s.footerLegalBold}>90VDMPT&quot;</Text>
                     </Text>
-
-                    {/* QR placeholder */}
-                    <View style={s.footerQrPlaceholder}>
-                        <Text style={{ fontSize: 5, color: '#94a3b8' }}>QR</Text>
-                    </View>
-
-                    {/* Dirección */}
-                    <View style={{ width: 90 }}>
-                        <Text style={s.footerAddress}>
-                            Jr. Bustamante Dueñas 881 - Urb II{`\n`}Etapa Chanu Chanu – Puno
-                        </Text>
-                        <Text style={{ ...s.footerAddress, marginTop: 4 }}>
-                            <Text style={s.footerAddressBold}>Nro. Exp: </Text>
-                        </Text>
-                    </View>
                 </View>
 
             </Page>

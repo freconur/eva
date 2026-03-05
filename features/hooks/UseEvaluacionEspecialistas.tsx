@@ -28,6 +28,7 @@ import {
   increment,
   orderBy,
   arrayUnion,
+  writeBatch,
   arrayRemove,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -1360,8 +1361,29 @@ const UseEvaluacionEspecialistas = () => {
       throw error;
     }
   };
+  const updateAllMonitorsInEvaluation = async (idEvaluacion: string, monitorData: { apellidos: string, nombres: string }) => {
+    try {
+      dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
+      const path = `/evaluaciones-especialista/${idEvaluacion}/evaluados/`;
+      const colRef = collection(db, path);
+      const snapshot = await getDocs(colRef);
 
+      const batch = writeBatch(db);
+      snapshot.forEach((docSnap) => {
+        batch.update(docSnap.ref, {
+          'datosMonitor.apellidos': monitorData.apellidos,
+          'datosMonitor.nombres': monitorData.nombres
+        });
+      });
 
+      await batch.commit();
+    } catch (error) {
+      console.error("Error al actualizar monitores masivamente:", error);
+      throw error;
+    } finally {
+      dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
+    }
+  };
 
 
   return {
@@ -1427,6 +1449,7 @@ const UseEvaluacionEspecialistas = () => {
     updateConfiguracionCamposRetro,
     getTodosLosEspecialistas,
     updateFaseEvaluacion,
+    updateMonitorEvaluation: updateAllMonitorsInEvaluation,
   };
 };
 
