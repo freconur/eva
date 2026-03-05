@@ -301,7 +301,7 @@ const ReporteEspecialistaIndividual = () => {
                     <div className={styles.infoRowGroup}>
                       <div className={styles.infoRowItem}>
                         <div className={styles.infoLabelSmall}>DNI:</div>
-                        <div className={styles.infoValueSmall}>{monitor.dni || <span className={styles.empty}>—</span>}</div>
+                        <div className={styles.infoValueSmall}>43139017</div>
                       </div>
                       <div className={styles.infoRowItem}>
                         <div className={styles.infoLabelSmall}>CARGO:</div>

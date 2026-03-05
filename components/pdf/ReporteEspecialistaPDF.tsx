@@ -623,7 +623,7 @@ const ReporteEspecialistaPDF = ({
                     {/* DNI | CARGO | EMAIL | CELULAR */}
                     <View style={s.infoRowLast}>
                         <View style={s.labelCellSmall}><Text style={s.labelText}>DNI:</Text></View>
-                        <View style={s.valueCellBordered}><Text style={s.valueTextSmall}>{val(monitor.dni)}</Text></View>
+                        <View style={s.valueCellBordered}><Text style={s.valueTextSmall}>43139017</Text></View>
                         <View style={s.labelCellSmall}><Text style={s.labelText}>CARGO:</Text></View>
                         <View style={s.valueCellBordered}><Text style={s.valueTextSmall}>{val(monitor.cargo, 'MONITOR')}</Text></View>
                         <View style={s.labelCellSmall}><Text style={s.labelText}>E-MAIL:</Text></View>
