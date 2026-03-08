@@ -278,6 +278,7 @@ export type Evaluacion = {
   tipoDeEvaluacion?: string;
   nivelYPuntaje?: NivelYPuntaje[];
   idDocente?: string;
+  añoDelExamen?: string;
   usuariosConPermisos?: string[];
   usuariosConPermisosUgel?: string[];
   activarEvidencias?: boolean;
@@ -297,6 +298,7 @@ export type UserEstudiante = {
   puntaje?: number;
   respuestas?: PreguntasRespuestas[];
   respuestasIncorrectas?: number;
+  dniDirector?: string;
 };
 
 export type Estudiante = {
@@ -314,6 +316,7 @@ export type Estudiante = {
   grado?: number | string;
   seccion?: string;
   genero?: string;
+  dniDirector?: string;
 };
 
 export type AsignacionGradoSeccion = {

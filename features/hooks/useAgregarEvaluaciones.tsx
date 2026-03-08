@@ -235,7 +235,7 @@ export const useAgregarEvaluaciones = () => {
 
     const rutaEstudiantesEvaluados = collection(
       db,
-      `/usuarios/${currentUserData.dni}/${evaluacion.id}/${currentYear}/${month}/`
+      `/usuarios/${currentUserData.dni}/${evaluacion.id}/${evaluacion.añoDelExamen || currentYear}/${month}/`
     );
     const rutaEstudiantesRef = collection(
       db,
@@ -669,9 +669,13 @@ export const useAgregarEvaluaciones = () => {
 
     //guarda la informacion para el propio docente
     /* const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`); */
+    const año = evaluacion.añoDelExamen || currentYear.toString();
+    const añoDocRef = doc(db, `usuarios/${currentUserData.dni}/${idEvaluacion}/${año}`);
+    await setDoc(añoDocRef, { existe: true }, { merge: true });
+
     const rutaRef = doc(
       db,
-      `usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${evaluacion.mesDelExamen}/${data.dni}`
+      `usuarios/${currentUserData.dni}/${idEvaluacion}/${año}/${evaluacion.mesDelExamen}/${data.dni}`
     );
 
     await setDoc(rutaRef, {
@@ -684,6 +688,7 @@ export const useAgregarEvaluaciones = () => {
       respuestasCorrectas: respuestasCorrectas,
       totalPreguntas: sizePreguntas,
       respuestas: pqConAlternativasAleatorias,
+      dniDirector: currentUserData?.dniDirector || '',
     });
     const rutaCrearEstudiante = doc(
       db,
@@ -696,11 +701,12 @@ export const useAgregarEvaluaciones = () => {
       grado: `${data.grado}`,
       seccion: `${data.seccion}`,
       genero: `${data.genero}`,
+      dniDirector: currentUserData?.dniDirector || '',
     });
 
     const rutaEstudianteParaEvaluacion = doc(
       db,
-      `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${currentYear}/${evaluacion.mesDelExamen}`,
+      `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${evaluacion.añoDelExamen || currentYear}/${evaluacion.mesDelExamen}`,
       `${data.dni}`
     );
     // Incluir las respuestas en el objeto data antes de calcular el nivel
@@ -723,6 +729,7 @@ export const useAgregarEvaluaciones = () => {
           respuestas: pqConAlternativasAleatorias,
           region: currentUserData.region,
           dniDocente: currentUserData.dni,
+          dniDirector: currentUserData?.dniDirector || '',
         };
         // Solo agregar puntaje y nivel si tienen datos válidos
         if (
@@ -750,7 +757,10 @@ export const useAgregarEvaluaciones = () => {
     if (evaluacion.tipoDeEvaluacion === '0') {
 
       try {
-        await setDoc(rutaEstudianteParaEvaluacion, dataConRespuestas);
+        await setDoc(rutaEstudianteParaEvaluacion, {
+          ...dataConRespuestas,
+          dniDirector: currentUserData?.dniDirector || '',
+        });
       } catch (error) {
         console.log('error', error);
       } finally {
