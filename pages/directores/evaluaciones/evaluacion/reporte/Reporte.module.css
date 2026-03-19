@@ -8,7 +8,7 @@
 
 .selectContainer {
   display: flex;
-  justify-content: space-between;
+  justify-content: start;
   align-items: center;
   gap: 1rem;
   /* padding: 1.5rem;

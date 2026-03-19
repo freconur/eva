@@ -117,15 +117,52 @@
   border: 1px solid #d1d5db;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #6b7280;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  color: #27292d;
+  font-weight: 700;
 }
 
 .questionButton:hover {
   background: #f3f4f6;
   border-color: #9ca3af;
-  color: #374151;
+  color: #27292d;
+  font-weight: 700;
+}
+
+.nivelText {
+  padding: 4px 10px;
+  border-radius: 12px;
+  background-color: #f3f4f6;
+  color: #27292d;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.nivelSatisfactorio {
+  background-color: var(--satisfactorio);
+  color: #ffffff;
+}
+
+.nivelEnProceso {
+  background-color: var(--en-proceso);
+  color: #ffffff;
+}
+
+.nivelEnInicio {
+  background-color: var(--inicio);
+  color: #ffffff;
+}
+
+.nivelPrevioInicio {
+  background-color: var(--previo-al-inicio);
+  color: #ffffff;
+}
+
+.nivelSinClasificar {
+  background-color: #f3f4f6;
+  color: #6b7280;
 }
 
 .questionButton:focus {
@@ -274,10 +311,11 @@
   align-items: center;
   transition: all 0.2s;
   border-radius: 4px;
-  font-weight: 500;
   color: #065f46;
   min-width: 25px;
   border: 1px solid #a7f3d0;
+  text-transform: uppercase;
+  font-weight: 700;
 }
 
 .correctAnswer:hover {
@@ -285,6 +323,8 @@
 }
 
 .incorrectAnswer {
+  font-weight: 700;
+  text-transform: uppercase;
   font-size: 0.75rem;
   background-color: #fee2e2;
   width: 100%;
@@ -294,7 +334,6 @@
   align-items: center;
   transition: all 0.2s;
   border-radius: 4px;
-  font-weight: 500;
   color: #991b1b;
   min-width: 25px;
   border: 1px solid #fecaca;
@@ -322,9 +361,10 @@
 
 /* Links */
 .studentLink {
-  color: #3b82f6;
+  color: #0248ba;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 700;
+  text-transform: uppercase;
   transition: color 0.2s;
 }
 

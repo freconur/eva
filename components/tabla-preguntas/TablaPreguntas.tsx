@@ -54,7 +54,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
   /* console.log('tablaestudiantes',estudiantes); */
   // Estado para la paginación
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // Estado para el popover estático
   const [activePopover, setActivePopover] = useState<string | null>(null);
   const [isPopoverVisible, setIsPopoverVisible] = useState(false);
@@ -138,6 +138,20 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
     }
   };
 
+  // Función para obtener la clase CSS según el nivel
+  const getNivelClass = (nivel?: string) => {
+    if (!nivel || nivel === '-' || nivel === 'sin clasificar') return styles.nivelSinClasificar;
+
+    const lowerNivel = nivel.toLowerCase();
+
+    if (lowerNivel.includes('satisfactorio')) return styles.nivelSatisfactorio;
+    if (lowerNivel.includes('proceso')) return styles.nivelEnProceso;
+    if (lowerNivel.includes('previo')) return styles.nivelPrevioInicio;
+    if (lowerNivel.includes('inicio')) return styles.nivelEnInicio;
+
+    return styles.nivelSinClasificar;
+  };
+
   // Efecto para manejar la animación de fade del popover
   useEffect(() => {
     if (activePopover) {
@@ -184,101 +198,105 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
         ) : (
           <>
             <div className={className.includes('tableWrapper') ? className : ''}>
-            <table className={styles.table}>
-              <thead className={styles.tableHeader}>
-                <tr>
-                  {showDeleteButton && onDeleteEstudiante && <th></th>}
-                  <th>#</th>
-                  <th>N-A</th>
-                  { currentUserData.rol === 2 && <th>Dni Docente</th>}
-                  <th>r.c</th>
-                  <th>t.p.</th>
-                  {hasValidPuntaje() && <th>puntaje</th>}
-                  {hasValidNivel() && <th>nivel</th>}
-                  {preguntasRespuestas.map((pr, index) => {
-                    const popoverId = `${pr.order || index}`;
-                    
-                    return (
-                      <th key={pr.order || index}>
-                        <button 
-                          className={styles.questionButton} 
-                          onClick={() => handlePopoverToggle(popoverId)}
-                        >
-                          {index + 1}
-                        </button>
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody className={styles.tableBody}>
-                {!warningEvaEstudianteSinRegistro ? (
-                  paginationData.currentStudents?.map((estudiante, index) => {
-                    // Crear una clave única combinando DNI, índice y timestamp para evitar duplicados
-                    const uniqueRowKey = `${estudiante.dni || 'no-dni'}-${paginationData.startIndex + index}-${Date.now()}`;
-                    
-                    return (
-                      <tr key={uniqueRowKey}>
-                        {showDeleteButton && onDeleteEstudiante && (
-                          <td>
-                            <MdDeleteForever
-                              onClick={() => handleDeleteClick(estudiante.dni)}
-                              className={styles.deleteIcon}
-                              title="Eliminar estudiante"
-                            />
-                          </td>
-                        )}
-                        <td>{paginationData.startIndex + index + 1}</td>
-                        <td>
-                          {showEditButton && linkToEdit && estudiante.dni ? (
-                            <Link
-                              href={`${linkToEdit}&idEstudiante=${estudiante.dni}`}
-                              className={styles.studentLink}
-                            >
-                              {estudiante.nombresApellidos || 'Sin nombre'}
-                            </Link>
-                          ) : (
-                            <span className={styles.studentName}>
-                              {estudiante.nombresApellidos || 'Sin nombre'}
-                            </span>
-                          )}
-                        </td>
-                        { currentUserData.rol === 2 && <td><span className={styles.dniDocenteText}>{estudiante.dniDocente}</span></td>}
-                        <td>{estudiante.respuestasCorrectas || 0}</td>
-                        <td>{estudiante.totalPreguntas || 0}</td>
-                        {hasValidPuntaje() && <td>{estudiante.puntaje || '-'}</td>}
-                        {hasValidNivel() && <td>{estudiante.nivel || '-'}</td>}
-                        {estudiante.respuestas?.map((res, resIndex) => {
-                          // Crear una clave única para cada celda de respuesta
-                          const uniqueCellKey = `${uniqueRowKey}-respuesta-${res.id || resIndex}-${res.order || resIndex}`;
-                          return <td key={uniqueCellKey}>{handleValidateRespuesta(res)}</td>;
-                        })}
-                      </tr>
-                    );
-                  })
-                ) : (
+              <table className={styles.table}>
+                <thead className={styles.tableHeader}>
                   <tr>
-                    <td colSpan={preguntasRespuestas.length + (showDeleteButton && onDeleteEstudiante ? 6 : 5) + (hasValidPuntaje() ? 1 : 0) + (hasValidNivel() ? 1 : 0)}>
-                      <div className={styles.warningContainer}>
-                        {warningEvaEstudianteSinRegistro}
-                      </div>
-                    </td>
+                    {showDeleteButton && onDeleteEstudiante && <th></th>}
+                    <th>#</th>
+                    <th>N-A</th>
+                    {currentUserData.rol === 2 && <th>Dni Docente</th>}
+                    <th>r.c</th>
+                    <th>t.p.</th>
+                    {hasValidPuntaje() && <th>puntaje</th>}
+                    {hasValidNivel() && <th>nivel</th>}
+                    {preguntasRespuestas.map((pr, index) => {
+                      const popoverId = `${pr.order || index}`;
+
+                      return (
+                        <th key={pr.order || index}>
+                          <button
+                            className={styles.questionButton}
+                            onClick={() => handlePopoverToggle(popoverId)}
+                          >
+                            {index + 1}
+                          </button>
+                        </th>
+                      );
+                    })}
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className={styles.tableBody}>
+                  {!warningEvaEstudianteSinRegistro ? (
+                    paginationData.currentStudents?.map((estudiante, index) => {
+                      // Crear una clave única combinando DNI, índice y timestamp para evitar duplicados
+                      const uniqueRowKey = `${estudiante.dni || 'no-dni'}-${paginationData.startIndex + index}-${Date.now()}`;
+
+                      return (
+                        <tr key={uniqueRowKey}>
+                          {showDeleteButton && onDeleteEstudiante && (
+                            <td>
+                              <MdDeleteForever
+                                onClick={() => handleDeleteClick(estudiante.dni)}
+                                className={styles.deleteIcon}
+                                title="Eliminar estudiante"
+                              />
+                            </td>
+                          )}
+                          <td>{paginationData.startIndex + index + 1}</td>
+                          <td>
+                            {showEditButton && linkToEdit && estudiante.dni ? (
+                              <Link
+                                href={`${linkToEdit}&idEstudiante=${estudiante.dni}`}
+                                className={styles.studentLink}
+                              >
+                                {estudiante.nombresApellidos || 'Sin nombre'}
+                              </Link>
+                            ) : (
+                              <span className={styles.studentName}>
+                                {estudiante.nombresApellidos || 'Sin nombre'}
+                              </span>
+                            )}
+                          </td>
+                          {currentUserData.rol === 2 && <td><span className={styles.dniDocenteText}>{estudiante.dniDocente}</span></td>}
+                          <td>{estudiante.respuestasCorrectas || 0}</td>
+                          <td>{estudiante.totalPreguntas || 0}</td>
+                          {hasValidPuntaje() && <td>{estudiante.puntaje || '-'}</td>}
+                          {hasValidNivel() && <td>
+                            <div className={`${styles.nivelText} ${getNivelClass(estudiante.nivel)}`}>
+                              {estudiante.nivel || '-'}
+                            </div>
+                          </td>}
+                          {estudiante.respuestas?.map((res, resIndex) => {
+                            // Crear una clave única para cada celda de respuesta
+                            const uniqueCellKey = `${uniqueRowKey}-respuesta-${res.id || resIndex}-${res.order || resIndex}`;
+                            return <td key={uniqueCellKey}>{handleValidateRespuesta(res)}</td>;
+                          })}
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={preguntasRespuestas.length + (showDeleteButton && onDeleteEstudiante ? 6 : 5) + (hasValidPuntaje() ? 1 : 0) + (hasValidNivel() ? 1 : 0)}>
+                        <div className={styles.warningContainer}>
+                          {warningEvaEstudianteSinRegistro}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </>
         )}
       </div>
-      
+
       {/* Controles de paginación - Completamente fuera del contenedor de la tabla */}
       {!hasNoStudents && !warningEvaEstudianteSinRegistro && paginationData.totalPages > 1 && (
         <div className={styles.paginationContainer}>
           <div className={styles.paginationInfo}>
             Mostrando {paginationData.startIndex + 1} - {Math.min(paginationData.endIndex, paginationData.totalItems)} de {paginationData.totalItems} estudiantes
           </div>
-          
+
           <div className={styles.paginationControls}>
             <button
               className={`${styles.paginationArrow} ${currentPage === 1 ? styles.disabled : ''}`}
@@ -287,7 +305,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
             >
               ‹
             </button>
-            
+
             <div className={styles.pageNumbers}>
               {Array.from({ length: paginationData.totalPages }, (_, i) => i + 1).map((page) => (
                 <button
@@ -299,7 +317,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                 </button>
               ))}
             </div>
-            
+
             <button
               className={`${styles.paginationArrow} ${currentPage === paginationData.totalPages ? styles.disabled : ''}`}
               onClick={() => handlePageChange(currentPage + 1)}
@@ -310,7 +328,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
           </div>
         </div>
       )}
-      
+
       {/* Popover fuera del contenedor principal - usando React Portal */}
       {shouldRenderPopover && (
         <div
@@ -325,7 +343,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                 </span>
               </div>
               <div className={styles.headerRight}>
-                <button 
+                <button
                   className={styles.closeButton}
                   onClick={(e) => {
                     e.stopPropagation();

@@ -25,11 +25,11 @@ export const useReporteDirectores = () => {
   const db = getFirestore();
   const [estudiantes, setEstudiantes] = useState<UserEstudiante[]>([]);
   const [evaluacionesEstudiantesDirector, setEvaluacionesEstudiantesDirector] = useState<UserEstudiante[]>([]);
-  const [ promedioGlobal, setPromedioGlobal ] = useState<PromedioGlobalPorMes[]>([])
+  const [promedioGlobal, setPromedioGlobal] = useState<PromedioGlobalPorMes[]>([])
   const [mesesConDataDisponibles, setMesesConDataDisponibles] = useState<number[]>([]);
-  const [ datosPorMes, setDatosPorMes ] = useState<GraficoTendenciaNiveles[]>([])
-  const [ warning, setWarning ] = useState<string>("")
-  const [ isLoading, setIsLoading ] = useState<boolean>(false)
+  const [datosPorMes, setDatosPorMes] = useState<GraficoTendenciaNiveles[]>([])
+  const [warning, setWarning] = useState<string>("")
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
 
   const loadingGraficos = (value: boolean) => {
@@ -47,12 +47,13 @@ export const useReporteDirectores = () => {
     dispatch({ type: AppAction.GRADOS, payload: grados });
     return grados;
   };
-  const getAllEvaluacionesDeEstudiantesPorMes = async (evaluacion: Evaluacion) => {
+
+  const getAllEvaluacionesDeEstudiantesPorMes = async (evaluacion: Evaluacion, year: number) => {
     try {
-      loadingGraficos(true)
-      const mesesConData: number[] = [];
+      loadingGraficos(true);
+      setMesesConDataDisponibles([]); // Reset available months
       const evaluacionesEstudiantesDirector: UserEstudiante[] = [];
-      
+
       const q = query(
         collection(db, 'usuarios'),
         where('dniDirector', '==', `${currentUserData.dni}`)
@@ -67,7 +68,7 @@ export const useReporteDirectores = () => {
         const promesasResultadosDelDirector = docentesDelDirector.map(async (docente) => {
           const pathRef = collection(
             db,
-            `/usuarios/${docente}/${evaluacion.id}/${currentYear}/${mes.id}`
+            `/usuarios/${docente}/${evaluacion.id}/${year}/${mes.id}`
           );
           const snapshot = await getAggregateFromServer(pathRef, {
             total: count(),
@@ -87,11 +88,11 @@ export const useReporteDirectores = () => {
           }
           return [];
         });
-        
+
         // Esperar a que todas las promesas del mes se resuelvan
         const resultados = await Promise.all(promesasResultadosDelDirector);
         const estudiantesDelMes = resultados.flat();
-        
+
         // Verificar si hay datos en estudiantesDelMes y agregar el mes.id a mesesConDataDisponibles
         if (estudiantesDelMes && estudiantesDelMes.length > 0) {
           setMesesConDataDisponibles(prevMeses => {
@@ -101,10 +102,10 @@ export const useReporteDirectores = () => {
             return prevMeses;
           });
         }
-        
+
         // Agregar estudiantes al array principal
         evaluacionesEstudiantesDirector.push(...estudiantesDelMes);
-        
+
         // Aplicar cálculos a los estudiantes del mes
         estudiantesDelMes.forEach((estudiante) => {
           calculoPreguntasCorrectas(estudiante);
@@ -118,14 +119,14 @@ export const useReporteDirectores = () => {
         });
         setPromedioGlobal(prevData => {
           const otrosMeses = prevData.filter(item => item.mes !== mes.id);
-          return [...otrosMeses, { 
-            mes: mes.id, 
+          return [...otrosMeses, {
+            mes: mes.id,
             totalEstudiantes: promedioGlobalDelMes.totalEstudiantes,
             promedioGlobal: promedioGlobalDelMes.promedioGlobal
           }];
         });
       }
-      
+
       // Actualizar el estado con los datos obtenidos
       setEvaluacionesEstudiantesDirector(evaluacionesEstudiantesDirector);
     } catch (error) {
@@ -138,6 +139,7 @@ export const useReporteDirectores = () => {
   const getAllEvaluacionesDeEstudiantes = async (
     idEvaluacion: string,
     month: number,
+    year: number,
     evaluacion: Evaluacion
   ) => {
     try {
@@ -158,7 +160,7 @@ export const useReporteDirectores = () => {
       const promesasEvaluaciones = docentesDelDirector.map(async (docente) => {
         const pathRefEstudiantes = collection(
           db,
-          `/usuarios/${docente}/${idEvaluacion}/${currentYear}/${month}`
+          `/usuarios/${docente}/${idEvaluacion}/${year}/${month}`
         );
         const snapshot = await getDocs(pathRefEstudiantes);
         const evaluacionesDocente: UserEstudiante[] = [];
@@ -256,10 +258,11 @@ export const useReporteDirectores = () => {
   const reporteDirectorEstudiantes = async (
     idEvaluacion: string,
     month: number,
+    year: number,
     currentUserData: User,
     evaluacion: Evaluacion
   ) => {
-    const estudiantes = await getAllEvaluacionesDeEstudiantes(idEvaluacion, month, evaluacion);
+    const estudiantes = await getAllEvaluacionesDeEstudiantes(idEvaluacion, month, year, evaluacion);
     const acumuladoPorPregunta: Record<
       string,
       { id: string; a: number; b: number; c: number; d?: number; total: number }
@@ -321,7 +324,7 @@ export const useReporteDirectores = () => {
     const myDirector = await getDoc(doc(db, `usuarios`, `${currentUserData.dni}`));
     myDirector.exists() &&
       (await setDoc(
-        doc(db, `evaluaciones/${idEvaluacion}/${currentYear}-${month}`, `${currentUserData.dni}`),
+        doc(db, `evaluaciones/${idEvaluacion}/${year}-${month}`, `${currentUserData.dni}`),
         {
           ...myDirector.data(),
           reporteEstudiantes: resultado,
@@ -650,9 +653,9 @@ export const useReporteDirectores = () => {
                         doc.data().d === undefined
                           ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
                           : Number(doc.data().a) +
-                            Number(doc.data().b) +
-                            Number(doc.data().c) +
-                            Number(doc.data().d),
+                          Number(doc.data().b) +
+                          Number(doc.data().c) +
+                          Number(doc.data().d),
                     })
                   );
 
@@ -671,9 +674,9 @@ export const useReporteDirectores = () => {
                         doc.data().d === undefined
                           ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
                           : Number(doc.data().a) +
-                            Number(doc.data().b) +
-                            Number(doc.data().c) +
-                            Number(doc.data().d),
+                          Number(doc.data().b) +
+                          Number(doc.data().c) +
+                          Number(doc.data().d),
                     })
                   );
                   // if(doc.data().d === undefined)
@@ -871,9 +874,9 @@ export const useReporteDirectores = () => {
                           doc.data().d === undefined
                             ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
                             : Number(doc.data().a) +
-                              Number(doc.data().b) +
-                              Number(doc.data().c) +
-                              Number(doc.data().d),
+                            Number(doc.data().b) +
+                            Number(doc.data().c) +
+                            Number(doc.data().d),
                       })
                     );
                     console.log(
@@ -893,9 +896,9 @@ export const useReporteDirectores = () => {
                           doc.data().d === undefined
                             ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
                             : Number(doc.data().a) +
-                              Number(doc.data().b) +
-                              Number(doc.data().c) +
-                              Number(doc.data().d),
+                            Number(doc.data().b) +
+                            Number(doc.data().c) +
+                            Number(doc.data().d),
                       })
                     );
                     dataEstadisticasRegionales

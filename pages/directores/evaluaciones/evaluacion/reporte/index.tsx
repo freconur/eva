@@ -49,13 +49,24 @@ const Reporte = () => {
   });
   const [loadingMonth, setLoadingMonth] = useState<boolean>(false);
   const [estudiantesOriginales, setEstudiantesOriginales] = useState<UserEstudiante[]>([]);
+  const [yearSelected, setYearSelected] = useState<number>(new Date().getFullYear());
+
+  const yearsAvailable = useMemo(() => {
+    const startYear = 2025;
+    const endYear = new Date().getFullYear();
+    const years = [];
+    for (let i = startYear; i <= endYear; i++) {
+      years.push(i);
+    }
+    return years;
+  }, []);
 
 
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFiltros({
       ...filtros,
       [e.target.name]: e.target.value,
-    });
+    } as any);
   };
 
   const handleLimpiarFiltros = () => {
@@ -65,12 +76,12 @@ const Reporte = () => {
       orden: '',
       genero: '',
     });
-    
+
     // Restaurar todos los estudiantes originales
     const estudiantesARestaurar = estudiantesOriginales.length > 0 ? estudiantesOriginales : estudiantes;
-    dispatch({ 
-      type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, 
-      payload: estudiantesARestaurar 
+    dispatch({
+      type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA,
+      payload: estudiantesARestaurar
     });
     setEstudiantes(estudiantesARestaurar);
   };
@@ -108,6 +119,17 @@ const Reporte = () => {
     isLoading,
     filtrosParaReporteDirector
   } = useReporteDirectores();
+
+  const availableSections = useMemo(() => {
+    const baseList = estudiantesOriginales.length > 0 ? estudiantesOriginales : estudiantes;
+    if (!baseList || baseList.length === 0) return [];
+
+    // Extraer IDs de secciones únicas de los estudiantes cargados originalmente para el mes/año
+    const uniqueSectionIds = Array.from(new Set(baseList.map(e => String(e.seccion))));
+
+    // Filtrar la lista maestra de secciones para incluir solo las que tienen datos
+    return sectionByGrade.filter(seccion => uniqueSectionIds.includes(String(seccion.id)));
+  }, [estudiantesOriginales, estudiantes]);
   const {
     currentUserData,
     reporteDirector,
@@ -238,68 +260,81 @@ const Reporte = () => {
     getEvaluacion(`${route.query.idEvaluacion}`);
   }, [currentUserData.dni, route.query.idEvaluacion]);
 
-  const handleFiltrar = () => {
-    // Verificar si hay filtros seleccionados
-    const hayFiltrosSeleccionados = filtros.grado || filtros.seccion || filtros.genero || filtros.orden;
-    
-    // Usar estudiantes originales como base para el filtrado
-    const baseEstudiantes = estudiantesOriginales.length > 0 ? estudiantesOriginales : estudiantes;
-    
-    if (hayFiltrosSeleccionados && baseEstudiantes.length > 0) {
-      // Aplicar filtros usando la función del hook
-      const estudiantesFiltrados = filtrosParaReporteDirector(baseEstudiantes, filtros);
-      
-      // Actualizar el estado global con los datos filtrados
-      dispatch({ 
-        type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, 
-        payload: estudiantesFiltrados 
-      });
-      
-      // También actualizar el estado local de estudiantes para que se refleje en la tabla
-      setEstudiantes(estudiantesFiltrados);
-    } else {
-      // Si no hay filtros, restaurar todos los estudiantes originales
-      const estudiantesARestaurar = estudiantesOriginales.length > 0 ? estudiantesOriginales : baseEstudiantes;
-      dispatch({ 
-        type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, 
-        payload: estudiantesARestaurar 
-      });
-      setEstudiantes(estudiantesARestaurar);
-    }
-  };
+  // Filtrado automático cuando cambian los filtros
   useEffect(() => {
-    currentUserData.dni &&
+    const hayFiltrosSeleccionados = filtros.grado || filtros.seccion || filtros.genero || filtros.orden;
+    const baseEstudiantes = estudiantesOriginales.length > 0 ? estudiantesOriginales : estudiantes;
+
+    if (hayFiltrosSeleccionados && baseEstudiantes.length > 0) {
+      const estudiantesFiltrados = filtrosParaReporteDirector(baseEstudiantes, filtros);
+
+      dispatch({
+        type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA,
+        payload: estudiantesFiltrados
+      });
+      setEstudiantes(estudiantesFiltrados);
+    } else if (!hayFiltrosSeleccionados && estudiantesOriginales.length > 0) {
+      // Si se limpian los filtros, restaurar los originales
+      dispatch({
+        type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA,
+        payload: estudiantesOriginales
+      });
+      setEstudiantes(estudiantesOriginales);
+    }
+  }, [filtros, estudiantesOriginales]);
+
+  useEffect(() => {
+    if (currentUserData.dni && evaluacion.id) {
       reporteDirectorEstudiantes(
         `${route.query.idEvaluacion}`,
         monthSelected,
+        yearSelected,
         currentUserData,
         evaluacion
       );
-    
-    
-  }, [route.query.id, route.query.idEvaluacion, currentUserData.dni]);
-useEffect(() => {
-  getGrados();
-},[])
-  useEffect(() => {
-    getAllEvaluacionesDeEstudiantesPorMes(evaluacion);
-  }, [evaluacion.id]);
-
-  // Guardar estudiantes originales cuando se cargan
-  useEffect(() => {
-    if (estudiantes.length > 0 && estudiantesOriginales.length === 0) {
-      setEstudiantesOriginales([...estudiantes]);
     }
-  }, [estudiantes, estudiantesOriginales.length]);
+  }, [route.query.idEvaluacion, currentUserData.dni, yearSelected, monthSelected, evaluacion.id]);
+  useEffect(() => {
+    getGrados();
+  }, [])
+  useEffect(() => {
+    if (evaluacion.id) {
+      getAllEvaluacionesDeEstudiantesPorMes(evaluacion, yearSelected);
+    }
+  }, [evaluacion.id, yearSelected]);
+
+  // Asegurar que el mes seleccionado sea válido para el nuevo año
+  useEffect(() => {
+    if (mesesConDataDisponibles.length > 0) {
+      if (!mesesConDataDisponibles.includes(monthSelected)) {
+        // Si el mes actual no tiene datos en el nuevo año, seleccionar el primero disponible
+        setMonthSelected(mesesConDataDisponibles[0]);
+      }
+    } else {
+      // Opcional: si no hay datos en ningún mes, se podría resetear o dejar como está
+    }
+  }, [mesesConDataDisponibles, yearSelected]);
+
+  // Guardar estudiantes originales cuando se cargan y resetearlos cuando cambian (ej. al cambiar de mes o año)
+  useEffect(() => {
+    if (estudiantes.length > 0) {
+      // Solo actualizar estudiantesOriginales si NO hay filtros activos
+      // para evitar capturar una lista ya filtrada como "original"
+      const hayFiltrosActivos = filtros.grado || filtros.seccion || filtros.genero || filtros.orden;
+      if (!hayFiltrosActivos) {
+        setEstudiantesOriginales([...estudiantes]);
+      }
+    }
+  }, [estudiantes]);
 
 
-console.log('estudiantes', estudiantes);
+  console.log('estudiantes', estudiantes);
 
   const handleChangeMonth = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     setLoadingMonth(true);
     const selectedMonth = getAllMonths.find((mes) => mes.name === e.target.value);
     const newMonth = selectedMonth ? selectedMonth.id : currentMonth;
-    
+
     // Limpiar las imágenes de gráficos cuando cambie el mes
     limpiarImagenes();
     // Limpiar filtros cuando cambie el mes
@@ -315,14 +350,11 @@ console.log('estudiantes', estudiantes);
     try {
       // Actualizar el mes seleccionado
       setMonthSelected(newMonth);
-      
+
       // La función reporteDirectorEstudiantes se ejecutará automáticamente 
       // por el useEffect que depende de monthSelected
-      // Solo necesitamos esperar un momento para que se complete
-      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
       console.error('Error al cambiar mes:', error);
-    } finally {
       setLoadingMonth(false);
     }
   };
@@ -332,22 +364,23 @@ console.log('estudiantes', estudiantes);
       reporteDirectorEstudiantes(
         `${route.query.idEvaluacion}`,
         monthSelected,
+        yearSelected,
         currentUserData,
         evaluacion
       ).finally(() => {
         setLoadingMonth(false);
       });
     }
-  }, [monthSelected, currentUserData.dni, evaluacion.id]);
+  }, [monthSelected, yearSelected, currentUserData.dni, evaluacion.id]);
 
   // Crear un mapa optimizado de preguntas por ID para evitar búsquedas repetidas O(1) en lugar de O(n)
-  
+
 
   // Memorizar las preguntas ordenadas por la propiedad order
- 
+
 
   // Hook para generar PDF con imágenes
-  
+
   return (
     <>
       {loaderReporteDirector ? (
@@ -395,13 +428,27 @@ console.log('estudiantes', estudiantes);
               <div className={styles.selectWrapper}>
                 <select
                   className={styles.select}
+                  onChange={(e) => setYearSelected(Number(e.target.value))}
+                  value={yearSelected}
+                >
+                  {yearsAvailable.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.selectWrapper}>
+                <select
+                  className={styles.select}
                   onChange={handleChangeMonth}
                   value={getAllMonths[monthSelected]?.name || ''}
                   disabled={loadingMonth}
                   id=""
                 >
                   <option value="">Mes</option>
-                  {getAllMonths.slice(0, currentMonth + 1).map((mes) => (
+                  {getAllMonths.filter(mes => mesesConDataDisponibles.includes(mes.id)).map((mes) => (
                     <option key={mes.id} value={mes.name}>
                       {mes.name}
                     </option>
@@ -432,7 +479,7 @@ console.log('estudiantes', estudiantes);
                 className={styles.select}
               >
                 <option value="">Sección</option>
-                {sectionByGrade.map((seccion) => (
+                {availableSections.map((seccion) => (
                   <option key={seccion.id} value={seccion.id}>
                     {seccion.name.toUpperCase()}
                   </option>
@@ -459,65 +506,62 @@ console.log('estudiantes', estudiantes);
                   </option>
                 ))}
               </select>
-              <button className={styles.filterButton} onClick={handleFiltrar}>
-                Filtrar
-              </button>
               <button className={styles.clearButton} onClick={handleLimpiarFiltros}>
-                Limpiar
+                Limpiar Filtros
               </button>
             </div>
 
-           
-          <TablaPreguntas
-            estudiantes={estudiantes}
-            preguntasRespuestas={preguntasRespuestas}
-            warningEvaEstudianteSinRegistro={undefined}
-            /* warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined} */
 
-            linkToEdit={`/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`}
-            customColumns={{
-              showPuntaje: hasValidPuntaje(),
-              showNivel: hasValidNivel(),
-            }}
-            className={styles.tableWrapper}
-          />
-        
-          {isLoading ? (
-            <div className={styles.loaderContainer}>
-              <Loader 
-                size="large" 
-                variant="spinner" 
-                text="Cargando datos..." 
-                color="#10b981"
-              />
-            </div>
-          ) : (
-            <>
-              {evaluacion.tipoDeEvaluacion === '1' ? (
-                <div className={styles.graficosContainer}>
-                  <GraficoTendenciaColegio
-                    evaluacion={evaluacion}
-                    datosPorMes={datosPorMes}
-                    mesesConDataDisponibles={mesesConDataDisponibles}
-                    promedioGlobal={promedioGlobal}
-                    monthSelected={monthSelected}
-                    dataGraficoTendenciaNiveles={[
-                      generarDataGraficoPiechart(estudiantes, monthSelected, evaluacion),
-                    ]}
-                  />
-                </div>
-              ) : null}
-              <ReporteEvaluacionPorPregunta
-                dataEstadisticasOrdenadas={reporteDirectorOrdenado}
-                preguntasMap={preguntasMap}
-                detectarNumeroOpciones={detectarNumeroOpciones}
-                warningEvaEstudianteSinRegistro={ undefined}
-                convertirGraficoAImagen={convertirGraficoAImagen}
-              />
-            </>
-          )}
+            {isLoading || loadingMonth ? (
+              <div className={styles.loaderContainer}>
+                <Loader
+                  size="large"
+                  variant="spinner"
+                  text="Cargando datos..."
+                  color="#10b981"
+                />
+              </div>
+            ) : (
+              <>
+                <TablaPreguntas
+                  estudiantes={estudiantes}
+                  preguntasRespuestas={preguntasRespuestas}
+                  warningEvaEstudianteSinRegistro={undefined}
+                  /* warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined} */
+
+                  linkToEdit={`/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`}
+                  customColumns={{
+                    showPuntaje: hasValidPuntaje(),
+                    showNivel: hasValidNivel(),
+                  }}
+                  className={styles.tableWrapper}
+                />
+
+                {evaluacion.tipoDeEvaluacion === '1' ? (
+                  <div className={styles.graficosContainer}>
+                    <GraficoTendenciaColegio
+                      evaluacion={evaluacion}
+                      datosPorMes={datosPorMes}
+                      mesesConDataDisponibles={mesesConDataDisponibles}
+                      promedioGlobal={promedioGlobal}
+                      monthSelected={monthSelected}
+                      dataGraficoTendenciaNiveles={[
+                        generarDataGraficoPiechart(estudiantes, monthSelected, evaluacion),
+                      ]}
+                    />
+                  </div>
+                ) : null}
+                <ReporteEvaluacionPorPregunta
+                  dataEstadisticasOrdenadas={reporteDirectorOrdenado}
+                  preguntasMap={preguntasMap}
+                  detectarNumeroOpciones={detectarNumeroOpciones}
+                  warningEvaEstudianteSinRegistro={undefined}
+                  convertirGraficoAImagen={convertirGraficoAImagen}
+                />
+              </>
+            )}
           </div>
-          
+
         </div>
       )}
     </>

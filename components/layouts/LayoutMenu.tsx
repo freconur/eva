@@ -30,49 +30,49 @@ const LayoutMenu = ({ children }: Props) => {
     if (currentUserData.perfil?.rol === 1) {
       return (
         <>
-          <div className={styles.logoContainer}>
+          {/* <div className={styles.logoContainer}>
             <Image
               alt="logo formativa"
               src={logo}
               width={80}
               height={80}
             />
-          </div>
+          </div> */}
           <SidebarEspecialistas showSidebar={showSidebar} />
         </>
       )
     } else if (currentUserData.perfil?.rol === 2) {
       return (
         <>
-          <div className={styles.logoContainer}>
+          {/* <div className={styles.logoContainer}>
             <Image
               alt="logo formativa"
               src={logo}
               width={80}
               height={80}
             />
-          </div>
+          </div> */}
           <SidebarDirectores showSidebar={showSidebar} />
         </>
       )
     } else if (currentUserData.perfil?.rol === 3) {
       return (
         <>
-          <div className={styles.logoContainer}>
+          {/* <div className={styles.logoContainer}>
             <Image
               alt="logo formativa"
               src={logo}
               width={80}
               height={80}
             />
-          </div>
+          </div> */}
           <SidebarDocentes showSidebar={showSidebar} />
         </>
       )
     } else if (currentUserData.perfil?.rol === 4 || currentUserData.perfil?.rol === 5) {
       return (
         <>
-          <div className={styles.logoContainer}>
+          {/* <div className={styles.logoContainer}>
             <Image
               priority
               alt="logo formativa"
@@ -80,7 +80,7 @@ const LayoutMenu = ({ children }: Props) => {
               width={80}
               height={80}
             />
-          </div>
+          </div> */}
           <SidebarAdmin showSidebar={showSidebar} />
         </>
       )
