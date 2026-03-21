@@ -12,13 +12,14 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { DataEstadisticas, Evaluacion, Grades, GraficoTendenciaNiveles, PromedioGlobalPorMes, Region, User, UserEstudiante } from '../types/types';
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AppAction } from '../actions/appAction';
 import { currentMonth, currentYear, getAllMonths } from '@/fuctions/dates';
 import { calculoNivel, calculoNivelProgresivo, calculoPreguntasCorrectas, calculoPromedioGlobalPorGradoEvaluacionPRogresiva } from '../utils/calculoNivel';
 import { generarDataGraficoPiechart } from '../utils/generar-data-grafico-piechart';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 export const useReporteDirectores = () => {
   const dispatch = useGlobalContextDispatch();
   const { currentUserData } = useGlobalContext();
@@ -51,87 +52,26 @@ export const useReporteDirectores = () => {
   const getAllEvaluacionesDeEstudiantesPorMes = async (evaluacion: Evaluacion, year: number) => {
     try {
       loadingGraficos(true);
-      setMesesConDataDisponibles([]); // Reset available months
-      const evaluacionesEstudiantesDirector: UserEstudiante[] = [];
+      const functions = getFunctions();
+      const getReporte = httpsCallable(functions, 'getReporteDirector');
 
-      const q = query(
-        collection(db, 'usuarios'),
-        where('dniDirector', '==', `${currentUserData.dni}`)
-      );
-      const queryDocentesDelDirector = await getDocs(q);
-      const docentesDelDirector: string[] = [];
-      queryDocentesDelDirector.forEach((doc) => {
-        docentesDelDirector.push(doc.id);
+      const response: any = await getReporte({
+        idEvaluacion: evaluacion.id,
+        year: year,
+        dniDirector: currentUserData.dni,
       });
 
-      for (const mes of getAllMonths) {
-        const promesasResultadosDelDirector = docentesDelDirector.map(async (docente) => {
-          const pathRef = collection(
-            db,
-            `/usuarios/${docente}/${evaluacion.id}/${year}/${mes.id}`
-          );
-          const snapshot = await getAggregateFromServer(pathRef, {
-            total: count(),
-          });
-          const estudiantesDelMes: UserEstudiante[] = [];
-          if (snapshot.data().total > 0) {
-            // Usar getDocs en lugar de onSnapshot para obtener datos estáticos
-            const docsSnapshot = await getDocs(pathRef);
-            docsSnapshot.forEach((doc) => {
-              estudiantesDelMes.push(doc.data() as UserEstudiante);
-            });
-            estudiantesDelMes.forEach((estudiante) => {
-              calculoNivel(estudiante, evaluacion);
-              calculoPreguntasCorrectas(estudiante);
-            });
-            return estudiantesDelMes;
-          }
-          return [];
-        });
-
-        // Esperar a que todas las promesas del mes se resuelvan
-        const resultados = await Promise.all(promesasResultadosDelDirector);
-        const estudiantesDelMes = resultados.flat();
-
-        // Verificar si hay datos en estudiantesDelMes y agregar el mes.id a mesesConDataDisponibles
-        if (estudiantesDelMes && estudiantesDelMes.length > 0) {
-          setMesesConDataDisponibles(prevMeses => {
-            if (!prevMeses.includes(mes.id)) {
-              return [...prevMeses, mes.id];
-            }
-            return prevMeses;
-          });
+      if (response.data.success) {
+        setMesesConDataDisponibles(response.data.mesesDisponibles || []);
+        if (response.data.datosPorMes) {
+          setDatosPorMes(response.data.datosPorMes);
         }
-
-        // Agregar estudiantes al array principal
-        evaluacionesEstudiantesDirector.push(...estudiantesDelMes);
-
-        // Aplicar cálculos a los estudiantes del mes
-        estudiantesDelMes.forEach((estudiante) => {
-          calculoPreguntasCorrectas(estudiante);
-        });
-
-        const resultadosProgresivo = calculoNivelProgresivo(estudiantesDelMes, evaluacion)
-        const promedioGlobalDelMes = calculoPromedioGlobalPorGradoEvaluacionPRogresiva(estudiantesDelMes);
-        setDatosPorMes(prevData => {
-          const otrosMeses = prevData.filter(item => item.mes !== mes.id);
-          return [...otrosMeses, { mes: mes.id, niveles: resultadosProgresivo }];
-        });
-        setPromedioGlobal(prevData => {
-          const otrosMeses = prevData.filter(item => item.mes !== mes.id);
-          return [...otrosMeses, {
-            mes: mes.id,
-            totalEstudiantes: promedioGlobalDelMes.totalEstudiantes,
-            promedioGlobal: promedioGlobalDelMes.promedioGlobal
-          }];
-        });
+        if (response.data.promedioGlobal) {
+          setPromedioGlobal(response.data.promedioGlobal);
+        }
       }
-
-      // Actualizar el estado con los datos obtenidos
-      setEvaluacionesEstudiantesDirector(evaluacionesEstudiantesDirector);
     } catch (error) {
-      console.error('Error en getAllEvaluacionesDeEstudiantesPorMes:', error);
-      throw error;
+      console.error('Error en getAllEvaluacionesDeEstudiantesPorMes (CF):', error);
     } finally {
       setIsLoading(false);
     }
@@ -215,7 +155,7 @@ export const useReporteDirectores = () => {
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: false });
     }
   };
-  const filtrosParaReporteDirector = (estudiantes: UserEstudiante[], filtros: {
+  const filtrosParaReporteDirector = useCallback((estudiantes: UserEstudiante[], filtros: {
     grado: string;
     seccion: string;
     orden: string;
@@ -254,7 +194,7 @@ export const useReporteDirectores = () => {
     }
 
     return estudiantesFiltrados;
-  }
+  }, []);
   const reporteDirectorEstudiantes = async (
     idEvaluacion: string,
     month: number,
@@ -262,74 +202,43 @@ export const useReporteDirectores = () => {
     currentUserData: User,
     evaluacion: Evaluacion
   ) => {
-    const estudiantes = await getAllEvaluacionesDeEstudiantes(idEvaluacion, month, year, evaluacion);
-    const acumuladoPorPregunta: Record<
-      string,
-      { id: string; a: number; b: number; c: number; d?: number; total: number }
-    > = {};
-    console.log('estudiantes', estudiantes.length);
-    estudiantes.forEach((estudiante) => {
-      if (estudiante.respuestas && Array.isArray(estudiante.respuestas)) {
-        estudiante.respuestas.forEach((respuesta) => {
-          const idPregunta = String(respuesta.id);
-          if (!idPregunta) return;
-          // Detectar si la alternativa 'd' existe en esta pregunta
-          let tieneD = false;
-          if (respuesta.alternativas && Array.isArray(respuesta.alternativas)) {
-            tieneD = respuesta.alternativas.some((alt) => alt.alternativa === 'd');
-          }
-          if (!acumuladoPorPregunta[idPregunta]) {
-            acumuladoPorPregunta[idPregunta] = tieneD
-              ? { id: idPregunta, a: 0, b: 0, c: 0, d: 0, total: 0 }
-              : { id: idPregunta, a: 0, b: 0, c: 0, total: 0 };
-          }
-          if (respuesta.alternativas && Array.isArray(respuesta.alternativas)) {
-            respuesta.alternativas.forEach((alternativa) => {
-              if (alternativa.selected) {
-                switch (alternativa.alternativa) {
-                  case 'a':
-                    acumuladoPorPregunta[idPregunta].a += 1;
-                    break;
-                  case 'b':
-                    acumuladoPorPregunta[idPregunta].b += 1;
-                    break;
-                  case 'c':
-                    acumuladoPorPregunta[idPregunta].c += 1;
-                    break;
-                  case 'd':
-                    if (typeof acumuladoPorPregunta[idPregunta].d === 'number') {
-                      acumuladoPorPregunta[idPregunta].d! += 1;
-                    }
-                    break;
-                  default:
-                    break;
-                }
-              }
-            });
-          }
-        });
-      }
-    });
-    Object.values(acumuladoPorPregunta).forEach((obj) => {
-      obj.total = obj.a + obj.b + obj.c + (typeof obj.d === 'number' ? obj.d : 0);
-    });
-    const resultado = Object.values(acumuladoPorPregunta);
-    console.log('acumulado por pregunta', resultado);
-    dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: resultado });
+    try {
+      loadingGraficos(true);
+      const functions = getFunctions();
+      const getReporte = httpsCallable(functions, 'getReporteDirector');
 
-    //enviaremos el valor de resultado a la base de datos de los directores
-    //collection    /    documento     /    subcollection  /    documento  /    subcollection  /    documento
-    //evaluaciones  /id de la evaluacion/    año y mes     / todos los directores
-    console.log('currentUserData', currentUserData);
-    const myDirector = await getDoc(doc(db, `usuarios`, `${currentUserData.dni}`));
-    myDirector.exists() &&
-      (await setDoc(
-        doc(db, `evaluaciones/${idEvaluacion}/${year}-${month}`, `${currentUserData.dni}`),
-        {
-          ...myDirector.data(),
-          reporteEstudiantes: resultado,
-        }
-      ));
+      const response: any = await getReporte({
+        idEvaluacion,
+        month,
+        year,
+        dniDirector: currentUserData.dni,
+      });
+
+      if (response.data.success) {
+        const { estudiantes: alumnos, estadisticas, mesesDisponibles, datosPorMes: trendData, promedioGlobal: avgData } = response.data;
+
+        setEstudiantes(alumnos);
+        setMesesConDataDisponibles(mesesDisponibles || []);
+
+        if (trendData) setDatosPorMes(trendData);
+        if (avgData) setPromedioGlobal(avgData);
+
+        dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: estadisticas });
+
+        // Mantener sincronizado el contexto global (opcional dependiendo de si se usa en otros lados)
+        dispatch({
+          type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR,
+          payload: alumnos,
+        });
+
+        // Persistir si es necesario (el CF ya podría hacerlo, pero mantengamos la compatibilidad por ahora si se desea)
+        // No obstante, si el CF ya devolvió los datos, el ahorro principal ya ocurrió.
+      }
+    } catch (error) {
+      console.error('Error en reporteDirectorEstudiantes (CF):', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const reporteDirectorData = async (idDirector: string, idEvaluacion: string) => {

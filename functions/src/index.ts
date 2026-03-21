@@ -20,6 +20,7 @@ export { borrarUsuario } from './borrarUsuario';
 export { crearDirectoresMasivo } from './crearDirectoresMasivo';
 export { crearDocentesMasivo } from './crearDocentesMasivo';
 export { leerEvaluacionesParaAdmin } from './leerEvaluacionesParaAdmin';
+export { getReporteDirector } from './getReporteDirector';
 
 try {
   const { getListCollectionsEvaluacionesPorMes } = require('./getListCollectionsEvaluacionesPorMes');

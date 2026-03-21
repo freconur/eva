@@ -48,7 +48,7 @@ const Reporte = () => {
     genero: '',
   });
   const [loadingMonth, setLoadingMonth] = useState<boolean>(false);
-  const [estudiantesOriginales, setEstudiantesOriginales] = useState<UserEstudiante[]>([]);
+
   const [yearSelected, setYearSelected] = useState<number>(new Date().getFullYear());
 
   const yearsAvailable = useMemo(() => {
@@ -76,14 +76,6 @@ const Reporte = () => {
       orden: '',
       genero: '',
     });
-
-    // Restaurar todos los estudiantes originales
-    const estudiantesARestaurar = estudiantesOriginales.length > 0 ? estudiantesOriginales : estudiantes;
-    dispatch({
-      type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA,
-      payload: estudiantesARestaurar
-    });
-    setEstudiantes(estudiantesARestaurar);
   };
   const hasValidPuntaje = () => {
     return estudiantes?.some(
@@ -121,7 +113,7 @@ const Reporte = () => {
   } = useReporteDirectores();
 
   const availableSections = useMemo(() => {
-    const baseList = estudiantesOriginales.length > 0 ? estudiantesOriginales : estudiantes;
+    const baseList = estudiantes;
     if (!baseList || baseList.length === 0) return [];
 
     // Extraer IDs de secciones únicas de los estudiantes cargados originalmente para el mes/año
@@ -129,7 +121,7 @@ const Reporte = () => {
 
     // Filtrar la lista maestra de secciones para incluir solo las que tienen datos
     return sectionByGrade.filter(seccion => uniqueSectionIds.includes(String(seccion.id)));
-  }, [estudiantesOriginales, estudiantes]);
+  }, [estudiantes]);
   const {
     currentUserData,
     reporteDirector,
@@ -260,38 +252,31 @@ const Reporte = () => {
     getEvaluacion(`${route.query.idEvaluacion}`);
   }, [currentUserData.dni, route.query.idEvaluacion]);
 
-  // Filtrado automático cuando cambian los filtros
+  // Memoizar el filtrado de estudiantes para evitar loops infinitos
+  const estudiantesFiltrados = useMemo(() => {
+    return filtrosParaReporteDirector(estudiantes, filtros);
+  }, [estudiantes, filtros, filtrosParaReporteDirector]);
+
+  // Sincronizar el estado global cuando cambian los estudiantes filtrados
   useEffect(() => {
-    const hayFiltrosSeleccionados = filtros.grado || filtros.seccion || filtros.genero || filtros.orden;
-    const baseEstudiantes = estudiantesOriginales.length > 0 ? estudiantesOriginales : estudiantes;
+    dispatch({
+      type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA,
+      payload: estudiantesFiltrados
+    });
+  }, [estudiantesFiltrados, dispatch]);
 
-    if (hayFiltrosSeleccionados && baseEstudiantes.length > 0) {
-      const estudiantesFiltrados = filtrosParaReporteDirector(baseEstudiantes, filtros);
-
-      dispatch({
-        type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA,
-        payload: estudiantesFiltrados
-      });
-      setEstudiantes(estudiantesFiltrados);
-    } else if (!hayFiltrosSeleccionados && estudiantesOriginales.length > 0) {
-      // Si se limpian los filtros, restaurar los originales
-      dispatch({
-        type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA,
-        payload: estudiantesOriginales
-      });
-      setEstudiantes(estudiantesOriginales);
-    }
-  }, [filtros, estudiantesOriginales]);
-
+  // Efecto principal para cargar los datos del reporte cuando cambian los filtros de tiempo o la evaluación
   useEffect(() => {
-    if (currentUserData.dni && evaluacion.id) {
+    if (currentUserData.dni && evaluacion.id && monthSelected !== undefined) {
       reporteDirectorEstudiantes(
         `${route.query.idEvaluacion}`,
         monthSelected,
         yearSelected,
         currentUserData,
         evaluacion
-      );
+      ).finally(() => {
+        setLoadingMonth(false);
+      });
     }
   }, [route.query.idEvaluacion, currentUserData.dni, yearSelected, monthSelected, evaluacion.id]);
   useEffect(() => {
@@ -315,17 +300,7 @@ const Reporte = () => {
     }
   }, [mesesConDataDisponibles, yearSelected]);
 
-  // Guardar estudiantes originales cuando se cargan y resetearlos cuando cambian (ej. al cambiar de mes o año)
-  useEffect(() => {
-    if (estudiantes.length > 0) {
-      // Solo actualizar estudiantesOriginales si NO hay filtros activos
-      // para evitar capturar una lista ya filtrada como "original"
-      const hayFiltrosActivos = filtros.grado || filtros.seccion || filtros.genero || filtros.orden;
-      if (!hayFiltrosActivos) {
-        setEstudiantesOriginales([...estudiantes]);
-      }
-    }
-  }, [estudiantes]);
+
 
 
   console.log('estudiantes', estudiantes);
@@ -344,8 +319,7 @@ const Reporte = () => {
       orden: '',
       genero: '',
     });
-    // Limpiar estudiantes originales para que se recarguen
-    setEstudiantesOriginales([]);
+
 
     try {
       // Actualizar el mes seleccionado
@@ -359,19 +333,7 @@ const Reporte = () => {
     }
   };
 
-  useEffect(() => {
-    if (monthSelected && currentUserData.dni && evaluacion.id) {
-      reporteDirectorEstudiantes(
-        `${route.query.idEvaluacion}`,
-        monthSelected,
-        yearSelected,
-        currentUserData,
-        evaluacion
-      ).finally(() => {
-        setLoadingMonth(false);
-      });
-    }
-  }, [monthSelected, yearSelected, currentUserData.dni, evaluacion.id]);
+  // Eliminado: el efecto de arriba ya maneja la carga de datos por mes/año de forma consolidada
 
   // Crear un mapa optimizado de preguntas por ID para evitar búsquedas repetidas O(1) en lugar de O(n)
 
@@ -524,7 +486,7 @@ const Reporte = () => {
             ) : (
               <>
                 <TablaPreguntas
-                  estudiantes={estudiantes}
+                  estudiantes={estudiantesFiltrados}
                   preguntasRespuestas={preguntasRespuestas}
                   warningEvaEstudianteSinRegistro={undefined}
                   /* warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined} */
@@ -546,7 +508,7 @@ const Reporte = () => {
                       promedioGlobal={promedioGlobal}
                       monthSelected={monthSelected}
                       dataGraficoTendenciaNiveles={[
-                        generarDataGraficoPiechart(estudiantes, monthSelected, evaluacion),
+                        generarDataGraficoPiechart(estudiantesFiltrados, monthSelected, evaluacion),
                       ]}
                     />
                   </div>
