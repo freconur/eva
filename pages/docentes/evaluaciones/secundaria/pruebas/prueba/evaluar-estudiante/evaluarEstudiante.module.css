@@ -22,10 +22,8 @@
 
 /* Header fijo */
 .stickyHeader {
-  position: fixed;
+  position: sticky;
   top: 60px;
-  left: 50%;
-  transform: translateX(-50%);
   width: 100%;
   min-height: auto;
   /* max-width: 1200px; */
@@ -141,7 +139,7 @@
 
 /* Contenido principal */
 .mainContent {
-  padding: 270px 2rem 2rem;
+  padding: 20px 2rem 2rem;
   transition: padding-top 0.2s ease-out;
 }
 

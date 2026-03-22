@@ -35,7 +35,7 @@ const EvaluarEstudiante = () => {
   const [repuestasCorrectas, setRespuestasCorrectas] = useState(0);
   const [todasRespondidas, setTodasRespondidas] = useState(false);
   const [headerTop, setHeaderTop] = useState(60); // Estado para el top del header
-  const [contentPadding, setContentPadding] = useState(270); // Estado para el padding del contenido
+  const [contentPadding, setContentPadding] = useState(20); // Estado para el padding del contenido
   const [showFloatingButton, setShowFloatingButton] = useState(false); // Estado para mostrar el botón flotante
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true); // Estado para controlar el avance automático
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar el modal de importar
@@ -259,18 +259,18 @@ const EvaluarEstudiante = () => {
   const scrollToNextQuestion = (preguntaIndex: number) => {
     // Solo hacer scroll automático si está habilitado
     if (!autoScrollEnabled) return;
-    
+
     // Esperar un pequeño delay para que la UI se actualice
     setTimeout(() => {
       const nextQuestionIndex = preguntaIndex + 1;
       const nextQuestionElement = document.getElementById(`pregunta-${nextQuestionIndex}`);
-      
+
       if (nextQuestionElement) {
         // Calcular la posición considerando el header fijo
         const headerHeight = 260; // Altura aproximada del header fijo
         const elementPosition = nextQuestionElement.offsetTop;
         const offsetPosition = elementPosition - headerHeight - 20; // 20px de margen adicional
-        
+
         window.scrollTo({
           top: offsetPosition,
           behavior: 'smooth'
@@ -285,13 +285,13 @@ const EvaluarEstudiante = () => {
    */
   const scrollToQuestion = (preguntaIndex: number) => {
     const questionElement = document.getElementById(`pregunta-${preguntaIndex}`);
-    
+
     if (questionElement) {
       // Calcular la posición considerando el header fijo
       const headerHeight = 260; // Altura aproximada del header fijo
       const elementPosition = questionElement.offsetTop;
       const offsetPosition = elementPosition - headerHeight - 20; // 20px de margen adicional
-      
+
       window.scrollTo({
         top: offsetPosition,
         behavior: 'smooth'
@@ -358,11 +358,11 @@ const EvaluarEstudiante = () => {
   }, [estudiantesDeEvaluacion, nuevaSeccion, evaluacion?.grado, reset]);
 
   useEffect(() => {
-   
+
     const fetchEstudiantes = async () => {
       try {
         if (evaluacion?.id && evaluacion?.grado) {
-           obtenerEstudianteDeEvaluacion(evaluacion, nuevaSeccion, `${evaluacion.mesDelExamen}`);
+          obtenerEstudianteDeEvaluacion(evaluacion, nuevaSeccion, `${evaluacion.mesDelExamen}`);
         }
       } catch (error) {
         console.error('Error al obtener estudiantes:', error);
@@ -385,9 +385,8 @@ const EvaluarEstudiante = () => {
           // Cuando scrollY >= 60, newTop = 0px
           const newTop = Math.max(0, 60 - (scrollY / maxScroll) * 60);
 
-          // Calcular el padding del contenido: de 270px a 210px
-          // Ajustar el padding para compensar el movimiento del header
-          const newPadding = Math.max(210, 270 - (scrollY / maxScroll) * 60);
+          // Calcular el padding del contenido: de 20px a 0px (ya no necesita tanto espacio porque es sticky)
+          const newPadding = Math.max(0, 20 - (scrollY / maxScroll) * 20);
 
           setHeaderTop(newTop);
           setContentPadding(newPadding);
@@ -448,14 +447,14 @@ const EvaluarEstudiante = () => {
 
   // Estado para el estudiante seleccionado
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState<UserEstudiante | null>(null);
-  
+
   // Estado para la nueva sección seleccionada
- 
-  
+
+
   // Función para manejar la selección de estudiante
   const handleEstudianteSeleccionado = (estudiante: UserEstudiante) => {
     setEstudianteSeleccionado(estudiante);
-    
+
     // Pre-llenar el formulario con los datos del estudiante
     reset({
       dni: estudiante.dni || '',
@@ -465,13 +464,13 @@ const EvaluarEstudiante = () => {
       genero: estudiante.genero || ''
     });
   };
-  
+
   // Función para manejar el cambio de la nueva sección
   const handleNuevaSeccionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const seccionSeleccionada = e.target.value;
     setNuevaSeccion(seccionSeleccionada);
     console.log('Nueva sección seleccionada:', seccionSeleccionada);
-    
+
     // Si se selecciona una sección, limpiar el estudiante seleccionado y el formulario
     if (seccionSeleccionada) {
       setEstudianteSeleccionado(null);
@@ -499,7 +498,7 @@ const EvaluarEstudiante = () => {
     console.log('Estudiantes importados:', estudiantesImportados);
     console.log('Grado seleccionado:', grado);
     console.log('Sección seleccionada:', seccion);
-    
+
     // Mostrar mensaje de confirmación personalizado
     setConfirmationData({
       estudiantes: estudiantesImportados,
@@ -522,31 +521,31 @@ const EvaluarEstudiante = () => {
   // Función para confirmar la importación
   const handleConfirmImport = async () => {
     if (confirmationData) {
-      console.log('confirmationData',confirmationData.estudiantes);
+      console.log('confirmationData', confirmationData.estudiantes);
       console.log(`Se importaron ${confirmationData.estudiantes.length} estudiantes exitosamente para ${confirmationData.grado} - ${confirmationData.seccion}`);
-      
+
       try {
         // Pasar los estudiantes importados a la función
         await crearEstudiantesImportados(confirmationData.estudiantes);
         console.log('Estudiantes creados exitosamente en la base de datos');
-        
+
         // Limpiar los datos de confirmación después de crear exitosamente
         setConfirmationData(null);
-        
+
         // Activar el reset del modal
         setResetModal(true);
-        
+
         // Resetear el estado de reset después de un breve delay
         setTimeout(() => {
           setResetModal(false);
         }, 100);
-        
+
       } catch (error) {
         console.error('Error al crear estudiantes:', error);
         // Aquí podrías mostrar un mensaje de error al usuario
       }
     }
-    
+
     // Cerrar mensaje con animación y luego cerrar modal
     closeMessageWithAnimation();
     setTimeout(() => {
@@ -557,11 +556,11 @@ const EvaluarEstudiante = () => {
   // Función para cancelar la importación
   const handleCancelImport = () => {
     console.log('No se importó');
-    
+
     // Solo cerrar el mensaje de confirmación con animación, mantener el modal abierto
     closeMessageWithAnimation();
   };
- 
+
   return (
     <div className={styles.containerPage}>
       <div className={styles.containerContent}>
@@ -579,7 +578,7 @@ const EvaluarEstudiante = () => {
             {/* Header fijo con información del estudiante */}
             <div className={styles.stickyHeader} style={{ top: `${headerTop}px` }}>
               {/* <h3 className={styles.title}>Evaluar Estudiante</h3> */}
-              
+
               {/* Indicador de progreso */}
               <div className={styles.progressIndicator}>
                 <div className={styles.progressText}>
@@ -610,7 +609,7 @@ const EvaluarEstudiante = () => {
                       </option>
                     ))}
                   </select>
-                  
+
                   <button
                     type="button"
                     className={styles.importButton}
@@ -621,7 +620,7 @@ const EvaluarEstudiante = () => {
                     <span>Importar</span>
                   </button>
                 </div>
-                
+
                 {/* Toggle para avance automático */}
                 <div className={styles.autoScrollToggle}>
                   <label className={styles.toggleLabel}>
@@ -644,28 +643,28 @@ const EvaluarEstudiante = () => {
               </div>
               {/* Selector de estudiantes */}
               {nuevaSeccion && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0 && (
-                  <select
-                    className={styles.inputNombresDni}
-                    value={estudianteSeleccionado?.id || ''}
-                    onChange={(e) => {
-                      if (e.target.value === '') {
-                        setEstudianteSeleccionado(null);
-                        reset();
-                      } else {
-                        const estudiante = estudiantesDeEvaluacion.find(est => est.id === e.target.value);
-                        if (estudiante) {
-                          handleEstudianteSeleccionado(estudiante);
-                        }
+                <select
+                  className={styles.inputNombresDni}
+                  value={estudianteSeleccionado?.id || ''}
+                  onChange={(e) => {
+                    if (e.target.value === '') {
+                      setEstudianteSeleccionado(null);
+                      reset();
+                    } else {
+                      const estudiante = estudiantesDeEvaluacion.find(est => est.id === e.target.value);
+                      if (estudiante) {
+                        handleEstudianteSeleccionado(estudiante);
                       }
-                    }}
-                  >
-                    <option value="">-- Selecciona un estudiante --</option>
-                    {estudiantesDeEvaluacion.map((estudiante) => (
-                      <option key={estudiante.id} value={estudiante.id}>
-                        {estudiante.nombresApellidos?.toUpperCase()}
-                      </option>
-                    ))}
-                  </select>
+                    }
+                  }}
+                >
+                  <option value="">-- Selecciona un estudiante --</option>
+                  {estudiantesDeEvaluacion.map((estudiante) => (
+                    <option key={estudiante.id} value={estudiante.id}>
+                      {estudiante.nombresApellidos?.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
               )}
 
               {/* Campos de información del estudiante - Solo se muestran cuando NO hay estudiantes disponibles Y se ha seleccionado una sección */}
@@ -764,9 +763,8 @@ const EvaluarEstudiante = () => {
                   return (
                     <span
                       key={index}
-                      className={`${styles.numeroPreguntaEstado} ${
-                        preguntaRespondida ? styles.respondida : styles.sinResponder
-                      }`}
+                      className={`${styles.numeroPreguntaEstado} ${preguntaRespondida ? styles.respondida : styles.sinResponder
+                        }`}
                       onClick={() => scrollToQuestion(index)}
                       title={`Ir a la pregunta ${index + 1}`}
                     >
@@ -775,7 +773,7 @@ const EvaluarEstudiante = () => {
                   );
                 })}
               </div>
-              
+
             </div>
 
             {/* Contenido principal con margen superior para el header fijo */}
@@ -801,9 +799,8 @@ const EvaluarEstudiante = () => {
                           return (
                             <li key={index} className={styles.respuestas}>
                               <div
-                                className={`${styles.respuestaItem} ${
-                                  alternativa.selected ? styles.selected : ''
-                                }`}
+                                className={`${styles.respuestaItem} ${alternativa.selected ? styles.selected : ''
+                                  }`}
                                 onClick={() => {
                                   handleContenedorClick(
                                     pregunta.order || 0,
@@ -850,15 +847,15 @@ const EvaluarEstudiante = () => {
                 </div>
 
                 {/* Botón de guardar con validación */}
-                <button 
-                  disabled={!todasRespondidas || (!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0)} 
+                <button
+                  disabled={!todasRespondidas || (!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0)}
                   className={styles.saveButton}
                 >
                   {!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0
                     ? 'Selecciona un estudiante para continuar'
                     : !todasRespondidas
-                    ? 'Complete todas las preguntas para guardar'
-                    : 'Guardar Evaluación'
+                      ? 'Complete todas las preguntas para guardar'
+                      : 'Guardar Evaluación'
                   }
                 </button>
               </form>
@@ -888,7 +885,7 @@ const EvaluarEstudiante = () => {
 
       {/* Mensaje de confirmación personalizado */}
       {showConfirmationMessage && confirmationData && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             top: 0,
@@ -906,7 +903,7 @@ const EvaluarEstudiante = () => {
             animation: isClosingMessage ? 'fadeOut 0.3s ease-in' : 'fadeIn 0.3s ease-out'
           }}
         >
-          <div 
+          <div
             style={{
               backgroundColor: 'white',
               borderRadius: '16px',
@@ -929,7 +926,7 @@ const EvaluarEstudiante = () => {
             }}>
               Confirmar Importación
             </h3>
-            
+
             <p style={{
               marginBottom: '35px',
               fontSize: '16px',
@@ -938,7 +935,7 @@ const EvaluarEstudiante = () => {
             }}>
               ¿Va a crear <strong style={{ color: '#1F2937' }}>{confirmationData.estudiantes.length}</strong> estudiantes que importo del archivo excel para el<strong style={{ color: '#1F2937' }}> {convertGrade(confirmationData.grado)}</strong> - <strong style={{ color: '#1F2937' }}> Sección {converSeccion(Number(confirmationData.seccion))?.toUpperCase()}</strong>? ,si esta seguro de crear los estudiantes, presione el botón de si, de lo contrario presione el botón de no.
             </p>
-            
+
             <div style={{
               display: 'flex',
               gap: '20px',
@@ -973,7 +970,7 @@ const EvaluarEstudiante = () => {
               >
                 Sí
               </button>
-              
+
               <button
                 onClick={handleCancelImport}
                 style={{
@@ -1004,7 +1001,7 @@ const EvaluarEstudiante = () => {
                 No
               </button>
             </div>
-            
+
             {/* Loader cuando se están creando estudiantes */}
             {loaderCrearEstudiantes && (
               <div style={{
@@ -1021,10 +1018,10 @@ const EvaluarEstudiante = () => {
                 borderRadius: '16px',
                 zIndex: 10
               }}>
-                <Loader 
-                  size="large" 
-                  variant="spinner" 
-                  text="Creando estudiantes..." 
+                <Loader
+                  size="large"
+                  variant="spinner"
+                  text="Creando estudiantes..."
                   color="#3b82f6"
                 />
               </div>
