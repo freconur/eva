@@ -29,6 +29,24 @@ const TercerNivel = () => {
       progress: 0
     },
     {
+      id: '1ro-personal-social',
+      title: '1er grado: Personal Social',
+      href: 'tercerNivel/pruebas?grado=1&categoria=8',
+      backgroundColor: '#1d4ed8', // Azul más oscuro para 1er grado
+      isActive: false,
+      isCompleted: false,
+      progress: 0
+    },
+    {
+      id: '1ro-ciencia-tecnologia',
+      title: '1er grado: Ciencia y Tecnología',
+      href: 'tercerNivel/pruebas?grado=1&categoria=9',
+      backgroundColor: '#1d4ed8', // Azul más oscuro para 1er grado
+      isActive: false,
+      isCompleted: false,
+      progress: 0
+    },
+    {
       id: '2do-lee',
       title: '2do grado: Lee',
       href: 'tercerNivel/pruebas?grado=2&categoria=1',
@@ -41,6 +59,24 @@ const TercerNivel = () => {
       id: '2do-resuelve',
       title: '2do grado: Resuelve problemas',
       href: 'tercerNivel/pruebas?grado=2&categoria=2',
+      backgroundColor: '#047857', // Verde más oscuro para 2do grado
+      isActive: false,
+      isCompleted: false,
+      progress: 0
+    },
+    {
+      id: '2do-personal-social',
+      title: '2do grado: Personal Social',
+      href: 'tercerNivel/pruebas?grado=2&categoria=8',
+      backgroundColor: '#047857', // Verde más oscuro para 2do grado
+      isActive: false,
+      isCompleted: false,
+      progress: 0
+    },
+    {
+      id: '2do-ciencia-tecnologia',
+      title: '2do grado: Ciencia y Tecnología',
+      href: 'tercerNivel/pruebas?grado=2&categoria=9',
       backgroundColor: '#047857', // Verde más oscuro para 2do grado
       isActive: false,
       isCompleted: false,
@@ -69,6 +105,24 @@ const TercerNivel = () => {
       progress: 0
     },
     {
+      id: '3ro-personal-social',
+      title: '3ro grado: Personal Social',
+      href: 'tercerNivel/pruebas?grado=3&categoria=8',
+      backgroundColor: '#b91c1c', // Rojo más oscuro para 3er grado
+      isActive: false,
+      isCompleted: false,
+      progress: 0
+    },
+    {
+      id: '3ro-ciencia-tecnologia',
+      title: '3ro grado: Ciencia y Tecnología',
+      href: 'tercerNivel/pruebas?grado=3&categoria=9',
+      backgroundColor: '#b91c1c', // Rojo más oscuro para 3er grado
+      isActive: false,
+      isCompleted: false,
+      progress: 0
+    },
+    {
       id: '4to-lee',
       title: '4to grado: Lee',
       href: 'tercerNivel/pruebas?grado=4&categoria=1',
@@ -81,6 +135,24 @@ const TercerNivel = () => {
       id: '4to-resuelve',
       title: '4to grado: Resuelve problemas',
       href: 'tercerNivel/pruebas?grado=4&categoria=2',
+      backgroundColor: '#6d28d9', // Púrpura más oscuro para 4to grado
+      isActive: false,
+      isCompleted: false,
+      progress: 0
+    },
+    {
+      id: '4to-personal-social',
+      title: '4to grado: Personal Social',
+      href: 'tercerNivel/pruebas?grado=4&categoria=8',
+      backgroundColor: '#6d28d9', // Púrpura más oscuro para 4to grado
+      isActive: false,
+      isCompleted: false,
+      progress: 0
+    },
+    {
+      id: '4to-ciencia-tecnologia',
+      title: '4to grado: Ciencia y Tecnología',
+      href: 'tercerNivel/pruebas?grado=4&categoria=9',
       backgroundColor: '#6d28d9', // Púrpura más oscuro para 4to grado
       isActive: false,
       isCompleted: false,
@@ -109,6 +181,24 @@ const TercerNivel = () => {
       progress: 0
     },
     {
+      id: '5to-personal-social',
+      title: '5to grado: Personal Social',
+      href: 'tercerNivel/pruebas?grado=5&categoria=8',
+      backgroundColor: '#c2410c', // Naranja más oscuro para 5to grado
+      isActive: false,
+      isCompleted: false,
+      progress: 0
+    },
+    {
+      id: '5to-ciencia-tecnologia',
+      title: '5to grado: Ciencia y Tecnología',
+      href: 'tercerNivel/pruebas?grado=5&categoria=9',
+      backgroundColor: '#c2410c', // Naranja más oscuro para 5to grado
+      isActive: false,
+      isCompleted: false,
+      progress: 0
+    },
+    {
       id: '6to-lee',
       title: '6to grado: Lee',
       href: 'tercerNivel/pruebas?grado=6&categoria=1',
@@ -121,6 +211,24 @@ const TercerNivel = () => {
       id: '6to-resuelve',
       title: '6to grado: Resuelve problemas',
       href: 'tercerNivel/pruebas?grado=6&categoria=2',
+      backgroundColor: '#0e7490', // Cian más oscuro para 6to grado
+      isActive: false,
+      isCompleted: false,
+      progress: 0
+    },
+    {
+      id: '6to-personal-social',
+      title: '6to grado: Personal Social',
+      href: 'tercerNivel/pruebas?grado=6&categoria=8',
+      backgroundColor: '#0e7490', // Cian más oscuro para 6to grado
+      isActive: false,
+      isCompleted: false,
+      progress: 0
+    },
+    {
+      id: '6to-ciencia-tecnologia',
+      title: '6to grado: Ciencia y Tecnología',
+      href: 'tercerNivel/pruebas?grado=6&categoria=9',
       backgroundColor: '#0e7490', // Cian más oscuro para 6to grado
       isActive: false,
       isCompleted: false,
@@ -165,9 +273,9 @@ const TercerNivel = () => {
     <div className={styles.container}>
       <div className={styles.mainGrid}>
         <NavigationBreadcrumb items={breadcrumbItems} />
-        
+
         <h1 className={styles.title}>Educación Primaria</h1>
-        
+
         {/* Estadísticas */}
         {/* <div className={styles.statsGrid}>
           {stats.map((stat, index) => (
@@ -182,7 +290,7 @@ const TercerNivel = () => {
             />
           ))}
         </div> */}
-        
+
         <div className={styles.evaluationsContainer}>
           <StandardHeader
             level={3}
@@ -191,7 +299,7 @@ const TercerNivel = () => {
             totalEvaluations={evaluationsNivel3.length}
             completedEvaluations={0}
           />
-          
+
           <div className={styles.evaluationsGrid}>
             {evaluationsNivel3.map((evaluation) => (
               <EvaluationCard
@@ -215,7 +323,7 @@ const TercerNivel = () => {
             totalEvaluations={evaluationsNivel4.length}
             completedEvaluations={0}
           />
-          
+
           <div className={styles.evaluationsGrid}>
             {evaluationsNivel4.map((evaluation) => (
               <EvaluationCard
@@ -239,7 +347,7 @@ const TercerNivel = () => {
             totalEvaluations={evaluationsNivel5.length}
             completedEvaluations={0}
           />
-          
+
           <div className={styles.evaluationsGrid}>
             {evaluationsNivel5.map((evaluation) => (
               <EvaluationCard

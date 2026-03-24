@@ -1,6 +1,6 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useColorsFromCSS } from '@/features/hooks/useColorsFromCSS';
 import {
   Chart as ChartJS,
@@ -30,6 +30,8 @@ import AcordeonReportePregunta from './AcordeonReportePregunta';
 import PieChartComponent from './PieChartComponent';
 import FiltrosReporte from '@/components/reportes/FiltrosReporte';
 import { useExportExcel } from '@/features/hooks/useExportExcel';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/firebase/firebase.config';
 
 ChartJS.register(
   CategoryScale,
@@ -311,6 +313,36 @@ const Reporte = () => {
     getDataGraficoPieChart(`${route.query.idEvaluacion}`, monthSelected, evaluacion);
     getEstadisticaGlobal(`${route.query.idEvaluacion}`, monthSelected, yearSelected);
   }, [route.query.id, route.query.idEvaluacion, currentUserData.dni, monthSelected]);
+
+  // --- INTEGRACIÓN DE GRÁFICOS DE BARRAS PARA DIRECTORES ---
+  const isFetchedBarGraphics = useRef<string | null>(null);
+
+  useEffect(() => {
+    const idEval = route.query.idEvaluacion;
+    if (!idEval || monthSelected === undefined || !yearSelected) return;
+
+    // Evitar ejecuciones duplicadas innecesarias (incluyendo React Strict Mode)
+    const currentKey = `${idEval}-${monthSelected}-${yearSelected}`;
+    if (isFetchedBarGraphics.current === currentKey) return;
+
+    const fetchBarGraphicsData = async () => {
+      try {
+        console.log('🚀 [Cloud Function] Solicitando datos para directores...');
+        const getDataFunction = httpsCallable(functions, 'getDataToDirectoresFromBarGraphics');
+        const result = await getDataFunction({
+          idEvaluacion: idEval,
+          año: yearSelected,
+          mes: monthSelected
+        });
+        console.log('✅ [Cloud Function] Datos de directores recibidos:', result.data);
+      } catch (error) {
+        console.error('❌ [Cloud Function] Error en getDataToDirectoresFromBarGraphics:', error);
+      }
+    };
+
+    fetchBarGraphicsData();
+    isFetchedBarGraphics.current = currentKey;
+  }, [route.query.idEvaluacion, monthSelected, yearSelected]);
 
 
   const handleRestablecerFiltros = () => {

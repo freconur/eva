@@ -3,6 +3,7 @@ export type Estudiante = {
   nombresApellidos?: string;
   dni?: string;
   dniDocente?: string;
+  dniDirector?: string;
   respuestasCorrectas?: string;
   totalPreguntas?: string;
   grado?: number;
