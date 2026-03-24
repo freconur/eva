@@ -3,11 +3,12 @@ import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useReporteDocente } from '@/features/hooks/useReporteDocente';
 import {
   Alternativa,
+  DataEstadisticas,
   Estudiante,
   PreguntasRespuestas,
 } from '@/features/types/types';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -18,18 +19,26 @@ import {
   Title,
   Tooltip,
   Legend,
+  ChartData,
 } from 'chart.js';
+import { Bar } from 'react-chartjs-2';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { RiLoader4Line } from 'react-icons/ri';
+import * as XLSX from 'xlsx';
+import { MdDeleteForever } from 'react-icons/md';
 import DeleteEstudiante from '@/modals/deleteEstudiante';
 import styles from './reporte.module.css';
 import { currentMonth, getAllMonths, getMonthName } from '@/fuctions/dates';
 import { ordernarAscDsc } from '@/fuctions/regiones';
+import { read, utils, writeFile } from 'xlsx';
 import { exportEstudiantesToExcel } from '@/features/utils/excelExport';
 import { useGenerarPDFReporte } from '@/features/hooks/useGenerarPDFReporte';
+import Link from 'next/link';
 import ReporteEvaluacionPorPregunta from './reporteEvaluacionPorPregunta';
+import PieChartComponent from '@/pages/admin/evaluaciones/evaluacion/reporte/PieChartComponent';
 import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafico-piechart';
 import { TablaPreguntas } from '@/components/tabla-preguntas';
+import { calculoNivel } from '@/features/utils/calculoNivel';
 import GraficoTendenciaColegio from '@/components/grafico-tendencia';
 import CorregirPuntajesModal from '@/modals/corregirPuntajes';
 ChartJS.register(
@@ -65,6 +74,8 @@ const Reportes = () => {
     estadisticasEstudiantesDelDocente,
     datosPorMes,
     mesesConDataDisponibles,
+    añosConDataDisponibles,
+    obtenerAñosConData,
     promedioGlobal,
     estudiantesQueDieronExamenPorMes,
     corregirPuntajesEstudiantes,
@@ -76,6 +87,7 @@ const Reportes = () => {
   } = useReporteDocente();
   const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
   const [idEstudiante, setIdEstudiante] = useState<string>('');
+  const [yearSelected, setYearSelected] = useState<string>('');
   const [monthSelected, setMonthSelected] = useState<number>(currentMonth);
   const [order, setOrder] = useState<number>(0);
   const handleShowTable = () => {
@@ -186,21 +198,25 @@ const Reportes = () => {
   useEffect(() => {
     const idExamen = route.query.idExamen as string;
     if (idExamen) {
-      estudiantesQueDieronExamenPorMes(evaluacion, estudiantes);
-      estadisticasEstudiantesDelDocente(evaluacion, monthSelected, preguntasRespuestas);
+      obtenerAñosConData(idExamen);
       getPreguntasRespuestas(idExamen);
-      setMonthSelected(currentMonth);
       getEvaluacion(`${idExamen}`);
     }
-  }, [route.query.idExamen, currentUserData.dni, evaluacion.id]);
+  }, [route.query.idExamen, currentUserData.dni]);
+
+  useEffect(() => {
+    if (evaluacion.añoDelExamen && !yearSelected) {
+      setYearSelected(evaluacion.añoDelExamen);
+    }
+  }, [evaluacion.añoDelExamen]);
 
   useEffect(() => {
     const idExamen = route.query.idExamen as string;
-    if (idExamen) {
-      estudiantesQueDieronExamenPorMes(evaluacion, estudiantes);
-      estadisticasEstudiantesDelDocente(evaluacion, monthSelected, preguntasRespuestas);
+    if (idExamen && yearSelected) {
+      estudiantesQueDieronExamenPorMes(evaluacion, estudiantes, yearSelected);
+      estadisticasEstudiantesDelDocente(evaluacion, monthSelected, preguntasRespuestas, yearSelected);
     }
-  }, [monthSelected]);
+  }, [route.query.idExamen, currentUserData.dni, evaluacion.id, yearSelected, monthSelected]);
 
   // Mostrar en consola el array completo con las imágenes
 
@@ -224,7 +240,7 @@ const Reportes = () => {
   };
 
   const handleCorregirPuntajes = () => {
-    corregirPuntajesEstudiantes(`${currentUserData.dni}`, evaluacion, monthSelected, estudiantes, preguntasRespuestas);
+    corregirPuntajesEstudiantes(`${currentUserData.dni}`, evaluacion, monthSelected, estudiantes, preguntasRespuestas, yearSelected);
   };
 
   const handleCerrarModalExito = () => {
@@ -238,6 +254,9 @@ const Reportes = () => {
   };
   const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setMonthSelected(Number(e.target.value));
+  };
+  const handleChangeYear = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setYearSelected(e.target.value);
   };
   const handleChangeOrder = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setOrder(Number(e.target.value));
@@ -331,13 +350,12 @@ const Reportes = () => {
                 <button
                   onClick={handleGenerarPDF}
                   disabled={loading || loadingPDF || reporteCompletoConImagenes.length === 0 || !imagenesGeneradas}
-                  className={`${styles.pdfButton} ${
-                    loadingPDF
-                      ? styles.pdfButtonLoading
-                      : !imagenesGeneradas
+                  className={`${styles.pdfButton} ${loadingPDF
+                    ? styles.pdfButtonLoading
+                    : !imagenesGeneradas
                       ? styles.pdfButtonGenerating
                       : styles.pdfButtonReady
-                  }`}
+                    }`}
                 >
                   {loadingPDF ? (
                     <>
@@ -358,7 +376,7 @@ const Reportes = () => {
                 </button>
                 {
                   evaluacion.tipoDeEvaluacion === '1' && (
-                    <button 
+                    <button
                       onClick={handleShowCorregirPuntajesModal}
                       className={styles.corregirButton}
                     >
@@ -406,6 +424,23 @@ const Reportes = () => {
                     </div>
 
                     <div className={styles.controlGroup}>
+                      <label className={styles.controlLabel}>Seleccionar año:</label>
+                      <select
+                        onChange={handleChangeYear}
+                        value={yearSelected}
+                        className={styles.modernSelect}
+                        aria-label="Seleccionar año para el reporte"
+                      >
+                        <option value="">-- Año --</option>
+                        {Array.from({ length: new Date().getFullYear() - 2025 + 1 }, (_, i) => (2025 + i).toString()).map((year) => (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className={styles.controlGroup}>
                       <label className={styles.controlLabel}>Seleccionar mes:</label>
                       <select
                         id="monthSelect"
@@ -414,8 +449,8 @@ const Reportes = () => {
                         className={styles.modernSelect}
                         aria-label="Seleccionar mes para el reporte"
                       >
-                        <option value={currentMonth}>{getMonthName(currentMonth)}</option>
-                        {getAllMonths.slice(0, currentMonth + 1).map((month) => (
+                        <option value="">-- Mes --</option>
+                        {getAllMonths.filter(m => mesesConDataDisponibles.includes(m.id)).map((month) => (
                           <option key={month.id} value={month.id}>
                             {month.name}
                           </option>
@@ -446,7 +481,7 @@ const Reportes = () => {
             {evaluacion.tipoDeEvaluacion === '1' ? (
               <div className={styles.graficosContainer}>
                 <GraficoTendenciaColegio
-                evaluacion={evaluacion}
+                  evaluacion={evaluacion}
                   datosPorMes={datosPorMes}
                   mesesConDataDisponibles={mesesConDataDisponibles}
                   promedioGlobal={promedioGlobal}
@@ -456,7 +491,7 @@ const Reportes = () => {
                   ]}
                 />
               </div>
-                          
+
             ) : null}
 
             {/* <GraficoTendenciaColegio estudiantes={estudiantes} monthSelected={monthSelected} evaluacion={evaluacion} /> */}

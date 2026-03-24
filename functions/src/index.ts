@@ -21,6 +21,7 @@ export { crearDirectoresMasivo } from './crearDirectoresMasivo';
 export { crearDocentesMasivo } from './crearDocentesMasivo';
 export { leerEvaluacionesParaAdmin } from './leerEvaluacionesParaAdmin';
 export { getReporteDirector } from './getReporteDirector';
+export { getDataToDirectoresFromBarGraphics } from './getDataToDirectoresFromBarGraphics';
 
 try {
   const { getListCollectionsEvaluacionesPorMes } = require('./getListCollectionsEvaluacionesPorMes');
