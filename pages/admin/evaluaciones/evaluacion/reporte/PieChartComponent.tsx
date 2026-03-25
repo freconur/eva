@@ -40,7 +40,7 @@ interface PieChartComponentProps {
   dataGraficoTendenciaNiveles: GraficoPieChart[]
   yearSelected: number
 }
-const PieChartComponent = ({ monthSelected, dataGraficoTendenciaNiveles, yearSelected }: PieChartComponentProps) => {
+const PieChartComponent = ({ monthSelected = 0, dataGraficoTendenciaNiveles = [], yearSelected = 2025 }: PieChartComponentProps) => {
   const [filtroGenero, setFiltroGenero] = useState<string>('')
   const [filtroRegion, setFiltroRegion] = useState<string>('')
   const [dataFiltrada, setDataFiltrada] = useState<GraficoPieChart[]>(dataGraficoTendenciaNiveles)

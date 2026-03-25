@@ -32,6 +32,7 @@ import FiltrosReporte from '@/components/reportes/FiltrosReporte';
 import { useExportExcel } from '@/features/hooks/useExportExcel';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/firebase/firebase.config';
+import BarChartDirectores from './BarChartDirectores';
 
 ChartJS.register(
   CategoryScale,
@@ -107,6 +108,8 @@ const Reporte = () => {
   } = useCrearPuntajeProgresiva();
 
   const [rangoMes, setRangoMes] = useState<number[]>([]);
+  const [dataDirectoresBar, setDataDirectoresBar] = useState<any[]>([]);
+  const [loadingDirectoresBar, setLoadingDirectoresBar] = useState(false);
 
   // Callback para manejar cambios en el rango
   const handleRangoChange = (mesInicio: number, mesFin: number, año: number, mesesIds: number[]) => {
@@ -326,6 +329,7 @@ const Reporte = () => {
     if (isFetchedBarGraphics.current === currentKey) return;
 
     const fetchBarGraphicsData = async () => {
+      setLoadingDirectoresBar(true);
       try {
         console.log('🚀 [Cloud Function] Solicitando datos para directores...');
         const getDataFunction = httpsCallable(functions, 'getDataToDirectoresFromBarGraphics');
@@ -335,8 +339,15 @@ const Reporte = () => {
           mes: monthSelected
         });
         console.log('✅ [Cloud Function] Datos de directores recibidos:', result.data);
+
+        const response: any = result.data;
+        if (response.success && Array.isArray(response.data)) {
+          setDataDirectoresBar(response.data);
+        }
       } catch (error) {
         console.error('❌ [Cloud Function] Error en getDataToDirectoresFromBarGraphics:', error);
+      } finally {
+        setLoadingDirectoresBar(false);
       }
     };
 
@@ -700,6 +711,22 @@ const Reporte = () => {
               />
 
             ) : null
+          }
+
+          {/* Gráfico de barras horizontales para directores */}
+          {
+            evaluacion.tipoDeEvaluacion === '1' && (
+              loadingDirectoresBar ? (
+                <div className={styles.loaderContainer} style={{ minHeight: '300px' }}>
+                  <div className={styles.loaderContent}>
+                    <RiLoader4Line className={styles.loaderIcon} />
+                    <span className={styles.loaderText}>Procesando analytics de directores...</span>
+                  </div>
+                </div>
+              ) : (
+                dataDirectoresBar.length > 0 && <BarChartDirectores data={dataDirectoresBar} />
+              )
+            )
           }
 
           {/* Componente de acordeón para gráficos de tendencia */}
