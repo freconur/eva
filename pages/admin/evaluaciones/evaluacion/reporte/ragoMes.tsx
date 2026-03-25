@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGlobalContext, useGlobalContextDispatch } from '@/features/context/GlolbalContext';
 import { AppAction } from '@/features/actions/appAction';
-import { currentYear } from '@/fuctions/dates';
+import { currentYear, currentMonth } from '@/fuctions/dates';
 import { getAllMonths } from '@/fuctions/dates';
 interface RangoMesProps {
   onRangoChange?: (mesInicio: number, mesFin: number, año: number, mesesIds: number[]) => void;
@@ -12,9 +12,9 @@ interface RangoMesProps {
 const RangoMes: React.FC<RangoMesProps> = ({ onRangoChange, className = '', setRangoMes }) => {
   const dispatch = useGlobalContextDispatch();
   const { currentUserData } = useGlobalContext();
-  
-  const [mesInicio, setMesInicio] = useState<number>(0);
-  const [mesFin, setMesFin] = useState<number>(11);
+
+  const [mesInicio, setMesInicio] = useState<number>(currentMonth);
+  const [mesFin, setMesFin] = useState<number>(currentMonth);
   const [año, setAño] = useState<number>(currentYear);
   const [error, setError] = useState<string>('');
 
@@ -53,7 +53,7 @@ const RangoMes: React.FC<RangoMesProps> = ({ onRangoChange, className = '', setR
   const handleMesInicioChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const nuevoMes = parseInt(e.target.value);
     setMesInicio(nuevoMes);
-    
+
     // Si el mes de fin es menor que el nuevo mes de inicio, ajustar automáticamente
     if (nuevoMes > mesFin) {
       setMesFin(nuevoMes);
@@ -83,7 +83,7 @@ const RangoMes: React.FC<RangoMesProps> = ({ onRangoChange, className = '', setR
 
   const handleAñoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setAño(parseInt(e.target.value));
-    
+
     // Solo actualizar rangoMes local, no ejecutar onRangoChange
     setTimeout(() => {
       const mesesIds = obtenerIdsMesesEnRango();
@@ -102,11 +102,11 @@ const RangoMes: React.FC<RangoMesProps> = ({ onRangoChange, className = '', setR
   };
 
   const resetearRango = () => {
-    setMesInicio(0);
-    setMesFin(11);
+    setMesInicio(currentMonth);
+    setMesFin(currentMonth);
     setAño(currentYear);
     setError('');
-    
+
     // Solo actualizar rangoMes local, no ejecutar onRangoChange
     setTimeout(() => {
       const mesesIds = obtenerIdsMesesEnRango();
@@ -201,7 +201,7 @@ const RangoMes: React.FC<RangoMesProps> = ({ onRangoChange, className = '', setR
         >
           Restablecer
         </button>
-        
+
         <button
           onClick={() => {
             const mesesIds = obtenerIdsMesesEnRango();
