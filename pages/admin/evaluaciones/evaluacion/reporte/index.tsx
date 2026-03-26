@@ -16,6 +16,8 @@ import {
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { Alternativa, DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
 import { RiLoader4Line, RiFileExcel2Line, RiDownloadLine } from 'react-icons/ri';
+import { toast } from 'react-toastify';
+import { MdAddCircle, MdAnalytics, MdCalendarToday, MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import styles from './Reporte.module.css';
 import { currentMonth, getAllMonths } from '@/fuctions/dates';
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista';
@@ -539,7 +541,7 @@ const Reporte = () => {
   // Función para generar reporte usando Firebase Functions
   const handleGenerarReporte = async () => {
     if (!route.query.idEvaluacion) {
-      alert('No se ha seleccionado una evaluación válida');
+      toast.warning('No se ha seleccionado una evaluación válida');
       return;
     }
 
@@ -564,18 +566,10 @@ const Reporte = () => {
       }, yearSelected);
 
       if (resultado) {
-        const data = resultado as any;
-        const message =
-          `🎉 ¡Reporte generado exitosamente!\n\n` +
-          `📊 Estadísticas del procesamiento:\n` +
-          `• Directores procesados: ${data.procesados || 'N/A'}\n` +
-          `• Total de docentes: ${data.totalDocentes || 'N/A'}\n` +
-          `• Total de evaluaciones: ${data.totalEvaluaciones || 'N/A'}\n` +
-          `• Directores con datos: ${data.estadisticas?.directoresConDatos || 'N/A'}\n` +
-          `• Preguntas procesadas: ${data.estadisticas?.preguntasProcesadas || 'N/A'}\n\n` +
-          `Los datos están listos para visualización y exportación.`;
-
-        alert(message);
+        toast.success(`Consolidado generado con éxito para la evaluación ${evaluacion.nombre}`, {
+          autoClose: 10000,
+          position: "top-right",
+        });
       }
     } catch (error: any) {
       if (error.code === 'functions/deadline-exceeded') {
@@ -588,7 +582,9 @@ const Reporte = () => {
           '• Contacta al administrador si el problema persiste\n\n' +
           'Esto puede ocurrir con más de 1000 directores o muchas evaluaciones.';
 
-        alert(timeoutMessage);
+        toast.warning(timeoutMessage, { autoClose: 15000 });
+      } else {
+        toast.error(`❌ Error al generar reporte: ${error.message || 'Error desconocido'}`);
       }
     }
   };

@@ -208,6 +208,7 @@
   background: #94a3b8;
 }
 
+.filterGroup,
 .rowsPerPageContainer {
   display: flex;
   align-items: center;
@@ -219,21 +220,40 @@
 }
 
 .rowsPerPageSelect {
-  padding: 4px 8px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  padding: 8px 36px 8px 16px;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
   background: #ffffff;
   color: #1e293b;
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
   outline: none;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5' /%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  min-width: 80px;
 }
 
 .rowsPerPageSelect:hover {
   border-color: #3b82f6;
-  background: #f1f5f9;
+  background: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.rowsPerPageSelect:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+  background: #ffffff;
+}
+
+.regionSelect {
+  min-width: 180px;
 }
 
 .emptyContainer {

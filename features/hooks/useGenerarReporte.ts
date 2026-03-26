@@ -149,12 +149,7 @@ ${estimacion.excederaTimeout ?
       const estimacionInicial = calcularTiempoEstimado(100); // Usar 1200 como estimación por defecto
       setEstimacionPrevia(estimacionInicial);
 
-      // Mostrar confirmación con estimación al usuario
-      const continuar = mostrarConfirmacionConEstimacion(100);
-      if (!continuar) {
-        setLoading(false);
-        throw new Error('Operación cancelada por el usuario');
-      }
+      // La confirmación ahora se maneja en los componentes para mayor flexibilidad
 
       // Verificar autenticación y refrescar token
       const auth = getAuth(app);
@@ -240,12 +235,11 @@ ${estimacion.excederaTimeout ?
         console.log(`   🎯 Eficiencia de estimación: ${real.eficienciaEstimacion}`);
       } */
 
-      // Mostrar mensaje de éxito con información de estimación
-      const mensajeExito = `Reporte generado exitosamente. ${(result.data as any).message}${data.estimacionTiempo ?
+      /* const mensajeExito = `Reporte generado exitosamente. ${(result.data as any).message}${data.estimacionTiempo ?
           `\n\n📊 Estimación: ${data.estimacionTiempo.tiempoEstimadoMinutos} min (${data.estimacionTiempo.clasificacion})` :
           ''
         }`;
-      alert(mensajeExito);
+      alert(mensajeExito); */
 
       return data;
 
@@ -270,7 +264,6 @@ ${estimacion.excederaTimeout ?
       }
 
       setError(errorMessage);
-      alert(`Error: ${errorMessage}`);
       throw error;
 
     } finally {

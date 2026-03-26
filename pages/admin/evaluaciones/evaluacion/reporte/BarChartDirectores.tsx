@@ -12,6 +12,7 @@ import { Bar } from 'react-chartjs-2';
 import styles from './BarChartDirectores.module.css';
 import { useHighQualityChartOptions } from '@/features/hooks/useHighQualityChartOptions';
 import { useColorsFromCSS } from '@/features/hooks/useColorsFromCSS';
+import { regiones } from '@/fuctions/regiones';
 
 ChartJS.register(
     CategoryScale,
@@ -36,6 +37,7 @@ interface DirectorData {
     institucion: string;
     totalEstudiantes: number;
     promedioGlobal: number;
+    region?: string | number;
     niveles: Nivel[];
 }
 
@@ -48,6 +50,7 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
     const [currentPage, setCurrentPage] = React.useState(0);
     const [sortBy, setSortBy] = React.useState<'promedio' | 'evaluados' | 'satisfactorios' | 'impacto'>('promedio');
     const [itemsPerPage, setItemsPerPage] = React.useState(25);
+    const [selectedRegion, setSelectedRegion] = React.useState<string>('');
 
     // Helper para obtener conteo de satisfactorios de forma robusta
     const getSatisfactorioCount = (director: DirectorData) => {
@@ -62,10 +65,17 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
         return director.promedioGlobal * Math.log10(1 + (director.totalEstudiantes || 0));
     };
 
-    // Aplicar ordenamiento dinámico con desempates lógicos predefinidos
+    // Aplicar filtrado por región y ordenamiento dinámico
     const sortedData = useMemo(() => {
         if (!Array.isArray(data)) return [];
-        return [...data].sort((a, b) => {
+
+        // 1. Filtrar por región si hay una seleccionada
+        const filteredData = selectedRegion
+            ? data.filter(d => String(d.region) === String(selectedRegion))
+            : data;
+
+        // 2. Ordenar datos filtrados
+        return [...filteredData].sort((a, b) => {
             const aSat = getSatisfactorioCount(a);
             const bSat = getSatisfactorioCount(b);
             const aImpact = getImpactScore(a);
@@ -85,7 +95,7 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
             }
             return 0;
         });
-    }, [data, sortBy]);
+    }, [data, sortBy, selectedRegion]);
 
     const totalPages = Math.ceil(sortedData.length / itemsPerPage);
 
@@ -246,6 +256,25 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
 
                 <div className={styles.controlsRow}>
                     <div className={styles.pagination}>
+                        <div className={styles.filterGroup}>
+                            <span>Ugel:</span>
+                            <select
+                                className={`${styles.rowsPerPageSelect} ${styles.regionSelect}`}
+                                value={selectedRegion}
+                                onChange={(e) => {
+                                    setSelectedRegion(e.target.value);
+                                    setCurrentPage(0);
+                                }}
+                            >
+                                <option value="">Todas las Ugel</option>
+                                {regiones.map((reg) => (
+                                    <option key={reg.id} value={reg.id}>
+                                        {reg.region}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
                         <div className={styles.rowsPerPageContainer}>
                             <span>Ver:</span>
                             <select

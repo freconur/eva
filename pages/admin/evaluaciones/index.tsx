@@ -2,6 +2,7 @@ import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
+import { useGenerarReporte } from '@/features/hooks/useGenerarReporte'
 // import { Evaluaciones } from '@/features/types/types'
 import DeleteEvaluacion from '@/modals/deleteEvaluacion'
 import UpdateEvaluacion from '@/modals/updateEvaluacion'
@@ -10,8 +11,9 @@ import AlertModal from '@/modals/alertModal/AlertModal'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
-import { MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff, MdAddCircle, MdCalendarToday } from 'react-icons/md'
+import { MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff, MdAddCircle, MdCalendarToday, MdAnalytics } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
+import { toast } from 'react-toastify'
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DesktopDatePicker } from "@mui/x-date-pickers";
@@ -41,6 +43,9 @@ const Evaluaciones = () => {
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false)
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
   const [selectedGrado, setSelectedGrado] = useState<string>('all')
+  const [processingIds, setProcessingIds] = useState<string[]>([])
+
+  const { generarReporte } = useGenerarReporte()
 
   // Helper para mostrar nivel
   const getNivelGrado = (gradoNum: number) => {
@@ -188,6 +193,50 @@ const Evaluaciones = () => {
       setUpdatingMonth(false)
     }
   }
+
+  const handleGenerarReporteLocal = async (eva: any) => {
+    if (!eva.id) {
+      toast.warning('No se ha seleccionado una evaluación válida')
+      return
+    }
+
+    const confirmed = window.confirm(
+      'Este proceso puede tardar un máximo de 2 minutos. ¿Deseas continuar?'
+    )
+
+    if (!confirmed) return
+
+    setProcessingIds(prev => [...prev, eva.id])
+
+    try {
+      const mes = Number(eva.mesDelExamen)
+      const año = Number(eva.añoDelExamen || new Date().getFullYear().toString())
+
+      const resultado = await generarReporte(eva.id, mes, {
+        region: '',
+        distrito: '',
+        caracteristicaCurricular: '',
+        genero: '',
+        area: '',
+      }, año)
+
+      if (resultado) {
+        toast.success(`Consolidado generado con éxito para la evaluación ${eva.nombre}`, {
+          autoClose: 5000,
+          position: "top-right",
+        })
+      }
+    } catch (error: any) {
+      if (error.code === 'functions/deadline-exceeded') {
+        toast.warning('⚠️ Tiempo de espera agotado. El proceso podría seguir ejecutándose en el servidor.')
+      } else {
+        toast.error(`❌ Error al generar reporte: ${error.message || 'Error desconocido'}`)
+      }
+    } finally {
+      setProcessingIds(prev => prev.filter(id => id !== eva.id))
+    }
+  }
+
   useEffect(() => {
     getGrades()
   }, [])
@@ -357,6 +406,7 @@ const Evaluaciones = () => {
                       <th className={styles.tableHeaderCell}>grado / nivel</th>
                       <th className={styles.tableHeaderCell}>mes y año</th>
                       <th className={styles.tableHeaderCell}>estado</th>
+                      <th className={styles.tableHeaderCell}>reporte</th>
                       <th className={styles.tableHeaderCell}>acciones</th>
                     </tr>
                   </thead>
@@ -471,9 +521,31 @@ const Evaluaciones = () => {
                                 />
                               )}
                             </td>
+                            <td className={styles.tableCell}>
+                              {puedeAcceder ? (
+                                <Link
+                                  href={`/admin/evaluaciones/evaluacion/reporte?id=${currentUserData?.dni}&idEvaluacion=${eva.id}`}
+                                  className={styles.reportLink}
+                                >
+                                  Ir
+                                </Link>
+                              ) : (
+                                <span className={styles.inactiveIcon}>-</span>
+                              )}
+                            </td>
                             <td>
                               {puedeAcceder && currentUserData?.perfil?.rol === 4 ? (
                                 <div className={styles.actionsContainer}>
+                                  <div onClick={() => eva.id && !processingIds.includes(eva.id) && handleGenerarReporteLocal(eva)}>
+                                    {eva.id && processingIds.includes(eva.id) ? (
+                                      <RiLoader4Line className={`${styles.actionIcon} ${styles.loaderIcon}`} />
+                                    ) : (
+                                      <MdAnalytics
+                                        className={`${styles.actionIcon} ${styles.consolidadoIcon}`}
+                                        title="Generar consolidado global"
+                                      />
+                                    )}
+                                  </div>
                                   <MdEditSquare
                                     onClick={() => {
                                       setNameEva(`${eva.nombre}`);
@@ -497,7 +569,7 @@ const Evaluaciones = () => {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
                           No se encontraron evaluaciones para los filtros seleccionados.
                         </td>
                       </tr>

@@ -707,6 +707,31 @@
   transform: translateY(-1px);
 }
 
+.reportLink {
+  color: #3b82f6;
+  font-weight: 600;
+  text-decoration: none;
+  background: #eff6ff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.reportLink:hover {
+  background: #dbeafe;
+  color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.consolidadoIcon {
+  color: #3b82f6 !important;
+}
+
+.consolidadoIcon:hover {
+  background: rgba(59, 130, 246, 0.08) !important;
+  transform: translateY(-1px);
+}
+
 /* Asegurar que las celdas de acciones tengan el ancho adecuado */
 .tableCell:last-child {
   min-width: 120px;
