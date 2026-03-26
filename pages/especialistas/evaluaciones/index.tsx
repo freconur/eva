@@ -9,7 +9,8 @@ import UpdateEvaluacion from '@/modals/updateEvaluacion'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
 import { MdDeleteForever, MdEditSquare } from 'react-icons/md'
-import { RiLoader4Line, RiSettings3Line } from 'react-icons/ri'
+import { RiLoader4Line, RiSettings3Line, RiBarChart2Line, RiArrowRightSLine } from 'react-icons/ri'
+import { getGradoTexto, nivelInstitucion } from '@/fuctions/regiones'
 
 const Evaluaciones = () => {
   const { getEvaluaciones, getEvaluacion } = useAgregarEvaluaciones()
@@ -18,12 +19,13 @@ const Evaluaciones = () => {
   const [inputUpdate, setInputUpdate] = useState<boolean>(false)
   const [idEva, setIdEva] = useState<string>("")
   const [nameEva, setNameEva] = useState<string>("")
+  const [selectedGrado, setSelectedGrado] = useState<string>("all")
   const handleShowInputUpdate = () => { setInputUpdate(!inputUpdate) }
   const handleShowModalDelete = () => { setShowDelete(!showDelete) }
   const [dataEvaluacion, setDataEvaluacion] = useState(evaluacion)
   useEffect(() => {
     getEvaluaciones()
-  }, [currentUserData.dni])
+  }, [currentUserData?.dni])
 
   const currentYear = new Date().getFullYear()
 
@@ -38,6 +40,27 @@ const Evaluaciones = () => {
 
     return isActive && isCorrectLevel && isCurrentYear;
   }) || [];
+
+  const gradeOptions = Array.from(new Set(filteredEvaluaciones.map(eva => {
+    const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel;
+    return `${eva.grado || ''}-${nivelEva}`;
+  }))).filter(option => option.split("-")[0] !== "").map(option => {
+    const [grado, nivel] = option.split("-");
+    const gradoLabel = getGradoTexto(grado);
+    const nivelLabel = nivelInstitucion.find(n => n.id === Number(nivel))?.name || "";
+
+    return {
+      value: option,
+      label: `${gradoLabel}, nivel ${nivelLabel.toLowerCase()}`
+    };
+  }).sort((a, b) => Number(a.value.split("-")[0]) - Number(b.value.split("-")[0]));
+
+  const finalEvaluaciones = selectedGrado === "all"
+    ? filteredEvaluaciones
+    : filteredEvaluaciones.filter(eva => {
+      const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel;
+      return `${eva.grado || ''}-${nivelEva}` === selectedGrado;
+    });
 
   return (
     <>
@@ -62,13 +85,37 @@ const Evaluaciones = () => {
               </p>
             </div>
 
-            <Link
-              href="/admin/evaluaciones"
-              className="flex items-center gap-2 px-5 py-3 bg-white text-slate-600 font-bold text-sm rounded-xl shadow-lg shadow-slate-200/50 border border-slate-100 hover:border-colorSegundo/30 hover:text-colorSegundo hover:shadow-xl hover:translate-y-[-2px] transition-all duration-300 group"
-            >
-              <RiSettings3Line className="text-lg group-hover:rotate-90 transition-transform duration-500" />
-              <span>Gestionar</span>
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              {gradeOptions.length > 0 && (
+                <div className="relative w-full sm:w-64">
+                  <select
+                    value={selectedGrado}
+                    onChange={(e) => setSelectedGrado(e.target.value)}
+                    className="w-full pl-4 pr-10 py-3 bg-white text-slate-700 font-semibold text-sm rounded-xl shadow-lg shadow-slate-200/50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-colorSegundo/20 focus:border-colorSegundo/30 appearance-none transition-all duration-300"
+                  >
+                    <option value="all">Todos los grados</option>
+                    {gradeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                      <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+
+              <Link
+                href="/admin/evaluaciones"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-white text-slate-600 font-bold text-sm rounded-xl shadow-lg shadow-slate-200/50 border border-slate-100 hover:border-colorSegundo/30 hover:text-colorSegundo hover:shadow-xl hover:translate-y-[-2px] transition-all duration-300 group"
+              >
+                <RiSettings3Line className="text-lg group-hover:rotate-90 transition-transform duration-500" />
+                <span>Gestionar</span>
+              </Link>
+            </div>
           </div>
 
           {loaderPages ? (
@@ -84,12 +131,12 @@ const Evaluaciones = () => {
                     <tr className="bg-slate-50/80 border-b border-slate-100">
                       <th className="py-6 px-8 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] w-20 text-center">#</th>
                       <th className="py-6 px-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em]">Descripción de la Evaluación</th>
-                      <th className="py-6 px-8 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] text-right">Acciones</th>
+                      <th className="py-6 px-8 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center">Reporte</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {filteredEvaluaciones.length > 0 ? (
-                      filteredEvaluaciones.map((eva, index) => (
+                    {finalEvaluaciones.length > 0 ? (
+                      finalEvaluaciones.map((eva, index) => (
                         <tr
                           key={eva.id || index}
                           className="group hover:bg-slate-50/50 transition-all duration-300"
@@ -98,43 +145,21 @@ const Evaluaciones = () => {
                             {String(index + 1).padStart(2, '0')}
                           </td>
                           <td className="py-6 px-4">
-                            <Link
-                              href={`/admin/evaluaciones/evaluacion/${eva.id}`}
-                              className="inline-flex items-center gap-3 text-slate-700 font-bold hover:text-colorSegundo transition-all duration-300"
+                            <div
+                              className="inline-flex items-center gap-3 text-slate-700 font-bold"
                             >
                               <span className="text-base tracking-tight">{eva.nombre}</span>
-                              <div className="w-6 h-6 rounded-full bg-colorSegundo/5 flex items-center justify-center opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                                <span className="text-colorSegundo text-xs">→</span>
-                              </div>
-                            </Link>
-                          </td>
-                          <td className="py-6 px-8 text-right">
-                            <div className="flex justify-end items-center gap-3">
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setIdEva(eva.id || "");
-                                  setNameEva(eva.nombre || "");
-                                  handleShowInputUpdate();
-                                }}
-                                className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 active:scale-90"
-                                title="Editar parámetros"
-                              >
-                                <MdEditSquare size={22} />
-                              </button>
-                              <div className="w-[1px] h-4 bg-slate-100"></div>
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setIdEva(eva.id || "");
-                                  handleShowModalDelete();
-                                }}
-                                className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200 active:scale-90"
-                                title="Eliminar definitivamente"
-                              >
-                                <MdDeleteForever size={22} />
-                              </button>
                             </div>
+                          </td>
+                          <td className="py-6 px-8 text-center">
+                            <Link
+                              href={`/admin/evaluaciones/evaluacion/reporte?id=${currentUserData?.dni}&idEvaluacion=${eva.id}`}
+                              className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-colorSegundo/5 text-colorSegundo font-bold text-sm rounded-xl hover:bg-colorSegundo hover:text-white hover:shadow-lg hover:shadow-colorSegundo/20 active:scale-95 transition-all duration-300 group/btn"
+                            >
+                              <RiBarChart2Line className="text-lg" />
+                              <span>Ver Reporte</span>
+                              <RiArrowRightSLine className="text-lg group-hover/btn:translate-x-1 transition-transform duration-300" />
+                            </Link>
                           </td>
                         </tr>
                       ))
