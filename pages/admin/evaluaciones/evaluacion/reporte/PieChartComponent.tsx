@@ -39,50 +39,56 @@ interface PieChartComponentProps {
   monthSelected: number
   dataGraficoTendenciaNiveles: GraficoPieChart[]
   yearSelected: number
+  filtros?: {
+    genero: string;
+    region: string;
+  };
+  onFilterChange?: (name: string, value: string) => void;
 }
-const PieChartComponent = ({ monthSelected = 0, dataGraficoTendenciaNiveles = [], yearSelected = 2025 }: PieChartComponentProps) => {
-  const [filtroGenero, setFiltroGenero] = useState<string>('')
-  const [filtroRegion, setFiltroRegion] = useState<string>('')
-  const [dataFiltrada, setDataFiltrada] = useState<GraficoPieChart[]>(dataGraficoTendenciaNiveles)
+
+const PieChartComponent = ({
+  monthSelected = 0,
+  dataGraficoTendenciaNiveles = [],
+  yearSelected = 2025,
+  filtros = { genero: '', region: '' },
+  onFilterChange
+}: PieChartComponentProps) => {
+  const { genero: filtroGenero, region: filtroRegion } = filtros;
 
   const route = useRouter()
-  const { loaderDataGraficoPieChart, evaluacion, dataGraficoPieChart } = useGlobalContext()
-  const { preparePieChartData, getNivelStyles } = useColorsFromCSS()
-  const { getDataGraficoPieChart } = useReporteEspecialistas()
-
-  // Memoizar el idEvaluacion para evitar renders innecesarios
-  const idEvaluacion = useMemo(() => route.query.idEvaluacion, [route.query.idEvaluacion])
-
-  // Efecto para recargar datos cuando cambien los filtros
-  useEffect(() => {
-    if (idEvaluacion && evaluacion?.nivelYPuntaje) {
-      getDataGraficoPieChart(
-        `${idEvaluacion}`,
-        monthSelected,
-        evaluacion,
-        filtroGenero || undefined,
-        filtroRegion || undefined,
-        yearSelected
-      )
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthSelected, filtroGenero, filtroRegion, idEvaluacion, yearSelected])
+  const { loaderDataGraficoPieChart, dataGraficoPieChart } = useGlobalContext()
+  const { preparePieChartData } = useColorsFromCSS()
 
   // Usar dataGraficoPieChart del contexto global si está disponible, sino usar la prop
   const datosParaGrafico = useMemo(() => {
-    // Si hay filtros activos, usar dataGraficoPieChart directamente (incluso si está vacío) para evitar mostrar datos generales
+    // Si hay filtros activos (Género o Región), no queremos el fallback global
+    // Queremos mostrar el resultado real del filtro (incluso si es vacío)
     if (filtroGenero || filtroRegion) {
-      return dataGraficoPieChart
+      return dataGraficoPieChart || [];
     }
-    return Array.isArray(dataGraficoPieChart) && dataGraficoPieChart.length > 0
-      ? dataGraficoPieChart
-      : dataGraficoTendenciaNiveles
-  }, [dataGraficoPieChart, dataGraficoTendenciaNiveles, filtroGenero, filtroRegion])
 
-  // Actualizar datos filtrados cuando cambien los datos originales
+    // Si NO hay filtros, usamos lo que haya en el contexto global,
+    // y si no hay nada, el fallback de dataGraficoTendenciaNiveles (datos generales)
+    if (Array.isArray(dataGraficoPieChart) && dataGraficoPieChart.length > 0) {
+      return dataGraficoPieChart;
+    }
+    return dataGraficoTendenciaNiveles;
+  }, [dataGraficoPieChart, dataGraficoTendenciaNiveles, filtroGenero, filtroRegion]);
+
+  const [dataFiltrada, setDataFiltrada] = useState<GraficoPieChart[]>(datosParaGrafico)
+
+  // Sincronizar dataFiltrada cuando cambien los datos originales
   useEffect(() => {
     setDataFiltrada(datosParaGrafico)
   }, [datosParaGrafico])
+
+  const handleChangeGenero = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (onFilterChange) onFilterChange('genero', e.target.value);
+  }
+
+  const handleChangeRegion = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (onFilterChange) onFilterChange('region', e.target.value);
+  }
 
   // Buscar datos del mes seleccionado usando find
   const datosMesSeleccionado = Array.isArray(dataFiltrada)
@@ -112,14 +118,6 @@ const PieChartComponent = ({ monthSelected = 0, dataGraficoTendenciaNiveles = []
         borderAlign: 'inner' as const
       }]
     }
-
-  const handleChangeGenero = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFiltroGenero(e.target.value)
-  }
-
-  const handleChangeRegion = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFiltroRegion(e.target.value)
-  }
 
   return (
     <div className={styles.container}>

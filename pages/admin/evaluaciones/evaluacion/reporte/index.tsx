@@ -315,9 +315,18 @@ const Reporte = () => {
     );
   };
   useEffect(() => {
-    getDataGraficoPieChart(`${route.query.idEvaluacion}`, monthSelected, evaluacion);
-    getEstadisticaGlobal(`${route.query.idEvaluacion}`, monthSelected, yearSelected);
-  }, [route.query.id, route.query.idEvaluacion, currentUserData.dni, monthSelected]);
+    if (route.query.idEvaluacion && evaluacion?.nivelYPuntaje) {
+      getDataGraficoPieChart(
+        `${route.query.idEvaluacion}`,
+        monthSelected,
+        evaluacion,
+        filtros.genero || undefined,
+        filtros.region || undefined,
+        yearSelected
+      );
+      getEstadisticaGlobal(`${route.query.idEvaluacion}`, monthSelected, yearSelected);
+    }
+  }, [route.query.id, route.query.idEvaluacion, currentUserData.dni, monthSelected, filtros.genero, filtros.region, yearSelected, evaluacion]);
 
   // --- INTEGRACIÓN DE GRÁFICOS DE BARRAS PARA DIRECTORES ---
   const isFetchedBarGraphics = useRef<string | null>(null);
@@ -704,6 +713,10 @@ const Reporte = () => {
                 monthSelected={monthSelected}
                 yearSelected={yearSelected}
                 dataGraficoTendenciaNiveles={dataGraficoTendenciaNiveles}
+                filtros={filtros}
+                onFilterChange={(name, value) => {
+                  setFiltros(prev => ({ ...prev, [name]: value }));
+                }}
               />
 
             ) : null

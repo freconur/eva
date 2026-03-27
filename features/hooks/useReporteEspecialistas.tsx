@@ -39,141 +39,75 @@ export const useReporteEspecialistas = () => {
     filtroRegion?: string,
     yearSelected?: number
   ) => {
-    console.log('evaluacion', evaluacion);
-    console.log('filtroGenero', filtroGenero);
-    console.log('filtroRegion', filtroRegion);
     try {
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: true });
-      const dataGraficoPieChart: GraficoPieChart[] = [];
-      const coll = collection(
-        db,
-        `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`
-      );
 
-      // Crear query para el total con los mismos filtros que se aplicarán a los niveles
-      const condicionesTotal: any[] = [];
-      if (filtroGenero) {
-        condicionesTotal.push(where('genero', '==', filtroGenero));
+      const studentsPath = `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`;
+      const coll = collection(db, studentsPath);
+
+      // 1. Obtener el Conteo Total (con filtros)
+      const condicionesFiltros: any[] = [];
+      if (filtroGenero) condicionesFiltros.push(where('genero', '==', filtroGenero));
+      if (filtroRegion) condicionesFiltros.push(where('region', '==', Number(filtroRegion)));
+
+      const queryTotal = condicionesFiltros.length > 0 ? query(coll, ...condicionesFiltros) : coll;
+      const snapshotTotal = await getCountFromServer(queryTotal);
+      const totalDocumentos = snapshotTotal.data().count;
+
+      if (totalDocumentos === 0) {
+        dispatch({ type: AppAction.DATA_GRAFICO_PIE_CHART, payload: [] });
+        return;
       }
-      if (filtroRegion) {
-        condicionesTotal.push(where('region', '==', Number(filtroRegion)));
-      }
 
-      const queryTotal = condicionesTotal.length > 0
-        ? query(coll, ...condicionesTotal)
-        : coll;
+      // 2. Ejecutar Consultas de Niveles en Paralelo (Optimization)
+      const nivelesConfig = evaluacion.nivelYPuntaje || [];
+      const promesasNiveles = nivelesConfig.map(async (nivelData) => {
+        const nivelNombre = nivelData.nivel?.toLowerCase() || '';
+        const minPuntaje = nivelData.min || 0;
+        const maxPuntaje = nivelData.max || 1000;
 
-      const cantidadDocumentos = await getCountFromServer(queryTotal);
+        const condicionesNivel = [...condicionesFiltros];
 
-      if (cantidadDocumentos.data().count > 0) {
-        // Validar que exista nivelYPuntaje en la evaluación
-        if (!evaluacion.nivelYPuntaje || evaluacion.nivelYPuntaje.length === 0) {
-          console.warn('No se encontraron niveles y puntajes en la evaluación');
-          dispatch({
-            type: AppAction.DATA_GRAFICO_PIE_CHART,
-            payload: [],
-          });
-          return;
+        // Manejo especial para "previo al inicio" o rangos que incluyen 0
+        if (nivelNombre.includes('previo')) {
+          condicionesNivel.push(where('puntaje', '>=', 0));
+          condicionesNivel.push(where('puntaje', '<=', maxPuntaje));
+        } else {
+          condicionesNivel.push(where('puntaje', '>=', minPuntaje));
+          condicionesNivel.push(where('puntaje', '<=', maxPuntaje));
         }
 
-        // Crear queries dinámicamente basadas en nivelYPuntaje
-        const queriesPorNivel: Record<string, any> = {};
-        const snapshotsPorNivel: Record<string, any> = {};
-        const nivelesData: Array<{ nivel: string; cantidadDeEstudiantes: number }> = [];
+        const qNivel = query(coll, ...condicionesNivel);
+        const snapNivel = await getCountFromServer(qNivel);
 
-        // Procesar cada nivel de nivelYPuntaje
-        for (const nivelData of evaluacion.nivelYPuntaje) {
-          const nivelNombre = nivelData.nivel?.toLowerCase() || '';
-          const minPuntaje = nivelData.min || 0;
-          const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
-
-          // Construir condiciones de filtro
-          const condicionesWhere: any[] = [];
-
-          // Agregar condición de puntaje según el nivel
-          if (nivelNombre === 'previo al inicio') {
-            condicionesWhere.push(where('puntaje', '<=', maxPuntaje));
-            condicionesWhere.push(where('puntaje', '>=', 0));
-          } else {
-            condicionesWhere.push(where('puntaje', '<=', maxPuntaje));
-            condicionesWhere.push(where('puntaje', '>=', minPuntaje));
-          }
-
-          // Agregar filtro de género si está presente
-          if (filtroGenero) {
-            condicionesWhere.push(where('genero', '==', filtroGenero));
-          }
-
-          // Agregar filtro de región si está presente
-          if (filtroRegion) {
-            condicionesWhere.push(where('region', '==', Number(filtroRegion)));
-          }
-
-          // Crear query con todas las condiciones
-          const q = query(
-            collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`),
-            ...condicionesWhere
-          );
-
-          queriesPorNivel[nivelNombre] = q;
-        }
-
-        // Ejecutar todas las queries y obtener los conteos
-        for (const nivelData of evaluacion.nivelYPuntaje) {
-          const nivelNombre = nivelData.nivel?.toLowerCase() || '';
-          if (queriesPorNivel[nivelNombre]) {
-            const snapshot = await getCountFromServer(queriesPorNivel[nivelNombre]);
-            snapshotsPorNivel[nivelNombre] = snapshot.data().count;
-            nivelesData.push({
-              nivel: nivelData.nivel || nivelNombre,
-              cantidadDeEstudiantes: snapshot.data().count,
-            });
-          }
-        }
-
-        // Calcular la diferencia entre el total y la suma de estudiantes por nivel
-        // Esta diferencia incluye estudiantes con puntaje null y otros casos no contados
-        const totalDocumentos = cantidadDocumentos.data().count;
-        const sumaPorNiveles = nivelesData.reduce((suma, nivel) => suma + nivel.cantidadDeEstudiantes, 0);
-        const diferencia = totalDocumentos - sumaPorNiveles;
-
-        // Si hay diferencia positiva, agregarla al nivel "previo al inicio"
-        if (diferencia > 0) {
-          const nivelPrevioAlInicio = nivelesData.find(n => n.nivel.toLowerCase() === 'previo al inicio');
-          if (nivelPrevioAlInicio) {
-            nivelPrevioAlInicio.cantidadDeEstudiantes += diferencia;
-          } else {
-            // Si no existe el nivel "previo al inicio", agregarlo
-            nivelesData.push({
-              nivel: 'previo al inicio',
-              cantidadDeEstudiantes: diferencia,
-            });
-          }
-        }
-
-        // Crear objeto para el gráfico de pie chart
-        const objetoGraficoPieChart = {
-          mes: mes,
-          niveles: nivelesData,
+        return {
+          nivel: nivelData.nivel || 'Sin Nombre',
+          cantidadDeEstudiantes: snapNivel.data().count
         };
-        dataGraficoPieChart.push(objetoGraficoPieChart);
-        const dataGraficoPieChartOrdenada = dataGraficoPieChart.sort(
-          (a, b) => a.mes - b.mes
-        );
+      });
 
-        dispatch({
-          type: AppAction.DATA_GRAFICO_PIE_CHART,
-          payload: dataGraficoPieChartOrdenada,
-        });
-      } else {
-        // Si no hay documentos, limpiar el gráfico
-        dispatch({
-          type: AppAction.DATA_GRAFICO_PIE_CHART,
-          payload: [],
-        });
+      const nivelesData = await Promise.all(promesasNiveles);
+
+      // 3. Ajuste por descalce (Estudiantes que no caen en ningún rango exacto)
+      const sumaNiveles = nivelesData.reduce((acc, curr) => acc + curr.cantidadDeEstudiantes, 0);
+      const diferencia = totalDocumentos - sumaNiveles;
+
+      if (diferencia > 0) {
+        // En lugar de inventar datos, si hay diferencia, la añadimos al nivel más bajo existente
+        // o al que el usuario espera (usualmente el primero en la lista si es "Inicio")
+        if (nivelesData.length > 0) {
+          nivelesData[0].cantidadDeEstudiantes += diferencia;
+        }
       }
+
+      dispatch({
+        type: AppAction.DATA_GRAFICO_PIE_CHART,
+        payload: [{ mes, niveles: nivelesData }],
+      });
+
     } catch (error) {
-      console.error('Error al obtener datos para gráfico de tendencia:', error);
+      console.error('❌ Error en getDataGraficoPieChart:', error);
+      dispatch({ type: AppAction.DATA_GRAFICO_PIE_CHART, payload: [] });
     } finally {
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: false });
     }
