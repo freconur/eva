@@ -131,6 +131,7 @@ const Evaluaciones = () => {
                     <tr className="bg-slate-50/80 border-b border-slate-100">
                       <th className="py-6 px-8 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] w-20 text-center">#</th>
                       <th className="py-6 px-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em]">Descripción de la Evaluación</th>
+                      <th className="py-6 px-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em]">Grado</th>
                       <th className="py-6 px-8 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center">Reporte</th>
                     </tr>
                   </thead>
@@ -151,6 +152,11 @@ const Evaluaciones = () => {
                               <span className="text-base tracking-tight">{eva.nombre}</span>
                             </div>
                           </td>
+                          <td className="py-6 px-4">
+                            <span className="text-sm text-slate-600 font-bold bg-slate-100 px-3 py-1 rounded-lg">
+                              {getGradoTexto(eva.grado)}
+                            </span>
+                          </td>
                           <td className="py-6 px-8 text-center">
                             <Link
                               href={`/admin/evaluaciones/evaluacion/reporte?id=${currentUserData?.dni}&idEvaluacion=${eva.id}`}
@@ -165,7 +171,7 @@ const Evaluaciones = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="py-32 text-center">
+                        <td colSpan={4} className="py-32 text-center">
                           <div className="flex flex-col items-center max-w-xs mx-auto space-y-5">
                             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
                               <RiLoader4Line size={32} />
