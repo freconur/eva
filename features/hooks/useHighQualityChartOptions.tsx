@@ -7,13 +7,13 @@ interface UseHighQualityChartOptionsProps {
   legendPosition?: 'top' | 'bottom' | 'left' | 'right';
 }
 
-export const useHighQualityChartOptions = ({ 
-  chartType, 
-  title = 'Gráfico', 
-  showLegend = true, 
-  legendPosition = 'bottom' 
+export const useHighQualityChartOptions = ({
+  chartType,
+  title = 'Gráfico',
+  showLegend = true,
+  legendPosition = 'bottom'
 }: UseHighQualityChartOptionsProps) => {
-  
+
   const highQualityOptions = useMemo(() => {
     const baseOptions = {
       responsive: true,
@@ -70,25 +70,25 @@ export const useHighQualityChartOptions = ({
           labels: {
             usePointStyle: true,
             pointStyle: chartType === 'pie' ? 'circle' : 'rect',
-            padding: 25, // Más espacio entre elementos
+            padding: 15, // Espacio moderado para flujo horizontal
             font: {
-              size: 16, // Fuente más grande
+              size: 14, // Fuente equilibrada
               weight: 'bold' as const,
               family: "'Inter', 'Helvetica', 'Arial', sans-serif",
             },
             color: '#1F2937',
-            generateLabels: chartType === 'pie' ? function(chart: any) {
+            generateLabels: chartType === 'pie' ? function (chart: any) {
               const data = chart.data;
               if (data.labels.length && data.datasets.length) {
                 const dataset = data.datasets[0];
                 const total = dataset.data.reduce((a: number, b: number) => a + b, 0);
-                
+
                 return data.labels.map((label: string, index: number) => {
                   const value = dataset.data[index];
                   const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
                   // Todos los indicadores son cuadrados
                   const pointStyle = 'rect';
-                  
+
                   return {
                     text: `${label}: ${value} (${percentage}%)`,
                     fillStyle: dataset.backgroundColor[index],
@@ -147,7 +147,7 @@ export const useHighQualityChartOptions = ({
               const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
               const percentage = ((context.parsed / total) * 100).toFixed(1);
               const estudiantes = context.parsed;
-              
+
               return [
                 `👥 Estudiantes: ${estudiantes.toLocaleString('es-PE')}`,
                 `📈 Porcentaje: ${percentage}%`,

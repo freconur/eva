@@ -17,7 +17,7 @@ import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import { Alternativa, DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
 import { RiLoader4Line, RiFileExcel2Line, RiDownloadLine } from 'react-icons/ri';
 import { toast } from 'react-toastify';
-import { MdAddCircle, MdAnalytics, MdCalendarToday, MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff } from 'react-icons/md';
+import { MdAddCircle, MdAnalytics, MdCalendarToday, MdClose, MdDeleteForever, MdEditSquare, MdFileDownload, MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import styles from './Reporte.module.css';
 import { currentMonth, getAllMonths } from '@/fuctions/dates';
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista';
@@ -33,8 +33,12 @@ import PieChartComponent from './PieChartComponent';
 import FiltrosReporte from '@/components/reportes/FiltrosReporte';
 import { useExportExcel } from '@/features/hooks/useExportExcel';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/firebase/firebase.config';
+import { getDoc, doc } from "firebase/firestore";
+import { functions, db } from '@/firebase/firebase.config';
 import BarChartDirectores from './BarChartDirectores';
+import BarChartDocentesBuckets from './BarChartDocentesBuckets';
+import BarChartDocenteDetalle from './BarChartDocenteDetalle';
+import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 
 ChartJS.register(
   CategoryScale,
@@ -112,6 +116,15 @@ const Reporte = () => {
   const [rangoMes, setRangoMes] = useState<number[]>([]);
   const [dataDirectoresBar, setDataDirectoresBar] = useState<any[]>([]);
   const [loadingDirectoresBar, setLoadingDirectoresBar] = useState(false);
+  const [dataProfesoresBuckets, setDataProfesoresBuckets] = useState<any[]>([]);
+  const [totalDocentesBuckets, setTotalDocentesBuckets] = useState(0);
+  const [loadingProfesoresBuckets, setLoadingProfesoresBuckets] = useState(false);
+
+  // Drill-down para docentes
+  const [fullDocentesData, setFullDocentesData] = useState<any[] | null>(null);
+  const [selectedRange, setSelectedRange] = useState<string | null>(null);
+  const [loadingFullDocentes, setLoadingFullDocentes] = useState(false);
+  const drillDownRef = useRef<HTMLDivElement>(null);
 
   // Callback para manejar cambios en el rango
   const handleRangoChange = (mesInicio: number, mesFin: number, año: number, mesesIds: number[]) => {
@@ -366,6 +379,75 @@ const Reporte = () => {
     isFetchedBarGraphics.current = currentKey;
   }, [route.query.idEvaluacion, monthSelected, yearSelected]);
 
+  const loadConsolidado = async () => {
+    const idEval = route.query.idEvaluacion;
+    if (!idEval || monthSelected === undefined || !yearSelected) return;
+
+    setLoadingProfesoresBuckets(true);
+    try {
+      console.log('🚀 [BigQuery] Cargando analítica de docentes en tiempo real...');
+      const getDataFunction = httpsCallable(functions, 'getDataToProfesoresFromBarGraphics');
+      const result = await getDataFunction({
+        idEvaluacion: idEval,
+        año: yearSelected,
+        mes: monthSelected
+      });
+
+      const response: any = result.data;
+      if (response.success && Array.isArray(response.distribucionDocentes)) {
+        setDataProfesoresBuckets(response.distribucionDocentes);
+        setTotalDocentesBuckets(response.totalDocentes || 0);
+        setFullDocentesData(response.finalDocentes || null);
+      } else {
+        setDataProfesoresBuckets([]);
+        setTotalDocentesBuckets(0);
+        setFullDocentesData(null);
+      }
+    } catch (error) {
+      console.error('❌ Error al cargar analítica de BigQuery:', error);
+      setDataProfesoresBuckets([]);
+    } finally {
+      setLoadingProfesoresBuckets(false);
+    }
+  };
+
+  // --- CONSOLIDACIÓN DE DOCENTES (MANUAL POR BOTÓN) ---
+  const handleConsolidarDocentes = async () => {
+    // Ya no es necesario consolidar manualmente, los datos son en tiempo real.
+    toast.info('Los datos se actualizan automáticamente desde BigQuery.');
+    loadConsolidado();
+  };
+
+  // --- EFECTO PARA CARGAR CONSOLIDACIÓN EXISTENTE ---
+  useEffect(() => {
+    loadConsolidado();
+  }, [route.query.idEvaluacion, monthSelected, yearSelected]);
+
+  const handleBarClick = async (range: string) => {
+    setSelectedRange(range);
+
+    // Scroll suave al detalle
+    setTimeout(() => {
+      drillDownRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  const filteredDocentesByRange = useMemo(() => {
+    if (!fullDocentesData || !selectedRange) return [];
+
+    // El rango viene como "0% - 20%" o "81% - 100%"
+    const match = selectedRange.match(/(\d+)%\s*-\s*(\d+)%/);
+    if (!match) return [];
+
+    const min = parseInt(match[1], 10);
+    const max = parseInt(match[2], 10);
+
+    return fullDocentesData.filter((doc: any) => {
+      const val = doc.porcentajeSatisfactorio;
+      // Inclusión: 0-20, 21-40, ...
+      return val >= min && val <= max;
+    });
+  }, [fullDocentesData, selectedRange]);
 
   const handleRestablecerFiltros = () => {
     restablecerFiltrosDeEspecialista(`${route.query.idEvaluacion}`, monthSelected, yearSelected);
@@ -693,6 +775,26 @@ const Reporte = () => {
                   )}
                 </button>
               )}
+
+              {currentUserData?.rol === 4 && (
+                <button
+                  className={`${styles.primaryButton} ${styles.blueButton}`}
+                  onClick={handleConsolidarDocentes}
+                  disabled={loadingProfesoresBuckets || !route.query.idEvaluacion}
+                >
+                  {loadingProfesoresBuckets ? (
+                    <>
+                      <RiLoader4Line className={styles.loaderIcon} />
+                      <span>Consolidando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <MdAnalytics />
+                      <span>Consolidar docentes</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
@@ -722,6 +824,7 @@ const Reporte = () => {
             ) : null
           }
 
+
           {/* Gráfico de barras horizontales para directores */}
           {
             evaluacion.tipoDeEvaluacion === '1' && (
@@ -737,8 +840,48 @@ const Reporte = () => {
               )
             )
           }
-
+          {/* Gráfico de barras de distribución por niveles para docentes (Buckets) */}
+          {
+            evaluacion.tipoDeEvaluacion === '1' && (
+              loadingProfesoresBuckets ? (
+                <div className={styles.loaderContainer} style={{ minHeight: '200px' }}>
+                  <div className={styles.loaderContent}>
+                    <RiLoader4Line className={styles.loaderIcon} />
+                    <span className={styles.loaderText}>Cargando distribución de docentes...</span>
+                  </div>
+                </div>
+              ) : (
+                dataProfesoresBuckets.length > 0 && (
+                  <BarChartDocentesBuckets
+                    data={dataProfesoresBuckets}
+                    totalDocentes={totalDocentesBuckets}
+                    onBarClick={handleBarClick}
+                  />
+                )
+              )
+            )
+          }
           {/* Componente de acordeón para gráficos de tendencia */}
+          {/* Detalle de Docentes (Leaderboard Stacked) */}
+          <div ref={drillDownRef}>
+            {selectedRange && (
+              loadingFullDocentes ? (
+                <div className={styles.modalLoader} style={{ minHeight: '300px' }}>
+                  <RiLoader4Line className={styles.loaderIcon} />
+                  <span>Cargando detalle de docentes...</span>
+                </div>
+              ) : (
+                filteredDocentesByRange.length > 0 && (
+                  <BarChartDocenteDetalle
+                    data={filteredDocentesByRange}
+                    selectedRange={selectedRange}
+                  />
+                )
+              )
+            )}
+          </div>
+
+
 
           {
             evaluacion.tipoDeEvaluacion === '1' ? (
