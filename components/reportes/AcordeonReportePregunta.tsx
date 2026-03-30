@@ -19,6 +19,7 @@ interface AcordeonReportePreguntaProps {
   distritosDisponibles: string[];
   handleChangeFiltros: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   handleRestablecerFiltros: () => void;
+  handleFiltrar?: () => void;
   yearSelected: number;
   dataReportePreguntas: any[];
   loadingReportePreguntas: boolean;
@@ -34,6 +35,7 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
   distritosDisponibles,
   handleChangeFiltros,
   handleRestablecerFiltros,
+  handleFiltrar,
   yearSelected,
   dataReportePreguntas,
   loadingReportePreguntas
@@ -80,6 +82,7 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
             distritosDisponibles={distritosDisponibles}
             handleChangeFiltros={handleChangeFiltros}
             handleRestablecerFiltros={handleRestablecerFiltros}
+            handleFiltrar={handleFiltrar}
             loading={loading}
           />
         </div>

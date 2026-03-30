@@ -273,6 +273,7 @@ const Reportes = () => {
         estudiante.puntaje !== null &&
         estudiante.nivel !== undefined &&
         estudiante.nivel !== null &&
+        estudiante.nivel !== null &&
         estudiante.nivel !== ''
     );
   };

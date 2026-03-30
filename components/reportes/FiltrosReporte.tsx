@@ -17,6 +17,8 @@ interface FiltrosReporteProps {
   distritosDisponibles: string[];
   handleChangeFiltros: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   handleRestablecerFiltros: () => void;
+  handleFiltrar?: () => void;
+  loading?: boolean;
 }
 
 const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
@@ -24,6 +26,8 @@ const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
   distritosDisponibles,
   handleChangeFiltros,
   handleRestablecerFiltros,
+  handleFiltrar,
+  loading = false,
 }) => {
   return (
     <div className={styles.filtersSection}>
@@ -99,9 +103,17 @@ const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
         </div>
 
         <div className={styles.filterActions}>
-          <button className={styles.secondaryAction} onClick={handleRestablecerFiltros}>
-            Limpiar filtros
+          <button
+            className={styles.primaryAction}
+            onClick={handleFiltrar}
+            disabled={loading}
+          >
+            {loading ? 'Filtrando...' : 'Filtrar'}
           </button>
+          <button className={styles.secondaryAction} onClick={handleRestablecerFiltros}>
+            Limpiar
+          </button>
+
         </div>
       </div>
     </div>

@@ -10,6 +10,7 @@ import AlertModal from '@/modals/alertModal/AlertModal'
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
 import { MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff, MdAddCircle, MdCalendarToday, MdAnalytics } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
@@ -44,6 +45,8 @@ const Evaluaciones = () => {
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
   const [selectedGrado, setSelectedGrado] = useState<string>('all')
   const [processingIds, setProcessingIds] = useState<string[]>([])
+
+  const router = useRouter()
 
   const { generarReporte } = useGenerarReporte()
 
@@ -255,6 +258,22 @@ const Evaluaciones = () => {
     };
   }, [currentUserData.dni])
 
+  // --- SINCRONIZACIÓN DE FILTROS CON URL (QUERY PARAMS) ---
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    const { year, grado } = router.query;
+    if (year) setSelectedYear(year as string);
+    if (grado) setSelectedGrado(grado as string);
+  }, [router.isReady, router.query]);
+
+  const updateQueryParams = (newYear: string, newGrado: string) => {
+    router.push({
+      pathname: router.pathname,
+      query: { ...router.query, year: newYear, grado: newGrado },
+    }, undefined, { shallow: true });
+  }
+
 
   console.log('evaluaciones', evaluaciones)
   console.log('grados', grados)
@@ -365,7 +384,11 @@ const Evaluaciones = () => {
                   <select
                     className={styles.monthSelect}
                     value={selectedYear}
-                    onChange={(e) => setSelectedYear(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedYear(val);
+                      updateQueryParams(val, selectedGrado);
+                    }}
                     style={{ padding: '0.4rem 1.25rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                   >
                     {years.map(year => (
@@ -381,7 +404,11 @@ const Evaluaciones = () => {
                   <select
                     className={styles.monthSelect}
                     value={selectedGrado}
-                    onChange={(e) => setSelectedGrado(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedGrado(val);
+                      updateQueryParams(selectedYear, val);
+                    }}
                     style={{ padding: '0.4rem 1.25rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                   >
                     <option value="all">Todos los grados permitidos</option>

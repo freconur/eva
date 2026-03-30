@@ -21,6 +21,7 @@ interface ReporteEvaluacionPorPreguntaProps {
   distritosDisponibles: string[];
   handleChangeFiltros: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   handleRestablecerFiltros: () => void;
+  handleFiltrar?: () => void;
   loading?: boolean;
 }
 
@@ -35,6 +36,7 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   distritosDisponibles,
   handleChangeFiltros,
   handleRestablecerFiltros,
+  handleFiltrar,
   loading = false,
 }) => {
   const [popoverData, setPopoverData] = useState<{
@@ -63,6 +65,8 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
         distritosDisponibles={distritosDisponibles}
         handleChangeFiltros={handleChangeFiltros}
         handleRestablecerFiltros={handleRestablecerFiltros}
+        handleFiltrar={handleFiltrar}
+        loading={loading}
       />
 
       <h2 className={styles.reportTitle}>Detalle por Pregunta</h2>

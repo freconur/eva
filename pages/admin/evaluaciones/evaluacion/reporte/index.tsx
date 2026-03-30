@@ -598,6 +598,38 @@ const Reporte = () => {
     }
   };
 
+  const handleFiltrarPreguntas = async () => {
+    const idEval = route.query.idEvaluacion;
+    if (!idEval || monthSelected === undefined || !yearSelected) return;
+
+    setLoadingReportePreguntas(true);
+    try {
+      const callPreguntas = httpsCallable(functions, 'getDataReporteEvaluacionPorPreguntas');
+      const result = await callPreguntas({
+        idEvaluacion: idEval,
+        año: yearSelected,
+        mes: monthSelected,
+        region: filtros.region,
+        distrito: filtros.distrito,
+        area: filtros.area,
+        genero: filtros.genero
+      });
+
+      const dataResult = result.data as any;
+      if (dataResult.success && Array.isArray(dataResult.data)) {
+        setDataReportePreguntas(dataResult.data);
+        toast.success('✅ Reporte de preguntas filtrado correctamente.');
+      } else {
+        toast.warning('⚠️ No se encontraron datos para los filtros seleccionados.');
+      }
+    } catch (error: any) {
+      console.error('❌ Error al filtrar reporte de preguntas:', error);
+      toast.error(`Error: ${error.message || 'Error desconocido'}`);
+    } finally {
+      setLoadingReportePreguntas(false);
+    }
+  };
+
   const options = {
     interaction: {
       intersect: false,
@@ -980,6 +1012,7 @@ const Reporte = () => {
             distritosDisponibles={distritosDisponibles}
             handleChangeFiltros={handleChangeFiltros}
             handleRestablecerFiltros={handleRestablecerFiltros}
+            handleFiltrar={handleFiltrarPreguntas}
             yearSelected={yearSelected}
             dataReportePreguntas={dataReportePreguntas}
             loadingReportePreguntas={loadingReportePreguntas}
