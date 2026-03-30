@@ -226,14 +226,14 @@ const Reporte = () => {
     if (!confirmacion) return;
 
     setLoadingConsolidado(true);
+    console.log('🚀 [Consolidación] Iniciando proceso...');
+
     try {
       const payload = {
         idEvaluacion: idEval,
         año: yearSelected,
         mes: monthSelected
       };
-
-      console.log('🚀 [Consolidación] Iniciando proceso...');
 
       const callAgregado = httpsCallable(functions, 'getDataReporteAgregadoPorRol');
       const callPreguntas = httpsCallable(functions, 'getDataReporteEvaluacionPorPreguntas');
@@ -253,20 +253,23 @@ const Reporte = () => {
       toast.success('✅ Consolidación completada exitosamente.');
 
       // 4. Recargar todos los datos en la vista (desde los nuevos JSON en Storage)
+      console.log('🔄 [Consolidación] Recargando datos en la vista...');
       await Promise.all([
-        loadConsolidado(),
-        fetchBarGraphicsData(),
-        fetchReportePreguntas()
+        loadConsolidado().catch(e => console.error('Error loadConsolidado:', e)),
+        fetchBarGraphicsData().catch(e => console.error('Error fetchBarGraphicsData:', e)),
+        fetchReportePreguntas().catch(e => console.error('Error fetchReportePreguntas:', e))
       ]);
 
       // Forzar recarga de estadísticas globales y pie chart
       const idEvalStr = String(idEval);
       getReporteEspecialistaPorUgel(idEvalStr, monthSelected, yearSelected);
+      console.log('🏁 [Consolidación] Finalizado con éxito.');
 
     } catch (error: any) {
       console.error('❌ Error en consolidación:', error);
       toast.error(`Error: ${error.message || 'Error desconocido'}`);
     } finally {
+      console.log('🔓 [Consolidación] Desactivando loader.');
       setLoadingConsolidado(false);
     }
   };
@@ -475,7 +478,23 @@ const Reporte = () => {
     }
   };
 
-  // --- CARGA DE DATOS ELIMINADA DE USEEFFECT (SE EJECUTA POR BOTÓN) ---
+  // --- CARGA AUTOMÁTICA OPTIMIZADA DESDE STORAGE (EFECTO SEGURO) ---
+  useEffect(() => {
+    const idEval = route.query.idEvaluacion;
+    if (!idEval || monthSelected === undefined || !yearSelected) return;
+
+    // Ejecutar carga barata de forma automática
+    const loadAllConsolidados = async () => {
+      console.log('🔄 [Auto-Load] Intentando cargar consolidados existentes para:', idEval, yearSelected, monthSelected);
+      await Promise.all([
+        loadConsolidado(),
+        fetchBarGraphicsData(),
+        fetchReportePreguntas()
+      ]);
+    };
+
+    loadAllConsolidados();
+  }, [route.query.idEvaluacion, monthSelected, yearSelected]);
 
   const handleBarClick = async (range: string) => {
     setSelectedRange(range);
