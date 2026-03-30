@@ -126,6 +126,7 @@ const Reporte = () => {
   const [fullDocentesData, setFullDocentesData] = useState<any[] | null>(null);
   const [selectedRange, setSelectedRange] = useState<string | null>(null);
   const [loadingFullDocentes, setLoadingFullDocentes] = useState(false);
+  const [loadingConsolidado, setLoadingConsolidado] = useState(false);
   const drillDownRef = useRef<HTMLDivElement>(null);
 
   // Callback para manejar cambios en el rango
@@ -209,6 +210,64 @@ const Reporte = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       alert(`❌ Error al generar puntaje progresiva:\n${errorMessage}`);
+    }
+  };
+
+  // Función para generar consolidación completa (Storage + Firestore)
+  const handleGenerarConsolidado = async () => {
+    const idEval = route.query.idEvaluacion;
+    if (!idEval || monthSelected === undefined || !yearSelected) return;
+
+    const confirmacion = window.confirm(
+      '🚀 ¿Deseas generar la consolidación completa de datos?\n\n' +
+      'Esto actualizará los archivos JSON en Storage y los resúmenes en Firestore para docentes, directores y preguntas.'
+    );
+
+    if (!confirmacion) return;
+
+    setLoadingConsolidado(true);
+    try {
+      const payload = {
+        idEvaluacion: idEval,
+        año: yearSelected,
+        mes: monthSelected
+      };
+
+      console.log('🚀 [Consolidación] Iniciando proceso...');
+
+      const callAgregado = httpsCallable(functions, 'getDataReporteAgregadoPorRol');
+      const callPreguntas = httpsCallable(functions, 'getDataReporteEvaluacionPorPreguntas');
+
+      // 1. Consolidar Docentes
+      toast.info('⏳ Consolidando datos de docentes...');
+      await callAgregado({ ...payload, rol: 'docente' });
+
+      // 2. Consolidar Directores
+      toast.info('⏳ Consolidando datos de directores...');
+      await callAgregado({ ...payload, rol: 'director' });
+
+      // 3. Consolidar Preguntas
+      toast.info('⏳ Consolidando reporte de preguntas...');
+      await callPreguntas(payload);
+
+      toast.success('✅ Consolidación completada exitosamente.');
+
+      // 4. Recargar todos los datos en la vista (desde los nuevos JSON en Storage)
+      await Promise.all([
+        loadConsolidado(),
+        fetchBarGraphicsData(),
+        fetchReportePreguntas()
+      ]);
+
+      // Forzar recarga de estadísticas globales y pie chart
+      const idEvalStr = String(idEval);
+      getReporteEspecialistaPorUgel(idEvalStr, monthSelected, yearSelected);
+
+    } catch (error: any) {
+      console.error('❌ Error en consolidación:', error);
+      toast.error(`Error: ${error.message || 'Error desconocido'}`);
+    } finally {
+      setLoadingConsolidado(false);
     }
   };
 
@@ -321,41 +380,35 @@ const Reporte = () => {
   // --- INTEGRACIÓN DE GRÁFICOS DE BARRAS PARA DIRECTORES ---
   const isFetchedBarGraphics = useRef<string | null>(null);
 
-  useEffect(() => {
+  const fetchBarGraphicsData = async () => {
     const idEval = route.query.idEvaluacion;
     if (!idEval || monthSelected === undefined || !yearSelected) return;
+    setLoadingDirectoresBar(true);
+    try {
+      console.log('🚀 [Storage] Buscando consolidado de directores en Firestore...');
+      const consolidadoRef = doc(db, `evaluaciones/${idEval}/consolidados`, `directores_${yearSelected}_${monthSelected}`);
+      const consolidadoSnap = await getDoc(consolidadoRef);
 
-    // Evitar ejecuciones duplicadas innecesarias (incluyendo React Strict Mode)
-    const currentKey = `${idEval}-${monthSelected}-${yearSelected}`;
-    if (isFetchedBarGraphics.current === currentKey) return;
-
-    const fetchBarGraphicsData = async () => {
-      try {
-        const idEval = route.query.idEvaluacion;
-        console.log('🚀 [Cloud Function] Ejecutando getDataReporteAgregadoPorRol (director) para:', idEval);
-
-        const getDataFunction = httpsCallable(functions, 'getDataReporteAgregadoPorRol');
-        const result = await getDataFunction({
-          idEvaluacion: idEval,
-          año: yearSelected,
-          mes: monthSelected,
-          rol: 'director'
-        });
-
-        const res = result.data as any;
-        if (res.success && res.data) {
-          setDataDirectoresBar(res.data);
+      if (consolidadoSnap.exists()) {
+        const { url } = consolidadoSnap.data();
+        if (url) {
+          const response = await fetch(url);
+          const res = await response.json();
+          if (res.success && res.data) {
+            setDataDirectoresBar(res.data);
+            return;
+          }
         }
-      } catch (error) {
-        console.error('❌ [Cloud Function] Error en getDataReporteAgregadoPorRol (director):', error);
-      } finally {
-        setLoadingDirectoresBar(false);
       }
-    };
-
-    fetchBarGraphicsData();
-    isFetchedBarGraphics.current = currentKey;
-  }, [route.query.idEvaluacion, monthSelected, yearSelected]);
+      console.warn('⚠️ No hay consolidado de directores disponible.');
+      setDataDirectoresBar([]);
+    } catch (error) {
+      console.error('❌ Error al cargar consolidado de directores (Storage):', error);
+      setDataDirectoresBar([]);
+    } finally {
+      setLoadingDirectoresBar(false);
+    }
+  };
 
   const loadConsolidado = async () => {
     const idEval = route.query.idEvaluacion;
@@ -363,75 +416,66 @@ const Reporte = () => {
 
     setLoadingProfesoresBuckets(true);
     try {
-      console.log('🚀 [BigQuery] Cargando analítica de docentes en tiempo real...');
-      const getDataFunction = httpsCallable(functions, 'getDataToProfesoresFromBarGraphics');
-      const result = await getDataFunction({
-        idEvaluacion: idEval,
-        año: yearSelected,
-        mes: monthSelected
-      });
+      console.log('🚀 [Storage] Buscando consolidado de docentes en Firestore...');
+      const consolidadoRef = doc(db, `evaluaciones/${idEval}/consolidados`, `profesores_${yearSelected}_${monthSelected}`);
+      const consolidadoSnap = await getDoc(consolidadoRef);
 
-      const response: any = result.data;
-      if (response.success && Array.isArray(response.distribucionDocentes)) {
-        setDataProfesoresBuckets(response.distribucionDocentes);
-        setTotalDocentesBuckets(response.totalDocentes || 0);
-        setFullDocentesData(response.finalDocentes || null);
-      } else {
-        setDataProfesoresBuckets([]);
-        setTotalDocentesBuckets(0);
-        setFullDocentesData(null);
+      if (consolidadoSnap.exists()) {
+        const { url, distribucionDocentes, totalDocentes } = consolidadoSnap.data();
+        if (url) {
+          const response = await fetch(url);
+          const res = await response.json();
+          if (res.success && Array.isArray(res.distribucionDocentes)) {
+            setDataProfesoresBuckets(res.distribucionDocentes);
+            setTotalDocentesBuckets(res.totalDocentes || 0);
+            setFullDocentesData(res.finalDocentes || null);
+            return;
+          }
+        }
       }
+      console.warn('⚠️ No hay consolidado de docentes disponible.');
+      setDataProfesoresBuckets([]);
+      setTotalDocentesBuckets(0);
+      setFullDocentesData(null);
     } catch (error) {
-      console.error('❌ Error al cargar analítica de BigQuery:', error);
+      console.error('❌ Error al cargar consolidado de docentes (Storage):', error);
       setDataProfesoresBuckets([]);
     } finally {
       setLoadingProfesoresBuckets(false);
     }
   };
 
-  // --- CONSOLIDACIÓN DE DOCENTES (MANUAL POR BOTÓN) ---
-
-
-  // --- EFECTO PARA CARGAR CONSOLIDACIÓN EXISTENTE ---
-  useEffect(() => {
-    loadConsolidado();
-  }, [route.query.idEvaluacion, monthSelected, yearSelected]);
-
-  // --- REPORTE POR PREGUNTAS (BIGQUERY) ---
-  useEffect(() => {
+  const fetchReportePreguntas = async () => {
     const idEval = route.query.idEvaluacion;
     if (!idEval || monthSelected === undefined || !yearSelected) return;
+    setLoadingReportePreguntas(true);
+    try {
+      console.log('🚀 [Storage] Buscando consolidado de preguntas en Firestore...');
+      const consolidadoRef = doc(db, `evaluaciones/${idEval}/consolidados`, `preguntas_${yearSelected}_${monthSelected}`);
+      const consolidadoSnap = await getDoc(consolidadoRef);
 
-    const fetchReportePreguntas = async () => {
-      setLoadingReportePreguntas(true);
-      try {
-        const payload = {
-          idEvaluacion: idEval,
-          año: yearSelected,
-          mes: monthSelected,
-          region: filtros.region,
-          distrito: filtros.distrito,
-          area: filtros.area,
-          genero: filtros.genero
-        };
-        console.log('🚀 [BigQuery] Solicitando reporte por preguntas con filtros:', payload);
-        const getDataFunction = httpsCallable(functions, 'getDataReporteEvaluacionPorPreguntas');
-        const result = await getDataFunction(payload);
-        console.log('✅ [BigQuery] Reporte por preguntas recibido:', result.data);
-
-        const response: any = result.data;
-        if (response.success && Array.isArray(response.data)) {
-          setDataReportePreguntas(response.data);
+      if (consolidadoSnap.exists()) {
+        const { url } = consolidadoSnap.data();
+        if (url) {
+          const response = await fetch(url);
+          const res = await response.json();
+          if (res.success && Array.isArray(res.data)) {
+            setDataReportePreguntas(res.data);
+            return;
+          }
         }
-      } catch (error) {
-        console.error('❌ Error al cargar reporte por preguntas de BigQuery:', error);
-      } finally {
-        setLoadingReportePreguntas(false);
       }
-    };
+      console.warn('⚠️ No hay consolidado de preguntas disponible.');
+      setDataReportePreguntas([]);
+    } catch (error) {
+      console.error('❌ Error al cargar consolidado de preguntas (Storage):', error);
+      setDataReportePreguntas([]);
+    } finally {
+      setLoadingReportePreguntas(false);
+    }
+  };
 
-    fetchReportePreguntas();
-  }, [route.query.idEvaluacion, monthSelected, yearSelected, filtros.region, filtros.distrito, filtros.area, filtros.genero]);
+  // --- CARGA DE DATOS ELIMINADA DE USEEFFECT (SE EJECUTA POR BOTÓN) ---
 
   const handleBarClick = async (range: string) => {
     setSelectedRange(range);
@@ -753,6 +797,47 @@ const Reporte = () => {
                   </>
                 )}
               </button>
+
+              {currentUserData.rol === 4 && (
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={async () => {
+                      toast.info('⏳ Cargando datos consolidados...');
+                      await Promise.all([
+                        loadConsolidado(),
+                        fetchBarGraphicsData(),
+                        fetchReportePreguntas()
+                      ]);
+                      toast.success('✅ Carga desde Storage completada.');
+                    }}
+                    className={styles.secondaryButton}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#e5e7eb')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <MdVisibility />
+                    <span>Ver Consolidado</span>
+                  </button>
+
+                  <button
+                    onClick={handleGenerarConsolidado}
+                    className={styles.primaryButton}
+                    style={{ backgroundColor: '#4f46e5', color: 'white' }}
+                    disabled={loadingConsolidado}
+                  >
+                    {loadingConsolidado ? (
+                      <>
+                        <RiLoader4Line className={styles.loaderIcon} />
+                        <span>Consolidando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <MdAnalytics />
+                        <span>Generar Consolidado</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
 
 
             </div>
