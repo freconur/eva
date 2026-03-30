@@ -39,18 +39,28 @@ interface TeacherData {
     porcentajeSatisfactorio: number;
     region?: string | number;
     niveles: Nivel[];
+    director?: string;
 }
 
 interface BarChartDocenteDetalleProps {
     data: TeacherData[];
     selectedRange: string;
+    metaSatisfactorio?: number;
+    onSaveMeta?: (newMeta: number) => Promise<void>;
 }
 
-const BarChartDocenteDetalle = ({ data = [], selectedRange }: BarChartDocenteDetalleProps) => {
+const BarChartDocenteDetalle = ({ data = [], selectedRange, metaSatisfactorio = 80, onSaveMeta }: BarChartDocenteDetalleProps) => {
     const { getNivelColor } = useColorsFromCSS();
     const [pageSize, setPageSize] = useState(10);
     const [currentPage, setCurrentPage] = useState(0);
     const [selectedRegion, setSelectedRegion] = useState<string>('');
+    const [threshold, setThreshold] = useState(metaSatisfactorio);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Sincronizar con el valor global cuando cambie
+    useEffect(() => {
+        setThreshold(metaSatisfactorio);
+    }, [metaSatisfactorio]);
 
     const sortedData = useMemo(() => {
         const filteredData = selectedRegion
@@ -170,7 +180,12 @@ const BarChartDocenteDetalle = ({ data = [], selectedRange }: BarChartDocenteDet
                     },
                     footer: (context: any) => {
                         const teacher = paginatedData[context[0].dataIndex];
-                        return `\nTotal: ${teacher.totalEstudiantes} estudiantes\nSatisfactorio: ${teacher.porcentajeSatisfactorio}%`;
+                        let extra = `\nTotal: ${teacher.totalEstudiantes} estudiantes\nSatisfactorio: ${teacher.porcentajeSatisfactorio}%`;
+
+                        if (teacher.institucion) extra += `\nI.E.: ${teacher.institucion}`;
+                        if (teacher.director) extra += `\nDirector: ${teacher.director}`;
+
+                        return extra;
                     }
                 }
             },
@@ -205,12 +220,12 @@ const BarChartDocenteDetalle = ({ data = [], selectedRange }: BarChartDocenteDet
         }
     };
 
-    // Plugin para la línea vertical de meta (ej. 80%)
-    const verticalLinePlugin = {
+    // Plugin para la línea vertical de meta (dinámico)
+    const verticalLinePlugin = useMemo(() => ({
         id: 'verticalLine',
         afterDraw: (chart: any) => {
             const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
-            const xPos = x.getPixelForValue(80);
+            const xPos = x.getPixelForValue(threshold);
 
             ctx.save();
             ctx.beginPath();
@@ -224,10 +239,10 @@ const BarChartDocenteDetalle = ({ data = [], selectedRange }: BarChartDocenteDet
             ctx.fillStyle = '#1e293b';
             ctx.font = 'bold 12px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('Satisfactorio (80%)', xPos, top - 10);
+            ctx.fillText(`Meta (${threshold}%)`, xPos, top - 10);
             ctx.restore();
         }
-    };
+    }), [threshold]);
 
     const studentCountPlugin = {
         id: 'studentCount',
@@ -306,6 +321,34 @@ const BarChartDocenteDetalle = ({ data = [], selectedRange }: BarChartDocenteDet
                         </select>
                     </div>
                     <div className={styles.pageSizeControl}>
+                        <span>Meta (%):</span>
+                        <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={threshold}
+                            onChange={(e) => setThreshold(Number(e.target.value))}
+                            className={styles.inputThreshold}
+                        />
+                        {onSaveMeta && threshold !== metaSatisfactorio && (
+                            <button
+                                onClick={async () => {
+                                    setIsSaving(true);
+                                    try {
+                                        await onSaveMeta(threshold);
+                                    } finally {
+                                        setIsSaving(false);
+                                    }
+                                }}
+                                className={styles.saveButton}
+                                title="Guardar como meta global"
+                                disabled={isSaving}
+                            >
+                                {isSaving ? '...' : '💾'}
+                            </button>
+                        )}
+                    </div>
+                    <div className={styles.pageSizeControl}>
                         <span>Mostrar:</span>
                         <select
                             value={pageSize}
@@ -331,6 +374,7 @@ const BarChartDocenteDetalle = ({ data = [], selectedRange }: BarChartDocenteDet
             ) : (
                 <div className={styles.chartWrapper} style={{ height: `${Math.max(400, paginatedData.length * 55 + 100)}px` }}>
                     <Bar
+                        key={`chart-threshold-${threshold}-${selectedRange}`}
                         data={chartData as any}
                         options={options as any}
                         plugins={[verticalLinePlugin, studentCountPlugin]}

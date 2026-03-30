@@ -9,7 +9,7 @@ import {
     Legend,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import styles from './BarChartDirectores.module.css';
+import styles from './BarChartDocentes.module.css';
 import { useHighQualityChartOptions } from '@/features/hooks/useHighQualityChartOptions';
 import { useColorsFromCSS } from '@/features/hooks/useColorsFromCSS';
 import { regiones } from '@/fuctions/regiones';
@@ -30,39 +30,32 @@ interface Nivel {
     color: string;
 }
 
-interface DirectorData {
-    dniDirector: string;
+interface TeacherData {
+    dniDocente: string;
     nombres: string;
     apellidos: string;
     institucion: string;
     totalEstudiantes: number;
     promedioGlobal: number;
+    porcentajeSatisfactorio: number;
     region?: string | number;
     niveles: Nivel[];
 }
 
-interface BarChartDirectoresProps {
-    data: DirectorData[];
+interface BarChartDocentesProps {
+    data: TeacherData[];
 }
 
-const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
+const BarChartDocentes = ({ data = [] }: BarChartDocentesProps) => {
     const { getNivelColor } = useColorsFromCSS();
     const [currentPage, setCurrentPage] = React.useState(0);
     const [sortBy, setSortBy] = React.useState<'promedio' | 'evaluados' | 'satisfactorios' | 'impacto'>('promedio');
-    const [itemsPerPage, setItemsPerPage] = React.useState(25);
+    const [itemsPerPage, setItemsPerPage] = React.useState(10);
     const [selectedRegion, setSelectedRegion] = React.useState<string>('');
 
-    // Helper para obtener conteo de satisfactorios de forma robusta
-    const getSatisfactorioCount = (director: DirectorData) => {
-        const satNivel = director.niveles?.find(n =>
-            n.nivel?.toLowerCase().includes('satisfactorio')
-        );
-        return satNivel ? satNivel.cantidadDeEstudiantes : 0;
-    };
-
     // Algoritmo de Impacto: Logaritmo de volumen * Promedio
-    const getImpactScore = (director: DirectorData) => {
-        return director.promedioGlobal * Math.log10(1 + (director.totalEstudiantes || 0));
+    const getImpactScore = (teacher: TeacherData) => {
+        return teacher.promedioGlobal * Math.log10(1 + (teacher.totalEstudiantes || 0));
     };
 
     // Aplicar filtrado por región y ordenamiento dinámico
@@ -76,19 +69,17 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
 
         // 2. Ordenar datos filtrados
         return [...filteredData].sort((a, b) => {
-            const aSat = getSatisfactorioCount(a);
-            const bSat = getSatisfactorioCount(b);
             const aImpact = getImpactScore(a);
             const bImpact = getImpactScore(b);
 
             if (sortBy === 'promedio') {
-                return (b.promedioGlobal - a.promedioGlobal) || (bImpact - aImpact) || (bSat - aSat);
+                return (b.promedioGlobal - a.promedioGlobal) || (bImpact - aImpact) || (b.porcentajeSatisfactorio - a.porcentajeSatisfactorio);
             }
             if (sortBy === 'evaluados') {
-                return (b.totalEstudiantes - a.totalEstudiantes) || (b.promedioGlobal - a.promedioGlobal) || (bSat - aSat);
+                return (b.totalEstudiantes - a.totalEstudiantes) || (b.promedioGlobal - a.promedioGlobal) || (b.porcentajeSatisfactorio - a.porcentajeSatisfactorio);
             }
             if (sortBy === 'satisfactorios') {
-                return (bSat - aSat) || (b.promedioGlobal - a.promedioGlobal) || (b.totalEstudiantes - a.totalEstudiantes);
+                return (b.porcentajeSatisfactorio - a.porcentajeSatisfactorio) || (b.promedioGlobal - a.promedioGlobal) || (b.totalEstudiantes - a.totalEstudiantes);
             }
             if (sortBy === 'impacto') {
                 return (bImpact - aImpact) || (b.promedioGlobal - a.promedioGlobal) || (b.totalEstudiantes - a.totalEstudiantes);
@@ -112,7 +103,7 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
 
     const options = useHighQualityChartOptions({
         chartType: 'bar',
-        title: 'Desempeño por Institución (Distribución de Niveles)',
+        title: 'Desempeño por Docente (Distribución de Niveles)',
         showLegend: true,
         legendPosition: 'bottom',
     });
@@ -124,8 +115,8 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
                 datasets: [{
                     label: isImpactMode ? 'Puntaje de Impacto' : 'Promedio Global',
                     data: paginatedData.map(d => isImpactMode ? getImpactScore(d) : d.promedioGlobal),
-                    backgroundColor: isImpactMode ? 'rgba(79, 70, 229, 0.8)' : 'rgba(59, 130, 246, 0.8)',
-                    borderColor: isImpactMode ? 'rgb(79, 70, 229)' : 'rgb(59, 130, 246)',
+                    backgroundColor: isImpactMode ? 'rgba(132, 204, 22, 0.8)' : 'rgba(52, 211, 153, 0.8)',
+                    borderColor: isImpactMode ? 'rgb(132, 204, 22)' : 'rgb(52, 211, 153)',
                     borderWidth: 1,
                     barThickness: 22,
                     categoryPercentage: 0.85,
@@ -135,8 +126,8 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
 
         // Encontrar todos los niveles únicos presentes en la data paginada
         const uniqueLevels = new Map<string, { name: string }>();
-        paginatedData.forEach(director => {
-            director.niveles?.forEach(n => {
+        paginatedData.forEach(teacher => {
+            teacher.niveles?.forEach(n => {
                 if (!uniqueLevels.has(n.nivel)) {
                     uniqueLevels.set(n.nivel, { name: n.nivel });
                 }
@@ -147,8 +138,8 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
             const colorData = getNivelColor(levelInfo.name);
             return {
                 label: levelInfo.name,
-                data: paginatedData.map(director => {
-                    const nivelData = director.niveles?.find(n => n.nivel === levelInfo.name);
+                data: paginatedData.map(teacher => {
+                    const nivelData = teacher.niveles?.find(n => n.nivel === levelInfo.name);
                     return nivelData ? nivelData.cantidadDeEstudiantes : 0;
                 }),
                 backgroundColor: colorData.bg,
@@ -193,7 +184,7 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
                             const index = context[0].dataIndex;
                             const item = paginatedData[index];
                             const impact = getImpactScore(item).toFixed(2);
-                            let text = `🏫 Institución: ${item.institucion}\n🆔 DNI: ${item.dniDirector}\n🚀 Impacto: ${impact}\n📊 Promedio Global: ${item.promedioGlobal}\n👥 Total Estudiantes: ${item.totalEstudiantes}\n`;
+                            let text = `🏫 Institución: ${item.institucion}\n🆔 DNI: ${item.dniDocente}\n🚀 Impacto: ${impact}\n📊 Promedio Global: ${item.promedioGlobal}\n🏆 Satisfactorio: ${item.porcentajeSatisfactorio}%\n👥 Total Estudiantes: ${item.totalEstudiantes}\n`;
 
                             if (isPromedioMode || isImpactMode) {
                                 text += '\n📌 Distribución de Estudiantes:';
@@ -250,7 +241,7 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
         <div className={styles.container}>
             <div className={styles.header}>
                 <div className={styles.titleWrapper}>
-                    <h2 className={styles.title}>Desempeño por Institución</h2>
+                    <h2 className={styles.title}>Desempeño por Docente</h2>
                     <p className={styles.subtitle}>{data.length} líderes educativos en este ranking</p>
                 </div>
 
@@ -316,10 +307,10 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
                 </div>
             </div>
             <div className={styles.chartWrapper} style={{ height: `${Math.max(400, paginatedData.length * 45 + 100)}px` }}>
-                <Bar data={chartData} options={customOptions as any} key={`chart-${sortBy}-${currentPage}-${itemsPerPage}`} />
+                <Bar data={chartData} options={customOptions as any} key={`chart-docente-${sortBy}-${currentPage}-${itemsPerPage}`} />
             </div>
         </div >
     );
 };
 
-export default BarChartDirectores;
+export default BarChartDocentes;

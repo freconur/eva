@@ -23,6 +23,9 @@ export { leerEvaluacionesParaAdmin } from './leerEvaluacionesParaAdmin';
 export { getReporteDirector } from './getReporteDirector';
 export { getDataToDirectoresFromBarGraphics } from './getDataToDirectoresFromBarGraphics';
 export { getDataToProfesoresFromBarGraphics } from './getDataToProfesoresFromBarGraphics';
+export { getDataReporteEvaluacionPorPreguntas } from './getDataReporteEvaluacionPorPreguntas';
+export { getDataReporteAgregadoPorRol } from './reportsAggregation';
+
 
 try {
   const { getListCollectionsEvaluacionesPorMes } = require('./getListCollectionsEvaluacionesPorMes');

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Bar } from 'react-chartjs-2';
+import Loader from '../loader/loader';
 import { DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
 import styles from './QuestionReport.module.css';
 import FiltrosReporte from './FiltrosReporte';
@@ -14,14 +15,13 @@ interface ReporteEvaluacionPorPreguntaProps {
   filtros: {
     region: string;
     distrito: string;
-    caracteristicaCurricular: string;
     genero: string;
     area: string;
   };
   distritosDisponibles: string[];
   handleChangeFiltros: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  handleFiltrar: () => void;
   handleRestablecerFiltros: () => void;
+  loading?: boolean;
 }
 
 const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> = ({
@@ -34,8 +34,8 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   filtros,
   distritosDisponibles,
   handleChangeFiltros,
-  handleFiltrar,
   handleRestablecerFiltros,
+  loading = false,
 }) => {
   const [popoverData, setPopoverData] = useState<{
     preguntaId: string;
@@ -62,90 +62,101 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
         filtros={filtros}
         distritosDisponibles={distritosDisponibles}
         handleChangeFiltros={handleChangeFiltros}
-        handleFiltrar={handleFiltrar}
         handleRestablecerFiltros={handleRestablecerFiltros}
       />
 
       <h2 className={styles.reportTitle}>Detalle por Pregunta</h2>
 
       <div className={styles.questionsList}>
-        {reporteDirectorOrdenado?.map((dat: DataEstadisticas, index: number) => {
-          const id = dat.id || '';
-          const correctKey = obtenerRespuestaPorId(id);
+        {loading ? (
+          <div className={styles.loadingWrapper}>
+            <Loader size="large" variant="spinner" color="#3b82f6" text="Procesando reporte..." />
+          </div>
+        ) : reporteDirectorOrdenado?.length === 0 ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>📊</div>
+            <h4 className={styles.emptyTitle}>Sin resultados</h4>
+            <p className={styles.emptyText}>No se encontraron datos para los filtros seleccionados. Intenta con otros parámetros.</p>
+          </div>
+        ) : (
+          reporteDirectorOrdenado?.map((dat: DataEstadisticas, index: number) => {
+            const id = dat.id || '';
+            const correctKey = obtenerRespuestaPorId(id);
 
-          return (
-            <div key={index} className={styles.questionContainer}>
-              <div className={styles.questionHeader}>
-                <span className={styles.questionNumber}>{index + 1}.</span>
-                <div className={styles.questionContent}>
-                  {iterarPregunta(id)}
+            return (
+              <div key={index} className={styles.questionContainer}>
+                <div className={styles.questionHeader}>
+                  <span className={styles.questionNumber}>{index + 1}.</span>
+                  <div className={styles.questionContent}>
+                    {iterarPregunta(id)}
+                  </div>
                 </div>
-              </div>
 
-              <div className={styles.chartContainer}>
-                <div className={styles.chartWrapper}>
-                  <Bar
-                    options={options}
-                    data={iterateData(dat, correctKey)}
-                  />
+                <div className={styles.chartContainer}>
+                  <div className={styles.chartWrapper}>
+                    <Bar
+                      options={options}
+                      data={iterateData(dat, correctKey)}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className={styles.statsGrid}>
-                {Object.entries(dat)
-                  .filter(([key]) => key !== 'id' && key !== 'total')
-                  .sort(([a], [b]) => a.localeCompare(b))
-                  .map(([key, value]) => {
-                    const description = getAlternativeDescription(id, key);
-                    const percentage = dat.total === 0 ? 0 : Math.round((100 * Number(value)) / Number(dat.total));
+                <div className={styles.statsGrid}>
+                  {Object.entries(dat)
+                    .filter(([key]) => key !== 'id' && key !== 'total' && key !== 'question_order' && key !== 'order')
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([key, value]) => {
+                      const description = getAlternativeDescription(id, key);
+                      const percentage = dat.total === 0 ? 0 : Math.round((100 * Number(value)) / Number(dat.total));
 
-                    return (
-                      <div key={key} className={styles.statItemWrapper}>
-                        <div
-                          className={styles.statItem}
-                          onMouseEnter={() => {
-                            if (description) {
-                              setPopoverData({
-                                preguntaId: id,
-                                alternativa: key,
-                                description: description,
-                                show: true
-                              });
-                            }
-                          }}
-                          onMouseLeave={() => {
-                            setPopoverData(prev => prev ? { ...prev, show: false } : null);
-                          }}
-                        >
-                          <span>{key.toUpperCase()}: <span className={styles.statValue}>{value}</span></span>
-                          <span className={styles.statPercentage}>{percentage}%</span>
-                        </div>
+                      return (
+                        <div key={key} className={styles.statItemWrapper}>
+                          <div
+                            className={styles.statItem}
+                            onMouseEnter={() => {
+                              if (description) {
+                                setPopoverData({
+                                  preguntaId: id,
+                                  alternativa: key,
+                                  description: description,
+                                  show: true
+                                });
+                              }
+                            }}
+                            onMouseLeave={() => {
+                              setPopoverData(prev => prev ? { ...prev, show: false } : null);
+                            }}
+                          >
+                            <span>{key.toUpperCase()}: <span className={styles.statValue}>{value}</span></span>
+                            <span className={styles.statPercentage}>{percentage}%</span>
+                          </div>
 
-                        {popoverData?.show &&
-                          popoverData.preguntaId === id &&
-                          popoverData.alternativa === key && (
-                            <div className={styles.popover}>
-                              <div className={styles.popoverContent}>
-                                <div className={styles.popoverHeader}>Alternativa {popoverData.alternativa}</div>
-                                {popoverData.description}
+                          {popoverData?.show &&
+                            popoverData.preguntaId === id &&
+                            popoverData.alternativa === key && (
+                              <div className={styles.popover}>
+                                <div className={styles.popoverContent}>
+                                  <div className={styles.popoverHeader}>Alternativa {popoverData.alternativa}</div>
+                                  {popoverData.description}
+                                </div>
+                                <div className={styles.popoverArrow}></div>
                               </div>
-                              <div className={styles.popoverArrow}></div>
-                            </div>
-                          )}
-                      </div>
-                    );
-                  })}
-              </div>
+                            )}
+                        </div>
+                      );
+                    })}
+                </div>
 
-              <div className={styles.answerContainer}>
-                <span>Respuesta correcta:</span>
-                <span className={styles.answerText}>
-                  {correctKey.toUpperCase()}
-                </span>
+                <div className={styles.answerContainer}>
+                  <span>Respuesta correcta:</span>
+                  <span className={styles.answerText}>
+                    {correctKey.toUpperCase()}
+                  </span>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

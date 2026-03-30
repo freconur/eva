@@ -11,13 +11,11 @@ interface FiltrosReporteProps {
   filtros: {
     region: string;
     distrito: string;
-    caracteristicaCurricular: string;
     genero: string;
     area: string;
   };
   distritosDisponibles: string[];
   handleChangeFiltros: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  handleFiltrar: () => void;
   handleRestablecerFiltros: () => void;
 }
 
@@ -25,7 +23,6 @@ const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
   filtros,
   distritosDisponibles,
   handleChangeFiltros,
-  handleFiltrar,
   handleRestablecerFiltros,
 }) => {
   return (
@@ -83,22 +80,6 @@ const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
           </select>
         </div>
 
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Curricular</label>
-          <select
-            name="caracteristicaCurricular"
-            value={filtros.caracteristicaCurricular}
-            onChange={handleChangeFiltros}
-            className={styles.filterSelect}
-          >
-            <option value="">Todas</option>
-            {caracteristicasDirectivo.map((are) => (
-              <option key={are.id} value={are.name}>
-                {are.name.toUpperCase()}
-              </option>
-            ))}
-          </select>
-        </div>
 
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Género</label>
@@ -118,11 +99,8 @@ const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
         </div>
 
         <div className={styles.filterActions}>
-          <button className={styles.primaryAction} onClick={handleFiltrar}>
-            Filtrar
-          </button>
           <button className={styles.secondaryAction} onClick={handleRestablecerFiltros}>
-            Limpiar
+            Limpiar filtros
           </button>
         </div>
       </div>

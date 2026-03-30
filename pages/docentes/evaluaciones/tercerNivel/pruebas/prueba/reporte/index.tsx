@@ -35,7 +35,7 @@ import { exportEstudiantesToExcel } from '@/features/utils/excelExport';
 import { useGenerarPDFReporte } from '@/features/hooks/useGenerarPDFReporte';
 import Link from 'next/link';
 import ReporteEvaluacionPorPregunta from './reporteEvaluacionPorPregunta';
-import PieChartComponent from '@/pages/admin/evaluaciones/evaluacion/reporte/PieChartComponent';
+import PieChartComponent from '@/components/reportes/PieChartComponent';
 import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafico-piechart';
 import { TablaPreguntas } from '@/components/tabla-preguntas';
 import { calculoNivel } from '@/features/utils/calculoNivel';

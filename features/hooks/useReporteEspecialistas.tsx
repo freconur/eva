@@ -349,13 +349,11 @@ export const useReporteEspecialistas = () => {
       region,
       area,
       genero,
-      caracteristicaCurricular,
       distrito,
     }: {
       region: string;
       area: string;
       genero: string;
-      caracteristicaCurricular: string;
       distrito: string;
     },
     month: number,
@@ -371,10 +369,6 @@ export const useReporteEspecialistas = () => {
         ...(region && { region: String(estudiante.region) === region }),
         ...(area && { area: String(estudiante.area) === area }),
         ...(genero && { genero: String(estudiante.genero) === String(genero) }),
-        ...(caracteristicaCurricular && {
-          caracteristicaCurricular:
-            String(estudiante.caracteristicaCurricular) === String(caracteristicaCurricular),
-        }),
         ...(distrito && { distrito: String(estudiante.distrito) === String(distrito) }),
       };
 
@@ -478,9 +472,8 @@ export const useReporteEspecialistas = () => {
     {
       area,
       genero,
-      caracteristicaCurricular,
       distrito,
-    }: { area: string; genero: string; caracteristicaCurricular: string; distrito: string }
+    }: { area: string; genero: string; distrito: string }
   ) => {
     console.log('data', data); //data son todos los docentes de la region, se filtra todos los docentes con sus datos personales y los datos de las evaluaciones echas a sus estudiantes.
 
@@ -489,10 +482,6 @@ export const useReporteEspecialistas = () => {
       const filtrosActivos = {
         ...(area && { area: String(estudiante.area) === area }),
         ...(genero && { genero: estudiante.genero === genero }),
-        ...(caracteristicaCurricular && {
-          caracteristicaCurricular:
-            estudiante.caracteristicaCurricular === caracteristicaCurricular,
-        }),
         ...(distrito && { distrito: estudiante.distrito === distrito }),
       };
 

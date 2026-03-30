@@ -1,4 +1,5 @@
-import { useGlobalContext } from '@/features/context/GlolbalContext';
+import { useGlobalContext, useGlobalContextDispatch } from '@/features/context/GlolbalContext';
+import { AppAction } from '@/features/actions/appAction';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useColorsFromCSS } from '@/features/hooks/useColorsFromCSS';
@@ -24,20 +25,20 @@ import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecial
 import { useReporteEspecialistas } from '@/features/hooks/useReporteEspecialistas';
 import { distritosPuno } from '@/fuctions/provinciasPuno';
 import { exportDirectorDocenteDataToExcel } from '@/features/utils/excelExport';
-import { useGenerarReporte } from '@/features/hooks/useGenerarReporte';
 import { useCrearEstudiantesDeDocente } from '@/features/hooks/useCrearEstudiantesDeDocente';
 import { useCrearPuntajeProgresiva } from '@/features/hooks/useCrearPuntajeProgresiva';
-import AcordeonGraficosTendencia from './AcordeonGraficosTendencia';
-import AcordeonReportePregunta from './AcordeonReportePregunta';
-import PieChartComponent from './PieChartComponent';
+import AcordeonGraficosTendencia from '@/components/reportes/AcordeonGraficosTendencia';
+import AcordeonReportePregunta from '@/components/reportes/AcordeonReportePregunta';
+import PieChartComponent from '@/components/reportes/PieChartComponent';
 import FiltrosReporte from '@/components/reportes/FiltrosReporte';
 import { useExportExcel } from '@/features/hooks/useExportExcel';
 import { httpsCallable } from 'firebase/functions';
-import { getDoc, doc } from "firebase/firestore";
+import { getDoc, doc, updateDoc } from "firebase/firestore";
 import { functions, db } from '@/firebase/firebase.config';
-import BarChartDirectores from './BarChartDirectores';
-import BarChartDocentesBuckets from './BarChartDocentesBuckets';
-import BarChartDocenteDetalle from './BarChartDocenteDetalle';
+import BarChartDirectores from '@/components/reportes/BarChartDirectores';
+import BarChartDocentes from '@/components/reportes/BarChartDocentes';
+import BarChartDocentesBuckets from '@/components/reportes/BarChartDocentesBuckets';
+import BarChartDocenteDetalle from '@/components/reportes/BarChartDocenteDetalle';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 
 ChartJS.register(
@@ -55,7 +56,6 @@ const Reporte = () => {
   const [filtros, setFiltros] = useState({
     region: '',
     distrito: '',
-    caracteristicaCurricular: '',
     genero: '',
     area: '',
   });
@@ -119,6 +119,8 @@ const Reporte = () => {
   const [dataProfesoresBuckets, setDataProfesoresBuckets] = useState<any[]>([]);
   const [totalDocentesBuckets, setTotalDocentesBuckets] = useState(0);
   const [loadingProfesoresBuckets, setLoadingProfesoresBuckets] = useState(false);
+  const [dataReportePreguntas, setDataReportePreguntas] = useState<any[]>([]);
+  const [loadingReportePreguntas, setLoadingReportePreguntas] = useState(false);
 
   // Drill-down para docentes
   const [fullDocentesData, setFullDocentesData] = useState<any[] | null>(null);
@@ -238,8 +240,8 @@ const Reporte = () => {
     evaluacion,
     dataGraficoTendenciaNiveles,
   } = useGlobalContext();
+  const dispatch = useGlobalContextDispatch();
   const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
-  const { generarReporte, loading: loadingGenerarReporte } = useGenerarReporte();
   const route = useRouter();
   const [monthSelected, setMonthSelected] = useState(currentMonth);
 
@@ -268,38 +270,7 @@ const Reporte = () => {
     return map;
   }, [preguntasOrdenadas]);
 
-  // Ordenar dataEstadisticaEvaluacion por el order de las preguntas correspondientes
-  const dataEstadisticaEvaluacionOrdenada = useMemo(() => {
-    if (!dataEstadisticaEvaluacion || dataEstadisticaEvaluacion.length === 0 || !preguntasOrdenadas.length) return [];
 
-    // Crear un mapa de estadísticas por ID de pregunta
-    const estadisticasMap = new Map<string, any>();
-    dataEstadisticaEvaluacion.forEach((stat) => {
-      if (stat.id) {
-        estadisticasMap.set(stat.id, stat);
-      }
-    });
-
-    // Crear un array sincronizado basado en preguntasRespuestas
-    const reporteSincronizado = preguntasOrdenadas.map((pregunta) => {
-      const estadistica = estadisticasMap.get(pregunta.id || '');
-      if (estadistica) {
-        return estadistica;
-      } else {
-        // Si no hay estadísticas para esta pregunta, crear una estructura vacía
-        return {
-          id: pregunta.id,
-          a: 0,
-          b: 0,
-          c: 0,
-          d: pregunta.alternativas?.some((alt) => alt.alternativa === 'd') ? 0 : undefined,
-          total: 0,
-        };
-      }
-    });
-
-    return reporteSincronizado;
-  }, [dataEstadisticaEvaluacion, preguntasOrdenadas]);
 
 
   useEffect(() => {
@@ -319,7 +290,6 @@ const Reporte = () => {
         region: filtros.region,
         area: filtros.area,
         genero: filtros.genero,
-        caracteristicaCurricular: filtros.caracteristicaCurricular,
         distrito: filtros.distrito,
       },
       monthSelected,
@@ -327,6 +297,13 @@ const Reporte = () => {
       yearSelected
     );
   };
+
+  // Efecto para filtrado reactivo: actualiza el reporte automáticamente al cambiar cualquier filtro o periodo
+  useEffect(() => {
+    if (route.query.idEvaluacion && allEvaluacionesDirectorDocente.length > 0) {
+      handleFiltrar();
+    }
+  }, [filtros, monthSelected, yearSelected, allEvaluacionesDirectorDocente.length]);
   useEffect(() => {
     if (route.query.idEvaluacion && evaluacion?.nivelYPuntaje) {
       getDataGraficoPieChart(
@@ -353,23 +330,24 @@ const Reporte = () => {
     if (isFetchedBarGraphics.current === currentKey) return;
 
     const fetchBarGraphicsData = async () => {
-      setLoadingDirectoresBar(true);
       try {
-        console.log('🚀 [Cloud Function] Solicitando datos para directores...');
-        const getDataFunction = httpsCallable(functions, 'getDataToDirectoresFromBarGraphics');
+        const idEval = route.query.idEvaluacion;
+        console.log('🚀 [Cloud Function] Ejecutando getDataReporteAgregadoPorRol (director) para:', idEval);
+
+        const getDataFunction = httpsCallable(functions, 'getDataReporteAgregadoPorRol');
         const result = await getDataFunction({
           idEvaluacion: idEval,
           año: yearSelected,
-          mes: monthSelected
+          mes: monthSelected,
+          rol: 'director'
         });
-        console.log('✅ [Cloud Function] Datos de directores recibidos:', result.data);
 
-        const response: any = result.data;
-        if (response.success && Array.isArray(response.data)) {
-          setDataDirectoresBar(response.data);
+        const res = result.data as any;
+        if (res.success && res.data) {
+          setDataDirectoresBar(res.data);
         }
       } catch (error) {
-        console.error('❌ [Cloud Function] Error en getDataToDirectoresFromBarGraphics:', error);
+        console.error('❌ [Cloud Function] Error en getDataReporteAgregadoPorRol (director):', error);
       } finally {
         setLoadingDirectoresBar(false);
       }
@@ -412,16 +390,48 @@ const Reporte = () => {
   };
 
   // --- CONSOLIDACIÓN DE DOCENTES (MANUAL POR BOTÓN) ---
-  const handleConsolidarDocentes = async () => {
-    // Ya no es necesario consolidar manualmente, los datos son en tiempo real.
-    toast.info('Los datos se actualizan automáticamente desde BigQuery.');
-    loadConsolidado();
-  };
+
 
   // --- EFECTO PARA CARGAR CONSOLIDACIÓN EXISTENTE ---
   useEffect(() => {
     loadConsolidado();
   }, [route.query.idEvaluacion, monthSelected, yearSelected]);
+
+  // --- REPORTE POR PREGUNTAS (BIGQUERY) ---
+  useEffect(() => {
+    const idEval = route.query.idEvaluacion;
+    if (!idEval || monthSelected === undefined || !yearSelected) return;
+
+    const fetchReportePreguntas = async () => {
+      setLoadingReportePreguntas(true);
+      try {
+        const payload = {
+          idEvaluacion: idEval,
+          año: yearSelected,
+          mes: monthSelected,
+          region: filtros.region,
+          distrito: filtros.distrito,
+          area: filtros.area,
+          genero: filtros.genero
+        };
+        console.log('🚀 [BigQuery] Solicitando reporte por preguntas con filtros:', payload);
+        const getDataFunction = httpsCallable(functions, 'getDataReporteEvaluacionPorPreguntas');
+        const result = await getDataFunction(payload);
+        console.log('✅ [BigQuery] Reporte por preguntas recibido:', result.data);
+
+        const response: any = result.data;
+        if (response.success && Array.isArray(response.data)) {
+          setDataReportePreguntas(response.data);
+        }
+      } catch (error) {
+        console.error('❌ Error al cargar reporte por preguntas de BigQuery:', error);
+      } finally {
+        setLoadingReportePreguntas(false);
+      }
+    };
+
+    fetchReportePreguntas();
+  }, [route.query.idEvaluacion, monthSelected, yearSelected, filtros.region, filtros.distrito, filtros.area, filtros.genero]);
 
   const handleBarClick = async (range: string) => {
     setSelectedRange(range);
@@ -432,24 +442,57 @@ const Reporte = () => {
     }, 100);
   };
 
+  const handleSaveMeta = async (newMeta: number) => {
+    const idEval = route.query.idEvaluacion;
+    if (!idEval) return;
+
+    try {
+      console.log(`💾 Guardando nueva meta global: ${newMeta}%`);
+      const evalRef = doc(db, 'evaluaciones', String(idEval));
+      await updateDoc(evalRef, {
+        metaSatisfactorio: newMeta
+      });
+
+      // Actualizar el contexto global para que todos los componentes se enteren
+      dispatch({
+        type: AppAction.EVALUACION,
+        payload: {
+          ...evaluacion,
+          metaSatisfactorio: newMeta
+        }
+      });
+
+      alert('✅ Meta global actualizada exitosamente.');
+    } catch (error) {
+      console.error('❌ Error al guardar meta global:', error);
+      alert('❌ Error al guardar la meta global.');
+    }
+  };
+
   const filteredDocentesByRange = useMemo(() => {
     if (!fullDocentesData || !selectedRange) return [];
 
-    // El rango viene como "0% - 20%" o "81% - 100%"
-    const match = selectedRange.match(/(\d+)%\s*-\s*(\d+)%/);
+    // El rango viene como "0% - 25%" o "75.1% - 100%"
+    const match = selectedRange.match(/([\d.]+)%\s*-\s*([\d.]+)%/);
     if (!match) return [];
 
-    const min = parseInt(match[1], 10);
-    const max = parseInt(match[2], 10);
+    const min = parseFloat(match[1]);
+    const max = parseFloat(match[2]);
 
     return fullDocentesData.filter((doc: any) => {
       const val = doc.porcentajeSatisfactorio;
-      // Inclusión: 0-20, 21-40, ...
+      // Inclusión: 0-25, 25.1-50, ...
       return val >= min && val <= max;
     });
   }, [fullDocentesData, selectedRange]);
 
   const handleRestablecerFiltros = () => {
+    setFiltros({
+      region: '',
+      distrito: '',
+      genero: '',
+      area: '',
+    });
     restablecerFiltrosDeEspecialista(`${route.query.idEvaluacion}`, monthSelected, yearSelected);
   }
   // Función optimizada para renderizar pregunta usando el mapa
@@ -630,55 +673,7 @@ const Reporte = () => {
   };
 
   // Función para generar reporte usando Firebase Functions
-  const handleGenerarReporte = async () => {
-    if (!route.query.idEvaluacion) {
-      toast.warning('No se ha seleccionado una evaluación válida');
-      return;
-    }
 
-    // Mostrar alerta informativa antes de comenzar
-    const confirmed = window.confirm(
-      '⏱️ Esta operación puede tomar hasta 9 minutos para procesar todos los datos.\n\n' +
-      '• Se procesarán todos los directores y sus docentes\n' +
-      '• Se generarán estadísticas consolidadas\n' +
-      '• Por favor, mantén esta ventana abierta\n\n' +
-      '¿Deseas continuar?'
-    );
-
-    if (!confirmed) return;
-
-    try {
-      const resultado = await generarReporte(String(route.query.idEvaluacion), monthSelected, {
-        region: filtros.region,
-        distrito: filtros.distrito,
-        caracteristicaCurricular: filtros.caracteristicaCurricular,
-        genero: filtros.genero,
-        area: filtros.area,
-      }, yearSelected);
-
-      if (resultado) {
-        toast.success(`Consolidado generado con éxito para la evaluación ${evaluacion.nombre}`, {
-          autoClose: 10000,
-          position: "top-right",
-        });
-      }
-    } catch (error: any) {
-      if (error.code === 'functions/deadline-exceeded') {
-        const timeoutMessage =
-          '⚠️ Tiempo de espera agotado\n\n' +
-          'El reporte está tardando más de lo esperado debido al gran volumen de datos.\n\n' +
-          'Opciones:\n' +
-          '• Intenta nuevamente en unos minutos\n' +
-          '• La función podría seguir ejecutándose en el servidor\n' +
-          '• Contacta al administrador si el problema persiste\n\n' +
-          'Esto puede ocurrir con más de 1000 directores o muchas evaluaciones.';
-
-        toast.warning(timeoutMessage, { autoClose: 15000 });
-      } else {
-        toast.error(`❌ Error al generar reporte: ${error.message || 'Error desconocido'}`);
-      }
-    }
-  };
 
 
   return (
@@ -759,42 +754,7 @@ const Reporte = () => {
                 )}
               </button>
 
-              {currentUserData?.rol === 4 && (
-                <button
-                  className={styles.warningButton}
-                  onClick={handleGenerarReporte}
-                  disabled={loadingGenerarReporte || !route.query.idEvaluacion}
-                >
-                  {loadingGenerarReporte ? (
-                    <>
-                      <RiLoader4Line className={styles.loaderIcon} />
-                      <span>Procesando...</span>
-                    </>
-                  ) : (
-                    'Generar consolidado'
-                  )}
-                </button>
-              )}
 
-              {currentUserData?.rol === 4 && (
-                <button
-                  className={`${styles.primaryButton} ${styles.blueButton}`}
-                  onClick={handleConsolidarDocentes}
-                  disabled={loadingProfesoresBuckets || !route.query.idEvaluacion}
-                >
-                  {loadingProfesoresBuckets ? (
-                    <>
-                      <RiLoader4Line className={styles.loaderIcon} />
-                      <span>Consolidando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <MdAnalytics />
-                      <span>Consolidar docentes</span>
-                    </>
-                  )}
-                </button>
-              )}
             </div>
           </div>
 
@@ -840,6 +800,12 @@ const Reporte = () => {
               )
             )
           }
+          {/* Gráfico de Ranking de Docentes (Nuevo) */}
+          {
+            evaluacion.tipoDeEvaluacion === '1' && !loadingProfesoresBuckets && fullDocentesData && fullDocentesData.length > 0 && (
+              <BarChartDocentes data={fullDocentesData} />
+            )
+          }
           {/* Gráfico de barras de distribución por niveles para docentes (Buckets) */}
           {
             evaluacion.tipoDeEvaluacion === '1' && (
@@ -861,6 +827,7 @@ const Reporte = () => {
               )
             )
           }
+
           {/* Componente de acordeón para gráficos de tendencia */}
           {/* Detalle de Docentes (Leaderboard Stacked) */}
           <div ref={drillDownRef}>
@@ -874,7 +841,9 @@ const Reporte = () => {
                 filteredDocentesByRange.length > 0 && (
                   <BarChartDocenteDetalle
                     data={filteredDocentesByRange}
-                    selectedRange={selectedRange}
+                    selectedRange={selectedRange || ''}
+                    metaSatisfactorio={evaluacion?.metaSatisfactorio || 80}
+                    onSaveMeta={handleSaveMeta}
                   />
                 )
               )
@@ -898,7 +867,6 @@ const Reporte = () => {
           }
           {/* Componente de acordeón para reporte por pregunta */}
           <AcordeonReportePregunta
-            reporteDirectorOrdenado={dataEstadisticaEvaluacionOrdenada}
             preguntasMap={preguntasMap}
             iterarPregunta={iterarPregunta}
             obtenerRespuestaPorId={obtenerRespuestaPorId}
@@ -907,9 +875,10 @@ const Reporte = () => {
             filtros={filtros}
             distritosDisponibles={distritosDisponibles}
             handleChangeFiltros={handleChangeFiltros}
-            handleFiltrar={handleFiltrar}
             handleRestablecerFiltros={handleRestablecerFiltros}
             yearSelected={yearSelected}
+            dataReportePreguntas={dataReportePreguntas}
+            loadingReportePreguntas={loadingReportePreguntas}
           />
         </div>
       )}

@@ -263,6 +263,7 @@ export type Evaluaciones = {
   usuariosConPermisosUgel?: string[];
   nivel?: number[];
   activarEvidencias?: boolean;
+  metaSatisfactorio?: number;
 };
 export type Evaluacion = {
   id?: string;
@@ -282,6 +283,7 @@ export type Evaluacion = {
   usuariosConPermisos?: string[];
   usuariosConPermisosUgel?: string[];
   activarEvidencias?: boolean;
+  metaSatisfactorio?: number;
 };
 export type UserEstudiante = {
   id?: string;

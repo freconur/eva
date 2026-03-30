@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import ReporteEvaluacionPorPregunta from '@/components/reportes/ReporteEvaluacionPorPregunta';
 import { PreguntasRespuestas, DataEstadisticas } from '@/features/types/types';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
-import Loader from '@/components/loader/loader';
 import styles from './Acordeon.module.css';
 
 interface AcordeonReportePreguntaProps {
-  reporteDirectorOrdenado: any[];
   preguntasMap: Map<string, PreguntasRespuestas>;
   iterarPregunta: (idPregunta: string) => JSX.Element;
   obtenerRespuestaPorId: (idPregunta: string) => string;
@@ -15,19 +13,18 @@ interface AcordeonReportePreguntaProps {
   filtros: {
     region: string;
     distrito: string;
-    caracteristicaCurricular: string;
     genero: string;
     area: string;
   };
   distritosDisponibles: string[];
   handleChangeFiltros: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  handleFiltrar: () => void;
   handleRestablecerFiltros: () => void;
   yearSelected: number;
+  dataReportePreguntas: any[];
+  loadingReportePreguntas: boolean;
 }
 
 const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
-  reporteDirectorOrdenado,
   preguntasMap,
   iterarPregunta,
   obtenerRespuestaPorId,
@@ -36,16 +33,16 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
   filtros,
   distritosDisponibles,
   handleChangeFiltros,
-  handleFiltrar,
   handleRestablecerFiltros,
-  yearSelected
+  yearSelected,
+  dataReportePreguntas,
+  loadingReportePreguntas
 }) => {
   const [mostrarReporte, setMostrarReporte] = useState(false);
-  const { loaderReportePorPregunta, reporteDirector } = useGlobalContext();
 
-  const datosParaReporte = Array.isArray(reporteDirector) && reporteDirector.length > 0
-    ? reporteDirector
-    : (Array.isArray(reporteDirectorOrdenado) ? reporteDirectorOrdenado : []);
+  const loading = loadingReportePreguntas;
+
+  const datosParaReporte = Array.isArray(dataReportePreguntas) ? dataReportePreguntas : [];
 
   const toggleReporte = () => {
     setMostrarReporte(!mostrarReporte);
@@ -72,33 +69,19 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
 
       <div className={`${styles.contentWrapper} ${mostrarReporte ? styles.contentWrapperOpen : ''}`}>
         <div className={`${styles.contentInner} ${mostrarReporte ? styles.innerVisible : ''}`}>
-          {loaderReportePorPregunta ? (
-            <div className="flex justify-center items-center py-10">
-              <Loader size="large" variant="spinner" color="#3b82f6" text="Cargando datos..." />
-            </div>
-          ) : (
-            datosParaReporte.length === 0 ? (
-              <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>📊</div>
-                <h4 className={styles.emptyTitle}>Sin datos disponibles</h4>
-                <p className={styles.emptyText}>No se encontraron datos para mostrar en este reporte</p>
-              </div>
-            ) : (
-              <ReporteEvaluacionPorPregunta
-                reporteDirectorOrdenado={datosParaReporte}
-                preguntasMap={preguntasMap}
-                iterarPregunta={iterarPregunta}
-                obtenerRespuestaPorId={obtenerRespuestaPorId}
-                iterateData={iterateData}
-                options={options}
-                filtros={filtros}
-                distritosDisponibles={distritosDisponibles}
-                handleChangeFiltros={handleChangeFiltros}
-                handleFiltrar={handleFiltrar}
-                handleRestablecerFiltros={handleRestablecerFiltros}
-              />
-            )
-          )}
+          <ReporteEvaluacionPorPregunta
+            reporteDirectorOrdenado={datosParaReporte}
+            preguntasMap={preguntasMap}
+            iterarPregunta={iterarPregunta}
+            obtenerRespuestaPorId={obtenerRespuestaPorId}
+            iterateData={iterateData}
+            options={options}
+            filtros={filtros}
+            distritosDisponibles={distritosDisponibles}
+            handleChangeFiltros={handleChangeFiltros}
+            handleRestablecerFiltros={handleRestablecerFiltros}
+            loading={loading}
+          />
         </div>
       </div>
     </div>

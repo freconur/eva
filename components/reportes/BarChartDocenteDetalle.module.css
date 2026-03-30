@@ -97,6 +97,54 @@
     background-color: #f8fafc;
 }
 
+.select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.inputThreshold {
+    width: 70px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1.5px solid #e2e8f0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1e293b;
+    outline: none;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.inputThreshold:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.saveButton {
+    background: #3b82f6;
+    border: none;
+    color: white;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.saveButton:hover {
+    background: #2563eb;
+    transform: scale(1.05);
+}
+
+.saveButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .chartWrapper {
     width: 100%;
     position: relative;
