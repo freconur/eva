@@ -84,17 +84,42 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
     }
   };
 
-  // Función para validar respuestas
+  // Función para validar respuestas usando la definición global como fuente de verdad
   const handleValidateRespuesta = (data: PreguntasRespuestas) => {
+    // Buscar la respuesta correcta en la definición global por ID o por Orden como respaldo
+    const globalPregunta = preguntasRespuestas.find(p =>
+      (data.id && p.id === data.id) || (data.order !== undefined && p.order === data.order)
+    );
+    const correctRespuesta = globalPregunta?.respuesta;
+
     const rta: Alternativa | undefined = data.alternativas?.find((r) => r.selected === true);
-    if (rta?.alternativa) {
-      if (rta.alternativa.toLowerCase() === data.respuesta?.toLowerCase()) {
+    if (rta?.alternativa && correctRespuesta) {
+      if (rta.alternativa.toLowerCase() === correctRespuesta.toLowerCase()) {
         return <div className={styles.correctAnswer}>si</div>;
       } else {
         return <div className={styles.incorrectAnswer}>no</div>;
       }
     }
     return <div className={styles.noAnswer}>-</div>;
+  };
+
+  // Función para calcular el total de respuestas correctas basadas en la definición global
+  const calculateCorrectCount = (respuestas?: PreguntasRespuestas[]) => {
+    if (!respuestas || !preguntasRespuestas) return 0;
+
+    let count = 0;
+    respuestas.forEach((res) => {
+      const globalPregunta = preguntasRespuestas.find(p =>
+        (res.id && p.id === res.id) || (res.order !== undefined && p.order === res.order)
+      );
+      const correctRespuesta = globalPregunta?.respuesta;
+      const rta: Alternativa | undefined = res.alternativas?.find((r) => r.selected === true);
+
+      if (rta?.alternativa && correctRespuesta && rta.alternativa.toLowerCase() === correctRespuesta.toLowerCase()) {
+        count++;
+      }
+    });
+    return count;
   };
 
   // Verificar si existen valores válidos para puntaje
@@ -258,7 +283,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                             )}
                           </td>
                           {currentUserData.rol === 2 && <td><span className={styles.dniDocenteText}>{estudiante.dniDocente}</span></td>}
-                          <td>{estudiante.respuestasCorrectas || 0}</td>
+                          <td>{calculateCorrectCount(estudiante.respuestas)}</td>
                           <td>{estudiante.totalPreguntas || 0}</td>
                           {hasValidPuntaje() && <td>{estudiante.puntaje || '-'}</td>}
                           {hasValidNivel() && <td>

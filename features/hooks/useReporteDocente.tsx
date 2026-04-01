@@ -211,7 +211,13 @@ export const useReporteDocente = () => {
         const rta = agregarPuntajesARespuestas(estudiante, preguntaRespuestas);
         const rta2 = calculoNivel(rta, evaluacion);
         const rta3 = calculoPreguntasCorrectas(rta2);
-        return { estudiante, data: rta3 };
+        return {
+          estudiante,
+          data: {
+            ...rta3,
+            region: currentUserData.region
+          }
+        };
       });
 
       const BATCH_SIZE = 500;

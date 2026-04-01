@@ -26,6 +26,7 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
     // Usar el número de opciones detectado globalmente
     const numOpciones = detectarNumeroOpciones;
+    const pregunta = preguntasMap.get(data.id || '');
 
     // Calcular porcentajes para cada opción
     const calcularPorcentaje = (valor: number | undefined) => {
@@ -44,22 +45,28 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
       return opcion.toLowerCase() === respuesta.toLowerCase();
     };
 
+    const getLabel = (opcion: string) => {
+      const label = opcion.toUpperCase();
+      return `${label}${esRespuestaCorrecta(opcion) ? ' ✓' : ''}`;
+    };
+
     if (numOpciones === 3) {
       // Para 3 opciones: redondear las primeras 2 y calcular la tercera
       const porcentajeA = Math.round(porcentajeARaw);
       const porcentajeB = Math.round(porcentajeBRaw);
+      // @ts-ignore
       const porcentajeC = Math.max(0, 100 - porcentajeA - porcentajeB);
 
       // Crear etiquetas solo para las 3 opciones con check para la respuesta correcta
       const labels = [
-        `A (${data.a || 0} - ${porcentajeA}%)${esRespuestaCorrecta('a') ? ' ✓' : ''}`,
-        `B (${data.b || 0} - ${porcentajeB}%)${esRespuestaCorrecta('b') ? ' ✓' : ''}`,
-        `C (${data.c || 0} - ${porcentajeC}%)${esRespuestaCorrecta('c') ? ' ✓' : ''}`
+        getLabel('a'),
+        getLabel('b'),
+        getLabel('c')
       ];
 
       // Usar el hook para preparar los datos del gráfico
       const chartData = prepareBarChartData(data, respuesta, 3);
-      
+
       return {
         labels: labels,
         datasets: chartData.datasets
@@ -69,19 +76,20 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
       const porcentajeA = Math.round(porcentajeARaw);
       const porcentajeB = Math.round(porcentajeBRaw);
       const porcentajeC = Math.round(porcentajeCRaw);
+      // @ts-ignore
       const porcentajeD = Math.max(0, 100 - porcentajeA - porcentajeB - porcentajeC);
 
       // Crear etiquetas para las 4 opciones con check para la respuesta correcta
       const labels = [
-        `A (${data.a || 0} - ${porcentajeA}%)${esRespuestaCorrecta('a') ? ' ✓' : ''}`,
-        `B (${data.b || 0} - ${porcentajeB}%)${esRespuestaCorrecta('b') ? ' ✓' : ''}`,
-        `C (${data.c || 0} - ${porcentajeC}%)${esRespuestaCorrecta('c') ? ' ✓' : ''}`,
-        `D (${data.d || 0} - ${porcentajeD}%)${esRespuestaCorrecta('d') ? ' ✓' : ''}`
+        getLabel('a'),
+        getLabel('b'),
+        getLabel('c'),
+        getLabel('d')
       ];
 
       // Usar el hook para preparar los datos del gráfico
       const chartData = prepareBarChartData(data, respuesta, 4);
-      
+
       return {
         labels: labels,
         datasets: chartData.datasets
@@ -109,24 +117,12 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
         borderWidth: 1,
         cornerRadius: 8,
         displayColors: true,
-        callbacks: {
-          title: function(context: any) {
-            return `Opción ${context[0].label.split(' ')[0].toUpperCase()}`;
-          },
-          label: function(context: any) {
-            const label = context.label;
-            const value = context.parsed.y;
-            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-            return `Respuestas: ${value} (${percentage}%)`;
-          }
-        }
       }
     },
     scales: {
       x: {
         ticks: {
-          color: function(context: any) {
+          color: function (context: any) {
             const label = context.tick.label;
             // Si la etiqueta contiene un check, usar color verde
             if (label && label.includes('✓')) {
@@ -157,28 +153,11 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
     },
     onHover: (event: any, activeElements: any) => {
       if (event.native) {
+        // @ts-ignore
         event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
       }
     }
   };
-
-  // Función optimizada para renderizar pregunta usando el mapa
-  /* const renderPregunta = useCallback((idPregunta: string) => {
-    const pregunta = preguntasMap.get(idPregunta);
-    if (!pregunta) {
-      return <p>Pregunta no encontrada</p>;
-    }
-    return (
-      <>
-        <h3 className={styles.questionTitle}>
-          {pregunta.pregunta}
-        </h3>
-        <h4 className={styles.questionSubtitle}>
-          <strong>Actuación</strong>: {pregunta.preguntaDocente}
-        </h4>
-      </>
-    );
-  }, [preguntasMap]); */
 
   // Función optimizada para obtener respuesta usando el mapa
   const obtenerRespuestaPorId = useCallback((idPregunta: string): string => {
@@ -189,13 +168,13 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   return (
     <div className={styles.containerPrincipal}>
       <h1 className={styles.title}>Reporte de Evaluación</h1>
-      
+
       {/* Selector de número de columnas */}
       <div className={styles.columnSelectorContainer}>
         <label className={styles.columnSelectorLabel}>
           Número de columnas:
         </label>
-        <select 
+        <select
           className={styles.columnSelector}
           value={numeroColumnas}
           onChange={(e) => setNumeroColumnas(Number(e.target.value))}
@@ -206,7 +185,7 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
         </select>
       </div>
 
-      <div 
+      <div
         className={styles.reportContainer}
         style={{
           gridTemplateColumns: `repeat(${numeroColumnas}, 1fr)`,
@@ -218,7 +197,6 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
         ) : (
           dataEstadisticasOrdenadas?.map((dat, index) => {
             const pregunta = preguntasMap.get(dat.id || '');
-            const numeroOrden = pregunta?.order || index + 1;
             return (
               <div key={dat.id || index} className={styles.questionCard}>
                 {/* Header de la pregunta */}
@@ -239,28 +217,8 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
                   <div className={styles.chartSection}>
                     <div className={styles.chartHeader}>
                       <h4 className={styles.chartTitle}>Distribución de Respuestas</h4>
-                      <div className={styles.chartLegend}>
-                        <span className={styles.legendItem}>
-                          <span className={`${styles.legendColor} ${obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === 'a' ? styles.correctAnswerColor : styles.legendColorA}`}></span>
-                          Opción A
-                        </span>
-                        <span className={styles.legendItem}>
-                          <span className={`${styles.legendColor} ${obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === 'b' ? styles.correctAnswerColor : styles.legendColorB}`}></span>
-                          Opción B
-                        </span>
-                        <span className={styles.legendItem}>
-                          <span className={`${styles.legendColor} ${obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === 'c' ? styles.correctAnswerColor : styles.legendColorC}`}></span>
-                          Opción C
-                        </span>
-                        {detectarNumeroOpciones === 4 && (
-                          <span className={styles.legendItem}>
-                            <span className={`${styles.legendColor} ${obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === 'd' ? styles.correctAnswerColor : styles.legendColorD}`}></span>
-                            Opción D
-                          </span>
-                        )}
-                      </div>
                     </div>
-                    
+
                     <div className={styles.chartWrapper}>
                       <Bar
                         options={{
@@ -275,12 +233,37 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
                             title: {
                               display: false,
                             },
+                            tooltip: {
+                              ...options.plugins?.tooltip,
+                              callbacks: {
+                                title: function (context: any) {
+                                  const labelChar = context[0].label.charAt(0).toUpperCase();
+                                  return `Opción ${labelChar}`;
+                                },
+                                label: function (context: any) {
+                                  const value = context.parsed.y;
+                                  const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                                  const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+
+                                  const labelStr = context.label as string;
+                                  const char = labelStr.charAt(0).toLowerCase();
+                                  const alt = pregunta?.alternativas?.find(a => a.alternativa?.toLowerCase() === char);
+                                  const fullDescription = alt?.descripcion || '';
+
+                                  return [
+                                    fullDescription ? `Opción: ${fullDescription}` : '',
+                                    `Resultados: ${value} de ${total} (${percentage}%)`
+                                  ].filter(Boolean);
+                                }
+                              }
+                            }
                           },
                         }}
                         data={iterateData(
                           dat,
                           obtenerRespuestaPorId(`${dat.id}`)
                         )}
+                        // @ts-ignore
                         ref={(chartRef) => {
                           if (chartRef && chartRef.canvas) {
                             setTimeout(() => {

@@ -6,6 +6,7 @@ import {
   DataEstadisticas,
   Estudiante,
   PreguntasRespuestas,
+  UserEstudiante,
 } from '@/features/types/types';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -38,7 +39,7 @@ import ReporteEvaluacionPorPregunta from './reporteEvaluacionPorPregunta';
 import PieChartComponent from '@/components/reportes/PieChartComponent';
 import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafico-piechart';
 import { TablaPreguntas } from '@/components/tabla-preguntas';
-import { calculoNivel } from '@/features/utils/calculoNivel';
+import { calculoNivel, calculoPreguntasCorrectas } from '@/features/utils/calculoNivel';
 import GraficoTendenciaColegio from '@/components/grafico-tendencia';
 import CorregirPuntajesModal from '@/modals/corregirPuntajes';
 ChartJS.register(
@@ -59,7 +60,7 @@ const Reportes = () => {
   const [showCorregirPuntajesModal, setShowCorregirPuntajesModal] = useState<boolean>(false);
   const route = useRouter();
   const {
-    estudiantes,
+    estudiantes: estudiantesGlob,
     currentUserData,
     dataEstadisticas,
     preguntasRespuestas,
@@ -90,6 +91,31 @@ const Reportes = () => {
   const [yearSelected, setYearSelected] = useState<string>('');
   const [monthSelected, setMonthSelected] = useState<number>(currentMonth);
   const [order, setOrder] = useState<number>(0);
+
+  // Crear una versión de estudiantes sincronizada con la definición global (Fuente de Verdad)
+  const estudiantes = useMemo(() => {
+    if (!estudiantesGlob || !preguntasRespuestas || !evaluacion) return [];
+
+    return estudiantesGlob.map(est => {
+      if (!est.respuestas) return est;
+
+      // 1. Sincronizar la propiedad 'respuesta' (correcta) con la definición global del examen
+      const respuestasSincronizadas = est.respuestas.map(r => {
+        const globalP = preguntasRespuestas.find(p =>
+          (r.id && p.id === r.id) || (r.order !== undefined && p.order === r.order)
+        );
+        return { ...r, respuesta: globalP?.respuesta || r.respuesta };
+      });
+
+      // 2. Recalcular respuestas correctas, puntaje y nivel dinámicamente para el reporte
+      let tempEst = { ...est, respuestas: respuestasSincronizadas } as any;
+      tempEst = calculoPreguntasCorrectas(tempEst);
+      tempEst = calculoNivel(tempEst, evaluacion);
+
+      return tempEst as (Estudiante | UserEstudiante);
+    });
+  }, [estudiantesGlob, preguntasRespuestas, evaluacion]);
+
   const handleShowTable = () => {
     setShowtable(!showTable);
   };
