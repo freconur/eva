@@ -549,7 +549,7 @@ const Evaluaciones = () => {
                               )}
                             </td>
                             <td className={styles.tableCell}>
-                              {puedeAcceder ? (
+                              {(puedeAcceder || currentUserData?.perfil?.rol === 5) ? (
                                 <Link
                                   href={`/admin/evaluaciones/evaluacion/reporte?id=${currentUserData?.dni}&idEvaluacion=${eva.id}`}
                                   className={styles.reportLink}
