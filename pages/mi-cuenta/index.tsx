@@ -31,7 +31,7 @@ const MiCuenta = () => {
                 onClick={() => setIsModalOpen(true)}
                 className={styles.editButton}
               >
-                Editar nombres y apellidos
+                Editar mis datos
               </button>
             )}
           </div>
@@ -60,6 +60,18 @@ const MiCuenta = () => {
                 <span className={styles.value}>{currentUserData.institucion}</span>
               </div>
             )}
+            <div className={styles.dataRow}>
+              <span className={styles.label}>Email</span>
+              <span className={styles.value}>{currentUserData.email || '—'}</span>
+            </div>
+            <div className={styles.dataRow}>
+              <span className={styles.label}>Teléfono</span>
+              <span className={styles.value}>{currentUserData.celular || '—'}</span>
+            </div>
+            <div className={styles.dataRow}>
+              <span className={styles.label}>ID de Rol</span>
+              <span className={styles.value}>{currentUserData.perfil?.rol}</span>
+            </div>
           </div>
         </div>
       </div>

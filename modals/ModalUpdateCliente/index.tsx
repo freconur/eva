@@ -14,6 +14,8 @@ const ModalUpdateCliente = ({ userData, onClose, onSuccess }: Props) => {
     const [formData, setFormData] = useState({
         nombres: userData.nombres || '',
         apellidos: userData.apellidos || '',
+        email: userData.email || '',
+        celular: userData.celular || '',
     });
     const [loading, setLoading] = useState(false);
     const { updateUsuarioById } = useUsuario();
@@ -95,6 +97,28 @@ const ModalUpdateCliente = ({ userData, onClose, onSuccess }: Props) => {
                             className={styles.input}
                             placeholder="Ingrese sus apellidos"
                             required
+                        />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Email</label>
+                        <input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            className={styles.input}
+                            placeholder="Ingrese su correo electrónico"
+                        />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Nº Celular</label>
+                        <input
+                            type="text"
+                            name="celular"
+                            value={formData.celular}
+                            onChange={handleChange}
+                            className={styles.input}
+                            placeholder="Ingrese su número de celular"
                         />
                     </div>
                     <div className={styles.formFooter}>

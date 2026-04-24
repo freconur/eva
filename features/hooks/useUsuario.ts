@@ -113,6 +113,8 @@ const useUsuario = () => {
           nivelesInstitucion: user.data()?.nivelesInstitucion || [],
           area: user.data()?.area,
           distrito: user.data()?.distrito || '',
+          email: user.data()?.email || '',
+          celular: user.data()?.celular || '',
         },
       });
     } else {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { MdArrowBack, MdSearch, MdPeople, MdExpandMore, MdExpandLess, MdTrendingUp, MdTrendingDown, MdTrendingFlat, MdHistory } from 'react-icons/md';
+import { MdArrowBack, MdSearch, MdPeople, MdExpandMore, MdExpandLess, MdTrendingUp, MdTrendingDown, MdTrendingFlat, MdHistory, MdDelete, MdWarning } from 'react-icons/md';
 import { RiLoader4Line } from 'react-icons/ri';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas';
@@ -40,7 +40,7 @@ const EvaluadosPage = () => {
     const router = useRouter();
     const { id } = router.query;
     const { evaluadosEspecialista, loaderPages, dataEvaluacionDocente, getPreguntaRespuestaDocentes, dimensionesEspecialistas } = useGlobalContext();
-    const { getEspecialistasEvaluados, getDataEvaluacion, getHistorialEspecialista, getPreguntasRespuestasEspecialistas, getDimensionesEspecialistas } = UseEvaluacionEspecialistas();
+    const { getEspecialistasEvaluados, getDataEvaluacion, getHistorialEspecialista, getPreguntasRespuestasEspecialistas, getDimensionesEspecialistas, deleteEvaluadoSession } = UseEvaluacionEspecialistas();
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [selectedFase, setSelectedFase] = useState<string>('');
     const [showModalEvolucion, setShowModalEvolucion] = useState(false);
@@ -49,6 +49,9 @@ const EvaluadosPage = () => {
     const [loadingHistorial, setLoadingHistorial] = useState(false);
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
     const [activeTab, setActiveTab] = useState<'evolucion' | 'radar' | 'analisis' | 'distribucion'>('evolucion');
+    const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+    const [evaluacionToDelete, setEvaluacionToDelete] = useState<{ id: string; name: string } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -179,6 +182,32 @@ const EvaluadosPage = () => {
             return dateString.substring(0, 10);
         }
         return String(dateString);
+    };
+
+    const handleDeleteClick = (e: React.MouseEvent, evalu: User) => {
+        e.stopPropagation();
+        setEvaluacionToDelete({
+            id: evalu.id || '',
+            name: `${evalu.nombres || ''} ${evalu.apellidos || ''}`.trim() || 'esta evaluación'
+        });
+        setShowConfirmDelete(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!id || !evaluacionToDelete || isDeleting) return;
+
+        try {
+            setIsDeleting(true);
+            await deleteEvaluadoSession(`${id}`, evaluacionToDelete.id);
+            setShowConfirmDelete(false);
+            setEvaluacionToDelete(null);
+            // La lista se actualizará automáticamente ya que tenemos onSnapshot en el hook (o deberíamos)
+            // En este caso getAllEvaluacionesEspecialistas usa onSnapshot
+        } catch (error) {
+            alert('Error al eliminar la evaluación');
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const chartData = {
@@ -583,15 +612,22 @@ const EvaluadosPage = () => {
                                                                                 </span>
                                                                             )}
                                                                             <span className={styles.evalScore}>{evalu.calificacion || 0} pts</span>
-                                                                        </div>
-                                                                        <div className={styles.evalActions}>
-                                                                            <Link
-                                                                                href={`/admin/especialistas/evaluaciones-especialistas/evaluacion/reporte-especialista-individual?idEvaluacion=${id}&sessionId=${evalu.id}`}
-                                                                                className={styles.viewReportLink}
-                                                                                onClick={(e) => e.stopPropagation()}
-                                                                            >
-                                                                                Ver Reporte
-                                                                            </Link>
+                                                                            <div className={styles.evalActions}>
+                                                                                <Link
+                                                                                    href={`/admin/especialistas/evaluaciones-especialistas/evaluacion/reporte-especialista-individual?idEvaluacion=${id}&sessionId=${evalu.id}`}
+                                                                                    className={styles.viewReportLink}
+                                                                                    onClick={(e) => e.stopPropagation()}
+                                                                                >
+                                                                                    Ver Reporte
+                                                                                </Link>
+                                                                                <button
+                                                                                    className={styles.deleteButton}
+                                                                                    onClick={(e) => handleDeleteClick(e, evalu)}
+                                                                                    title="Eliminar evaluación"
+                                                                                >
+                                                                                    <MdDelete />
+                                                                                </button>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 ))}
@@ -798,6 +834,39 @@ const EvaluadosPage = () => {
                             ) : (
                                 <p className={styles.noHistory}>No se encontraron suficientes registros para generar una gráfica.</p>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Deletion Confirmation Modal */}
+            {showConfirmDelete && (
+                <div className={styles.modalOverlay} onClick={() => !isDeleting && setShowConfirmDelete(false)}>
+                    <div className={styles.modalContent} style={{ maxWidth: '450px' }} onClick={e => e.stopPropagation()}>
+                        <div className={styles.modalBody}>
+                            <div className={styles.modalConfirm}>
+                                <MdWarning className={styles.modalConfirmIcon} />
+                                <h3 className={styles.modalConfirmTitle}>¿Eliminar evaluación?</h3>
+                                <p className={styles.modalConfirmText}>
+                                    Estás a punto de eliminar la evaluación de <strong>{evaluacionToDelete?.name}</strong>.
+                                    Esta acción no se puede deshacer.
+                                </p>
+                                <div className={styles.modalActions}>
+                                    <button
+                                        className={styles.cancelButton}
+                                        onClick={() => setShowConfirmDelete(false)}
+                                        disabled={isDeleting}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        className={styles.confirmDeleteButton}
+                                        onClick={handleConfirmDelete}
+                                        disabled={isDeleting}
+                                    >
+                                        {isDeleting ? 'Eliminando...' : 'Eliminar permanentemente'}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

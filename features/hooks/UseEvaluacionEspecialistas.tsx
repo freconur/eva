@@ -1372,7 +1372,10 @@ const UseEvaluacionEspecialistas = () => {
       snapshot.forEach((docSnap) => {
         batch.update(docSnap.ref, {
           'datosMonitor.apellidos': monitorData.apellidos,
-          'datosMonitor.nombres': monitorData.nombres
+          'datosMonitor.nombres': monitorData.nombres,
+          'datosMonitor.email': (monitorData as any).email || '',
+          'datosMonitor.celular': (monitorData as any).celular || '',
+          'datosMonitor.cargo': (monitorData as any).cargo || 'MONITOR',
         });
       });
 
@@ -1386,7 +1389,18 @@ const UseEvaluacionEspecialistas = () => {
   };
 
 
+  const deleteEvaluadoSession = async (idEvaluacion: string, sessionId: string) => {
+    try {
+      const path = `/evaluaciones-especialista/${idEvaluacion}/evaluados/`;
+      await deleteDoc(doc(db, path, sessionId));
+    } catch (error) {
+      console.error("Error al eliminar la sesión de evaluación:", error);
+      throw error;
+    }
+  };
+
   return {
+    deleteEvaluadoSession,
     getDataSeguimientoRetroalimentacionEspecialista,
     getHistorialEspecialista,
     updateEvaluacionEspecialistaSeguimientoRetroalimentacion,

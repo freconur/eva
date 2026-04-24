@@ -494,7 +494,7 @@ const Reporte = () => {
     };
 
     loadAllConsolidados();
-  }, [route.query.idEvaluacion, monthSelected, yearSelected, currentUserData?.dni]);
+  }, [route.query.idEvaluacion, monthSelected, yearSelected]);
 
   const handleBarClick = async (range: string) => {
     setSelectedRange(range);
@@ -849,7 +849,7 @@ const Reporte = () => {
                 )}
               </button>
 
-              {currentUserData?.rol === 4 && (
+              {currentUserData.rol === 4 && (
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button
                     onClick={async () => {

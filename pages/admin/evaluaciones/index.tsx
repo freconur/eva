@@ -240,6 +240,14 @@ const Evaluaciones = () => {
     }
   }
 
+  const handleCopyId = (id: string) => {
+    navigator.clipboard.writeText(id)
+    toast.success(`ID ${id} copiado al portapapeles`, {
+      autoClose: 2000,
+      position: "bottom-right",
+    })
+  }
+
   useEffect(() => {
     getGrades()
   }, [])
@@ -428,7 +436,8 @@ const Evaluaciones = () => {
                 <table className={styles.table}>
                   <thead className={styles.tableHeader}>
                     <tr className={styles.tableHeaderRow}>
-                      <th className={styles.tableHeaderCell}>#</th>
+                      <th className={styles.tableHeaderCell}>ID</th>
+                      <th className={styles.tableHeaderCell}>niveles</th>
                       <th className={styles.tableHeaderCell}>nombre de evaluación</th>
                       <th className={styles.tableHeaderCell}>grado / nivel</th>
                       <th className={styles.tableHeaderCell}>mes y año</th>
@@ -445,13 +454,23 @@ const Evaluaciones = () => {
 
                         return (
                           <tr key={index} className={styles.tableRow} style={{ opacity: puedeAcceder ? 1 : 0.6, background: puedeAcceder ? 'inherit' : '#f8fafc' }}>
+                            <td 
+                              className={styles.tableCell}
+                              onClick={() => handleCopyId(eva.id || '')}
+                              style={{ cursor: 'pointer' }}
+                              title="Click para copiar ID"
+                            >
+                              <span style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace' }}>
+                                {eva.id}
+                              </span>
+                            </td>
                             <td className={styles.tableCell}>
-                              {puedeAcceder ? (
-                                <Link href={`/admin/evaluaciones/evaluacion/${eva.id}`}>
-                                  {index + 1}
-                                </Link>
+                              {eva.nivelYPuntaje === undefined ? (
+                                <span style={{ color: '#ef4444', fontSize: '0.85rem', fontWeight: 500 }}>Undefined</span>
+                              ) : Array.isArray(eva.nivelYPuntaje) && eva.nivelYPuntaje.length === 0 ? (
+                                <span style={{ color: '#f59e0b', fontSize: '0.85rem', fontWeight: 500 }}>Vacío</span>
                               ) : (
-                                <span>{index + 1}</span>
+                                <span style={{ color: '#10b981', fontSize: '0.85rem', fontWeight: 500 }}>Con data ({eva.nivelYPuntaje.length})</span>
                               )}
                             </td>
                             <td className={styles.tableCell}>
