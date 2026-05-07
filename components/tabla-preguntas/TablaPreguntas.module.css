@@ -49,7 +49,7 @@
 /* Contenedor con scroll horizontal para la tabla */
 .tableWrapper {
   width: 100%;
-  overflow: visible; /* CRÍTICO: Debe ser visible para permitir sticky vertical */
+  overflow: visible;
   margin-bottom: 2rem;
   margin-top: 0.5rem;
   position: relative;
@@ -67,9 +67,9 @@
 
 .tableHeader {
   background-color: #f9fafb;
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 110 !important;
+  position: sticky;
+  top: 0;
+  z-index: 110;
 }
 
 .tableHeader th {

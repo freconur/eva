@@ -150,6 +150,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -213,7 +214,8 @@
 }
 
 .pdfTableButton {
-  background-color: #3b82f6; /* Azul para PDF */
+  background-color: #3b82f6;
+  /* Azul para PDF */
   color: #ffffff;
   padding: 0.625rem 1.25rem;
   border-radius: 8px;
@@ -348,7 +350,8 @@
   border-radius: 50%;
   border: 1px solid rgba(0, 0, 0, 0.05);
   flex-shrink: 0;
-  background-color: #ccc; /* Fallback */
+  background-color: #ccc;
+  /* Fallback */
 }
 
 .nivelSatisfactorio {
@@ -1079,4 +1082,103 @@
   .chartWrapper {
     height: 200px;
   }
+}
+
+/* Estilos para el configurador de columnas */
+.configContainer {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  z-index: 100;
+}
+
+.configButton {
+  padding: 0.5rem 1rem;
+  background: #ffffff;
+  color: #4b5563;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 38px;
+  transition: all 0.2s ease;
+}
+
+.configButton:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #1f2937;
+}
+
+.configMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 240px;
+  background: #ffffff;
+  border: 1px solid rgba(229, 231, 235, 1);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  z-index: 9999;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.configTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.configList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.configItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.configItem:hover {
+  background-color: #f3f4f6;
+}
+
+.configItem input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.configItem span {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
 }

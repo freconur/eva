@@ -1,7 +1,7 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useReporteDirectores } from '@/features/hooks/useReporteDirectores';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,10 +15,12 @@ import {
   ordernarAscDsc,
   genero,
   convertGrade,
+  converSeccion,
+  gradosDeColegio,
 } from '@/fuctions/regiones';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { DataEstadisticas, PreguntasRespuestas, UserEstudiante } from '@/features/types/types';
-import { RiLoader4Line } from 'react-icons/ri';
+import { RiLoader4Line, RiSettings4Line } from 'react-icons/ri';
 import styles from './Reporte.module.css';
 import { currentMonth, getAllMonths } from '@/fuctions/dates';
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
@@ -39,17 +41,91 @@ ChartJS.register(
   Legend
 );
 
+// Guardias persistentes fuera del componente para sobrevivir a re-montajes accidentales
+let globalLastFetchParams = "";
+let globalLastFetchTrendParams = "";
+
 const Reporte = () => {
   const dispatch = useGlobalContextDispatch();
+  const route = useRouter();
   const [filtros, setFiltros] = useState({
-    grado: '',
-    seccion: '',
-    orden: '',
-    genero: '',
+    grado: (route.query.grado as string) || '',
+    seccion: (route.query.seccion as string) || '',
+    orden: (route.query.orden as string) || '',
+    genero: (route.query.genero as string) || '',
+    nivel: (route.query.nivel as string) || '',
   });
   const [loadingMonth, setLoadingMonth] = useState<boolean>(false);
+  const [showConfig, setShowConfig] = useState<boolean>(false);
+  const configRef = useRef<HTMLDivElement>(null);
 
-  const [yearSelected, setYearSelected] = useState<number>(new Date().getFullYear());
+  // Cerrar el menú de configuración al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (configRef.current && !configRef.current.contains(event.target as Node)) {
+        setShowConfig(false);
+      }
+    };
+
+    if (showConfig) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showConfig]);
+
+  const [columnasVisibles, setColumnasVisibles] = useState({
+    showRC: true,
+    showTP: true,
+    showPuntaje: true,
+    showNivel: true,
+    showDniDocente: false // Por defecto oculto para directores a menos que lo activen
+  });
+
+  const [yearSelected, setYearSelected] = useState<number>(() => {
+    const y = route.query.year;
+    return y ? Number(y) : new Date().getFullYear();
+  });
+
+  const [monthSelected, setMonthSelected] = useState<number>(() => {
+    const m = route.query.mes;
+    return m ? Number(m) : currentMonth;
+  });
+
+  const updateQuery = useCallback((params: Record<string, any>) => {
+    if (!route.isReady) return;
+
+    const newQuery = { ...route.query, ...params };
+    Object.keys(newQuery).forEach(key => {
+      if (newQuery[key] === '' || newQuery[key] === undefined || newQuery[key] === null) {
+        delete newQuery[key];
+      }
+    });
+
+    route.push({ pathname: route.pathname, query: newQuery }, undefined, { shallow: true });
+  }, [route]);
+
+  // Sincronizar estados locales con la URL cuando esta cambie
+  useEffect(() => {
+    if (route.isReady) {
+      setFiltros({
+        grado: (route.query.grado as string) || '',
+        seccion: (route.query.seccion as string) || '',
+        orden: (route.query.orden as string) || '',
+        genero: (route.query.genero as string) || '',
+        nivel: (route.query.nivel as string) || '',
+      });
+      if (route.query.year) setYearSelected(Number(route.query.year));
+      if (route.query.mes) setMonthSelected(Number(route.query.mes));
+    }
+  }, [route.query, route.isReady]);
+
+  useEffect(() => {
+    console.log("EVA-LOG: >>> Componente Reporte MONTADO <<<");
+    return () => console.log("EVA-LOG: <<< Componente Reporte DESMONTADO <<<");
+  }, []);
 
   const yearsAvailable = useMemo(() => {
     const startYear = 2025;
@@ -62,21 +138,23 @@ const Reporte = () => {
   }, []);
 
 
+  // Eliminar el bloque de aquí porque está antes de la inicialización de currentUserData
+
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFiltros({
-      ...filtros,
-      [e.target.name]: e.target.value,
-    } as any);
+    const { name, value } = e.target;
+    setFiltros(prev => ({ ...prev, [name]: value }));
+    updateQuery({ [name]: value });
   };
 
-  const handleLimpiarFiltros = () => {
-    setFiltros({
-      grado: '',
-      seccion: '',
-      orden: '',
-      genero: '',
-    });
+  const toggleColumna = (columna: keyof typeof columnasVisibles) => {
+    setColumnasVisibles(prev => ({
+      ...prev,
+      [columna]: !prev[columna]
+    }));
   };
+
+  // Eliminado de aquí para moverse después de la inicialización de currentUserData
+
   const hasValidPuntaje = () => {
     return estudiantes?.some(
       (estudiante) =>
@@ -109,8 +187,24 @@ const Reporte = () => {
     warning,
     setIsLoading,
     isLoading,
-    filtrosParaReporteDirector
+    filtrosParaReporteDirector,
+    obtenerCoberturaDirector
   } = useReporteDirectores();
+
+  // Ya no usamos useRef locales, sino las variables globales de arriba para diagnosticar re-montajes
+  const lastFetchParams = { current: globalLastFetchParams };
+  const lastFetchTrendParams = { current: globalLastFetchTrendParams };
+
+  // Función para actualizar los guardias globales
+  const setGlobalFetchParams = (val: string) => {
+    globalLastFetchParams = val;
+    lastFetchParams.current = val;
+  };
+
+  const setGlobalTrendParams = (val: string) => {
+    globalLastFetchTrendParams = val;
+    lastFetchTrendParams.current = val;
+  };
 
   const availableSections = useMemo(() => {
     const baseList = estudiantes;
@@ -122,6 +216,48 @@ const Reporte = () => {
     // Filtrar la lista maestra de secciones para incluir solo las que tienen datos
     return sectionByGrade.filter(seccion => uniqueSectionIds.includes(String(seccion.id)));
   }, [estudiantes]);
+
+  // Cálculo de promedios y distribución por sección para el gráfico comparativo
+  const promedioPorSeccion = useMemo(() => {
+    if (availableSections.length < 2) return [];
+
+    return availableSections.map(seccionObj => {
+      const seccionId = String(seccionObj.id);
+      const estudiantesSeccion = estudiantes.filter(est => String(est.seccion) === seccionId);
+
+      const totalPuntaje = estudiantesSeccion.reduce((acc, est) => acc + (est.puntaje || 0), 0);
+      const promedio = estudiantesSeccion.length > 0 ? totalPuntaje / estudiantesSeccion.length : 0;
+
+      // Contar niveles
+      const niveles = {
+        satisfactorio: 0,
+        proceso: 0,
+        inicio: 0,
+        previo: 0
+      };
+
+      estudiantesSeccion.forEach(est => {
+        const nivel = (est.nivel || '').toLowerCase();
+        if (nivel.includes('satisfactorio')) niveles.satisfactorio++;
+        else if (nivel.includes('proceso')) niveles.proceso++;
+        else if (nivel.includes('previo')) niveles.previo++;
+        else if (nivel.includes('inicio')) niveles.inicio++;
+      });
+
+      return {
+        seccion: seccionObj.name.toUpperCase(),
+        promedio: Number(promedio.toFixed(2)),
+        cantidad: estudiantesSeccion.length,
+        distribucion: niveles
+      };
+    })
+      // Ordenar por el porcentaje de estudiantes en nivel Satisfactorio (de mayor a menor)
+      .sort((a, b) => {
+        const percA = a.cantidad > 0 ? (a.distribucion.satisfactorio / a.cantidad) : 0;
+        const percB = b.cantidad > 0 ? (b.distribucion.satisfactorio / b.cantidad) : 0;
+        return percB - percA;
+      });
+  }, [estudiantes, availableSections]);
   const {
     currentUserData,
     reporteDirector,
@@ -130,10 +266,49 @@ const Reporte = () => {
     allRespuestasEstudiantesDirector,
     dataFiltradaDirectorTabla,
     evaluacion,
+    estudiantesDeEvaluacion,
   } = useGlobalContext();
+
+  // Auto-seleccionar grado de la evaluación para Directores
+  useEffect(() => {
+    const gradoEvaluacion = evaluacion?.grado;
+    if (currentUserData?.rol === 2 && gradoEvaluacion && !filtros.grado) {
+      const gradoFormatted = convertGrade(String(gradoEvaluacion));
+      setFiltros((prev: any) => ({ ...prev, grado: gradoFormatted }));
+      updateQuery({ grado: gradoFormatted });
+    }
+  }, [currentUserData?.rol, evaluacion, filtros.grado, updateQuery, setFiltros]);
+
+  // Bloque movido abajo para evitar errores de referencia
+  const nivelesLeyenda: any[] = ((evaluacion as any)?.niveles?.length > 0)
+    ? (evaluacion as any).niveles
+    : [
+        { nombre: 'satisfactorio', color: 'var(--satisfactorio)' },
+        { nombre: 'en proceso', color: 'var(--en-proceso)' },
+        { nombre: 'en inicio', color: 'var(--inicio)' },
+        { nombre: 'previo al inicio', color: 'var(--previo-al-inicio)' }
+      ];
+
+  const handleLimpiarFiltros = () => {
+    setFiltros({
+      grado: currentUserData?.rol === 2 ? filtros.grado : '',
+      seccion: '',
+      orden: '',
+      genero: '',
+      nivel: '',
+    });
+    updateQuery({ 
+      grado: currentUserData?.rol === 2 ? filtros.grado : '', 
+      seccion: '', 
+      orden: '', 
+      genero: '', 
+      nivel: '' 
+    });
+  };
+
   const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
-  const route = useRouter();
-  const [monthSelected, setMonthSelected] = useState(currentMonth);
+  // const route = useRouter(); // Ya definido arriba
+  // const [monthSelected, setMonthSelected] = useState(currentMonth); // Ya definido arriba
 
   // Función para detectar si toda la evaluación tiene 3 o 4 opciones
   const detectarNumeroOpciones = useMemo(() => {
@@ -267,43 +442,69 @@ const Reporte = () => {
 
   // Efecto principal para cargar los datos del reporte cuando cambian los filtros de tiempo o la evaluación
   useEffect(() => {
+    const currentFetchKey = `${route.query.idEvaluacion}-${monthSelected}-${yearSelected}-${evaluacion.id}`;
+
     if (currentUserData.dni && evaluacion.id && monthSelected !== undefined) {
+      // Si los parámetros de identidad/tiempo no han cambiado, no volver a leer de Firestore
+      if (lastFetchParams.current === currentFetchKey) {
+        console.log("EVA-LOG: Filtro aplicado en memoria (estudiantes)");
+        return;
+      }
+
+      console.log("EVA-LOG: Iniciando carga de estudiantes...", {
+        motivo: "Cambio de parámetros detectado",
+        keyAntigua: lastFetchParams.current,
+        keyNueva: currentFetchKey
+      });
+      setGlobalFetchParams(currentFetchKey);
+
       reporteDirectorEstudiantes(
         `${route.query.idEvaluacion}`,
         monthSelected,
         yearSelected,
         currentUserData,
         evaluacion
-      ).finally(() => {
+      ).then((alumnos) => {
+        if (evaluacion.id) {
+          obtenerCoberturaDirector(evaluacion, alumnos);
+        }
+      }).finally(() => {
         setLoadingMonth(false);
       });
     }
-  }, [route.query.idEvaluacion, currentUserData.dni, yearSelected, monthSelected, evaluacion.id]);
+  }, [route.query.idEvaluacion, currentUserData.dni, yearSelected, monthSelected, evaluacion.id, obtenerCoberturaDirector, reporteDirectorEstudiantes]);
   useEffect(() => {
     getGrados();
   }, [])
   useEffect(() => {
+    const trendKey = `${evaluacion.id}-${yearSelected}`;
     if (evaluacion.id) {
+      if (lastFetchTrendParams.current === trendKey) {
+        console.log("EVA-LOG: Filtro aplicado en memoria (tendencia)");
+        return;
+      }
+      console.log("EVA-LOG: Iniciando carga de tendencia anual (CF)...");
+      setGlobalTrendParams(trendKey);
       getAllEvaluacionesDeEstudiantesPorMes(evaluacion, yearSelected);
     }
-  }, [evaluacion.id, yearSelected]);
+  }, [evaluacion.id, yearSelected, getAllEvaluacionesDeEstudiantesPorMes]);
 
-  // Asegurar que el mes seleccionado sea válido para el nuevo año
-  useEffect(() => {
-    if (mesesConDataDisponibles.length > 0) {
+  // Asegurar que el mes seleccionado sea válido para el nuevo año (COMENTADO TEMPORALMENTE PARA EVITAR SALTOS)
+  /* useEffect(() => {
+    if (mesesConDataDisponibles.length > 0 && route.isReady) {
+      const mesEnUrl = route.query.mes ? Number(route.query.mes) : null;
       if (!mesesConDataDisponibles.includes(monthSelected)) {
-        // Si el mes actual no tiene datos en el nuevo año, seleccionar el primero disponible
-        setMonthSelected(mesesConDataDisponibles[0]);
+        const nuevoMes = mesesConDataDisponibles[0];
+        console.log(`EVA-LOG: Bloqueado salto de mes automático de ${monthSelected} a ${nuevoMes}`);
+        // setMonthSelected(nuevoMes);
       }
-    } else {
-      // Opcional: si no hay datos en ningún mes, se podría resetear o dejar como está
     }
-  }, [mesesConDataDisponibles, yearSelected]);
+  }, [mesesConDataDisponibles, monthSelected, route.query.mes, route.isReady]); */
 
 
 
 
-  console.log('estudiantes', estudiantes);
+
 
   const handleChangeMonth = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     setLoadingMonth(true);
@@ -318,12 +519,14 @@ const Reporte = () => {
       seccion: '',
       orden: '',
       genero: '',
+      nivel: '',
     });
 
 
     try {
       // Actualizar el mes seleccionado
       setMonthSelected(newMonth);
+      updateQuery({ mes: newMonth });
 
       // La función reporteDirectorEstudiantes se ejecutará automáticamente 
       // por el useEffect que depende de monthSelected
@@ -331,6 +534,12 @@ const Reporte = () => {
       console.error('Error al cambiar mes:', error);
       setLoadingMonth(false);
     }
+  };
+
+  const handleChangeYear = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = Number(e.target.value);
+    setYearSelected(val);
+    updateQuery({ year: val });
   };
 
   // Eliminado: el efecto de arriba ya maneja la carga de datos por mes/año de forma consolidada
@@ -390,7 +599,7 @@ const Reporte = () => {
               <div className={styles.selectWrapper}>
                 <select
                   className={styles.select}
-                  onChange={(e) => setYearSelected(Number(e.target.value))}
+                  onChange={handleChangeYear}
                   value={yearSelected}
                 >
                   {yearsAvailable.map((year) => (
@@ -425,13 +634,32 @@ const Reporte = () => {
             </div>
             <div className={styles.filtersContainer}>
               <select
-                name="grado"
-                value={filtros.grado}
-                onChange={handleChangeFiltros}
+                name="nivel"
                 className={styles.select}
-                disabled={true}
+                onChange={handleChangeFiltros}
+                value={filtros.nivel}
               >
-                <option value="">{convertGrade(`${evaluacion.grado}`)}</option>
+                <option value="">Nivel</option>
+                {evaluacion.nivelYPuntaje?.map((nivel) => (
+                  <option key={nivel.id} value={nivel.nivel}>
+                    {nivel.nivel}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                name="grado"
+                className={styles.select}
+                onChange={handleChangeFiltros}
+                value={filtros.grado}
+                disabled={currentUserData.rol === 2}
+              >
+                <option value="">Grado</option>
+                {gradosDeColegio.map((grado) => (
+                  <option key={grado.id} value={grado.id}>
+                    {grado.name}
+                  </option>
+                ))}
               </select>
 
               <select
@@ -468,6 +696,66 @@ const Reporte = () => {
                   </option>
                 ))}
               </select>
+
+              <div className={styles.configContainer} ref={configRef}>
+                <button 
+                  className={styles.configButton} 
+                  onClick={() => setShowConfig(!showConfig)}
+                  title="Configurar columnas"
+                >
+                  <RiSettings4Line />
+                  Columnas
+                </button>
+
+                {showConfig && (
+                  <div className={styles.configMenu}>
+                    <span className={styles.configTitle}>Visibilidad de Columnas</span>
+                    <div className={styles.configList}>
+                      <label className={styles.configItem}>
+                        <input 
+                          type="checkbox" 
+                          checked={columnasVisibles.showRC} 
+                          onChange={() => toggleColumna('showRC')} 
+                        />
+                        <span>Respuestas Correctas (RC)</span>
+                      </label>
+                      <label className={styles.configItem}>
+                        <input 
+                          type="checkbox" 
+                          checked={columnasVisibles.showTP} 
+                          onChange={() => toggleColumna('showTP')} 
+                        />
+                        <span>Total Preguntas (TP)</span>
+                      </label>
+                      <label className={styles.configItem}>
+                        <input 
+                          type="checkbox" 
+                          checked={columnasVisibles.showPuntaje} 
+                          onChange={() => toggleColumna('showPuntaje')} 
+                        />
+                        <span>Puntaje</span>
+                      </label>
+                      <label className={styles.configItem}>
+                        <input 
+                          type="checkbox" 
+                          checked={columnasVisibles.showNivel} 
+                          onChange={() => toggleColumna('showNivel')} 
+                        />
+                        <span>Nivel (Logro)</span>
+                      </label>
+                      <label className={styles.configItem}>
+                        <input 
+                          type="checkbox" 
+                          checked={columnasVisibles.showDniDocente} 
+                          onChange={() => toggleColumna('showDniDocente')} 
+                        />
+                        <span>DNI Docente</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <button className={styles.clearButton} onClick={handleLimpiarFiltros}>
                 Limpiar Filtros
               </button>
@@ -485,6 +773,20 @@ const Reporte = () => {
               </div>
             ) : (
               <>
+                {/* Leyenda de Niveles */}
+                <div className={styles.legendContainer}>
+                  <span className={styles.legendTitle}>LEYENDA DE NIVELES:</span>
+                  {(nivelesLeyenda as any[]).map((nivel: any, index: number) => (
+                    <div key={index} className={styles.legendItem}>
+                      <div 
+                        className={styles.legendCircle} 
+                        style={{ backgroundColor: nivel.color }}
+                      ></div>
+                      <span className={styles.legendLabel}>{nivel.nombre}</span>
+                    </div>
+                  ))}
+                </div>
+
                 <TablaPreguntas
                   estudiantes={estudiantesFiltrados}
                   preguntasRespuestas={preguntasRespuestas}
@@ -493,8 +795,11 @@ const Reporte = () => {
 
                   linkToEdit={`/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`}
                   customColumns={{
-                    showPuntaje: hasValidPuntaje(),
-                    showNivel: hasValidNivel(),
+                    showPuntaje: columnasVisibles.showPuntaje,
+                    showNivel: columnasVisibles.showNivel,
+                    showRC: columnasVisibles.showRC,
+                    showTP: columnasVisibles.showTP,
+                    showDniDocente: columnasVisibles.showDniDocente
                   }}
                   className={styles.tableWrapper}
                 />
@@ -507,6 +812,10 @@ const Reporte = () => {
                       mesesConDataDisponibles={mesesConDataDisponibles}
                       promedioGlobal={promedioGlobal}
                       monthSelected={monthSelected}
+                      promedioPorSeccion={promedioPorSeccion}
+                      evaluados={estudiantes.length}
+                      pendientes={estudiantesDeEvaluacion.length}
+                      listaPendientes={estudiantesDeEvaluacion}
                       dataGraficoTendenciaNiveles={[
                         generarDataGraficoPiechart(estudiantesFiltrados, monthSelected, evaluacion),
                       ]}

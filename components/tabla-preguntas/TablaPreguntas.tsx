@@ -29,6 +29,9 @@ export interface TablaPreguntasProps {
   customColumns?: {
     showPuntaje?: boolean;
     showNivel?: boolean;
+    showRC?: boolean;
+    showTP?: boolean;
+    showDniDocente?: boolean;
   };
   className?: string;
   itemsPerPage?: number | 'all';
@@ -152,32 +155,21 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
     return count;
   };
 
-  // Verificar si existen valores válidos para puntaje
+  // Funciones para verificar si hay datos válidos en las columnas
   const hasValidPuntaje = () => {
-    if (customColumns?.showPuntaje !== undefined) {
-      return customColumns.showPuntaje;
-    }
-    return estudiantes?.some(
-      (estudiante) =>
-        estudiante.puntaje !== undefined &&
-        estudiante.puntaje !== null &&
-        !isNaN(estudiante.puntaje)
-    );
+    return estudiantes?.some(est => est.puntaje !== undefined && est.puntaje !== null && est.puntaje !== 0);
   };
 
-  // Verificar si existen valores válidos para nivel
   const hasValidNivel = () => {
-    if (customColumns?.showNivel !== undefined) {
-      return customColumns.showNivel;
-    }
-    return estudiantes?.some(
-      (estudiante) =>
-        estudiante.nivel !== undefined &&
-        estudiante.nivel !== null &&
-        estudiante.nivel !== '' &&
-        estudiante.nivel !== 'sin clasificar'
-    );
+    return estudiantes?.some(est => est.nivel !== undefined && est.nivel !== null && est.nivel !== '-' && est.nivel !== '');
   };
+
+  // Verificar visibilidad de columnas personalizadas
+  const showRC = customColumns?.showRC !== false; // Por defecto true
+  const showTP = customColumns?.showTP !== false; // Por defecto true
+  const showDniDocente = customColumns?.showDniDocente !== undefined 
+    ? customColumns.showDniDocente 
+    : currentUserData.rol === 2; // Por defecto basado en rol si no se especifica
 
   // Función para manejar el clic en eliminar
   const handleDeleteClick = (dni?: string) => {
@@ -284,11 +276,11 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                     {showDeleteButton && onDeleteEstudiante && <th></th>}
                     <th>#</th>
                     <th>N-A</th>
-                    {currentUserData.rol === 2 && <th>Dni Docente</th>}
-                    <th>r.c</th>
-                    <th>t.p.</th>
-                    {hasValidPuntaje() && <th>puntaje</th>}
-                    {hasValidNivel() && <th>nivel</th>}
+                    {showDniDocente && <th>Dni Docente</th>}
+                    {showRC && <th>r.c</th>}
+                    {showTP && <th>t.p.</th>}
+                    {(customColumns?.showPuntaje ?? hasValidPuntaje()) && <th>puntaje</th>}
+                    {(customColumns?.showNivel ?? hasValidNivel()) && <th>nivel</th>}
                     {preguntasRespuestas.map((pr, index) => {
                       const popoverId = `${pr.order || index}`;
 
@@ -367,11 +359,11 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                               </span>
                             )}
                           </td>
-                          {currentUserData.rol === 2 && <td><span className={styles.dniDocenteText}>{estudiante.dniDocente}</span></td>}
-                          <td>{calculateCorrectCount(estudiante.respuestas)}</td>
-                          <td>{estudiante.totalPreguntas || 0}</td>
-                          {hasValidPuntaje() && <td>{estudiante.puntaje || '-'}</td>}
-                          {hasValidNivel() && (
+                          {showDniDocente && <td><span className={styles.dniDocenteText}>{estudiante.dniDocente}</span></td>}
+                          {showRC && <td>{calculateCorrectCount(estudiante.respuestas)}</td>}
+                          {showTP && <td>{estudiante.totalPreguntas || 0}</td>}
+                          {(customColumns?.showPuntaje ?? hasValidPuntaje()) && <td>{estudiante.puntaje || '-'}</td>}
+                          {(customColumns?.showNivel ?? hasValidNivel()) && (
                             <td>
                               <div className={styles.levelContainer}>
                                 <div
@@ -395,7 +387,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                     })
                   ) : (
                     <tr>
-                      <td colSpan={preguntasRespuestas.length + (showDeleteButton && onDeleteEstudiante ? 6 : 5) + (hasValidPuntaje() ? 1 : 0) + (hasValidNivel() ? 1 : 0)}>
+                      <td colSpan={preguntasRespuestas.length + (showDeleteButton && onDeleteEstudiante ? 3 : 2) + (showDniDocente ? 1 : 0) + (showRC ? 1 : 0) + (showTP ? 1 : 0) + ((customColumns?.showPuntaje ?? hasValidPuntaje()) ? 1 : 0) + ((customColumns?.showNivel ?? hasValidNivel()) ? 1 : 0)}>
                         <div className={styles.warningContainer}>
                           {warningEvaEstudianteSinRegistro}
                         </div>

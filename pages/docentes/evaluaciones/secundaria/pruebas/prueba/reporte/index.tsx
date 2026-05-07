@@ -313,10 +313,10 @@ const Reportes = () => {
     return seccionesDisponibles.map(seccion => {
       // Usar estudiantesBase que tiene todos los alumnos del grado sin el filtro de sección de la UI
       const estudiantesSeccion = estudiantesBase.filter(est => est.seccion === seccion);
-      
+
       const totalPuntaje = estudiantesSeccion.reduce((acc, est) => acc + (est.puntaje || 0), 0);
       const promedio = estudiantesSeccion.length > 0 ? totalPuntaje / estudiantesSeccion.length : 0;
-      
+
       // Contar niveles
       const niveles = {
         satisfactorio: 0,
@@ -332,7 +332,7 @@ const Reportes = () => {
         else if (nivel.includes('previo')) niveles.previo++;
         else if (nivel.includes('inicio')) niveles.inicio++;
       });
-      
+
       return {
         seccion: converSeccion(Number(seccion))?.toUpperCase() || seccion,
         promedio: Number(promedio.toFixed(2)),
@@ -340,12 +340,12 @@ const Reportes = () => {
         distribucion: niveles
       };
     })
-    // Ordenar por el porcentaje de estudiantes en nivel Satisfactorio (de mayor a menor)
-    .sort((a, b) => {
-      const percA = a.cantidad > 0 ? (a.distribucion.satisfactorio / a.cantidad) : 0;
-      const percB = b.cantidad > 0 ? (b.distribucion.satisfactorio / b.cantidad) : 0;
-      return percB - percA;
-    });
+      // Ordenar por el porcentaje de estudiantes en nivel Satisfactorio (de mayor a menor)
+      .sort((a, b) => {
+        const percA = a.cantidad > 0 ? (a.distribucion.satisfactorio / a.cantidad) : 0;
+        const percB = b.cantidad > 0 ? (b.distribucion.satisfactorio / b.cantidad) : 0;
+        return percB - percA;
+      });
   }, [estudiantesBase, seccionesDisponibles]);
 
   // Hook para generar PDF con imágenes
@@ -676,8 +676,8 @@ const Reportes = () => {
                       >
                         <option value="">-- Mes --</option>
                         {getAllMonths.map((month) => (
-                          <option 
-                            key={month.id} 
+                          <option
+                            key={month.id}
                             value={String(month.id)}
                             disabled={mesesConDataDisponibles.length > 0 && !mesesConDataDisponibles.includes(month.id)}
                           >

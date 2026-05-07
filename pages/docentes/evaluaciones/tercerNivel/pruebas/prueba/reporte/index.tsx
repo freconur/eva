@@ -687,8 +687,8 @@ const Reportes = () => {
                       >
                         <option value="">-- Mes --</option>
                         {getAllMonths.map((month) => (
-                          <option 
-                            key={month.id} 
+                          <option
+                            key={month.id}
                             value={String(month.id)}
                             disabled={mesesConDataDisponibles.length > 0 && !mesesConDataDisponibles.includes(month.id)}
                           >

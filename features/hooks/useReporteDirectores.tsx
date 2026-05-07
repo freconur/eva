@@ -19,6 +19,7 @@ import { AppAction } from '../actions/appAction';
 import { currentMonth, currentYear, getAllMonths } from '@/fuctions/dates';
 import { calculoNivel, calculoNivelProgresivo, calculoPreguntasCorrectas, calculoPromedioGlobalPorGradoEvaluacionPRogresiva } from '../utils/calculoNivel';
 import { generarDataGraficoPiechart } from '../utils/generar-data-grafico-piechart';
+import { gradosDeColegio } from '@/fuctions/regiones';
 import { useState, useCallback } from 'react';
 export const useReporteDirectores = () => {
   const dispatch = useGlobalContextDispatch();
@@ -33,11 +34,12 @@ export const useReporteDirectores = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
 
-  const loadingGraficos = (value: boolean) => {
+  const loadingGraficos = useCallback((value: boolean) => {
+    console.log(`HOOK-LOG: loadingGraficos(${value})`);
     setIsLoading(value)
-  }
+  }, []);
   //dataFiltradaDirectorTabla, esta es la constate que contiene los datos de los estudiantes que se van a mostrar en la tabla
-  const getGrados = async () => {
+  const getGrados = useCallback(async () => {
     const refGrados = collection(db, 'grados');
     const q = query(refGrados, orderBy('grado'));
     const res = await getDocs(q);
@@ -47,10 +49,11 @@ export const useReporteDirectores = () => {
     });
     dispatch({ type: AppAction.GRADOS, payload: grados });
     return grados;
-  };
+  }, [db, dispatch]);
 
-  const getAllEvaluacionesDeEstudiantesPorMes = async (evaluacion: Evaluacion, year: number) => {
+  const getAllEvaluacionesDeEstudiantesPorMes = useCallback(async (evaluacion: Evaluacion, year: number) => {
     try {
+      if (!evaluacion.id || !currentUserData.dni) return;
       loadingGraficos(true);
       const functions = getFunctions();
       const getReporte = httpsCallable(functions, 'getReporteDirector');
@@ -61,8 +64,16 @@ export const useReporteDirectores = () => {
         dniDirector: currentUserData.dni,
       });
 
+      console.log("HOOK-LOG: Respuesta meses disponibles:", response.data.mesesDisponibles);
+
       if (response.data.success) {
-        setMesesConDataDisponibles(response.data.mesesDisponibles || []);
+        const nuevosMeses = response.data.mesesDisponibles || [];
+        // Solo actualizar si la lista de meses es realmente diferente para evitar loops
+        setMesesConDataDisponibles(prev => {
+          if (JSON.stringify(prev) === JSON.stringify(nuevosMeses)) return prev;
+          return nuevosMeses;
+        });
+
         if (response.data.datosPorMes) {
           setDatosPorMes(response.data.datosPorMes);
         }
@@ -73,9 +84,10 @@ export const useReporteDirectores = () => {
     } catch (error) {
       console.error('Error en getAllEvaluacionesDeEstudiantesPorMes (CF):', error);
     } finally {
+      console.log("HOOK-LOG: Finalizando tendencia anual");
       setIsLoading(false);
     }
-  };
+  }, [currentUserData.dni]);
   const getAllEvaluacionesDeEstudiantes = async (
     idEvaluacion: string,
     month: number,
@@ -117,6 +129,8 @@ export const useReporteDirectores = () => {
 
       // Aplanamos el array de arrays en un solo array
       const todasLasEvaluaciones = resultadosEvaluaciones.flat();
+
+
       console.log('todasLasEvaluaciones', todasLasEvaluaciones);
       if (todasLasEvaluaciones.length === 0) {
         dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, payload: [] });
@@ -160,9 +174,10 @@ export const useReporteDirectores = () => {
     seccion: string;
     orden: string;
     genero: string;
+    nivel: string;
   }) => {
     // Si no hay filtros seleccionados, devolver todos los estudiantes
-    if (!filtros.grado && !filtros.seccion && !filtros.genero && !filtros.orden) {
+    if (!filtros.grado && !filtros.seccion && !filtros.genero && !filtros.orden && !filtros.nivel) {
       return estudiantes;
     }
 
@@ -172,7 +187,25 @@ export const useReporteDirectores = () => {
       const cumpleSeccion = !filtros.seccion || estudiante.seccion?.toString() === filtros.seccion;
       const cumpleGenero = !filtros.genero || estudiante.genero?.toString() === filtros.genero;
 
-      return cumpleGrado && cumpleSeccion && cumpleGenero;
+      // Filtrar por Nivel de Logro (Satisfactorio, Proceso, Inicio, etc.)
+      let cumpleNivel = true;
+      if (filtros.nivel) {
+        if (!estudiante.nivel) {
+          cumpleNivel = false;
+        } else {
+          const nivelEst = estudiante.nivel.toLowerCase();
+          const nivelBusqueda = filtros.nivel.toLowerCase();
+          
+          // Lógica especial para "Inicio" vs "Previo al Inicio"
+          if (nivelBusqueda === 'inicio') {
+            cumpleNivel = nivelEst.includes('inicio') && !nivelEst.includes('previo');
+          } else {
+            cumpleNivel = nivelEst.includes(nivelBusqueda);
+          }
+        }
+      }
+
+      return cumpleGrado && cumpleSeccion && cumpleGenero && cumpleNivel;
     });
 
     // Aplicar ordenamiento si se especifica
@@ -195,7 +228,71 @@ export const useReporteDirectores = () => {
 
     return estudiantesFiltrados;
   }, []);
-  const reporteDirectorEstudiantes = async (
+
+  const obtenerCoberturaDirector = useCallback(async (evaluacion: Evaluacion, alumnosEvaluados?: UserEstudiante[]) => {
+    try {
+      if (!evaluacion.id || !currentUserData.dni) return;
+
+      // Eliminado dispatch de LOADER_PAGES para que la carga de cobertura sea silenciosa
+      // y no interrumpa el filtrado en memoria.
+
+      // 1. Obtener todos los profesores del director que enseñan ese grado
+      const qProfesores = query(
+        collection(db, 'usuarios'),
+        where('dniDirector', '==', currentUserData.dni),
+        where('rol', '==', 3), // Docente
+        where('grados', 'array-contains', Number(evaluacion.grado))
+      );
+
+      const snapshotProfesores = await getDocs(qProfesores);
+
+      if (snapshotProfesores.empty) {
+        dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
+        return;
+      }
+
+      // 2. Para cada profesor, obtener sus estudiantes de ese grado en paralelo
+      const promesasEstudiantes = snapshotProfesores.docs.map(async (docProfesor) => {
+        const qEstudiantes = query(
+          collection(db, `usuarios/${docProfesor.id}/estudiantes-docentes`),
+          where('grado', '==', `${evaluacion.grado}`)
+        );
+        const snapEst = await getDocs(qEstudiantes);
+        return snapEst.docs.map(d => ({ ...d.data(), id: d.id } as UserEstudiante));
+      });
+
+      const resultadosEstudiantes = await Promise.all(promesasEstudiantes);
+
+      // Aplanar resultados y eliminar duplicados por DNI
+      const uniqueEstudiantesMap = new Map<string, UserEstudiante>();
+      resultadosEstudiantes.flat().forEach(est => {
+        if (est.dni) uniqueEstudiantesMap.set(String(est.dni), est);
+      });
+
+      const todosLosEstudiantesDelGrado = Array.from(uniqueEstudiantesMap.values());
+
+      // 3. Identificar pendientes comparando contra los evaluados
+      // Si se pasa alumnosEvaluados, lo usamos; si no, usamos el estado 'estudiantes'
+      const baseEvaluados = alumnosEvaluados || estudiantes;
+      const evaluadosDnis = new Set(baseEvaluados.map(e => String(e.dni)));
+
+      const listaPendientes = todosLosEstudiantesDelGrado.filter(
+        est => !evaluadosDnis.has(String(est.dni))
+      );
+
+      dispatch({
+        type: AppAction.ESTUDIANTES_DE_EVALUACION,
+        payload: listaPendientes,
+      });
+
+    } catch (error) {
+      console.error('Error al obtener cobertura director:', error);
+      dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
+    } finally {
+      // Eliminado dispatch de LOADER_PAGES para evitar bloqueos visuales innecesarios
+    }
+  }, [currentUserData.dni, db, dispatch, estudiantes]);
+  const reporteDirectorEstudiantes = useCallback(async (
     idEvaluacion: string,
     month: number,
     year: number,
@@ -233,13 +330,16 @@ export const useReporteDirectores = () => {
 
         // Persistir si es necesario (el CF ya podría hacerlo, pero mantengamos la compatibilidad por ahora si se desea)
         // No obstante, si el CF ya devolvió los datos, el ahorro principal ya ocurrió.
+        return alumnos;
       }
+      return [];
     } catch (error) {
       console.error('Error en reporteDirectorEstudiantes (CF):', error);
     } finally {
+      console.log("HOOK-LOG: Finalizando reporte estudiantes");
       setIsLoading(false);
     }
-  };
+  }, [currentUserData.dni, dispatch]);
 
   const reporteDirectorData = async (idDirector: string, idEvaluacion: string) => {
     //1.-traer a todos los docentes que estan acargo del director
@@ -885,6 +985,7 @@ export const useReporteDirectores = () => {
     warning,
     setIsLoading,
     isLoading,
-    filtrosParaReporteDirector
+    filtrosParaReporteDirector,
+    obtenerCoberturaDirector
   };
 };

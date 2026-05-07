@@ -42,16 +42,25 @@
   color: var(--color-tercero);
 }
 
+.popoverContent {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
 .content {
   width: 100%;
-  max-width: 100%;
+  max-width: none;
   background-color: white;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: stretch;
   box-sizing: border-box;
-  overflow-x: auto;
+  overflow: visible;
   padding: 1rem;
 }
 
@@ -63,9 +72,10 @@
   position: relative;
   z-index: 10;
   width: 100%;
-  max-width: 100%;
+  max-width: none;
   padding: 1rem;
   box-sizing: border-box;
+  overflow: visible;
 }
 
 .filtersContainer {
@@ -114,11 +124,7 @@
 /* Contenedor con scroll horizontal para la tabla */
 .tableWrapper {
   width: 100%;
-  overflow-x: auto;
-  overflow-y: visible;
   margin-bottom: 2.5rem;
-  border-radius: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   background-color: white;
   position: relative;
 }
@@ -734,4 +740,144 @@
   font-weight: 600;
   margin-top: 16px;
   font-size: 16px;
+}
+
+/* Leyenda de Niveles */
+.legendContainer {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.5rem;
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.legendTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-right: 0.5rem;
+  letter-spacing: 0.025em;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.legendCircle {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.legendLabel {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #334155;
+  text-transform: lowercase;
+}
+
+/* Estilos para el configurador de columnas */
+.configContainer {
+  position: relative;
+}
+
+.configButton {
+  padding: 0.625rem 1.25rem;
+  background: #ffffff;
+  color: #4b5563;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.configButton:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #1f2937;
+}
+
+.configMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 240px;
+  background: #ffffff;
+  /* Sólido para evitar que se transparente lo de abajo */
+  border: 1px solid rgba(229, 231, 235, 1);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  z-index: 9999;
+  /* Z-index muy alto para superar la tabla */
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.configTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.configList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.configItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.configItem:hover {
+  background-color: #f3f4f6;
+}
+
+.configItem input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.configItem span {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
 }
