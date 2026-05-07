@@ -691,6 +691,65 @@ const UseEvaluacionEspecialistas = () => {
     }
   };
 
+  const updateNombreFaseEvaluacion = async (idEvaluacion: string, idFase: string, nuevoNombre: string) => {
+    dispatch({ type: AppAction.LOADER_MODALES, payload: true });
+    try {
+      // 1. Actualizar registros históricos en la subcolección 'evaluados'
+      const evaluadosRef = collection(db, `/evaluaciones-especialista/${idEvaluacion}/evaluados`);
+      const q = query(evaluadosRef, where("idFase", "==", idFase));
+      const querySnapshot = await getDocs(q);
+      
+      const batch = writeBatch(db);
+      querySnapshot.forEach((documento) => {
+        batch.update(doc(db, `/evaluaciones-especialista/${idEvaluacion}/evaluados`, documento.id), {
+          faseNombre: nuevoNombre
+        });
+      });
+      await batch.commit();
+
+      // 2. Si es la fase actual, actualizar también el documento principal
+      if (dataEvaluacionDocente?.faseActualID === idFase) {
+        const mainDocRef = doc(db, 'evaluaciones-especialista', idEvaluacion);
+        await updateDoc(mainDocRef, { faseNombre: nuevoNombre });
+      }
+    } catch (error) {
+      console.error("Error al actualizar nombre de fase:", error);
+      throw error;
+    } finally {
+      dispatch({ type: AppAction.LOADER_MODALES, payload: false });
+    }
+  };
+
+  const deleteFaseEvaluacion = async (idEvaluacion: string, idFase: string) => {
+    dispatch({ type: AppAction.LOADER_MODALES, payload: true });
+    try {
+      // 1. Eliminar evaluaciones asociadas
+      const evaluadosRef = collection(db, `/evaluaciones-especialista/${idEvaluacion}/evaluados`);
+      const q = query(evaluadosRef, where("idFase", "==", idFase));
+      const querySnapshot = await getDocs(q);
+      
+      const batch = writeBatch(db);
+      querySnapshot.forEach((documento) => {
+        batch.delete(doc(db, `/evaluaciones-especialista/${idEvaluacion}/evaluados`, documento.id));
+      });
+      await batch.commit();
+
+      // 2. Si es la fase actual, resetear en el documento principal
+      if (dataEvaluacionDocente?.faseActualID === idFase) {
+        const mainDocRef = doc(db, 'evaluaciones-especialista', idEvaluacion);
+        await updateDoc(mainDocRef, {
+          faseActualID: null,
+          faseNombre: null
+        });
+      }
+    } catch (error) {
+      console.error("Error al eliminar fase:", error);
+      throw error;
+    } finally {
+      dispatch({ type: AppAction.LOADER_MODALES, payload: false });
+    }
+  };
+
   const buscarEspecialistaReporteDeEvaluacion = async (idEvaluacion: string, idDocente: string) => {
     console.log('currentUserData?.dni', currentUserData?.dni);
     if (idEvaluacion.length > 0 && idDocente.length > 0) {
@@ -764,6 +823,7 @@ const UseEvaluacionEspecialistas = () => {
       const idFaseAuto = `${nombreMes}_${currentYear}`;
 
       let idFase = dataEvaluacionDocente?.faseActualID || idFaseAuto;
+      let faseNombre = dataEvaluacionDocente?.faseNombre || '';
       let numeroEvaluacion = 1;
 
       if (sessionId) {
@@ -772,6 +832,7 @@ const UseEvaluacionEspecialistas = () => {
         if (docSnap.exists()) {
           const docData = docSnap.data();
           idFase = docData.idFase || idFase;
+          faseNombre = docData.faseNombre || faseNombre;
           numeroEvaluacion = docData.numeroEvaluacion || 1;
         }
       } else {
@@ -788,6 +849,7 @@ const UseEvaluacionEspecialistas = () => {
         especialistaDni: especialista.dni || '',
         id: finalSessionId,
         idFase,
+        faseNombre,
         numeroEvaluacion,
         resultadosSeguimientoRetroalimentacion: data,
         calificacion: calificacion,
@@ -1463,6 +1525,8 @@ const UseEvaluacionEspecialistas = () => {
     updateConfiguracionCamposRetro,
     getTodosLosEspecialistas,
     updateFaseEvaluacion,
+    updateNombreFaseEvaluacion,
+    deleteFaseEvaluacion,
     updateMonitorEvaluation: updateAllMonitorsInEvaluation,
   };
 };

@@ -295,7 +295,11 @@ export const useEvaluarEspecialista = () => {
         currentFeedback = retroalimentacionDinamica
     ) => {
         if (!evaluacionId || !dataDirector.dni) return;
+        
+        // Priorizar hora manual si existe, si no, capturar actual
         const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        const finalTime = horaFinal || now;
+        
         const monitorData = isAutoreporte && monitorDataFijo
             ? { ...monitorDataFijo, email: emailMonitor, celular: celularMonitor }
             : { ...currentUserData, email: emailMonitor, celular: celularMonitor };
@@ -306,8 +310,8 @@ export const useEvaluarEspecialista = () => {
             { ...dataDirector, email: emailEspecialista, celular: celularEspecialista },
             currentFeedback,
             fechaMonitoreo,
-            horaInicio,
-            now,
+            horaInicio || now,
+            finalTime,
             monitorData,
             tituloReporte,
             true,
@@ -318,8 +322,21 @@ export const useEvaluarEspecialista = () => {
 
     const _guardarEvaluacion = async () => {
         if (!dataDirector.dni || !evaluacionId) return;
+        
+        // Capturar hora actual solo si no hay una manual
         const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-        setHoraFinal(now);
+        
+        // Si horaFinal está vacía, actualizamos el estado con la hora actual
+        const finalTime = horaFinal || now;
+        if (!horaFinal) {
+            setHoraFinal(now);
+        }
+
+        // Lo mismo para horaInicio por seguridad (aunque suele estar ya capturada)
+        const startTime = horaInicio || now;
+        if (!horaInicio) {
+            setHoraInicio(now);
+        }
 
         const monitorData = isAutoreporte && monitorDataFijo
             ? { ...monitorDataFijo, email: emailMonitor, celular: celularMonitor }
@@ -331,8 +348,8 @@ export const useEvaluarEspecialista = () => {
             { ...dataDirector, email: emailEspecialista, celular: celularEspecialista },
             retroalimentacionDinamica,
             fechaMonitoreo,
-            horaInicio,
-            now,
+            startTime,
+            finalTime,
             monitorData,
             tituloReporte,
             false,
