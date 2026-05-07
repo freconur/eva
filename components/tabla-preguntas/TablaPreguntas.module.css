@@ -67,12 +67,15 @@
 
 .tableHeader {
   background-color: #f9fafb;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 110 !important;
 }
 
 .tableHeader th {
   position: sticky !important;
   top: 0 !important;
-  z-index: 100 !important; /* Aumentado para seguridad */
+  z-index: 110 !important; /* Aumentado para seguridad */
   background-color: #f9fafb !important;
   color: #374151;
   text-transform: uppercase;

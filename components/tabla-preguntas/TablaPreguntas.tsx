@@ -243,7 +243,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
 
   return (
     <>
-      <div className={`${className}`}>
+      <div className={`${styles.mainContainer} ${className}`}>
         {hasNoStudents ? (
           <div className={styles.noDataContainer}>
             <div className={styles.noDataMessage}>

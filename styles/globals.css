@@ -41,11 +41,12 @@
   padding: 0;
 }
 
+html,
 body {
+  height: 100%;
+  overflow: hidden;
   color: "black";
-  /* background-color: #002060; */
   background-color: #ffffff;
-  /* background-color: #121f3d; */
 }
 
 /* Estilos para el scroll de la barra lateral */

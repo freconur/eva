@@ -7,14 +7,14 @@
   font-family: 'Inter', sans-serif;
 }
 
-/* Grid de 3 columnas */
+/* Grid de 3 columnas fijas */
 .threeColumnGrid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, minmax(300px, 1fr));
   gap: 2rem;
   margin-top: 1.5rem;
-  /* padding: 1.5rem; */
   font-family: 'Inter', sans-serif;
+  width: 100%;
 }
 
 /* Columna individual */
@@ -22,20 +22,6 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-}
-
-/* 2 columnas para pantallas iguales o menores a 1360px */
-@media screen and (max-width: 1360px) {
-  .threeColumnGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* 3 columnas para pantallas mayores a 1360px */
-@media screen and (min-width: 1361px) {
-  .threeColumnGrid {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 /* Estilos para las tarjetas de gráficos */

@@ -9,22 +9,22 @@
 @media (min-width: 1024px) {
   .container.withSidebar {
     /* En desktop el sidebar ocupa 300px fijos estructurales */
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 300px minmax(0, 1fr);
     gap: 0;
   }
 
   .container.withSidebar.collapsedSidebar {
     /* En desktop cuando esta colapsado ocupa 88px */
-    grid-template-columns: 88px 1fr;
+    grid-template-columns: 88px minmax(0, 1fr);
   }
 }
 
 .contentWrapper {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  min-height: 100vh;
-  overflow-x: clip; /* Usamos clip en lugar de hidden para no romper el position: sticky */
+  height: 100vh;
+  overflow: auto; /* Scroll independiente para el contenido (X e Y) */
+  scrollbar-gutter: stable; /* Evita saltos de layout al aparecer el scroll */
 }
 
 .logoContainer {

@@ -1,3 +1,9 @@
+.tableSection {
+  width: 100%;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+
 /* Container Principal */
 .container {
   display: block;
@@ -16,7 +22,6 @@
   justify-content: flex-start;
   align-items: stretch;
   box-sizing: border-box;
-  overflow: visible !important;
   padding: 1.5rem 1rem;
 }
 
