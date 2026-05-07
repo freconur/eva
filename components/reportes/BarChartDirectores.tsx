@@ -51,6 +51,7 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
     const [sortBy, setSortBy] = React.useState<'promedio' | 'evaluados' | 'satisfactorios' | 'impacto'>('promedio');
     const [itemsPerPage, setItemsPerPage] = React.useState(10);
     const [selectedRegion, setSelectedRegion] = React.useState<string>('');
+    const [minStudents, setMinStudents] = React.useState<number | string>(1);
 
     // Helper para obtener conteo de satisfactorios de forma robusta
     const getSatisfactorioCount = (director: DirectorData) => {
@@ -60,42 +61,54 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
         return satNivel ? satNivel.cantidadDeEstudiantes : 0;
     };
 
+    // Nuevo helper para obtener el porcentaje de satisfactorios
+    const getSatisfactorioPercentage = (director: DirectorData) => {
+        const count = getSatisfactorioCount(director);
+        return director.totalEstudiantes > 0 ? (count / director.totalEstudiantes) * 100 : 0;
+    };
+
     // Algoritmo de Impacto: Logaritmo de volumen * Promedio
     const getImpactScore = (director: DirectorData) => {
         return director.promedioGlobal * Math.log10(1 + (director.totalEstudiantes || 0));
     };
 
-    // Aplicar filtrado por región y ordenamiento dinámico
+    // Aplicar filtrado por región, umbral mínimo y ordenamiento dinámico
     const sortedData = useMemo(() => {
         if (!Array.isArray(data)) return [];
 
-        // 1. Filtrar por región si hay una seleccionada
-        const filteredData = selectedRegion
-            ? data.filter(d => String(d.region) === String(selectedRegion))
-            : data;
+        const threshold = Number(minStudents) || 0;
+
+        // 1. Filtrar por región y por umbral mínimo de estudiantes
+        const filteredData = data.filter(d => {
+            const matchRegion = selectedRegion ? String(d.region) === String(selectedRegion) : true;
+            const matchMin = (d.totalEstudiantes || 0) >= threshold;
+            return matchRegion && matchMin;
+        });
 
         // 2. Ordenar datos filtrados
         return [...filteredData].sort((a, b) => {
-            const aSat = getSatisfactorioCount(a);
-            const bSat = getSatisfactorioCount(b);
+            const aSatCount = getSatisfactorioCount(a);
+            const bSatCount = getSatisfactorioCount(b);
+            const aSatPerc = getSatisfactorioPercentage(a);
+            const bSatPerc = getSatisfactorioPercentage(b);
             const aImpact = getImpactScore(a);
             const bImpact = getImpactScore(b);
 
             if (sortBy === 'promedio') {
-                return (b.promedioGlobal - a.promedioGlobal) || (bImpact - aImpact) || (bSat - aSat);
+                return (b.promedioGlobal - a.promedioGlobal) || (bImpact - aImpact) || (bSatPerc - aSatPerc);
             }
             if (sortBy === 'evaluados') {
-                return (b.totalEstudiantes - a.totalEstudiantes) || (b.promedioGlobal - a.promedioGlobal) || (bSat - aSat);
+                return (b.totalEstudiantes - a.totalEstudiantes) || (b.promedioGlobal - a.promedioGlobal) || (bSatPerc - aSatPerc);
             }
             if (sortBy === 'satisfactorios') {
-                return (bSat - aSat) || (b.promedioGlobal - a.promedioGlobal) || (b.totalEstudiantes - a.totalEstudiantes);
+                return (bSatPerc - aSatPerc) || (b.promedioGlobal - a.promedioGlobal) || (bSatCount - aSatCount);
             }
             if (sortBy === 'impacto') {
-                return (bImpact - aImpact) || (b.promedioGlobal - a.promedioGlobal) || (b.totalEstudiantes - a.totalEstudiantes);
+                return (bImpact - aImpact) || (b.promedioGlobal - a.promedioGlobal) || (bSatPerc - aSatPerc);
             }
             return 0;
         });
-    }, [data, sortBy, selectedRegion]);
+    }, [data, sortBy, selectedRegion, minStudents]);
 
     const totalPages = Math.ceil(sortedData.length / itemsPerPage);
 
@@ -273,6 +286,22 @@ const BarChartDirectores = ({ data = [] }: BarChartDirectoresProps) => {
                                     </option>
                                 ))}
                             </select>
+                        </div>
+
+                        <div className={styles.filterGroup}>
+                            <span>Mín. Estudiantes:</span>
+                            <input
+                                type="number"
+                                min="0"
+                                className={styles.rowsPerPageSelect}
+                                value={minStudents}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setMinStudents(val === "" ? "" : Number(val));
+                                    setCurrentPage(0);
+                                }}
+                                style={{ width: '60px', padding: '4px 8px' }}
+                            />
                         </div>
 
                         <div className={styles.rowsPerPageContainer}>

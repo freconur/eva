@@ -52,20 +52,25 @@ const BarChartDocentes = ({ data = [] }: BarChartDocentesProps) => {
     const [sortBy, setSortBy] = React.useState<'promedio' | 'evaluados' | 'satisfactorios' | 'impacto'>('promedio');
     const [itemsPerPage, setItemsPerPage] = React.useState(10);
     const [selectedRegion, setSelectedRegion] = React.useState<string>('');
+    const [minStudents, setMinStudents] = React.useState<number | string>(1);
 
     // Algoritmo de Impacto: Logaritmo de volumen * Promedio
     const getImpactScore = (teacher: TeacherData) => {
         return teacher.promedioGlobal * Math.log10(1 + (teacher.totalEstudiantes || 0));
     };
 
-    // Aplicar filtrado por región y ordenamiento dinámico
+    // Aplicar filtrado por región, umbral mínimo y ordenamiento dinámico
     const sortedData = useMemo(() => {
         if (!Array.isArray(data)) return [];
 
-        // 1. Filtrar por región si hay una seleccionada
-        const filteredData = selectedRegion
-            ? data.filter(d => String(d.region) === String(selectedRegion))
-            : data;
+        const threshold = Number(minStudents) || 0;
+
+        // 1. Filtrar por región y por umbral mínimo de estudiantes
+        const filteredData = data.filter(d => {
+            const matchRegion = selectedRegion ? String(d.region) === String(selectedRegion) : true;
+            const matchMin = (d.totalEstudiantes || 0) >= threshold;
+            return matchRegion && matchMin;
+        });
 
         // 2. Ordenar datos filtrados
         return [...filteredData].sort((a, b) => {
@@ -86,7 +91,7 @@ const BarChartDocentes = ({ data = [] }: BarChartDocentesProps) => {
             }
             return 0;
         });
-    }, [data, sortBy, selectedRegion]);
+    }, [data, sortBy, selectedRegion, minStudents]);
 
     const totalPages = Math.ceil(sortedData.length / itemsPerPage);
 
@@ -264,6 +269,22 @@ const BarChartDocentes = ({ data = [] }: BarChartDocentesProps) => {
                                     </option>
                                 ))}
                             </select>
+                        </div>
+
+                        <div className={styles.filterGroup}>
+                            <span>Mín. Estudiantes:</span>
+                            <input
+                                type="number"
+                                min="0"
+                                className={styles.rowsPerPageSelect}
+                                value={minStudents}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setMinStudents(val === "" ? "" : Number(val));
+                                    setCurrentPage(0);
+                                }}
+                                style={{ width: '60px', padding: '4px 8px' }}
+                            />
                         </div>
 
                         <div className={styles.rowsPerPageContainer}>

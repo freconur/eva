@@ -10,6 +10,22 @@ interface UseChartOptionsProps {
 }
 
 export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles, monthSelected }: UseChartOptionsProps) => {
+  // Calcular el valor máximo dinámico para el eje Y basado en los datos
+  const maxPromedioGlobal = useMemo(() => {
+    if (!promedioGlobal || promedioGlobal.length === 0) return 100;
+    const values = promedioGlobal
+      .filter(p => p.promedioGlobal > 0)
+      .map(p => p.promedioGlobal);
+    
+    if (values.length === 0) return 100;
+    
+    const maxVal = Math.max(...values);
+    // Añadir un margen del 10% y redondear al siguiente centenar
+    // Si el valor es muy bajo, al menos mostrar hasta 100
+    const calculatedMax = Math.ceil((maxVal * 1.2) / 50) * 50; 
+    return Math.max(calculatedMax, 50);
+  }, [promedioGlobal]);
+
   // Función para determinar el nivel basado en el puntaje
   const obtenerNivelPorPuntaje = useCallback((puntaje: number) => {
     if (!evaluacion?.nivelYPuntaje || evaluacion.nivelYPuntaje.length === 0) {
@@ -223,7 +239,7 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
         },
       },
     },
-  }), []);
+  }), [monthSelected]);
 
   // Opciones para el gráfico de promedio
   const opcionesPromedio = useMemo(() => ({
@@ -301,10 +317,10 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
       y: {
         beginAtZero: true,
         min: 0,
-        max: 900,
+        max: maxPromedioGlobal,
         ticks: {
           precision: 0,
-          stepSize: 100,
+          stepSize: maxPromedioGlobal / 5,
           callback: function (value: any) {
             return Number(value).toFixed(0);
           },
@@ -319,7 +335,7 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
         },
       },
     },
-  }), [opcionesComunes, promedioGlobal, obtenerNivelPorPuntaje]);
+  }), [opcionesComunes, promedioGlobal, obtenerNivelPorPuntaje, maxPromedioGlobal]);
 
   // Opciones para el gráfico de barras
   const opcionesBarrasPromedio = useMemo(() => ({
@@ -425,7 +441,7 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
       y: {
         beginAtZero: true,
         min: 0,
-        max: 900,
+        max: maxPromedioGlobal,
         grid: {
           display: true,
           color: 'rgba(0, 0, 0, 0.05)',
@@ -433,7 +449,7 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
         },
         ticks: {
           precision: 0,
-          stepSize: 100,
+          stepSize: maxPromedioGlobal / 5,
           callback: function (value: any) {
             return Number(value).toFixed(0);
           },
@@ -449,13 +465,74 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
         },
       },
     },
-  }), [promedioGlobal]);
+  }), [promedioGlobal, maxPromedioGlobal]);
+
+  // Opciones para el gráfico de comparación por secciones (Barras Horizontales Apiladas)
+  const opcionesComparacionSecciones = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y' as const,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom' as const,
+        labels: {
+          boxWidth: 12,
+          font: { size: 10 }
+        }
+      },
+      title: {
+        display: true,
+        text: 'Distribución de Niveles por Sección (%)',
+        font: {
+          size: 14,
+          weight: 'bold' as const,
+        },
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        callbacks: {
+          label: function(context: any) {
+            const label = context.dataset.label || '';
+            const value = context.parsed.x || 0;
+            const total = context.chart.data.datasets.reduce((acc: number, ds: any) => acc + ds.data[context.dataIndex], 0);
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+            return `${label}: ${value} alumnos (${percentage}%)`;
+          },
+          footer: function(context: any) {
+            const total = context[0].chart.data.datasets.reduce((acc: number, ds: any) => acc + ds.data[context[0].dataIndex], 0);
+            return `Total Sección: ${total} alumnos`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        stacked: true,
+        beginAtZero: true,
+        grid: { display: false },
+        title: {
+          display: true,
+          text: 'Cantidad de Estudiantes',
+          font: { size: 10 }
+        }
+      },
+      y: {
+        stacked: true,
+        grid: { display: false },
+        ticks: {
+          font: { weight: 'bold' as const }
+        }
+      }
+    }
+  }), []);
 
   return {
     opcionesComunes,
     opcionesGraficoPie,
     opcionesPromedio,
     opcionesBarrasPromedio,
+    opcionesComparacionSecciones,
     obtenerNivelPorPuntaje,
   };
 };

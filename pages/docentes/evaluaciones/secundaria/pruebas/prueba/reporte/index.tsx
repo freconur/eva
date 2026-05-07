@@ -8,7 +8,7 @@ import {
   PreguntasRespuestas,
 } from '@/features/types/types';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -23,13 +23,15 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
-import { RiLoader4Line } from 'react-icons/ri';
+import { RiLoader4Line, RiFileExcel2Line, RiFilePdfLine } from 'react-icons/ri';
+import { IoIosArrowDown } from 'react-icons/io';
+import { HiOutlineDownload } from 'react-icons/hi';
 import * as XLSX from 'xlsx';
 import { MdDeleteForever } from 'react-icons/md';
 import DeleteEstudiante from '@/modals/deleteEstudiante';
 import styles from './reporte.module.css';
 import { currentMonth, getAllMonths, getMonthName } from '@/fuctions/dates';
-import { ordernarAscDsc } from '@/fuctions/regiones';
+import { ordernarAscDsc, converSeccion } from '@/fuctions/regiones';
 import { read, utils, writeFile } from 'xlsx';
 import { exportEstudiantesToExcel } from '@/features/utils/excelExport';
 import { useGenerarPDFReporte } from '@/features/hooks/useGenerarPDFReporte';
@@ -38,7 +40,7 @@ import ReporteEvaluacionPorPregunta from './reporteEvaluacionPorPregunta';
 import PieChartComponent from '@/components/reportes/PieChartComponent';
 import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafico-piechart';
 import { TablaPreguntas } from '@/components/tabla-preguntas';
-import { calculoNivel } from '@/features/utils/calculoNivel';
+import { calculoNivel, calculoPreguntasCorrectas } from '@/features/utils/calculoNivel';
 import GraficoTendenciaColegio from '@/components/grafico-tendencia';
 import CorregirPuntajesModal from '@/modals/corregirPuntajes';
 ChartJS.register(
@@ -59,7 +61,8 @@ const Reportes = () => {
   const [showCorregirPuntajesModal, setShowCorregirPuntajesModal] = useState<boolean>(false);
   const route = useRouter();
   const {
-    estudiantes,
+    estudiantesDeEvaluacion,
+    estudiantes: estudiantesGlob,
     currentUserData,
     dataEstadisticas,
     preguntasRespuestas,
@@ -85,11 +88,142 @@ const Reportes = () => {
     correccionPuntajesError,
     setCorreccionPuntajesError
   } = useReporteDocente();
-  const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
+  const { getPreguntasRespuestas, getEvaluacion, obtenerEstudianteDeEvaluacion } = useAgregarEvaluaciones();
   const [idEstudiante, setIdEstudiante] = useState<string>('');
-  const [yearSelected, setYearSelected] = useState<string>('');
-  const [monthSelected, setMonthSelected] = useState<number>(currentMonth);
-  const [order, setOrder] = useState<number>(0);
+  const [yearSelected, setYearSelected] = useState<string>((route.query.year as string) || '');
+  const [monthSelected, setMonthSelected] = useState<number>(() => {
+    const mesQuery = route.query.mes;
+    if (mesQuery !== undefined && mesQuery !== "" && !Array.isArray(mesQuery)) {
+      const val = Number(mesQuery);
+      if (!isNaN(val)) return val;
+    }
+    return currentMonth;
+  });
+  const [levelSelected, setLevelSelected] = useState<string>((route.query.nivel as string) || '');
+  const [sectionSelected, setSectionSelected] = useState<string>((route.query.seccion as string) || '');
+  const [order, setOrder] = useState<number>(Number(route.query.order) || 0);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+
+  // Obtener estudiantes pendientes (no evaluados)
+  useEffect(() => {
+    if (evaluacion.id && monthSelected !== undefined && monthSelected !== null) {
+      const unsubscribe = obtenerEstudianteDeEvaluacion(evaluacion, sectionSelected, `${monthSelected}`);
+      return () => {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      };
+    }
+  }, [evaluacion.id, monthSelected, sectionSelected]);
+
+  // Obtener secciones únicas disponibles en la data
+  const seccionesDisponibles = useMemo(() => {
+    if (!estudiantesGlob) return [];
+    const sections = estudiantesGlob
+      .map(est => est.seccion)
+      .filter((s): s is string => !!s && s !== '');
+    return Array.from(new Set(sections)).sort();
+  }, [estudiantesGlob]);
+
+  // Sincronizar estados locales con la URL cuando esta cambie
+  useEffect(() => {
+    if (route.isReady) {
+      if (route.query.year) setYearSelected(route.query.year as string);
+      const mesQuery = route.query.mes;
+      if (mesQuery !== undefined && mesQuery !== "" && !Array.isArray(mesQuery)) {
+        const val = Number(mesQuery);
+        if (!isNaN(val) && val !== monthSelected) setMonthSelected(val);
+      }
+      if (route.query.nivel) setLevelSelected(route.query.nivel as string);
+      if (route.query.seccion) setSectionSelected(route.query.seccion as string);
+    }
+  }, [route.query, route.isReady]);
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Función para actualizar la URL con los filtros actuales
+  const updateQuery = (params: Record<string, any>) => {
+    if (!route.isReady) return;
+
+    const newQuery = { ...route.query, ...params };
+    Object.keys(newQuery).forEach(key => {
+      if (newQuery[key] === '' || newQuery[key] === undefined || newQuery[key] === null) {
+        delete newQuery[key];
+      }
+    });
+
+    route.push({ pathname: route.pathname, query: newQuery }, undefined, { shallow: true });
+  };
+
+  // Crear una versión de estudiantes sincronizada con la definición global
+  const estudiantesBase = useMemo(() => {
+    if (!estudiantesGlob || !preguntasRespuestas || !evaluacion) return [];
+
+    return estudiantesGlob.map(est => {
+      if (!est.respuestas) return est;
+
+      const respuestasSincronizadas = est.respuestas.map(r => {
+        const globalP = preguntasRespuestas.find(p =>
+          (r.id && p.id === r.id) || (r.order !== undefined && p.order === r.order)
+        );
+        return { ...r, respuesta: globalP?.respuesta || r.respuesta };
+      });
+
+      let tempEst = { ...est, respuestas: respuestasSincronizadas } as any;
+      tempEst = calculoPreguntasCorrectas(tempEst);
+      tempEst = calculoNivel(tempEst, evaluacion);
+
+      return tempEst as Estudiante;
+    });
+  }, [estudiantesGlob, preguntasRespuestas, evaluacion]);
+
+  // Aplicar filtro por nivel y sección
+  const estudiantes = useMemo(() => {
+    const filterLevel = (route.query.nivel as string) || levelSelected;
+    const filterSection = (route.query.seccion as string) || sectionSelected;
+
+    let filtered = estudiantesBase;
+
+    if (filterLevel) {
+      filtered = filtered.filter(est => {
+        if (!est.nivel) return false;
+        const nivel = est.nivel.toLowerCase();
+        const search = filterLevel.toLowerCase();
+        if (search === 'inicio') {
+          return nivel.includes('inicio') && !nivel.includes('previo');
+        }
+        return nivel.includes(search);
+      });
+    }
+
+    if (filterSection) {
+      filtered = filtered.filter(est => est.seccion === filterSection);
+    }
+
+    const currentOrder = Number(route.query.order) || order;
+    if (currentOrder !== 0) {
+      filtered = [...filtered].sort((a, b) => {
+        const valA = Number(a.respuestasCorrectas) || 0;
+        const valB = Number(b.respuestasCorrectas) || 0;
+        if (currentOrder === 1) return valA - valB;
+        if (currentOrder === 2) return valB - valA;
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [estudiantesBase, levelSelected, sectionSelected, order, route.query.nivel, route.query.seccion, route.query.order]);
   const handleShowTable = () => {
     setShowtable(!showTable);
   };
@@ -152,6 +286,68 @@ const Reportes = () => {
     });
   }, [dataEstadisticasOrdenadas, preguntasMap]);
 
+
+  const handleExportarGrillaPDF = async () => {
+    const { exportarGrillaHeatmapPDF } = await import('@/features/utils/exportarGrillaHeatmapPDF');
+
+    setLoading(true);
+    try {
+      exportarGrillaHeatmapPDF({
+        estudiantes,
+        preguntasRespuestas,
+        evaluacion,
+        monthSelected,
+        nombreDocente: `${currentUserData.nombres || ''} ${currentUserData.apellidos || ''}`.trim() || 'Docente'
+      });
+    } catch (error) {
+      console.error('Error al exportar grilla:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cálculo de promedios y distribución por sección para el gráfico de barras horizontales
+  const promedioPorSeccion = useMemo(() => {
+    if (seccionesDisponibles.length < 2) return [];
+
+    return seccionesDisponibles.map(seccion => {
+      // Usar estudiantesBase que tiene todos los alumnos del grado sin el filtro de sección de la UI
+      const estudiantesSeccion = estudiantesBase.filter(est => est.seccion === seccion);
+      
+      const totalPuntaje = estudiantesSeccion.reduce((acc, est) => acc + (est.puntaje || 0), 0);
+      const promedio = estudiantesSeccion.length > 0 ? totalPuntaje / estudiantesSeccion.length : 0;
+      
+      // Contar niveles
+      const niveles = {
+        satisfactorio: 0,
+        proceso: 0,
+        inicio: 0,
+        previo: 0
+      };
+
+      estudiantesSeccion.forEach(est => {
+        const nivel = (est.nivel || '').toLowerCase();
+        if (nivel.includes('satisfactorio')) niveles.satisfactorio++;
+        else if (nivel.includes('proceso')) niveles.proceso++;
+        else if (nivel.includes('previo')) niveles.previo++;
+        else if (nivel.includes('inicio')) niveles.inicio++;
+      });
+      
+      return {
+        seccion: converSeccion(Number(seccion))?.toUpperCase() || seccion,
+        promedio: Number(promedio.toFixed(2)),
+        cantidad: estudiantesSeccion.length,
+        distribucion: niveles
+      };
+    })
+    // Ordenar por el porcentaje de estudiantes en nivel Satisfactorio (de mayor a menor)
+    .sort((a, b) => {
+      const percA = a.cantidad > 0 ? (a.distribucion.satisfactorio / a.cantidad) : 0;
+      const percB = b.cantidad > 0 ? (b.distribucion.satisfactorio / b.cantidad) : 0;
+      return percB - percA;
+    });
+  }, [estudiantesBase, seccionesDisponibles]);
+
   // Hook para generar PDF con imágenes
   const {
     graficosImagenes,
@@ -213,7 +409,7 @@ const Reportes = () => {
   useEffect(() => {
     const idExamen = route.query.idExamen as string;
     if (idExamen && yearSelected) {
-      estudiantesQueDieronExamenPorMes(evaluacion, estudiantes, yearSelected);
+      estudiantesQueDieronExamenPorMes(evaluacion, estudiantesGlob, yearSelected);
       estadisticasEstudiantesDelDocente(evaluacion, monthSelected, preguntasRespuestas, yearSelected);
     }
   }, [route.query.idExamen, currentUserData.dni, evaluacion.id, yearSelected, monthSelected]);
@@ -253,16 +449,43 @@ const Reportes = () => {
     setShowCorregirPuntajesModal(false);
   };
   const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setMonthSelected(Number(e.target.value));
+    const valStr = e.target.value;
+    if (valStr === "") return; // No hacer nada si se selecciona el placeholder
+    const val = Number(valStr);
+    if (isNaN(val)) return;
+    setMonthSelected(val);
+    updateQuery({ mes: val, page: 1 });
   };
   const handleChangeYear = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setYearSelected(e.target.value);
+    const val = e.target.value;
+    setYearSelected(val);
+    updateQuery({ year: val, page: 1 });
+  };
+  const handleChangeLevel = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    setLevelSelected(val);
+    updateQuery({ nivel: val, page: 1 });
+  };
+  const handleChangeSection = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    setSectionSelected(val);
+    updateQuery({ seccion: val, page: 1 });
   };
   const handleChangeOrder = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setOrder(Number(e.target.value));
+    const val = Number(e.target.value);
+    setOrder(val);
+    updateQuery({ order: val });
   };
-  const handleOrder = () => {
-    filtroEstudiantes(estudiantes as Estudiante[], order);
+
+  const handleExportOption = (type: string) => {
+    if (type === 'excel') {
+      handleExportToExcel();
+    } else if (type === 'pdf-tabla') {
+      handleExportarGrillaPDF();
+    } else if (type === 'pdf-preguntas') {
+      handleGenerarPDF();
+    }
+    setIsOpen(false);
   };
 
   // Verificar si existen valores válidos para puntaje y nivel
@@ -299,8 +522,7 @@ const Reportes = () => {
     );
   };
 
-  /* console.log('dataEstadisticasOrdenadas', dataEstadisticasOrdenadas)
-  console.log('preguntasMap',preguntasMap) */
+
   return (
     <>
       {showDeleteEstudiante && (
@@ -333,66 +555,74 @@ const Reportes = () => {
         <div className={styles.container}>
           <div className={styles.content}>
             <div className={styles.headerActions}>
-              {/* <div className={styles.toggleButtonContainer}>
-                <div onClick={handleShowTable} className={styles.toggleButton}>
-                  {showTable ? 'ocultar tabla de estudiantes' : 'mostrar tabla de estudiantes'}
-                </div>
-              </div> */}
               <div className={styles.exportButtonsContainer}>
-                {showTable && (
+                <div className={styles.customDropdown} ref={dropdownRef}>
                   <button
-                    onClick={handleExportToExcel}
-                    disabled={loading || !estudiantes || estudiantes.length === 0}
-                    className={styles.exportButton}
+                    className={`${styles.dropdownTrigger} ${isOpen ? styles.dropdownActive : ''}`}
+                    onClick={() => setIsOpen(!isOpen)}
+                    disabled={loading || loadingPDF || !estudiantes || estudiantes.length === 0}
                   >
-                    {loading ? <RiLoader4Line className={styles.loaderIcon} /> : 'Exportar a Excel'}
+                    <HiOutlineDownload className={styles.dropdownIcon} />
+                    <span>{loading || loadingPDF ? 'Procesando...' : 'Exportar Reporte'}</span>
+                    <IoIosArrowDown className={`${styles.arrowIcon} ${isOpen ? styles.arrowRotate : ''}`} />
+                  </button>
+
+                  {isOpen && (
+                    <div className={styles.dropdownMenu}>
+                      {showTable && (
+                        <>
+                          <div
+                            className={styles.dropdownItem}
+                            onClick={() => handleExportOption('pdf-tabla')}
+                          >
+                            <RiFilePdfLine className={styles.itemIconPdf} />
+                            <div className={styles.itemContent}>
+                              <span className={styles.itemTitle}>Exportar Grilla PDF</span>
+                              <span className={styles.itemDescription}>Reporte tabular de resultados</span>
+                            </div>
+                          </div>
+                          <div
+                            className={styles.dropdownItem}
+                            onClick={() => handleExportOption('excel')}
+                          >
+                            <RiFileExcel2Line className={styles.itemIconExcel} />
+                            <div className={styles.itemContent}>
+                              <span className={styles.itemTitle}>Exportar a Excel</span>
+                              <span className={styles.itemDescription}>Datos crudos para análisis</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      <div
+                        className={`${styles.dropdownItem} ${(!imagenesGeneradas || reporteCompletoConImagenes.length === 0) ? styles.itemDisabled : ''}`}
+                        onClick={() => {
+                          if (imagenesGeneradas && reporteCompletoConImagenes.length > 0) {
+                            handleExportOption('pdf-preguntas');
+                          }
+                        }}
+                      >
+                        <RiFilePdfLine className={styles.itemIconQuestions} />
+                        <div className={styles.itemContent}>
+                          <span className={styles.itemTitle}>
+                            {!imagenesGeneradas ? 'Preparando PDF Preguntas...' : 'Generar PDF Preguntas'}
+                          </span>
+                          <span className={styles.itemDescription}>Reporte gráfico detallado</span>
+                        </div>
+                        {!imagenesGeneradas && <RiLoader4Line className={styles.loaderIconSmall} />}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {evaluacion.tipoDeEvaluacion === '1' && (
+                  <button
+                    onClick={handleShowCorregirPuntajesModal}
+                    className={styles.corregirButton}
+                  >
+                    <span>🔧</span>
+                    <span>Corregir Puntajes</span>
                   </button>
                 )}
-                <button
-                  onClick={handleGenerarPDF}
-                  disabled={loading || loadingPDF || reporteCompletoConImagenes.length === 0 || !imagenesGeneradas}
-                  className={`${styles.pdfButton} ${loadingPDF
-                    ? styles.pdfButtonLoading
-                    : !imagenesGeneradas
-                      ? styles.pdfButtonGenerating
-                      : styles.pdfButtonReady
-                    }`}
-                >
-                  {loadingPDF ? (
-                    <>
-                      <RiLoader4Line className={styles.loaderIcon} />
-                      <span>Generando PDF...</span>
-                    </>
-                  ) : !imagenesGeneradas ? (
-                    <>
-                      <RiLoader4Line className={styles.loaderIcon} />
-                      <span>Preparando gráficos...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>📄</span>
-                      <span>Generar PDF</span>
-                    </>
-                  )}
-                </button>
-                {
-                  evaluacion.tipoDeEvaluacion === '1' && (
-                    <button
-                      onClick={handleShowCorregirPuntajesModal}
-                      className={styles.corregirButton}
-                    >
-                      <span>🔧</span>
-                      <span>Corregir Puntajes</span>
-                    </button>
-                  )
-                }
-                {/* <button 
-                  onClick={handleShowCorregirPuntajesModal}
-                  className={styles.corregirButton}
-                >
-                  <span>🔧</span>
-                  <span>Corregir Puntajes</span>
-                </button> */}
               </div>
             </div>
             {showTable ? (
@@ -404,23 +634,17 @@ const Reportes = () => {
                       <div className={styles.controlInputs}>
                         <select
                           onChange={handleChangeOrder}
+                          value={order}
                           className={styles.modernSelect}
                           aria-label="Seleccionar orden de clasificación"
                         >
-                          <option value="">-- Seleccionar orden --</option>
+                          <option value="0">-- Seleccionar orden --</option>
                           {ordernarAscDsc.map((order) => (
                             <option key={order.id} value={order.id}>
                               {order.name}
                             </option>
                           ))}
                         </select>
-                        <button
-                          className={styles.modernButton}
-                          onClick={handleOrder}
-                          disabled={!order}
-                        >
-                          Ordenar
-                        </button>
                       </div>
                     </div>
 
@@ -446,36 +670,110 @@ const Reportes = () => {
                       <select
                         id="monthSelect"
                         onChange={handleChangeMonth}
-                        value={monthSelected}
+                        value={String(monthSelected)}
                         className={styles.modernSelect}
                         aria-label="Seleccionar mes para el reporte"
                       >
                         <option value="">-- Mes --</option>
-                        {getAllMonths.filter(m => mesesConDataDisponibles.includes(m.id)).map((month) => (
-                          <option key={month.id} value={month.id}>
+                        {getAllMonths.map((month) => (
+                          <option 
+                            key={month.id} 
+                            value={String(month.id)}
+                            disabled={mesesConDataDisponibles.length > 0 && !mesesConDataDisponibles.includes(month.id)}
+                          >
                             {month.name}
                           </option>
                         ))}
                       </select>
                     </div>
+
+                    <div className={styles.controlGroup}>
+                      <label className={styles.controlLabel}>Nivel Estudiante:</label>
+                      <select
+                        onChange={handleChangeLevel}
+                        value={levelSelected}
+                        className={styles.modernSelect}
+                        aria-label="Filtrar por nivel de estudiante"
+                      >
+                        <option value="">Todos los niveles</option>
+                        <option value="Satisfactorio">Satisfactorio</option>
+                        <option value="Proceso">En Proceso</option>
+                        <option value="Inicio">En Inicio</option>
+                        <option value="Previo">Previo al Inicio</option>
+                      </select>
+                    </div>
+
+                    {seccionesDisponibles.length > 0 && (
+                      <div className={styles.controlGroup}>
+                        <label className={styles.controlLabel}>Sección:</label>
+                        <select
+                          onChange={handleChangeSection}
+                          value={sectionSelected}
+                          className={styles.modernSelect}
+                          aria-label="Filtrar por sección de estudiante"
+                        >
+                          <option value="">Todas las secciones</option>
+                          {seccionesDisponibles.map((sec) => (
+                            <option key={sec} value={sec}>
+                              Sección {converSeccion(Number(sec))?.toUpperCase() || sec}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <TablaPreguntas
-                  estudiantes={estudiantes}
-                  preguntasRespuestas={preguntasRespuestas}
-                  warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined}
-                  onDeleteEstudiante={(dni) => {
-                    handleShowModalDelete();
-                    setIdEstudiante(dni);
-                  }}
-                  linkToEdit={`/docentes/evaluaciones/secundaria/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`}
-                  customColumns={{
-                    showPuntaje: hasValidPuntaje(),
-                    showNivel: hasValidNivel(),
-                  }}
-                  className={styles.tableWrapper}
-                />
+                <div id="tabla-estudiantes-pdf">
+                  {evaluacion.nivelYPuntaje && evaluacion.nivelYPuntaje.length > 0 && (
+                    <div className={styles.levelLegend}>
+                      <span className={styles.levelLegendTitle}>Leyenda de Niveles:</span>
+                      {[...evaluacion.nivelYPuntaje]
+                        .sort((a, b) => (b.min || 0) - (a.min || 0))
+                        .map((nivel, idx) => {
+                          const lowerNivel = (nivel.nivel || '').toLowerCase();
+                          const colorClass = lowerNivel.includes('satisfactorio')
+                            ? styles.nivelSatisfactorio
+                            : lowerNivel.includes('proceso')
+                              ? styles.nivelEnProceso
+                              : lowerNivel.includes('previo')
+                                ? styles.nivelPrevioInicio
+                                : lowerNivel.includes('inicio')
+                                  ? styles.nivelEnInicio
+                                  : '';
+
+                          return (
+                            <div key={idx} className={styles.levelLegendItem}>
+                              <div
+                                className={`${styles.levelLegendColor} ${colorClass}`}
+                                style={{ backgroundColor: nivel.color }}
+                              ></div>
+                              <span>{nivel.nivel}</span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                  <TablaPreguntas
+                    estudiantes={estudiantes}
+                    preguntasRespuestas={preguntasRespuestas}
+                    warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined}
+                    onDeleteEstudiante={(dni) => {
+                      handleShowModalDelete();
+                      setIdEstudiante(dni);
+                    }}
+                    linkToEdit={`/docentes/evaluaciones/secundaria/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`}
+                    customColumns={{
+                      showPuntaje: hasValidPuntaje(),
+                      showNivel: hasValidNivel(),
+                    }}
+                    className={styles.tableSection}
+                    currentPage={Number(route.query.page) || 1}
+                    itemsPerPage={route.query.limit === 'all' ? 'all' : (Number(Array.isArray(route.query.limit) ? route.query.limit[0] : route.query.limit) || 10)}
+                    onPageChange={(page) => updateQuery({ page })}
+                    onItemsPerPageChange={(limit) => updateQuery({ limit, page: 1 })}
+                  />
+                </div>
               </>
             ) : null}
 
@@ -487,6 +785,10 @@ const Reportes = () => {
                   mesesConDataDisponibles={mesesConDataDisponibles}
                   promedioGlobal={promedioGlobal}
                   monthSelected={monthSelected}
+                  evaluados={estudiantes.length}
+                  pendientes={0} // En secundaria parece no estar mapeado el conteo de pendientes de la misma forma
+                  listaPendientes={[]}
+                  promedioPorSeccion={promedioPorSeccion}
                   dataGraficoTendenciaNiveles={[
                     generarDataGraficoPiechart(estudiantes, monthSelected, evaluacion),
                   ]}

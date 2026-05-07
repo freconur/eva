@@ -191,6 +191,15 @@ const DocenteInfo = ({ nombreDocente, fecha }: { nombreDocente: string; fecha: s
   </View>
 );
 
+// Función para limpiar texto de espacios y saltos de línea excesivos
+const limpiarTexto = (texto: string) => {
+  if (!texto) return '';
+  return texto
+    .replace(/[\r\n]+/g, ' ') // Reemplazar saltos de línea por un espacio
+    .replace(/\s+/g, ' ')     // Reemplazar múltiples espacios por uno solo
+    .trim();                  // Quitar espacios al inicio y final
+};
+
 // Componente para una pregunta individual
 const PreguntaItem = ({ item }: { item: ReporteItem }) => {
   const { a = 0, b = 0, c = 0, d, total = 1 } = item.dataEstadistica;
@@ -198,35 +207,27 @@ const PreguntaItem = ({ item }: { item: ReporteItem }) => {
   const calcularPorcentaje = (valor: number) => ((valor / total) * 100).toFixed(0);
   
   return (
-    <View style={styles.questionSection}>
-      <Text style={styles.questionNumber}>
-        {item.index}. {item.pregunta}
+    <View style={[styles.questionSection, { marginBottom: 40 }]}>
+      <Text style={[styles.questionNumber, { textAlign: 'left' }]}>
+        {item.index}. {limpiarTexto(item.pregunta).replace(/^\d+\.\s*/, '')}
       </Text>
       
       <View style={styles.questionDetails}>
-        <Text>
+        <Text style={{ textAlign: 'left' }}>
           <Text style={styles.questionLabel}>Actuación:</Text>
-          <Text style={styles.questionValue}> {item.actuacion}</Text>
+          <Text style={styles.questionValue}> {limpiarTexto(item.actuacion)}</Text>
         </Text>
       </View>
       
       <View style={styles.questionDetails}>
-        <Text>
+        <Text style={{ textAlign: 'left' }}>
           <Text style={styles.questionLabel}>Respuesta correcta:</Text>
           <Text style={styles.questionValue}> {item.respuesta}</Text>
         </Text>
       </View>
-      
-      {/* <View style={styles.statsContainer}>
-        <Text style={styles.statsText}>
-          Estadísticas: A={a} ({calcularPorcentaje(a)}%), B={b} ({calcularPorcentaje(b)}%), C={c} ({calcularPorcentaje(c)}%)
-          {d !== undefined ? `, D=${d} (${calcularPorcentaje(d)}%)` : ''}
-        </Text>
-      </View> */}
-      
+
       {item.graficoImagen && (
-        <View style={styles.chartContainer}>
-          {/* <Text style={styles.questionLabel}>Gráfico de resultados:</Text> */}
+        <View style={[styles.chartContainer, { marginTop: 10 }]}>
           <Image 
             src={item.graficoImagen} 
             style={styles.chartImage}
@@ -234,6 +235,25 @@ const PreguntaItem = ({ item }: { item: ReporteItem }) => {
           />
         </View>
       )}
+
+      <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 10, marginBottom: 20 }}>
+        {[
+          { label: 'A', val: a, color: '#9bbb58' },
+          { label: 'B', val: b, color: '#f89646' },
+          { label: 'C', val: c, color: '#a64e4d' },
+          ...(d !== undefined && d !== null ? [{ label: 'D', val: d, color: '#a5a5a5' }] : [])
+        ].map((alt, i) => {
+          const isCorrect = item.respuesta?.toLowerCase() === alt.label.toLowerCase();
+          return (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 8 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: alt.color, marginRight: 4 }} />
+              <Text style={{ fontSize: 9, color: '#34495e', fontWeight: isCorrect ? 'bold' : 'normal' }}>
+                {alt.label}({alt.val} - {calcularPorcentaje(alt.val)}%){isCorrect ? ' ✓' : ''}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
     </View>
   );
 };

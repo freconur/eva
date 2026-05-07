@@ -31,7 +31,10 @@ export interface TablaPreguntasProps {
     showNivel?: boolean;
   };
   className?: string;
-  itemsPerPage?: number;
+  itemsPerPage?: number | 'all';
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
+  onItemsPerPageChange?: (limit: number | 'all') => void;
 }
 
 const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
@@ -45,15 +48,20 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
   showEditButton = true,
   customColumns,
   className = '',
-  itemsPerPage = 10
+  itemsPerPage: itemsPerPageProp = 10,
+  currentPage: currentPageProp,
+  onPageChange,
+  onItemsPerPageChange
 }) => {
-
-
   const { currentUserData } = useGlobalContext()
-  /* console.log('tablaestudiantes',estudiantes); */
-  /* console.log('tablaestudiantes',estudiantes); */
-  // Estado para la paginación
-  const [currentPage, setCurrentPage] = useState(1);
+
+  // Estados internos (se usan si no se pasan props controladas)
+  const [internalPage, setInternalPage] = useState(1);
+  const [internalLimit, setInternalLimit] = useState<number | 'all'>(itemsPerPageProp);
+
+  // Determinar valores actuales (priorizando props)
+  const currentPage = currentPageProp !== undefined ? currentPageProp : internalPage;
+  const currentItemsPerPage = onItemsPerPageChange !== undefined ? itemsPerPageProp : internalLimit;
 
   // Estado para el popover estático
   const [activePopover, setActivePopover] = useState<string | null>(null);
@@ -63,9 +71,10 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
   // Calcular datos de paginación
   const paginationData = useMemo(() => {
     const totalItems = estudiantes?.length || 0;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
+    const currentLimit = currentItemsPerPage === 'all' ? (totalItems || 1) : currentItemsPerPage;
+    const totalPages = Math.ceil(totalItems / currentLimit);
+    const startIndex = currentItemsPerPage === 'all' ? 0 : (currentPage - 1) * currentItemsPerPage;
+    const endIndex = currentItemsPerPage === 'all' ? totalItems : startIndex + currentItemsPerPage;
     const currentStudents = estudiantes?.slice(startIndex, endIndex) || [];
 
     return {
@@ -75,14 +84,35 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
       startIndex,
       endIndex
     };
-  }, [estudiantes, currentPage, itemsPerPage]);
+  }, [estudiantes, currentPage, currentItemsPerPage]);
 
   // Función para cambiar de página
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= paginationData.totalPages) {
-      setCurrentPage(newPage);
+      if (onPageChange) {
+        onPageChange(newPage);
+      } else {
+        setInternalPage(newPage);
+      }
     }
   };
+
+  // Referencia para evitar que el efecto de reset se dispare al montar el componente
+  const isMounted = useRef(false);
+
+  // Resetear a la primera página solo si cambia el límite (después del primer render)
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+
+    if (onPageChange) {
+      onPageChange(1);
+    } else {
+      setInternalPage(1);
+    }
+  }, [currentItemsPerPage]);
 
   // Función para validar respuestas usando la definición global como fuente de verdad
   const handleValidateRespuesta = (data: PreguntasRespuestas) => {
@@ -95,12 +125,12 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
     const rta: Alternativa | undefined = data.alternativas?.find((r) => r.selected === true);
     if (rta?.alternativa && correctRespuesta) {
       if (rta.alternativa.toLowerCase() === correctRespuesta.toLowerCase()) {
-        return <div className={styles.correctAnswer}>si</div>;
+        return <div className={styles.correctAnswer} title="Correcto"></div>;
       } else {
-        return <div className={styles.incorrectAnswer}>no</div>;
+        return <div className={styles.incorrectAnswer} title="Incorrecto"></div>;
       }
     }
-    return <div className={styles.noAnswer}>-</div>;
+    return <div className={styles.noAnswer} title="Sin respuesta"></div>;
   };
 
   // Función para calcular el total de respuestas correctas basadas en la definición global
@@ -222,7 +252,32 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
           </div>
         ) : (
           <>
-            <div className={className.includes('tableWrapper') ? className : ''}>
+            <div className={styles.tableControls}>
+              <div className={styles.itemsPerPageSelector}>
+                <span>Mostrar:</span>
+                <select
+                  value={currentItemsPerPage}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const newLimit = val === 'all' ? 'all' : Number(val);
+                    if (onItemsPerPageChange) {
+                      onItemsPerPageChange(newLimit);
+                    } else {
+                      setInternalLimit(newLimit);
+                    }
+                  }}
+                  className={styles.limitSelect}
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value="all">Todos</option>
+                </select>
+                <span className={styles.selectorLabel}>estudiantes</span>
+              </div>
+            </div>
+
+            <div className={styles.tableWrapper}>
               <table className={styles.table}>
                 <thead className={styles.tableHeader}>
                   <tr>
@@ -237,14 +292,44 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                     {preguntasRespuestas.map((pr, index) => {
                       const popoverId = `${pr.order || index}`;
 
+                      // Calcular estadísticas para esta pregunta
+                      const stats = (() => {
+                        if (!estudiantes || estudiantes.length === 0) return { percent: 0, correct: 0, total: 0 };
+                        let correct = 0;
+                        let answered = 0;
+
+                        estudiantes.forEach(est => {
+                          const resp = est.respuestas?.find(r =>
+                            (pr.id && r.id === pr.id) || (pr.order !== undefined && r.order === pr.order)
+                          );
+                          if (resp) {
+                            answered++;
+                            const rta: Alternativa | undefined = resp.alternativas?.find((alt) => alt.selected === true);
+                            if (rta?.alternativa && pr.respuesta && rta.alternativa.toLowerCase() === pr.respuesta.toLowerCase()) {
+                              correct++;
+                            }
+                          }
+                        });
+
+                        const total = estudiantes.length;
+                        const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
+                        return { percent, correct, total };
+                      })();
+
                       return (
-                        <th key={pr.order || index}>
-                          <button
-                            className={styles.questionButton}
-                            onClick={() => handlePopoverToggle(popoverId)}
-                          >
-                            {index + 1}
-                          </button>
+                        <th key={pr.order || index} className={styles.questionHeader}>
+                          <div className={styles.headerStack}>
+                            <button
+                              className={styles.questionButton}
+                              onClick={() => handlePopoverToggle(popoverId)}
+                            >
+                              {index + 1}
+                            </button>
+                            <div className={styles.questionStats} title={`${stats.correct} de ${stats.total} correctas`}>
+                              <span className={styles.statPercent}>{stats.percent}%</span>
+                              <span className={styles.statCount}>{stats.correct}/{stats.total}</span>
+                            </div>
+                          </div>
                         </th>
                       );
                     })}
@@ -286,15 +371,24 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                           <td>{calculateCorrectCount(estudiante.respuestas)}</td>
                           <td>{estudiante.totalPreguntas || 0}</td>
                           {hasValidPuntaje() && <td>{estudiante.puntaje || '-'}</td>}
-                          {hasValidNivel() && <td>
-                            <div className={`${styles.nivelText} ${getNivelClass(estudiante.nivel)}`}>
-                              {estudiante.nivel || '-'}
-                            </div>
-                          </td>}
+                          {hasValidNivel() && (
+                            <td>
+                              <div className={styles.levelContainer}>
+                                <div
+                                  className={`${styles.nivelCircle} ${getNivelClass(estudiante.nivel)}`}
+                                  title={estudiante.nivel || 'Sin clasificar'}
+                                ></div>
+                              </div>
+                            </td>
+                          )}
                           {estudiante.respuestas?.map((res, resIndex) => {
                             // Crear una clave única para cada celda de respuesta
                             const uniqueCellKey = `${uniqueRowKey}-respuesta-${res.id || resIndex}-${res.order || resIndex}`;
-                            return <td key={uniqueCellKey}>{handleValidateRespuesta(res)}</td>;
+                            return (
+                              <td key={uniqueCellKey} className={styles.answerCell}>
+                                {handleValidateRespuesta(res)}
+                              </td>
+                            );
                           })}
                         </tr>
                       );

@@ -52,9 +52,9 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
 
       // Crear etiquetas solo para las 3 opciones con check para la respuesta correcta
       const labels = [
-        `A (${data.a || 0} - ${porcentajeA}%)${esRespuestaCorrecta('a') ? ' ✓' : ''}`,
-        `B (${data.b || 0} - ${porcentajeB}%)${esRespuestaCorrecta('b') ? ' ✓' : ''}`,
-        `C (${data.c || 0} - ${porcentajeC}%)${esRespuestaCorrecta('c') ? ' ✓' : ''}`
+        `A(${data.a || 0} - ${porcentajeA}%)${esRespuestaCorrecta('a') ? ' ✓' : ''}`,
+        `B(${data.b || 0} - ${porcentajeB}%)${esRespuestaCorrecta('b') ? ' ✓' : ''}`,
+        `C(${data.c || 0} - ${porcentajeC}%)${esRespuestaCorrecta('c') ? ' ✓' : ''}`
       ];
 
       // Usar el hook para preparar los datos del gráfico
@@ -73,10 +73,10 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
 
       // Crear etiquetas para las 4 opciones con check para la respuesta correcta
       const labels = [
-        `A (${data.a || 0} - ${porcentajeA}%)${esRespuestaCorrecta('a') ? ' ✓' : ''}`,
-        `B (${data.b || 0} - ${porcentajeB}%)${esRespuestaCorrecta('b') ? ' ✓' : ''}`,
-        `C (${data.c || 0} - ${porcentajeC}%)${esRespuestaCorrecta('c') ? ' ✓' : ''}`,
-        `D (${data.d || 0} - ${porcentajeD}%)${esRespuestaCorrecta('d') ? ' ✓' : ''}`
+        `A(${data.a || 0} - ${porcentajeA}%)${esRespuestaCorrecta('a') ? ' ✓' : ''}`,
+        `B(${data.b || 0} - ${porcentajeB}%)${esRespuestaCorrecta('b') ? ' ✓' : ''}`,
+        `C(${data.c || 0} - ${porcentajeC}%)${esRespuestaCorrecta('c') ? ' ✓' : ''}`,
+        `D(${data.d || 0} - ${porcentajeD}%)${esRespuestaCorrecta('d') ? ' ✓' : ''}`
       ];
 
       // Usar el hook para preparar los datos del gráfico
@@ -285,7 +285,7 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
                           if (chartRef && chartRef.canvas) {
                             setTimeout(() => {
                               convertirGraficoAImagen(dat.id || '', chartRef.canvas);
-                            }, 100);
+                            }, 500); // Aumentado para asegurar renderizado completo
                           }
                         }}
                       />

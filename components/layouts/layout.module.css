@@ -24,7 +24,7 @@
   flex-direction: column;
   width: 100%;
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip; /* Usamos clip en lugar de hidden para no romper el position: sticky */
 }
 
 .logoContainer {

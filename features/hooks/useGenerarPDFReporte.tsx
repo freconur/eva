@@ -66,7 +66,6 @@ export const useGenerarPDFReporte = ({
             
             // Verificar si se han generado todas las imágenes
             if (Object.keys(newState).length === reporteCompleto?.length) {
-              console.log('imagenes generadas cambia a true')
               setImagenesGeneradas(true);
             }
             
@@ -87,7 +86,6 @@ export const useGenerarPDFReporte = ({
       graficoImagen: graficosImagenes[item.id] || '',
     }));
   }, [reporteCompleto, graficosImagenes]);
-/* console.log('reporteCompletoConImagenes', reporteCompletoConImagenes); */
   // Función para generar PDF
   const handleGenerarPDF = useCallback(async () => {
     setLoadingPDF(true);

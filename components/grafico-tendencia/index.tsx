@@ -3,8 +3,9 @@ import {
   GraficoTendenciaNiveles,
   PromedioGlobalPorMes,
   GraficoPieChart,
+  UserEstudiante,
 } from '@/features/types/types';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -23,6 +24,7 @@ import { useGlobalContext } from '@/features/context/GlolbalContext';
 import Loader from '@/components/loader/loader';
 import { useGraficoTendenciaData } from '@/features/hooks/useGraficoTendenciaData';
 import { useChartOptions } from '@/features/hooks/useChartOptions';
+import CoverageChart from '../reportes/CoverageChart';
 import styles from './grafico-tendencia.module.css';
 // Registrar los componentes necesarios de Chart.js
 ChartJS.register(
@@ -45,6 +47,20 @@ interface Props {
   monthSelected: number;
   dataGraficoTendenciaNiveles: GraficoPieChart[];
   evaluacion: Evaluacion;
+  evaluados?: number;
+  pendientes?: number;
+  listaPendientes?: UserEstudiante[];
+  promedioPorSeccion?: {
+    seccion: string;
+    promedio: number;
+    cantidad: number;
+    distribucion: {
+      satisfactorio: number;
+      proceso: number;
+      inicio: number;
+      previo: number;
+    };
+  }[];
 }
 
 const GraficoTendenciaColegio = ({
@@ -54,6 +70,10 @@ const GraficoTendenciaColegio = ({
   monthSelected,
   dataGraficoTendenciaNiveles,
   evaluacion,
+  evaluados = 0,
+  pendientes = 0,
+  listaPendientes = [],
+  promedioPorSeccion = [],
 }: Props) => {
   
 
@@ -82,12 +102,44 @@ const GraficoTendenciaColegio = ({
     opcionesGraficoPie,
     opcionesPromedio,
     opcionesBarrasPromedio,
+    opcionesComparacionSecciones,
   } = useChartOptions({
     evaluacion,
     promedioGlobal,
     valorMaximoNiveles,
     monthSelected,
   });
+
+  // Preparar data para el gráfico de comparación por secciones (Apilado)
+  const dataSecciones = useMemo(() => {
+    if (promedioPorSeccion.length < 2) return null;
+
+    return {
+      labels: promedioPorSeccion.map(s => `Sección ${s.seccion}`),
+      datasets: [
+        {
+          label: 'Satisfactorio',
+          data: promedioPorSeccion.map(s => s.distribucion.satisfactorio),
+          backgroundColor: '#84cc16', // Lima/Verde (Satisfactorio)
+        },
+        {
+          label: 'En Proceso',
+          data: promedioPorSeccion.map(s => s.distribucion.proceso),
+          backgroundColor: '#f97316', // Naranja (Proceso)
+        },
+        {
+          label: 'En Inicio',
+          data: promedioPorSeccion.map(s => s.distribucion.inicio),
+          backgroundColor: '#b91c1c', // Rojo (Inicio)
+        },
+        {
+          label: 'Previo al Inicio',
+          data: promedioPorSeccion.map(s => s.distribucion.previo),
+          backgroundColor: '#9ca3af', // Gris (Previo)
+        }
+      ]
+    };
+  }, [promedioPorSeccion]);
  
   return (
     <div className={styles.threeColumnGrid}>
@@ -161,6 +213,31 @@ const GraficoTendenciaColegio = ({
           </div>
         )}
       </div>
+
+      {/* Columna - Gráfico de Cobertura */}
+      <div className={styles.column}>
+        <CoverageChart 
+          evaluados={evaluados} 
+          pendientes={pendientes} 
+          listaPendientes={listaPendientes}
+        />
+      </div>
+
+      {/* Columna de Comparativa por Secciones (solo si hay 2 o más) */}
+      {dataSecciones && (
+        <div className={styles.column}>
+          <div className={styles.chartCard}>
+            <div className={styles.cardHeader}>
+              <div className={`${styles.headerBar} ${styles.headerBarBlue}`}></div>
+              <h3 className={styles.cardTitle}>Comparativa por Secciones</h3>
+            </div>
+            <div className={styles.chartContainer} style={{ height: '250px' }}>
+              <Bar data={dataSecciones} options={opcionesComparacionSecciones} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mensaje si no hay datos */}
       {!datosNiveles && !datosPromedio && (
         <div className={styles.noDataContainer}>

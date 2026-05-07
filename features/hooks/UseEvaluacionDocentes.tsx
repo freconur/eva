@@ -280,7 +280,6 @@ const UseEvaluacionDocentes = () => {
             }
           })
       } catch (error) {
-        console.log('error', error)
         reject()
       }
     })
@@ -304,7 +303,6 @@ const UseEvaluacionDocentes = () => {
     return docentesDelDirectorarray
   }
   const reporteTablaEvaluacionEspecialistaDocente = (data: ReporteDocenteIndividual[], { genero, grado, seccion, order }: { genero: string, grado: string, seccion: string, order: string }) => {
-    console.log('Filtros recibidos:', { genero, grado, seccion, order });
 
     const dataFiltrada = data?.filter(docente => {
       // Si no hay filtros activos, incluir todos los docentes
@@ -326,13 +324,7 @@ const UseEvaluacionDocentes = () => {
       // El docente debe cumplir todos los filtros activos
       const cumpleFiltros = cumpleGenero && cumpleGrado && cumpleSeccion;
 
-      if (cumpleFiltros) {
-        console.log('Docente cumple filtros:', {
-          nombre: docente.info?.nombres,
-          grados: docente.info?.grados,
-          secciones: docente.info?.secciones
-        });
-      }
+
 
       return cumpleFiltros;
     });
@@ -353,12 +345,10 @@ const UseEvaluacionDocentes = () => {
       });
     }
 
-    console.log('Datos ordenados:', dataOrdenada.map(d => ({ nombre: d.info?.nombres, calificacion: d.calificacion })));
     dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA, payload: dataOrdenada });
     convertDataEstadisticasYGraficos(dataOrdenada);
   }
   const reporteTablaEvaluacionDirectorDocente = (data: ReporteDocenteIndividual[], { grado, seccion, orden, genero }: { grado: string, seccion: string, orden: string, genero: string }) => {
-    console.log('Filtros recibidos:', { grado, seccion, orden, genero });
 
     const dataFiltrada = data?.filter(docente => {
       // Si no hay filtros activos, incluir todos los docentes
@@ -377,13 +367,6 @@ const UseEvaluacionDocentes = () => {
       // El docente debe cumplir todos los filtros activos
       const cumpleFiltros = cumpleGrado && cumpleSeccion;
 
-      if (cumpleFiltros) {
-        console.log('Docente cumple filtros:', {
-          nombre: docente.info?.nombres,
-          grados: docente.info?.grados,
-          secciones: docente.info?.secciones
-        });
-      }
 
       return cumpleFiltros;
     });
@@ -404,7 +387,6 @@ const UseEvaluacionDocentes = () => {
       });
     }
 
-    console.log('Datos ordenados:', dataOrdenada.map(d => ({ nombre: d.info?.nombres, calificacion: d.calificacion })));
     dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA, payload: dataOrdenada });
     convertDataEstadisticasYGraficos(dataOrdenada);
   }
@@ -620,7 +602,6 @@ const UseEvaluacionDocentes = () => {
             });
           })
       } catch (error) {
-        console.log('error', error)
         reject()
       }
     })

@@ -83,7 +83,6 @@ export const useAgregarEvaluaciones = () => {
 
       // Ejecutar todas las operaciones de una vez
       await batch.commit();
-      console.log(`${estudiantes.length} estudiantes creados exitosamente`);
     } catch (error) {
       console.error('Error al crear estudiantes:', error);
       throw error; // Re-lanzar el error para que el componente pueda manejarlo
@@ -121,7 +120,6 @@ export const useAgregarEvaluaciones = () => {
         fechaCreacion: serverTimestamp(),
       });
 
-      console.log('Estudiante creado exitosamente:', estudiante.dni);
       return { success: true, message: 'Estudiante creado exitosamente' };
     } catch (error: any) {
       console.error('Error al crear estudiante:', error);
@@ -159,7 +157,6 @@ export const useAgregarEvaluaciones = () => {
         fechaActualizacion: serverTimestamp(),
       });
 
-      console.log('Estudiante actualizado exitosamente:', estudiante.dni);
       return { success: true, message: 'Estudiante actualizado exitosamente' };
     } catch (error: any) {
       console.error('Error al actualizar estudiante:', error);
@@ -191,7 +188,6 @@ export const useAgregarEvaluaciones = () => {
       // Eliminar el documento del estudiante
       await deleteDoc(docRef);
 
-      console.log('Estudiante eliminado exitosamente:', dni);
       return { success: true, message: 'Estudiante eliminado exitosamente' };
     } catch (error: any) {
       console.error('Error al eliminar estudiante:', error);
@@ -215,12 +211,10 @@ export const useAgregarEvaluaciones = () => {
               payload: docSnap.data().tiposDeEvaluacion as TipoDeEvaluacion[],
             });
           } catch (error) {
-            console.log('error', error);
           }
         }
       },
       (error: Error) => {
-        console.log('Error en getTipoDeEvaluacion:', error);
       }
     );
 
@@ -283,7 +277,6 @@ export const useAgregarEvaluaciones = () => {
                 estudiantesDeEvaluacion.push({ ...doc.data(), id: doc.id });
               }
             });
-            console.log('estudiantesDeEvaluacion', estudiantesDeEvaluacion);
             dispatch({ type: AppAction.LOADER_PAGES, payload: false });
             estudiantesDeEvaluacion.length > 0
               ? dispatch({
@@ -293,14 +286,12 @@ export const useAgregarEvaluaciones = () => {
               : dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
           },
           (error: Error) => {
-            console.log('Error en query estudiantes:', error);
             dispatch({ type: AppAction.LOADER_PAGES, payload: false });
             dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
           }
         );
       },
       (error: Error) => {
-        console.log('Error en query estudiantes evaluados:', error);
         dispatch({ type: AppAction.LOADER_PAGES, payload: false });
         dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
       }
@@ -334,7 +325,6 @@ export const useAgregarEvaluaciones = () => {
         dispatch({ type: AppAction.LOADER_PAGES, payload: false });
       },
       (error: Error) => {
-        console.log('Error en getEvaluaciones:', error);
         dispatch({ type: AppAction.LOADER_PAGES, payload: false });
       }
     );
@@ -401,7 +391,6 @@ export const useAgregarEvaluaciones = () => {
         updateCombinedResults();
       },
       (error: Error) => {
-        console.log('Error en query Q:', error);
         dispatch({ type: AppAction.LOADER_PAGES, payload: false });
       }
     );
@@ -417,7 +406,6 @@ export const useAgregarEvaluaciones = () => {
         updateCombinedResults();
       },
       (error: Error) => {
-        console.log('Error en query Q1:', error);
         dispatch({ type: AppAction.LOADER_PAGES, payload: false });
       }
     );
@@ -453,7 +441,6 @@ export const useAgregarEvaluaciones = () => {
         nivel: Number(value.nivel),
       });
     } catch (error) {
-      console.log('error', error);
     } finally {
       dispatch({ type: AppAction.LOADER_PAGES, payload: false });
     }
@@ -470,14 +457,12 @@ export const useAgregarEvaluaciones = () => {
         }
       },
       (error: Error) => {
-        console.log('Error al obtener evaluación:', error);
       }
     );
   };
 
   const getPreguntasRespuestas = async (id: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
-    console.log('id', id);
     if (id && id.length > 0) {
       // Inicializar el contador si no existe
       await initializeCounter(id);
@@ -510,7 +495,6 @@ export const useAgregarEvaluaciones = () => {
           dispatch({ type: AppAction.LOADER_PAGES, payload: false });
         },
         (error: Error) => {
-          console.log('error', error);
           dispatch({ type: AppAction.LOADER_PAGES, payload: false });
         }
       );
@@ -524,7 +508,6 @@ export const useAgregarEvaluaciones = () => {
 
   // Alternativa con timestamp como ID
   const guardarPreguntasRespuestas = async (data: PreguntasRespuestas) => {
-    console.log('data', data);
 
     try {
       // Usar transacción para garantizar atomicidad en el contador
@@ -559,7 +542,6 @@ export const useAgregarEvaluaciones = () => {
         return nextCount;
       });
 
-      console.log(`Pregunta guardada con ID secuencial: ${nextId}`);
     } catch (error) {
       console.error('Error al guardar pregunta con ID secuencial:', error);
       throw error;
@@ -567,7 +549,6 @@ export const useAgregarEvaluaciones = () => {
   };
 
   const addRangosNivel = async (nivelYPuntaje: NivelYPuntaje[], evaluacion: Evaluacion) => {
-    console.log('evaluacion', evaluacion);
     const rutaRef = doc(db, `evaluaciones`, `${evaluacion.id}`);
     await updateDoc(rutaRef, {
       nivelYPuntaje: nivelYPuntaje,
@@ -584,10 +565,6 @@ export const useAgregarEvaluaciones = () => {
       );
 
       if (tieneNoRespondioSeleccionado && pregunta.alternativas && pregunta.respuesta) {
-        console.log('=== PROCESANDO PREGUNTA CON "NO RESPONDIÓ" ===');
-        console.log('Pregunta:', pregunta.pregunta);
-        console.log('Respuesta correcta:', pregunta.respuesta);
-        console.log('Alternativas originales:', pregunta.alternativas);
 
         // Crear una copia de las alternativas
         const alternativasModificadas = [...pregunta.alternativas];
@@ -596,11 +573,9 @@ export const useAgregarEvaluaciones = () => {
         const alternativasElegibles = alternativasModificadas.filter((alternativa) => {
           const esNoRespondio = alternativa.descripcion?.toLowerCase() === "no respondio";
           const coincideConRespuesta = alternativa.alternativa?.toString().toLowerCase() === pregunta.respuesta?.toString().toLowerCase();
-          console.log(`Alternativa: "${alternativa.descripcion}" (valor: "${alternativa.alternativa}") - EsNoRespondio: ${esNoRespondio}, CoincideConRespuesta: ${coincideConRespuesta}`);
           return !esNoRespondio && !coincideConRespuesta;
         });
 
-        console.log('Alternativas elegibles (excluyendo "no respondió" y respuesta correcta):', alternativasElegibles);
 
         // Si hay alternativas elegibles, seleccionar una aleatoriamente
         if (alternativasElegibles.length > 0) {
@@ -613,7 +588,6 @@ export const useAgregarEvaluaciones = () => {
           const indiceAleatorio = Math.floor(Math.random() * alternativasElegibles.length);
           const alternativaSeleccionada = alternativasElegibles[indiceAleatorio];
 
-          console.log('Alternativa seleccionada aleatoriamente:', alternativaSeleccionada);
 
           // Encontrar y seleccionar la alternativa en el array original
           const indiceEnArrayOriginal = alternativasModificadas.findIndex(
@@ -622,7 +596,6 @@ export const useAgregarEvaluaciones = () => {
 
           if (indiceEnArrayOriginal !== -1) {
             alternativasModificadas[indiceEnArrayOriginal].selected = true;
-            console.log('Alternativa seleccionada en el array modificado:', alternativasModificadas[indiceEnArrayOriginal]);
           }
 
           // Eliminar la alternativa "no respondió" del array
@@ -630,18 +603,14 @@ export const useAgregarEvaluaciones = () => {
             (alt) => alt.descripcion?.toLowerCase() !== "no respondio"
           );
 
-          console.log('Alternativas después de eliminar "no respondió":', alternativasSinNoRespondio);
 
           // Actualizar el array de alternativas modificadas
           alternativasModificadas.length = 0;
           alternativasModificadas.push(...alternativasSinNoRespondio);
 
         } else {
-          console.log('No hay alternativas elegibles (todas son "no respondió" o coinciden con la respuesta correcta)');
         }
 
-        console.log('Alternativas finales:', alternativasModificadas);
-        console.log('=== FIN PROCESAMIENTO ===');
 
         return {
           ...pregunta,
@@ -749,7 +718,6 @@ export const useAgregarEvaluaciones = () => {
         }
         await setDoc(rutaEstudianteParaEvaluacion, documentoEstudiante);
       } catch (error) {
-        console.log('error', error);
       } finally {
         dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
       }
@@ -762,7 +730,6 @@ export const useAgregarEvaluaciones = () => {
           dniDirector: currentUserData?.dniDirector || '',
         });
       } catch (error) {
-        console.log('error', error);
       } finally {
         dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
       }
@@ -784,7 +751,6 @@ export const useAgregarEvaluaciones = () => {
 
   const updateEvaluacion = async (evaluacion: Evaluaciones, id: string) => {
     const pathRef = doc(db, 'evaluaciones', `${id}`);
-    console.log('rta', evaluacion);
     await updateDoc(pathRef, { ...evaluacion, timestamp: serverTimestamp() });
     // No es necesario llamar getEvaluaciones() aquí porque onSnapshot ya actualiza automáticamente
     // El re-renderizado completo causaba que la página volviera al top
@@ -795,10 +761,7 @@ export const useAgregarEvaluaciones = () => {
     alternativass: Alternativa[],
     id: string
   ) => {
-    console.log('data final', { ...data, alternativas: alternativass });
     const pathRef = doc(db, `/evaluaciones/${id}/preguntasRespuestas`, `${data.id}`);
-    console.log('alternativasslengh', alternativass.length);
-    console.log('3', alternativass[3]);
     if (alternativass[3] === undefined) {
       await updateDoc(pathRef, {
         order: data.order,
@@ -891,7 +854,6 @@ export const useAgregarEvaluaciones = () => {
 
         // Inicializar el contador con el ID más alto encontrado
         await setDoc(counterRef, { count: maxId });
-        console.log(`Contador inicializado con valor: ${maxId}`);
       }
     } catch (error) {
       console.error('Error al inicializar contador:', error);
@@ -903,10 +865,6 @@ export const useAgregarEvaluaciones = () => {
     idPregunta: string,
     order: number
   ) => {
-    console.log('=== INICIO DELETE PREGUNTA ===');
-    console.log('idEvaluacion:', idEvaluacion);
-    console.log('idPregunta:', idPregunta);
-    console.log('order:', order);
 
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
 
@@ -919,7 +877,6 @@ export const useAgregarEvaluaciones = () => {
       }
 
       // Primero, eliminar la pregunta en una transacción simple
-      console.log('Eliminando pregunta...');
       await runTransaction(db, async (transaction) => {
         // DESPUÉS: Todas las escrituras
         const preguntaRef = doc(
@@ -927,20 +884,15 @@ export const useAgregarEvaluaciones = () => {
           `/evaluaciones/${idEvaluacion}/preguntasRespuestas`,
           idPregunta
         );
-        console.log(
-          'Ruta de la pregunta:',
-          `/evaluaciones/${idEvaluacion}/preguntasRespuestas/${idPregunta}`
-        );
+
         transaction.delete(preguntaRef);
 
         // NO decrementar el contador para mantener IDs únicos
         // El contador debe ser siempre incremental
       });
 
-      console.log('Pregunta eliminada exitosamente');
 
       // Después, reorganizar las preguntas restantes (fuera de la transacción)
-      console.log('Reorganizando preguntas restantes...');
       const preguntasSnapshot = await getDocs(
         collection(db, `/evaluaciones/${idEvaluacion}/preguntasRespuestas`)
       );
@@ -949,23 +901,18 @@ export const useAgregarEvaluaciones = () => {
       preguntasSnapshot.forEach((doc) => {
         const pregunta = doc.data();
         if (pregunta.order > order) {
-          console.log(
-            `Actualizando orden de pregunta ${doc.id} de ${pregunta.order} a ${pregunta.order - 1}`
-          );
+
           batch.update(doc.ref, { order: pregunta.order - 1 });
         }
       });
 
       // Ejecutar todas las actualizaciones de orden
       await batch.commit();
-      console.log('Orden de preguntas actualizado');
 
       // Recargar las preguntas
-      console.log('Recargando preguntas...');
       await getPreguntasRespuestas(idEvaluacion);
 
       dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
-      console.log('=== FIN DELETE PREGUNTA EXITOSO ===');
     } catch (error) {
       console.error('=== ERROR AL BORRAR LA PREGUNTA ===');
       console.error('Error details:', error);
@@ -991,7 +938,6 @@ export const useAgregarEvaluaciones = () => {
       const counterRef = doc(db, `/evaluaciones/${idEvaluacion}/metadata/counter`);
       await setDoc(counterRef, { count: maxId }, { merge: true });
 
-      console.log(`Contador reparado. Nuevo valor: ${maxId}`);
     } catch (error) {
       console.error('Error al reparar contador:', error);
     }
@@ -1002,7 +948,6 @@ export const useAgregarEvaluaciones = () => {
     const pathRef = collection(db, `evaluaciones/${evaluacion.id}/preguntasRespuestas`);
     const preguntasRespuestas = await getDocs(pathRef);
     if (preguntasRespuestas.size > 0) {
-      console.log('entramos a la validación de preguntas y puntajes')
       const arrayPreguntasRespuestas: PreguntasRespuestas[] = [];
       preguntasRespuestas.forEach((doc) => {
         arrayPreguntasRespuestas.push({ ...doc.data(), id: doc.id });
@@ -1022,7 +967,6 @@ export const useAgregarEvaluaciones = () => {
         // Verificar que sea un número válido
         return !isNaN(puntajeNumerico) && isFinite(puntajeNumerico);
       });
-      console.log('tienePuntajeValido', tienePuntajeValido)
 
       // Calcular la suma total de puntajes
       const sumaTotalPuntajes = arrayPreguntasRespuestas.reduce((sum, pregunta) => {
@@ -1033,7 +977,6 @@ export const useAgregarEvaluaciones = () => {
         return sum + (isNaN(puntaje) ? 0 : puntaje);
       }, 0);
 
-      console.log('sumaTotalPuntajes', sumaTotalPuntajes);
 
       return { tienePuntajeValido, totalPreguntas: preguntasRespuestas.size, sumaTotalPuntajes, preguntas: arrayPreguntasRespuestas };
     } else {

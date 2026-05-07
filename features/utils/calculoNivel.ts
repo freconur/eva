@@ -1,7 +1,6 @@
 import { Estudiante, Evaluacion, PreguntasRespuestas, UserEstudiante } from "../types/types";
 
 export const calculoNivel = (data:UserEstudiante | Estudiante, evaluacion:Evaluacion) => {
-    console.log('estudiantes antes de calcular el nivel', data);
     
     let puntajeAcumulado = 0;
     let tienePuntajes = false;
@@ -18,7 +17,6 @@ export const calculoNivel = (data:UserEstudiante | Estudiante, evaluacion:Evalua
                         const puntajePregunta = Number(pregunta.puntaje);
                         puntajeAcumulado = puntajeAcumulado + puntajePregunta;
                     } else {
-                        console.log('calculoNivel - pregunta sin puntaje válido:', pregunta.puntaje);
                     }
                 }
             }
@@ -210,6 +208,5 @@ export function agregarPuntajesARespuestas(
   
     // Retornar el estudiante con las respuestas mutadas (más eficiente que spread)
     estudiante.respuestas = respuestas;
-    console.log('estudiante', estudiante)
     return estudiante;
   }

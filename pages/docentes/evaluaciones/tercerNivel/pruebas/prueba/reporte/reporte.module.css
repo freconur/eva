@@ -1,11 +1,10 @@
 /* Container Principal */
 .container {
-  display: grid;
-  justify-content: center;
-  align-items: center;
+  display: block;
   position: relative;
   z-index: 10;
   width: 100%;
+  overflow: visible;
 }
 
 .content {
@@ -17,7 +16,7 @@
   justify-content: flex-start;
   align-items: stretch;
   box-sizing: border-box;
-  overflow-x: auto;
+  overflow: visible !important;
   padding: 1.5rem 1rem;
 }
 
@@ -57,6 +56,183 @@
 }
 
 /* Botón Excel - Verde */
+.exportButtonsGroup {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Custom Dropdown Styles */
+.customDropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdownTrigger {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  background-color: #ffffff;
+  color: #111827;
+  border: 1.5px solid #3b82f6;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.875rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 200px;
+  justify-content: space-between;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dropdownTrigger:hover:not(:disabled) {
+  background-color: #f0f7ff;
+  border-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06);
+}
+
+.dropdownTrigger:disabled {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.dropdownActive {
+  border-color: #1d4ed8;
+  background-color: #f0f7ff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.dropdownIcon {
+  font-size: 1.125rem;
+  color: #3b82f6;
+}
+
+.arrowIcon {
+  font-size: 1rem;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.arrowRotate {
+  transform: rotate(180deg);
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  min-width: 280px;
+  z-index: 1000;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.dropdownItem:hover:not(.itemDisabled) {
+  background-color: #f9fafb;
+}
+
+.dropdownItem:active:not(.itemDisabled) {
+  background-color: #f3f4f6;
+}
+
+.itemDisabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.itemIconPdf {
+  font-size: 1.5rem;
+  color: #ef4444;
+}
+
+.itemIconExcel {
+  font-size: 1.5rem;
+  color: #10b981;
+}
+
+.itemIconQuestions {
+  font-size: 1.5rem;
+  color: #8b5cf6;
+}
+
+.itemContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.itemTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.itemDescription {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.pdfTableButton {
+  background-color: #3b82f6; /* Azul para PDF */
+  color: #ffffff;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.pdfTableButton:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.pdfTableButton:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
 .exportButton {
   border-color: #10b981;
   color: #059669;
@@ -129,6 +305,65 @@
   margin-bottom: 1.5rem;
   position: relative;
   overflow: hidden;
+}
+
+.levelLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  align-items: center;
+}
+
+.levelLegendTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 0.5rem;
+}
+
+.levelLegendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.levelLegendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+  background-color: #ccc; /* Fallback */
+}
+
+.nivelSatisfactorio {
+  background-color: var(--satisfactorio) !important;
+}
+
+.nivelEnProceso {
+  background-color: var(--en-proceso) !important;
+}
+
+.nivelEnInicio {
+  background-color: var(--inicio) !important;
+}
+
+.nivelPrevioInicio {
+  background-color: var(--previo-al-inicio) !important;
+}
+
+.nivelSinClasificar {
+  background-color: #f3f4f6 !important;
 }
 
 .controlSection {
@@ -307,9 +542,6 @@
 
 /* Gráficos Container */
 .graficosContainer {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
   margin: 1.5rem 0;
   width: 100%;
 }

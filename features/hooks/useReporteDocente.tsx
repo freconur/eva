@@ -176,7 +176,6 @@ export const useReporteDocente = () => {
           });
         },
         (error) => {
-          console.error(`Error en onSnapshot para el mes ${mes}:`, error);
         }
       );
 
@@ -434,7 +433,7 @@ export const useReporteDocente = () => {
           );
           await setDoc(docRefEstudianteEvaluado, estudianteUpdate, { merge: true });
         } catch (error) {
-          console.log('error', error);
+
         }
       }
     } else if (evaluacion.tipoDeEvaluacion === '0') {
@@ -442,7 +441,7 @@ export const useReporteDocente = () => {
         const dataEstudiante = calculoPreguntasCorrectas(data);
         await updateDoc(docRef, dataEstudiante);
       } catch (error) {
-        console.log('error', error);
+
       }
     }
   };

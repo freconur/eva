@@ -45,23 +45,23 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
       return opcion.toLowerCase() === respuesta.toLowerCase();
     };
 
-    const getLabel = (opcion: string) => {
+    const getLabel = (opcion: string, valor: number, porcentaje: number) => {
       const label = opcion.toUpperCase();
-      return `${label}${esRespuestaCorrecta(opcion) ? ' ✓' : ''}`;
+      const check = esRespuestaCorrecta(opcion) ? ' ✓' : '';
+      return `${label}(${valor} - ${porcentaje}%)${check}`;
     };
 
     if (numOpciones === 3) {
       // Para 3 opciones: redondear las primeras 2 y calcular la tercera
       const porcentajeA = Math.round(porcentajeARaw);
       const porcentajeB = Math.round(porcentajeBRaw);
-      // @ts-ignore
       const porcentajeC = Math.max(0, 100 - porcentajeA - porcentajeB);
 
       // Crear etiquetas solo para las 3 opciones con check para la respuesta correcta
       const labels = [
-        getLabel('a'),
-        getLabel('b'),
-        getLabel('c')
+        getLabel('a', Number(data.a || 0), porcentajeA),
+        getLabel('b', Number(data.b || 0), porcentajeB),
+        getLabel('c', Number(data.c || 0), porcentajeC)
       ];
 
       // Usar el hook para preparar los datos del gráfico
@@ -76,15 +76,14 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
       const porcentajeA = Math.round(porcentajeARaw);
       const porcentajeB = Math.round(porcentajeBRaw);
       const porcentajeC = Math.round(porcentajeCRaw);
-      // @ts-ignore
       const porcentajeD = Math.max(0, 100 - porcentajeA - porcentajeB - porcentajeC);
 
       // Crear etiquetas para las 4 opciones con check para la respuesta correcta
       const labels = [
-        getLabel('a'),
-        getLabel('b'),
-        getLabel('c'),
-        getLabel('d')
+        getLabel('a', Number(data.a || 0), porcentajeA),
+        getLabel('b', Number(data.b || 0), porcentajeB),
+        getLabel('c', Number(data.c || 0), porcentajeC),
+        getLabel('d', Number(data.d || 0), porcentajeD)
       ];
 
       // Usar el hook para preparar los datos del gráfico
@@ -268,7 +267,7 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
                           if (chartRef && chartRef.canvas) {
                             setTimeout(() => {
                               convertirGraficoAImagen(dat.id || '', chartRef.canvas);
-                            }, 100);
+                            }, 500); // Aumentado a 500ms para asegurar renderizado
                           }
                         }}
                       />
