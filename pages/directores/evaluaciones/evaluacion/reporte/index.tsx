@@ -271,13 +271,14 @@ const Reporte = () => {
 
   // Auto-seleccionar grado de la evaluación para Directores
   useEffect(() => {
+    if (!route.isReady) return;
     const gradoEvaluacion = evaluacion?.grado;
     if (currentUserData?.rol === 2 && gradoEvaluacion && !filtros.grado) {
-      const gradoFormatted = convertGrade(String(gradoEvaluacion));
-      setFiltros((prev: any) => ({ ...prev, grado: gradoFormatted }));
-      updateQuery({ grado: gradoFormatted });
+      const gradoId = String(gradoEvaluacion);
+      setFiltros((prev: any) => ({ ...prev, grado: gradoId }));
+      updateQuery({ grado: gradoId });
     }
-  }, [currentUserData?.rol, evaluacion, filtros.grado, updateQuery, setFiltros]);
+  }, [currentUserData?.rol, evaluacion, filtros.grado, updateQuery, setFiltros, route.isReady]);
 
   // Bloque movido abajo para evitar errores de referencia
   const nivelesLeyenda: any[] = ((evaluacion as any)?.niveles?.length > 0)
@@ -290,15 +291,16 @@ const Reporte = () => {
       ];
 
   const handleLimpiarFiltros = () => {
+    const gradoDefault = currentUserData?.rol === 2 ? String(evaluacion?.grado || filtros.grado) : '';
     setFiltros({
-      grado: currentUserData?.rol === 2 ? filtros.grado : '',
+      grado: gradoDefault,
       seccion: '',
       orden: '',
       genero: '',
       nivel: '',
     });
     updateQuery({ 
-      grado: currentUserData?.rol === 2 ? filtros.grado : '', 
+      grado: gradoDefault, 
       seccion: '', 
       orden: '', 
       genero: '', 
@@ -507,15 +509,18 @@ const Reporte = () => {
 
 
   const handleChangeMonth = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (val === "") return;
+
     setLoadingMonth(true);
-    const selectedMonth = getAllMonths.find((mes) => mes.name === e.target.value);
-    const newMonth = selectedMonth ? selectedMonth.id : currentMonth;
+    const newMonth = Number(val);
 
     // Limpiar las imágenes de gráficos cuando cambie el mes
     limpiarImagenes();
-    // Limpiar filtros cuando cambie el mes
+    // Limpiar filtros cuando cambie el mes (preservando grado si es director)
+    const gradoDefault = currentUserData?.rol === 2 ? String(evaluacion?.grado || filtros.grado) : '';
     setFiltros({
-      grado: '',
+      grado: gradoDefault,
       seccion: '',
       orden: '',
       genero: '',
@@ -614,13 +619,13 @@ const Reporte = () => {
                 <select
                   className={styles.select}
                   onChange={handleChangeMonth}
-                  value={getAllMonths[monthSelected]?.name || ''}
+                  value={monthSelected}
                   disabled={loadingMonth}
                   id=""
                 >
                   <option value="">Mes</option>
                   {getAllMonths.filter(mes => mesesConDataDisponibles.includes(mes.id)).map((mes) => (
-                    <option key={mes.id} value={mes.name}>
+                    <option key={mes.id} value={mes.id}>
                       {mes.name}
                     </option>
                   ))}
