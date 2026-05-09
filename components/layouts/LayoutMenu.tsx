@@ -10,6 +10,7 @@ import SidebarAdmin from '../sidebar/SidebarAdmin'
 import Image from 'next/image'
 import logo from '@/assets/cl-logo.png'
 import styles from './layout.module.css'
+import ModalTipoGestion from '@/modals/ModalTipoGestion'
 
 interface Props {
   children: JSX.Element | JSX.Element[]
@@ -102,6 +103,13 @@ const LayoutMenu = ({ children }: Props) => {
           {children}
         </main>
       </div>
+
+      {/* Modal obligatorio para directores sin tipo de gestión definido */}
+      {currentUserData.perfil?.rol === 2 &&
+        currentUserData.tipoGestion === undefined &&
+        router.pathname !== '/login' && (
+          <ModalTipoGestion currentUserData={currentUserData} />
+      )}
     </div>
   )
 }

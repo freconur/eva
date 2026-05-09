@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
+import CustomDropdown from '@/components/common/CustomDropdown'
 import { RiCloseLine, RiLoader4Line, RiFileExcel2Line } from 'react-icons/ri'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
@@ -14,7 +15,7 @@ interface Props {
 }
 
 const DirectorModal = ({ onClose }: Props) => {
-    const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
+    const { register, handleSubmit, watch, reset, control, formState: { errors } } = useForm()
     const { createNewDirector, getRegiones, createMassiveDirectors } = useUsuario()
     const { regiones, loaderPages, warningUsuarioExiste } = useGlobalContext()
     const [distritos, setDistritos] = useState<string[]>([])
@@ -309,16 +310,20 @@ const DirectorModal = ({ onClose }: Props) => {
                             </div>
 
                             <div className={styles.formGroup}>
-                                <label className={styles.label}>UGEL</label>
-                                <select
-                                    {...register("region", { required: "Requerido" })}
-                                    className={styles.select}
-                                >
-                                    <option value="">Seleccione UGEL</option>
-                                    {regiones?.map((region, index) => (
-                                        <option key={index} value={Number(region.codigo)}>{region.region?.toUpperCase()}</option>
-                                    ))}
-                                </select>
+                                <Controller
+                                    name="region"
+                                    control={control}
+                                    rules={{ required: "Requerido" }}
+                                    render={({ field }) => (
+                                        <CustomDropdown
+                                            label="UGEL"
+                                            options={regiones?.map(r => ({ id: Number(r.codigo), region: r.region || '' })) || []}
+                                            value={field.value ? Number(field.value) : undefined}
+                                            onChange={(val) => field.onChange(val)}
+                                            placeholder="Seleccione UGEL"
+                                        />
+                                    )}
+                                />
                                 {errors.region && <span className={styles.error}>{errors.region.message as string}</span>}
                             </div>
 

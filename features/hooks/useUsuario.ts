@@ -35,7 +35,7 @@ const useUsuario = () => {
   /* const URL_API = "http://localhost:3001/" */
   const auth = getAuth(app);
   const db = getFirestore(app);
-  const { currentUserData } = useGlobalContext();
+  const { currentUserData, docentesDeDirectores, usuariosDirectores } = useGlobalContext();
   const dispatch = useGlobalContextDispatch();
 
   const getUsersDirectores = async () => {
@@ -115,6 +115,7 @@ const useUsuario = () => {
           distrito: user.data()?.distrito || '',
           email: user.data()?.email || '',
           celular: user.data()?.celular || '',
+          tipoGestion: user.data()?.tipoGestion || undefined,
         },
       });
     } else {
@@ -528,6 +529,45 @@ const useUsuario = () => {
     getAllEspecialistas(); // Actualizamos la lista después de modificar
   };
 
+  const updateTipoGestion = async (dni: string, tipoGestion: 'publico' | 'privado') => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    try {
+      const { functions } = await import('@/firebase/firebase.config');
+      const { httpsCallable } = await import('firebase/functions');
+      const actualizarUsuarioFn = httpsCallable(functions, 'actualizarUsuario');
+
+      await actualizarUsuarioFn({ dni, data: { tipoGestion } });
+
+      // Si el DNI actualizado es el del usuario logueado, actualizamos su contexto (para cerrar el modal)
+      if (dni === currentUserData.dni) {
+        dispatch({
+          type: AppAction.CURRENT_USER_DATA,
+          payload: { ...currentUserData, tipoGestion },
+        });
+      }
+
+      // Actualizar en tiempo real las listas de directores que puedan estar mostrándose
+      const nuevaListaDocentes = docentesDeDirectores.map((d) =>
+        d.dni === dni ? { ...d, tipoGestion } : d
+      );
+      dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: nuevaListaDocentes });
+
+      const nuevaListaUsuarios = usuariosDirectores.map((d) =>
+        d.dni === dni ? { ...d, tipoGestion } : d
+      );
+      dispatch({ type: AppAction.USUARIOS_DIRECTORES, payload: nuevaListaUsuarios });
+
+      toast.success(`Gestión actualizada a ${tipoGestion}`);
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return true;
+    } catch (error) {
+      console.error('Error al actualizar tipoGestion:', error);
+      toast.error("Error al actualizar el tipo de gestión");
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return false;
+    }
+  };
+
   return {
     getDirectorById,
     signIn,
@@ -548,6 +588,7 @@ const useUsuario = () => {
     checkCustomClaims,
     createMassiveDirectors,
     createMassiveTeachers,
+    updateTipoGestion,
   };
 };
 

@@ -387,6 +387,7 @@ export type User = {
   id?: string;
   idFase?: string;
   numeroEvaluacion?: number;
+  tipoGestion?: 'publico' | 'privado';
 };
 
 export type ConocimientoPedagogico = {

@@ -26,11 +26,11 @@
 }
 
 .tableHeader th {
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1rem;
     text-align: left;
     font-weight: 600;
     color: #64748b;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-bottom: 1px solid #e2e8f0;
@@ -54,6 +54,21 @@
     background-color: #f8fafc;
 }
 
+.tableRow {
+    animation: fadeInRow 0.4s ease-out;
+}
+
+@keyframes fadeInRow {
+    0% {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Hover específico para el enlace dentro de la celda */
 .tableBody tr:hover .tableLink {
     color: #2563eb;
@@ -61,10 +76,10 @@
 }
 
 .tableCell {
-    padding: 1rem 1.5rem;
+    padding: 0.65rem 1rem;
     border-bottom: 1px solid #f1f5f9;
     color: #334155;
-    font-size: 0.875rem;
+    font-size: 0.85rem;
 }
 
 /* Formulario de búsqueda minimalista */
@@ -108,8 +123,21 @@
 }
 
 .button:hover {
-    background-color: #2563eb;
-    transform: translateY(-1px);
+    background-color: #1d4ed8;
+}
+
+.buttonSpinner {
+    animation: spinButton 1s linear infinite;
+    font-size: 1.25rem;
+}
+
+@keyframes spinButton {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Acciones minimalistas */

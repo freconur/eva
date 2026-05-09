@@ -1,7 +1,8 @@
 import React, { useEffect, useCallback, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useForm, SubmitHandler } from 'react-hook-form'
+import { useForm, SubmitHandler, Controller } from 'react-hook-form'
 import { RiCloseLine, RiLoader4Line } from 'react-icons/ri'
+import CustomDropdown from '@/components/common/CustomDropdown'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import useUsuario from '@/features/hooks/useUsuario'
 import { genero, tipoEspecialista, nivelInstitucion } from '@/fuctions/regiones'
@@ -109,7 +110,7 @@ const FormCheckbox = ({ label, register, errors, name, options }: {
 )
 
 const AdminEspecialistaModal = ({ onClose }: Props) => {
-    const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>()
+    const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormValues>()
     const { createNewEspecialista, getRegiones } = useUsuario()
     const { regiones, loaderPages } = useGlobalContext()
 
@@ -174,13 +175,23 @@ const AdminEspecialistaModal = ({ onClose }: Props) => {
                             }}
                         />
 
-                        <FormSelect
-                            label="Ugel"
-                            name="region"
-                            register={register}
-                            errors={errors}
-                            options={regiones?.map(r => ({ codigo: r.codigo || 0, region: r.region || '' })) || []}
-                        />
+                        <div className={styles.formGroup}>
+                            <Controller
+                                name="region"
+                                control={control}
+                                rules={{ required: "Ugel es requerida" }}
+                                render={({ field }) => (
+                                    <CustomDropdown
+                                        label="Ugel"
+                                        options={regiones?.map(r => ({ id: Number(r.codigo), region: r.region || '' })) || []}
+                                        value={field.value ? Number(field.value) : undefined}
+                                        onChange={(val) => field.onChange(val)}
+                                        placeholder="Seleccione UGEL"
+                                    />
+                                )}
+                            />
+                            {errors.region && <span className={styles.error}>{errors.region.message as string}</span>}
+                        </div>
 
                         <FormInput
                             label="Nombres"

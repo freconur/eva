@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { addDoc, collection, doc, getDoc, getDocs, getFirestore, limit, onSnapshot, orderBy, query, setDoc, startAfter, updateDoc, where, QueryDocumentSnapshot, DocumentData, writeBatch, deleteDoc } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, getDocs, getFirestore, limit, onSnapshot, orderBy, query, setDoc, startAfter, updateDoc, where, QueryDocumentSnapshot, DocumentData, writeBatch, deleteDoc, startAt, endAt, getCountFromServer } from "firebase/firestore";
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AnexosCurricularType, CaracteristicaCurricular, DataEstadisticas, DataEstadisticasCurricular, EstandaresCurriculares, EvaluacionCurricular, EvaluacionCurricularAlternativa, EvaluacionHabilidad, PaHanilidad, ResultadosAcumuladosCC, User } from '../types/types';
 import { AppAction } from '../actions/appAction';
@@ -230,12 +230,17 @@ const useEvaluacionCurricular = () => {
     return unsubscribe
   }
 
-  const getDirectoresTabla = async (usuario: User) => {
+  const getDirectoresTabla = async (usuario: User, regionId?: number) => {
     const pathRef = collection(db, 'usuarios')
 
-    // Si es Administrador (rol 4), trae todos los directores sin importar la región con paginación
-    if (usuario.rol === 4) {
-      const q = query(pathRef, where("rol", "==", 2), orderBy("apellidos"), limit(50));
+    // Si es Administrador (rol 5) o Especialista Regional (rol 4)
+    if (usuario.rol === 4 || usuario.rol === 5) {
+      let q = query(pathRef, where("rol", "==", 2), orderBy("apellidos"), limit(50));
+      
+      if (regionId) {
+        q = query(pathRef, where("rol", "==", 2), where("region", "==", regionId), orderBy("apellidos"));
+      }
+
       const querySnapshot = await getDocs(q);
       const usuarios: User[] = [];
       querySnapshot.forEach(doc => {
@@ -253,15 +258,18 @@ const useEvaluacionCurricular = () => {
 
     // Lógica para Especialistas (rol 1) y otros
     const nivelesEspecialista = usuario.nivelDeInstitucion || [];
+    
+    // Si se pasa un regionId, lo usamos; de lo contrario usamos la región del usuario
+    const targetRegion = regionId || usuario.region;
 
-    let q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2));
+    let q = query(pathRef, where("region", "==", targetRegion), where("rol", "==", 2));
 
     if (nivelesEspecialista.includes(1) && nivelesEspecialista.includes(2)) {
-      q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains-any", [1, 2]));
+      q = query(pathRef, where("region", "==", targetRegion), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains-any", [1, 2]));
     } else if (nivelesEspecialista.includes(1)) {
-      q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains", 1));
+      q = query(pathRef, where("region", "==", targetRegion), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains", 1));
     } else if (nivelesEspecialista.includes(2)) {
-      q = query(pathRef, where("region", "==", usuario.region), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains", 2));
+      q = query(pathRef, where("region", "==", targetRegion), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains", 2));
     }
 
     onSnapshot(q, (querySnapshot) => {
@@ -500,12 +508,64 @@ const useEvaluacionCurricular = () => {
 
   }
 
+  const getDirectoresBySearch = async (usuario: User, term: string, regionId?: number) => {
+    const pathRef = collection(db, 'usuarios');
+    
+    if (!term.trim()) {
+      getDirectoresTabla(usuario, regionId);
+      return;
+    }
+
+    const searchTerm = term.toUpperCase();
+    const targetRegion = regionId || usuario.region;
+
+    // Función interna para evitar repetir la lógica de filtros de región
+    const createSearchQuery = (field: string) => {
+      if ((usuario.rol === 4 || usuario.rol === 5) && !regionId) {
+        return query(
+          pathRef,
+          where("rol", "==", 2),
+          orderBy(field),
+          startAt(searchTerm),
+          endAt(searchTerm + '\uf8ff')
+        );
+      } else {
+        return query(
+          pathRef,
+          where("rol", "==", 2),
+          where("region", "==", targetRegion),
+          orderBy(field),
+          startAt(searchTerm),
+          endAt(searchTerm + '\uf8ff')
+        );
+      }
+    };
+
+    try {
+      // Intentar búsqueda por NOMBRES primero
+      let querySnapshot = await getDocs(createSearchQuery("nombres"));
+
+      // Si no hay resultados, intentar por APELLIDOS
+      if (querySnapshot.empty) {
+        querySnapshot = await getDocs(createSearchQuery("apellidos"));
+      }
+
+      const usuarios: User[] = [];
+      querySnapshot.forEach(doc => {
+        usuarios.push({ ...doc.data() });
+      });
+      dispatch({ type: AppAction.DOCENTES_DIRECTORES, payload: usuarios });
+    } catch (error) {
+      console.error("Error en búsqueda secuencial por Firestore:", error);
+    }
+  }
+
   const getDirectorFromEspecialistaCurricular = async (rol: number, dniDirector: string) => {
     const pathRef = collection(db, 'usuarios')
     let q;
 
     // Si es Administrador (rol 4), busca el director por DNI globalmente (sin restricción de región)
-    if (currentUserData.rol === 4) {
+    if (currentUserData.rol === 4 || currentUserData.rol === 5) {
       q = query(pathRef, where("rol", "==", rol), where("dni", "==", dniDirector));
     } else {
       // Lógica existente para Especialistas: restringe por región
@@ -1242,6 +1302,18 @@ const useEvaluacionCurricular = () => {
     })
 
   }
+  const getTotalDirectoresCount = async (regionId?: number) => {
+    const pathRef = collection(db, 'usuarios')
+    let q;
+    if (regionId) {
+      q = query(pathRef, where("rol", "==", 2), where("region", "==", regionId));
+    } else {
+      q = query(pathRef, where("rol", "==", 2));
+    }
+    const snapshot = await getCountFromServer(q);
+    return snapshot.data().count;
+  }
+
   return {
     createEvaluacionCurricular,
     getEvaluacionCurricular,
@@ -1273,6 +1345,7 @@ const useEvaluacionCurricular = () => {
     getPreviousUsuariosDocentes,
     getDocentesToTable,
     getDirectoresTabla,
+    getDirectoresBySearch,
     getUsuarioMaster,
     getEspecialistaToAdmin,
     getEstandaresCurriculares,
@@ -1286,8 +1359,9 @@ const useEvaluacionCurricular = () => {
     tituloCoberturaCurricular,
     reporteEspecialistaCCDocentes,
     reporteCCDirectorFilterEspecialista,
+    getPreviousDirectoresAdmin,
     getNextDirectoresAdmin,
-    getPreviousDirectoresAdmin
+    getTotalDirectoresCount
   }
 }
 export default useEvaluacionCurricular

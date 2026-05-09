@@ -3,26 +3,61 @@ import React, { useState } from 'react'
 import styles from './tablasUsuarios.module.css'
 import Link from 'next/link'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
-import { convertRolToPath, convertRolToTitle } from '@/fuctions/regiones'
+import { convertRolToPath, convertRolToTitle, regionTexto } from '@/fuctions/regiones'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
-import { RiDeleteBinLine } from 'react-icons/ri'
+import { RiDeleteBinLine, RiLoader4Line } from 'react-icons/ri'
 import { MdEditSquare } from 'react-icons/md'
 import UpdateUsuarioDirector from '@/modals/updateUsuarioDirector'
 import DeleteUsuario from '@/modals/deleteUsuario'
 import Loader from '@/components/loader/loader'
 import { useEffect } from 'react'
+import useUsuario from '@/features/hooks/useUsuario'
 
 
 interface TablaUsuariosProps {
 	docentesDeDirectores: User[],
-	rol: number
+	rol: number,
+	isSearching?: boolean,
+	isLoadingExternal?: boolean,
+	isFiltered?: boolean,
+	searchTerm?: string,
+	showGestionHelp?: boolean,
+	onDisablePopupsPermanently?: () => void
 }
-const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
+const HighlightedText = ({ text, highlight }: { text: string; highlight: string }) => {
+	if (!highlight.trim()) return <>{text}</>;
+
+	const parts = text.split(new RegExp(`(${highlight.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')})`, 'gi'));
+	return (
+		<>
+			{parts.map((part, index) =>
+				part.toLowerCase() === highlight.toLowerCase() ? (
+					<mark key={index} style={{ backgroundColor: '#fde047', color: '#1e293b', padding: '0 2px', borderRadius: '2px', fontWeight: '700' }}>{part}</mark>
+				) : (
+					part
+				)
+			)}
+		</>
+	);
+};
+
+const TablaDirectores = ({ 
+	docentesDeDirectores, 
+	rol, 
+	isSearching, 
+	isLoadingExternal, 
+	isFiltered, 
+	searchTerm, 
+	showGestionHelp, 
+	onDisablePopupsPermanently 
+}: TablaUsuariosProps) => {
+	const [showLocalPopup, setShowLocalPopup] = useState(true)
 	const { currentUserData, resultadoBusquedaUsuario, lastVisible, warningDataDocente } = useGlobalContext()
 	const [dniUsuario, setDniUsuario] = useState<string>("")
 	const [error, setError] = useState<string>("")
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const { getDirectorFromEspecialistaCurricular, getNextUsuarios, getPreviousUsuarios, getNextUsuariosEspecialista, getPreviousUsuariosEspecialista, getNextDirectoresAdmin, getPreviousDirectoresAdmin } = useEvaluacionCurricular()
+	const { updateTipoGestion } = useUsuario()
 	const [docente, setDocente] = useState<User>({})
 	const [showUpdateDirector, setShowUpdateDirector] = useState(false)
 	const [idDirector, setIdDirector] = useState<string>("")
@@ -91,7 +126,9 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 									onChange={handleDniChange}
 									maxLength={8}
 								/>
-								<button type='submit' className={styles.button}>Buscar</button>
+								<button type='submit' className={styles.button} disabled={isLoading}>
+									{isLoading ? <RiLoader4Line className={styles.buttonSpinner} /> : 'Buscar'}
+								</button>
 							</div>
 							{error && <span className={styles.errorMessage}>{error}</span>}
 						</div>
@@ -115,17 +152,38 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 						<p><strong>DNI:</strong> {resultadoBusquedaUsuario.dni}</p>
 						<p><strong>Nombres:</strong> {resultadoBusquedaUsuario.nombres?.toLocaleUpperCase()}</p>
 						<p><strong>Apellidos:</strong> {resultadoBusquedaUsuario.apellidos?.toLocaleUpperCase()}</p>
+						<p><strong>UGEL:</strong> {regionTexto(String(resultadoBusquedaUsuario.region))}</p>
 					</div>
 				) : (
 					<p>{warningDataDocente}</p>
 				)}
 			</div>
-			<table className={styles.table}>
+			<table className={`${styles.table} ${isLoadingExternal ? styles.tableLoading : ''}`}>
 				<thead className={styles.tableHeader}>
 					<tr>
 						<th>#</th>
 						<th>DNI</th>
 						<th>Directores</th>
+						<th>Institución</th>
+						<th>UGEL</th>
+						<th className={styles.relativeHeader}>
+							Gestión
+							{showLocalPopup && showGestionHelp && (
+								<div className={styles.popupContainerHeader}>
+									<div className={styles.tourArrow}></div>
+									<div className={styles.tourCardCompact}>
+										<div className={styles.tourContentCompact}>
+											<span className={styles.newBadge}>NUEVO</span>
+											<p>⚙️ Ahora puedes actualizar los datos de gestion de los directores a publico y privado</p>
+											<button className={styles.dontShowAgainBtn} onClick={onDisablePopupsPermanently}>
+												No volver a mostrar
+											</button>
+										</div>
+										<button className={styles.popupCloseBtn} onClick={() => setShowLocalPopup(false)}>&times;</button>
+									</div>
+								</div>
+							)}
+						</th>
 						<th></th>
 					</tr>
 				</thead>
@@ -133,15 +191,32 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 					{
 						docentesDeDirectores?.map((director, index) => {
 							return (
-								<tr key={index} className={styles.tableRow}>
+								<tr key={director.dni || index} className={styles.tableRow}>
 									<td className={styles.tableCell}>
 										{index + 1}
 									</td>
 									<td className={styles.tableCell}>
-										{director.dni}
+										<HighlightedText text={director.dni || ''} highlight={searchTerm || ''} />
 									</td>
 									<td className={styles.tableCell}>
-										{director.nombres?.toLocaleUpperCase()} {director.apellidos?.toLocaleUpperCase()}
+										<HighlightedText text={director.nombres?.toLocaleUpperCase() || ''} highlight={searchTerm || ''} /> <HighlightedText text={director.apellidos?.toLocaleUpperCase() || ''} highlight={searchTerm || ''} />
+									</td>
+									<td className={styles.tableCell}>
+										<HighlightedText text={director.institucion?.toLocaleUpperCase() || ''} highlight={searchTerm || ''} />
+									</td>
+									<td className={styles.tableCell}>
+										{regionTexto(String(director.region))}
+									</td>
+									<td className={styles.tableCell}>
+										<select
+											value={director.tipoGestion || ''}
+											onChange={(e) => updateTipoGestion(director.dni || '', e.target.value as 'publico' | 'privado')}
+											className={`${styles.gestionSelect} ${director.tipoGestion === 'publico' ? styles.selectPublic : director.tipoGestion === 'privado' ? styles.selectPrivate : ''}`}
+										>
+											<option value="" disabled>Sin definir</option>
+											<option value="publico">Público</option>
+											<option value="privado">Privado</option>
+										</select>
 									</td>
 									<td >
 										<div className={styles.actions}>
@@ -155,8 +230,8 @@ const TablaDirectores = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
 					}
 				</tbody>
 			</table>
-			{/* Paginación solo para administradores */}
-			{currentUserData.rol === 4 && (
+			{/* Paginación solo para administradores/especialistas regionales y cuando no hay búsqueda ni filtros activos */}
+			{(currentUserData.rol === 4 || currentUserData.rol === 5) && !isSearching && !isFiltered && (
 				<div className={styles.paginationContainer} style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '10px' }}>
 					<button
 						className={styles.button}

@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react'
 import styles from './tablasUsuarios.module.css'
 import Link from 'next/link'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
-import { convertRolToPath, convertRolToTitle } from '@/fuctions/regiones'
+import { convertRolToPath, convertRolToTitle, regionTexto } from '@/fuctions/regiones'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import UpdateDataDocente from '@/modals/updateDocente'
 import DeleteUsuario from '@/modals/deleteUsuario'
 import { MdEditSquare } from 'react-icons/md'
-import { RiDeleteBinLine } from 'react-icons/ri'
+import { RiDeleteBinLine, RiLoader4Line } from 'react-icons/ri'
 
 interface TablaUsuariosProps {
 	docentesDeDirectores: User[],
@@ -32,6 +32,12 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores, rol }: TablaUsu
 	const endIndex = startIndex + itemsPerPage
 	const currentItems = docentesDeDirectores.slice(startIndex, endIndex)
 	const totalPages = Math.ceil(docentesDeDirectores.length / itemsPerPage)
+	
+	useEffect(() => {
+		if (Object.keys(resultadoBusquedaUsuario).length > 0 || warningDataDocente) {
+			setIsLoading(false)
+		}
+	}, [resultadoBusquedaUsuario, warningDataDocente])
 
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
@@ -39,6 +45,7 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores, rol }: TablaUsu
 			setError("El DNI debe tener 8 dígitos")
 			return
 		} else {
+			setIsLoading(true)
 			getEspecialistaToAdmin(rol, dniUsuario)
 			console.log(dniUsuario)
 			setError("")
@@ -98,7 +105,9 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores, rol }: TablaUsu
 									onChange={handleDniChange}
 									maxLength={8}
 								/>
-								<button type='submit' className={styles.button}>Buscar</button>
+								<button type='submit' className={styles.button} disabled={isLoading}>
+									{isLoading ? <RiLoader4Line className={styles.buttonSpinner} /> : 'Buscar'}
+								</button>
 							</div>
 							{error && <span className={styles.errorMessage}>{error}</span>}
 						</div>
@@ -117,6 +126,7 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores, rol }: TablaUsu
 						<p><strong>DNI:</strong> {resultadoBusquedaUsuario.dni}</p>
 						<p><strong>Nombres:</strong> {resultadoBusquedaUsuario.nombres?.toLocaleUpperCase()}</p>
 						<p><strong>Apellidos:</strong> {resultadoBusquedaUsuario.apellidos?.toLocaleUpperCase()}</p>
+						<p><strong>UGEL:</strong> {regionTexto(String(resultadoBusquedaUsuario.region))}</p>
 					</Link>
 				) : (
 					<p>{warningDataDocente}</p>
@@ -128,6 +138,7 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores, rol }: TablaUsu
 						<th>#</th>
 						<th>Dni</th>
 						<th>{convertRolToTitle(currentUserData.rol || 0)}</th>
+						<th>UGEL</th>
 						<th></th>
 					</tr>
 				</thead>
@@ -135,7 +146,7 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores, rol }: TablaUsu
 					{
 						currentItems?.map((director, index) => {
 							return (
-								<tr key={index} className={styles.tableRow}>
+								<tr key={director.dni || index} className={styles.tableRow}>
 									<td className={styles.tableCell}>
 										<Link href={`/${convertRolToPath(currentUserData.rol || 0)}/cobertura-curricular/curricular/evaluar-curricula?idDocente=${director.dni}`} className={styles.tableLink}>
 											{startIndex + index + 1}
@@ -150,6 +161,9 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores, rol }: TablaUsu
 										<Link href={`/${convertRolToPath(currentUserData.rol || 0)}/cobertura-curricular/curricular/evaluar-curricula?idDocente=${director.dni}`} className={styles.tableLink}>
 											{director.nombres?.toLocaleUpperCase()} {director.apellidos?.toLocaleUpperCase()}
 										</Link>
+									</td>
+									<td className={styles.tableCell}>
+										{regionTexto(String(director.region))}
 									</td>
 									<td >
 										<div className={styles.actions}>
