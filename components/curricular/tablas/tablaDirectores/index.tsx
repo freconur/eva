@@ -41,15 +41,15 @@ const HighlightedText = ({ text, highlight }: { text: string; highlight: string 
 	);
 };
 
-const TablaDirectores = ({ 
-	docentesDeDirectores, 
-	rol, 
-	isSearching, 
-	isLoadingExternal, 
-	isFiltered, 
-	searchTerm, 
-	showGestionHelp, 
-	onDisablePopupsPermanently 
+const TablaDirectores = ({
+	docentesDeDirectores,
+	rol,
+	isSearching,
+	isLoadingExternal,
+	isFiltered,
+	searchTerm,
+	showGestionHelp,
+	onDisablePopupsPermanently
 }: TablaUsuariosProps) => {
 	const [showLocalPopup, setShowLocalPopup] = useState(true)
 	const { currentUserData, resultadoBusquedaUsuario, lastVisible, warningDataDocente } = useGlobalContext()
@@ -174,7 +174,7 @@ const TablaDirectores = ({
 									<div className={styles.tourCardCompact}>
 										<div className={styles.tourContentCompact}>
 											<span className={styles.newBadge}>NUEVO</span>
-											<p>⚙️ Ahora puedes actualizar los datos de gestion de los directores a publico y privado</p>
+											<p>⚙️ Ahora puedes actualizar los datos de gestión de los directores a público o privado</p>
 											<button className={styles.dontShowAgainBtn} onClick={onDisablePopupsPermanently}>
 												No volver a mostrar
 											</button>

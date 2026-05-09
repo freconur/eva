@@ -89,7 +89,9 @@ const initialState: AppReducerValues = {
   loaderDataGraficoPieChart: false,
   preguntaEvaluacionLikert: [],
   dimensionesEspecialistas: [],
-  evaluadosEspecialista: []
+  evaluadosEspecialista: [],
+  dataGraficoUgelStacked: [],
+  loaderDataGraficoUgelStacked: false
 }
 
 export const GlobalContext = createContext<[AppReducerValues, Dispatch<AppActions>]>([initialState, () => { }])

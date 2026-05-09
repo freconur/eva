@@ -4,6 +4,16 @@ import { AppActions, AppReducerValues } from "../types/types";
 
 export const appReducer = (state: AppReducerValues, action: AppActions) => {
   switch (action.type) {
+    case AppAction.DATA_GRAFICO_UGEL_STACKED:
+      return {
+        ...state,
+        dataGraficoUgelStacked: action.payload
+      }
+    case AppAction.LOADER_DATA_GRAFICO_UGEL_STACKED:
+      return {
+        ...state,
+        loaderDataGraficoUgelStacked: action.payload
+      }
     case AppAction.EVALUADOS_ESPECIALISTA:
       return {
         ...state,

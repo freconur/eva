@@ -18,7 +18,7 @@ import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import { Alternativa, DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
 import { RiLoader4Line, RiFileExcel2Line, RiDownloadLine } from 'react-icons/ri';
 import { toast } from 'react-toastify';
-import { MdAddCircle, MdAnalytics, MdCalendarToday, MdClose, MdDeleteForever, MdEditSquare, MdFileDownload, MdVisibility, MdVisibilityOff } from 'react-icons/md';
+import { MdAddCircle, MdAnalytics, MdCalendarToday, MdClose, MdDeleteForever, MdEditSquare, MdFileDownload, MdVisibility, MdVisibilityOff, MdGridView, MdViewStream, MdViewModule } from 'react-icons/md';
 import styles from './Reporte.module.css';
 import { currentMonth, getAllMonths } from '@/fuctions/dates';
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista';
@@ -39,6 +39,7 @@ import BarChartDirectores from '@/components/reportes/BarChartDirectores';
 import BarChartDocentes from '@/components/reportes/BarChartDocentes';
 import BarChartDocentesBuckets from '@/components/reportes/BarChartDocentesBuckets';
 import BarChartDocenteDetalle from '@/components/reportes/BarChartDocenteDetalle';
+import BarChartUgelStacked from '@/components/reportes/BarChartUgelStacked';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 
 ChartJS.register(
@@ -119,6 +120,8 @@ const Reporte = () => {
   const [dataProfesoresBuckets, setDataProfesoresBuckets] = useState<any[]>([]);
   const [totalDocentesBuckets, setTotalDocentesBuckets] = useState(0);
   const [loadingProfesoresBuckets, setLoadingProfesoresBuckets] = useState(false);
+  const [chartColumns, setChartColumns] = useState(2); // 1, 2, 3 columnas
+  const [questionColumns, setQuestionColumns] = useState(2); // 1, 2, 3 columnas para preguntas
   const [dataReportePreguntas, setDataReportePreguntas] = useState<any[]>([]);
   const [loadingReportePreguntas, setLoadingReportePreguntas] = useState(false);
 
@@ -291,7 +294,8 @@ const Reporte = () => {
     getAllReporteDeDirectoreToAdmin,
     getDataGraficoPieChart,
     restablecerFiltrosDeEspecialista,
-    getReporteEspecialistaPorUgel
+    getReporteEspecialistaPorUgel,
+    getDataGraficoUgelStacked
   } = useReporteEspecialistas();
   const {
     currentUserData,
@@ -301,6 +305,8 @@ const Reporte = () => {
     dataEstadisticaEvaluacion,
     evaluacion,
     dataGraficoTendenciaNiveles,
+    dataGraficoUgelStacked,
+    loaderDataGraficoUgelStacked
   } = useGlobalContext();
   const dispatch = useGlobalContextDispatch();
   const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
@@ -374,6 +380,12 @@ const Reporte = () => {
         evaluacion,
         filtros.genero || undefined,
         filtros.region || undefined,
+        yearSelected
+      );
+      getDataGraficoUgelStacked(
+        `${route.query.idEvaluacion}`,
+        monthSelected,
+        evaluacion,
         yearSelected
       );
       getEstadisticaGlobal(`${route.query.idEvaluacion}`, monthSelected, yearSelected);
@@ -810,6 +822,31 @@ const Reporte = () => {
                   </option>
                 ))}
               </select>
+
+              {/* Selector de Layout de Gráficos */}
+              <div className={styles.layoutSelector}>
+                <button
+                  onClick={() => setChartColumns(1)}
+                  className={`${styles.layoutButton} ${chartColumns === 1 ? styles.layoutButtonActive : ''}`}
+                  title="1 Columna"
+                >
+                  <MdViewStream />
+                </button>
+                <button
+                  onClick={() => setChartColumns(2)}
+                  className={`${styles.layoutButton} ${chartColumns === 2 ? styles.layoutButtonActive : ''}`}
+                  title="2 Columnas"
+                >
+                  <MdGridView />
+                </button>
+                <button
+                  onClick={() => setChartColumns(3)}
+                  className={`${styles.layoutButton} ${chartColumns === 3 ? styles.layoutButtonActive : ''}`}
+                  title="3 Columnas"
+                >
+                  <MdViewModule />
+                </button>
+              </div>
             </div>
 
             <div className={styles.exportGroup}>
@@ -902,67 +939,99 @@ const Reporte = () => {
             handleRestablecerFiltros={handleRestablecerFiltros}
           /> */}
 
+          {/* Sistema de Grillas para Reportes */}
+          <div className={styles.chartsGrid}>
 
-
-          {/* Componente de gráfico pie chart */}
-          {
-            evaluacion.tipoDeEvaluacion === '1' ? (
-              <PieChartComponent
-                monthSelected={monthSelected}
-                yearSelected={yearSelected}
-                dataGraficoTendenciaNiveles={dataGraficoTendenciaNiveles}
-                filtros={filtros}
-                onFilterChange={(name, value) => {
-                  setFiltros(prev => ({ ...prev, [name]: value }));
-                }}
-              />
-
-            ) : null
-          }
-
-
-          {/* Gráfico de barras horizontales para directores */}
-          {
-            evaluacion.tipoDeEvaluacion === '1' && (
-              loadingDirectoresBar ? (
-                <div className={styles.loaderContainer} style={{ minHeight: '300px' }}>
-                  <div className={styles.loaderContent}>
-                    <RiLoader4Line className={styles.loaderIcon} />
-                    <span className={styles.loaderText}>Procesando analytics de directores...</span>
-                  </div>
-                </div>
-              ) : (
-                dataDirectoresBar.length > 0 && <BarChartDirectores data={dataDirectoresBar} />
-              )
-            )
-          }
-          {/* Gráfico de Ranking de Docentes (Nuevo) */}
-          {
-            evaluacion.tipoDeEvaluacion === '1' && !loadingProfesoresBuckets && fullDocentesData && fullDocentesData.length > 0 && (
-              <BarChartDocentes data={fullDocentesData} />
-            )
-          }
-          {/* Gráfico de barras de distribución por niveles para docentes (Buckets) */}
-          {
-            evaluacion.tipoDeEvaluacion === '1' && (
-              loadingProfesoresBuckets ? (
-                <div className={styles.loaderContainer} style={{ minHeight: '200px' }}>
-                  <div className={styles.loaderContent}>
-                    <RiLoader4Line className={styles.loaderIcon} />
-                    <span className={styles.loaderText}>Cargando distribución de docentes...</span>
-                  </div>
-                </div>
-              ) : (
-                dataProfesoresBuckets.length > 0 && (
-                  <BarChartDocentesBuckets
-                    data={dataProfesoresBuckets}
-                    totalDocentes={totalDocentesBuckets}
-                    onBarClick={handleBarClick}
+            {/* Gráfico de distribución (Pie Chart) */}
+            <div className={chartColumns === 1 ? styles.gridItemFull : chartColumns === 2 ? styles.gridItemHalf : styles.gridItemThird}>
+              {
+                evaluacion.tipoDeEvaluacion === '1' ? (
+                  <PieChartComponent
+                    monthSelected={monthSelected}
+                    yearSelected={yearSelected}
+                    dataGraficoTendenciaNiveles={dataGraficoTendenciaNiveles}
+                    filtros={filtros}
+                    onFilterChange={(name, value) => {
+                      setFiltros(prev => ({ ...prev, [name]: value }));
+                    }}
                   />
+                ) : null
+              }
+            </div>
+
+            {/* Comparativa por UGEL Stacked Bar Chart */}
+            <div className={chartColumns === 1 ? styles.gridItemFull : chartColumns === 2 ? styles.gridItemHalf : styles.gridItemThird}>
+              {
+                evaluacion.tipoDeEvaluacion === '1' && (
+                  loaderDataGraficoUgelStacked ? (
+                    <div className={styles.loaderContainer} style={{ minHeight: '300px' }}>
+                      <div className={styles.loaderContent}>
+                        <RiLoader4Line className={styles.loaderIcon} />
+                        <span className={styles.loaderText}>Procesando comparativa regional...</span>
+                      </div>
+                    </div>
+                  ) : (
+                    dataGraficoUgelStacked && dataGraficoUgelStacked.length > 0 && (
+                      <BarChartUgelStacked data={dataGraficoUgelStacked} />
+                    )
+                  )
                 )
-              )
-            )
-          }
+              }
+            </div>
+
+            {/* Gráfico de Ranking de Directores */}
+            <div className={chartColumns === 1 ? styles.gridItemFull : chartColumns === 2 ? styles.gridItemHalf : styles.gridItemThird}>
+              {
+                evaluacion.tipoDeEvaluacion === '1' && (
+                  loadingDirectoresBar ? (
+                    <div className={styles.loaderContainer} style={{ minHeight: '300px' }}>
+                      <div className={styles.loaderContent}>
+                        <RiLoader4Line className={styles.loaderIcon} />
+                        <span className={styles.loaderText}>Procesando analytics de directores...</span>
+                      </div>
+                    </div>
+                  ) : (
+                    dataDirectoresBar && dataDirectoresBar.length > 0 && (
+                      <BarChartDirectores data={dataDirectoresBar} />
+                    )
+                  )
+                )
+              }
+            </div>
+
+            {/* Gráfico de Ranking de Docentes */}
+            <div className={chartColumns === 1 ? styles.gridItemFull : chartColumns === 2 ? styles.gridItemHalf : styles.gridItemThird}>
+              {
+                evaluacion.tipoDeEvaluacion === '1' && !loadingProfesoresBuckets && fullDocentesData && fullDocentesData.length > 0 && (
+                  <BarChartDocentes data={fullDocentesData} />
+                )
+              }
+            </div>
+
+            {/* Gráfico de distribución por niveles para docentes (Buckets) */}
+            <div className={chartColumns === 1 ? styles.gridItemFull : chartColumns === 2 ? styles.gridItemHalf : styles.gridItemThird}>
+              {
+                evaluacion.tipoDeEvaluacion === '1' && (
+                  loadingProfesoresBuckets ? (
+                    <div className={styles.loaderContainer} style={{ minHeight: '200px' }}>
+                      <div className={styles.loaderContent}>
+                        <RiLoader4Line className={styles.loaderIcon} />
+                        <span className={styles.loaderText}>Cargando distribución de docentes...</span>
+                      </div>
+                    </div>
+                  ) : (
+                    dataProfesoresBuckets.length > 0 && (
+                      <BarChartDocentesBuckets
+                        data={dataProfesoresBuckets}
+                        totalDocentes={totalDocentesBuckets}
+                        onBarClick={handleBarClick}
+                      />
+                    )
+                  )
+                )
+              }
+            </div>
+          </div>
 
           {/* Componente de acordeón para gráficos de tendencia */}
           {/* Detalle de Docentes (Leaderboard Stacked) */}
@@ -1016,6 +1085,9 @@ const Reporte = () => {
             yearSelected={yearSelected}
             dataReportePreguntas={dataReportePreguntas}
             loadingReportePreguntas={loadingReportePreguntas}
+            questionColumns={questionColumns}
+            setQuestionColumns={setQuestionColumns}
+            globalStyles={styles}
           />
         </div>
       )}

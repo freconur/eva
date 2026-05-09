@@ -1,6 +1,6 @@
 .mainContainer {
-  padding: 2rem;
-  max-width: 1200px;
+  padding: 2rem 3rem;
+  max-width: 100%;
   margin: 0 auto;
   color: #334155;
 }
@@ -408,4 +408,76 @@
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 700;
+}
+
+/* Grid System for Charts */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.gridItemFull {
+  grid-column: span 12;
+}
+
+.gridItemHalf {
+  grid-column: span 6;
+}
+
+.gridItemThird {
+  grid-column: span 4;
+}
+
+@media (max-width: 1400px) {
+  .gridItemThird {
+    grid-column: span 6;
+  }
+}
+
+@media (max-width: 1024px) {
+
+  .gridItemHalf,
+  .gridItemThird {
+    grid-column: span 12;
+  }
+}
+
+/* Layout Selector */
+.layoutSelector {
+  display: flex;
+  background: #ffffff;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  margin-left: 0.5rem;
+}
+
+.layoutButton {
+  padding: 6px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.layoutButton:hover {
+  background: #f1f5f9;
+  color: #3b82f6;
+}
+
+.layoutButtonActive {
+  background: #3b82f6;
+  color: #ffffff !important;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }

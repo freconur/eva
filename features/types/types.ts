@@ -86,6 +86,8 @@ export type AppReducerValues = {
   preguntaEvaluacionLikert: PreguntasEvaluacionLikert[];
   dimensionesEspecialistas: DimensionEspecialista[];
   evaluadosEspecialista: User[];
+  dataGraficoUgelStacked: GraficoUgelStacked[];
+  loaderDataGraficoUgelStacked: boolean;
 };
 
 export type AppActions =
@@ -194,7 +196,9 @@ export type AppActions =
   | { type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART; payload: boolean }
   | { type: AppAction.PREGUNTAS_EVALUACION_ESCALA_LIKERT; payload: PreguntasEvaluacionLikert[] }
   | { type: AppAction.DIMENSIONES_ESPECIALISTAS; payload: DimensionEspecialista[] }
-  | { type: AppAction.EVALUADOS_ESPECIALISTA; payload: User[] };
+  | { type: AppAction.EVALUADOS_ESPECIALISTA; payload: User[] }
+  | { type: AppAction.DATA_GRAFICO_UGEL_STACKED; payload: GraficoUgelStacked[] }
+  | { type: AppAction.LOADER_DATA_GRAFICO_UGEL_STACKED; payload: boolean };
 
 export type LoginData = {
   usuario: string;
@@ -666,6 +670,16 @@ export type GraficoPieChart = {
     id?: number;
     nivel: string;
     cantidadDeEstudiantes: number;
+  }[];
+};
+
+export type GraficoUgelStacked = {
+  ugel: string;
+  ugelId: number;
+  niveles: {
+    nivel: string;
+    cantidadDeEstudiantes: number;
+    color?: string;
   }[];
 };
 

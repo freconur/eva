@@ -23,9 +23,11 @@ interface ReporteEvaluacionPorPreguntaProps {
   handleRestablecerFiltros: () => void;
   handleFiltrar?: () => void;
   loading?: boolean;
+  columns?: number;
+  globalStyles?: any;
 }
 
-const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> = ({
+  const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> = ({
   reporteDirectorOrdenado,
   preguntasMap,
   iterarPregunta,
@@ -38,6 +40,8 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   handleRestablecerFiltros,
   handleFiltrar,
   loading = false,
+  columns = 2,
+  globalStyles = {},
 }) => {
   const [popoverData, setPopoverData] = useState<{
     preguntaId: string;
@@ -71,11 +75,9 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
 
       <h2 className={styles.reportTitle}>Detalle por Pregunta</h2>
 
-      <div className={styles.questionsList}>
+      <div className={loading ? styles.loadingWrapper : (reporteDirectorOrdenado?.length > 0 ? globalStyles.chartsGrid : styles.questionsList)}>
         {loading ? (
-          <div className={styles.loadingWrapper}>
-            <Loader size="large" variant="spinner" color="#3b82f6" text="Procesando reporte..." />
-          </div>
+          <Loader size="large" variant="spinner" color="#3b82f6" text="Procesando reporte..." />
         ) : reporteDirectorOrdenado?.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>📊</div>
@@ -90,7 +92,7 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
               const correctKey = obtenerRespuestaPorId(id);
 
               return (
-                <div key={index} className={styles.questionContainer}>
+                <div key={index} className={`${styles.questionContainer} ${columns === 1 ? globalStyles.gridItemFull : columns === 2 ? globalStyles.gridItemHalf : globalStyles.gridItemThird}`}>
                   <div className={styles.questionHeader}>
                     <span className={styles.questionNumber}>{index + 1}.</span>
                     <div className={styles.questionContent}>

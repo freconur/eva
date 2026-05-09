@@ -25,6 +25,7 @@ import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalCo
 import { AppAction } from '../actions/appAction';
 import { currentMonth, currentYear } from '@/fuctions/dates';
 import { calcularEstadisticasOptimizadas } from '@/fuctions/funcione-calculo-estadistica';
+import { regiones } from '@/fuctions/regiones';
 
 export const useReporteEspecialistas = () => {
   const dispatch = useGlobalContextDispatch();
@@ -110,6 +111,82 @@ export const useReporteEspecialistas = () => {
       dispatch({ type: AppAction.DATA_GRAFICO_PIE_CHART, payload: [] });
     } finally {
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: false });
+    }
+  };
+
+  const getDataGraficoUgelStacked = async (
+    idEvaluacion: string,
+    mes: number,
+    evaluacion: Evaluaciones,
+    yearSelected?: number
+  ) => {
+    try {
+      dispatch({ type: AppAction.LOADER_DATA_GRAFICO_UGEL_STACKED, payload: true });
+
+      const studentsPath = `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`;
+      const coll = collection(db, studentsPath);
+
+      const nivelesConfig = evaluacion.nivelYPuntaje || [];
+
+      const promesasUgels = regiones.map(async (reg) => {
+        const ugelNombre = reg.region;
+        const ugelId = reg.id;
+
+        const promesasNiveles = nivelesConfig.map(async (nivelData) => {
+          const nivelNombre = nivelData.nivel?.toLowerCase() || '';
+          const minPuntaje = nivelData.min || 0;
+          const maxPuntaje = nivelData.max || 1000;
+
+          // Manejo especial para rangos de puntaje por nivel (igual que en PieChart)
+          let q;
+          if (nivelNombre.includes('previo')) {
+            q = query(
+              coll,
+              where('region', '==', ugelId),
+              where('puntaje', '>=', 0),
+              where('puntaje', '<=', maxPuntaje)
+            );
+          } else {
+            q = query(
+              coll,
+              where('region', '==', ugelId),
+              where('puntaje', '>=', minPuntaje),
+              where('puntaje', '<=', maxPuntaje)
+            );
+          }
+
+          const snap = await getCountFromServer(q);
+          return {
+            nivel: nivelData.nivel || 'Sin Nombre',
+            cantidadDeEstudiantes: snap.data().count,
+          };
+        });
+
+        const nivelesData = await Promise.all(promesasNiveles);
+
+        return {
+          ugel: ugelNombre,
+          ugelId: ugelId,
+          niveles: nivelesData,
+        };
+      });
+
+      const resultado = await Promise.all(promesasUgels);
+
+      // Solo incluir UGELs que tienen al menos un estudiante evaluado
+      const resultadoFiltrado = resultado.filter((r) =>
+        r.niveles.some((n) => n.cantidadDeEstudiantes > 0)
+      );
+
+      dispatch({
+        type: AppAction.DATA_GRAFICO_UGEL_STACKED,
+        payload: resultadoFiltrado,
+      });
+    } catch (error) {
+      console.error('❌ Error en getDataGraficoUgelStacked:', error);
+      dispatch({ type: AppAction.DATA_GRAFICO_UGEL_STACKED, payload: [] });
+    } finally {
+      dispatch({ type: AppAction.LOADER_DATA_GRAFICO_UGEL_STACKED, payload: false });
     }
   };
   const getDataParaGraficoTendencia = async (rangoMes: number[], idEvaluacion: string, evaluacion?: Evaluaciones, yearSelected?: number) => {
@@ -851,6 +928,7 @@ export const useReporteEspecialistas = () => {
       throw error;
     }
   };
+  
   return {
     getAllDirectores,
     getReporteEspecialistaPorUgel,
@@ -866,5 +944,6 @@ export const useReporteEspecialistas = () => {
     getAllReporteDeDirectoreToAdmin,
     getDataGraficoPieChart,
     restablecerFiltrosDeEspecialista,
+    getDataGraficoUgelStacked
   };
 };

@@ -246,12 +246,11 @@ const BarChartDocentes = ({ data = [] }: BarChartDocentesProps) => {
         <div className={styles.container}>
             <div className={styles.header}>
                 <div className={styles.titleWrapper}>
-                    <h2 className={styles.title}>Desempeño por Docente</h2>
                     <p className={styles.subtitle}>{data.length} líderes educativos en este ranking</p>
                 </div>
 
                 <div className={styles.controlsRow}>
-                    <div className={styles.pagination}>
+                    <div className={styles.filtersRow}>
                         <div className={styles.filterGroup}>
                             <span>Ugel:</span>
                             <select
@@ -272,7 +271,7 @@ const BarChartDocentes = ({ data = [] }: BarChartDocentesProps) => {
                         </div>
 
                         <div className={styles.filterGroup}>
-                            <span>Mín. Estudiantes:</span>
+                            <span>Estudiantes:</span>
                             <input
                                 type="number"
                                 min="0"
@@ -287,29 +286,32 @@ const BarChartDocentes = ({ data = [] }: BarChartDocentesProps) => {
                             />
                         </div>
 
-                        <div className={styles.rowsPerPageContainer}>
-                            <span>Ver:</span>
-                            <select
-                                className={styles.rowsPerPageSelect}
-                                value={itemsPerPage}
-                                onChange={(e) => {
-                                    setItemsPerPage(Number(e.target.value));
-                                    setCurrentPage(0);
-                                }}
-                            >
-                                <option value={10}>10</option>
-                                <option value={25}>25</option>
-                                <option value={50}>50</option>
-                            </select>
-                        </div>
-                        {totalPages > 1 && (
-                            <>
+                    </div>
+
+                    {totalPages > 1 && (
+                        <div className={styles.paginationRow}>
+                            <div className={styles.filterGroup}>
+                                <span>Ver:</span>
+                                <select
+                                    className={styles.rowsPerPageSelect}
+                                    value={itemsPerPage}
+                                    onChange={(e) => {
+                                        setItemsPerPage(Number(e.target.value));
+                                        setCurrentPage(0);
+                                    }}
+                                >
+                                    <option value={10}>10</option>
+                                    <option value={25}>25</option>
+                                    <option value={50}>50</option>
+                                </select>
+                            </div>
+                            <div className={styles.navButtons}>
                                 <button onClick={handlePrev} disabled={currentPage === 0} className={styles.pageButton}>←</button>
                                 <span className={styles.pageInfo}>{currentPage + 1} / {totalPages}</span>
                                 <button onClick={handleNext} disabled={currentPage === totalPages - 1} className={styles.pageButton}>→</button>
-                            </>
-                        )}
-                    </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className={styles.sortContainer}>
                         <div className={styles.sortButtons}>

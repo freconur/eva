@@ -23,7 +23,12 @@ interface AcordeonReportePreguntaProps {
   yearSelected: number;
   dataReportePreguntas: any[];
   loadingReportePreguntas: boolean;
+  questionColumns: number;
+  setQuestionColumns: (val: number) => void;
+  globalStyles?: any;
 }
+
+import { MdViewStream, MdGridView, MdViewModule } from 'react-icons/md';
 
 const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
   preguntasMap,
@@ -38,7 +43,10 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
   handleFiltrar,
   yearSelected,
   dataReportePreguntas,
-  loadingReportePreguntas
+  loadingReportePreguntas,
+  questionColumns,
+  setQuestionColumns,
+  globalStyles = {}
 }) => {
   const [mostrarReporte, setMostrarReporte] = useState(false);
 
@@ -52,11 +60,8 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
 
   return (
     <div className={styles.accordionContainer}>
-      <div
-        onClick={toggleReporte}
-        className={mostrarReporte ? styles.headerOpen : styles.header}
-      >
-        <div className={styles.titleGroup}>
+      <div className={mostrarReporte ? styles.headerOpen : styles.header}>
+        <div onClick={toggleReporte} className={styles.titleGroup} style={{ flex: 1, cursor: 'pointer' }}>
           <span className={styles.icon}>
             {mostrarReporte ? '📋' : '📊'}
           </span>
@@ -64,7 +69,34 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
             Reporte de Evaluación por Pregunta
           </h3>
         </div>
-        <div className={mostrarReporte ? styles.chevronOpen : styles.chevron}>
+
+        {mostrarReporte && (
+          <div className={globalStyles.layoutSelector} style={{ marginRight: '1rem' }}>
+            <button
+              className={`${globalStyles.layoutButton} ${questionColumns === 1 ? globalStyles.layoutButtonActive : ''}`}
+              onClick={() => setQuestionColumns(1)}
+              title="1 Columna"
+            >
+              <MdViewStream />
+            </button>
+            <button
+              className={`${globalStyles.layoutButton} ${questionColumns === 2 ? globalStyles.layoutButtonActive : ''}`}
+              onClick={() => setQuestionColumns(2)}
+              title="2 Columnas"
+            >
+              <MdGridView />
+            </button>
+            <button
+              className={`${globalStyles.layoutButton} ${questionColumns === 3 ? globalStyles.layoutButtonActive : ''}`}
+              onClick={() => setQuestionColumns(3)}
+              title="3 Columnas"
+            >
+              <MdViewModule />
+            </button>
+          </div>
+        )}
+
+        <div onClick={toggleReporte} className={mostrarReporte ? styles.chevronOpen : styles.chevron} style={{ cursor: 'pointer' }}>
           ▼
         </div>
       </div>
@@ -84,6 +116,8 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
             handleRestablecerFiltros={handleRestablecerFiltros}
             handleFiltrar={handleFiltrar}
             loading={loading}
+            columns={questionColumns}
+            globalStyles={globalStyles}
           />
         </div>
       </div>
