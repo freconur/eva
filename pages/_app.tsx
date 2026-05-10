@@ -3,6 +3,7 @@ import { GlobalContextProvider } from '@/features/context/GlolbalContext'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import '@/styles/globals.css'
+import Head from 'next/head'
 interface Props {
   children: JSX.Element | JSX.Element[]
 }
@@ -12,6 +13,9 @@ export default function App({ Component, pageProps }: any) {
 
   return (
     <GlobalContextProvider>
+      <Head>
+        <title>competence lab</title>
+      </Head>
       <Auth>
         <LayoutMenu>
           <Component {...pageProps} />
