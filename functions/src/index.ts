@@ -25,6 +25,7 @@ export { getDataToDirectoresFromBarGraphics } from './getDataToDirectoresFromBar
 export { getDataToProfesoresFromBarGraphics } from './getDataToProfesoresFromBarGraphics';
 export { getDataReporteEvaluacionPorPreguntas } from './getDataReporteEvaluacionPorPreguntas';
 export { getDataReporteAgregadoPorRol } from './reportsAggregation';
+export { startFullConsolidation } from './orchestrator';
 
 
 try {

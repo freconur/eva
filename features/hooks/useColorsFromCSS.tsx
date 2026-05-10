@@ -155,28 +155,47 @@ export const useColorsFromCSS = () => {
     };
   }, [getNivelColor]);
 
-  // Función para preparar datos de gráfico de barras con colores de alternativas
+  // Función para preparar datos de gráfico de barras con colores de alternativas (SOPORTA DINÁMICAS)
   const prepareBarChartData = useCallback((data: any, respuesta: string, numOpciones: number = 4) => {
-    const esRespuestaCorrecta = (opcion: string) => {
-      return opcion.toLowerCase() === respuesta.toLowerCase();
-    };
+    let labels: string[] = [];
+    let dataValues: any[] = [];
+    let backgroundColor: string[] = [];
+    let borderColor: string[] = [];
 
-    const alternativas = ['a', 'b', 'c', 'd'];
-    const dataValues = [data.a, data.b, data.c, data.d];
-    
-    const backgroundColor = alternativas.slice(0, numOpciones).map(alt => 
-      esRespuestaCorrecta(alt) ? 'rgba(34, 197, 94, 0.8)' : getAlternativaColorWithOpacity(alt)
-    );
-    
-    const borderColor = alternativas.slice(0, numOpciones).map(alt => 
-      esRespuestaCorrecta(alt) ? 'rgb(34, 197, 94)' : getAlternativaColor(alt)
-    );
+    if (Array.isArray(data.alternativas)) {
+      // ESTRUCTURA NUEVA (DINÁMICA)
+      labels = data.alternativas.map((alt: any) => alt.id);
+      dataValues = data.alternativas.map((alt: any) => alt.cantidad);
+      backgroundColor = data.alternativas.map((alt: any) => 
+        alt.esCorrecta ? 'rgba(34, 197, 94, 0.8)' : getAlternativaColorWithOpacity(alt.id)
+      );
+      borderColor = data.alternativas.map((alt: any) => 
+        alt.esCorrecta ? 'rgb(34, 197, 94)' : getAlternativaColor(alt.id)
+      );
+    } else {
+      // ESTRUCTURA ANTIGUA (FIJA A, B, C, D)
+      const esRespuestaCorrecta = (opcion: string) => {
+        return opcion.toLowerCase() === respuesta.toLowerCase();
+      };
+
+      const alternativasBase = ['a', 'b', 'c', 'd'];
+      labels = alternativasBase.slice(0, numOpciones);
+      dataValues = labels.map(alt => data[alt]);
+      
+      backgroundColor = labels.map(alt => 
+        esRespuestaCorrecta(alt) ? 'rgba(34, 197, 94, 0.8)' : getAlternativaColorWithOpacity(alt)
+      );
+      
+      borderColor = labels.map(alt => 
+        esRespuestaCorrecta(alt) ? 'rgb(34, 197, 94)' : getAlternativaColor(alt)
+      );
+    }
 
     return {
-      labels: alternativas.slice(0, numOpciones),
+      labels,
       datasets: [{
         label: 'total',
-        data: dataValues.slice(0, numOpciones),
+        data: dataValues,
         backgroundColor,
         borderColor,
         borderWidth: 2

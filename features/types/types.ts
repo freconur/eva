@@ -417,6 +417,7 @@ export type DataEstadisticas = {
   d?: number;
   total?: number;
   order?: number;
+  alternativas?: any[];
 };
 export type ResultadosAcumuladosCC = {
   acumuladoDirector?: DataEstadisticasCurricular[];

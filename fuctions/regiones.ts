@@ -34,7 +34,7 @@ export const rolTexto = (rol: number) => {
   if (rol === 3) return "Docente"
   if (rol === 4) return "Especialista DREP"
 }
-export const regionTexto = (id: string) => {
+export const regionTexto = (id: any) => {
   let rta
   regiones.forEach(reg => {
     if (Number(id) === reg.id) {

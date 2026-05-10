@@ -481,3 +481,222 @@
   color: #ffffff !important;
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
+
+/* Estilos para el Detalle de Directores */
+.detailCard {
+  background: white;
+  border-radius: 1.25rem;
+  padding: 2rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+  margin-bottom: 3rem;
+  animation: slideUp 0.4s cubic-bezier(0, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.detailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+
+.detailTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.detailSubtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.closeBtn {
+  padding: 0.625rem 1.25rem;
+  background: #f1f5f9;
+  color: #475569;
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+  transform: translateY(-1px);
+}
+
+.customTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.customTable th {
+  text-align: left;
+  padding: 1rem;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.customTable td {
+  padding: 1.25rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.customTable tr:hover td {
+  background: #f8fafc;
+}
+
+.dniCell {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.nameCell {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.statusBadgeActive {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  background: #f0fdf4;
+  color: #15803d;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid #bbf7d0;
+}
+
+.statusBadgePending {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  background: #f8fafc;
+  color: #64748b;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid #e2e8f0;
+}
+
+.detailActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap; /* Asegura que los filtros y el botón se acomoden */
+  justify-content: flex-end;
+}
+
+.searchWrapper {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.5rem 1rem;
+  width: 320px;
+  transition: all 0.2s ease;
+}
+
+.searchWrapper:focus-within {
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.searchInput {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.875rem;
+  color: #1e293b;
+  width: 100%;
+  font-weight: 500;
+}
+
+.searchInput::placeholder {
+  color: #94a3b8;
+}
+
+.filterWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.regionSelect {
+  padding: 0.5rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.regionSelect:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
+.regionSelect:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.limitSelect {
+  padding: 0.5rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.limitSelect:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
+.limitSelect:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.ugelCell {
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: 0.025em;
+}

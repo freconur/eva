@@ -18,13 +18,14 @@ import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import { Alternativa, DataEstadisticas, PreguntasRespuestas } from '@/features/types/types';
 import { RiLoader4Line, RiFileExcel2Line, RiDownloadLine } from 'react-icons/ri';
 import { toast } from 'react-toastify';
-import { MdAddCircle, MdAnalytics, MdCalendarToday, MdClose, MdDeleteForever, MdEditSquare, MdFileDownload, MdVisibility, MdVisibilityOff, MdGridView, MdViewStream, MdViewModule } from 'react-icons/md';
+import { MdAddCircle, MdAnalytics, MdCalendarToday, MdClose, MdDeleteForever, MdEditSquare, MdFileDownload, MdVisibility, MdVisibilityOff, MdGridView, MdViewStream, MdViewModule, MdSearch } from 'react-icons/md';
 import styles from './Reporte.module.css';
 import { currentMonth, getAllMonths } from '@/fuctions/dates';
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista';
 import { useReporteEspecialistas } from '@/features/hooks/useReporteEspecialistas';
 import { distritosPuno } from '@/fuctions/provinciasPuno';
 import { exportDirectorDocenteDataToExcel } from '@/features/utils/excelExport';
+import { regiones, regionTexto } from '@/fuctions/regiones';
 import { useCrearEstudiantesDeDocente } from '@/features/hooks/useCrearEstudiantesDeDocente';
 import { useCrearPuntajeProgresiva } from '@/features/hooks/useCrearPuntajeProgresiva';
 import AcordeonGraficosTendencia from '@/components/reportes/AcordeonGraficosTendencia';
@@ -33,9 +34,10 @@ import PieChartComponent from '@/components/reportes/PieChartComponent';
 import FiltrosReporte from '@/components/reportes/FiltrosReporte';
 import { useExportExcel } from '@/features/hooks/useExportExcel';
 import { httpsCallable } from 'firebase/functions';
-import { getDoc, doc, updateDoc } from "firebase/firestore";
+import { getDoc, doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { functions, db } from '@/firebase/firebase.config';
 import BarChartDirectores from '@/components/reportes/BarChartDirectores';
+import ParticipacionDirectoresChart from '@/components/reportes/ParticipacionDirectoresChart';
 import BarChartDocentes from '@/components/reportes/BarChartDocentes';
 import BarChartDocentesBuckets from '@/components/reportes/BarChartDocentesBuckets';
 import BarChartDocenteDetalle from '@/components/reportes/BarChartDocenteDetalle';
@@ -128,9 +130,17 @@ const Reporte = () => {
   // Drill-down para docentes
   const [fullDocentesData, setFullDocentesData] = useState<any[] | null>(null);
   const [selectedRange, setSelectedRange] = useState<string | null>(null);
+  const [selectedDirectorStatus, setSelectedDirectorStatus] = useState<'participo' | 'no_participo' | 'all' | null>(null);
+  const [searchTermDirector, setSearchTermDirector] = useState('');
+  const [selectedRegionDirector, setSelectedRegionDirector] = useState<string>('all');
+  const [pageSizeDirector, setPageSizeDirector] = useState<number | 'all'>(100);
+  const [consolidationStatus, setConsolidationStatus] = useState<any>(null);
   const [loadingFullDocentes, setLoadingFullDocentes] = useState(false);
   const [loadingConsolidado, setLoadingConsolidado] = useState(false);
   const drillDownRef = useRef<HTMLDivElement>(null);
+  const directorsDetailRef = useRef<HTMLDivElement>(null);
+
+  const { loaderDataGraficoPieChart, dataGraficoPieChart } = useGlobalContext();
 
   // Callback para manejar cambios en el rango
   const handleRangoChange = (mesInicio: number, mesFin: number, año: number, mesesIds: number[]) => {
@@ -221,70 +231,73 @@ const Reporte = () => {
     const idEval = route.query.idEvaluacion;
     if (!idEval || monthSelected === undefined || !yearSelected) return;
 
-    const confirmacion = window.confirm(
-      '🚀 ¿Deseas generar la consolidación completa de datos?\n\n' +
-      'Esto actualizará los archivos JSON en Storage y los resúmenes en Firestore para docentes, directores y preguntas.'
-    );
+    const isProcessing = consolidationStatus?.status === 'processing';
+    
+    const message = isProcessing
+      ? `⚠️ El proceso parece haberse detenido en ${consolidationStatus?.progress || 0}%. ¿Deseas FORZAR el reinicio de la consolidación?`
+      : '🚀 ¿Deseas generar la consolidación completa de datos en SEGUNDO PLANO?\n\n' +
+        'Esto se ejecutará en el servidor. Podrás cerrar la pestaña y el proceso continuará.';
+
+    const confirmacion = window.confirm(message);
 
     if (!confirmacion) return;
 
     setLoadingConsolidado(true);
-    console.log('🚀 [Consolidación] Iniciando proceso...');
-
     try {
-      const payload = {
+      const callOrchestrator = httpsCallable(functions, 'startFullConsolidation', { timeout: 540000 });
+      
+      toast.info('⏳ Iniciando proceso en segundo plano...');
+      
+      // Llamamos a la función maestra. No esperamos a que termine (el listener de Firestore hará el trabajo)
+      callOrchestrator({
         idEvaluacion: idEval,
         año: yearSelected,
         mes: monthSelected
-      };
+      }).catch(err => {
+        console.error("Error al iniciar orquestador:", err);
+        toast.error("Error al iniciar el proceso en el servidor.");
+      });
 
-      const callAgregado = httpsCallable(functions, 'getDataReporteAgregadoPorRol');
-      const callPreguntas = httpsCallable(functions, 'getDataReporteEvaluacionPorPreguntas');
-
-      // 1. Consolidar Docentes
-      toast.info('⏳ Consolidando datos de docentes...');
-      await callAgregado({ ...payload, rol: 'docente' });
-
-      // 2. Consolidar Directores
-      toast.info('⏳ Consolidando datos de directores...');
-      await callAgregado({ ...payload, rol: 'director' });
-
-      // 3. Consolidar Preguntas
-      toast.info('⏳ Consolidando reporte de preguntas...');
-      await callPreguntas(payload);
-
-      toast.success('✅ Consolidación completada exitosamente.');
-
-      // 4. Recargar todos los datos en la vista (desde los nuevos JSON en Storage)
-      console.log('🔄 [Consolidación] Recargando datos en la vista...');
-      await Promise.all([
-        loadConsolidado().catch(e => console.error('Error loadConsolidado:', e)),
-        fetchBarGraphicsData().catch(e => console.error('Error fetchBarGraphicsData:', e)),
-        fetchReportePreguntas().catch(e => console.error('Error fetchReportePreguntas:', e))
-      ]);
-
-      // Forzar recarga de estadísticas globales y pie chart
-      const idEvalStr = String(idEval);
-      getReporteEspecialistaPorUgel(idEvalStr, monthSelected, yearSelected);
-      console.log('🏁 [Consolidación] Finalizado con éxito.');
+      // Damos un feedback inmediato
+      toast.success(isProcessing ? '🚀 Reinicio forzado enviado.' : '🚀 Proceso delegado al servidor.');
 
     } catch (error: any) {
-      console.error('❌ Error en consolidación:', error);
+      console.error('❌ Error al invocar orquestador:', error);
       toast.error(`Error: ${error.message || 'Error desconocido'}`);
     } finally {
-      console.log('🔓 [Consolidación] Desactivando loader.');
       setLoadingConsolidado(false);
+    }
+  };
+
+  const handleDetenerConsolidado = async () => {
+    const idEval = route.query.idEvaluacion;
+    if (!idEval || monthSelected === undefined || !yearSelected) return;
+
+    const confirmed = window.confirm('🛑 ¿Deseas DETENER el proceso de consolidación?');
+    if (!confirmed) return;
+
+    try {
+      const statusRef = doc(db, `evaluaciones/${idEval}/estado_consolidacion`, `${yearSelected}_${monthSelected}`);
+      await updateDoc(statusRef, { 
+        status: 'stopped',
+        message: 'Proceso detenido por el usuario.',
+        endTime: new Date()
+      });
+      toast.info('🛑 Petición de parada enviada.');
+    } catch (error: any) {
+      console.error('Error stopping:', error);
+      toast.error('Error al detener el proceso.');
     }
   };
 
   const { prepareBarChartData } = useColorsFromCSS();
 
-  const iterateData = (data: DataEstadisticas, respuesta: string) => {
-    const numOpciones = data.d === undefined ? 3 : 4;
-    const chartData = prepareBarChartData(data, respuesta, numOpciones);
+  const iterateData = (data: any, respuesta: string) => {
+    const chartData = prepareBarChartData(data, respuesta);
 
-    // Convertir labels a mayúsculas
-    chartData.labels = chartData.labels.map((label: string) => label.toUpperCase());
+    if (chartData && chartData.labels) {
+      chartData.labels = chartData.labels.map((label: string) => label.toUpperCase());
+    }
 
     return chartData;
   };
@@ -316,6 +329,52 @@ const Reporte = () => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 2025 + 1 }, (_, i) => 2025 + i);
   const [yearSelected, setYearSelected] = useState(currentYear);
+  const isInitialMonthSet = useRef(false);
+
+  // --- SINCRONIZACIÓN INICIAL CON EL MES DEL EXAMEN ---
+  useEffect(() => {
+    isInitialMonthSet.current = false;
+  }, [route.query.idEvaluacion]);
+
+  useEffect(() => {
+    if (evaluacion?.mesDelExamen && !isInitialMonthSet.current) {
+      isInitialMonthSet.current = true; // Marcamos como hecho inmediatamente
+      const mesId = Number(evaluacion.mesDelExamen);
+      if (!isNaN(mesId)) {
+        console.log(`📅 [Auto-Config] Mes inicial establecido en: ${mesId} (${evaluacion.mesDelExamen})`);
+        setMonthSelected(mesId);
+      }
+    }
+  }, [evaluacion]);
+  useEffect(() => {
+    const idEval = route.query.idEvaluacion;
+    if (!idEval || monthSelected === undefined || !yearSelected) return;
+
+    const statusRef = doc(db, `evaluaciones/${idEval}/estado_consolidacion`, `${yearSelected}_${monthSelected}`);
+    
+    const unsubscribe = onSnapshot(statusRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        setConsolidationStatus(data);
+        
+        // Si acaba de completarse, recargamos los datos locales
+        if (data.status === 'completed') {
+           // Pequeño delay para asegurar que Storage se actualizó
+           setTimeout(() => {
+             // Funciones de refresco asumiendo que existen en el componente
+             if (typeof loadConsolidado === 'function') loadConsolidado();
+             if (typeof fetchBarGraphicsData === 'function') fetchBarGraphicsData();
+             if (typeof fetchReportePreguntas === 'function') fetchReportePreguntas();
+             getReporteEspecialistaPorUgel(String(idEval), monthSelected, yearSelected);
+           }, 1000);
+        }
+      } else {
+        setConsolidationStatus(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [route.query.idEvaluacion, monthSelected, yearSelected]);
 
   const handleChangeYear = (e: React.ChangeEvent<HTMLSelectElement>) => {
     console.log('Select Año value:', e.target.value);
@@ -407,9 +466,11 @@ const Reporte = () => {
       if (consolidadoSnap.exists()) {
         const { url } = consolidadoSnap.data();
         if (url) {
-          const response = await fetch(url);
+          // Añadimos un timestamp para evitar que el navegador use una versión en caché (Cache-busting)
+          const cacheBuster = `?t=${Date.now()}`;
+          const response = await fetch(url + cacheBuster);
           const res = await response.json();
-          if (res.success && res.data) {
+          if (res.success && Array.isArray(res.data)) {
             setDataDirectoresBar(res.data);
             return;
           }
@@ -438,12 +499,15 @@ const Reporte = () => {
       if (consolidadoSnap.exists()) {
         const { url, distribucionDocentes, totalDocentes } = consolidadoSnap.data();
         if (url) {
-          const response = await fetch(url);
+          const cacheBuster = `?t=${Date.now()}`;
+          const response = await fetch(url + cacheBuster);
           const res = await response.json();
-          if (res.success && Array.isArray(res.distribucionDocentes)) {
-            setDataProfesoresBuckets(res.distribucionDocentes);
-            setTotalDocentesBuckets(res.totalDocentes || 0);
-            setFullDocentesData(res.finalDocentes || null);
+          // El nuevo formato de la Cloud Function usa 'data' para ambos roles
+          if (res.success && Array.isArray(res.data)) {
+            setFullDocentesData(res.data);
+            // Si el JSON no trae la distribución precalculada, la calcularemos o usaremos la data directamente
+            setDataProfesoresBuckets(res.distribucionDocentes || []); 
+            setTotalDocentesBuckets(res.totalDocentes || res.data.length || 0);
             return;
           }
         }
@@ -472,7 +536,9 @@ const Reporte = () => {
       if (consolidadoSnap.exists()) {
         const { url } = consolidadoSnap.data();
         if (url) {
-          const response = await fetch(url);
+          // Añadimos un timestamp para evitar que el navegador use una versión en caché (Cache-busting)
+          const cacheBuster = `?t=${Date.now()}`;
+          const response = await fetch(url + cacheBuster);
           const res = await response.json();
           if (res.success && Array.isArray(res.data)) {
             setDataReportePreguntas(res.data);
@@ -547,19 +613,139 @@ const Reporte = () => {
   const filteredDocentesByRange = useMemo(() => {
     if (!fullDocentesData || !selectedRange) return [];
 
-    // El rango viene como "0% - 25%" o "75.1% - 100%"
-    const match = selectedRange.match(/([\d.]+)%\s*-\s*([\d.]+)%/);
+    // El rango viene como "0-20%", "20-40%", etc.
+    const match = selectedRange.match(/(\d+)-(\d+)%/);
     if (!match) return [];
 
     const min = parseFloat(match[1]);
     const max = parseFloat(match[2]);
 
     return fullDocentesData.filter((doc: any) => {
-      const val = doc.porcentajeSatisfactorio;
-      // Inclusión: 0-25, 25.1-50, ...
-      return val >= min && val <= max;
+      const satNivel = doc.niveles?.find((n: any) => n.nivel?.toLowerCase().includes('satisfactorio'));
+      const satCount = satNivel ? satNivel.cantidadDeEstudiantes : 0;
+      const totalEst = doc.totalEstudiantes || 0;
+      const percentage = totalEst > 0 ? (satCount / totalEst) * 100 : 0;
+
+      return percentage >= min && percentage <= max;
     });
   }, [fullDocentesData, selectedRange]);
+
+  // --- CALCULO DINÁMICO DE BUCKETS PARA DOCENTES ---
+  const computedDocentesBuckets = useMemo(() => {
+    if (!fullDocentesData || fullDocentesData.length === 0) return [];
+    
+    const ranges = [
+      { label: '0-20%', min: 0, max: 20, color: '#ef4444' },
+      { label: '20-40%', min: 20, max: 40, color: '#f97316' },
+      { label: '40-60%', min: 40, max: 60, color: '#eab308' },
+      { label: '60-80%', min: 60, max: 80, color: '#84cc16' },
+      { label: '80-100%', min: 80, max: 101, color: '#22c55e' },
+    ];
+
+    const counts = ranges.map(r => ({ rango: r.label, cantidad: 0, color: r.color }));
+
+    fullDocentesData.forEach(doc => {
+      const satNivel = doc.niveles?.find((n: any) => n.nivel?.toLowerCase().includes('satisfactorio'));
+      const satCount = satNivel ? satNivel.cantidadDeEstudiantes : 0;
+      const totalEst = doc.totalEstudiantes || 0;
+      const percentage = totalEst > 0 ? (satCount / totalEst) * 100 : 0;
+
+      const rangeIdx = ranges.findIndex(r => percentage >= r.min && percentage < r.max);
+      if (rangeIdx !== -1) {
+        counts[rangeIdx].cantidad++;
+      }
+    });
+
+    return counts;
+  }, [fullDocentesData]);
+
+  // Verificar si hay datos reales para el gráfico de pastel en el mes seleccionado
+  const hasPieChartData = useMemo(() => {
+    // El gráfico prioriza dataGraficoPieChart del contexto, luego usa dataGraficoTendenciaNiveles
+    const sourceData = (Array.isArray(dataGraficoPieChart) && dataGraficoPieChart.length > 0) 
+      ? dataGraficoPieChart 
+      : dataGraficoTendenciaNiveles;
+
+    if (!sourceData || !Array.isArray(sourceData)) return false;
+    
+    // Buscamos los datos del mes seleccionado
+    const datosMes = sourceData.find((item: any) => item.mes === monthSelected);
+    if (!datosMes || !datosMes.niveles) return false;
+
+    // Sumamos la cantidad de estudiantes
+    const total = datosMes.niveles.reduce((acc: number, n: any) => acc + (n.cantidadDeEstudiantes || 0), 0);
+    
+    return total > 0;
+  }, [dataGraficoPieChart, dataGraficoTendenciaNiveles, monthSelected]);
+
+  // Función para resaltar texto de búsqueda
+  const highlightText = (text: string, term: string) => {
+    if (!term.trim() || !text) return text;
+    const parts = String(text).split(new RegExp(`(${term})`, 'gi'));
+    return (
+      <>
+        {parts.map((part, i) => 
+          part.toLowerCase() === term.toLowerCase() 
+            ? <mark key={i} style={{ backgroundColor: '#fde047', color: '#000', padding: '0 2px', borderRadius: '2px' }}>{part}</mark> 
+            : part
+        )}
+      </>
+    );
+  };
+
+  const handleDirectorSegmentClick = (status: 'participo' | 'no_participo' | 'all') => {
+    setSelectedDirectorStatus(status);
+    setTimeout(() => {
+      directorsDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  const filteredDirectoresByStatus = useMemo(() => {
+    if (!dataDirectoresBar) return [];
+    
+    // 1. Filtrar por estado (Participó / No Participó / Todos)
+    let filtered = dataDirectoresBar;
+    
+    if (selectedDirectorStatus && selectedDirectorStatus !== 'all') {
+      filtered = dataDirectoresBar.filter(d => {
+        const isParticipante = !!d.participo || (d.totalEstudiantes > 0);
+        return selectedDirectorStatus === 'participo' ? isParticipante : !isParticipante;
+      });
+    }
+
+    // 2. Filtrar por Región/UGEL usando el ID
+    if (selectedRegionDirector !== 'all') {
+      filtered = filtered.filter(d => String(d.region) === selectedRegionDirector);
+    }
+
+    // 3. Filtrar por búsqueda inteligente
+    if (!searchTermDirector.trim()) return filtered;
+
+    const term = searchTermDirector.toLowerCase().trim();
+    return filtered.filter(d => 
+      d.dniDirector?.toLowerCase().includes(term) ||
+      d.nombres?.toLowerCase().includes(term) ||
+      d.apellidos?.toLowerCase().includes(term) ||
+      d.institucion?.toLowerCase().includes(term)
+    );
+  }, [dataDirectoresBar, selectedDirectorStatus, searchTermDirector, selectedRegionDirector]);
+
+  // --- RESUMEN DE ESTADÍSTICAS DE DIRECTORES ---
+  const directoresStats = useMemo(() => {
+    if (!dataDirectoresBar) return { participo: 0, no_participo: 0, total: 0 };
+    
+    const baseList = selectedRegionDirector === 'all' 
+      ? dataDirectoresBar 
+      : dataDirectoresBar.filter(d => String(d.region) === selectedRegionDirector);
+
+    const participoCount = baseList.filter(d => !!d.participo || (d.totalEstudiantes > 0)).length;
+    
+    return {
+      participo: participoCount,
+      no_participo: baseList.length - participoCount,
+      total: baseList.length
+    };
+  }, [dataDirectoresBar, selectedRegionDirector]);
 
   const handleRestablecerFiltros = () => {
     setFiltros({
@@ -779,22 +965,22 @@ const Reporte = () => {
     }
   };
 
-  // Función para generar reporte usando Firebase Functions
-
-
+  if (loaderReporteDirector) {
+    return (
+      <div className={styles.loaderContainer}>
+        <div className={styles.loaderContent}>
+          <RiLoader4Line className={styles.loaderIcon} />
+          <span className={styles.loaderText}>...cargando</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
-      {loaderReporteDirector ? (
-        <div className={styles.loaderContainer}>
-          <div className={styles.loaderContent}>
-            <RiLoader4Line className={styles.loaderIcon} />
-            <span className={styles.loaderText}>...cargando</span>
-          </div>
-        </div>
-      ) : (
-        <div className={styles.mainContainer}>
-          <h1 className={styles.title}>{evaluacion.nombre?.toUpperCase()}</h1>
+      <div className={styles.mainContainer}>
+        <main>
+          <h1 className={styles.title}>{evaluacion?.nombre?.toUpperCase() || 'REPORTE'}</h1>
 
           <div className={styles.toolbar}>
             <div className={styles.controlsGroup}>
@@ -909,13 +1095,22 @@ const Reporte = () => {
                   <button
                     onClick={handleGenerarConsolidado}
                     className={styles.primaryButton}
-                    style={{ backgroundColor: '#4f46e5', color: 'white' }}
-                    disabled={loadingConsolidado}
+                    style={{ 
+                      backgroundColor: (loadingConsolidado || !hasPieChartData) ? '#94a3b8' : '#4f46e5', 
+                      color: 'white',
+                      cursor: (loadingConsolidado || !hasPieChartData) ? 'not-allowed' : 'pointer'
+                    }}
+                    disabled={loadingConsolidado || !hasPieChartData}
                   >
-                    {loadingConsolidado ? (
+                    {consolidationStatus?.status === 'processing' ? (
                       <>
                         <RiLoader4Line className={styles.loaderIcon} />
-                        <span>Consolidando...</span>
+                        <span>{consolidationStatus.progress}% - {consolidationStatus.message || 'Procesando...'}</span>
+                      </>
+                    ) : loadingConsolidado ? (
+                      <>
+                        <RiLoader4Line className={styles.loaderIcon} />
+                        <span>Iniciando...</span>
                       </>
                     ) : (
                       <>
@@ -924,6 +1119,21 @@ const Reporte = () => {
                       </>
                     )}
                   </button>
+
+                  {consolidationStatus?.status === 'processing' && (
+                    <button
+                      onClick={handleDetenerConsolidado}
+                      className={styles.secondaryButton}
+                      style={{ 
+                        backgroundColor: '#ef4444', 
+                        color: 'white',
+                        marginLeft: '8px'
+                      }}
+                    >
+                      <MdClose />
+                      <span>Detener</span>
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -979,6 +1189,7 @@ const Reporte = () => {
               }
             </div>
 
+
             {/* Gráfico de Ranking de Directores */}
             <div className={chartColumns === 1 ? styles.gridItemFull : chartColumns === 2 ? styles.gridItemHalf : styles.gridItemThird}>
               {
@@ -1020,11 +1231,34 @@ const Reporte = () => {
                       </div>
                     </div>
                   ) : (
-                    dataProfesoresBuckets.length > 0 && (
+                    computedDocentesBuckets.length > 0 && (
                       <BarChartDocentesBuckets
-                        data={dataProfesoresBuckets}
-                        totalDocentes={totalDocentesBuckets}
+                        data={computedDocentesBuckets}
+                        totalDocentes={fullDocentesData?.length || 0}
                         onBarClick={handleBarClick}
+                      />
+                    )
+                  )
+                )
+              }
+            </div>
+
+            {/* Gráfico de Participación de Directores (Movido al final) */}
+            <div className={chartColumns === 1 ? styles.gridItemFull : chartColumns === 2 ? styles.gridItemHalf : styles.gridItemThird}>
+              {
+                evaluacion.tipoDeEvaluacion === '1' && (
+                  loadingDirectoresBar ? (
+                    <div className={styles.loaderContainer} style={{ minHeight: '300px' }}>
+                      <div className={styles.loaderContent}>
+                        <RiLoader4Line className={styles.loaderIcon} />
+                        <span className={styles.loaderText}>Cargando participación...</span>
+                      </div>
+                    </div>
+                  ) : (
+                    dataDirectoresBar && dataDirectoresBar.length > 0 && (
+                      <ParticipacionDirectoresChart 
+                        data={dataDirectoresBar} 
+                        onSegmentClick={handleDirectorSegmentClick}
                       />
                     )
                   )
@@ -1089,8 +1323,124 @@ const Reporte = () => {
             setQuestionColumns={setQuestionColumns}
             globalStyles={styles}
           />
-        </div>
-      )}
+          {/* Detalle de Directores (Participación) */}
+          <div ref={directorsDetailRef} style={{ marginTop: '2rem' }}>
+            {(selectedDirectorStatus || selectedRegionDirector !== 'all') && (
+              <div className={styles.detailCard}>
+                <div className={styles.detailHeader}>
+                  <div className={styles.detailTitleWrapper}>
+                    <h3 className={styles.detailTitle}>
+                      {selectedDirectorStatus === 'participo' ? 'Directores que Participaron' : 
+                       selectedDirectorStatus === 'no_participo' ? 'Directores que No Participaron (Omisos)' : 
+                       'Reporte de Participación de Directores'}
+                    </h3>
+                    <span className={styles.detailSubtitle}>
+                      {selectedRegionDirector !== 'all' && <strong style={{ color: '#1e293b' }}>UGEL {regionTexto(selectedRegionDirector)} | </strong>}
+                      Participaron: <strong style={{ color: '#10b981' }}>{directoresStats.participo}</strong> | 
+                      No Participaron: <strong style={{ color: '#ef4444' }}>{directoresStats.no_participo}</strong> | 
+                      Total: <strong>{directoresStats.total}</strong>
+                    </span>
+                  </div>
+                  <div className={styles.detailActions}>
+                    <div className={styles.filterWrapper}>
+                      <select 
+                        className={styles.limitSelect}
+                        value={pageSizeDirector}
+                        onChange={(e) => setPageSizeDirector(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                      >
+                        <option value={100}>Mostrar 100</option>
+                        <option value="all">Mostrar Todos</option>
+                      </select>
+
+                      <select 
+                        className={styles.regionSelect}
+                        value={selectedRegionDirector}
+                        onChange={(e) => setSelectedRegionDirector(e.target.value)}
+                      >
+                        <option value="all">Todas las UGEL</option>
+                        {regiones.map(reg => (
+                          <option key={reg.id} value={String(reg.id)}>{reg.region}</option>
+                        ))}
+                      </select>
+
+                      <select 
+                        className={styles.limitSelect}
+                        value={selectedDirectorStatus || 'all'}
+                        onChange={(e) => setSelectedDirectorStatus(e.target.value as any)}
+                        style={{ border: '1px solid #3b82f6', fontWeight: 600 }}
+                      >
+                        <option value="all">Estado: Todos</option>
+                        <option value="participo">Participó</option>
+                        <option value="no_participo">No Participó</option>
+                      </select>
+                    </div>
+                    <div className={styles.searchWrapper}>
+                      <MdSearch style={{ marginRight: '8px', color: '#64748b', fontSize: '1.2rem' }} />
+                      <input 
+                        type="text" 
+                        placeholder="DNI, Nombre, I.E..."
+                        className={styles.searchInput}
+                        value={searchTermDirector}
+                        onChange={(e) => setSearchTermDirector(e.target.value)}
+                      />
+                    </div>
+                    <button 
+                      className={styles.closeBtn}
+                      onClick={() => {
+                        setSelectedDirectorStatus(null);
+                        setSearchTermDirector('');
+                        setSelectedRegionDirector('all');
+                      }}
+                    >
+                      Cerrar Detalle
+                    </button>
+                  </div>
+                </div>
+
+                <div className={styles.tableWrapper}>
+                  <table className={styles.customTable}>
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>DNI</th>
+                        <th>Director</th>
+                        <th>Institución Educativa</th>
+                        <th>UGEL / Región</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredDirectoresByStatus
+                        .slice(0, pageSizeDirector === 'all' ? filteredDirectoresByStatus.length : pageSizeDirector)
+                        .map((director, idx) => {
+                          const isParticipante = !!director.participo || (director.totalEstudiantes > 0);
+                          const nombreCompleto = `${director.nombres || ''} ${director.apellidos || ''}`.trim() || 'N/A';
+                          
+                          return (
+                            <tr key={idx}>
+                              <td style={{ fontWeight: 600, color: '#64748b', width: '40px' }}>{idx + 1}</td>
+                              <td className={styles.dniCell}>{highlightText(director.dniDirector, searchTermDirector)}</td>
+                              <td className={styles.nameCell}>{highlightText(nombreCompleto, searchTermDirector)}</td>
+                              <td>{highlightText(director.institucion || 'N/A', searchTermDirector)}</td>
+                              <td className={styles.ugelCell}>
+                                {regionTexto(director.region) || 'N/A'}
+                              </td>
+                              <td>
+                                <span className={isParticipante ? styles.statusBadgeActive : styles.statusBadgePending}>
+                                  {isParticipante ? 'Participó' : 'Pendiente'}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
     </>
   );
 };
