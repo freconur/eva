@@ -213,12 +213,12 @@ export const useReporteDirectores = () => {
       switch (filtros.orden) {
         case 'asc':
           estudiantesFiltrados.sort(
-            (a, b) => Number(a.respuestasCorrectas || 0) - Number(b.respuestasCorrectas || 0)
+            (a, b) => Number(a.puntaje || 0) - Number(b.puntaje || 0)
           );
           break;
         case 'desc':
           estudiantesFiltrados.sort(
-            (a, b) => Number(b.respuestasCorrectas || 0) - Number(a.respuestasCorrectas || 0)
+            (a, b) => Number(b.puntaje || 0) - Number(a.puntaje || 0)
           );
           break;
         default:
@@ -528,12 +528,12 @@ export const useReporteDirectores = () => {
       switch (orden) {
         case 'asc':
           dataOrdenada.sort(
-            (a, b) => Number(a.respuestasCorrectas || 0) - Number(b.respuestasCorrectas || 0)
+            (a, b) => Number(a.puntaje || 0) - Number(b.puntaje || 0)
           );
           break;
         case 'desc':
           dataOrdenada.sort(
-            (a, b) => Number(b.respuestasCorrectas || 0) - Number(a.respuestasCorrectas || 0)
+            (a, b) => Number(b.puntaje || 0) - Number(a.puntaje || 0)
           );
           break;
         default:

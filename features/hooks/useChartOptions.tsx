@@ -472,6 +472,11 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
     responsive: true,
     maintainAspectRatio: false,
     indexAxis: 'y' as const,
+    interaction: {
+      intersect: true,
+      axis: 'y' as const,
+      mode: 'index' as const,
+    },
     plugins: {
       legend: {
         display: true,
@@ -492,6 +497,9 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
       tooltip: {
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
         callbacks: {
+          title: function(context: any) {
+            return context[0].label;
+          },
           label: function(context: any) {
             const label = context.dataset.label || '';
             const value = context.parsed.x || 0;
@@ -521,7 +529,8 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
         stacked: true,
         grid: { display: false },
         ticks: {
-          font: { weight: 'bold' as const }
+          font: { weight: 'bold' as const },
+          autoSkip: false
         }
       }
     }

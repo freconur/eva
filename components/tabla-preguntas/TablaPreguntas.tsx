@@ -230,6 +230,45 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
     e.stopPropagation();
   };
 
+  // Generar números de página visibles con elipsis para evitar desbordamientos horizontales
+  const getVisiblePageNumbers = () => {
+    const total = paginationData.totalPages;
+    const current = currentPage;
+    const delta = 2; // páginas adyacentes a la actual
+
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+
+    const pages: (number | string)[] = [];
+    pages.push(1);
+
+    let start = Math.max(2, current - delta);
+    let end = Math.min(total - 1, current + delta);
+
+    if (current - delta <= 2) {
+      end = 1 + delta * 2;
+    }
+    if (current + delta >= total - 1) {
+      start = total - delta * 2;
+    }
+
+    if (start > 2) {
+      pages.push('...');
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    if (end < total - 1) {
+      pages.push('...');
+    }
+
+    pages.push(total);
+    return pages;
+  };
+
   // Verificar si no hay estudiantes para mostrar
   const hasNoStudents = !estudiantes || estudiantes.length === 0;
 
@@ -418,14 +457,20 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
             </button>
 
             <div className={styles.pageNumbers}>
-              {Array.from({ length: paginationData.totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  className={`${styles.pageNumber} ${currentPage === page ? styles.active : ''}`}
-                  onClick={() => handlePageChange(page)}
-                >
-                  {page}
-                </button>
+              {getVisiblePageNumbers().map((page, index) => (
+                typeof page === 'string' ? (
+                  <span key={`ellipsis-${index}`} className={styles.ellipsis}>
+                    {page}
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    className={`${styles.pageNumber} ${currentPage === page ? styles.active : ''}`}
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </button>
+                )
               ))}
             </div>
 

@@ -5,7 +5,7 @@ import {
   GraficoPieChart,
   UserEstudiante,
 } from '@/features/types/types';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -75,7 +75,7 @@ const GraficoTendenciaColegio = ({
   listaPendientes = [],
   promedioPorSeccion = [],
 }: Props) => {
-  
+  const [gridColumns, setGridColumns] = useState<1 | 2 | 3>(3);
 
   const { loaderDataGraficoPieChart } = useGlobalContext();
 
@@ -140,10 +140,67 @@ const GraficoTendenciaColegio = ({
       ]
     };
   }, [promedioPorSeccion]);
- 
+
+  // Determinar la clase de la cuadrícula según la selección
+  const getGridClassName = () => {
+    switch (gridColumns) {
+      case 1:
+        return `${styles.threeColumnGrid} ${styles.gridColumns1}`;
+      case 2:
+        return `${styles.threeColumnGrid} ${styles.gridColumns2}`;
+      case 3:
+        return `${styles.threeColumnGrid} ${styles.gridColumns3}`;
+      default:
+        return styles.threeColumnGrid;
+    }
+  };
+
   return (
-    <div className={styles.threeColumnGrid}>
-      {/* Columna 1 - Gráfico de Pie Chart */}
+    <div className={styles.containerWrapper}>
+      {/* Controles de vista de columnas */}
+      <div className={styles.controlsContainer}>
+        <div className={styles.tabsWrapper}>
+          <button
+            onClick={() => setGridColumns(1)}
+            className={`${styles.tabButton} ${gridColumns === 1 ? styles.tabButtonActive : ''}`}
+            title="1 Columna"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="3" y="6" width="18" height="4.5" rx="1.5" />
+              <rect x="3" y="13.5" width="18" height="4.5" rx="1.5" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setGridColumns(2)}
+            className={`${styles.tabButton} ${gridColumns === 2 ? styles.tabButtonActive : ''}`}
+            title="2 Columnas"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
+              <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
+              <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" />
+              <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setGridColumns(3)}
+            className={`${styles.tabButton} ${gridColumns === 3 ? styles.tabButtonActive : ''}`}
+            title="3 Columnas"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="2" y="4" width="5.5" height="6.5" rx="1" />
+              <rect x="9.25" y="4" width="5.5" height="6.5" rx="1" />
+              <rect x="16.5" y="4" width="5.5" height="6.5" rx="1" />
+              <rect x="2" y="13.5" width="5.5" height="6.5" rx="1" />
+              <rect x="9.25" y="13.5" width="5.5" height="6.5" rx="1" />
+              <rect x="16.5" y="13.5" width="5.5" height="6.5" rx="1" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div className={getGridClassName()}>
+        {/* Columna 1 - Gráfico de Pie Chart */}
       {datosMesSeleccionado && datosMesSeleccionado.niveles.length > 0 && (
         <div className={styles.column}>
           <div className={styles.chartCard}>
@@ -170,8 +227,8 @@ const GraficoTendenciaColegio = ({
       )}
 
       {/* Columna 2 - Gráfico de niveles por mes */}
-      <div className={styles.column}>
-        {datosNiveles && (
+      {datosNiveles && (
+        <div className={styles.column}>
           <div className={styles.chartCard}>
             <div className={styles.cardHeader}>
               <div className={`${styles.headerBar} ${styles.headerBarBlue}`}></div>
@@ -181,13 +238,12 @@ const GraficoTendenciaColegio = ({
               <Line data={datosNiveles} options={opcionesComunes} />
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Columna 3 - Gráficos de promedio global */}
-      <div className={styles.column}>
-        {/* Gráfico de promedio global - Líneas */}
-        {datosPromedio && (
+      {datosPromedio && (
+        <div className={styles.column}>
           <div className={styles.chartCard}>
             <div className={styles.cardHeader}>
               <div className={`${styles.headerBar} ${styles.headerBarGreen}`}></div>
@@ -197,11 +253,12 @@ const GraficoTendenciaColegio = ({
               <Line data={datosPromedio} options={opcionesPromedio} />
             </div>
           </div>
-        )}
-      </div>
-      <div className={styles.column}>
-        {/* Gráfico de promedio global - Barras */}
-        {datosBarrasPromedio && (
+        </div>
+      )}
+
+      {/* Gráfico de promedio global - Barras */}
+      {datosBarrasPromedio && (
+        <div className={styles.column}>
           <div className={styles.chartCard}>
             <div className={styles.cardHeader}>
               <div className={`${styles.headerBar} ${styles.headerBarBlue}`}></div>
@@ -211,27 +268,27 @@ const GraficoTendenciaColegio = ({
               <Bar data={datosBarrasPromedio} options={opcionesBarrasPromedio} />
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Columna - Gráfico de Cobertura */}
       <div className={styles.column}>
-        <CoverageChart 
-          evaluados={evaluados} 
-          pendientes={pendientes} 
+        <CoverageChart
+          evaluados={evaluados}
+          pendientes={pendientes}
           listaPendientes={listaPendientes}
         />
       </div>
 
       {/* Columna de Comparativa por Secciones (solo si hay 2 o más) */}
       {dataSecciones && (
-        <div className={styles.column}>
+        <div className={`${styles.column} ${styles.columnFullWidth}`}>
           <div className={styles.chartCard}>
             <div className={styles.cardHeader}>
               <div className={`${styles.headerBar} ${styles.headerBarBlue}`}></div>
               <h3 className={styles.cardTitle}>Comparativa por Secciones</h3>
             </div>
-            <div className={styles.chartContainer} style={{ height: '250px' }}>
+            <div className={styles.chartContainer} style={{ height: `${Math.max(250, dataSecciones.labels.length * 50)}px` }}>
               <Bar data={dataSecciones} options={opcionesComparacionSecciones} />
             </div>
           </div>
@@ -248,6 +305,7 @@ const GraficoTendenciaColegio = ({
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 };

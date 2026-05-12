@@ -494,8 +494,15 @@
 }
 
 @keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .detailHeader {
@@ -608,7 +615,8 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  flex-wrap: wrap; /* Asegura que los filtros y el botón se acomoden */
+  flex-wrap: wrap;
+  /* Asegura que los filtros y el botón se acomoden */
   justify-content: flex-end;
 }
 

@@ -114,7 +114,9 @@
 
 .tableContainer {
   overflow-x: auto;
-  width: 1000px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   border-radius: 0.5rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   background-color: white;
@@ -124,6 +126,9 @@
 /* Contenedor con scroll horizontal para la tabla */
 .tableWrapper {
   width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  box-sizing: border-box;
   margin-bottom: 2.5rem;
   background-color: white;
   position: relative;
@@ -298,6 +303,7 @@
 .reportContainer {
   width: 100%;
   max-width: 1024px;
+  box-sizing: border-box;
   background-color: white;
   display: grid;
   justify-content: center;
@@ -331,8 +337,9 @@
 }
 
 .questionContainer {
-  width: 800px;
+  width: 100%;
   max-width: 800px;
+  box-sizing: border-box;
   padding: 1.5rem;
   border-radius: 1rem;
   background-color: #f8fafc;
