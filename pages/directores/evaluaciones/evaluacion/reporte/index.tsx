@@ -1,5 +1,6 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useReporteDirectores } from '@/features/hooks/useReporteDirectores';
+import { useRegistros } from '@/features/hooks/useRegistros';
 import { useRouter } from 'next/router';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
@@ -46,6 +47,17 @@ let globalLastFetchParams = "";
 let globalLastFetchTrendParams = "";
 
 const Reporte = () => {
+  const {
+    currentUserData,
+    reporteDirector,
+    preguntasRespuestas,
+    loaderReporteDirector,
+    allRespuestasEstudiantesDirector,
+    dataFiltradaDirectorTabla,
+    evaluacion,
+    estudiantesDeEvaluacion,
+  } = useGlobalContext();
+
   const dispatch = useGlobalContextDispatch();
   const route = useRouter();
   const [filtros, setFiltros] = useState({
@@ -184,6 +196,7 @@ const Reporte = () => {
     datosPorMes,
     promedioGlobal,
     mesesConDataDisponibles,
+    promedioPorDocente,
     warning,
     setIsLoading,
     isLoading,
@@ -217,13 +230,40 @@ const Reporte = () => {
     return sectionByGrade.filter(seccion => uniqueSectionIds.includes(String(seccion.id)));
   }, [estudiantes]);
 
+  // Mapeo de docentes para mostrar nombres en el gráfico
+  const { docentesDeDirectores } = useGlobalContext();
+  const { getDocentesDeDirectores } = useRegistros();
+
+  useEffect(() => {
+    if (currentUserData?.dni && currentUserData?.rol === 2) {
+      getDocentesDeDirectores(currentUserData.dni);
+    }
+  }, [currentUserData?.dni, currentUserData?.rol]);
+
+  const docentesMap = useMemo(() => {
+    const map = new Map<string, string>();
+    docentesDeDirectores?.forEach(docente => {
+      if (docente.dni) {
+        map.set(String(docente.dni), `${docente.nombres} ${docente.apellidos}`);
+      }
+    });
+    return map;
+  }, [docentesDeDirectores]);
+
   // Cálculo de promedios y distribución por sección para el gráfico comparativo
   const promedioPorSeccion = useMemo(() => {
-    if (availableSections.length < 2) return [];
+    if (availableSections.length === 0) return [];
 
     return availableSections.map(seccionObj => {
       const seccionId = String(seccionObj.id);
       const estudiantesSeccion = estudiantes.filter(est => String(est.seccion) === seccionId);
+
+      const docentesUnicos = Array.from(new Set(
+        estudiantesSeccion
+          .map(est => est.dniDocente ? docentesMap.get(String(est.dniDocente)) : null)
+          .filter(Boolean)
+      ));
+      const docenteNombre = docentesUnicos.length > 0 ? docentesUnicos.join(", ") : undefined;
 
       const totalPuntaje = estudiantesSeccion.reduce((acc, est) => acc + (est.puntaje || 0), 0);
       const promedio = estudiantesSeccion.length > 0 ? totalPuntaje / estudiantesSeccion.length : 0;
@@ -246,6 +286,7 @@ const Reporte = () => {
 
       return {
         seccion: seccionObj.name.toUpperCase(),
+        docenteNombre: docenteNombre,
         promedio: Number(promedio.toFixed(2)),
         cantidad: estudiantesSeccion.length,
         distribucion: niveles
@@ -258,16 +299,7 @@ const Reporte = () => {
         return percB - percA;
       });
   }, [estudiantes, availableSections]);
-  const {
-    currentUserData,
-    reporteDirector,
-    preguntasRespuestas,
-    loaderReporteDirector,
-    allRespuestasEstudiantesDirector,
-    dataFiltradaDirectorTabla,
-    evaluacion,
-    estudiantesDeEvaluacion,
-  } = useGlobalContext();
+
 
   // Auto-seleccionar grado de la evaluación para Directores
   useEffect(() => {
@@ -284,11 +316,11 @@ const Reporte = () => {
   const nivelesLeyenda: any[] = ((evaluacion as any)?.niveles?.length > 0)
     ? (evaluacion as any).niveles
     : [
-        { nombre: 'satisfactorio', color: 'var(--satisfactorio)' },
-        { nombre: 'en proceso', color: 'var(--en-proceso)' },
-        { nombre: 'en inicio', color: 'var(--inicio)' },
-        { nombre: 'previo al inicio', color: 'var(--previo-al-inicio)' }
-      ];
+      { nombre: 'satisfactorio', color: 'var(--satisfactorio)' },
+      { nombre: 'en proceso', color: 'var(--en-proceso)' },
+      { nombre: 'en inicio', color: 'var(--inicio)' },
+      { nombre: 'previo al inicio', color: 'var(--previo-al-inicio)' }
+    ];
 
   const handleLimpiarFiltros = () => {
     const gradoDefault = currentUserData?.rol === 2 ? String(evaluacion?.grado || filtros.grado) : '';
@@ -299,12 +331,12 @@ const Reporte = () => {
       genero: '',
       nivel: '',
     });
-    updateQuery({ 
-      grado: gradoDefault, 
-      seccion: '', 
-      orden: '', 
-      genero: '', 
-      nivel: '' 
+    updateQuery({
+      grado: gradoDefault,
+      seccion: '',
+      orden: '',
+      genero: '',
+      nivel: ''
     });
   };
 
@@ -466,7 +498,9 @@ const Reporte = () => {
         yearSelected,
         currentUserData,
         evaluacion
-      ).then((alumnos) => {
+      ).then((res) => {
+        console.log("DEBUG-REPORTE: Datos recibidos de reporteDirectorEstudiantes en reporte/index.tsx:", res);
+        const alumnos = res?.estudiantes || [];
         if (evaluacion.id) {
           obtenerCoberturaDirector(evaluacion, alumnos);
         }
@@ -703,8 +737,8 @@ const Reporte = () => {
               </select>
 
               <div className={styles.configContainer} ref={configRef}>
-                <button 
-                  className={styles.configButton} 
+                <button
+                  className={styles.configButton}
                   onClick={() => setShowConfig(!showConfig)}
                   title="Configurar columnas"
                 >
@@ -717,42 +751,42 @@ const Reporte = () => {
                     <span className={styles.configTitle}>Visibilidad de Columnas</span>
                     <div className={styles.configList}>
                       <label className={styles.configItem}>
-                        <input 
-                          type="checkbox" 
-                          checked={columnasVisibles.showRC} 
-                          onChange={() => toggleColumna('showRC')} 
+                        <input
+                          type="checkbox"
+                          checked={columnasVisibles.showRC}
+                          onChange={() => toggleColumna('showRC')}
                         />
                         <span>Respuestas Correctas (RC)</span>
                       </label>
                       <label className={styles.configItem}>
-                        <input 
-                          type="checkbox" 
-                          checked={columnasVisibles.showTP} 
-                          onChange={() => toggleColumna('showTP')} 
+                        <input
+                          type="checkbox"
+                          checked={columnasVisibles.showTP}
+                          onChange={() => toggleColumna('showTP')}
                         />
                         <span>Total Preguntas (TP)</span>
                       </label>
                       <label className={styles.configItem}>
-                        <input 
-                          type="checkbox" 
-                          checked={columnasVisibles.showPuntaje} 
-                          onChange={() => toggleColumna('showPuntaje')} 
+                        <input
+                          type="checkbox"
+                          checked={columnasVisibles.showPuntaje}
+                          onChange={() => toggleColumna('showPuntaje')}
                         />
                         <span>Puntaje</span>
                       </label>
                       <label className={styles.configItem}>
-                        <input 
-                          type="checkbox" 
-                          checked={columnasVisibles.showNivel} 
-                          onChange={() => toggleColumna('showNivel')} 
+                        <input
+                          type="checkbox"
+                          checked={columnasVisibles.showNivel}
+                          onChange={() => toggleColumna('showNivel')}
                         />
                         <span>Nivel (Logro)</span>
                       </label>
                       <label className={styles.configItem}>
-                        <input 
-                          type="checkbox" 
-                          checked={columnasVisibles.showDniDocente} 
-                          onChange={() => toggleColumna('showDniDocente')} 
+                        <input
+                          type="checkbox"
+                          checked={columnasVisibles.showDniDocente}
+                          onChange={() => toggleColumna('showDniDocente')}
                         />
                         <span>DNI Docente</span>
                       </label>
@@ -783,8 +817,8 @@ const Reporte = () => {
                   <span className={styles.legendTitle}>LEYENDA DE NIVELES:</span>
                   {(nivelesLeyenda as any[]).map((nivel: any, index: number) => (
                     <div key={index} className={styles.legendItem}>
-                      <div 
-                        className={styles.legendCircle} 
+                      <div
+                        className={styles.legendCircle}
                         style={{ backgroundColor: nivel.color }}
                       ></div>
                       <span className={styles.legendLabel}>{nivel.nombre}</span>
@@ -818,6 +852,7 @@ const Reporte = () => {
                       promedioGlobal={promedioGlobal}
                       monthSelected={monthSelected}
                       promedioPorSeccion={promedioPorSeccion}
+                      promedioPorDocente={promedioPorDocente}
                       evaluados={estudiantes.length}
                       pendientes={estudiantesDeEvaluacion.length}
                       listaPendientes={estudiantesDeEvaluacion}

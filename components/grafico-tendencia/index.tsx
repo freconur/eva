@@ -6,6 +6,7 @@ import {
   UserEstudiante,
 } from '@/features/types/types';
 import React, { useMemo, useState } from 'react';
+import { useRouter } from 'next/router';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -18,6 +19,8 @@ import {
   Legend,
   Filler,
   ArcElement,
+  ChartData,
+  ChartOptions,
 } from 'chart.js';
 import { Line, Bar, Pie } from 'react-chartjs-2';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
@@ -26,7 +29,7 @@ import { useGraficoTendenciaData } from '@/features/hooks/useGraficoTendenciaDat
 import { useChartOptions } from '@/features/hooks/useChartOptions';
 import CoverageChart from '../reportes/CoverageChart';
 import styles from './grafico-tendencia.module.css';
-// Registrar los componentes necesarios de Chart.js
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -50,17 +53,9 @@ interface Props {
   evaluados?: number;
   pendientes?: number;
   listaPendientes?: UserEstudiante[];
-  promedioPorSeccion?: {
-    seccion: string;
-    promedio: number;
-    cantidad: number;
-    distribucion: {
-      satisfactorio: number;
-      proceso: number;
-      inicio: number;
-      previo: number;
-    };
-  }[];
+  promedioPorSeccion?: any[];
+  promedioPorDocente?: any[];
+  isFlat?: boolean;
 }
 
 const GraficoTendenciaColegio = ({
@@ -74,20 +69,35 @@ const GraficoTendenciaColegio = ({
   pendientes = 0,
   listaPendientes = [],
   promedioPorSeccion = [],
+  promedioPorDocente = [],
+  isFlat = false,
 }: Props) => {
+  console.log("DEBUG-GRAFICOS: Recibiendo datos en GraficoTendenciaColegio:", {
+    datosPorMes,
+    mesesConDataDisponibles,
+    promedioGlobal,
+    monthSelected,
+    dataGraficoTendenciaNiveles,
+    evaluacion,
+    evaluados,
+    pendientes,
+    listaPendientes,
+    promedioPorSeccion,
+    promedioPorDocente,
+  });
+  const router = useRouter();
   const [gridColumns, setGridColumns] = useState<1 | 2 | 3>(3);
-
+  const [sortMethod, setSortMethod] = useState<'satisfactorio' | 'estudiantes'>('satisfactorio');
   const { loaderDataGraficoPieChart } = useGlobalContext();
 
-  // Usar hooks personalizados para manejar datos y opciones
+  const isMainDashboard = router.pathname === '/directores/reporte';
+
   const {
     datosChartPie,
     datosMesSeleccionado,
     datosNiveles,
     valorMaximoNiveles,
     datosPromedio,
-    valorMinimoPromedio,
-    datosBarrasPromedio,
   } = useGraficoTendenciaData({
     datosPorMes,
     mesesConDataDisponibles,
@@ -101,7 +111,6 @@ const GraficoTendenciaColegio = ({
     opcionesComunes,
     opcionesGraficoPie,
     opcionesPromedio,
-    opcionesBarrasPromedio,
     opcionesComparacionSecciones,
   } = useChartOptions({
     evaluacion,
@@ -110,201 +119,200 @@ const GraficoTendenciaColegio = ({
     monthSelected,
   });
 
-  // Preparar data para el gráfico de comparación por secciones (Apilado)
-  const dataSecciones = useMemo(() => {
-    if (promedioPorSeccion.length < 2) return null;
+  // DATA DOCENTES (SERVER)
+  const chartDataDocentes = useMemo<ChartData<'bar'> | null>(() => {
+    let data = Array.isArray(promedioPorDocente) ? [...promedioPorDocente] : [];
+    if (data.length === 0) return null;
+
+    // Ordenar dinámicamente según el método seleccionado
+    data.sort((a, b) => {
+      if (sortMethod === 'satisfactorio') {
+        const porcentajeA = a.cantidad > 0 ? (a.distribucion?.satisfactorio || 0) / a.cantidad : 0;
+        const porcentajeB = b.cantidad > 0 ? (b.distribucion?.satisfactorio || 0) / b.cantidad : 0;
+        return porcentajeB - porcentajeA; // Descendente por defecto
+      } else {
+        // Ordenar por número de estudiantes de manera ascendente
+        return (a.cantidad || 0) - (b.cantidad || 0);
+      }
+    });
 
     return {
-      labels: promedioPorSeccion.map(s => `Sección ${s.seccion}`),
+      labels: data.map(d => d.docenteNombre || 'Sin nombre'),
       datasets: [
-        {
-          label: 'Satisfactorio',
-          data: promedioPorSeccion.map(s => s.distribucion.satisfactorio),
-          backgroundColor: '#84cc16', // Lima/Verde (Satisfactorio)
-        },
-        {
-          label: 'En Proceso',
-          data: promedioPorSeccion.map(s => s.distribucion.proceso),
-          backgroundColor: '#f97316', // Naranja (Proceso)
-        },
-        {
-          label: 'En Inicio',
-          data: promedioPorSeccion.map(s => s.distribucion.inicio),
-          backgroundColor: '#b91c1c', // Rojo (Inicio)
-        },
-        {
-          label: 'Previo al Inicio',
-          data: promedioPorSeccion.map(s => s.distribucion.previo),
-          backgroundColor: '#9ca3af', // Gris (Previo)
-        }
+        { label: 'Satisfactorio', data: data.map(d => d.distribucion?.satisfactorio || 0), backgroundColor: '#84cc16' },
+        { label: 'En Proceso', data: data.map(d => d.distribucion?.proceso || 0), backgroundColor: '#f97316' },
+        { label: 'En Inicio', data: data.map(d => d.distribucion?.inicio || 0), backgroundColor: '#b91c1c' },
+        { label: 'Previo al Inicio', data: data.map(d => d.distribucion?.previo || 0), backgroundColor: '#9ca3af' }
+      ]
+    };
+  }, [promedioPorDocente, sortMethod]);
+
+  // DATA SECCIONES (CLIENT)
+  const chartDataSecciones = useMemo<ChartData<'bar'> | null>(() => {
+    const data = Array.isArray(promedioPorSeccion) ? promedioPorSeccion : [];
+    if (data.length === 0) return null;
+
+    return {
+      labels: data.map(s => `Sección ${s.seccion || '?'}`),
+      datasets: [
+        { label: 'Satisfactorio', data: data.map(s => s.distribucion?.satisfactorio || 0), backgroundColor: '#84cc16' },
+        { label: 'En Proceso', data: data.map(s => s.distribucion?.proceso || 0), backgroundColor: '#f97316' },
+        { label: 'En Inicio', data: data.map(s => s.distribucion?.inicio || 0), backgroundColor: '#b91c1c' },
+        { label: 'Previo al Inicio', data: data.map(s => s.distribucion?.previo || 0), backgroundColor: '#9ca3af' }
       ]
     };
   }, [promedioPorSeccion]);
 
-  // Determinar la clase de la cuadrícula según la selección
-  const getGridClassName = () => {
-    switch (gridColumns) {
-      case 1:
-        return `${styles.threeColumnGrid} ${styles.gridColumns1}`;
-      case 2:
-        return `${styles.threeColumnGrid} ${styles.gridColumns2}`;
-      case 3:
-        return `${styles.threeColumnGrid} ${styles.gridColumns3}`;
-      default:
-        return styles.threeColumnGrid;
-    }
+  // --- RENDERIZADO ---
+
+  const renderDocentesChart = () => {
+    if (!chartDataDocentes) return null;
+    return (
+      <div className={`${styles.column} ${styles.columnFullWidth}`}>
+        <div className={isFlat ? styles.flatCard : styles.chartCard}>
+          <div className={styles.cardHeader} style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className={`${styles.headerBar} ${styles.headerBarBlue}`} style={{ width: '3px', height: '18px' }}></div>
+              <h3 className={styles.cardTitle} style={{ fontSize: isFlat ? '0.95rem' : '1.1rem', color: '#1e293b', margin: 0, fontWeight: 600 }}>
+                {isFlat ? 'Comparativa por Docentes' : 'Comparativa de Niveles por Docentes'}
+              </h3>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>Ordenar por:</span>
+              <select
+                value={sortMethod}
+                onChange={(e) => setSortMethod(e.target.value as 'satisfactorio' | 'estudiantes')}
+                style={{
+                  padding: '2px 6px',
+                  fontSize: '12px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: '#f8fafc',
+                  color: '#334155',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                  outline: 'none'
+                }}
+              >
+                <option value="satisfactorio">Satisfactorio (%)</option>
+                <option value="estudiantes">N° Estudiantes (Asc)</option>
+              </select>
+            </div>
+          </div>
+          <div className={styles.chartContainer} style={{ height: `${Math.max(450, (chartDataDocentes.labels?.length || 0) * 75)}px`, marginTop: '1.5rem' }}>
+            <Bar data={chartDataDocentes} options={opcionesComparacionSecciones as any} />
+          </div>
+        </div>
+      </div>
+    );
   };
+
+  const renderSeccionesChart = () => {
+    if (!chartDataSecciones) return null;
+    return (
+      <div className={`${styles.column} ${styles.columnFullWidth}`}>
+        <div className={styles.chartCard}>
+          <div className={styles.cardHeader}><div className={styles.headerBarBlue}></div><h3 className={styles.cardTitle}>Comparativa por Secciones</h3></div>
+          <div className={styles.chartContainer} style={{ height: `${Math.max(250, (chartDataSecciones.labels?.length || 0) * 50)}px` }}>
+            <Bar data={chartDataSecciones} options={opcionesComparacionSecciones as any} />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (isMainDashboard) {
+    return (
+      <div className={styles.containerWrapper}>
+        <div className={styles.oneColumnGrid}>
+          {renderDocentesChart() || (
+            <div className={styles.noDataContainer}><h3 className={styles.noDataTitle}>Procesando resultados...</h3></div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.containerWrapper}>
-      {/* Controles de vista de columnas */}
       <div className={styles.controlsContainer}>
         <div className={styles.tabsWrapper}>
           <button
             onClick={() => setGridColumns(1)}
             className={`${styles.tabButton} ${gridColumns === 1 ? styles.tabButtonActive : ''}`}
-            title="1 Columna"
+            title="1 columna"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="3" y="6" width="18" height="4.5" rx="1.5" />
-              <rect x="3" y="13.5" width="18" height="4.5" rx="1.5" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="4" y="7" width="16" height="3" rx="1.5" />
+              <rect x="4" y="14" width="16" height="3" rx="1.5" />
             </svg>
           </button>
           <button
             onClick={() => setGridColumns(2)}
             className={`${styles.tabButton} ${gridColumns === 2 ? styles.tabButtonActive : ''}`}
-            title="2 Columnas"
+            title="2 columnas"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
-              <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
-              <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" />
-              <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="4" y="4" width="7" height="7" rx="1.5" />
+              <rect x="13" y="4" width="7" height="7" rx="1.5" />
+              <rect x="4" y="13" width="7" height="7" rx="1.5" />
+              <rect x="13" y="13" width="7" height="7" rx="1.5" />
             </svg>
           </button>
           <button
             onClick={() => setGridColumns(3)}
             className={`${styles.tabButton} ${gridColumns === 3 ? styles.tabButtonActive : ''}`}
-            title="3 Columnas"
+            title="3 columnas"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="2" y="4" width="5.5" height="6.5" rx="1" />
-              <rect x="9.25" y="4" width="5.5" height="6.5" rx="1" />
-              <rect x="16.5" y="4" width="5.5" height="6.5" rx="1" />
-              <rect x="2" y="13.5" width="5.5" height="6.5" rx="1" />
-              <rect x="9.25" y="13.5" width="5.5" height="6.5" rx="1" />
-              <rect x="16.5" y="13.5" width="5.5" height="6.5" rx="1" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="3" y="3" width="4" height="4" rx="1" />
+              <rect x="10" y="3" width="4" height="4" rx="1" />
+              <rect x="17" y="3" width="4" height="4" rx="1" />
+              <rect x="3" y="10" width="4" height="4" rx="1" />
+              <rect x="10" y="10" width="4" height="4" rx="1" />
+              <rect x="17" y="10" width="4" height="4" rx="1" />
+              <rect x="3" y="17" width="4" height="4" rx="1" />
+              <rect x="10" y="17" width="4" height="4" rx="1" />
+              <rect x="17" y="17" width="4" height="4" rx="1" />
             </svg>
           </button>
         </div>
       </div>
 
-      <div className={getGridClassName()}>
-        {/* Columna 1 - Gráfico de Pie Chart */}
-      {datosMesSeleccionado && datosMesSeleccionado.niveles.length > 0 && (
+      <div className={`${styles.threeColumnGrid} ${styles[`gridColumns${gridColumns}`]}`}>
+        {datosMesSeleccionado && (
+          <div className={styles.column}>
+            <div className={styles.chartCard}>
+              <div className={styles.cardHeader}><div className={styles.headerBarPurple}></div><h3 className={styles.cardTitle}>Distribución Niveles</h3></div>
+              <div className={styles.chartContainer}>
+                {loaderDataGraficoPieChart ? <Loader text="Cargando..." /> : <Pie data={datosChartPie as any} options={opcionesGraficoPie as any} />}
+              </div>
+            </div>
+          </div>
+        )}
+        {datosNiveles && (
+          <div className={styles.column}>
+            <div className={styles.chartCard}>
+              <div className={styles.cardHeader}><div className={styles.headerBarBlue}></div><h3 className={styles.cardTitle}>Tendencia Niveles</h3></div>
+              <div className={styles.chartContainer}><Line data={datosNiveles as any} options={opcionesComunes as any} /></div>
+            </div>
+          </div>
+        )}
+        {datosPromedio && (
+          <div className={styles.column}>
+            <div className={styles.chartCard}>
+              <div className={styles.cardHeader}><div className={styles.headerBarGreen}></div><h3 className={styles.cardTitle}>Promedio Global</h3></div>
+              <div className={styles.chartContainer}><Line data={datosPromedio as any} options={opcionesPromedio as any} /></div>
+            </div>
+          </div>
+        )}
         <div className={styles.column}>
-          <div className={styles.chartCard}>
-            <div className={styles.cardHeader}>
-              <div className={`${styles.headerBar} ${styles.headerBarPurple}`}></div>
-              <h3 className={styles.cardTitle}>Distribución de Estudiantes por Niveles</h3>
-            </div>
-            <div className={styles.chartContainer}>
-              {loaderDataGraficoPieChart ? (
-                <div className={styles.loaderContainer}>
-                  <Loader
-                    size="large"
-                    variant="spinner"
-                    color="#3b82f6"
-                    text="Cargando datos del gráfico..."
-                  />
-                </div>
-              ) : (
-                <Pie data={datosChartPie} options={opcionesGraficoPie} />
-              )}
-            </div>
-          </div>
+          <CoverageChart evaluados={evaluados} pendientes={pendientes} listaPendientes={listaPendientes} />
         </div>
-      )}
-
-      {/* Columna 2 - Gráfico de niveles por mes */}
-      {datosNiveles && (
-        <div className={styles.column}>
-          <div className={styles.chartCard}>
-            <div className={styles.cardHeader}>
-              <div className={`${styles.headerBar} ${styles.headerBarBlue}`}></div>
-              <h3 className={styles.cardTitle}>Cantidad de Estudiantes por Nivel y Mes</h3>
-            </div>
-            <div className={styles.chartContainer}>
-              <Line data={datosNiveles} options={opcionesComunes} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Columna 3 - Gráficos de promedio global */}
-      {datosPromedio && (
-        <div className={styles.column}>
-          <div className={styles.chartCard}>
-            <div className={styles.cardHeader}>
-              <div className={`${styles.headerBar} ${styles.headerBarGreen}`}></div>
-              <h3 className={styles.cardTitle}>Promedio Global por Mes - Líneas</h3>
-            </div>
-            <div className={styles.chartContainer}>
-              <Line data={datosPromedio} options={opcionesPromedio} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Gráfico de promedio global - Barras */}
-      {datosBarrasPromedio && (
-        <div className={styles.column}>
-          <div className={styles.chartCard}>
-            <div className={styles.cardHeader}>
-              <div className={`${styles.headerBar} ${styles.headerBarBlue}`}></div>
-              <h3 className={styles.cardTitle}>Promedio Global por Mes - Barras</h3>
-            </div>
-            <div className={styles.chartContainer}>
-              <Bar data={datosBarrasPromedio} options={opcionesBarrasPromedio} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Columna - Gráfico de Cobertura */}
-      <div className={styles.column}>
-        <CoverageChart
-          evaluados={evaluados}
-          pendientes={pendientes}
-          listaPendientes={listaPendientes}
-        />
-      </div>
-
-      {/* Columna de Comparativa por Secciones (solo si hay 2 o más) */}
-      {dataSecciones && (
-        <div className={`${styles.column} ${styles.columnFullWidth}`}>
-          <div className={styles.chartCard}>
-            <div className={styles.cardHeader}>
-              <div className={`${styles.headerBar} ${styles.headerBarBlue}`}></div>
-              <h3 className={styles.cardTitle}>Comparativa por Secciones</h3>
-            </div>
-            <div className={styles.chartContainer} style={{ height: `${Math.max(250, dataSecciones.labels.length * 50)}px` }}>
-              <Bar data={dataSecciones} options={opcionesComparacionSecciones} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Mensaje si no hay datos */}
-      {!datosNiveles && !datosPromedio && (
-        <div className={styles.noDataContainer}>
-          <div className={styles.noDataIcon}>📊</div>
-          <h3 className={styles.noDataTitle}>No hay datos disponibles</h3>
-          <p className={styles.noDataMessage}>
-            Los gráficos aparecerán cuando haya datos para mostrar
-          </p>
-        </div>
-      )}
+        
+        {/* GRÁFICOS FULL WIDTH */}
+        {renderDocentesChart()}
+        {renderSeccionesChart()}
       </div>
     </div>
   );

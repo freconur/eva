@@ -192,26 +192,61 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
       
       {/* Selector de número de columnas */}
       <div className={styles.columnSelectorContainer}>
-        <label className={styles.columnSelectorLabel}>
+        <span className={styles.columnSelectorLabel}>
           Número de columnas:
-        </label>
-        <select 
-          className={styles.columnSelector}
-          value={numeroColumnas}
-          onChange={(e) => setNumeroColumnas(Number(e.target.value))}
-        >
-          <option value={1}>1 Columna</option>
-          <option value={2}>2 Columnas</option>
-          <option value={3}>3 Columnas</option>
-        </select>
+        </span>
+        <div className={styles.gridSelectorWrapper}>
+          <button
+            type="button"
+            className={`${styles.gridButton} ${numeroColumnas === 1 ? styles.active : ''}`}
+            onClick={() => setNumeroColumnas(1)}
+            title="1 columna"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="4" y="7" width="16" height="3" rx="1.5" />
+              <rect x="4" y="14" width="16" height="3" rx="1.5" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className={`${styles.gridButton} ${numeroColumnas === 2 ? styles.active : ''}`}
+            onClick={() => setNumeroColumnas(2)}
+            title="2 columnas"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="4" y="4" width="7" height="7" rx="1.5" />
+              <rect x="13" y="4" width="7" height="7" rx="1.5" />
+              <rect x="4" y="13" width="7" height="7" rx="1.5" />
+              <rect x="13" y="13" width="7" height="7" rx="1.5" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className={`${styles.gridButton} ${numeroColumnas === 3 ? styles.active : ''}`}
+            onClick={() => setNumeroColumnas(3)}
+            title="3 columnas"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="3" y="3" width="4" height="4" rx="1" />
+              <rect x="10" y="3" width="4" height="4" rx="1" />
+              <rect x="17" y="3" width="4" height="4" rx="1" />
+              <rect x="3" y="10" width="4" height="4" rx="1" />
+              <rect x="10" y="10" width="4" height="4" rx="1" />
+              <rect x="17" y="10" width="4" height="4" rx="1" />
+              <rect x="3" y="17" width="4" height="4" rx="1" />
+              <rect x="10" y="17" width="4" height="4" rx="1" />
+              <rect x="17" y="17" width="4" height="4" rx="1" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div 
         className={styles.reportContainer}
         style={{
-          gridTemplateColumns: `repeat(${numeroColumnas}, 1fr)`,
+          '--num-cols': numeroColumnas,
           display: 'grid'
-        }}
+        } as React.CSSProperties}
       >
         {warningEvaEstudianteSinRegistro ? (
           <div className={styles.warningContainer}>{warningEvaEstudianteSinRegistro}</div>

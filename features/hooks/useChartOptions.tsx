@@ -321,7 +321,7 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
         ticks: {
           precision: 0,
           stepSize: maxPromedioGlobal / 5,
-          callback: function (value: any) {
+          callback: function (value: any): string {
             return Number(value).toFixed(0);
           },
         },
@@ -450,7 +450,7 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
         ticks: {
           precision: 0,
           stepSize: maxPromedioGlobal / 5,
-          callback: function (value: any) {
+          callback: function (value: any): string {
             return Number(value).toFixed(0);
           },
           font: {
@@ -473,7 +473,7 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
     maintainAspectRatio: false,
     indexAxis: 'y' as const,
     interaction: {
-      intersect: true,
+      intersect: false,
       axis: 'y' as const,
       mode: 'index' as const,
     },
@@ -491,14 +491,23 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
         text: 'Distribución de Niveles por Sección (%)',
         font: {
           size: 14,
-          weight: 'bold' as const,
+          weight: '600' as const,
+          family: "'Inter', sans-serif",
         },
+        color: '#4b5563',
+        padding: { bottom: 20 }
       },
       tooltip: {
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        padding: 12,
+        cornerRadius: 4,
         callbacks: {
           title: function(context: any) {
-            return context[0].label;
+            const chartData = context[0].chart.data;
+            const label = context[0].label;
+            const docente = (chartData.docenteNombres && chartData.docenteNombres[context[0].dataIndex]) || 
+                            (context[0].dataset.docenteNombres && context[0].dataset.docenteNombres[context[0].dataIndex]);
+            return docente ? `${label} - Docente: ${docente}` : `${label}`;
           },
           label: function(context: any) {
             const label = context.dataset.label || '';
@@ -518,18 +527,39 @@ export const useChartOptions = ({ evaluacion, promedioGlobal, valorMaximoNiveles
       x: {
         stacked: true,
         beginAtZero: true,
-        grid: { display: false },
+        grid: { 
+          display: true,
+          color: '#e5e7eb',
+          drawBorder: false
+        },
         title: {
           display: true,
           text: 'Cantidad de Estudiantes',
-          font: { size: 10 }
+          font: { size: 11, family: "'Inter', sans-serif" },
+          color: '#6b7280'
+        },
+        ticks: {
+          color: '#6b7280',
+          font: { size: 11 }
         }
       },
       y: {
         stacked: true,
         grid: { display: false },
         ticks: {
-          font: { weight: 'bold' as const },
+          callback: function(this: any, value: any): any {
+            const label = this.getLabelForValue(value);
+            if (typeof label === 'string' && label.length > 14) {
+              return label.substring(0, 12) + '...';
+            }
+            return label;
+          },
+          font: { 
+            weight: '600' as const,
+            size: 10,
+            family: "'Inter', sans-serif"
+          },
+          color: '#4b5563',
           autoSkip: false
         }
       }

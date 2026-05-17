@@ -21,6 +21,7 @@ import { calculoNivel, calculoNivelProgresivo, calculoPreguntasCorrectas, calcul
 import { generarDataGraficoPiechart } from '../utils/generar-data-grafico-piechart';
 import { gradosDeColegio } from '@/fuctions/regiones';
 import { useState, useCallback } from 'react';
+
 export const useReporteDirectores = () => {
   const dispatch = useGlobalContextDispatch();
   const { currentUserData } = useGlobalContext();
@@ -30,15 +31,15 @@ export const useReporteDirectores = () => {
   const [promedioGlobal, setPromedioGlobal] = useState<PromedioGlobalPorMes[]>([])
   const [mesesConDataDisponibles, setMesesConDataDisponibles] = useState<number[]>([]);
   const [datosPorMes, setDatosPorMes] = useState<GraficoTendenciaNiveles[]>([])
+  const [promedioPorDocente, setPromedioPorDocente] = useState<any[]>([]);
   const [warning, setWarning] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
 
   const loadingGraficos = useCallback((value: boolean) => {
-    console.log(`HOOK-LOG: loadingGraficos(${value})`);
     setIsLoading(value)
   }, []);
-  //dataFiltradaDirectorTabla, esta es la constate que contiene los datos de los estudiantes que se van a mostrar en la tabla
+
   const getGrados = useCallback(async () => {
     const refGrados = collection(db, 'grados');
     const q = query(refGrados, orderBy('grado'));
@@ -64,234 +65,26 @@ export const useReporteDirectores = () => {
         dniDirector: currentUserData.dni,
       });
 
-      console.log("HOOK-LOG: Respuesta meses disponibles:", response.data.mesesDisponibles);
-
       if (response.data.success) {
         const nuevosMeses = response.data.mesesDisponibles || [];
-        // Solo actualizar si la lista de meses es realmente diferente para evitar loops
         setMesesConDataDisponibles(prev => {
           if (JSON.stringify(prev) === JSON.stringify(nuevosMeses)) return prev;
           return nuevosMeses;
         });
 
-        if (response.data.datosPorMes) {
-          setDatosPorMes(response.data.datosPorMes);
-        }
-        if (response.data.promedioGlobal) {
-          setPromedioGlobal(response.data.promedioGlobal);
+        if (response.data.datosPorMes) setDatosPorMes(response.data.datosPorMes);
+        if (response.data.promedioGlobal) setPromedioGlobal(response.data.promedioGlobal);
+        if (response.data.promedioPorDocente && response.data.promedioPorDocente.length > 0) {
+          setPromedioPorDocente(response.data.promedioPorDocente);
         }
       }
     } catch (error) {
       console.error('Error en getAllEvaluacionesDeEstudiantesPorMes (CF):', error);
     } finally {
-      console.log("HOOK-LOG: Finalizando tendencia anual");
       setIsLoading(false);
     }
   }, [currentUserData.dni]);
-  const getAllEvaluacionesDeEstudiantes = async (
-    idEvaluacion: string,
-    month: number,
-    year: number,
-    evaluacion: Evaluacion
-  ) => {
-    try {
-      dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: true });
-      //obtengo todos los docentes del director
 
-      const q = query(
-        collection(db, 'usuarios'),
-        where('dniDirector', '==', `${currentUserData.dni}`)
-      );
-      const querySnapshot = await getDocs(q);
-
-      const docentesDelDirector: string[] = [];
-      querySnapshot.forEach((doc) => {
-        docentesDelDirector.push(doc.id);
-      });
-      // Convertimos el forEach en un array de promesas
-      const promesasEvaluaciones = docentesDelDirector.map(async (docente) => {
-        const pathRefEstudiantes = collection(
-          db,
-          `/usuarios/${docente}/${idEvaluacion}/${year}/${month}`
-        );
-        const snapshot = await getDocs(pathRefEstudiantes);
-        const evaluacionesDocente: UserEstudiante[] = [];
-
-        snapshot.forEach((doc) => {
-          evaluacionesDocente.push(doc.data() as UserEstudiante);
-        });
-
-        return evaluacionesDocente;
-      });
-
-      // Esperamos a que todas las promesas se resuelvan
-      const resultadosEvaluaciones = await Promise.all(promesasEvaluaciones);
-
-      // Aplanamos el array de arrays en un solo array
-      const todasLasEvaluaciones = resultadosEvaluaciones.flat();
-
-
-      console.log('todasLasEvaluaciones', todasLasEvaluaciones);
-      if (todasLasEvaluaciones.length === 0) {
-        dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, payload: [] });
-        dispatch({ type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR, payload: [] });
-        setEstudiantes(todasLasEvaluaciones);
-        setWarning("No hay registros")
-        return [];
-      }
-      if (evaluacion.tipoDeEvaluacion === '1') {
-        todasLasEvaluaciones.forEach((estudiante) => {
-          calculoNivel(estudiante, evaluacion);
-        });
-
-        const dataGraficoPiechart = generarDataGraficoPiechart(
-          todasLasEvaluaciones,
-          month,
-          evaluacion
-        );
-        dispatch({ type: AppAction.DATA_GRAFICO_PIE_CHART, payload: [dataGraficoPiechart] });
-        dispatch({
-          type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR,
-          payload: todasLasEvaluaciones,
-        });
-      } else if (evaluacion.tipoDeEvaluacion === '0') {
-        dispatch({
-          type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR,
-          payload: todasLasEvaluaciones,
-        });
-      }
-      setEstudiantes(todasLasEvaluaciones);
-      return todasLasEvaluaciones;
-    } catch (error) {
-      console.error('Error en reporteDirectorEstudiantes:', error);
-      throw error;
-    } finally {
-      dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: false });
-    }
-  };
-  const filtrosParaReporteDirector = useCallback((estudiantes: UserEstudiante[], filtros: {
-    grado: string;
-    seccion: string;
-    orden: string;
-    genero: string;
-    nivel: string;
-  }) => {
-    // Si no hay filtros seleccionados, devolver todos los estudiantes
-    if (!filtros.grado && !filtros.seccion && !filtros.genero && !filtros.orden && !filtros.nivel) {
-      return estudiantes;
-    }
-
-    // Filtrar estudiantes según los criterios seleccionados
-    let estudiantesFiltrados = estudiantes.filter((estudiante) => {
-      const cumpleGrado = !filtros.grado || estudiante.grado?.toString() === filtros.grado;
-      const cumpleSeccion = !filtros.seccion || estudiante.seccion?.toString() === filtros.seccion;
-      const cumpleGenero = !filtros.genero || estudiante.genero?.toString() === filtros.genero;
-
-      // Filtrar por Nivel de Logro (Satisfactorio, Proceso, Inicio, etc.)
-      let cumpleNivel = true;
-      if (filtros.nivel) {
-        if (!estudiante.nivel) {
-          cumpleNivel = false;
-        } else {
-          const nivelEst = estudiante.nivel.toLowerCase();
-          const nivelBusqueda = filtros.nivel.toLowerCase();
-          
-          // Lógica especial para "Inicio" vs "Previo al Inicio"
-          if (nivelBusqueda === 'inicio') {
-            cumpleNivel = nivelEst.includes('inicio') && !nivelEst.includes('previo');
-          } else {
-            cumpleNivel = nivelEst.includes(nivelBusqueda);
-          }
-        }
-      }
-
-      return cumpleGrado && cumpleSeccion && cumpleGenero && cumpleNivel;
-    });
-
-    // Aplicar ordenamiento si se especifica
-    if (filtros.orden) {
-      switch (filtros.orden) {
-        case 'asc':
-          estudiantesFiltrados.sort(
-            (a, b) => Number(a.puntaje || 0) - Number(b.puntaje || 0)
-          );
-          break;
-        case 'desc':
-          estudiantesFiltrados.sort(
-            (a, b) => Number(b.puntaje || 0) - Number(a.puntaje || 0)
-          );
-          break;
-        default:
-          break;
-      }
-    }
-
-    return estudiantesFiltrados;
-  }, []);
-
-  const obtenerCoberturaDirector = useCallback(async (evaluacion: Evaluacion, alumnosEvaluados?: UserEstudiante[]) => {
-    try {
-      if (!evaluacion.id || !currentUserData.dni) return;
-
-      // Eliminado dispatch de LOADER_PAGES para que la carga de cobertura sea silenciosa
-      // y no interrumpa el filtrado en memoria.
-
-      // 1. Obtener todos los profesores del director que enseñan ese grado
-      const qProfesores = query(
-        collection(db, 'usuarios'),
-        where('dniDirector', '==', currentUserData.dni),
-        where('rol', '==', 3), // Docente
-        where('grados', 'array-contains', Number(evaluacion.grado))
-      );
-
-      const snapshotProfesores = await getDocs(qProfesores);
-
-      if (snapshotProfesores.empty) {
-        dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
-        return;
-      }
-
-      // 2. Para cada profesor, obtener sus estudiantes de ese grado en paralelo
-      const promesasEstudiantes = snapshotProfesores.docs.map(async (docProfesor) => {
-        const qEstudiantes = query(
-          collection(db, `usuarios/${docProfesor.id}/estudiantes-docentes`),
-          where('grado', '==', `${evaluacion.grado}`)
-        );
-        const snapEst = await getDocs(qEstudiantes);
-        return snapEst.docs.map(d => ({ ...d.data(), id: d.id } as UserEstudiante));
-      });
-
-      const resultadosEstudiantes = await Promise.all(promesasEstudiantes);
-
-      // Aplanar resultados y eliminar duplicados por DNI
-      const uniqueEstudiantesMap = new Map<string, UserEstudiante>();
-      resultadosEstudiantes.flat().forEach(est => {
-        if (est.dni) uniqueEstudiantesMap.set(String(est.dni), est);
-      });
-
-      const todosLosEstudiantesDelGrado = Array.from(uniqueEstudiantesMap.values());
-
-      // 3. Identificar pendientes comparando contra los evaluados
-      // Si se pasa alumnosEvaluados, lo usamos; si no, usamos el estado 'estudiantes'
-      const baseEvaluados = alumnosEvaluados || estudiantes;
-      const evaluadosDnis = new Set(baseEvaluados.map(e => String(e.dni)));
-
-      const listaPendientes = todosLosEstudiantesDelGrado.filter(
-        est => !evaluadosDnis.has(String(est.dni))
-      );
-
-      dispatch({
-        type: AppAction.ESTUDIANTES_DE_EVALUACION,
-        payload: listaPendientes,
-      });
-
-    } catch (error) {
-      console.error('Error al obtener cobertura director:', error);
-      dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
-    } finally {
-      // Eliminado dispatch de LOADER_PAGES para evitar bloqueos visuales innecesarios
-    }
-  }, [currentUserData.dni, db, dispatch, estudiantes]);
   const reporteDirectorEstudiantes = useCallback(async (
     idEvaluacion: string,
     month: number,
@@ -311,190 +104,97 @@ export const useReporteDirectores = () => {
         dniDirector: currentUserData.dni,
       });
 
-      if (response.data.success) {
-        const { estudiantes: alumnos, estadisticas, mesesDisponibles, datosPorMes: trendData, promedioGlobal: avgData } = response.data;
+      console.log("DEBUG-HOOK: Cloud Function getReporteDirector response:", response.data);
 
-        setEstudiantes(alumnos);
+      if (response.data.success) {
+        const { 
+          estudiantes: alumnos, 
+          estadisticas, 
+          mesesDisponibles, 
+          datosPorMes: trendData, 
+          promedioGlobal: avgData,
+          promedioPorDocente: teacherData
+        } = response.data;
+
+        setEstudiantes(alumnos || []);
         setMesesConDataDisponibles(mesesDisponibles || []);
 
         if (trendData) setDatosPorMes(trendData);
         if (avgData) setPromedioGlobal(avgData);
+        if (teacherData && teacherData.length > 0) {
+          setPromedioPorDocente(teacherData);
+        }
 
         dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: estadisticas });
 
-        // Mantener sincronizado el contexto global (opcional dependiendo de si se usa en otros lados)
         dispatch({
           type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR,
-          payload: alumnos,
+          payload: alumnos || [],
         });
 
-        // Persistir si es necesario (el CF ya podría hacerlo, pero mantengamos la compatibilidad por ahora si se desea)
-        // No obstante, si el CF ya devolvió los datos, el ahorro principal ya ocurrió.
-        return alumnos;
+        return {
+          estudiantes: alumnos || [],
+          promedioPorDocente: teacherData || []
+        };
       }
-      return [];
+      return { estudiantes: [], promedioPorDocente: [] };
     } catch (error) {
       console.error('Error en reporteDirectorEstudiantes (CF):', error);
+      return { estudiantes: [], promedioPorDocente: [] };
     } finally {
-      console.log("HOOK-LOG: Finalizando reporte estudiantes");
       setIsLoading(false);
     }
   }, [currentUserData.dni, dispatch]);
 
-  const reporteDirectorData = async (idDirector: string, idEvaluacion: string) => {
-    //1.-traer a todos los docentes que estan acargo del director
-    //2.-comenzar a iterar en el array de docentes y hacer get de las evaluaciones de cada docente
-    //3.-hacer acumulado de las evaluaciones de cada docente
-    //4.-hacer set de los datos en la collection de evaluaciones-directores
-    const docentesDelDirector: string[] = [];
-    /* dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: true }); */
-    const getDocenterIdRef = query(
-      collection(db, 'usuarios'),
-      where('dniDirector', '==', `${idDirector}`)
-    ); //me traigo a todos los docentes que estan acargo del director
+  const filtrosParaReporteDirector = useCallback((estudiantes: UserEstudiante[], filtros: {
+    grado: string;
+    seccion: string;
+    orden: string;
+    genero: string;
+    nivel: string;
+  }) => {
+    if (!filtros.grado && !filtros.seccion && !filtros.genero && !filtros.orden && !filtros.nivel) {
+      return estudiantes;
+    }
 
-    //aqui debemos de validar si existe evaluaciones de los docentes de dicha evalucion
+    let estudiantesFiltrados = estudiantes.filter((estudiante) => {
+      const cumpleGrado = !filtros.grado || estudiante.grado?.toString() === filtros.grado;
+      const cumpleSeccion = !filtros.seccion || estudiante.seccion?.toString() === filtros.seccion;
+      const cumpleGenero = !filtros.genero || estudiante.genero?.toString() === filtros.genero;
 
-    //1.-traer a todos los docentes que estan acargo del director
-    const getDniDocentesDeDirectores = new Promise<string[]>(async (resolve, reject) => {
-      let index = 0;
-      try {
-        await getDocs(getDocenterIdRef).then((docente) => {
-          //obtengo todos los dni de los docentes que estan acargo del director si no tiene no devuelve reultados
-          if (docente.size === 0) {
-            //entro aqui si no hay docentes que han evaluado a sus estudiantes
-            console.log('docente.size', docente.size);
-            dispatch({
-              type: AppAction.LOADER_REPORTE_DIRECTOR,
-              payload: false,
-            });
-            reject();
+      let cumpleNivel = true;
+      if (filtros.nivel) {
+        if (!estudiante.nivel) {
+          cumpleNivel = false;
+        } else {
+          const nivelEst = estudiante.nivel.toLowerCase();
+          const nivelBusqueda = filtros.nivel.toLowerCase();
+          if (nivelBusqueda === 'inicio') {
+            cumpleNivel = nivelEst.includes('inicio') && !nivelEst.includes('previo');
           } else {
-            console.log('entro aqui si hay docentes que han evaluado a sus estudiantes');
-            //entro aqui si hay docentes que han evaluado a sus estudiantes
-            docente.forEach((doc) => {
-              index = index + 1;
-              //obtengo todos los dni de los docentes que estan acargo del director
-              docentesDelDirector.push(doc.id);
-              if (index === docente.size) {
-                resolve(docentesDelDirector);
-              }
-            });
+            cumpleNivel = nivelEst.includes(nivelBusqueda);
           }
-        });
-      } catch (error) {
-        console.log('error', error);
-        reject(error);
-      }
-    });
-
-    //2.-comenzar a iterar en el array de docentes y hacer get de las evaluaciones de cada docente
-    //con esta promesa una vez tenga los dni de todo los docentes comienzo hacer get del acumulativo del examen hecho por el profesor
-
-    getDniDocentesDeDirectores.then(async (docentes) => {
-      console.log('docentes', docentes);
-      const promesaEstudiantes = docentes.map(async (docente) => {
-        try {
-          const path = `/usuarios/${docente}/${idEvaluacion}/`;
-          const pathRefEstudiantes = collection(db, path);
-
-          const snapshot = await getDocs(pathRefEstudiantes);
-          const arrayEstudiantes: UserEstudiante[] = [];
-
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            if (data) {
-              arrayEstudiantes.push({
-                ...data,
-                id: doc.id,
-              } as UserEstudiante);
-            }
-          });
-          return arrayEstudiantes;
-        } catch (error) {
-          console.error(`Error al obtener datos del docente ${docente}:`, error);
-          return [] as UserEstudiante[];
         }
-      });
+      }
 
-      const dataDeTodosLosEstudiantes = Promise.allSettled(promesaEstudiantes);
-      dataDeTodosLosEstudiantes.then((res) => {
-        const estudiantesExitosos = res
-          .filter(
-            (result): result is PromiseFulfilledResult<UserEstudiante[]> =>
-              result.status === 'fulfilled'
-          )
-          .map((result) => result.value)
-          .flat();
-        //en este dispatch guardare la data de todos los estudiantes que pertenecen a la institucion
-        dispatch({
-          type: AppAction.ALL_RESPUESTAS_ESTUDIANTES_DIRECTOR,
-          payload: estudiantesExitosos,
-        });
-        const dataEstadisticasEstudiantes = estudiantesExitosos.reduce((acc, estudiante) => {
-          estudiante.respuestas?.forEach((respuesta) => {
-            if (respuesta.order === undefined) return;
-
-            const orderId = respuesta.order.toString();
-            let estadistica = acc.find((stat) => stat.id === orderId);
-
-            if (!estadistica) {
-              // Inicializamos con todas las propiedades posibles
-              estadistica = {
-                id: orderId,
-                a: 0,
-                b: 0,
-                c: 0,
-                d: 0,
-                total: 0,
-              };
-              acc.push(estadistica);
-            }
-
-            respuesta.alternativas?.forEach((alternativa) => {
-              if (!alternativa.selected) return;
-
-              switch (alternativa.alternativa) {
-                case 'a':
-                  estadistica!.a = (estadistica!.a || 0) + 1;
-                  break;
-                case 'b':
-                  estadistica!.b = (estadistica!.b || 0) + 1;
-                  break;
-                case 'c':
-                  estadistica!.c = (estadistica!.c || 0) + 1;
-                  break;
-                case 'd':
-                  estadistica!.d = (estadistica!.d || 0) + 1;
-                  break;
-              }
-            });
-
-            // Calculamos el total basado en las alternativas presentes
-            const alternativasPresentes = respuesta.alternativas?.some(
-              (alt) => alt.alternativa === 'd'
-            );
-            if (alternativasPresentes) {
-              estadistica!.total =
-                (estadistica!.a || 0) +
-                (estadistica!.b || 0) +
-                (estadistica!.c || 0) +
-                (estadistica!.d || 0);
-            } else {
-              estadistica!.total =
-                (estadistica!.a || 0) + (estadistica!.b || 0) + (estadistica!.c || 0);
-              // Si no hay alternativa 'd', la establecemos como undefined
-              estadistica!.d = undefined;
-            }
-          });
-          console.log('acc', acc);
-          return acc;
-        }, [] as DataEstadisticas[]);
-
-        dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: dataEstadisticasEstudiantes });
-      });
+      return cumpleGrado && cumpleSeccion && cumpleGenero && cumpleNivel;
     });
-  };
+
+    if (filtros.orden) {
+      switch (filtros.orden) {
+        case 'asc':
+          estudiantesFiltrados.sort((a, b) => Number(a.puntaje || 0) - Number(b.puntaje || 0));
+          break;
+        case 'desc':
+          estudiantesFiltrados.sort((a, b) => Number(b.puntaje || 0) - Number(a.puntaje || 0));
+          break;
+        default:
+          break;
+      }
+    }
+
+    return estudiantesFiltrados;
+  }, []);
 
   const reporteToTableDirector = (
     data: UserEstudiante[],
@@ -508,33 +208,21 @@ export const useReporteDirectores = () => {
     idEvaluacion: string
   ) => {
     const dataFiltrada = data?.filter((estudiante) => {
-      // Si no hay filtros, incluir todos los datos
-      if (!grado && !seccion && !genero) {
-        return true;
-      }
-
-      // Verificar cada filtro individualmente
+      if (!grado && !seccion && !genero) return true;
       const cumpleGrado = !grado || estudiante.grado?.toString() === grado;
       const cumpleSeccion = !seccion || estudiante.seccion?.toString() === seccion;
       const cumpleGenero = !genero || estudiante.genero?.toString() === genero;
-
-      // El estudiante debe cumplir con todos los filtros activos
       return cumpleGrado && cumpleSeccion && cumpleGenero;
     });
 
-    // Ordenar los datos según el parámetro orden
     let dataOrdenada = [...dataFiltrada];
     if (orden) {
       switch (orden) {
         case 'asc':
-          dataOrdenada.sort(
-            (a, b) => Number(a.puntaje || 0) - Number(b.puntaje || 0)
-          );
+          dataOrdenada.sort((a, b) => Number(a.puntaje || 0) - Number(b.puntaje || 0));
           break;
         case 'desc':
-          dataOrdenada.sort(
-            (a, b) => Number(b.puntaje || 0) - Number(a.puntaje || 0)
-          );
+          dataOrdenada.sort((a, b) => Number(b.puntaje || 0) - Number(a.puntaje || 0));
           break;
         default:
           break;
@@ -545,447 +233,108 @@ export const useReporteDirectores = () => {
     return dataOrdenada;
   };
 
-  const agregarDatosEstadisticosDirector = async (
-    data: DataEstadisticas[],
-    idEvaluacion: string
-  ) => {
-    await setDoc(doc(db, 'evaluaciones-directores', `${currentUserData.dni}`), {
-      dni: currentUserData.dni,
-    });
+  const obtenerCoberturaDirector = useCallback(async (evaluacion: Evaluacion, alumnosEvaluados?: UserEstudiante[]) => {
+    try {
+      if (!evaluacion.id || !currentUserData.dni) return;
 
-    // const newPromiseAddAcumulado = new Promise<boolean>((resolve, reject) => {
-    //   try {
-    data.map(async (pq) => {
-      const pathRef = doc(
-        db,
-        `/evaluaciones-directores/${currentUserData.dni}/${idEvaluacion}`,
-        `${pq.id}`
+      const qProfesores = query(
+        collection(db, 'usuarios'),
+        where('dniDirector', '==', currentUserData.dni),
+        where('rol', '==', 3), 
+        where('grados', 'array-contains', Number(evaluacion.grado))
       );
 
-      if (pq.d === undefined) {
-        await setDoc(pathRef, {
-          id: pq.id,
-          a: pq.a,
-          b: pq.b,
-          c: pq.c,
-          total: pq.total,
-        }).then((res) => {
-          if (data.length === Number(pq.id)) {
-            dispatch({
-              type: AppAction.LOADER_REPORTE_DIRECTOR,
-              payload: false,
-            });
-            dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: data });
-          }
-        });
-      } else {
-        await setDoc(pathRef, {
-          id: pq.id,
-          a: pq.a,
-          b: pq.b,
-          c: pq.c,
-          d: pq.d,
-          total: pq.total,
-        }).then((res) => {
-          if (data.length === Number(pq.id)) {
-            dispatch({
-              type: AppAction.LOADER_REPORTE_DIRECTOR,
-              payload: false,
-            });
-            dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: data });
-          }
-        });
+      const snapshotProfesores = await getDocs(qProfesores);
+
+      if (snapshotProfesores.empty) {
+        dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
+        return;
       }
-    });
-  };
 
-  const resetReporteRegional = () => {
-    // dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: true })
-    dispatch({ type: AppAction.REPORTE_REGIONAL, payload: [] });
-  };
-  const resetReporteGlobal = () => {
-    // dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: true })
-    dispatch({ type: AppAction.REPORTE_REGIONAL, payload: [] });
-  };
-
-  const reporteRegionalGlobal = async (idEvaluacion: string) => {
-    resetReporteGlobal();
-    dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: true });
-    //pathref es la referencia para hacer el get de todos los directores que estan en la collection de evaluaciones-directores
-    const pathRefEvaluacionesDirectores = collection(db, 'evaluaciones-directores');
-    //creamos un array para almacenar toda la data alli
-    const dniDirectoreDeRegion: string[] = [];
-    const arrayAllDirectoresEvaluacionesDirectore: DataEstadisticas[] = [];
-
-    const getDniDirectores = new Promise<string[]>(async (resolve, reject) => {
-      try {
-        await getDocs(pathRefEvaluacionesDirectores).then((res) => {
-          res.forEach((doc) => {
-            dniDirectoreDeRegion.push(doc.id);
-          });
-          resolve(dniDirectoreDeRegion);
-        });
-      } catch (error) {
-        reject();
-        console.log('error', error);
-      }
-    });
-
-    const reporteGlobalPromise = new Promise<DataEstadisticas[]>(async (resolve, reject) => {
-      let arrayAcumulativoDeRespuestas: DataEstadisticas[] = [];
-      let pruebaRespuestas = [];
-
-      try {
-        getDniDirectores.then((arrayDirectores) => {
-          arrayDirectores.forEach(async (director, index) => {
-            const pathRefDirectoresTodasRegiones = collection(
-              db,
-              `/evaluaciones-directores/${director}/${idEvaluacion}`
-            );
-
-            await getDocs(pathRefDirectoresTodasRegiones).then((evaluaciones) => {
-              if (evaluaciones.size > 0) {
-                // const dataEvaluaciones:DataEstadisticas[] = []
-                // evaluaciones.forEach(doc => {
-                //   dataEvaluaciones.push(doc.data())
-                // })
-                // pruebaRespuestas.push(dataEvaluaciones)
-                // console.log('linea 325 evaluaciones',pruebaRespuestas)
-                // resolve(pruebaRespuestas)
-                if (arrayAcumulativoDeRespuestas.length === 0) {
-                  const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-                  evaluaciones.forEach((doc) =>
-                    arrayOrdenadoRespuestas.push({
-                      ...doc.data(),
-                      id: doc.id,
-                      total:
-                        doc.data().d === undefined
-                          ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
-                          : Number(doc.data().a) +
-                          Number(doc.data().b) +
-                          Number(doc.data().c) +
-                          Number(doc.data().d),
-                    })
-                  );
-
-                  arrayOrdenadoRespuestas
-                    .sort((a: any, b: any) => a.id - b.id)
-                    .forEach((a) => arrayAcumulativoDeRespuestas.push(a));
-
-                  console.log(`revision ${index}`, arrayAcumulativoDeRespuestas);
-                } else {
-                  const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-                  evaluaciones.forEach((doc) =>
-                    arrayOrdenadoRespuestas.push({
-                      ...doc.data(),
-                      id: doc.id,
-                      total:
-                        doc.data().d === undefined
-                          ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
-                          : Number(doc.data().a) +
-                          Number(doc.data().b) +
-                          Number(doc.data().c) +
-                          Number(doc.data().d),
-                    })
-                  );
-                  // if(doc.data().d === undefined)
-                  arrayOrdenadoRespuestas
-                    ?.sort((a: any, b: any) => a.id - b.id)
-                    .forEach((data) => {
-                      arrayAcumulativoDeRespuestas?.map((rta, i) => {
-                        if (rta.d === undefined) {
-                          if (rta.id === data.id) {
-                            rta.a = Number(rta.a) + Number(data.a);
-                            rta.b = Number(rta.b) + Number(data.b);
-                            rta.c = Number(rta.c) + Number(data.c);
-                            rta.total = Number(rta.total) + Number(data.total);
-                          }
-                        } else {
-                          if (rta.id === data.id) {
-                            rta.a = Number(rta.a) + Number(data.a);
-                            rta.b = Number(rta.b) + Number(data.b);
-                            rta.c = Number(rta.c) + Number(data.c);
-                            rta.d = Number(rta.d) + Number(data.d);
-                            rta.total = Number(rta.total) + Number(data.total);
-                          }
-                        }
-                      });
-                    });
-                  console.log(`revision ${index}`, arrayAcumulativoDeRespuestas);
-                }
-              }
-              if (arrayDirectores.length === index + 1) {
-                resolve(arrayAcumulativoDeRespuestas);
-              }
-            });
-          });
-        });
-      } catch (error) {
-        console.log('linea 315 error', error);
-        reject(error);
-      }
-    });
-
-    reporteGlobalPromise.then((res) => {
-      console.log('linea 405 res', res);
-      setTimeout(() => {
-        dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: false });
-        dispatch({ type: AppAction.REPORTE_REGIONAL, payload: res });
-      }, 3000);
-    });
-
-    // getDniDirectores
-    //   .then((res) => {
-    //     //dniDirectoreDeRegion tiene toda los dni de los directores donde de buscara aquellas que tengan la evaluacion que se busca para hacer el resultado acumulado.
-    //     console.log("linea:301, res", res);
-    //     res.forEach(async (director, index) => {
-    //       const pathRefDirectoresTodasRegiones = collection(
-    //         db,
-    //         `/evaluaciones-directores/${director}/${idEvaluacion}`
-    //       );
-    //       //comienzo a hacer el get de todos los resultados de los directores pero solo para un examen en especifico
-    //       await getDocs(pathRefDirectoresTodasRegiones).then(
-    //         (resultadosExamen) => {
-    //           console.log("index", index);
-
-    //           //primero verifico si el director tiene registros de evaluacion de ese examen
-    //           if (resultadosExamen.size > 0) {
-    //             //entonces si existe data
-    //             if (arrayAcumulativoDeRespuestas.length === 0) {
-    //               const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-    //               resultadosExamen.forEach((doc) => {
-    //                 arrayOrdenadoRespuestas.push({
-    //                   ...doc.data(),
-    //                   id: doc.id,
-    //                   total:
-    //                     doc.data().d === undefined
-    //                       ? Number(doc.data().a) +
-    //                         Number(doc.data().b) +
-    //                         Number(doc.data().c)
-    //                       : Number(doc.data().a) +
-    //                         Number(doc.data().b) +
-    //                         Number(doc.data().c) +
-    //                         Number(doc.data().d),
-    //                 });
-    //                 arrayOrdenadoRespuestas
-    //                   .sort((a: any, b: any) => a.id - b.id)
-    //                   .forEach((a) => arrayAcumulativoDeRespuestas.push(a));
-    //                 //  arrayAllDirectoresEvaluacionesDirectore.push(doc.data())
-    //               });
-    //               console.log(`rta ${index}`, arrayAcumulativoDeRespuestas);
-    //             } else if (arrayAcumulativoDeRespuestas.length > 0) {
-    //               console.log(
-    //                 "index 1, para saber si entra qui este bastardo",
-    //                 index
-    //               );
-    //               //este array lo utliziamos cada vez que ingresamos a la condicion con el objetivo de poder guardar la data y ordenarla y luego resetea su valor
-    //               const arrayOrdenadoRespuestas: DataEstadisticas[] = [];
-    //               resultadosExamen.forEach((doc) =>
-    //                 //primero se agrega el total
-    //                 arrayOrdenadoRespuestas.push({
-    //                   ...doc.data(),
-    //                   id: doc.id,
-    //                   total:
-    //                     doc.data().d === undefined
-    //                       ? Number(doc.data().a) +
-    //                         Number(doc.data().b) +
-    //                         Number(doc.data().c)
-    //                       : Number(doc.data().a) +
-    //                         Number(doc.data().b) +
-    //                         Number(doc.data().c) +
-    //                         Number(doc.data().d),
-    //                 })
-    //               );
-
-    //               //luego se ordena y se hacen las sumas correspondientes
-    //               arrayOrdenadoRespuestas
-    //                 ?.sort((a: any, b: any) => a.id - b.id)
-    //                 .forEach((data) => {
-    //                   arrayAcumulativoDeRespuestas?.map((rta, i) => {
-    //                     if (rta.d === undefined) {
-    //                       if (rta.id === data.id) {
-    //                         rta.a = Number(rta.a) + Number(data.a);
-    //                         rta.b = Number(rta.b) + Number(data.b);
-    //                         rta.c = Number(rta.c) + Number(data.c);
-    //                         rta.total = Number(rta.total) + Number(data.total);
-    //                       }
-    //                     } else {
-    //                       if (rta.id === data.id) {
-    //                         rta.a = Number(rta.a) + Number(data.a);
-    //                         rta.b = Number(rta.b) + Number(data.b);
-    //                         rta.c = Number(rta.c) + Number(data.c);
-    //                         rta.d = Number(rta.d) + Number(data.d);
-    //                         rta.total = Number(rta.total) + Number(data.total);
-    //                       }
-    //                     }
-    //                   });
-    //                 });
-    //               console.log(`rta ${index}`, arrayAcumulativoDeRespuestas);
-    //             }
-    //           }
-    //         }
-    //       );
-    //     });
-    //     // dniDirectoreDeRegion;
-    //   });
-  };
-
-  const reporteRegionales = async (regionValue: number, idEvaluacion: string) => {
-    resetReporteRegional();
-    dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: true });
-    const dniDirectoreDeRegion: string[] = [];
-
-    let dataEstadisticasRegionalesAcumulativo: DataEstadisticas[] = [];
-    const directoreRegionRef = collection(db, 'usuarios');
-    const directoreRegionQuery = query(directoreRegionRef, where('region', '==', regionValue));
-
-    const sizesDirectores = await getDocs(directoreRegionQuery);
-
-    if (sizesDirectores.size === 0) {
-      console.log('la region no tiene data');
-      dispatch({ type: AppAction.REPORTE_REGIONAL, payload: [] });
-      dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: false });
-      // dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: false })
-    } else {
-      const getDataRegionPromise = new Promise<string[]>(async (resolve, reject) => {
-        try {
-          await getDocs(directoreRegionQuery).then((res) => {
-            res.forEach((doc) => {
-              dniDirectoreDeRegion.push(doc.data().dni);
-            });
-            resolve(dniDirectoreDeRegion);
-          });
-        } catch (error) {
-          console.log('error', error);
-          reject(error);
-        }
+      const promesasEstudiantes = snapshotProfesores.docs.map(async (docProfesor) => {
+        const qEstudiantes = query(
+          collection(db, `usuarios/${docProfesor.id}/estudiantes-docentes`),
+          where('grado', '==', `${evaluacion.grado}`)
+        );
+        const snapEst = await getDocs(qEstudiantes);
+        return snapEst.docs.map(d => ({ ...d.data(), id: d.id } as UserEstudiante));
       });
 
-      const reporteFinalRegional = new Promise<DataEstadisticas[]>(async (resolve, reject) => {
-        try {
-          await getDataRegionPromise.then(async (res) => {
-            res.forEach(async (dni, index) => {
-              const evaluacionesDirectorRef = collection(
-                db,
-                `/evaluaciones-directores/${dni}/${idEvaluacion}`
-              );
-              await getDocs(evaluacionesDirectorRef).then((evaluaciones) => {
-                if (evaluaciones.size > 0) {
-                  //preguntamos si la collecition tiene datos, si tiene ingresa a la condicion
+      const resultadosEstudiantes = await Promise.all(promesasEstudiantes);
 
-                  if (dataEstadisticasRegionalesAcumulativo.length === 0) {
-                    const dataEstadisticasRegionales: DataEstadisticas[] = [];
-                    evaluaciones.forEach((doc) =>
-                      dataEstadisticasRegionales.push({
-                        ...doc.data(),
-                        id: doc.id,
-                        total:
-                          doc.data().d === undefined
-                            ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
-                            : Number(doc.data().a) +
-                            Number(doc.data().b) +
-                            Number(doc.data().c) +
-                            Number(doc.data().d),
-                      })
-                    );
-                    console.log(
-                      'entrando cuando el array se encuentra vacio, solo ingresara una vez'
-                    );
-                    dataEstadisticasRegionales
-                      .sort((a: any, b: any) => a.id - b.id)
-                      .forEach((a) => dataEstadisticasRegionalesAcumulativo.push(a));
-                    // resolve(dataEstadisticasRegionalesAcumulativo)
-                  } else if (dataEstadisticasRegionalesAcumulativo.length > 0) {
-                    const dataEstadisticasRegionales: DataEstadisticas[] = [];
-                    evaluaciones.forEach((doc) =>
-                      dataEstadisticasRegionales.push({
-                        ...doc.data(),
-                        id: doc.id,
-                        total:
-                          doc.data().d === undefined
-                            ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c)
-                            : Number(doc.data().a) +
-                            Number(doc.data().b) +
-                            Number(doc.data().c) +
-                            Number(doc.data().d),
-                      })
-                    );
-                    dataEstadisticasRegionales
-                      .sort((a: any, b: any) => a.id - b.id)
-                      .forEach((data) => {
-                        dataEstadisticasRegionalesAcumulativo.map((rta) => {
-                          if (rta.d === undefined) {
-                            if (rta.id === data.id) {
-                              rta.a = Number(rta.a) + Number(data.a);
-                              rta.b = Number(rta.b) + Number(data.b);
-                              rta.c = Number(rta.c) + Number(data.c);
-                              rta.total = Number(rta.total) + Number(data.total);
-                            }
-                          } else {
-                            if (rta.id === data.id) {
-                              rta.a = Number(rta.a) + Number(data.a);
-                              rta.b = Number(rta.b) + Number(data.b);
-                              rta.c = Number(rta.c) + Number(data.c);
-                              rta.d = Number(rta.d) + Number(data.d);
-                              rta.total = Number(rta.total) + Number(data.total);
-                            }
-                          }
-                        });
-                      });
-                  }
-                }
-                if (res.length === index + 1) {
-                  resolve(dataEstadisticasRegionalesAcumulativo);
-                }
-              });
-            });
-          });
-        } catch (error) {
-          console.log('error', error);
-          reject(error);
-        }
+      const uniqueEstudiantesMap = new Map<string, UserEstudiante>();
+      resultadosEstudiantes.flat().forEach(est => {
+        if (est.dni) uniqueEstudiantesMap.set(String(est.dni), est);
       });
-      reporteFinalRegional.then((rtaFinal) => {
-        dispatch({ type: AppAction.REPORTE_REGIONAL, payload: rtaFinal });
-        dispatch({ type: AppAction.LOADER_REPORTE_REGIONAL, payload: false });
-        // setTimeout(() => {
-        //   console.log("rtafinal", rtaFinal);
-        // }, 5000);
+
+      const todosLosEstudiantesDelGrado = Array.from(uniqueEstudiantesMap.values());
+
+      const baseEvaluados = alumnosEvaluados || estudiantes;
+      const evaluadosDnis = new Set(baseEvaluados.map(e => String(e.dni)));
+
+      const listaPendientes = todosLosEstudiantesDelGrado.filter(
+        est => !evaluadosDnis.has(String(est.dni))
+      );
+
+      dispatch({
+        type: AppAction.ESTUDIANTES_DE_EVALUACION,
+        payload: listaPendientes,
       });
+
+    } catch (error) {
+      console.error('Error al obtener cobertura director:', error);
+      dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
     }
-  };
+  }, [currentUserData.dni, db, dispatch, estudiantes]);
 
-  const getRegiones = async () => {
+  // --- MÉTODOS DE COMPATIBILIDAD REGIONAL ---
+  const resetReporteRegional = useCallback(() => {
+    dispatch({ type: AppAction.REPORTE_REGIONAL, payload: [] });
+  }, [dispatch]);
+
+  const resetReporteGlobal = useCallback(() => {
+    dispatch({ type: AppAction.REPORTE_REGIONAL, payload: [] });
+  }, [dispatch]);
+
+  const getRegiones = useCallback(async () => {
     const regionRef = collection(db, 'region');
     const queryRegiones = await getDocs(regionRef);
     const arrayRegiones: Region[] = [];
     queryRegiones.forEach((doc) => {
-      arrayRegiones.push(doc.data());
+      arrayRegiones.push(doc.data() as Region);
     });
-
     dispatch({ type: AppAction.REGIONES, payload: arrayRegiones });
-  };
+    return arrayRegiones;
+  }, [db, dispatch]);
+
+  const reporteRegionales = useCallback(async (regionValue: number, idEvaluacion: string) => {
+    resetReporteRegional();
+  }, [resetReporteRegional]);
+
+  const reporteRegionalGlobal = useCallback(async (idEvaluacion: string) => {
+    resetReporteRegional();
+  }, [resetReporteRegional]);
+
   return {
-    reporteDirectorData,
-    agregarDatosEstadisticosDirector,
+    estudiantes,
+    setEstudiantes,
+    promedioGlobal,
+    mesesConDataDisponibles,
+    datosPorMes,
+    promedioPorDocente,
+    isLoading,
+    setIsLoading,
+    warning,
+    reporteDirectorEstudiantes,
+    obtenerCoberturaDirector,
+    getAllEvaluacionesDeEstudiantesPorMes,
+    getGrados,
+    filtrosParaReporteDirector,
+    reporteToTableDirector,
     getRegiones,
     reporteRegionales,
     resetReporteRegional,
     reporteRegionalGlobal,
-    resetReporteGlobal,
-    reporteToTableDirector,
-    reporteDirectorEstudiantes,
-    getGrados,
-    estudiantes,
-    setEstudiantes,
-    getAllEvaluacionesDeEstudiantesPorMes,
-    datosPorMes,
-    promedioGlobal,
-    mesesConDataDisponibles,
-    warning,
-    setIsLoading,
-    isLoading,
-    filtrosParaReporteDirector,
-    obtenerCoberturaDirector
+    resetReporteGlobal
   };
 };

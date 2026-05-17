@@ -1,6 +1,8 @@
-/* Contenedor principal */
 .mainContainer {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Controles de la tabla (Paginación dinámica) */
@@ -49,7 +51,8 @@
 /* Contenedor con scroll horizontal para la tabla */
 .tableWrapper {
   width: 100%;
-  overflow: visible;
+  max-width: 100%;
+  overflow-x: auto;
   margin-bottom: 2rem;
   margin-top: 0.5rem;
   position: relative;
@@ -57,8 +60,8 @@
 
 /* Tabla */
 .table {
-  width: 100%;
-  min-width: 800px;
+  width: max-content;
+  min-width: 100%;
   background-color: #ffffff;
   border-collapse: separate;
   border-spacing: 1px;

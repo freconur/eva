@@ -10,6 +10,7 @@ import {
   setDoc,
   where,
   getCountFromServer,
+  limit,
 } from 'firebase/firestore';
 import {
   DataEstadisticas,
@@ -121,10 +122,34 @@ export const useReporteEspecialistas = () => {
     yearSelected?: number
   ) => {
     try {
+      console.log('🔍 [DEBUG UGEL] Iniciando carga de comparativa regional...');
+      console.log(`📍 Ruta: /evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`);
+      
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_UGEL_STACKED, payload: true });
 
       const studentsPath = `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`;
       const coll = collection(db, studentsPath);
+
+      // Verificación rápida: ¿Hay estudiantes en la ruta?
+      const snapGlobal = await getCountFromServer(coll);
+      const totalEnRuta = snapGlobal.data().count;
+      console.log(`📊 Estudiantes totales en esta ruta (sin filtros): ${totalEnRuta}`);
+
+      if (totalEnRuta > 0) {
+        // Verificación de tipo de dato: Tomar una muestra
+        const muestraQuery = query(coll, limit(1));
+        const muestraSnap = await getDocs(muestraQuery);
+        if (!muestraSnap.empty) {
+          const primerDoc = muestraSnap.docs[0].data();
+          console.log('💡 Muestra de datos del primer estudiante:', {
+            dni: primerDoc.dni,
+            region: primerDoc.region,
+            tipoRegion: typeof primerDoc.region,
+            puntaje: primerDoc.puntaje,
+            tipoPuntaje: typeof primerDoc.puntaje
+          });
+        }
+      }
 
       const nivelesConfig = evaluacion.nivelYPuntaje || [];
 
@@ -137,7 +162,6 @@ export const useReporteEspecialistas = () => {
           const minPuntaje = nivelData.min || 0;
           const maxPuntaje = nivelData.max || 1000;
 
-          // Manejo especial para rangos de puntaje por nivel (igual que en PieChart)
           let q;
           if (nivelNombre.includes('previo')) {
             q = query(
@@ -163,6 +187,11 @@ export const useReporteEspecialistas = () => {
         });
 
         const nivelesData = await Promise.all(promesasNiveles);
+        const sumaUgel = nivelesData.reduce((acc, n) => acc + n.cantidadDeEstudiantes, 0);
+        
+        if (sumaUgel > 0) {
+          console.log(`✅ UGEL ${ugelNombre} (ID: ${ugelId}) -> Estudiantes encontrados: ${sumaUgel}`);
+        }
 
         return {
           ugel: ugelNombre,
@@ -173,10 +202,11 @@ export const useReporteEspecialistas = () => {
 
       const resultado = await Promise.all(promesasUgels);
 
-      // Solo incluir UGELs que tienen al menos un estudiante evaluado
       const resultadoFiltrado = resultado.filter((r) =>
         r.niveles.some((n) => n.cantidadDeEstudiantes > 0)
       );
+
+      console.log('🏁 Resultado final filtrado para el gráfico:', resultadoFiltrado);
 
       dispatch({
         type: AppAction.DATA_GRAFICO_UGEL_STACKED,
@@ -189,6 +219,7 @@ export const useReporteEspecialistas = () => {
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_UGEL_STACKED, payload: false });
     }
   };
+
   const getDataParaGraficoTendencia = async (rangoMes: number[], idEvaluacion: string, evaluacion?: Evaluaciones, yearSelected?: number) => {
     dispatch({ type: AppAction.LOADER_GRAFICOS, payload: true });
     dispatch({ type: AppAction.DATA_GRAFICO_TENDENCIA, payload: [] });
@@ -799,151 +830,53 @@ export const useReporteEspecialistas = () => {
 
       const docentesDelDirector: string[] = [];
       querySnapshot.forEach((doc) => {
-        docentesDelDirector.push(doc.id); //aqui se van agregar los 1500 directores pero solo los id
+        docentesDelDirector.push(doc.data().dni);
       });
-      // Convertimos el forEach en un array de promesas
-      const promesasEvaluaciones = docentesDelDirector.map(async (docente) => {
-        const pathRefEstudiantes = collection(
-          db,
-          `/usuarios/${docente}/${idEvaluacion}/${currentYear}/${month}`
-        );
-        const snapshot = await getDocs(pathRefEstudiantes);
-        const evaluacionesDocente: UserEstudiante[] = [];
-
-        snapshot.forEach((doc) => {
-          evaluacionesDocente.push(doc.data() as UserEstudiante);
-        });
-
-        return evaluacionesDocente;
-      });
-
-      // Esperamos a que todas las promesas se resuelvan
-      const resultadosEvaluaciones = await Promise.all(promesasEvaluaciones);
-
-      // Aplanamos el array de arrays en un solo array
-      const todasLasEvaluaciones = resultadosEvaluaciones.flat();
-      console.log('todasLasEvaluaciones', todasLasEvaluaciones);
-
-      return todasLasEvaluaciones;
+      return docentesDelDirector;
     } catch (error) {
-      console.error('Error en reporteDirectorEstudiantes:', error);
-      throw error;
+      console.error('Error al obtener directores:', error);
+      return [];
     }
   };
 
-  const generarReporteAllDirectores = async (
+  const getReporteEspecialistaPorUgel = async (
     idEvaluacion: string,
     month: number,
-    currentUserData: User
+    yearSelected: number
   ) => {
-    const directores = await getAllDirectores(idEvaluacion, month);
-
-    const acumuladoPorPregunta: Record<
-      string,
-      { id: string; a: number; b: number; c: number; d?: number; total: number }
-    > = {};
-    console.log('estudiantes', directores.length);
-    /* directores.forEach(estudiante => {
-      if (estudiante.respuestas && Array.isArray(estudiante.respuestas)) {
-        estudiante.respuestas.forEach(respuesta => {
-          const idPregunta = String(respuesta.id)
-          if (!idPregunta) return
-          // Detectar si la alternativa 'd' existe en esta pregunta
-          let tieneD = false
-          if (respuesta.alternativas && Array.isArray(respuesta.alternativas)) {
-            tieneD = respuesta.alternativas.some(alt => alt.alternativa === 'd')
-          }
-          if (!acumuladoPorPregunta[idPregunta]) {
-            acumuladoPorPregunta[idPregunta] = tieneD
-              ? { id: idPregunta, a: 0, b: 0, c: 0, d: 0, total: 0 }
-              : { id: idPregunta, a: 0, b: 0, c: 0, total: 0 }
-          }
-          if (respuesta.alternativas && Array.isArray(respuesta.alternativas)) {
-            respuesta.alternativas.forEach(alternativa => {
-              if (alternativa.selected) {
-                switch (alternativa.alternativa) {
-                  case 'a':
-                    acumuladoPorPregunta[idPregunta].a += 1
-                    break
-                  case 'b':
-                    acumuladoPorPregunta[idPregunta].b += 1
-                    break
-                  case 'c':
-                    acumuladoPorPregunta[idPregunta].c += 1
-                    break
-                  case 'd':
-                    if (typeof acumuladoPorPregunta[idPregunta].d === 'number') {
-                      acumuladoPorPregunta[idPregunta].d! += 1
-                    }
-                    break
-                  default:
-                    break
-                }
-              }
-            })
-          }
-        })
-      }
-    })
-    Object.values(acumuladoPorPregunta).forEach(obj => {
-      obj.total = obj.a + obj.b + obj.c + (typeof obj.d === 'number' ? obj.d : 0)
-    })
-    const resultado = Object.values(acumuladoPorPregunta)
-    console.log('acumulado por pregunta', resultado)
-   
-
-
-    //enviaremos el valor de resultado a la base de datos de los directores
-    //collection    /    documento     /    subcollection  /    documento  /    subcollection  /    documento
-    //evaluaciones  /id de la evaluacion/    año y mes     / todos los directores
-
-    console.log('currentUserData', currentUserData)
-    const myDirector = await getDoc(doc(db, `usuarios`, `${currentUserData.dni}`))
-    myDirector.exists() && await setDoc(doc(db, `evaluaciones/${idEvaluacion}/${currentYear}-${month}`, `${currentUserData.dni}`), {
-      ...myDirector.data(),
-      reporteEstudiantes: resultado
-    }) */
-
-    /* return resultado */
-  };
-
-  const getReporteEspecialistaPorUgel = async (idEvaluacion: string, month: number, yearSelected: number) => {
     try {
-      if (currentUserData.region) {
-        const pathRef = collection(db, `/evaluaciones/${idEvaluacion}/${yearSelected}-${month}/`);
-        /* const pathRef = collection(db, `/evaluaciones/${idEvaluacion}/${2025}-${10}/`); */
-        const q = query(pathRef, where('region', '==', currentUserData.region));
-        const querySnapshot = await getDocs(q);
-        const directoresUgel: User[] = [];
-        querySnapshot.forEach((doc) => {
-          directoresUgel.push(doc.data() as User);
-        });
-        console.log('directoresUgel', directoresUgel);
-        const estadisticas = calcularEstadisticasOptimizadas(directoresUgel);
-        console.log('estadisticas', estadisticas);
-        return directoresUgel;
+      dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: true });
+      const pathData = `/evaluaciones/${idEvaluacion}/consolidado-ugel/`;
+      const docRef = doc(db, pathData, `${yearSelected}-${month}`);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists() && docSnap.data()) {
+        const ugelData = docSnap.data()?.ugelData;
+        dispatch({ type: AppAction.ALL_EVALUACIONES_ESTUDIANTES, payload: ugelData || [] });
+      } else {
+        dispatch({ type: AppAction.ALL_EVALUACIONES_ESTUDIANTES, payload: [] });
       }
     } catch (error) {
-      console.error('Error en getReporteEspecialistaPorUgel:', error);
-      throw error;
+      console.error('Error al obtener reporte por ugel:', error);
+      dispatch({ type: AppAction.ALL_EVALUACIONES_ESTUDIANTES, payload: [] });
+    } finally {
+      dispatch({ type: AppAction.LOADER_REPORTE_DIRECTOR, payload: false });
     }
   };
-  
+
   return {
-    getAllDirectores,
-    getReporteEspecialistaPorUgel,
-    generarReporteAllDirectores,
-    getAllReporteDeDirectores,
-    reporteParaTablaDeEspecialista,
-    reporteEspecialistaDeEstudiantes,
-    getAllReporteDeDirectoresToDocentes,
-    reporteEspecialistaDeDocente,
-    reporteFiltrosEspecialistaDirectores,
-    getDataParaGraficoTendencia,
-    getEstadisticaGlobal,
-    getAllReporteDeDirectoreToAdmin,
     getDataGraficoPieChart,
+    getDataGraficoUgelStacked,
+    getDataParaGraficoTendencia,
+    getAllReporteDeDirectores,
+    reporteEspecialistaDeDocente,
+    reporteParaTablaDeEspecialista,
+    reporteFiltrosEspecialistaDirectores,
+    getAllReporteDeDirectoreToAdmin,
+    getEstadisticaGlobal,
+    reporteEspecialistaDeEstudiantes,
+    getAllDirectores,
     restablecerFiltrosDeEspecialista,
-    getDataGraficoUgelStacked
+    getReporteEspecialistaPorUgel,
   };
 };

@@ -139,6 +139,12 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
                         </Link>
                       </li>
                     </PermissionGate>
+
+                    <li>
+                      <Link href="/directores/reporte" className={`${styles.submenuLink} ${router.pathname.includes('/directores/reporte') ? styles.activeLink : ''}`}>
+                        Reporte
+                      </Link>
+                    </li>
                   </ul>
                 </li>
 

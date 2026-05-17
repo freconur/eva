@@ -40,30 +40,24 @@ const isClient = typeof window !== 'undefined';
 const isLocalhost = isClient && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 /**
- * Función para detectar si el emulador de Firestore está corriendo
- * Intenta hacer una petición al puerto del emulador
+ * Función genérica para detectar si un puerto específico está activo en localhost
  */
-async function checkIfEmulatorIsRunning(): Promise<boolean> {
-  if (!isClient || !isLocalhost) {
-    return false;
-  }
-
+async function isPortActive(port: number): Promise<boolean> {
+  if (!isClient || !isLocalhost) return false;
   try {
-    // Intentar conectar al emulador de Firestore en localhost:8080
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1000); // Timeout de 1 segundo
-
-    const response = await fetch('http://localhost:8080', {
+    const timeoutId = setTimeout(() => controller.abort(), 1000);
+    
+    // Usamos mode: 'no-cors' para evitar problemas de CORS en la detección
+    await fetch(`http://localhost:${port}`, {
       method: 'GET',
+      mode: 'no-cors',
       signal: controller.signal,
     });
-
+    
     clearTimeout(timeoutId);
-
-    // Si obtenemos cualquier respuesta, el emulador está corriendo
     return true;
   } catch (error) {
-    // Si falla la conexión, el emulador no está corriendo
     return false;
   }
 }
@@ -72,38 +66,42 @@ async function checkIfEmulatorIsRunning(): Promise<boolean> {
  * Conectar a los emuladores si están disponibles
  */
 async function connectToEmulatorsIfAvailable() {
-  if (emulatorsConnected) {
-    return;
-  }
+  if (emulatorsConnected) return;
 
-  const emulatorIsRunning = await checkIfEmulatorIsRunning();
+  const firestoreRunning = await isPortActive(8080);
+  const functionsRunning = await isPortActive(5001);
+  const authRunning = await isPortActive(9099);
 
-  if (emulatorIsRunning) {
-    console.log('🔧 EMULADORES DETECTADOS - Conectando a Firebase Emulators...');
+  if (firestoreRunning || functionsRunning || authRunning) {
+    console.log('🔧 EMULADORES DETECTADOS - Conectando a los servicios locales disponibles...');
 
     try {
-      // Conecta Firestore al emulador
-      connectFirestoreEmulator(db, 'localhost', 8080);
-      console.log('✅ Firestore conectado al emulador (localhost:8080)');
+      if (firestoreRunning) {
+        connectFirestoreEmulator(db, 'localhost', 8080);
+        console.log('✅ Firestore conectado al emulador (localhost:8080)');
+      }
 
-      // Conecta Cloud Functions al emulador
-      connectFunctionsEmulator(functions, 'localhost', 5001);
-      console.log('✅ Cloud Functions conectadas al emulador (localhost:5001)');
+      // Comentado para usar siempre Cloud Functions en producción
+      /*
+      if (functionsRunning) {
+        connectFunctionsEmulator(functions, 'localhost', 5001);
+        console.log('✅ Cloud Functions conectadas al emulador (localhost:5001)');
+      }
+      */
+      console.log('🌐 Cloud Functions - Configurado para PRODUCCIÓN (nube de Firebase)');
 
-      // Conecta Authentication al emulador
-      connectAuthEmulator(auth, 'http://localhost:9099');
-      console.log('✅ Authentication conectada al emulador (localhost:9099)');
+      if (authRunning) {
+        connectAuthEmulator(auth, 'http://localhost:9099');
+        console.log('✅ Authentication conectada al emulador (localhost:9099)');
+      }
 
       emulatorsConnected = true;
-      console.log('🎉 Todos los emuladores conectados exitosamente');
+      console.log('🎉 Conexión a emuladores completada');
     } catch (error) {
       console.warn('⚠️ Error al conectar a los emuladores:', error);
     }
   } else {
     console.log('🌐 PRODUCCIÓN - Usando Firebase en producción (evaluaciones-ugel)');
-    console.log('📊 Firestore: producción');
-    console.log('⚡ Cloud Functions: producción');
-    console.log('🔐 Authentication: producción');
   }
 }
 

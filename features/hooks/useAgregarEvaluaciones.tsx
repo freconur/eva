@@ -46,6 +46,24 @@ export const useAgregarEvaluaciones = () => {
   const [totalPreguntas, setTotalPreguntas] = useState<number>(0)
   const [loaderCrearEstudiantes, setLoaderCrearEstudiantes] = useState<boolean>(false);
 
+  const updateEvaluacionesSentinel = async () => {
+    try {
+      const sentinelRef = doc(db, 'options', 'evaluaciones_sentinel');
+      await setDoc(sentinelRef, { lastUpdate: serverTimestamp() }, { merge: true });
+    } catch (error) {
+      console.error('Error actualizando centinela:', error);
+    }
+  };
+
+  const updatePreguntasSentinel = async (evaluacionId: string) => {
+    try {
+      const sentinelRef = doc(db, 'options', `preguntas_sentinel_${evaluacionId}`);
+      await setDoc(sentinelRef, { lastUpdate: serverTimestamp() }, { merge: true });
+    } catch (error) {
+      console.error('Error actualizando centinela de preguntas:', error);
+    }
+  };
+
 
   const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) => {
     // Validar parámetros
@@ -318,7 +336,7 @@ export const useAgregarEvaluaciones = () => {
       (querySnapshot: QuerySnapshot<DocumentData>) => {
         let allEvaluaciones: Evaluaciones[] = [];
         querySnapshot.forEach((doc) => {
-          allEvaluaciones.push({ ...doc.data(), id: doc.id });
+          allEvaluaciones.push({ ...doc.data(), id: doc.id } as Evaluaciones);
         });
 
         dispatch({ type: AppAction.EVALUACIONES, payload: allEvaluaciones });
@@ -331,6 +349,28 @@ export const useAgregarEvaluaciones = () => {
 
     // Retornar la función de limpieza para poder desuscribirse
     return unsubscribe;
+  };
+
+  const getEvaluacionesOnce = async () => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    try {
+      const pathRef = collection(db, 'evaluaciones');
+      const q = query(pathRef, where('rol', '==', 4));
+      const querySnapshot = await getDocs(q);
+      
+      const allEvaluaciones: Evaluaciones[] = [];
+      querySnapshot.forEach((doc) => {
+        allEvaluaciones.push({ ...doc.data(), id: doc.id } as Evaluaciones);
+      });
+
+      dispatch({ type: AppAction.EVALUACIONES, payload: allEvaluaciones });
+      return allEvaluaciones;
+    } catch (error) {
+      console.error('Error al obtener evaluaciones:', error);
+      return [];
+    } finally {
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+    }
   };
 
   const getGrades = async () => {
@@ -440,6 +480,7 @@ export const useAgregarEvaluaciones = () => {
         active: false,
         nivel: Number(value.nivel),
       });
+      await updateEvaluacionesSentinel();
     } catch (error) {
     } finally {
       dispatch({ type: AppAction.LOADER_PAGES, payload: false });
@@ -506,6 +547,46 @@ export const useAgregarEvaluaciones = () => {
     }
   };
 
+  const getPreguntasRespuestasOnce = async (id: string) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    try {
+      if (id && id.length > 0) {
+        await initializeCounter(id);
+
+        const pathRef = collection(db, `/evaluaciones/${id}/preguntasRespuestas`);
+        const q = query(pathRef, orderBy('order', 'asc'));
+        const querySnapshot = await getDocs(q);
+
+        const count = querySnapshot.size;
+        let preguntasrespuestas: PreguntasRespuestas[] = [];
+
+        querySnapshot.forEach((doc) => {
+          preguntasrespuestas.push({ ...doc.data(), id: doc.id });
+        });
+
+        // Ordenar por ID de manera ascendente
+        preguntasrespuestas.sort((a, b) => {
+          const idA = parseInt(a.order?.toString() || '0');
+          const idB = parseInt(b.order?.toString() || '0');
+          return idA - idB;
+        });
+
+        // Agregar alternativa "no respondió"
+        const preguntasConNoRespondio = addNoRespondioAlternative(preguntasrespuestas);
+
+        dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: preguntasConNoRespondio });
+        dispatch({ type: AppAction.SIZE_PREGUNTAS, payload: count });
+        return preguntasConNoRespondio;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error al obtener preguntas/respuestas:', error);
+      return [];
+    } finally {
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+    }
+  };
+
   // Alternativa con timestamp como ID
   const guardarPreguntasRespuestas = async (data: PreguntasRespuestas) => {
 
@@ -542,6 +623,9 @@ export const useAgregarEvaluaciones = () => {
         return nextCount;
       });
 
+      if (data.id) {
+        await updatePreguntasSentinel(data.id);
+      }
     } catch (error) {
       console.error('Error al guardar pregunta con ID secuencial:', error);
       throw error;
@@ -553,6 +637,7 @@ export const useAgregarEvaluaciones = () => {
     await updateDoc(rutaRef, {
       nivelYPuntaje: nivelYPuntaje,
     });
+    await updateEvaluacionesSentinel();
   };
 
   const dataConAlternativasNoRespondidas = (preguntasRespuestas: PreguntasRespuestas[]): PreguntasRespuestas[] => {
@@ -746,14 +831,13 @@ export const useAgregarEvaluaciones = () => {
 
   const deleteEvaluacion = async (id: string) => {
     await deleteDoc(doc(db, 'evaluaciones', `${id}`));
-    // No es necesario llamar getEvaluaciones() aquí porque onSnapshot ya actualiza automáticamente
+    await updateEvaluacionesSentinel();
   };
 
   const updateEvaluacion = async (evaluacion: Evaluaciones, id: string) => {
     const pathRef = doc(db, 'evaluaciones', `${id}`);
     await updateDoc(pathRef, { ...evaluacion, timestamp: serverTimestamp() });
-    // No es necesario llamar getEvaluaciones() aquí porque onSnapshot ya actualiza automáticamente
-    // El re-renderizado completo causaba que la página volviera al top
+    await updateEvaluacionesSentinel();
   };
 
   const updatePreguntaRespuesta = async (
@@ -786,7 +870,10 @@ export const useAgregarEvaluaciones = () => {
             alternativa: alternativass[2].alternativa,
           },
         ],
-      }).then((res) => getPreguntasRespuestas(id));
+      }).then(async (res) => {
+        await updatePreguntasSentinel(id);
+        getPreguntasRespuestas(id);
+      });
     } else {
       await updateDoc(pathRef, {
         order: data.order,
@@ -816,7 +903,10 @@ export const useAgregarEvaluaciones = () => {
             alternativa: alternativass[3].alternativa,
           },
         ],
-      }).then((res) => getPreguntasRespuestas(id));
+      }).then(async (res) => {
+        await updatePreguntasSentinel(id);
+        getPreguntasRespuestas(id);
+      });
     }
   };
 
@@ -910,6 +1000,7 @@ export const useAgregarEvaluaciones = () => {
       await batch.commit();
 
       // Recargar las preguntas
+      await updatePreguntasSentinel(idEvaluacion);
       await getPreguntasRespuestas(idEvaluacion);
 
       dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
@@ -988,8 +1079,10 @@ export const useAgregarEvaluaciones = () => {
     totalPreguntas,
     crearEvaluacion,
     getEvaluaciones,
+    getEvaluacionesOnce,
     getEvaluacion,
     getPreguntasRespuestas,
+    getPreguntasRespuestasOnce,
     prEstudiantes,
     salvarPreguntRespuestaEstudiante,
     getGrades,

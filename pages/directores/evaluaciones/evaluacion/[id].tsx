@@ -1,10 +1,12 @@
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores'
-import { useGlobalContext } from '@/features/context/GlolbalContext'
+import { useGlobalContext, useGlobalContextDispatch } from '@/features/context/GlolbalContext'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
+import { AppAction } from '@/features/actions/appAction'
 import { Alternativas } from '@/features/types/types'
 import AgregarPreguntasRespuestas from '@/modals/agregarPreguntasYRespuestas'
 import EvaluarEstudiante from '@/modals/evaluarEstudiante'
+import { getFirestore, doc, getDoc } from 'firebase/firestore'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState, useRef } from 'react'
@@ -14,8 +16,10 @@ import QuestionNavigator from '@/components/QuestionNavigator/QuestionNavigator'
 
 const Evaluacion = () => {
   const route = useRouter()
+  const db = getFirestore()
+  const dispatch = useGlobalContextDispatch()
   const { evaluacion, preguntasRespuestas, currentUserData, loaderPages } = useGlobalContext()
-  const { getEvaluacion, getPreguntasRespuestas } = useAgregarEvaluaciones()
+  const { getEvaluacion, getPreguntasRespuestas, getPreguntasRespuestasOnce } = useAgregarEvaluaciones()
   const [showModal, setShowModal] = useState(false)
   const [showModalEstudiante, setShowModalEstudiante] = useState(false)
   const [activeQuestion, setActiveQuestion] = useState(0)
@@ -60,9 +64,44 @@ const Evaluacion = () => {
   }
 
   useEffect(() => {
-    getEvaluacion(`${route.query.id}`)
+    const checkPreguntasSentinelAndLoad = async () => {
+      const evalId = `${route.query.id}`
+      if (!evalId || evalId === 'undefined') return
+
+      try {
+        // Cargar los detalles básicos de la evaluación
+        await getEvaluacion(evalId)
+
+        // Referencia al centinela específico de esta evaluación en Firestore
+        const sentinelRef = doc(db, 'options', `preguntas_sentinel_${evalId}`)
+        const sentinelSnap = await getDoc(sentinelRef)
+
+        const latestSentinel = String(sentinelSnap.data()?.lastUpdate?.seconds || sentinelSnap.data()?.lastUpdate || "")
+
+        const cachedList = localStorage.getItem(`preguntas_cache_${evalId}`)
+        const cachedSentinel = localStorage.getItem(`preguntas_sentinel_${evalId}`)
+
+        if (cachedList && cachedSentinel === latestSentinel) {
+          const parsedList = JSON.parse(cachedList)
+          dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: parsedList })
+          dispatch({ type: AppAction.SIZE_PREGUNTAS, payload: parsedList.length })
+        } else {
+          // Si no hay caché o si el centinela cambió, descargamos las preguntas de forma fresca
+          const freshList = await getPreguntasRespuestasOnce(evalId)
+          if (freshList) {
+            localStorage.setItem(`preguntas_cache_${evalId}`, JSON.stringify(freshList))
+            localStorage.setItem(`preguntas_sentinel_${evalId}`, latestSentinel)
+          }
+        }
+      } catch (error) {
+        console.error('Error al cargar preguntas con centinela:', error)
+        // Fallback al listener tradicional en caso de fallo
+        getPreguntasRespuestas(evalId)
+      }
+    }
+
     if (route.query.id) {
-      getPreguntasRespuestas(`${route.query.id}`)
+      checkPreguntasSentinelAndLoad()
     }
   }, [route.query.id])
   // console.log('preguntasRespuestas', preguntasRespuestas)
