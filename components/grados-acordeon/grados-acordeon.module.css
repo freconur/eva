@@ -188,6 +188,10 @@
 }
 
 /* ===== COLORES POR NIVEL EDUCATIVO ===== */
+.nivelInicial {
+  border-left: 4px solid #06b6d4;
+}
+
 .nivelPrimaria {
   border-left: 4px solid #3b82f6;
 }

@@ -324,6 +324,11 @@ export const appReducer = (state: AppReducerValues, action: AppActions) => {
         ...state,
         grados: action.payload
       }
+    case AppAction.CATEGORIAS:
+      return {
+        ...state,
+        categorias: action.payload
+      }
     case AppAction.LOADER_REPORTE_REGIONAL:
       return {
         ...state,

@@ -264,12 +264,8 @@ const useEvaluacionCurricular = () => {
 
     let q = query(pathRef, where("region", "==", targetRegion), where("rol", "==", 2));
 
-    if (nivelesEspecialista.includes(1) && nivelesEspecialista.includes(2)) {
-      q = query(pathRef, where("region", "==", targetRegion), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains-any", [1, 2]));
-    } else if (nivelesEspecialista.includes(1)) {
-      q = query(pathRef, where("region", "==", targetRegion), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains", 1));
-    } else if (nivelesEspecialista.includes(2)) {
-      q = query(pathRef, where("region", "==", targetRegion), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains", 2));
+    if (nivelesEspecialista.length > 0) {
+      q = query(pathRef, where("region", "==", targetRegion), where("rol", "==", 2), where("nivelDeInstitucion", "array-contains-any", nivelesEspecialista));
     }
 
     onSnapshot(q, (querySnapshot) => {
@@ -571,12 +567,8 @@ const useEvaluacionCurricular = () => {
       // Lógica existente para Especialistas: restringe por región
       const nivelesEspecialista = currentUserData.nivelDeInstitucion || [];
 
-      if (nivelesEspecialista.includes(1) && nivelesEspecialista.includes(2)) {
-        q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector), where("nivelDeInstitucion", "array-contains-any", [1, 2]));
-      } else if (nivelesEspecialista.includes(1)) {
-        q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector), where("nivelDeInstitucion", "array-contains", 1));
-      } else if (nivelesEspecialista.includes(2)) {
-        q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector), where("nivelDeInstitucion", "array-contains", 2));
+      if (nivelesEspecialista.length > 0) {
+        q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector), where("nivelDeInstitucion", "array-contains-any", nivelesEspecialista));
       } else {
         q = query(pathRef, where("rol", "==", rol), where("region", "==", currentUserData.region), where("dni", "==", dniDirector));
       }

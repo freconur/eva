@@ -32,6 +32,7 @@ const Navbar = () => {
               <span className={styles.nivelLabel}>Nivel:</span>
               <span className={styles.nivelValue}>
                 {currentUserData.nivelDeInstitucion.map((nivel: number) => {
+                  if (nivel === 0) return 'Inicial';
                   if (nivel === 1) return 'Primaria';
                   if (nivel === 2) return 'Secundaria';
                   return nivel;

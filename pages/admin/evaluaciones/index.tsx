@@ -55,6 +55,7 @@ const Evaluaciones = () => {
 
   // Helper para mostrar nivel
   const getNivelGrado = (gradoNum: number) => {
+    if (gradoNum === 12) return 'Inicial'
     if (gradoNum >= 1 && gradoNum <= 6) return 'Primaria'
     if (gradoNum >= 7 && gradoNum <= 11) return 'Secundaria'
     return 'Otro'
@@ -62,14 +63,17 @@ const Evaluaciones = () => {
 
   // Filtrar grados según el rol del usuario (sacado de GradosAcordeon)
   const gradosFiltrados = React.useMemo(() => {
-    if (currentUserData?.perfil?.rol === 5) {
-      if (currentUserData?.nivelesInstitucion?.includes(1)) {
-        return grados.filter(grado => grado.nivel === 1)
-      } else {
-        return grados.filter(grado => grado.nivel === 2)
-      }
+    let list = grados
+    if (currentUserData?.perfil?.rol === 5 && Array.isArray(currentUserData?.nivelesInstitucion)) {
+      const niveles = currentUserData.nivelesInstitucion
+      list = grados.filter(grado => grado.nivel !== undefined && niveles.includes(grado.nivel))
     }
-    return grados
+    return [...list].sort((a, b) => {
+      const nivelA = a.nivel ?? 0
+      const nivelB = b.nivel ?? 0
+      if (nivelA !== nivelB) return nivelA - nivelB
+      return (a.grado ?? 0) - (b.grado ?? 0)
+    })
   }, [grados, currentUserData?.perfil?.rol, currentUserData?.nivelesInstitucion])
 
   // Función para validar acceso a evaluación (sacado de GradosAcordeon)

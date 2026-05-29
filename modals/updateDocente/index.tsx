@@ -99,8 +99,10 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
           updatedData.grados = (prev.grados || []).filter(gradoId => {
             const gradoObj = gradosDeColegio.find(g => g.id === gradoId);
             if (!gradoObj) return false;
+            const isInicial = Number(gradoObj.nivel) === 0 || Number(gradoObj.id) === 12;
             const isPrimary = Number(gradoObj.nivel) === 1 || (Number(gradoObj.id) >= 1 && Number(gradoObj.id) <= 6);
             const isSecondary = Number(gradoObj.nivel) === 2 || (Number(gradoObj.id) >= 7 && Number(gradoObj.id) <= 11);
+            if (newArray.includes(0) && isInicial) return true;
             if (newArray.includes(1) && isPrimary) return true;
             if (newArray.includes(2) && isSecondary) return true;
             return false;
@@ -278,7 +280,6 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
                         value={nivel.id}
                         checked={formData.nivelDeInstitucion?.includes(nivel.id)}
                         onChange={handleCheckboxChange}
-                        disabled={nivel.id === 0}
                         className={styles.chipInput}
                       />
                       <span className={styles.chipLabel}>{nivel.name.charAt(0).toUpperCase() + nivel.name.slice(1)}</span>
@@ -294,8 +295,10 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
                     <div className={styles.chipGroup}>
                       {gradosDeColegio
                         .filter((grado) => {
+                          const isInicial = Number(grado.nivel) === 0 || Number(grado.id) === 12;
                           const isPrimary = Number(grado.nivel) === 1 || (Number(grado.id) >= 1 && Number(grado.id) <= 6);
                           const isSecondary = Number(grado.nivel) === 2 || (Number(grado.id) >= 7 && Number(grado.id) <= 11);
+                          if (formData.nivelDeInstitucion?.includes(0) && isInicial) return true;
                           if (formData.nivelDeInstitucion?.includes(1) && isPrimary) return true;
                           if (formData.nivelDeInstitucion?.includes(2) && isSecondary) return true;
                           return false;

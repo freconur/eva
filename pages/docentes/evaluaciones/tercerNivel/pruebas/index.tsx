@@ -9,12 +9,13 @@ import { PiFilesFill } from 'react-icons/pi'
 import styles from './pruebas.module.css'
 
 const Pruebas = () => {
-  const { evaluacionesGradoYCategoria , loaderPages} = useGlobalContext()
-  const { getEvaluacionesGradoYCategoria } = useAgregarEvaluaciones()
+  const { evaluacionesGradoYCategoria, loaderPages, categorias } = useGlobalContext()
+  const { getEvaluacionesGradoYCategoria, getCategories } = useAgregarEvaluaciones()
   const route = useRouter()
   
   useEffect(() => {
     getEvaluacionesGradoYCategoria(Number(route.query.grado), Number(route.query.categoria))
+    getCategories()
   }, [route.query.grado, route.query.categoria])
   
   // Algoritmo super eficiente para ordenar evaluaciones alfabéticamente
@@ -42,7 +43,7 @@ const Pruebas = () => {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
-          <h1 className={styles.title}>{convertGrade(`${route.query.grado}`)}: {categoriaTransform(Number(route.query.categoria))}</h1>
+          <h1 className={styles.title}>{convertGrade(`${route.query.grado}`)}: {categoriaTransform(Number(route.query.categoria), categorias)}</h1>
         </div>
         <div className={styles.loaderContainer}>
           <div className={styles.loader}></div>
@@ -56,7 +57,7 @@ const Pruebas = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.title}>{convertGrade(`${route.query.grado}`)}: {categoriaTransform(Number(route.query.categoria))}</h1>
+        <h1 className={styles.title}>{convertGrade(`${route.query.grado}`)}: {categoriaTransform(Number(route.query.categoria), categorias)}</h1>
       </div>
       <div className={styles.content}>
         <div className={styles.cardsGrid}>

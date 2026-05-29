@@ -25,6 +25,7 @@ export type AppReducerValues = {
   reporteRegional: DataEstadisticas[];
   loaderReporteRegional: boolean;
   grados: Grades[];
+  categorias: Category[];
   evaluacionesGradoYCategoria: Evaluaciones[];
   evaluacionesPsicolinguistica: Psicolinguistica[];
   psicolinguisticaById: Psicolinguistica;
@@ -122,6 +123,7 @@ export type AppActions =
   | { type: AppAction.REPORTE_REGIONAL; payload: DataEstadisticas[] }
   | { type: AppAction.LOADER_REPORTE_REGIONAL; payload: boolean }
   | { type: AppAction.GRADOS; payload: Grades[] }
+  | { type: AppAction.CATEGORIAS; payload: Category[] }
   | { type: AppAction.EVALUACIONES_GRADO_CATEGORIA; payload: Evaluaciones[] }
   | { type: AppAction.PSICOLINGUISTICA; payload: Psicolinguistica[] }
   | { type: AppAction.PSICOLINGUISTICA_BY_ID; payload: Psicolinguistica }
@@ -450,6 +452,14 @@ export type Grades = {
   nombre?: string;
   grado?: number;
   nivel?: number;
+};
+
+export type Category = {
+  id: number;
+  categoria: string;
+  activo?: boolean;
+  docId?: string;
+  niveles?: number[];
 };
 
 export type CreaEvaluacion = {

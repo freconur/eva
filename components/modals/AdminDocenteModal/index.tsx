@@ -162,7 +162,8 @@ const AdminDocenteModal = ({ onClose }: Props) => {
             const filteredGrados = gradosSeleccionados.filter(gradoId => {
                 const gradoObj = gradosDeColegio.find(g => String(g.id) === gradoId)
                 if (!gradoObj) return false
-                // Primaria es nivel 1, Secundaria es nivel 2
+                // Inicial es nivel 0, Primaria es nivel 1, Secundaria es nivel 2
+                if (nivelesSeleccionados.includes("0") && gradoObj.nivel === 0) return true
                 if (nivelesSeleccionados.includes("1") && gradoObj.nivel === 1) return true
                 if (nivelesSeleccionados.includes("2") && gradoObj.nivel === 2) return true
                 return false
@@ -403,7 +404,6 @@ const AdminDocenteModal = ({ onClose }: Props) => {
                             <label className={styles.label}>Niveles de la Institución</label>
                             <div className={styles.chipGroup}>
                                 {nivelInstitucion
-                                    .filter(n => n.id !== 0)
                                     .filter(nivel => {
                                         // Si hay director asignado, solo mostrar sus niveles
                                         if (directorAsignado && nivelesDirector.length > 0) {
@@ -433,6 +433,7 @@ const AdminDocenteModal = ({ onClose }: Props) => {
                                 <div className={styles.chipGroup}>
                                     {gradosDeColegio
                                         .filter(grado => {
+                                            if (nivelesSeleccionados.includes("0") && grado.nivel === 0) return true
                                             if (nivelesSeleccionados.includes("1") && grado.nivel === 1) return true
                                             if (nivelesSeleccionados.includes("2") && grado.nivel === 2) return true
                                             return false
@@ -442,7 +443,12 @@ const AdminDocenteModal = ({ onClose }: Props) => {
                                                 <input
                                                     type="checkbox"
                                                     value={String(grado.id)}
-                                                    {...register("grados", { required: "Seleccione al menos uno" })}
+                                                    {...register("grados", {
+                                                        required: {
+                                                            value: nivelesSeleccionados.some(n => n === "0" || n === "1" || n === "2"),
+                                                            message: "Seleccione al menos uno"
+                                                        }
+                                                    })}
                                                     className={styles.chipInput}
                                                 />
                                                 <span className={styles.chipLabel}>{grado.name.toUpperCase()}</span>

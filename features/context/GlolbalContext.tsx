@@ -29,6 +29,7 @@ const initialState: AppReducerValues = {
   reporteRegional: [],
   loaderReporteRegional: false,
   grados: [],
+  categorias: [],
   evaluacionesGradoYCategoria: [],
   evaluacionesPsicolinguistica: [],
   psicolinguisticaById: {},

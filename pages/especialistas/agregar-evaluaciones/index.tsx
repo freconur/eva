@@ -12,9 +12,9 @@ const AgregarEvaluaciones = () => {
   const [showModal, setShowModal] = useState(false)
   const [selectValues, setSelectValues] = useState(initialValuesForData)
   // 
-  const { grados, loaderPages } = useGlobalContext()
+  const { grados, categorias, loaderPages } = useGlobalContext()
   const [nombreEvaluacion, setNombreEvaluacion] = useState<{ evaluacion: string }>(initialValues)
-  const { crearEvaluacion, getGrades } = useAgregarEvaluaciones()
+  const { crearEvaluacion, getGrades, getCategories } = useAgregarEvaluaciones()
   const handleshowModal = () => {
     setShowModal(!showModal)
   }
@@ -38,6 +38,7 @@ const AgregarEvaluaciones = () => {
   }
   useEffect(() => {
     getGrades()
+    getCategories()
   }, [])
 
   console.log('selectValues', selectValues)
@@ -94,11 +95,13 @@ const AgregarEvaluaciones = () => {
                   <select name="categoria" onChange={handleChangeValues} className='w-full p-3 drop-shadow-lg text-slate-500'>
                     <option>--CATEGORIA--</option>
                     {
-                      especialidad?.map((esp, index) => {
-                        return (
-                          <option key={index} value={esp.id}>{esp.categoria}</option>
-                        )
-                      })
+                      ([...(categorias && categorias.length > 0 ? categorias : especialidad)])
+                        .filter(c => c.activo !== false)
+                        .map((esp, index) => {
+                          return (
+                            <option key={index} value={esp.id}>{esp.categoria}</option>
+                          )
+                        })
                     }
 
                   </select>

@@ -52,18 +52,9 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
 
   // Filtrar grados según el rol del usuario
   const gradosFiltrados = React.useMemo(() => {
-    if (currentUserData?.perfil?.rol === 5) {
-      // Si nivelesInstitucion incluye el valor 1, mostrar solo grados con nivel 1
-      console.log('currentUserData?.nivelesInstitucion', currentUserData?.nivelesInstitucion)
-      if (currentUserData?.nivelesInstitucion?.includes(1)) {
-        console.log('grados con nivel 1')
-        return grados.filter(grado => grado.nivel === 1)
-      } else {
-        console.log('grados con nivel 2')
-        return grados.filter(grado => grado.nivel === 2)
-
-      }
-      // Si no incluye 1, mostrar grados con nivel 2
+    if (currentUserData?.perfil?.rol === 5 && Array.isArray(currentUserData?.nivelesInstitucion)) {
+      const niveles = currentUserData.nivelesInstitucion
+      return grados.filter(grado => grado.nivel !== undefined && niveles.includes(grado.nivel))
     }
     // Para otros roles, mostrar todos los grados
     return grados
@@ -74,12 +65,14 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
   }
 
   const getNivelGrado = (grado: number) => {
+    if (grado === 12) return 'Inicial'
     if (grado >= 1 && grado <= 6) return 'Primaria'
     if (grado >= 7 && grado <= 11) return 'Secundaria'
     return 'Otro'
   }
 
   const getColorNivel = (grado: number) => {
+    if (grado === 12) return styles.nivelInicial
     if (grado >= 1 && grado <= 6) return styles.nivelPrimaria
     if (grado >= 7 && grado <= 11) return styles.nivelSecundaria
     return styles.nivelOtro

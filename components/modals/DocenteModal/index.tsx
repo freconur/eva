@@ -70,6 +70,7 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
             const filteredGrados = gradosSeleccionados.filter(gradoId => {
                 const gradoObj = gradosDeColegio.find(g => String(g.id) === gradoId);
                 if (!gradoObj) return false;
+                if (nivelesSeleccionados.includes("0") && gradoObj.nivel === 0) return true;
                 if (nivelesSeleccionados.includes("1") && gradoObj.nivel === 1) return true;
                 if (nivelesSeleccionados.includes("2") && gradoObj.nivel === 2) return true;
                 return false;
@@ -142,8 +143,12 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
                     })) : [])
             })
         } else {
+            const initialNiveles = (currentUserData.nivelDeInstitucion && currentUserData.nivelDeInstitucion.length === 1)
+                ? [String(currentUserData.nivelDeInstitucion[0])]
+                : [];
+
             reset({
-                nivelDeInstitucion: [],
+                nivelDeInstitucion: initialNiveles,
                 grados: [],
                 secciones: []
             })
@@ -422,13 +427,14 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
                                                 <input
                                                     type="checkbox"
                                                     value={String(nivel.id)}
-                                                    {...register("nivelDeInstitucion")}
+                                                    {...register("nivelDeInstitucion", { required: "Seleccione al menos uno" })}
                                                     className={styles.chipInput}
                                                 />
                                                 <span className={styles.chipLabel}>{nivel.name.charAt(0).toUpperCase() + nivel.name.slice(1)}</span>
                                             </label>
                                         ))}
                                 </div>
+                                {errors.nivelDeInstitucion && <span className={styles.error}>{errors.nivelDeInstitucion.message}</span>}
                             </div>
 
                             <div className={`${styles.fullWidth} ${styles.gradosAsignadosGroup}`}>
@@ -436,6 +442,7 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
                                 <div className={styles.chipGroup}>
                                     {gradosDeColegio
                                         .filter((grado) => {
+                                            if (nivelesSeleccionados.includes("0") && grado.nivel === 0) return true;
                                             if (nivelesSeleccionados.includes("1") && grado.nivel === 1) return true;
                                             if (nivelesSeleccionados.includes("2") && grado.nivel === 2) return true;
                                             return false;
@@ -445,7 +452,12 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
                                                 <input
                                                     type="checkbox"
                                                     value={String(grado.id)}
-                                                    {...register("grados", { required: "Seleccione al menos uno" })}
+                                                    {...register("grados", {
+                                                        required: {
+                                                            value: nivelesSeleccionados.some(n => n === "0" || n === "1" || n === "2"),
+                                                            message: "Seleccione al menos uno"
+                                                        }
+                                                    })}
                                                     className={styles.chipInput}
                                                 />
                                                 <span className={styles.chipLabel}>{grado.name}</span>

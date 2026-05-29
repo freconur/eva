@@ -1,239 +1,91 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import PrivateRouteDocentes from '@/components/layouts/PrivateRoutesDocentes'
 import StandardHeader from '@/components/evaluaciones/StandardHeader'
 import EvaluationCard from '@/components/evaluaciones/EvaluationCard'
 import StatsCard from '@/components/evaluaciones/StatsCard'
 import NavigationBreadcrumb from '@/components/evaluaciones/NavigationBreadcrumb'
 import { FaGraduationCap, FaBookOpen, FaChartLine, FaUsers } from 'react-icons/fa'
+import { useGlobalContext } from '@/features/context/GlolbalContext'
+import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
+import { especialidad } from '@/fuctions/categorias'
 import styles from './index.module.css'
 
 const TercerNivel = () => {
-  // Datos de las evaluaciones disponibles para estándar 3
+  const { categorias } = useGlobalContext()
+  const { getCategories } = useAgregarEvaluaciones()
+
+  useEffect(() => {
+    getCategories()
+  }, [])
+
+  // Filter categories that are active and apply to Primaria (nivel 1)
+  const categoriesNivel1 = (categorias && categorias.length > 0 ? categorias : especialidad)
+    .filter(cat => cat.activo !== false && cat.niveles && cat.niveles.includes(1))
+
+  // Datos de las evaluaciones disponibles para estándar 3 (1er y 2do grado)
   const evaluationsNivel3 = [
-    {
-      id: '1ro-lee',
-      title: '1er grado: Lee',
-      href: 'tercerNivel/pruebas?grado=1&categoria=1',
-      backgroundColor: '#3b82f6', // Azul para 1er grado
+    ...categoriesNivel1.map(cat => ({
+      id: `1ro-${cat.id}`,
+      title: `1er grado: ${cat.categoria.charAt(0).toUpperCase() + cat.categoria.slice(1)}`,
+      href: `tercerNivel/pruebas?grado=1&categoria=${cat.id}`,
+      backgroundColor: '#3b82f6',
       isActive: false,
       isCompleted: false,
       progress: 0
-    },
-    {
-      id: '1ro-resuelve',
-      title: '1er grado: Resuelve problemas',
-      href: 'tercerNivel/pruebas?grado=1&categoria=2',
-      backgroundColor: '#1d4ed8', // Azul más oscuro para 1er grado
+    })),
+    ...categoriesNivel1.map(cat => ({
+      id: `2do-${cat.id}`,
+      title: `2do grado: ${cat.categoria.charAt(0).toUpperCase() + cat.categoria.slice(1)}`,
+      href: `tercerNivel/pruebas?grado=2&categoria=${cat.id}`,
+      backgroundColor: '#059669',
       isActive: false,
       isCompleted: false,
       progress: 0
-    },
-    {
-      id: '1ro-personal-social',
-      title: '1er grado: Personal Social',
-      href: 'tercerNivel/pruebas?grado=1&categoria=8',
-      backgroundColor: '#1d4ed8', // Azul más oscuro para 1er grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '1ro-ciencia-tecnologia',
-      title: '1er grado: Ciencia y Tecnología',
-      href: 'tercerNivel/pruebas?grado=1&categoria=9',
-      backgroundColor: '#1d4ed8', // Azul más oscuro para 1er grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '2do-lee',
-      title: '2do grado: Lee',
-      href: 'tercerNivel/pruebas?grado=2&categoria=1',
-      backgroundColor: '#059669', // Verde para 2do grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '2do-resuelve',
-      title: '2do grado: Resuelve problemas',
-      href: 'tercerNivel/pruebas?grado=2&categoria=2',
-      backgroundColor: '#047857', // Verde más oscuro para 2do grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '2do-personal-social',
-      title: '2do grado: Personal Social',
-      href: 'tercerNivel/pruebas?grado=2&categoria=8',
-      backgroundColor: '#047857', // Verde más oscuro para 2do grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '2do-ciencia-tecnologia',
-      title: '2do grado: Ciencia y Tecnología',
-      href: 'tercerNivel/pruebas?grado=2&categoria=9',
-      backgroundColor: '#047857', // Verde más oscuro para 2do grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    }
+    }))
   ];
 
-  // Datos de las evaluaciones disponibles para estándar 4
+  // Datos de las evaluaciones disponibles para estándar 4 (3er y 4to grado)
   const evaluationsNivel4 = [
-    {
-      id: '3ro-lee',
-      title: '3er grado: Lee',
-      href: 'tercerNivel/pruebas?grado=3&categoria=1',
-      backgroundColor: '#dc2626', // Rojo para 3er grado
+    ...categoriesNivel1.map(cat => ({
+      id: `3ro-${cat.id}`,
+      title: `3er grado: ${cat.categoria.charAt(0).toUpperCase() + cat.categoria.slice(1)}`,
+      href: `tercerNivel/pruebas?grado=3&categoria=${cat.id}`,
+      backgroundColor: '#dc2626',
       isActive: false,
       isCompleted: false,
       progress: 0
-    },
-    {
-      id: '3ro-resuelve',
-      title: '3er grado: Resuelve problemas',
-      href: 'tercerNivel/pruebas?grado=3&categoria=2',
-      backgroundColor: '#b91c1c', // Rojo más oscuro para 3er grado
+    })),
+    ...categoriesNivel1.map(cat => ({
+      id: `4to-${cat.id}`,
+      title: `4to grado: ${cat.categoria.charAt(0).toUpperCase() + cat.categoria.slice(1)}`,
+      href: `tercerNivel/pruebas?grado=4&categoria=${cat.id}`,
+      backgroundColor: '#7c3aed',
       isActive: false,
       isCompleted: false,
       progress: 0
-    },
-    {
-      id: '3ro-personal-social',
-      title: '3ro grado: Personal Social',
-      href: 'tercerNivel/pruebas?grado=3&categoria=8',
-      backgroundColor: '#b91c1c', // Rojo más oscuro para 3er grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '3ro-ciencia-tecnologia',
-      title: '3ro grado: Ciencia y Tecnología',
-      href: 'tercerNivel/pruebas?grado=3&categoria=9',
-      backgroundColor: '#b91c1c', // Rojo más oscuro para 3er grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '4to-lee',
-      title: '4to grado: Lee',
-      href: 'tercerNivel/pruebas?grado=4&categoria=1',
-      backgroundColor: '#7c3aed', // Púrpura para 4to grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '4to-resuelve',
-      title: '4to grado: Resuelve problemas',
-      href: 'tercerNivel/pruebas?grado=4&categoria=2',
-      backgroundColor: '#6d28d9', // Púrpura más oscuro para 4to grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '4to-personal-social',
-      title: '4to grado: Personal Social',
-      href: 'tercerNivel/pruebas?grado=4&categoria=8',
-      backgroundColor: '#6d28d9', // Púrpura más oscuro para 4to grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '4to-ciencia-tecnologia',
-      title: '4to grado: Ciencia y Tecnología',
-      href: 'tercerNivel/pruebas?grado=4&categoria=9',
-      backgroundColor: '#6d28d9', // Púrpura más oscuro para 4to grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    }
+    }))
   ];
 
-  // Datos de las evaluaciones disponibles para estándar 5
+  // Datos de las evaluaciones disponibles para estándar 5 (5to y 6to grado)
   const evaluationsNivel5 = [
-    {
-      id: '5to-lee',
-      title: '5to grado: Lee',
-      href: 'tercerNivel/pruebas?grado=5&categoria=1',
-      backgroundColor: '#ea580c', // Naranja para 5to grado
+    ...categoriesNivel1.map(cat => ({
+      id: `5to-${cat.id}`,
+      title: `5to grado: ${cat.categoria.charAt(0).toUpperCase() + cat.categoria.slice(1)}`,
+      href: `tercerNivel/pruebas?grado=5&categoria=${cat.id}`,
+      backgroundColor: '#ea580c',
       isActive: false,
       isCompleted: false,
       progress: 0
-    },
-    {
-      id: '5to-resuelve',
-      title: '5to grado: Resuelve problemas',
-      href: 'tercerNivel/pruebas?grado=5&categoria=2',
-      backgroundColor: '#c2410c', // Naranja más oscuro para 5to grado
+    })),
+    ...categoriesNivel1.map(cat => ({
+      id: `6to-${cat.id}`,
+      title: `6to grado: ${cat.categoria.charAt(0).toUpperCase() + cat.categoria.slice(1)}`,
+      href: `tercerNivel/pruebas?grado=6&categoria=${cat.id}`,
+      backgroundColor: '#0891b2',
       isActive: false,
       isCompleted: false,
       progress: 0
-    },
-    {
-      id: '5to-personal-social',
-      title: '5to grado: Personal Social',
-      href: 'tercerNivel/pruebas?grado=5&categoria=8',
-      backgroundColor: '#c2410c', // Naranja más oscuro para 5to grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '5to-ciencia-tecnologia',
-      title: '5to grado: Ciencia y Tecnología',
-      href: 'tercerNivel/pruebas?grado=5&categoria=9',
-      backgroundColor: '#c2410c', // Naranja más oscuro para 5to grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '6to-lee',
-      title: '6to grado: Lee',
-      href: 'tercerNivel/pruebas?grado=6&categoria=1',
-      backgroundColor: '#0891b2', // Cian para 6to grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '6to-resuelve',
-      title: '6to grado: Resuelve problemas',
-      href: 'tercerNivel/pruebas?grado=6&categoria=2',
-      backgroundColor: '#0e7490', // Cian más oscuro para 6to grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '6to-personal-social',
-      title: '6to grado: Personal Social',
-      href: 'tercerNivel/pruebas?grado=6&categoria=8',
-      backgroundColor: '#0e7490', // Cian más oscuro para 6to grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    },
-    {
-      id: '6to-ciencia-tecnologia',
-      title: '6to grado: Ciencia y Tecnología',
-      href: 'tercerNivel/pruebas?grado=6&categoria=9',
-      backgroundColor: '#0e7490', // Cian más oscuro para 6to grado
-      isActive: false,
-      isCompleted: false,
-      progress: 0
-    }
+    }))
   ];
 
   // Datos de navegación

@@ -27,6 +27,7 @@ import {
   Evaluacion,
   Evaluaciones,
   Grades,
+  Category,
   NivelYPuntaje,
   PreguntasRespuestas,
   TipoDeEvaluacion,
@@ -385,6 +386,67 @@ export const useAgregarEvaluaciones = () => {
       }
       dispatch({ type: AppAction.GRADOS, payload: grados });
     });
+  };
+
+  const getCategories = async () => {
+    const refCategorias = collection(db, 'categorias');
+    const q = query(refCategorias, orderBy('id'));
+    await getDocs(q).then((res) => {
+      const categorias: Category[] = [];
+      if (res.size > 0) {
+        res.forEach((doc) => {
+          categorias.push({ ...doc.data() as Category, docId: doc.id });
+        });
+      }
+      dispatch({ type: AppAction.CATEGORIAS, payload: categorias });
+    });
+  };
+
+  const crearCategoria = async (nombreCategoria: string, nivel: number) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    try {
+      const refCategorias = collection(db, 'categorias');
+      const snap = await getDocs(refCategorias);
+      let maxId = 0;
+      snap.forEach(doc => {
+        const data = doc.data();
+        if (data.id && data.id > maxId) {
+          maxId = data.id;
+        }
+      });
+      const newId = maxId + 1;
+      const docRef = doc(db, 'categorias', newId.toString());
+      await setDoc(docRef, {
+        id: newId,
+        categoria: nombreCategoria,
+        activo: true,
+        niveles: [nivel]
+      });
+      await getCategories();
+      return newId;
+    } catch (error) {
+      console.error('Error al crear categoría:', error);
+      throw error;
+    } finally {
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+    }
+  };
+
+  const actualizarCategoria = async (id: number, nombreCategoria: string, niveles: number[]) => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    try {
+      const docRef = doc(db, 'categorias', id.toString());
+      await updateDoc(docRef, {
+        categoria: nombreCategoria,
+        niveles: niveles
+      });
+      await getCategories();
+    } catch (error) {
+      console.error('Error al actualizar categoría:', error);
+      throw error;
+    } finally {
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+    }
   };
 
   const getEvaluacionesGradoYCategoria = async (grado: number, categoria: number) => {
@@ -1086,6 +1148,9 @@ export const useAgregarEvaluaciones = () => {
     prEstudiantes,
     salvarPreguntRespuestaEstudiante,
     getGrades,
+    getCategories,
+    crearCategoria,
+    actualizarCategoria,
     getEvaluacionesGradoYCategoria,
     resetPRestudiantes,
     deleteEvaluacion,

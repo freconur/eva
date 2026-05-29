@@ -6,6 +6,7 @@ import { RiDeleteBinLine, RiSearchLine } from 'react-icons/ri'
 import { MdEditSquare } from 'react-icons/md'
 import DeleteUsuario from '@/modals/deleteUsuario'
 import DocenteModal from '@/components/modals/DocenteModal'
+import { getGradoTexto, getSeccionTexto } from '@/fuctions/regiones'
 
 interface Props {
     usuariosByRol: User[]
@@ -85,7 +86,7 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true }: Props) => {
                                         <div className={styles.chipsContainer}>
                                             {Array.isArray(user.grados) && user.grados.length > 0 ? (
                                                 user.grados.map(g => (
-                                                    <span key={g} className={styles.tableChip}>{g}°</span>
+                                                    <span key={g} className={styles.tableChip}>{getGradoTexto(g)}</span>
                                                 ))
                                             ) : '-'}
                                         </div>
@@ -94,7 +95,7 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true }: Props) => {
                                         <div className={styles.chipsContainer}>
                                             {Array.isArray(user.secciones) && user.secciones.length > 0 ? (
                                                 user.secciones.map(s => (
-                                                    <span key={s} className={styles.tableChip}>{s}</span>
+                                                    <span key={s} className={styles.tableChip}>{getSeccionTexto(s).toUpperCase()}</span>
                                                 ))
                                             ) : '-'}
                                         </div>
@@ -163,7 +164,7 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true }: Props) => {
                                         <div className={styles.chipsContainer}>
                                             {Array.isArray(user.grados) && user.grados.length > 0 ? (
                                                 user.grados.map(g => (
-                                                    <span key={g} className={styles.tableChip}>{g}°</span>
+                                                    <span key={g} className={styles.tableChip}>{getGradoTexto(g)}</span>
                                                 ))
                                             ) : '-'}
                                         </div>
@@ -173,7 +174,7 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true }: Props) => {
                                         <div className={styles.chipsContainer}>
                                             {Array.isArray(user.secciones) && user.secciones.length > 0 ? (
                                                 user.secciones.map(s => (
-                                                    <span key={s} className={styles.tableChip}>{s}</span>
+                                                    <span key={s} className={styles.tableChip}>{getSeccionTexto(s).toUpperCase()}</span>
                                                 ))
                                             ) : '-'}
                                         </div>

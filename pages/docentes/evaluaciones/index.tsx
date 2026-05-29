@@ -8,7 +8,7 @@ import primaria from "../../../assets/primaria.png";
 import secundaria from "../../../assets/secundaria.png";
 import inicial from "../../../assets/inicial.png";
 import { RiLoader4Line, RiArrowRightLine, RiCheckLine } from "react-icons/ri";
-import { FaGraduationCap, FaChalkboardTeacher, FaBaby } from "react-icons/fa";
+import { FaGraduationCap, FaChalkboardTeacher, FaChild } from "react-icons/fa";
 import styles from "./evaluaciones.module.css";
 import PermissionGate from "@/components/permissions/PermissionGate";
 import { PERMISSIONS } from "@/features/utils/permissions";
@@ -46,7 +46,7 @@ const educationLevels = [
     id: 'inicial',
     title: 'Educación Inicial',
     description: 'Niveles 1 y 2 - Niños de 3 a 5 años',
-    icon: FaBaby,
+    icon: FaChild,
     nivel:0,
     image: inicial,
     levels: [
@@ -70,16 +70,9 @@ const Evaluaciones = () => {
   if (loaderPages) {
     return (
       <div className={styles.container}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          height: '50vh',
-          flexDirection: 'column',
-          gap: '1rem'
-        }}>
-          <RiLoader4Line className="animate-spin" style={{ fontSize: '3rem', color: '#667eea' }} />
-          <span style={{ color: '#667eea', fontSize: '1.2rem', fontWeight: '500' }}>
+        <div className={styles.loaderContainer}>
+          <RiLoader4Line className={styles.spinner} />
+          <span className={styles.loaderText}>
             Cargando evaluaciones...
           </span>
         </div>
@@ -96,16 +89,15 @@ const Evaluaciones = () => {
       <div className={styles.gridContainer}>
         {educationLevels
           .filter((level) => {
-            // Si currentUserData tiene la propiedad nivel y su valor es 2, 
-            // solo mostrar el objeto que tenga nivel 2
-            if (currentUserData?.nivel === 2) {
-              return level.nivel === 2;
+            // Si currentUserData tiene la propiedad nivelDeInstitucion, filtrar por los niveles que contenga
+            if (Array.isArray(currentUserData?.nivelDeInstitucion)) {
+              return currentUserData.nivelDeInstitucion.map(Number).includes(level.nivel);
             }
-            // Si currentUserData no tiene nivel, mostrar solo el que tenga nivel 1
-            if (!currentUserData?.nivel) {
-              return level.nivel === 1;
+            // Fallback: Si no tiene nivelDeInstitucion pero sí la propiedad nivel, usarla
+            if (currentUserData?.nivel !== undefined && currentUserData?.nivel !== null) {
+              return level.nivel === Number(currentUserData.nivel);
             }
-            // Si no se cumple ninguna condición, mostrar todos los niveles
+            // Si no se cumple ninguna de las anteriores, por defecto mostrar todos o un nivel predeterminado
             return true;
           })
           .map((level) => {

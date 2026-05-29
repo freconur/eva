@@ -250,12 +250,11 @@ const DirectorModal = ({ onClose }: Props) => {
                                 <label className={styles.label}>Nivel de Institución</label>
                                 <div className={styles.radioGroup}>
                                     {nivelInstitucion?.map((nivel, index) => (
-                                        <label key={index} className={`${styles.radioLabel} ${nivel.id === 0 ? styles.disabled : ''}`}>
+                                        <label key={index} className={styles.radioLabel}>
                                             <input
                                                 type="checkbox"
                                                 checked={nivelesSeleccionados.includes(nivel.id)}
                                                 onChange={() => handleNivelChange(nivel.id)}
-                                                disabled={nivel.id === 0}
                                             />
                                             {nivel.name}
                                         </label>
@@ -399,6 +398,29 @@ const DirectorModal = ({ onClose }: Props) => {
                                     ))}
                                 </div>
                                 {errors.area && <span className={styles.error}>{errors.area.message as string}</span>}
+                            </div>
+
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>Tipo de Gestión</label>
+                                <div className={styles.radioGroup}>
+                                    <label className={styles.radioLabel}>
+                                        <input
+                                            type="radio"
+                                            value="publico"
+                                            {...register("tipoGestion", { required: "Debe seleccionar tipo de gestión" })}
+                                        />
+                                        PÚBLICO
+                                    </label>
+                                    <label className={styles.radioLabel}>
+                                        <input
+                                            type="radio"
+                                            value="privado"
+                                            {...register("tipoGestion", { required: "Debe seleccionar tipo de gestión" })}
+                                        />
+                                        PRIVADO
+                                    </label>
+                                </div>
+                                {errors.tipoGestion && <span className={styles.error}>{errors.tipoGestion.message as string}</span>}
                             </div>
                         </div>
 

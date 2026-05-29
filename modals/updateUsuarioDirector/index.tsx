@@ -28,7 +28,8 @@ const initialValue = {
   distrito: "",
   rolDirectivo: 1,
   caracteristicaCurricular: "1",
-  area: 1
+  area: 1,
+  tipoGestion: undefined as "publico" | "privado" | undefined
 }
 
 const UpdateUsuarioDirector = ({ idUsuario, handleShowModal }: Props) => {
@@ -302,19 +303,47 @@ const UpdateUsuarioDirector = ({ idUsuario, handleShowModal }: Props) => {
                     </div>
                   </div>
 
+                  {/* Tipo de Gestión */}
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Tipo de Gestión</label>
+                    <div className={styles.radioGroup}>
+                      <label className={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="tipoGestion"
+                          value="publico"
+                          checked={formData.tipoGestion === "publico"}
+                          onChange={handleChange}
+                          className={styles.radio}
+                        />
+                        <span>Público</span>
+                      </label>
+                      <label className={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="tipoGestion"
+                          value="privado"
+                          checked={formData.tipoGestion === "privado"}
+                          onChange={handleChange}
+                          className={styles.radio}
+                        />
+                        <span>Privado</span>
+                      </label>
+                    </div>
+                  </div>
+
                   {/* Nivel de Institución */}
                   <div className={`${styles.formGroup} ${styles.fullWidth}`}>
                     <label className={styles.label}>Nivel de Institución</label>
                     <div className={styles.chipGroup}>
                       {nivelInstitucion.map((nivel) => (
                         <label key={nivel.id} className={styles.chip}>
-                          <input
+                      <input
                             type="checkbox"
                             name="nivelDeInstitucion"
                             value={nivel.id}
                             checked={formData.nivelDeInstitucion?.includes(nivel.id)}
                             onChange={handleCheckboxChange}
-                            disabled={nivel.id === 0}
                             className={styles.chipInput}
                           />
                           <span className={styles.chipLabel}>{nivel.name.charAt(0).toUpperCase() + nivel.name.slice(1)}</span>

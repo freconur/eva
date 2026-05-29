@@ -65,6 +65,7 @@ export const convertGrade = (grade: string) => {
   if (grade === "9") return "3ro sec."
   if (grade === "10") return "4to sec."
   if (grade === "11") return "5to sec."
+  if (grade === "12") return "5 años"
 }
 
 export const converSeccion = (seccion: number) => {
@@ -90,6 +91,7 @@ export const converGenero = (genero: string) => {
   if (genero === "2") return "Femenino"
 }
 export const gradosDeColegio = [
+  { id: 12, name: "5 años", nivel: 0 },
   { id: 1, name: "1ro grado", nivel: 1 },
   { id: 2, name: "2do grado", nivel: 1 },
   { id: 3, name: "3ro grado", nivel: 1 },
@@ -211,6 +213,7 @@ export const nivelCurricularPreguntas = [
   },
 ]
 export const converNivelCurricularPreguntas = (grado: number) => {
+  if (grado === 12) return "Inicial"
   if (grado === 1 || grado === 2) return "Estandar III"
   if (grado === 3 || grado === 4) return "Estandar IV"
   if (grado === 5 || grado === 6) return "Estandar V"

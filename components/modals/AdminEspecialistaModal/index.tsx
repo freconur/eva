@@ -89,7 +89,6 @@ const FormCheckbox = ({ label, register, errors, name, options }: {
                         type="checkbox"
                         id={`${name}-${option.id}`}
                         value={option.id}
-                        disabled={option.name === "inicial"}
                         {...register(name, {
                             setValueAs: (value: string[]) => {
                                 return value ? value.map(v => Number(v)) : [];

@@ -117,15 +117,15 @@ export const ROLE_PERMISSIONS: Record<ROLES, PERMISSIONS[]> = {
 
 // Permisos específicos por nivel de institución
 export const INSTITUTION_LEVEL_PERMISSIONS: Record<number, PERMISSIONS[]> = {
-  1: [ // Inicial
+  0: [ // Inicial
     PERMISSIONS.VIEW_MEDIACION_DIDACTICA,
     PERMISSIONS.VIEW_COBERTURA_CURRICULAR
   ],
-  2: [ // Primaria
+  1: [ // Primaria
     PERMISSIONS.VIEW_MEDIACION_DIDACTICA,
     PERMISSIONS.VIEW_COBERTURA_CURRICULAR
   ],
-  3: [ // Secundaria
+  2: [ // Secundaria
     PERMISSIONS.VIEW_MEDIACION_DIDACTICA,
     PERMISSIONS.VIEW_COBERTURA_CURRICULAR
   ]
