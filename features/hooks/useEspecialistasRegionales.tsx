@@ -1,48 +1,51 @@
 import { collection, deleteDoc, doc, getDocs, getFirestore, onSnapshot, query, setDoc, updateDoc, where } from 'firebase/firestore';
-import { app } from '@/firebase/firebase.config';
+import { app, functions } from '@/firebase/firebase.config';
 import { EspecialistaData } from './especialista-regional/useEspecialistaFormUtils';
-import axios from 'axios';
+import { httpsCallable } from 'firebase/functions';
 import { useState } from 'react';
 import { User } from '../types/types';
 
 export const useEspecialistasRegionales = () => {
   const db = getFirestore(app);
-  /* const URL_API = 'http://localhost:3001/' */;
-  const URL_API = 'https://api-ugel-production.up.railway.app/';
-
 
   const [loader, setLoader] = useState<boolean>(false);
   const [warningMessage, setWarningMessage] = useState<string>("")
   const [especialistasRegionales, setEspecialistasRegionales] = useState<User[]>([]);
   const [especialistasUgel, setEspecialistasUgel] = useState<User[]>([]);
   const createEspecialistaRegional = async (data: EspecialistaData) => {
-    //aqui tendria que colocar activar el loader ara creacion de especialista regional
     try {
       setLoader(true);
       console.log('activando loader');
-      const response = await axios.post(`${URL_API}crear-especialista-regional`, {
+
+      const crearUsuarioFn = httpsCallable(functions, 'crearUsuario');
+
+      const result = await crearUsuarioFn({
         email: `${data.dni}@competencelab.com`,
         password: `${data.dni}`,
         dni: `${data.dni}`,
         rol: 5,
-        perfil: { rol: 5, nombre: 'especialista regional' },
-        nombres: data.nombres,
-        apellidos: data.apellidos,
-        nivelesInstitucion: data.nivelesInstitucion,
+        data: {
+          nombres: data.nombres,
+          apellidos: data.apellidos,
+          nivelesInstitucion: data.nivelesInstitucion,
+          perfil: { rol: 5, nombre: 'especialista regional' },
+        }
       });
-      if (response.data.exists === false && response.data.estado === true) {
+
+      const resData = result.data as any;
+
+      if (resData.success && !resData.exists) {
         setWarningMessage(`Especialista ${data.dni} creado exitosamente`);
         setLoader(false);
-      }
-      if (response.data.exists === true) {
+        return { exists: false, success: true };
+      } else if (resData.exists) {
         console.log('usuario ya existe');
         setWarningMessage(`El usuario ${data.dni} ya existe`);
         setLoader(false);
-        return response.data;
+        return { exists: true, success: false };
       } else {
-        console.log('usuario no existe');
         setLoader(false);
-        return response.data;
+        return { exists: false, success: false };
       }
     } catch (error) {
       setLoader(false);
@@ -104,17 +107,13 @@ export const useEspecialistasRegionales = () => {
     await updateDoc(pathRef, data);
   }
   const deleteEspecialistaRegional = async (dni: string) => {
-
-
-    axios.post(`${URL_API}borrar-usuario`, {
-      dni: dni
-    },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        withCredentials: true, // si usas cookies/sesiones
-      });
+    try {
+      const borrarUsuarioFn = httpsCallable(functions, 'borrarUsuario');
+      await borrarUsuarioFn({ dni });
+    } catch (error) {
+      console.error('Error al borrar especialista regional:', error);
+      throw error;
+    }
   }
   return {
     createEspecialistaRegional,

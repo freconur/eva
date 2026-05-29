@@ -103,7 +103,7 @@ const ModalAgregarEspecialista: React.FC<ModalAgregarEspecialistaProps> = ({
           <div className={styles.formGroup}>
             <label className={styles.label}>Nivel de Institución</label>
             <div className={styles.checkboxContainer}>
-              {nivelInstitucion.filter(nivel => nivel.id !== 0).map((nivel) => (
+              {nivelInstitucion.map((nivel) => (
                 <div key={nivel.id} className={styles.checkboxItem}>
                   <input
                     type="checkbox"
