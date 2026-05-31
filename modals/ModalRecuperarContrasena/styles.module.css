@@ -1,0 +1,527 @@
+/* ─────────────────────────────────────────────────────────
+   MODAL RECUPERAR CONTRASEÑA – CSS Module
+   Premium Glassmorphism & High-Contrast Design
+   Matches ModalConfigurarSeguridad for aesthetic consistency
+───────────────────────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.75); /* Dark slate overlay */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modalCard {
+  background-color: #ffffff;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 512px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(241, 245, 249, 0.8);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.header {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e1b4b 100%);
+  padding: 2rem;
+  color: #ffffff;
+  position: relative;
+}
+
+.headerIconBg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 2rem;
+  opacity: 0.08;
+  font-size: 8rem;
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 1.25rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.closeBtn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.closeBtn:active {
+  transform: scale(0.95);
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+
+.subtitle {
+  color: rgba(219, 234, 254, 0.9);
+  font-size: 0.875rem;
+  margin: 0.5rem 0 0 0;
+  line-height: 1.5;
+  max-width: 380px;
+}
+
+/* ── Step Indicator ─────────────────────────────────── */
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+  background-color: #f8fafc;
+}
+
+.stepWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.stepNode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stepCircle {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  border: 1px solid #e2e8f0;
+}
+
+.stepCircleActive {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.stepCircleCompleted {
+  background-color: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+}
+
+.stepLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.stepLine {
+  width: 3rem;
+  height: 2px;
+  background-color: #e2e8f0;
+  transition: background-color 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 640px) {
+  .stepLine {
+    width: 4.5rem;
+  }
+}
+
+.stepLineActive {
+  background-color: #10b981;
+}
+
+/* ── Content & Body ─────────────────────────────────── */
+.body {
+  padding: 2rem;
+  flex: 1;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.required {
+  color: #ef4444;
+}
+
+.select, .input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  outline: none;
+  font-size: 0.95rem;
+  color: #334155;
+  transition: all 0.2s ease;
+}
+
+.selectPrefixContainer {
+  position: relative;
+}
+
+.selectPrefixIcon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 1.15rem;
+  pointer-events: none;
+}
+
+.selectWithIcon {
+  padding-left: 2.75rem;
+}
+
+.inputWithIconContainer {
+  position: relative;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 1.15rem;
+  pointer-events: none;
+}
+
+.inputWithIcon {
+  padding-left: 2.75rem;
+}
+
+.inputCenterTracking {
+  text-align: center;
+  letter-spacing: 0.25em;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.select:focus, .input:focus {
+  border-color: #2563eb;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.helpText {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+  line-height: 1.4;
+  margin-top: 0.25rem;
+}
+
+.helpTextCenter {
+  text-align: center;
+}
+
+/* Choice Option Grid for Recovery Methods */
+.optionsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.optionCard {
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #f8fafc;
+}
+
+.optionCard:hover {
+  border-color: #cbd5e1;
+  background-color: #f1f5f9;
+  transform: translateY(-2px);
+}
+
+.optionCardActive {
+  border-color: #2563eb;
+  background-color: rgba(37, 99, 235, 0.05);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+}
+
+.optionIcon {
+  font-size: 1.75rem;
+  color: #64748b;
+  transition: color 0.2s ease;
+}
+
+.optionCardActive .optionIcon {
+  color: #2563eb;
+}
+
+.optionLabel {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #334155;
+  text-align: center;
+}
+
+/* ── Buttons ────────────────────────────────────────── */
+.buttonGroup {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.buttonGroupRight {
+  justify-content: flex-end;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btnPrimary {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+
+.btnPrimary:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.3);
+}
+
+.btnSuccess {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+}
+
+.btnSuccess:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 6px 14px rgba(16, 185, 129, 0.3);
+}
+
+.btnSecondary {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+.btnSecondary:hover {
+  background-color: #f8fafc;
+  color: #475569;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ── Loader spinner ─────────────────────────────────── */
+.spinner {
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorBanner {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  color: #ef4444;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.forgotRecoveryOption {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.75rem;
+}
+
+.supportLink {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.supportLink:hover {
+  color: #1d4ed8;
+}
+
+.supportLink:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.successSupportContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1rem 0;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.successSupportIconBg {
+  background-color: #ecfdf5;
+  color: #10b981;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.successSupportTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 0.5rem 0;
+}
+
+.successSupportText {
+  font-size: 0.875rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0 0 0.5rem 0;
+}
+
+.successSupportHelp {
+  font-size: 0.8125rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+}

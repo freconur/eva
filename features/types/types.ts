@@ -333,6 +333,13 @@ export type AsignacionGradoSeccion = {
 };
 
 export type User = {
+  seguridad?: {
+    preguntaId?: string;
+    respuesta?: string;
+    pin?: string;
+    configurado?: boolean;
+  };
+  debeCambiarContrasena?: boolean;
   nivelesInstitucion?: number[];
   calificacion?: number;
   nombres?: string;

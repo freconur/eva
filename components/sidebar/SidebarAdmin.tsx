@@ -121,6 +121,12 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 Dashboard
               </Link>
             </div>
+            <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/gestion-usuarios') ? styles.activeLink : ''}`}>
+              <MdPeople className={styles.dashboardIcon} />
+              <Link className={styles.dashboardLink} href="/admin/gestion-usuarios" aria-haspopup="true">
+                Gestión de Usuarios
+              </Link>
+            </div>
             <div className={styles.menuContainer}>
               <div className={styles.menuHeader} onClick={(e) => {
                 e.stopPropagation();

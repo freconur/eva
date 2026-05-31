@@ -116,6 +116,8 @@ const useUsuario = () => {
           email: user.data()?.email || '',
           celular: user.data()?.celular || '',
           tipoGestion: user.data()?.tipoGestion || undefined,
+          seguridad: user.data()?.seguridad || undefined,
+          debeCambiarContrasena: user.data()?.debeCambiarContrasena || false,
         },
       });
     } else {

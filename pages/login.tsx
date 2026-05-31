@@ -8,6 +8,7 @@ import { RiLoader4Line } from 'react-icons/ri'
 import Image from 'next/image'
 import logo from '../assets/cl-logo.png'
 import styles from '@/styles/login.module.css'
+import ModalRecuperarContrasena from '@/modals/ModalRecuperarContrasena'
 
 const initialValue = { usuario: "", contrasena: "" }
 const Login = () => {
@@ -16,6 +17,7 @@ const Login = () => {
   const { signIn } = useUsuario()
   const { currentUserData, loaderLogin, warningLogin } = useGlobalContext()
   const [loginValues, setLoginValues] = useState(initialValue)
+  const [showRecoverModal, setShowRecoverModal] = useState(false)
 
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
@@ -94,6 +96,16 @@ const Login = () => {
                 </div>
               </div>
 
+              <div className={styles.forgotPasswordContainer}>
+                <button
+                  type="button"
+                  onClick={() => setShowRecoverModal(true)}
+                  className={styles.forgotPasswordLink}
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+
               {loaderLogin ? (
                 <div className={styles.loaderContainer}>
                   <RiLoader4Line className={styles.loaderIcon} />
@@ -115,6 +127,9 @@ const Login = () => {
           </div>
         </div>
       </div>
+      {showRecoverModal && (
+        <ModalRecuperarContrasena onClose={() => setShowRecoverModal(false)} />
+      )}
     </div>
   )
 }

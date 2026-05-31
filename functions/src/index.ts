@@ -17,6 +17,13 @@ export { traerTodosEstudiantesEvaluados } from './traerTodosEstudiantesEvaluados
 export { crearUsuario } from './crearUsuario';
 export { actualizarUsuario } from './actualizarUsuario';
 export { borrarUsuario } from './borrarUsuario';
+export { configurarSeguridad } from './configurarSeguridad';
+export { resetearContrasena } from './resetearContrasena';
+export { resetearContrasenasMasivo } from './resetearContrasenasMasivo';
+export { recuperarContrasenaAutoservicio } from './recuperarContrasenaAutoservicio';
+export { obtenerPreguntaSeguridad } from './obtenerPreguntaSeguridad';
+export { validarCredencialesAutoservicio } from './validarCredencialesAutoservicio';
+export { solicitarReseteoContrasena } from './solicitarReseteoContrasena';
 export { crearDirectoresMasivo } from './crearDirectoresMasivo';
 export { crearDocentesMasivo } from './crearDocentesMasivo';
 export { leerEvaluacionesParaAdmin } from './leerEvaluacionesParaAdmin';

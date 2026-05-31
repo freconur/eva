@@ -11,6 +11,7 @@ import Image from 'next/image'
 import logo from '@/assets/cl-logo.png'
 import styles from './layout.module.css'
 import ModalTipoGestion from '@/modals/ModalTipoGestion'
+import ModalConfigurarSeguridad from '@/modals/ModalConfigurarSeguridad'
 
 interface Props {
   children: JSX.Element | JSX.Element[]
@@ -86,6 +87,18 @@ const LayoutMenu = ({ children }: Props) => {
         </>
       )
     }
+  }
+
+  const needsSecuritySetup = currentUserData.perfil?.rol !== undefined &&
+    router.pathname !== '/login' &&
+    (!currentUserData.seguridad?.configurado || currentUserData.debeCambiarContrasena === true);
+
+  if (needsSecuritySetup) {
+    return (
+      <div className="min-h-screen w-screen bg-slate-950 flex items-center justify-center">
+        <ModalConfigurarSeguridad />
+      </div>
+    )
   }
 
   const hasSidebar = Boolean(currentUserData.perfil?.rol && router.pathname !== '/login');

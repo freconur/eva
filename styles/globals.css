@@ -80,3 +80,8 @@ body {
   overflow-y: auto;
   padding-right: 8px;
 }
+
+/* Asegurar que las notificaciones Toast de react-toastify aparezcan sobre los modales con Portal */
+.Toastify__toast-container {
+  z-index: 1000000 !important;
+}
