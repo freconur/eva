@@ -3,7 +3,7 @@
  */
 
 import * as functions from 'firebase-functions';
-import { Estudiante } from './types';
+import { Estudiante, PreguntasRespuestas } from './types';
 
 // ==========================================================
 // TIPOS Y INTERFACES
@@ -632,7 +632,41 @@ export const limpiarParaFirestore = (obj: any): any => {
 };
 
 
-export const calculoNivel = (data: Estudiante) => {
+export const reconstruirRespuestas = (respuestas: any, preguntas: any[]): any[] => {
+  if (Array.isArray(respuestas)) {
+    return respuestas;
+  }
+  if (respuestas && typeof respuestas === 'object' && preguntas) {
+    return preguntas.map((p) => {
+      const alternativaSeleccionada = respuestas[p.id || ''];
+      const alternativasReconstruidas =
+        p.alternativas?.map((alt: any) => ({
+          ...alt,
+          selected: alt.alternativa === alternativaSeleccionada,
+        })) || [];
+
+      return {
+        ...p,
+        alternativas: alternativasReconstruidas,
+      };
+    });
+  }
+  return [];
+};
+
+export const convertirRespuestasAMapa = (respuestas?: any[]): Record<string, string> => {
+  const mapa: Record<string, string> = {};
+  if (!respuestas || !Array.isArray(respuestas)) return mapa;
+  respuestas.forEach((p) => {
+    const seleccionada = p.alternativas?.find((alt: any) => alt.selected === true)?.alternativa;
+    if (seleccionada && p.id) {
+      mapa[p.id] = seleccionada;
+    }
+  });
+  return mapa;
+};
+
+export const calculoNivel = (data: Estudiante, evaluacion?: any) => {
   // Validación temprana para evitar procesamiento innecesario
   const respuestas = data.respuestas;
   if (!respuestas?.length) {
@@ -678,10 +712,71 @@ export const calculoNivel = (data: Estudiante) => {
     }
   }
 
-  // Solo asignar puntaje si es mayor que 0
-  if (puntajeAcumulado > 0) {
-    data.puntaje = puntajeAcumulado;
+  // Asignar puntaje
+  data.puntaje = puntajeAcumulado;
+
+  // Si se proporciona la evaluación, calcular el nivel correspondiente
+  if (evaluacion && evaluacion.nivelYPuntaje && Array.isArray(evaluacion.nivelYPuntaje) && evaluacion.nivelYPuntaje.length > 0) {
+    const nivelesOrdenados = [...evaluacion.nivelYPuntaje].sort((a, b) => (a.min || 0) - (b.min || 0));
+    
+    let nivelEncontrado = null;
+    for (let i = 0; i < nivelesOrdenados.length; i++) {
+      const nivelData = nivelesOrdenados[i];
+      const minPuntaje = nivelData.min || 0;
+      const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
+      
+      if (puntajeAcumulado >= minPuntaje && puntajeAcumulado <= maxPuntaje) {
+        nivelEncontrado = nivelData;
+        break;
+      }
+    }
+    
+    if (nivelEncontrado) {
+      data.nivel = nivelEncontrado.nivel || "sin clasificar";
+      data.nivelData = nivelEncontrado;
+    } else {
+      data.nivel = "sin clasificar";
+      data.nivelData = undefined;
+    }
+  } else {
+    data.nivel = "sin clasificar";
+    data.nivelData = undefined;
   }
   
   return data;
 };
+
+export function agregarPuntajesARespuestas(
+  estudiante: Estudiante,
+  preguntaRespuestas: PreguntasRespuestas[]
+): Estudiante {
+  // Validación temprana para evitar procesamiento innecesario
+  if (!estudiante.respuestas || estudiante.respuestas.length === 0) {
+    return estudiante;
+  }
+
+  // Crear un objeto simple en lugar de Map para mejor rendimiento
+  // Los objetos son más rápidos que Map para claves numéricas simples
+  const puntajesPorOrder: Record<number, string> = {};
+  for (let i = 0; i < preguntaRespuestas.length; i++) {
+    const pregunta = preguntaRespuestas[i];
+    if (pregunta.order !== undefined && pregunta.puntaje !== undefined) {
+      puntajesPorOrder[pregunta.order] = pregunta.puntaje;
+    }
+  }
+
+  // Mutar directamente el array de respuestas para evitar crear nuevos objetos
+  const respuestas = estudiante.respuestas;
+  for (let i = 0; i < respuestas.length; i++) {
+    const respuesta = respuestas[i];
+    if (respuesta.order !== undefined) {
+      respuesta.puntaje = puntajesPorOrder[respuesta.order] || "0";
+    } else {
+      respuesta.puntaje = "0";
+    }
+  }
+
+  // Retornar el estudiante con las respuestas mutadas (más eficiente que spread)
+  estudiante.respuestas = respuestas;
+  return estudiante;
+}

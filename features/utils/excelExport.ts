@@ -15,7 +15,11 @@ type BaseData = {
   'Género'?: string;
 };
 
-export const exportEstudiantesToExcel = (estudiantes: (Estudiante | UserEstudiante)[], fileName: string = 'estudiantes.xlsx') => {
+export const exportEstudiantesToExcel = (
+  estudiantes: (Estudiante | UserEstudiante)[],
+  fileName: string = 'estudiantes.xlsx',
+  preguntasRespuestas?: PreguntasRespuestas[]
+) => {
   // Crear un nuevo libro de Excel
   const workbook = XLSX.utils.book_new();
 
@@ -44,18 +48,48 @@ export const exportEstudiantesToExcel = (estudiantes: (Estudiante | UserEstudian
     }
 
     // Agregar las respuestas del estudiante
-    const respuestasData = estudiante.respuestas?.reduce((acc, respuesta, index) => {
-      const preguntaDocente = 'preguntaDocente' in respuesta ? respuesta.preguntaDocente : '';
-      const alternativaSeleccionada = respuesta.alternativas?.find(alt => alt.selected)?.alternativa || '';
-      
-      return {
-        ...acc,
-        [`Pregunta ${index + 1}`]: respuesta.pregunta || '',
-        [`Actuación ${index + 1}`]: preguntaDocente || '',
-        [`Respuesta ${index + 1}`]: respuesta.respuesta || '',
-        [`Alternativa Seleccionada ${index + 1}`]: alternativaSeleccionada
-      };
-    }, {});
+    let respuestasData = {};
+    if (preguntasRespuestas && preguntasRespuestas.length > 0) {
+      respuestasData = preguntasRespuestas.reduce((acc, globalP, index) => {
+        let alternativaSeleccionada = '';
+        if (estudiante.respuestas) {
+          if (Array.isArray(estudiante.respuestas)) {
+            // Formato antiguo (Array de objetos)
+            const resp = estudiante.respuestas.find(r =>
+              (globalP.id && r.id === globalP.id) || (globalP.order !== undefined && r.order === globalP.order)
+            );
+            alternativaSeleccionada = resp?.alternativas?.find(alt => alt.selected)?.alternativa || '';
+          } else if (typeof estudiante.respuestas === 'object') {
+            // Formato optimizado (Mapa/Objeto)
+            alternativaSeleccionada = (estudiante.respuestas as any)[globalP.id || ''] || '';
+          }
+        }
+
+        return {
+          ...acc,
+          [`Pregunta ${index + 1}`]: globalP.pregunta || '',
+          [`Actuación ${index + 1}`]: globalP.preguntaDocente || '',
+          [`Respuesta ${index + 1}`]: globalP.respuesta || '',
+          [`Alternativa Seleccionada ${index + 1}`]: alternativaSeleccionada
+        };
+      }, {});
+    } else {
+      // Fallback de compatibilidad si no se proporciona la lista global de preguntas
+      if (estudiante.respuestas && Array.isArray(estudiante.respuestas)) {
+        respuestasData = estudiante.respuestas.reduce((acc, respuesta, index) => {
+          const preguntaDocente = 'preguntaDocente' in respuesta ? respuesta.preguntaDocente : '';
+          const alternativaSeleccionada = respuesta.alternativas?.find(alt => alt.selected)?.alternativa || '';
+          
+          return {
+            ...acc,
+            [`Pregunta ${index + 1}`]: respuesta.pregunta || '',
+            [`Actuación ${index + 1}`]: preguntaDocente || '',
+            [`Respuesta ${index + 1}`]: respuesta.respuesta || '',
+            [`Alternativa Seleccionada ${index + 1}`]: alternativaSeleccionada
+          };
+        }, {});
+      }
+    }
 
     return {
       ...baseData,

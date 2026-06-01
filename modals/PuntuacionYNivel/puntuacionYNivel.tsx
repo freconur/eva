@@ -4,6 +4,7 @@ import { Estudiante, Evaluacion, UserEstudiante } from "@/features/types/types";
 import { calculoNivel } from "@/features/utils/calculoNivel";
 import styles from './puntuacionYNivel.module.css';
 import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones";
+import { MdClose } from "react-icons/md";
 
 interface RangoNivel {
   id: number;
@@ -166,8 +167,13 @@ const PuntuacionYNivel = ({ showModal, handleShowModal, estudiante, idExamen, ev
           <div className={styles.containerSale}>
             <div className={styles.closeModalContainer}>
               <h3 className={styles.title}>Puntuación y Nivel del Estudiante</h3>
-              <button className={styles.close} onClick={handleShowModal}>
-                Cerrar
+              <button
+                type="button"
+                className={styles.closeButton}
+                onClick={handleShowModal}
+                title="Cerrar"
+              >
+                <MdClose />
               </button>
             </div>
 
@@ -312,7 +318,8 @@ const PuntuacionYNivel = ({ showModal, handleShowModal, estudiante, idExamen, ev
                     <ul className={styles.calculationList}>
                       {rangosNivel.map((rango) => (
                         <li key={rango.nivel}>
-                          <strong>{getNivelTexto(rango.nivel)}:</strong> {rango.min} - {rango.max} puntos
+                          <strong>{getNivelTexto(rango.nivel)}</strong>
+                          <span>{rango.min} - {rango.max} puntos</span>
                         </li>
                       ))}
                     </ul>

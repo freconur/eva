@@ -1,18 +1,18 @@
 import { createPortal } from "react-dom"
-import styles from '../updateEvaluacion/updateEvaluacion.module.css'
-import { useForm } from "react-hook-form";
+import styles from './updatePreguntaRespuesta.module.css'
 import { useGlobalContext } from "@/features/context/GlolbalContext";
-import { Alternativa, Alternativas, Evaluaciones, PreguntasRespuestas, Psicolinguistica } from "@/features/types/types";
+import { Alternativa, PreguntasRespuestas } from "@/features/types/types";
 import { RiLoader4Line } from "react-icons/ri";
-import { usePsicolinguistica } from "@/features/hooks/usePsicolinguistica";
 import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones";
 import { useEffect, useState } from "react";
+import { MdClose } from 'react-icons/md';
 
 interface Props {
   pregunta: PreguntasRespuestas,
   id: string,
   handleShowModalUpdatePreguntaRespuesta: () => void
 }
+
 const initialValue = {
   id: "",
   order: 0,
@@ -31,28 +31,26 @@ const initialValue = {
 const initialValueAlternativas = { descripcion: "", alternativa: "", selected: false }
 
 const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespuesta, id }: Props) => {
-  const { loaderSalvarPregunta, } = useGlobalContext()
-  const { updateEvaluacion } = useAgregarEvaluaciones()
-  // const [valueInput, setValueInput] = useState<PreguntasRespuestas>(pregunta)
+  const { loaderSalvarPregunta, evaluacion, preguntasRespuestas } = useGlobalContext()
   const [valueInput, setValueInput] = useState<PreguntasRespuestas>(initialValue)
   const [valueInputA, setValueInputA] = useState<Alternativa>(initialValueAlternativas)
   const [valueInputB, setValueInputB] = useState<Alternativa>(initialValueAlternativas)
   const [valueInputC, setValueInputC] = useState<Alternativa>(initialValueAlternativas)
   const [valueInputD, setValueInputD] = useState<Alternativa>(initialValueAlternativas)
   const [puntajeError, setPuntajeError] = useState<string>("")
-  // const [valueInputAlternativas, setValueInputAlternativas] = useState<Alternativa[]>(initialValueAlternativas)
-  // const [valueInput, setValueInput] = useState<Evaluaciones>(initialValue)
-  // const [nameUpdate, setNameUpdate] = useState(nameEva)
+  const [validationError, setValidationError] = useState<string>("")
+
   let container;
   if (typeof window !== "undefined") {
     container = document.getElementById("portal-modal");
   }
-  const { updatePreguntaRespuesta } = useAgregarEvaluaciones()
-  const handleChangeInput = (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
-    // setNameUpdate(e.target.value)
-    setValueInput({ ...valueInput, [e.target.name]: e.target.value })
 
+  const { updatePreguntaRespuesta } = useAgregarEvaluaciones()
+
+  const handleChangeInput = (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
+    setValueInput({ ...valueInput, [e.target.name]: e.target.value })
   }
+
   const handleA = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValueInputA({ ...valueInputA, descripcion: e.target.value })
   }
@@ -63,7 +61,11 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
     setValueInputC({ ...valueInputC, descripcion: e.target.value })
   }
   const handleD = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValueInputD({ ...valueInputD, descripcion: e.target.value })
+    setValueInputD({
+      alternativa: 'd',
+      selected: valueInputD?.selected || false,
+      descripcion: e.target.value
+    })
   }
 
   const handlePuntajeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,131 +85,257 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
   }
 
   const handleActualizar = () => {
-    console.log('valueInput', valueInput)
+    if (!valueInput.pregunta?.trim()) {
+      setValidationError("La pregunta del examen es requerida");
+      return;
+    }
+    if (!valueInput.preguntaDocente?.trim()) {
+      setValidationError("La actuación docente es requerida");
+      return;
+    }
+    if (!valueInputA.descripcion?.trim() || !valueInputB.descripcion?.trim() || !valueInputC.descripcion?.trim()) {
+      setValidationError("Las alternativas A, B y C son requeridas");
+      return;
+    }
+    if (!valueInput.respuesta) {
+      setValidationError("Debe seleccionar la respuesta correcta");
+      return;
+    }
+    
+    const descD = valueInputD?.descripcion?.trim();
+    if (valueInput.respuesta.toLowerCase() === 'd' && !descD) {
+      setValidationError("La alternativa D debe tener contenido para ser la respuesta correcta");
+      return;
+    }
+    if (puntajeError) {
+      setValidationError("Por favor corrige los errores del puntaje");
+      return;
+    }
+
+    // VALIDACIÓN DE NIVELES Y PUNTAJES (Solo para tipo de evaluación "1")
+    if (evaluacion.tipoDeEvaluacion === "1") {
+      const nuevoPuntaje = Number(valueInput.puntaje) || 0;
+      if (nuevoPuntaje > 0) {
+        if (!evaluacion.nivelYPuntaje || !Array.isArray(evaluacion.nivelYPuntaje) || evaluacion.nivelYPuntaje.length === 0) {
+          setValidationError("Primero debes configurar los rangos de nivel y puntaje en la evaluación para poder asignar puntos a las preguntas.");
+          return;
+        }
+
+        const nivelSatisfactorio = evaluacion.nivelYPuntaje.find((n: any) => n.nivel.toLowerCase() === 'satisfactorio');
+        if (!nivelSatisfactorio) {
+          setValidationError("No se encontró la configuración del nivel 'Satisfactorio'. Por favor configurarlo primero.");
+          return;
+        }
+
+        const maxSatisfactorio = Number(nivelSatisfactorio.max || 0);
+        const sumOfOtherQuestions = preguntasRespuestas
+          .filter((p: any) => p.id !== valueInput.id)
+          .reduce((sum: number, p: any) => sum + (Number(p.puntaje) || 0), 0);
+        const proposedSum = sumOfOtherQuestions + nuevoPuntaje;
+
+        if (proposedSum > maxSatisfactorio) {
+          setValidationError(`La suma total de los puntajes de las preguntas (${proposedSum}) superaría el puntaje máximo del nivel Satisfactorio (${maxSatisfactorio}).`);
+          return;
+        }
+      }
+    }
+
+    setValidationError("");
+    
     const array: Alternativa[] = []
     array.push(valueInputA)
     array.push(valueInputB)
     array.push(valueInputC)
-    console.log('arrat', array)
-    valueInputD?.descripcion?.length === 0 ? null : array.push(valueInputD)
+    
+    if (descD && descD.length > 0) {
+      array.push(valueInputD)
+    }
+    
     updatePreguntaRespuesta(valueInput, array, id)
+    handleShowModalUpdatePreguntaRespuesta()
   }
+
   useEffect(() => {
     setValueInput(pregunta)
     if (pregunta.alternativas) {
-      // setValueInputAlternativas(pregunta.alternativas)
-      setValueInputA(pregunta.alternativas[0])
-      setValueInputB(pregunta.alternativas[1])
-      setValueInputC(pregunta.alternativas[2])
-      setValueInputD(pregunta.alternativas[3])
+      setValueInputA(pregunta.alternativas[0] || initialValueAlternativas)
+      setValueInputB(pregunta.alternativas[1] || initialValueAlternativas)
+      setValueInputC(pregunta.alternativas[2] || initialValueAlternativas)
+      setValueInputD(pregunta.alternativas[3] || initialValueAlternativas)
     }
-  }, [])
-  console.log('valueInput', valueInput)
-  console.log('valueInputA', valueInputA)
-  console.log('valueInputB', valueInputB)
-  console.log('valueInputC', valueInputC)
-  console.log('valueInputD', valueInputD)
-  // console.log('valueInputAlternativas', valueInputAlternativas)
+  }, [pregunta])
+
   return container
     ? createPortal(
       <div className={styles.containerModal}>
-
         <div className={styles.containerSale}>
+          <div className={styles.closeModalContainer}>
+            <h3 className={styles.title}>Editar pregunta</h3>
+            <button
+              type="button"
+              className={styles.closeButton}
+              onClick={() => { handleShowModalUpdatePreguntaRespuesta(); setValueInput(initialValue) }}
+              title="Cerrar"
+            >
+              <MdClose />
+            </button>
+          </div>
 
-          {
-
-            loaderSalvarPregunta ?
-              <div className='grid items-center justify-center'>
-                <div className='flex justify-center items-center'>
-                  <RiLoader4Line className="animate-spin text-3xl text-colorTercero " />
-                  <span className='text-colorTercero animate-pulse'>...borrando evaluación</span>
-                </div>
-              </div>
-              :
-              <>
-                {/* <div className={styles.closeModalContainer}>
-                  <div className={styles.close} onClick={() => { handleShowModalUpdatePreguntaRespuesta(); setValueInput(initialValue) }} >cerrar</div>
-                </div> */}
-                <h3 className={styles.title}>Editar pregunta</h3>
-                <div>
-                  {/* <h3 className="text-xl text-white">{valueInput.pregunta}</h3> */}
+          {loaderSalvarPregunta ? (
+            <div className='flex flex-col justify-center items-center py-12'>
+              <RiLoader4Line className={`${styles.spinner} text-3xl text-blue-500`} />
+              <span className='text-gray-500 animate-pulse mt-2'>Guardando cambios...</span>
+            </div>
+          ) : (
+            <div className={styles.formulario}>
+              <div className={styles.columnaIzquierda}>
+                <div className={styles.formGroup}>
+                  <label className={styles.labelPregunta}>Pregunta del examen *</label>
                   <textarea
-                    className={styles.inputNombresDni}
+                    className={styles.textAreaPregunta}
                     name="pregunta"
                     value={valueInput.pregunta}
                     onChange={handleChangeInput}
-                  // placeholder={nameEva}
+                    placeholder="Escribe la pregunta aquí..."
                   />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.labelPregunta}>Actuación Docente (Especialidad) *</label>
                   <textarea
-                    className={styles.inputNombresDni}
+                    className={styles.textAreaPregunta}
                     name="preguntaDocente"
                     value={valueInput.preguntaDocente}
                     onChange={handleChangeInput}
-                  // placeholder={nameEva}
+                    placeholder="Escribe la actuación docente aquí..."
                   />
-                  <div>
-                    <input
-                      type="text"
-                      className={styles.inputNombresDni}
-                      name="descripcion"
-                      value={valueInputA.descripcion}
-                      onChange={handleA}
-                    />
-                    <input
-                      type="text"
-                      className={styles.inputNombresDni}
-                      name="descripcion"
-                      value={valueInputB.descripcion}
-                      onChange={handleB}
-                    />
-                    <input
-                      type="text"
-                      className={styles.inputNombresDni}
-                      name="descripcion"
-                      value={valueInputC.descripcion}
-                      onChange={handleC}
-                    />
-                    <input
-                      type="text"
-                      className={styles.inputNombresDni}
-                      name="descripcion"
-                      value={valueInputD?.descripcion}
-                      onChange={handleD}
-                    />
-                    <div>
-                      <p className={styles.tituloBotones}>Respuesta Correcta</p>
+                </div>
+              </div>
+
+              <div className={styles.columnaDerecha}>
+                <p className={styles.titlePregunta}>alternativas</p>
+                
+                <div className={styles.inputAlternativas}>
+                  {/* alternativa A */}
+                  <div className={styles.alternativaRow}>
+                    <span className={styles.alternativaLabel}>a.</span>
+                    <div className={styles.alternativaInputWrapper}>
                       <input
                         type="text"
-                        className={styles.inputNombresDni}
-                        name="respuesta"
-                        value={valueInput.respuesta}
-                        onChange={handleChangeInput}
+                        className={styles.alternativaInput}
+                        name="descripcion"
+                        value={valueInputA.descripcion}
+                        onChange={handleA}
+                        placeholder="Escribe la alternativa a"
                       />
-                      <p className={styles.tituloBotones}>Puntaje</p>
-                      <input
-                        type="text"
-                        className={styles.inputNombresDni}
-                        name="puntaje"
-                        value={valueInput.puntaje || ""}
-                        onChange={handlePuntajeChange}
-                        placeholder="Ingrese el puntaje"
-                      />
-                      {puntajeError && (
-                        <p className="text-red-500 text-sm mt-1">{puntajeError}</p>
-                      )}
                     </div>
                   </div>
-                  <p className={styles.tituloBotones}>¿Quieres actualizar esta pregunta y sus alternativas?</p>
-                  <div className='flex gap-3 justify-center items-center'>
 
-                    <button onClick={() => { handleShowModalUpdatePreguntaRespuesta(); setValueInput(initialValue) }} className={styles.buttonCrearEvaluacion}>CANCELAR</button>
-                    <button onClick={() => { handleShowModalUpdatePreguntaRespuesta(); handleActualizar() }} className={styles.buttonDelete}>SI</button>
-
+                  {/* alternativa B */}
+                  <div className={styles.alternativaRow}>
+                    <span className={styles.alternativaLabel}>b.</span>
+                    <div className={styles.alternativaInputWrapper}>
+                      <input
+                        type="text"
+                        className={styles.alternativaInput}
+                        name="descripcion"
+                        value={valueInputB.descripcion}
+                        onChange={handleB}
+                        placeholder="Escribe la alternativa b"
+                      />
+                    </div>
                   </div>
 
+                  {/* alternativa C */}
+                  <div className={styles.alternativaRow}>
+                    <span className={styles.alternativaLabel}>c.</span>
+                    <div className={styles.alternativaInputWrapper}>
+                      <input
+                        type="text"
+                        className={styles.alternativaInput}
+                        name="descripcion"
+                        value={valueInputC.descripcion}
+                        onChange={handleC}
+                        placeholder="Escribe la alternativa c"
+                      />
+                    </div>
+                  </div>
+
+                  {/* alternativa D */}
+                  <div className={styles.alternativaRow}>
+                    <span className={styles.alternativaLabel}>d.</span>
+                    <div className={styles.alternativaInputWrapper}>
+                      <input
+                        type="text"
+                        className={styles.alternativaInput}
+                        name="descripcion"
+                        value={valueInputD?.descripcion || ""}
+                        onChange={handleD}
+                        placeholder="Escribe la alternativa d (Opcional)"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </>
-          }
+
+                <div className={styles.formGroup}>
+                  <label className={styles.labelPregunta}>respuesta correcta *</label>
+                  <div className={styles.radioGroup}>
+                    {['a', 'b', 'c', 'd'].map((option) => (
+                      <label key={option} className={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="respuesta"
+                          value={option}
+                          checked={valueInput.respuesta?.toLowerCase() === option}
+                          onChange={() => setValueInput({ ...valueInput, respuesta: option })}
+                          className={styles.radioInput}
+                        />
+                        <span className={styles.radioCustomBadge}>{option.toUpperCase()}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.labelPregunta}>Puntaje</label>
+                  <input
+                    type="text"
+                    className={styles.inputNombresDni}
+                    name="puntaje"
+                    value={valueInput.puntaje || ""}
+                    onChange={handlePuntajeChange}
+                    placeholder="Ingrese el puntaje"
+                  />
+                  {puntajeError && (
+                    <span className={styles.error}>{puntajeError}</span>
+                  )}
+                </div>
+              </div>
+
+              {validationError && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <span className={styles.error}>{validationError}</span>
+                </div>
+              )}
+
+              <div className={styles.buttonGroup}>
+                <button
+                  type="button"
+                  onClick={() => { handleShowModalUpdatePreguntaRespuesta(); setValueInput(initialValue) }}
+                  className={styles.cancelButton}
+                >
+                  cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleActualizar}
+                  className={styles.submitButton}
+                >
+                  guardar cambios
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>,
       container
@@ -215,4 +343,4 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
     : null
 }
 
-export default UpdatePreguntaRespuesta
+export default UpdatePreguntaRespuesta;

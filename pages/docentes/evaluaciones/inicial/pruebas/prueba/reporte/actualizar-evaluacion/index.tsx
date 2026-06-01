@@ -40,11 +40,28 @@ const ActualizarEvaluacion = () => {
 
   // Sincronizar respuestas editables cuando cambie evaluacionEstudiante
   useEffect(() => {
-    if (evaluacionEstudiante?.respuestas) {
-      setRespuestasEditables(evaluacionEstudiante.respuestas);
-    }
-    // Sincronizar datos del estudiante
     if (evaluacionEstudiante) {
+      let respuestasReconstruidas: any[] = [];
+
+      if (Array.isArray(evaluacionEstudiante.respuestas)) {
+        respuestasReconstruidas = evaluacionEstudiante.respuestas;
+      } else if (evaluacionEstudiante.respuestas && typeof evaluacionEstudiante.respuestas === 'object' && preguntasRespuestas) {
+        respuestasReconstruidas = preguntasRespuestas.map(p => {
+          const alternativaSeleccionada = (evaluacionEstudiante.respuestas as any)[p.id || ''];
+          const alternativasReconstruidas = p.alternativas?.map(alt => ({
+            ...alt,
+            selected: alt.alternativa === alternativaSeleccionada
+          })) || [];
+
+          return {
+            ...p,
+            alternativas: alternativasReconstruidas
+          };
+        });
+      }
+      setRespuestasEditables(respuestasReconstruidas);
+
+      // Sincronizar datos del estudiante
       setDatosEstudiante({
         dni: String(evaluacionEstudiante.dni || ''),
         grado: String(evaluacionEstudiante.grado || ''),
@@ -53,7 +70,7 @@ const ActualizarEvaluacion = () => {
         nombresApellidos: String(evaluacionEstudiante.nombresApellidos || '')
       });
     }
-  }, [evaluacionEstudiante]);
+  }, [evaluacionEstudiante, preguntasRespuestas]);
 
   // Handler para cambiar la selección de alternativas
   const handleAlternativaChange = (preguntaIndex: number, alternativaSeleccionada: string) => {

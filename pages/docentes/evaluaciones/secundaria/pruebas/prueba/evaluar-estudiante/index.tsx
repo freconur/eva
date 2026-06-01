@@ -321,10 +321,15 @@ const EvaluarEstudiante = () => {
   }, [preguntasRespuestas]);
 
   useEffect(() => {
-    if (idExamen) {
-      getEvaluacion(`${idExamen}`);
-      getPreguntasRespuestas(`${idExamen}`);
-    }
+    if (!idExamen) return;
+
+    const unsubscribeEvaluacion = getEvaluacion(`${idExamen}`);
+    const unsubscribePreguntas = getPreguntasRespuestas(`${idExamen}`);
+
+    return () => {
+      if (unsubscribeEvaluacion) unsubscribeEvaluacion();
+      if (unsubscribePreguntas) unsubscribePreguntas();
+    };
   }, [idExamen]);
 
   // Efecto para establecer valores iniciales del formulario cuando se carga la evaluación
@@ -358,17 +363,17 @@ const EvaluarEstudiante = () => {
   }, [estudiantesDeEvaluacion, nuevaSeccion, evaluacion?.grado, reset]);
 
   useEffect(() => {
+    if (!evaluacion?.id || !evaluacion?.grado) return;
 
-    const fetchEstudiantes = async () => {
-      try {
-        if (evaluacion?.id && evaluacion?.grado) {
-          obtenerEstudianteDeEvaluacion(evaluacion, nuevaSeccion, `${evaluacion.mesDelExamen}`);
-        }
-      } catch (error) {
-        console.error('Error al obtener estudiantes:', error);
-      }
+    const unsubscribeEstudiantes = obtenerEstudianteDeEvaluacion(
+      evaluacion,
+      nuevaSeccion,
+      `${evaluacion.mesDelExamen}`
+    );
+
+    return () => {
+      if (unsubscribeEstudiantes) unsubscribeEstudiantes();
     };
-    fetchEstudiantes();
   }, [evaluacion?.id, evaluacion?.grado, nuevaSeccion]);
   // Efecto para manejar el scroll y cambiar el top del header progresivamente
   useEffect(() => {

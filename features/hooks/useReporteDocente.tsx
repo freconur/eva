@@ -44,7 +44,7 @@ export const useReporteDocente = () => {
   const [correccionPuntajesExitoso, setCorreccionPuntajesExitoso] = useState<boolean>(false)
   const [correccionPuntajesError, setCorreccionPuntajesError] = useState<boolean>(false)
   const db = getFirestore(app);
-  const { currentUserData } = useGlobalContext();
+  const { currentUserData, preguntasRespuestas } = useGlobalContext();
   const dispatch = useGlobalContextDispatch();
 
   const filtroEstudiantes = (estudiantes: Estudiante[], order: number) => {
@@ -140,8 +140,11 @@ export const useReporteDocente = () => {
           const estudiantesDelMes: Estudiante[] = [];
 
           snapshot.forEach((doc) => {
+            const rawRespuestas = doc.data().respuestas;
+            const respuestasReconstruidas = reconstruirRespuestas(rawRespuestas, preguntasRespuestas || []);
             const estudianteData = {
               ...doc.data(),
+              respuestas: respuestasReconstruidas,
               respuestasIncorrectas:
                 Number(doc.data().totalPreguntas) - Number(doc.data().respuestasCorrectas),
             } as Estudiante;
@@ -207,13 +210,18 @@ export const useReporteDocente = () => {
 
     try {
       const resultados = estudiantesDelDocente.map((estudiante) => {
-        const rta = agregarPuntajesARespuestas(estudiante, preguntaRespuestas);
+        const estudianteReconstruido = {
+          ...estudiante,
+          respuestas: reconstruirRespuestas(estudiante.respuestas, preguntaRespuestas)
+        };
+        const rta = agregarPuntajesARespuestas(estudianteReconstruido, preguntaRespuestas);
         const rta2 = calculoNivel(rta, evaluacion);
         const rta3 = calculoPreguntasCorrectas(rta2);
         return {
           estudiante,
           data: {
             ...rta3,
+            respuestas: convertirRespuestasAMapa(rta3.respuestas),
             region: currentUserData.region
           }
         };
@@ -278,8 +286,11 @@ export const useReporteDocente = () => {
         }
 
         snapshot.forEach((doc) => {
+          const rawRespuestas = doc.data().respuestas;
+          const respuestasReconstruidas = reconstruirRespuestas(rawRespuestas, preguntaRespuestas);
           arrayEstudiantes.push({
             ...doc.data(),
+            respuestas: respuestasReconstruidas,
             respuestasIncorrectas:
               Number(doc.data().totalPreguntas) - Number(doc.data().respuestasCorrectas),
           });
@@ -381,6 +392,43 @@ export const useReporteDocente = () => {
     return unsubscribe;
   };
 
+  const reconstruirRespuestas = (
+    respuestas: any,
+    preguntas: PreguntasRespuestas[]
+  ): any[] => {
+    if (Array.isArray(respuestas)) {
+      return respuestas;
+    }
+    if (respuestas && typeof respuestas === 'object' && preguntas) {
+      return preguntas.map((p) => {
+        const alternativaSeleccionada = respuestas[p.id || ''];
+        const alternativasReconstruidas =
+          p.alternativas?.map((alt) => ({
+            ...alt,
+            selected: alt.alternativa === alternativaSeleccionada,
+          })) || [];
+
+        return {
+          ...p,
+          alternativas: alternativasReconstruidas,
+        };
+      });
+    }
+    return [];
+  };
+
+  const convertirRespuestasAMapa = (preguntas?: PreguntasRespuestas[]): Record<string, string> => {
+    const mapa: Record<string, string> = {};
+    if (!preguntas) return mapa;
+    preguntas.forEach((p) => {
+      const seleccionada = p.alternativas?.find((alt) => alt.selected === true)?.alternativa;
+      if (seleccionada && p.id) {
+        mapa[p.id] = seleccionada;
+      }
+    });
+    return mapa;
+  };
+
   const updateEvaluacionEstudiante = async (
     data: UserEstudiante,
     idExamen: string,
@@ -412,7 +460,7 @@ export const useReporteDocente = () => {
             grado: estudiante.grado,
             seccion: estudiante.seccion,
             genero: estudiante.genero,
-            respuestas: estudiante.respuestas,
+            respuestas: convertirRespuestasAMapa(estudiante.respuestas),
             region: currentUserData.region,
             puntaje: estudiante.puntaje,
             dniDocente: currentUserData.dni,
@@ -439,7 +487,11 @@ export const useReporteDocente = () => {
     } else if (evaluacion.tipoDeEvaluacion === '0') {
       try {
         const dataEstudiante = calculoPreguntasCorrectas(data);
-        await updateDoc(docRef, dataEstudiante);
+        const dataEstudianteUpdate = {
+          ...dataEstudiante,
+          respuestas: dataEstudiante.respuestas ? convertirRespuestasAMapa(dataEstudiante.respuestas) : undefined
+        };
+        await updateDoc(docRef, dataEstudianteUpdate);
       } catch (error) {
 
       }

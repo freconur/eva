@@ -25,11 +25,17 @@ const Evaluacion = () => {
     setShowModalEstudiante(!showModalEstudiante)
   }
   useEffect(() => {
-    getEvaluacion(`${route.query.idExamen}`)
-    if (route.query.idExamen) {
-      getPreguntasRespuestas(`${route.query.idExamen}`)
-    }
-  }, [route.query.idExamen])
+    const evalId = route.query.idExamen;
+    if (!evalId) return;
+
+    const unsubscribeEvaluacion = getEvaluacion(`${evalId}`);
+    const unsubscribePreguntas = getPreguntasRespuestas(`${evalId}`);
+
+    return () => {
+      if (unsubscribeEvaluacion) unsubscribeEvaluacion();
+      if (unsubscribePreguntas) unsubscribePreguntas();
+    };
+  }, [route.query.idExamen]);
 
   console.log('preguntasRespuestas', preguntasRespuestas)
   return (

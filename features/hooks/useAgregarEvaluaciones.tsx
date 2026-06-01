@@ -39,10 +39,19 @@ import { calculoNivel } from '../utils/calculoNivel';
 import { addNoRespondioAlternative } from '../utils/addNoRespondioAlternative';
 import { useState } from 'react';
 import { EstudianteImportado } from '@/features/types/estudiante';
+import { toast } from 'react-toastify';
 
 export const useAgregarEvaluaciones = () => {
   const dispatch = useGlobalContextDispatch();
   const { currentUserData } = useGlobalContext();
+
+  const checkAuditReadOnly = (): boolean => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('audited_user')) {
+      toast.warning('Modo de Auditoría: No se permite modificar información en este modo.');
+      return true;
+    }
+    return false;
+  };
   const db = getFirestore();
   const [totalPreguntas, setTotalPreguntas] = useState<number>(0)
   const [loaderCrearEstudiantes, setLoaderCrearEstudiantes] = useState<boolean>(false);
@@ -67,6 +76,7 @@ export const useAgregarEvaluaciones = () => {
 
 
   const crearEstudiantesImportados = async (estudiantes: EstudianteImportado[]) => {
+    if (checkAuditReadOnly()) return;
     // Validar parámetros
     if (!estudiantes || estudiantes.length === 0) {
       console.warn('No hay estudiantes para crear');
@@ -112,6 +122,7 @@ export const useAgregarEvaluaciones = () => {
 
   // Función para crear un estudiante individual
   const crearEstudianteIndividual = async (estudiante: EstudianteImportado) => {
+    if (checkAuditReadOnly()) return;
     // Validar parámetros
     if (!estudiante.dni || !estudiante.nombresApellidos || !estudiante.grado || !estudiante.seccion || !estudiante.genero) {
       throw new Error('Todos los campos son requeridos');
@@ -150,6 +161,7 @@ export const useAgregarEvaluaciones = () => {
 
   // Función para actualizar un estudiante individual
   const actualizarEstudiante = async (estudiante: EstudianteImportado) => {
+    if (checkAuditReadOnly()) return;
     // Validar parámetros
     if (!estudiante.dni || !estudiante.nombresApellidos || !estudiante.grado || !estudiante.seccion || !estudiante.genero) {
       throw new Error('Todos los campos son requeridos');
@@ -187,6 +199,7 @@ export const useAgregarEvaluaciones = () => {
 
   // Función para eliminar un estudiante individual
   const eliminarEstudiante = async (dni: string) => {
+    if (checkAuditReadOnly()) return;
     // Validar parámetro
     if (!dni) {
       throw new Error('El DNI es requerido');
@@ -403,6 +416,7 @@ export const useAgregarEvaluaciones = () => {
   };
 
   const crearCategoria = async (nombreCategoria: string, nivel: number) => {
+    if (checkAuditReadOnly()) throw new Error('Modo de Auditoría: No se permite crear categorías.');
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
       const refCategorias = collection(db, 'categorias');
@@ -433,6 +447,7 @@ export const useAgregarEvaluaciones = () => {
   };
 
   const actualizarCategoria = async (id: number, nombreCategoria: string, niveles: number[]) => {
+    if (checkAuditReadOnly()) return;
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
       const docRef = doc(db, 'categorias', id.toString());
@@ -519,6 +534,7 @@ export const useAgregarEvaluaciones = () => {
     };
   };
   const crearEvaluacion = async (value: CreaEvaluacion) => {
+    if (checkAuditReadOnly()) return;
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     // 1. Obtiene una referencia a la colección 'productos' y un ID autogenerado
     const nuevoProductoRef = doc(collection(db, 'evaluaciones'));
@@ -552,7 +568,7 @@ export const useAgregarEvaluaciones = () => {
     const docRef = doc(db, 'evaluaciones', `${id}`);
 
     // Usar onSnapshot para cambios en tiempo real
-    onSnapshot(
+    return onSnapshot(
       docRef,
       (docSnap) => {
         if (docSnap.exists()) {
@@ -560,16 +576,14 @@ export const useAgregarEvaluaciones = () => {
         }
       },
       (error: Error) => {
+        console.error('Error en getEvaluacion:', error);
       }
     );
   };
 
-  const getPreguntasRespuestas = async (id: string) => {
+  const getPreguntasRespuestas = (id: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     if (id && id.length > 0) {
-      // Inicializar el contador si no existe
-      await initializeCounter(id);
-
       const pethRef = collection(db, `/evaluaciones/${id}/preguntasRespuestas`);
       const q = query(pethRef, orderBy('order', 'asc'));
 
@@ -599,6 +613,7 @@ export const useAgregarEvaluaciones = () => {
         },
         (error: Error) => {
           dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+          console.error('Error en getPreguntasRespuestas:', error);
         }
       );
     } else {
@@ -606,6 +621,7 @@ export const useAgregarEvaluaciones = () => {
       dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: [] });
       dispatch({ type: AppAction.SIZE_PREGUNTAS, payload: 0 });
       dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return () => {};
     }
   };
 
@@ -613,8 +629,6 @@ export const useAgregarEvaluaciones = () => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
       if (id && id.length > 0) {
-        await initializeCounter(id);
-
         const pathRef = collection(db, `/evaluaciones/${id}/preguntasRespuestas`);
         const q = query(pathRef, orderBy('order', 'asc'));
         const querySnapshot = await getDocs(q);
@@ -651,8 +665,13 @@ export const useAgregarEvaluaciones = () => {
 
   // Alternativa con timestamp como ID
   const guardarPreguntasRespuestas = async (data: PreguntasRespuestas) => {
-
+    if (checkAuditReadOnly()) return;
     try {
+      // Inicializar el contador si no existe antes de comenzar la transacción
+      if (data.id) {
+        await initializeCounter(data.id);
+      }
+
       // Usar transacción para garantizar atomicidad en el contador
       const nextId = await runTransaction(db, async (transaction) => {
         // Referencia al documento contador
@@ -695,6 +714,7 @@ export const useAgregarEvaluaciones = () => {
   };
 
   const addRangosNivel = async (nivelYPuntaje: NivelYPuntaje[], evaluacion: Evaluacion) => {
+    if (checkAuditReadOnly()) return;
     const rutaRef = doc(db, `evaluaciones`, `${evaluacion.id}`);
     await updateDoc(rutaRef, {
       nivelYPuntaje: nivelYPuntaje,
@@ -769,6 +789,18 @@ export const useAgregarEvaluaciones = () => {
       return pregunta;
     });
   };
+  const convertirRespuestasAMapa = (preguntas?: PreguntasRespuestas[]): Record<string, string> => {
+    const mapa: Record<string, string> = {};
+    if (!preguntas) return mapa;
+    preguntas.forEach((p) => {
+      const seleccionada = p.alternativas?.find((alt) => alt.selected === true)?.alternativa;
+      if (seleccionada && p.id) {
+        mapa[p.id] = seleccionada;
+      }
+    });
+    return mapa;
+  };
+
   const salvarPreguntRespuestaEstudiante = async (
     data: UserEstudiante,
     idEvaluacion: string,
@@ -777,6 +809,7 @@ export const useAgregarEvaluaciones = () => {
     sizePreguntas: number,
     evaluacion: Evaluacion
   ) => {
+    if (checkAuditReadOnly()) return;
     let puntajeAcumulado = 0;
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
 
@@ -803,7 +836,7 @@ export const useAgregarEvaluaciones = () => {
       genero: `${data.genero}`,
       respuestasCorrectas: respuestasCorrectas,
       totalPreguntas: sizePreguntas,
-      respuestas: pqConAlternativasAleatorias,
+      respuestas: convertirRespuestasAMapa(pqConAlternativasAleatorias),
       dniDirector: currentUserData?.dniDirector || '',
     });
     const rutaCrearEstudiante = doc(
@@ -842,7 +875,7 @@ export const useAgregarEvaluaciones = () => {
           grado: `${dataEstudiante.grado}`,
           seccion: `${dataEstudiante.seccion}`,
           genero: `${dataEstudiante.genero}`,
-          respuestas: pqConAlternativasAleatorias,
+          respuestas: convertirRespuestasAMapa(pqConAlternativasAleatorias),
           region: currentUserData.region,
           dniDocente: currentUserData.dni,
           dniDirector: currentUserData?.dniDirector || '',
@@ -874,6 +907,7 @@ export const useAgregarEvaluaciones = () => {
       try {
         await setDoc(rutaEstudianteParaEvaluacion, {
           ...dataConRespuestas,
+          respuestas: convertirRespuestasAMapa(pqConAlternativasAleatorias),
           dniDirector: currentUserData?.dniDirector || '',
         });
       } catch (error) {
@@ -892,11 +926,13 @@ export const useAgregarEvaluaciones = () => {
   };
 
   const deleteEvaluacion = async (id: string) => {
+    if (checkAuditReadOnly()) return;
     await deleteDoc(doc(db, 'evaluaciones', `${id}`));
     await updateEvaluacionesSentinel();
   };
 
   const updateEvaluacion = async (evaluacion: Evaluaciones, id: string) => {
+    if (checkAuditReadOnly()) return;
     const pathRef = doc(db, 'evaluaciones', `${id}`);
     await updateDoc(pathRef, { ...evaluacion, timestamp: serverTimestamp() });
     await updateEvaluacionesSentinel();
@@ -907,6 +943,7 @@ export const useAgregarEvaluaciones = () => {
     alternativass: Alternativa[],
     id: string
   ) => {
+    if (checkAuditReadOnly()) return;
     const pathRef = doc(db, `/evaluaciones/${id}/preguntasRespuestas`, `${data.id}`);
     if (alternativass[3] === undefined) {
       await updateDoc(pathRef, {
@@ -917,25 +954,20 @@ export const useAgregarEvaluaciones = () => {
         puntaje: data.puntaje || '0',
         alternativas: [
           {
-            // selected: alternativass[0].selected,
             descripcion: alternativass[0].descripcion,
             alternativa: alternativass[0].alternativa,
           },
           {
-            // selected: alternativass[1].selected,
             descripcion: alternativass[1].descripcion,
             alternativa: alternativass[1].alternativa,
           },
           {
-            // selected: alternativass[2].selected,
             descripcion: alternativass[2].descripcion,
             alternativa: alternativass[2].alternativa,
           },
         ],
-      }).then(async (res) => {
-        await updatePreguntasSentinel(id);
-        getPreguntasRespuestas(id);
       });
+      await updatePreguntasSentinel(id);
     } else {
       await updateDoc(pathRef, {
         order: data.order,
@@ -945,30 +977,61 @@ export const useAgregarEvaluaciones = () => {
         puntaje: data.puntaje || '0',
         alternativas: [
           {
-            // selected: alternativass[0].selected,
             descripcion: alternativass[0].descripcion,
             alternativa: alternativass[0].alternativa,
           },
           {
-            // selected: alternativass[1].selected,
             descripcion: alternativass[1].descripcion,
             alternativa: alternativass[1].alternativa,
           },
           {
-            // selected: alternativass[2].selected,
             descripcion: alternativass[2].descripcion,
             alternativa: alternativass[2].alternativa,
           },
           {
-            // selected: alternativass[3].selected,
             descripcion: alternativass[3].descripcion,
             alternativa: alternativass[3].alternativa,
           },
         ],
-      }).then(async (res) => {
-        await updatePreguntasSentinel(id);
-        getPreguntasRespuestas(id);
       });
+      await updatePreguntasSentinel(id);
+    }
+  };
+
+  const updatePreguntaPuntaje = async (
+    idEvaluacion: string,
+    idPregunta: string,
+    puntaje: string
+  ) => {
+    if (checkAuditReadOnly()) return;
+    try {
+      const pathRef = doc(db, `/evaluaciones/${idEvaluacion}/preguntasRespuestas`, `${idPregunta}`);
+      await updateDoc(pathRef, {
+        puntaje: puntaje || '0',
+      });
+      await updatePreguntasSentinel(idEvaluacion);
+    } catch (error) {
+      console.error('Error al actualizar puntaje de la pregunta:', error);
+      throw error;
+    }
+  };
+
+  const updatePreguntasOrder = async (
+    preguntas: PreguntasRespuestas[],
+    evaluacionId: string
+  ) => {
+    if (checkAuditReadOnly()) return;
+    try {
+      const batch = writeBatch(db);
+      preguntas.forEach((pregunta, index) => {
+        const docRef = doc(db, `/evaluaciones/${evaluacionId}/preguntasRespuestas`, `${pregunta.id}`);
+        batch.update(docRef, { order: index + 1 });
+      });
+      await batch.commit();
+      await updatePreguntasSentinel(evaluacionId);
+    } catch (error) {
+      console.error('Error al guardar el nuevo orden de preguntas:', error);
+      throw error;
     }
   };
 
@@ -1017,6 +1080,7 @@ export const useAgregarEvaluaciones = () => {
     idPregunta: string,
     order: number
   ) => {
+    if (checkAuditReadOnly()) return;
 
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
 
@@ -1063,7 +1127,6 @@ export const useAgregarEvaluaciones = () => {
 
       // Recargar las preguntas
       await updatePreguntasSentinel(idEvaluacion);
-      await getPreguntasRespuestas(idEvaluacion);
 
       dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
     } catch (error) {
@@ -1156,6 +1219,8 @@ export const useAgregarEvaluaciones = () => {
     deleteEvaluacion,
     updateEvaluacion,
     updatePreguntaRespuesta,
+    updatePreguntaPuntaje,
+    updatePreguntasOrder,
     getEvaluacionesDirector,
     deletePreguntaRespuesta,
     initializeCounter,

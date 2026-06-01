@@ -38,6 +38,14 @@ const useUsuario = () => {
   const { currentUserData, docentesDeDirectores, usuariosDirectores } = useGlobalContext();
   const dispatch = useGlobalContextDispatch();
 
+  const checkAuditReadOnly = (): boolean => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('audited_user')) {
+      toast.warning('Modo de Auditoría: No se permite modificar información en este modo.');
+      return true;
+    }
+    return false;
+  };
+
   const getUsersDirectores = async () => {
     console.log('currentUserData', currentUserData);
     const q = query(
@@ -82,6 +90,7 @@ const useUsuario = () => {
     });
   };
   const updateDirector = async (dniDirector: string, data: User) => {
+    if (checkAuditReadOnly()) return;
     const pathRef = doc(db, 'usuarios', `${dniDirector}`);
     await updateDoc(pathRef, data).then((res) => {
       getUsersDirectores();
@@ -90,6 +99,21 @@ const useUsuario = () => {
   };
 
   const getUser = async (id: string) => {
+    const auditedUserStr = typeof window !== 'undefined' ? sessionStorage.getItem('audited_user') : null;
+    if (auditedUserStr) {
+      try {
+        const auditedUser = JSON.parse(auditedUserStr);
+        dispatch({ type: AppAction.LOADER_LOGIN, payload: false });
+        dispatch({
+          type: AppAction.CURRENT_USER_DATA,
+          payload: auditedUser,
+        });
+        return;
+      } catch (e) {
+        console.error('Error parsing audited_user from sessionStorage:', e);
+      }
+    }
+
     const refUser = doc(db, 'usuarios', id as string);
     const user = await getDoc(refUser);
 
@@ -211,6 +235,7 @@ const useUsuario = () => {
   };
 
   const createNewEspecialista = async (data: User) => {
+    if (checkAuditReadOnly()) return;
     console.log('data', data)
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
@@ -242,6 +267,7 @@ const useUsuario = () => {
   };
 
   const createNewDirector = async (data: User): Promise<{ success: boolean; exists?: boolean; message?: string }> => {
+    if (checkAuditReadOnly()) return { success: false, message: 'Modo de Auditoría: No se permite crear directores.' };
     console.log('data', data);
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
@@ -282,6 +308,7 @@ const useUsuario = () => {
   };
 
   const createMassiveDirectors = async (directores: any[]): Promise<{ success: boolean; message?: string; detalles?: any }> => {
+    if (checkAuditReadOnly()) return { success: false, message: 'Modo de Auditoría: No se permite la carga masiva.' };
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
       const { functions } = await import('@/firebase/firebase.config');
@@ -302,6 +329,7 @@ const useUsuario = () => {
   };
 
   const crearNuevoDocente = async (data: User) => {
+    if (checkAuditReadOnly()) return;
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     console.log('data', data);
     try {
@@ -345,6 +373,7 @@ const useUsuario = () => {
   };
 
   const createMassiveTeachers = async (docentes: any[], dataComun: any) => {
+    if (checkAuditReadOnly()) return { success: false, message: 'Modo de Auditoría: No se permite la carga masiva.' };
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
       const { functions } = await import('@/firebase/firebase.config');
@@ -369,6 +398,7 @@ const useUsuario = () => {
     }
   };
   const deleteUsuarioById = async (idUsuario: string) => {
+    if (checkAuditReadOnly()) return Promise.resolve(false);
     console.log('idUsuario', idUsuario);
     return new Promise<boolean>(async (resolve, reject) => {
       try {
@@ -387,6 +417,7 @@ const useUsuario = () => {
   };
 
   const updateUsuarioById = async (dni: string, data: Partial<User>) => {
+    if (checkAuditReadOnly()) return false;
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
       const { functions } = await import('@/firebase/firebase.config');
@@ -416,6 +447,7 @@ const useUsuario = () => {
     idEstudiante: string,
     monthSelected: number
   ) => {
+    if (checkAuditReadOnly()) return;
     console.log('idEvaluacion', idEvaluacion);
     console.log('idEstudiante', idEstudiante);
     console.log('monthSelected', monthSelected);
@@ -434,6 +466,7 @@ const useUsuario = () => {
     await deleteDoc(pathRefBorrarEstudianteEvaluacion);
   };
   const deleteEstudianteById = async (id: string, idExamen: string, estudiantes: Estudiante[]) => {
+    if (checkAuditReadOnly()) return;
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
     const rta = estudiantes.find((es) => es.dni === id);
     console.log('primero');
@@ -526,12 +559,14 @@ const useUsuario = () => {
   };
 
   const updateEspecialista = async (dniEspecialista: string, data: User) => {
+    if (checkAuditReadOnly()) return;
     const pathRef = doc(db, 'usuarios', `${dniEspecialista}`);
     await updateDoc(pathRef, data);
     getAllEspecialistas(); // Actualizamos la lista después de modificar
   };
 
   const updateTipoGestion = async (dni: string, tipoGestion: 'publico' | 'privado') => {
+    if (checkAuditReadOnly()) return false;
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     try {
       const { functions } = await import('@/firebase/firebase.config');

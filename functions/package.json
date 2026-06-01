@@ -16,6 +16,7 @@
   "main": "lib/index.js",
   "dependencies": {
     "@google-cloud/bigquery": "^8.1.1",
+    "@google-cloud/monitoring": "^4.1.0",
     "@types/cors": "^2.8.19",
     "cors": "^2.8.5",
     "firebase-admin": "^11.8.0",

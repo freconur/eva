@@ -168,23 +168,41 @@ const Reportes = () => {
     route.push({ pathname: route.pathname, query: newQuery }, undefined, { shallow: true });
   };
 
-  // Crear una versión de estudiantes sincronizada con la definición global (Fuente de Verdad)
+  // Crear una versión de estudiantes sincronizada con la definición global o reconstruida a partir del mapa de respuestas
   const estudiantesBase = useMemo(() => {
     if (!estudiantesGlob || !preguntasRespuestas || !evaluacion) return [];
 
     return estudiantesGlob.map(est => {
       if (!est.respuestas) return est;
 
-      // 1. Sincronizar la propiedad 'respuesta' (correcta) con la definición global del examen
-      const respuestasSincronizadas = est.respuestas.map(r => {
-        const globalP = preguntasRespuestas.find(p =>
-          (r.id && p.id === r.id) || (r.order !== undefined && p.order === r.order)
-        );
-        return { ...r, respuesta: globalP?.respuesta || r.respuesta };
-      });
+      let respuestasReconstruidas: PreguntasRespuestas[] = [];
+
+      if (Array.isArray(est.respuestas)) {
+        // Formato antiguo (Array de objetos)
+        respuestasReconstruidas = est.respuestas.map(r => {
+          const globalP = preguntasRespuestas.find(p =>
+            (r.id && p.id === r.id) || (r.order !== undefined && p.order === r.order)
+          );
+          return { ...r, respuesta: globalP?.respuesta || r.respuesta };
+        });
+      } else if (typeof est.respuestas === 'object') {
+        // Formato nuevo optimizado (Mapa/Objeto)
+        respuestasReconstruidas = preguntasRespuestas.map(p => {
+          const alternativaSeleccionada = (est.respuestas as any)[p.id || ''];
+          const alternativasReconstruidas = p.alternativas?.map(alt => ({
+            ...alt,
+            selected: alt.alternativa === alternativaSeleccionada
+          })) || [];
+
+          return {
+            ...p,
+            alternativas: alternativasReconstruidas
+          };
+        });
+      }
 
       // 2. Recalcular respuestas correctas, puntaje y nivel dinámicamente para el reporte
-      let tempEst = { ...est, respuestas: respuestasSincronizadas } as any;
+      let tempEst = { ...est, respuestas: respuestasReconstruidas } as any;
       tempEst = calculoPreguntasCorrectas(tempEst);
       tempEst = calculoNivel(tempEst, evaluacion);
 
@@ -282,7 +300,7 @@ const Reportes = () => {
     setLoading(true);
     try {
       const fileName = `estudiantes_${currentUserData.dni}_${getMonthName(monthSelected)}.xlsx`;
-      exportEstudiantesToExcel(estudiantes, fileName);
+      exportEstudiantesToExcel(estudiantes, fileName, preguntasRespuestas);
     } catch (error) {
       console.error('Error al exportar a Excel:', error);
     } finally {
@@ -415,11 +433,16 @@ const Reportes = () => {
 
   useEffect(() => {
     const idExamen = route.query.idExamen as string;
-    if (idExamen && yearSelected) {
+    if (idExamen && yearSelected && preguntasRespuestas && preguntasRespuestas.length > 0 && evaluacion.id) {
       estudiantesQueDieronExamenPorMes(evaluacion, estudiantesGlob, yearSelected);
-      estadisticasEstudiantesDelDocente(evaluacion, monthSelected, preguntasRespuestas, yearSelected);
+      const unsubscribe = estadisticasEstudiantesDelDocente(evaluacion, monthSelected, preguntasRespuestas, yearSelected);
+      return () => {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      };
     }
-  }, [route.query.idExamen, currentUserData.dni, evaluacion.id, yearSelected, monthSelected]);
+  }, [route.query.idExamen, currentUserData.dni, evaluacion.id, yearSelected, monthSelected, preguntasRespuestas]);
 
   // Mostrar en consola el array completo con las imágenes
 

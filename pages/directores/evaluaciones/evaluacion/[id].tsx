@@ -64,13 +64,16 @@ const Evaluacion = () => {
   }
 
   useEffect(() => {
+    let unsubscribeEvaluacion: (() => void) | null = null;
+    let unsubscribePreguntasFallback: (() => void) | null = null;
+
     const checkPreguntasSentinelAndLoad = async () => {
       const evalId = `${route.query.id}`
       if (!evalId || evalId === 'undefined') return
 
       try {
         // Cargar los detalles básicos de la evaluación
-        await getEvaluacion(evalId)
+        unsubscribeEvaluacion = getEvaluacion(evalId)
 
         // Referencia al centinela específico de esta evaluación en Firestore
         const sentinelRef = doc(db, 'options', `preguntas_sentinel_${evalId}`)
@@ -96,13 +99,18 @@ const Evaluacion = () => {
       } catch (error) {
         console.error('Error al cargar preguntas con centinela:', error)
         // Fallback al listener tradicional en caso de fallo
-        getPreguntasRespuestas(evalId)
+        unsubscribePreguntasFallback = getPreguntasRespuestas(evalId)
       }
     }
 
     if (route.query.id) {
       checkPreguntasSentinelAndLoad()
     }
+
+    return () => {
+      if (unsubscribeEvaluacion) unsubscribeEvaluacion();
+      if (unsubscribePreguntasFallback) unsubscribePreguntasFallback();
+    };
   }, [route.query.id])
   // console.log('preguntasRespuestas', preguntasRespuestas)
   console.log('evaluacion', evaluacion)

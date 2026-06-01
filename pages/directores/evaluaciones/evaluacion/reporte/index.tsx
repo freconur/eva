@@ -461,10 +461,43 @@ const Reporte = () => {
     getEvaluacion(`${route.query.idEvaluacion}`);
   }, [currentUserData.dni, route.query.idEvaluacion]);
 
+  // Reconstruir en memoria para compatibilidad del Director
+  const estudiantesBase = useMemo(() => {
+    if (!estudiantes || !preguntasRespuestas) return [];
+
+    return estudiantes.map(est => {
+      let respuestasReconstruidas: PreguntasRespuestas[] = [];
+
+      if (Array.isArray(est.respuestas)) {
+        respuestasReconstruidas = est.respuestas.map(r => {
+          const globalP = preguntasRespuestas.find(p =>
+            (r.id && p.id === r.id) || (r.order !== undefined && p.order === r.order)
+          );
+          return { ...r, respuesta: globalP?.respuesta || r.respuesta };
+        });
+      } else if (est.respuestas && typeof est.respuestas === 'object') {
+        respuestasReconstruidas = preguntasRespuestas.map(p => {
+          const alternativaSeleccionada = (est.respuestas as any)[p.id || ''];
+          const alternativasReconstruidas = p.alternativas?.map(alt => ({
+            ...alt,
+            selected: alt.alternativa === alternativaSeleccionada
+          })) || [];
+
+          return {
+            ...p,
+            alternativas: alternativasReconstruidas
+          };
+        });
+      }
+
+      return { ...est, respuestas: respuestasReconstruidas } as UserEstudiante;
+    });
+  }, [estudiantes, preguntasRespuestas]);
+
   // Memoizar el filtrado de estudiantes para evitar loops infinitos
   const estudiantesFiltrados = useMemo(() => {
-    return filtrosParaReporteDirector(estudiantes, filtros);
-  }, [estudiantes, filtros, filtrosParaReporteDirector]);
+    return filtrosParaReporteDirector(estudiantesBase, filtros);
+  }, [estudiantesBase, filtros, filtrosParaReporteDirector]);
 
   // Sincronizar el estado global cuando cambian los estudiantes filtrados
   useEffect(() => {

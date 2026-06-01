@@ -1,5 +1,6 @@
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
+import { writeBatch } from 'firebase/firestore'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import { Alternativas } from '@/features/types/types'
 import AgregarPreguntasRespuestas from '@/modals/agregarPreguntasYRespuestas'
@@ -12,7 +13,7 @@ import AsignarEvaluacionUgelModal from './AsignarEvaluacionUgelModal'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState, useRef, useCallback } from 'react'
-import { MdEditSquare, MdDelete, MdAssignment, MdAddCircle, MdSettings, MdAssessment, MdTrendingUp, MdEmojiEvents } from 'react-icons/md'
+import { MdEditSquare, MdDelete, MdAssignment, MdAddCircle, MdSettings, MdAssessment, MdTrendingUp, MdEmojiEvents, MdDragIndicator, MdViewList } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 import { FaArrowUp, FaArrowDown } from 'react-icons/fa'
 import styles from './evaluacion.module.css'
@@ -40,8 +41,15 @@ const useScrollPosition = () => {
 const Evaluacion = () => {
   const route = useRouter()
   const { evaluacion, preguntasRespuestas, currentUserData, loaderPages } = useGlobalContext()
-  const { getEvaluacion, getPreguntasRespuestas, updatePreguntaRespuesta, deletePreguntaRespuesta } = useAgregarEvaluaciones()
+  const { getEvaluacion, getPreguntasRespuestas, updatePreguntaRespuesta, updatePreguntaPuntaje, updatePreguntasOrder, deletePreguntaRespuesta } = useAgregarEvaluaciones()
   const [showModal, setShowModal] = useState(false)
+  const [preguntasLocales, setPreguntasLocales] = useState<any[]>([])
+  const [scoresLocales, setScoresLocales] = useState<Record<string, string>>({})
+  const [isCompactView, setIsCompactView] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+  const [isSavingOrder, setIsSavingOrder] = useState(false)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [showModalEstudiante, setShowModalEstudiante] = useState(false)
   const [pregunta, setPregunta] = useState({})
   const [showModalUpdatePReguntaRespuesta, setShowModalUpdatePReguntaRespuesta] = useState(false)
@@ -50,6 +58,102 @@ const Evaluacion = () => {
   const [showModalAsignarEvaluacion, setShowModalAsignarEvaluacion] = useState(false)
   const [showModalAsignarEvaluacionUgel, setShowModalAsignarEvaluacionUgel] = useState(false)
   const [preguntaToDelete, setPreguntaToDelete] = useState({ id: '', order: 0 })
+  const [showReorderCallout, setShowReorderCallout] = useState(false)
+  const [showScoreCallout, setShowScoreCallout] = useState(false)
+
+  useEffect(() => {
+    const dismissedReorder = localStorage.getItem('reorder-callout-dismissed')
+    if (!dismissedReorder) setShowReorderCallout(true)
+    const dismissedScore = localStorage.getItem('score-callout-dismissed')
+    if (!dismissedScore) setShowScoreCallout(true)
+  }, [])
+
+  const handleDismissCallout = () => setShowReorderCallout(false)
+
+  const handleNeverShowCallout = () => {
+    localStorage.setItem('reorder-callout-dismissed', 'true')
+    setShowReorderCallout(false)
+  }
+
+  const handleDismissScoreCallout = () => setShowScoreCallout(false)
+
+  const handleNeverShowScoreCallout = () => {
+    localStorage.setItem('score-callout-dismissed', 'true')
+    setShowScoreCallout(false)
+  }
+
+  const handleInlineScoreChange = (id: string, value: string) => {
+    const numericValue = value.replace(/[^0-9]/g, '')
+    setScoresLocales(prev => ({
+      ...prev,
+      [id]: numericValue
+    }))
+  }
+
+  const handleSaveInlineScore = async (id: string, originalPuntaje: string) => {
+    const value = scoresLocales[id] || '0'
+    if (value === String(originalPuntaje || '0')) return
+
+    // VALIDACIÓN DE NIVELES Y PUNTAJES (Solo para tipo de evaluación "1")
+    if (evaluacion.tipoDeEvaluacion === "1") {
+      if (!evaluacion.nivelYPuntaje || !Array.isArray(evaluacion.nivelYPuntaje) || evaluacion.nivelYPuntaje.length === 0) {
+        alert("⚠️ Primero debes configurar los rangos de nivel y puntaje en la evaluación para poder asignar puntos a las preguntas.");
+        setScoresLocales(prev => ({
+          ...prev,
+          [id]: String(originalPuntaje || '0')
+        }))
+        return;
+      }
+
+      const nivelSatisfactorio = evaluacion.nivelYPuntaje.find((n: any) => n.nivel.toLowerCase() === 'satisfactorio');
+      if (!nivelSatisfactorio) {
+        alert("⚠️ No se encontró la configuración del nivel 'Satisfactorio'. Por favor configurarlo primero.");
+        setScoresLocales(prev => ({
+          ...prev,
+          [id]: String(originalPuntaje || '0')
+        }))
+        return;
+      }
+
+      const maxSatisfactorio = Number(nivelSatisfactorio.max || 0);
+      const sumOfOtherQuestions = preguntasRespuestas
+        .filter((p: any) => p.id !== id)
+        .reduce((sum: number, p: any) => sum + (Number(p.puntaje) || 0), 0);
+      const proposedSum = sumOfOtherQuestions + Number(value);
+
+      if (proposedSum > maxSatisfactorio) {
+        alert(`⚠️ No se puede guardar el puntaje. La suma total de los puntajes de las preguntas (${proposedSum}) superaría el puntaje máximo del nivel Satisfactorio (${maxSatisfactorio}).`);
+        setScoresLocales(prev => ({
+          ...prev,
+          [id]: String(originalPuntaje || '0')
+        }))
+        return;
+      }
+    }
+
+    try {
+      await updatePreguntaPuntaje(`${route.query.id}`, id, value)
+    } catch (error: any) {
+      alert(`❌ Error al guardar el puntaje: ${error.message || 'Error desconocido'}`)
+      setScoresLocales(prev => ({
+        ...prev,
+        [id]: String(originalPuntaje || '0')
+      }))
+    }
+  }
+
+  // Sincronizar puntuaciones locales
+  useEffect(() => {
+    if (preguntasRespuestas) {
+      const initialScores: Record<string, string> = {}
+      preguntasRespuestas.forEach(pr => {
+        if (pr.id) {
+          initialScores[pr.id] = String(pr.puntaje !== undefined && pr.puntaje !== null ? pr.puntaje : '0')
+        }
+      })
+      setScoresLocales(initialScores)
+    }
+  }, [preguntasRespuestas])
 
   // Hook para mantener la posición de scroll
   const { containerRef, saveScrollPosition, restoreScrollPosition } = useScrollPosition()
@@ -116,35 +220,86 @@ const Evaluacion = () => {
     await deletePreguntaRespuesta(`${route.query.id}`, preguntaToDelete.id, preguntaToDelete.order)
   }
 
-  const handleMoveQuestion = async (index: number, direction: 'up' | 'down') => {
-    saveScrollPosition() // Guardar posición antes de mover
-
+  const handleMoveQuestion = (index: number, direction: 'up' | 'down') => {
     const newIndex = direction === 'up' ? index - 1 : index + 1
 
-    if (newIndex < 0 || newIndex >= preguntasRespuestas.length) return
+    if (newIndex < 0 || newIndex >= preguntasLocales.length) return
 
-    const currentQuestion = preguntasRespuestas[index]
-    const targetQuestion = preguntasRespuestas[newIndex]
+    const updated = [...preguntasLocales]
+    const temp = updated[index]
+    updated[index] = updated[newIndex]
+    updated[newIndex] = temp
 
-    // Intercambiar los valores de order
-    const tempOrder = currentQuestion.order
-    currentQuestion.order = targetQuestion.order
-    targetQuestion.order = tempOrder
+    setPreguntasLocales(updated)
+    setIsDirty(true)
+  }
 
-    // Actualizar ambas preguntas en la base de datos
-    await updatePreguntaRespuesta(currentQuestion, currentQuestion.alternativas || [], `${route.query.id}`)
-    await updatePreguntaRespuesta(targetQuestion, targetQuestion.alternativas || [], `${route.query.id}`)
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(index))
+  }
 
-    // Recargar las preguntas para reflejar el nuevo orden
-    getPreguntasRespuestas(`${route.query.id}`)
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    if (draggedIndex === index) return
+    setDragOverIndex(index)
+  }
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault()
+    if (draggedIndex === null || draggedIndex === targetIndex) return
+
+    const updated = [...preguntasLocales]
+    const [draggedItem] = updated.splice(draggedIndex, 1)
+    updated.splice(targetIndex, 0, draggedItem)
+
+    setPreguntasLocales(updated)
+    setIsDirty(true)
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  const handleSaveNewOrder = async () => {
+    if (preguntasLocales.length === 0 || !route.query.id) return
+
+    setIsSavingOrder(true)
+    try {
+      await updatePreguntasOrder(preguntasLocales, `${route.query.id}`)
+      setIsDirty(false)
+      alert('✅ Nuevo orden guardado exitosamente')
+    } catch (error: any) {
+      alert(`❌ Error al guardar el orden: ${error.message || 'Error desconocido'}`)
+    } finally {
+      setIsSavingOrder(false)
+    }
   }
 
   useEffect(() => {
-    getEvaluacion(`${route.query.id}`)
-    if (route.query.id) {
-      getPreguntasRespuestas(`${route.query.id}`)
+    const evalId = route.query.id;
+    if (!evalId) return;
+
+    const unsubscribeEvaluacion = getEvaluacion(`${evalId}`);
+    const unsubscribePreguntas = getPreguntasRespuestas(`${evalId}`);
+
+    return () => {
+      if (unsubscribeEvaluacion) unsubscribeEvaluacion();
+      if (unsubscribePreguntas) unsubscribePreguntas();
+    };
+  }, [route.query.id]);
+
+  // Sincronizar estado local al recibir las preguntas de Firestore
+  useEffect(() => {
+    if (preguntasRespuestas) {
+      const ordenadas = [...preguntasRespuestas].sort((a, b) => (a.order || 0) - (b.order || 0));
+      setPreguntasLocales(ordenadas);
     }
-  }, [route.query.id, evaluacion.id])
+  }, [preguntasRespuestas]);
 
   // Restaurar posición de scroll después de que se actualicen las preguntas
   useEffect(() => {
@@ -262,6 +417,59 @@ const Evaluacion = () => {
                 >
                   <MdTrendingUp /> Seguimiento
                 </Link>
+
+                <div className={styles.newFeatureWrapper}>
+                  {showReorderCallout && !isCompactView && (
+                    <div className={styles.featureCallout}>
+                      <div className={styles.featureCalloutHeader}>
+                        <span className={styles.newBadge}>NUEVO</span>
+                        <button
+                          type="button"
+                          className={styles.featureCalloutClose}
+                          onClick={handleDismissCallout}
+                          title="Cerrar"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <p className={styles.featureCalloutText}>
+                        <MdDragIndicator className={styles.featureCalloutIcon} />
+                        Ahora puedes reordenar las preguntas arrastrándolas o usando las flechas
+                      </p>
+                      <button
+                        type="button"
+                        className={styles.featureCalloutNever}
+                        onClick={handleNeverShowCallout}
+                      >
+                        No volver a mostrar
+                      </button>
+                      <span className={styles.featureCalloutArrow} />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsCompactView(!isCompactView)}
+                    className={`${styles.linkButton} ${isCompactView ? styles.activeViewBtn : ''}`}
+                  >
+                    <MdViewList /> {isCompactView ? 'Vista Detallada' : 'Modo Reordenar'}
+                  </button>
+                </div>
+
+                {isDirty && (
+                  <button
+                    onClick={handleSaveNewOrder}
+                    disabled={isSavingOrder}
+                    className={`${styles.linkButton} ${styles.saveOrderBtn}`}
+                  >
+                    {isSavingOrder ? (
+                      <>
+                        <RiLoader4Line className={styles.spinnerIcon} /> Guardando...
+                      </>
+                    ) : (
+                      '💾 Guardar Orden'
+                    )}
+                  </button>
+                )}
               </div>
 
               {/* Score Badge */}
@@ -275,94 +483,224 @@ const Evaluacion = () => {
 
             {/* Questions List */}
             <section>
-              <h2 className={styles.sectionTitle}>Preguntas ({preguntasRespuestas.length})</h2>
-              <ul className={styles.questionsList}>
-                {preguntasRespuestas.map((pr, index) => (
-                  <li key={index} className={styles.questionCard}>
-
-                    <div className={styles.questionHeader}>
-                      <div className={styles.questionMeta}>
-                        <span className={styles.questionNumber}>{index + 1}</span>
-                        <p className={styles.questionText}>{pr.pregunta}</p>
+              <h2 className={styles.sectionTitle}>Preguntas ({preguntasLocales.length})</h2>
+              {isCompactView ? (
+                <ul className={styles.compactList}>
+                  {preguntasLocales.map((pr, index) => (
+                    <li
+                      key={pr.id || index}
+                      className={`${styles.compactCard} ${draggedIndex === index ? styles.dragging : ''} ${dragOverIndex === index ? styles.dragOver : ''}`}
+                      draggable={canManageEvaluation}
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <div className={styles.compactMeta}>
+                        <span className={styles.compactDragHandle}>
+                          <MdDragIndicator />
+                        </span>
+                        <span className={styles.compactNumber}>{index + 1}</span>
+                        <p className={styles.compactText} title={pr.pregunta}>{pr.pregunta}</p>
                       </div>
 
-                      {canManageEvaluation && (
-                        <div className={styles.controls}>
-                          <button
-                            onClick={() => handleMoveQuestion(index, 'up')}
-                            disabled={index === 0}
-                            className={styles.controlButton}
-                            title="Mover arriba"
-                          >
-                            <FaArrowUp />
-                          </button>
-                          <button
-                            onClick={() => handleMoveQuestion(index, 'down')}
-                            disabled={index === preguntasRespuestas.length - 1}
-                            className={styles.controlButton}
-                            title="Mover abajo"
-                          >
-                            <FaArrowDown />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className={styles.teacherAction}>
-                      <div className={styles.actionContent}>
-                        <span className={styles.actionLabel}>Actuación Docente</span>
-                        <p className={styles.actionText}>{pr.preguntaDocente}</p>
-                      </div>
-
-                      {canManageEvaluation && (
-                        <div className={styles.actionButtons}>
-                          <div
-                            className={`${styles.iconButton} ${styles.editBtn}`}
-                            onClick={() => {
-                              handleSelectPregunta(index);
-                              handleShowModalUpdatePreguntaRespuesta();
-                            }}
-                            title="Editar"
-                          >
-                            <MdEditSquare />
+                      <div className={styles.compactRightSide}>
+                        {pr.puntaje !== undefined && pr.puntaje !== null && currentUserData.rol === 4 && (
+                          canManageEvaluation ? (
+                            <div className={styles.compactScoreEdit}>
+                              <input
+                                type="text"
+                                className={styles.compactScoreInput}
+                                value={scoresLocales[pr.id || ''] || '0'}
+                                onChange={(e) => pr.id && handleInlineScoreChange(pr.id, e.target.value)}
+                                onBlur={() => pr.id && handleSaveInlineScore(pr.id, String(pr.puntaje || '0'))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    (e.target as HTMLInputElement).blur()
+                                  }
+                                }}
+                                placeholder="Puntaje"
+                              />
+                              <span className={styles.scorePtsLabel}>pts</span>
+                            </div>
+                          ) : (
+                            <span className={styles.compactScore}>
+                              {pr.puntaje} pts
+                            </span>
+                          )
+                        )}
+                        {canManageEvaluation && (
+                          <div className={styles.compactControls}>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveQuestion(index, 'up')}
+                              disabled={index === 0}
+                              className={styles.compactControlButton}
+                              title="Mover arriba"
+                            >
+                              <FaArrowUp />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveQuestion(index, 'down')}
+                              disabled={index === preguntasLocales.length - 1}
+                              className={styles.compactControlButton}
+                              title="Mover abajo"
+                            >
+                              <FaArrowDown />
+                            </button>
                           </div>
-                          <div
-                            className={`${styles.iconButton} ${styles.deleteBtn}`}
-                            onClick={() => handleSelectPreguntaToDelete(index)}
-                            title="Eliminar"
-                          >
-                            <MdDelete />
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <ul className={styles.questionsList}>
+                  {preguntasLocales.map((pr, index) => (
+                    <li
+                      key={pr.id || index}
+                      className={`${styles.questionCard} ${draggedIndex === index ? styles.dragging : ''} ${dragOverIndex === index ? styles.dragOver : ''}`}
+                      draggable={canManageEvaluation}
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
+                    >
+
+                      <div className={styles.questionHeader}>
+                        <div className={styles.questionMeta}>
+                          <span className={styles.questionNumber}>{index + 1}</span>
+                          <p className={styles.questionText}>{pr.pregunta}</p>
+                        </div>
+
+                        {canManageEvaluation && (
+                          <div className={styles.controls}>
+                            <button
+                              onClick={() => handleMoveQuestion(index, 'up')}
+                              disabled={index === 0}
+                              className={styles.controlButton}
+                              title="Mover arriba"
+                            >
+                              <FaArrowUp />
+                            </button>
+                            <button
+                              onClick={() => handleMoveQuestion(index, 'down')}
+                              disabled={index === preguntasLocales.length - 1}
+                              className={styles.controlButton}
+                              title="Mover abajo"
+                            >
+                              <FaArrowDown />
+                            </button>
                           </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className={styles.alternativesList}>
-                      {pr.alternativas && pr.alternativas.map((al, idx) => (
-                        <div key={idx} className={styles.alternativeItem}>
-                          <span className={styles.altBadge}>{al.alternativa}</span>
-                          <p className={styles.altText}>{al.descripcion}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className={styles.cardFooter}>
-                      <div className={styles.correctAnswer}>
-                        <span>Respuesta Correcta:</span>
-                        <strong>{pr.respuesta}</strong>
+                        )}
                       </div>
 
-                      {pr.puntaje !== undefined && pr.puntaje !== null && currentUserData.rol === 4 && (
-                        <div className={`${styles.scoreBadge} ${Number(pr.puntaje) <= 0 ? styles.low : ''}`}>
-                          <MdEmojiEvents />
-                          <span>{pr.puntaje} pts</span>
+                      <div className={styles.teacherAction}>
+                        <div className={styles.actionContent}>
+                          <span className={styles.actionLabel}>Actuación Docente</span>
+                          <p className={styles.actionText}>{pr.preguntaDocente}</p>
                         </div>
-                      )}
-                    </div>
 
-                  </li>
-                ))}
-              </ul>
+                        {canManageEvaluation && (
+                          <div className={styles.actionButtons}>
+                            <div
+                              className={`${styles.iconButton} ${styles.editBtn}`}
+                              onClick={() => {
+                                handleSelectPregunta(index);
+                                handleShowModalUpdatePreguntaRespuesta();
+                              }}
+                              title="Editar"
+                            >
+                              <MdEditSquare />
+                            </div>
+                            <div
+                              className={`${styles.iconButton} ${styles.deleteBtn}`}
+                              onClick={() => handleSelectPreguntaToDelete(index)}
+                              title="Eliminar"
+                            >
+                              <MdDelete />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className={styles.alternativesList}>
+                        {pr.alternativas && pr.alternativas.map((al: any, idx: number) => (
+                          <div key={idx} className={styles.alternativeItem}>
+                            <span className={styles.altBadge}>{al.alternativa}</span>
+                            <p className={styles.altText}>{al.descripcion}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className={styles.cardFooter}>
+                        <div className={styles.correctAnswer}>
+                          <span>Respuesta Correcta:</span>
+                          <strong>{pr.respuesta}</strong>
+                        </div>
+
+                        {pr.puntaje !== undefined && pr.puntaje !== null && currentUserData.rol === 4 && (
+                          canManageEvaluation ? (
+                            <div className={styles.inlineScoreWrapper}>
+                              {index === 0 && showScoreCallout && (
+                                <div className={styles.featureCallout}>
+                                  <div className={styles.featureCalloutHeader}>
+                                    <span className={styles.newBadge}>NUEVO</span>
+                                    <button
+                                      type="button"
+                                      className={styles.featureCalloutClose}
+                                      onClick={handleDismissScoreCallout}
+                                      title="Cerrar"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                  <p className={styles.featureCalloutText}>
+                                    <MdEmojiEvents className={styles.featureCalloutIcon} />
+                                    Ahora puedes modificar directamente los puntajes de las preguntas
+                                  </p>
+                                  <button
+                                    type="button"
+                                    className={styles.featureCalloutNever}
+                                    onClick={handleNeverShowScoreCallout}
+                                  >
+                                    No volver a mostrar
+                                  </button>
+                                  <span className={styles.featureCalloutArrow} />
+                                </div>
+                              )}
+                              <div className={styles.inlineScoreEdit}>
+                                <MdEmojiEvents className={styles.scoreIcon} />
+                                <input
+                                  type="text"
+                                  className={styles.inlineScoreInput}
+                                  value={scoresLocales[pr.id || ''] || '0'}
+                                  onChange={(e) => pr.id && handleInlineScoreChange(pr.id, e.target.value)}
+                                  onBlur={() => pr.id && handleSaveInlineScore(pr.id, String(pr.puntaje || '0'))}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      (e.target as HTMLInputElement).blur()
+                                    }
+                                  }}
+                                  placeholder="Puntaje"
+                                />
+                                <span className={styles.scorePtsLabel}>pts</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className={`${styles.scoreBadge} ${Number(pr.puntaje) <= 0 ? styles.low : ''}`}>
+                              <MdEmojiEvents />
+                              <span>{pr.puntaje} pts</span>
+                            </div>
+                          )
+                        )}
+                      </div>
+
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
           </div>
         </div>

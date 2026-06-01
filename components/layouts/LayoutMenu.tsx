@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Navbar from '../navbar/Navbar'
-import { useGlobalContext } from '@/features/context/GlolbalContext'
+import { useGlobalContext, useGlobalContextDispatch } from '@/features/context/GlolbalContext'
+import { AppAction } from '@/features/actions/appAction'
 import SidebarEspecialistas from '../sidebar/SidebarEspecialistas'
 import useUsuario from '@/features/hooks/useUsuario'
 import SidebarDirectores from '../sidebar/SidebarDirectores'
@@ -19,11 +20,60 @@ interface Props {
 
 const LayoutMenu = ({ children }: Props) => {
   const { showSidebar, currentUserData, isSidebarCollapsed } = useGlobalContext()
+  const dispatch = useGlobalContextDispatch()
   const { getUserData } = useUsuario()
   const router = useRouter()
+
+  const [isAuditing, setIsAuditing] = useState(false)
+  const [auditedUserName, setAuditedUserName] = useState('')
+
   useEffect(() => {
     getUserData()
   }, [currentUserData.dni])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const audited = sessionStorage.getItem('audited_user')
+      if (audited) {
+        try {
+          const user = JSON.parse(audited)
+          setIsAuditing(true)
+          setAuditedUserName(`${user.nombres || ''} ${user.apellidos || ''}`)
+        } catch (e) {
+          console.error(e)
+          setIsAuditing(false)
+        }
+      } else {
+        setIsAuditing(false)
+      }
+    }
+  }, [currentUserData.dni])
+
+  const handleExitAudit = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('audited_user')
+      const realAdmin = sessionStorage.getItem('real_admin_user')
+      if (realAdmin) {
+        try {
+          const adminData = JSON.parse(realAdmin)
+          dispatch({
+            type: AppAction.CURRENT_USER_DATA,
+            payload: adminData
+          })
+          sessionStorage.removeItem('real_admin_user')
+          router.push('/admin/gestion-usuarios')
+        } catch (e) {
+          console.error(e)
+          getUserData()
+          router.push('/login')
+        }
+      } else {
+        sessionStorage.removeItem('real_admin_user')
+        getUserData()
+        router.push('/login')
+      }
+    }
+  }
 
   const siderbarSegunPerfil = () => {
     if (router.pathname === "/login") {
@@ -89,7 +139,8 @@ const LayoutMenu = ({ children }: Props) => {
     }
   }
 
-  const needsSecuritySetup = currentUserData.perfil?.rol !== undefined &&
+  const needsSecuritySetup = !isAuditing &&
+    currentUserData.perfil?.rol !== undefined &&
     router.pathname !== '/login' &&
     (!currentUserData.seguridad?.configurado || currentUserData.debeCambiarContrasena === true);
 
@@ -109,6 +160,17 @@ const LayoutMenu = ({ children }: Props) => {
         siderbarSegunPerfil()
       }
       <div className={styles.contentWrapper}>
+        {isAuditing && (
+          <div className={styles.auditBanner}>
+            <div className={styles.auditInfo}>
+              <span className={styles.auditBadge}>Modo Auditoría</span>
+              <span>Visualizando la plataforma como: <strong>{auditedUserName}</strong> (DNI: {currentUserData.dni} - Rol: {currentUserData.perfil?.nombre})</span>
+            </div>
+            <button onClick={handleExitAudit} className={styles.exitAuditBtn}>
+              Regresar a mi Administrador
+            </button>
+          </div>
+        )}
         {currentUserData.perfil?.rol && router.pathname !== '/login' && (
           <Navbar />
         )}
@@ -118,7 +180,8 @@ const LayoutMenu = ({ children }: Props) => {
       </div>
 
       {/* Modal obligatorio para directores sin tipo de gestión definido */}
-      {currentUserData.perfil?.rol === 2 &&
+      {!isAuditing &&
+        currentUserData.perfil?.rol === 2 &&
         currentUserData.tipoGestion === undefined &&
         router.pathname !== '/login' && (
           <ModalTipoGestion currentUserData={currentUserData} />

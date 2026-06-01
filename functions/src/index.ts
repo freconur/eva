@@ -33,6 +33,8 @@ export { getDataToProfesoresFromBarGraphics } from './getDataToProfesoresFromBar
 export { getDataReporteEvaluacionPorPreguntas } from './getDataReporteEvaluacionPorPreguntas';
 export { getDataReporteAgregadoPorRol } from './reportsAggregation';
 export { startFullConsolidation } from './orchestrator';
+export { obtenerMetricasConsumo } from './obtenerMetricasConsumo';
+
 
 
 try {
