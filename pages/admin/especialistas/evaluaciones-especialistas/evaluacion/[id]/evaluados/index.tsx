@@ -254,7 +254,7 @@ const EvaluadosPage = () => {
 			},
 			title: {
 				display: true,
-				text: `Evolución de ${selectedEspecialista?.nombres || ''}`,
+				text: `Evolución de ${selectedEspecialista ? `${selectedEspecialista.nombres || ''} ${selectedEspecialista.apellidos || ''}`.trim() : ''}`,
 				padding: {
 					top: historialSelected.length === 1 ? 55 : 10,
 					bottom: 10
