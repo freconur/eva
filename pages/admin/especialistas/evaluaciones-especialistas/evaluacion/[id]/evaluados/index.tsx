@@ -255,6 +255,10 @@ const EvaluadosPage = () => {
 			title: {
 				display: true,
 				text: `Evolución de ${selectedEspecialista?.nombres || ''}`,
+				padding: {
+					top: historialSelected.length === 1 ? 55 : 10,
+					bottom: 10
+				}
 			},
 			tooltip: {
 				callbacks: {
@@ -280,7 +284,7 @@ const EvaluadosPage = () => {
 			padding: {
 				left: 20,
 				right: 20,
-				top: 20,
+				top: historialSelected.length === 1 ? 30 : 20,
 				bottom: 20
 			}
 		}
