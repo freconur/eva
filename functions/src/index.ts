@@ -3,6 +3,22 @@
  */
 import * as admin from 'firebase-admin';
 
+if (process.env.FUNCTIONS_EMULATOR === 'true') {
+  if (process.env.CONNECT_TO_PROD === 'true') {
+    console.log('📡 Desconectando variables del emulador para apuntar a PRODUCCIÓN (Firestore, Auth, Storage, etc.)...');
+    const emulatorsToUnset = [
+      'FIRESTORE_EMULATOR_HOST',
+      'FIREBASE_AUTH_EMULATOR_HOST',
+      'FIREBASE_STORAGE_EMULATOR_HOST',
+      'FIREBASE_DATABASE_EMULATOR_HOST',
+      'PUBSUB_EMULATOR_HOST'
+    ];
+    emulatorsToUnset.forEach(envVar => {
+      delete process.env[envVar];
+    });
+  }
+}
+
 try {
   admin.initializeApp();
 } catch (e: any) {

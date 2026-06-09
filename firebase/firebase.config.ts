@@ -2,7 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getFunctions } from 'firebase/functions';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -19,9 +19,17 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
-const functions = getFunctions(app);       // Producción — sin emulador
+const functions = getFunctions(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
+
+const isClient = typeof window !== 'undefined';
+const isLocalhost = isClient && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+if (isLocalhost) {
+  connectFunctionsEmulator(functions, 'localhost', 5001);
+  console.log('🔌 Conectado al emulador local de Cloud Functions en puerto 5001');
+}
 
 // Timeout personalizado para Cloud Functions largas (ej. consolidación masiva)
 // 570s = 9.5 min — margen sobre el máximo de 540s de GCP

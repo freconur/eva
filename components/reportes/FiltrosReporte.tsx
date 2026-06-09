@@ -19,6 +19,7 @@ interface FiltrosReporteProps {
   handleRestablecerFiltros: () => void;
   handleFiltrar?: () => void;
   loading?: boolean;
+  soloUgel?: boolean;
 }
 
 const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
@@ -28,6 +29,7 @@ const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
   handleRestablecerFiltros,
   handleFiltrar,
   loading = false,
+  soloUgel = false,
 }) => {
   return (
     <div className={styles.filtersSection}>
@@ -49,58 +51,63 @@ const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
           </select>
         </div>
 
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Distrito</label>
-          <select
-            name="distrito"
-            className={styles.filterSelect}
-            onChange={handleChangeFiltros}
-            value={filtros.distrito}
-            disabled={!filtros.region}
-          >
-            <option value="">Seleccionar Distrito</option>
-            {distritosDisponibles.map((distrito, index) => (
-              <option key={index} value={distrito}>
-                {distrito}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!soloUgel && (
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Distrito</label>
+            <select
+              name="distrito"
+              className={styles.filterSelect}
+              onChange={handleChangeFiltros}
+              value={filtros.distrito}
+              disabled={!filtros.region}
+            >
+              <option value="">Seleccionar Distrito</option>
+              {distritosDisponibles.map((distrito, index) => (
+                <option key={index} value={distrito}>
+                  {distrito}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Área</label>
-          <select
-            name="area"
-            value={filtros.area}
-            onChange={handleChangeFiltros}
-            className={styles.filterSelect}
-          >
-            <option value="">Todas las Áreas</option>
-            {area.map((are) => (
-              <option key={are.id} value={are.id}>
-                {are.name.toUpperCase()}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!soloUgel && (
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Área</label>
+            <select
+              name="area"
+              value={filtros.area}
+              onChange={handleChangeFiltros}
+              className={styles.filterSelect}
+            >
+              <option value="">Todas las Áreas</option>
+              {area.map((are) => (
+                <option key={are.id} value={are.id}>
+                  {are.name.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
-
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Género</label>
-          <select
-            name="genero"
-            value={filtros.genero}
-            onChange={handleChangeFiltros}
-            className={styles.filterSelect}
-          >
-            <option value="">Todos</option>
-            {genero.map((gen) => (
-              <option key={gen.id} value={gen.id}>
-                {gen.name.toUpperCase()}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!soloUgel && (
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Género</label>
+            <select
+              name="genero"
+              value={filtros.genero}
+              onChange={handleChangeFiltros}
+              className={styles.filterSelect}
+            >
+              <option value="">Todos</option>
+              {genero.map((gen) => (
+                <option key={gen.id} value={gen.id}>
+                  {gen.name.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className={styles.filterActions}>
           <button

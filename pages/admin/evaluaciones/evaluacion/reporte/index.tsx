@@ -55,6 +55,104 @@ ChartJS.register(
   Legend
 );
 
+const options = {
+  interaction: {
+    intersect: false,
+    mode: 'index' as const,
+  },
+  plugins: {
+    legend: {
+      position: 'center' as const,
+    },
+    title: {
+      display: true,
+      text: 'estadistica de respuestas',
+    },
+    tooltip: {
+      backgroundColor: 'rgba(15, 23, 42, 0.95)',
+      titleColor: '#ffffff',
+      bodyColor: '#ffffff',
+      borderColor: 'rgba(59, 130, 246, 0.5)',
+      borderWidth: 2,
+      cornerRadius: 12,
+      displayColors: true,
+      titleFont: {
+        size: 16,
+        weight: 'bold' as const,
+        family: "'Inter', 'Helvetica', 'Arial', sans-serif",
+      },
+      bodyFont: {
+        size: 14,
+        family: "'Inter', 'Helvetica', 'Arial', sans-serif",
+      },
+      padding: 16,
+      titleSpacing: 8,
+      bodySpacing: 8,
+      boxPadding: 8,
+      callbacks: {
+        title: function (context: any) {
+          return `📊 Alternativa: ${context[0].label.toUpperCase()}`;
+        },
+        label: function (context: any) {
+          const value = context.parsed.y;
+          const dataset = context.dataset;
+          const total = Array.isArray(dataset.data)
+            ? dataset.data.reduce((a: number, b: number) => a + b, 0)
+            : 0;
+          const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+          return [
+            `👥 Cantidad: ${value.toLocaleString('es-PE')}`,
+            `📈 Porcentaje: ${percentage}%`,
+            `📊 Total: ${total.toLocaleString('es-PE')}`,
+          ];
+        },
+        labelColor: function (context: any) {
+          const dataset = context.dataset;
+          const index = context.dataIndex;
+          const borderColor = Array.isArray(dataset.borderColor)
+            ? dataset.borderColor[index]
+            : (typeof dataset.borderColor === 'string' ? dataset.borderColor : '#6b7280');
+          const backgroundColor = Array.isArray(dataset.backgroundColor)
+            ? dataset.backgroundColor[index]
+            : (typeof dataset.backgroundColor === 'string' ? dataset.backgroundColor : '#6b7280');
+
+          return {
+            borderColor: borderColor,
+            backgroundColor: backgroundColor,
+            borderWidth: 3,
+            borderRadius: 4,
+          };
+        },
+      },
+    },
+  },
+  scales: {
+    x: {
+      ticks: {
+        color: function (context: any) {
+          // Obtener el color de fondo de la barra correspondiente
+          const chart = context.chart;
+          const dataset = chart.data.datasets[0];
+          const index = context.index;
+          const bgColor = Array.isArray(dataset.backgroundColor)
+            ? dataset.backgroundColor[index]
+            : (typeof dataset.backgroundColor === 'string' ? dataset.backgroundColor : '');
+          // Si el color es verde (rgb(34, 197, 94) o rgba(34, 197, 94)), es la alternativa correcta
+          if (bgColor.includes('34, 197, 94') || bgColor.includes('rgb(34, 197, 94)')) {
+            return '#22c55e'; // Verde para la alternativa correcta
+          }
+          return '#374151'; // Color gris por defecto
+        },
+        font: {
+          size: 13,
+          weight: '600' as const,
+          family: "'Inter', 'Helvetica', 'Arial', sans-serif",
+        },
+      },
+    },
+  },
+};
+
 const Reporte = () => {
   const [filtros, setFiltros] = useState({
     region: '',
@@ -802,15 +900,12 @@ const Reporte = () => {
 
     setLoadingReportePreguntas(true);
     try {
-      const callPreguntas = httpsCallable(functions, 'getDataReporteEvaluacionPorPreguntas');
+      const callPreguntas = httpsCallable(functions, 'getDataReporteEvaluacionPorPreguntas', { timeout: 540000 });
       const result = await callPreguntas({
         idEvaluacion: idEval,
         año: yearSelected,
         mes: monthSelected,
-        region: filtros.region,
-        distrito: filtros.distrito,
-        area: filtros.area,
-        genero: filtros.genero
+        region: filtros.region
       });
 
       const dataResult = result.data as any;
@@ -828,103 +923,7 @@ const Reporte = () => {
     }
   };
 
-  const options = {
-    interaction: {
-      intersect: false,
-      mode: 'index' as const,
-    },
-    plugins: {
-      legend: {
-        position: 'center' as const,
-      },
-      title: {
-        display: true,
-        text: 'estadistica de respuestas',
-      },
-      tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-        titleColor: '#ffffff',
-        bodyColor: '#ffffff',
-        borderColor: 'rgba(59, 130, 246, 0.5)',
-        borderWidth: 2,
-        cornerRadius: 12,
-        displayColors: true,
-        titleFont: {
-          size: 16,
-          weight: 'bold' as const,
-          family: "'Inter', 'Helvetica', 'Arial', sans-serif",
-        },
-        bodyFont: {
-          size: 14,
-          family: "'Inter', 'Helvetica', 'Arial', sans-serif",
-        },
-        padding: 16,
-        titleSpacing: 8,
-        bodySpacing: 8,
-        boxPadding: 8,
-        callbacks: {
-          title: function (context: any) {
-            return `📊 Alternativa: ${context[0].label.toUpperCase()}`;
-          },
-          label: function (context: any) {
-            const value = context.parsed.y;
-            const dataset = context.dataset;
-            const total = Array.isArray(dataset.data)
-              ? dataset.data.reduce((a: number, b: number) => a + b, 0)
-              : 0;
-            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-            return [
-              `👥 Cantidad: ${value.toLocaleString('es-PE')}`,
-              `📈 Porcentaje: ${percentage}%`,
-              `📊 Total: ${total.toLocaleString('es-PE')}`,
-            ];
-          },
-          labelColor: function (context: any) {
-            const dataset = context.dataset;
-            const index = context.dataIndex;
-            const borderColor = Array.isArray(dataset.borderColor)
-              ? dataset.borderColor[index]
-              : (typeof dataset.borderColor === 'string' ? dataset.borderColor : '#6b7280');
-            const backgroundColor = Array.isArray(dataset.backgroundColor)
-              ? dataset.backgroundColor[index]
-              : (typeof dataset.backgroundColor === 'string' ? dataset.backgroundColor : '#6b7280');
 
-            return {
-              borderColor: borderColor,
-              backgroundColor: backgroundColor,
-              borderWidth: 3,
-              borderRadius: 4,
-            };
-          },
-        },
-      },
-    },
-    scales: {
-      x: {
-        ticks: {
-          color: function (context: any) {
-            // Obtener el color de fondo de la barra correspondiente
-            const chart = context.chart;
-            const dataset = chart.data.datasets[0];
-            const index = context.index;
-            const bgColor = Array.isArray(dataset.backgroundColor)
-              ? dataset.backgroundColor[index]
-              : (typeof dataset.backgroundColor === 'string' ? dataset.backgroundColor : '');
-            // Si el color es verde (rgb(34, 197, 94) o rgba(34, 197, 94)), es la alternativa correcta
-            if (bgColor.includes('34, 197, 94') || bgColor.includes('rgb(34, 197, 94)')) {
-              return '#22c55e'; // Verde para la alternativa correcta
-            }
-            return '#374151'; // Color gris por defecto
-          },
-          font: {
-            size: 13,
-            weight: '600' as const,
-            family: "'Inter', 'Helvetica', 'Arial', sans-serif",
-          },
-        },
-      },
-    },
-  };
   const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
     console.log('Select Mes value:', e.target.value);
     const selectedMonth = getAllMonths.find((mes) => mes.name === e.target.value);

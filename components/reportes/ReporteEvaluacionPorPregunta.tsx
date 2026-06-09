@@ -71,6 +71,7 @@ interface ReporteEvaluacionPorPreguntaProps {
         handleRestablecerFiltros={handleRestablecerFiltros}
         handleFiltrar={handleFiltrar}
         loading={loading}
+        soloUgel={true}
       />
 
       <h2 className={styles.reportTitle}>Detalle por Pregunta</h2>
