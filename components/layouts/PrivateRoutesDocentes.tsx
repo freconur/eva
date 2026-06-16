@@ -24,6 +24,7 @@ const PrivateRouteDocentes = ({ children }: Props) => {
         router.push('/login');
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -35,6 +36,7 @@ const PrivateRouteDocentes = ({ children }: Props) => {
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni]);
   // console.log('docente', currentUserData)
   return (

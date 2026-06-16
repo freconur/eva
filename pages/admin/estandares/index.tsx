@@ -194,9 +194,11 @@ const EstandaresCurriculares = () => {
 			setIsLoading(false)
 		}
 		loadData()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [selectedEstandar])
 	useEffect(() => {
 		getInstrumentos()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	},[])
 	return (
 		<div className={estilos.container}>

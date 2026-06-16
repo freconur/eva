@@ -98,11 +98,13 @@ const ReporteRegional = () => {
 
   useEffect(() => {
     getRegiones();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     resetReporteRegional();
     resetReporteGlobal()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     if (regionValue.region !== 0 && regionValue.region !== 15) {
@@ -112,6 +114,7 @@ const ReporteRegional = () => {
       );
       getPreguntasRespuestas(`${route.query.idEvaluacion}`);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionValue.region]);
   const handleRegion = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setRegionValue({ region: Number(e.target.value) });
@@ -133,6 +136,7 @@ const ReporteRegional = () => {
   useEffect(() => {
     regionValue.region === 15 &&
       reporteRegionalGlobal(`${route.query.idEvaluacion}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionValue.region]);
   const options = {
     plugins: {

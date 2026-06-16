@@ -40,7 +40,6 @@ interface PieChartComponentProps {
   dataGraficoTendenciaNiveles: GraficoPieChart[]
   yearSelected: number
   filtros?: {
-    genero: string;
     region: string;
   };
   onFilterChange?: (name: string, value: string) => void;
@@ -50,10 +49,10 @@ const PieChartComponent = ({
   monthSelected = 0,
   dataGraficoTendenciaNiveles = [],
   yearSelected = 2025,
-  filtros = { genero: '', region: '' },
+  filtros = { region: '' },
   onFilterChange
 }: PieChartComponentProps) => {
-  const { genero: filtroGenero, region: filtroRegion } = filtros;
+  const { region: filtroRegion } = filtros;
 
   const route = useRouter()
   const { loaderDataGraficoPieChart, dataGraficoPieChart } = useGlobalContext()
@@ -61,9 +60,9 @@ const PieChartComponent = ({
 
   // Usar dataGraficoPieChart del contexto global si está disponible, sino usar la prop
   const datosParaGrafico = useMemo(() => {
-    // Si hay filtros activos (Género o Región), no queremos el fallback global
+    // Si hay filtros activos (Región), no queremos el fallback global
     // Queremos mostrar el resultado real del filtro (incluso si es vacío)
-    if (filtroGenero || filtroRegion) {
+    if (filtroRegion) {
       return dataGraficoPieChart || [];
     }
 
@@ -73,7 +72,7 @@ const PieChartComponent = ({
       return dataGraficoPieChart;
     }
     return dataGraficoTendenciaNiveles;
-  }, [dataGraficoPieChart, dataGraficoTendenciaNiveles, filtroGenero, filtroRegion]);
+  }, [dataGraficoPieChart, dataGraficoTendenciaNiveles, filtroRegion]);
 
   const [dataFiltrada, setDataFiltrada] = useState<GraficoPieChart[]>(datosParaGrafico)
 
@@ -81,10 +80,6 @@ const PieChartComponent = ({
   useEffect(() => {
     setDataFiltrada(datosParaGrafico)
   }, [datosParaGrafico])
-
-  const handleChangeGenero = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (onFilterChange) onFilterChange('genero', e.target.value);
-  }
 
   const handleChangeRegion = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (onFilterChange) onFilterChange('region', e.target.value);
@@ -123,23 +118,6 @@ const PieChartComponent = ({
     <div className={styles.container}>
       {/* Selectores de filtro */}
       <div className={styles.filtersContainer}>
-        <div className={styles.filterWrapper}>
-          <label className={styles.label}>
-            Filtrar por Género
-          </label>
-          <select
-            value={filtroGenero}
-            onChange={handleChangeGenero}
-            className={styles.select}
-          >
-            <option value="">Todos los géneros</option>
-            {genero.map((gen) => (
-              <option key={gen.id} value={gen.id}>
-                {gen.name.toUpperCase()}
-              </option>
-            ))}
-          </select>
-        </div>
         <div className={styles.filterWrapper}>
           <label className={styles.label}>
             Filtrar por Ugel

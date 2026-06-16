@@ -85,14 +85,18 @@ const ReporteRegional = () => {
 
   useEffect(() => {
     getRegiones()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => {resetReporteRegional()},[])
+  useEffect(() => {resetReporteRegional()},
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [])
   useEffect(() => {
     if (regionValue.region !== 0) {
       reporteRegionales(Number(regionValue.region), `${route.query.idEvaluacion}`)
     }
     getPreguntasRespuestas(`${route.query.idEvaluacion}`)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionValue.region])
   const handleRegion = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setRegionValue({ region: Number(e.target.value) })

@@ -48,6 +48,7 @@ const { idEvaluacion } = router.query
       setDistritosDisponibles([]);
       setDatos(prev => ({ ...prev, distrito: '' }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [datos.region]);
 
   // Actualizar datos cuando currentUserData esté disponible
@@ -68,6 +69,7 @@ const { idEvaluacion } = router.query
     }
     getEvaluacionEscalaLikert(`${idEvaluacion}`)
     getPreguntasEvaluacionEscalaLikert(`${idEvaluacion}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni, router.query.idEvaluacion]);
 console.log('evaluacionEscalaLikert', evaluacionEscalaLikert)
 console.log('preguntaEvaluacionLikert', preguntaEvaluacionLikert)

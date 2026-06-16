@@ -25,7 +25,7 @@ const DeleteEstudiante = ({
   idExamen,
   monthSelected
 }: Props) => {
-  const { loaderSalvarPregunta } = useGlobalContext();
+  const { loaderSalvarPregunta, evaluacion } = useGlobalContext();
   const [reValidar, setReValidar] = useState(false);
   const [exito, setExito] = useState(false);
   const { deleteEstudianteById, deleteEvaluacionEstudiante } = useUsuario();
@@ -36,7 +36,8 @@ const DeleteEstudiante = ({
   }
 
   const handleDeleteEvaluacion = () => {
-    deleteEvaluacionEstudiante(idExamen, idEstudiante, monthSelected);
+    console.log('Borrar estudiante clicked. realtimeEnabled:', evaluacion?.realtimeEnabled);
+    deleteEvaluacionEstudiante(idExamen, idEstudiante, monthSelected, evaluacion?.realtimeEnabled);
     /* deleteEstudianteById(idEstudiante, idExamen, estudiantes); */
   };
   return container

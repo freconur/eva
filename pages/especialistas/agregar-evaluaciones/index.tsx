@@ -39,6 +39,7 @@ const AgregarEvaluaciones = () => {
   useEffect(() => {
     getGrades()
     getCategories()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   console.log('selectValues', selectValues)

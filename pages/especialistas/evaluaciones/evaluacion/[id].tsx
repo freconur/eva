@@ -33,10 +33,11 @@ const Evaluacion = () => {
     setPregunta(preguntasRespuestas[index])
   }
   useEffect(() => {
-    getEvaluacion(`${route.query.id}`)
+    getEvaluacion(`${route.query.id}`);
     if (route.query.id) {
-      getPreguntasRespuestas(`${route.query.id}`)
+      getPreguntasRespuestas(`${route.query.id}`);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.id])
   console.log('preguntasRespuestas', preguntasRespuestas)
   return (

@@ -57,10 +57,12 @@ const CoberturaCurricular = ({ currentUserData,dataDocente, paHabilidad, evaluac
     dispatch({ type: AppAction.PREGUNTAS_ESTANDAR, payload: [] })
     getEvaluacionCurricularDocente(`${dataDocente.dni}`, selectedEstandar)
     getEstandaresCurriculares(selectedEstandar)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[selectedEstandar, dataDocente.dni])
   useEffect(() => {
     /* resetValuesEvaluarCurricular() */
     getInstrumentos()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   /* console.log('evaluacionCurricular', evaluacionCurricular)
   console.log('allEvaluacionesCurricularesDocente', allEvaluacionesCurricularesDocente)

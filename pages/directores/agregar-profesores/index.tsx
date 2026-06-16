@@ -18,16 +18,19 @@ const AgregarDirectores = () => {
 
   useEffect(() => {
     getUserData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni])
 
   useEffect(() => {
     if (currentUserData.dni) {
       getDocentesByDniDirector(`${currentUserData.dni}`)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni])
 
   useEffect(() => {
     getGrades()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

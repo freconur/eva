@@ -159,6 +159,7 @@ const BarChartDocentes = ({ data = [] }: BarChartDocentesProps) => {
             labels: rankingLabels,
             datasets: datasets,
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [paginatedData, rankingLabels, sortBy, getNivelColor, isPromedioMode, isImpactMode]);
 
     const customOptions = useMemo(() => {
@@ -235,6 +236,7 @@ const BarChartDocentes = ({ data = [] }: BarChartDocentesProps) => {
                 },
             },
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [options, paginatedData, isPromedioMode, isImpactMode, rankingOffset, sortBy]);
 
     const handleNext = () => currentPage < totalPages - 1 && setCurrentPage(prev => prev + 1);

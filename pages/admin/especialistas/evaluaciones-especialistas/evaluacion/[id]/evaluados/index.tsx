@@ -60,6 +60,7 @@ const EvaluadosPage = () => {
 			getPreguntasRespuestasEspecialistas(`${id}`);
 			getDimensionesEspecialistas(`${id}`);
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [id]);
 
 	const getTimestamp = (val: any): number => {

@@ -28,6 +28,7 @@ const ExamenPsicolinguistica = () => {
   //CARGA DE VALORES DE INICIO
   useEffect(() => {
     getPsicolinguisticaById(`${router.query.id}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.query.id])
   //CARGA DE VALORES DE INICIO
   return (

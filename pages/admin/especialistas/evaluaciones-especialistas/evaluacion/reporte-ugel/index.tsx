@@ -91,6 +91,7 @@ const ReporteRegional = () => {
         reporteUgelGlobal(Number(regionValue), `${route.query.idEvaluacion}`,getPreguntaRespuestaDocentes.length )
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionValue, route.query.idEvaluacion])
 
   useEffect(() => {
@@ -98,6 +99,7 @@ const ReporteRegional = () => {
     getRegiones();
     resetReporteRegional();
     resetReporteGlobal()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleRegion = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -120,6 +122,7 @@ const ReporteRegional = () => {
   useEffect(() => {
     getDataEvaluacion(`${route.query.idEvaluacion}`)
     getPreguntasRespuestasEspecialistas(`${route.query.idEvaluacion}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[route.query.idEvaluacion])
   // console.log('reporteRegional', reporteRegional)
   // console.log('getPreguntaRespuestaDocentes', getPreguntaRespuestaDocentes)

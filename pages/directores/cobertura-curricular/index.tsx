@@ -32,6 +32,7 @@ const CoberturaCurricular = () => {
   useEffect(() => {
     getEvaluacionCurricular()
     getDocentesToTable(`${currentUserData.dni}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni])
   return (
     <div>

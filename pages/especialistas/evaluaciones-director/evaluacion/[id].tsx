@@ -38,10 +38,12 @@ const EvaluacionDirector = () => {
     if (valueDni.toString().length === 8) {
       buscarDirector(`${valueDni}`)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valueDni])
   useEffect(() => {
     getDataEvaluacion(`${router.query.id}`)
     getPreguntasRespuestasDirectores(`${router.query.id}`)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [`${router.query.id}`])
 
   console.log('dataDirector', dataDirector)

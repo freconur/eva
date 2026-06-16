@@ -1,0 +1,984 @@
+{
+  "nombresApellidos": "Gabriel PACHA TURPO",
+  "dni": "80763987",
+  "grado": "2",
+  "seccion": "1",
+  "genero": "1",
+  "respuestas": [
+    {
+      "pregunta": "Roxana fue al mercado Central de Puno llevando una canasta con 24 huevos para vender. En el camino, debido al movimiento, se rompieron algunos huevos. Al llegar, Roxana revisó su canasta y vio que solo le quedaron 15 huevos sin romper.\n¿Cuántos huevos se rompieron en el camino?",
+      "puntaje": "30",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "9 huevos.",
+          "selected": true
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "39 huevos.",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "19 huevos.",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "preguntaDocente": "Establece relaciones vinculadas a acciones de agregar y quitar cantidades, a partir de situaciones aditivas.",
+      "order": 1,
+      "respuesta": "a",
+      "timestamp": {
+        "_seconds": 1772913016,
+        "_nanoseconds": 378000000
+      },
+      "id": "1"
+    },
+    {
+      "pregunta": "María vive en la comunidad de Chimú, quiere comprar un chullo de lana hecho por las artesanas. Ella tiene S/ 30 ahorrados, pero el chullo cuesta S/ 48.\n¿Cuánto dinero le falta a María para comprar el chullo?",
+      "order": 2,
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "S/ 78",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "S/ 81",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "S/ 18",
+          "selected": true
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "puntaje": "30",
+      "preguntaDocente": "Establece relaciones vinculadas a acciones de igualar cantidades a partir de situaciones aditivas.",
+      "respuesta": "c",
+      "timestamp": {
+        "_seconds": 1772913101,
+        "_nanoseconds": 721000000
+      },
+      "id": "2"
+    },
+    {
+      "order": 3,
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "72 canicas.",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "28 canicas.",
+          "selected": true
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "82 canicas.",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "puntaje": "30",
+      "preguntaDocente": "Establece relaciones vinculadas a acciones de separar cantidades a partir de situaciones aditivas.",
+      "respuesta": "b",
+      "timestamp": {
+        "_seconds": 1772913185,
+        "_nanoseconds": 650000000
+      },
+      "pregunta": "En la escuela de Ocosuyo, José guarda 50 canicas en una botella, para jugar con sus amigos. De todas las canicas, 22 son de color blanco y las demás son de color negro.\n¿Cuántas canicas son de color negro?",
+      "id": "3"
+    },
+    {
+      "timestamp": {
+        "_seconds": 1772913299,
+        "_nanoseconds": 290000000
+      },
+      "respuesta": "c",
+      "order": 4,
+      "preguntaDocente": "Establece relaciones vinculadas a acciones de comparar cantidades, a partir de situaciones aditivas.",
+      "puntaje": "30",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "12 niñas.",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "7 niñas.",
+          "selected": true
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "6 niñas.",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "pregunta": "En la escuela de danzas “Unucajas de Azángaro”, participan 18 niñas y 12 niños en un ensayo para una presentación por el aniversario de la ciudad.\n¿Cuántas niñas más que niños participan en el ensayo?",
+      "id": "4"
+    },
+    {
+      "respuesta": "b",
+      "timestamp": {
+        "_seconds": 1772913387,
+        "_nanoseconds": 109000000
+      },
+      "puntaje": "30",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "8 baldes",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "7 baldes",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "76 baldes",
+          "selected": true
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "preguntaDocente": "Expresa con diversas representaciones su comprensión de la decena como nueva unidad a partir de 10 unidades.",
+      "order": 5,
+      "pregunta": "A la feria de Ayaviri, la señora Rosa llevó 76 kilos de quinua para vender. Para facilitar la venta, reparte la quinua en baldes de 10 kilos cada uno.\n¿Cuántos baldes de 10 kilos preparó la señora Rosa en total?",
+      "id": "5"
+    },
+    {
+      "pregunta": "José juega con sus juguetes. Para contar él usa dibujos como claves. Observa.\n¿Qué número se debe escribir para representar la cantidad de juguetes?",
+      "respuesta": "b",
+      "timestamp": {
+        "_seconds": 1772913546,
+        "_nanoseconds": 818000000
+      },
+      "puntaje": "30",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "13",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "33",
+          "selected": true
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "23",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "preguntaDocente": "Expresa con diversas representaciones su comprensión de la decena al interpretar el valor posicional en números de hasta dos cifras.",
+      "order": 6,
+      "id": "6"
+    },
+    {
+      "preguntaDocente": "Emplea diversas estrategias para calcular la suma con canje de dos números naturales de hasta dos cifras.",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "95",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "81",
+          "selected": true
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "91",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "puntaje": "30",
+      "order": 7,
+      "respuesta": "c",
+      "timestamp": {
+        "_seconds": 1772913606,
+        "_nanoseconds": 389000000
+      },
+      "pregunta": "¿Cuál es la suma de 63 y 28?\nAhora, marca tu respuesta.",
+      "id": "7"
+    },
+    {
+      "respuesta": "a",
+      "timestamp": {
+        "_seconds": 1772913665,
+        "_nanoseconds": 375000000
+      },
+      "puntaje": "30",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "44",
+          "selected": true
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "34",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "54",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "preguntaDocente": "Emplea diversas estrategias para calcular la resta con canje de dos números naturales de hasta dos cifras.",
+      "order": 8,
+      "pregunta": "Resta: 76 - 32 =\n¿Cuánto es la respuesta?",
+      "id": "8"
+    },
+    {
+      "respuesta": "c",
+      "timestamp": {
+        "_seconds": 1772914135,
+        "_nanoseconds": 519000000
+      },
+      "order": 9,
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "a",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "b",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "c",
+          "selected": true
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "puntaje": "30",
+      "preguntaDocente": "Deduce, a partir de la comparación de números, si una cantidad está contenida en otra.",
+      "pregunta": "Una madre de familia de Macusani necesita 26 ovillos de lana de alpaca para tejer chompas para sus hijos.\n¿De qué canasta puede sacar esta cantidad de ovillos?",
+      "id": "9"
+    },
+    {
+      "pregunta": "En la comunidad de Santa Rosa, Don Julián cuenta sus alpacas. Tiene 24 alpacas blancas y 17 alpacas de color café. Su vecino Don Pablo tiene 30 alpacas en total. Don Julián dice: \"Tengo más alpacas que Don Pablo\".\n¿Tiene razón Don Julián?",
+      "respuesta": "a",
+      "timestamp": {
+        "_seconds": 1772914416,
+        "_nanoseconds": 459000000
+      },
+      "order": 10,
+      "preguntaDocente": "Explica su decisión considerando relaciones entre datos y acciones aditivas.",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "Si, con argumento",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "No, con argumento",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "Marca la alternativa pero no argumenta.",
+          "selected": true
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        }
+      ],
+      "puntaje": "30",
+      "id": "10"
+    },
+    {
+      "pregunta": "En el mercado, la señora Julia pesa en una balanza, en el lado izquierdo 19 papas. En el lado derecho 7 papas y una bolsa misteriosa.\n¿Cuántas papas debe haber dentro de la bolsa para que la balanza esté en equilibrio?",
+      "order": 11,
+      "preguntaDocente": "Establece relaciones de equivalencias entre grupo de objetos.",
+      "puntaje": "34",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "12 papas.",
+          "selected": true
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "19 papas.",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "13 papas.",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "timestamp": {
+        "_seconds": 1772914486,
+        "_nanoseconds": 242000000
+      },
+      "respuesta": "a",
+      "id": "11"
+    },
+    {
+      "order": 12,
+      "preguntaDocente": "Describe cómo aumentan los números en un patrón aditivo.",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "Sumar 2 al 35",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "Sumar 5 al 35",
+          "selected": true
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "Sumar 10 al 35",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "puntaje": "34",
+      "respuesta": "b",
+      "timestamp": {
+        "_seconds": 1772914580,
+        "_nanoseconds": 390000000
+      },
+      "pregunta": "Luis está guardando sus canicas en una caja. Él las cuenta siguiendo esta secuencia: 15, 20, 25, 30, 35, ...\n¿Qué debes hacer para encontrar el número que sigue?",
+      "id": "12"
+    },
+    {
+      "order": 13,
+      "preguntaDocente": "Describe cómo continúan los términos cercanos en un patrón de repetición.",
+      "puntaje": "34",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "Triángulo.",
+          "selected": true
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "Círculo.",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "Cuadrado.",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "timestamp": {
+        "_seconds": 1772914664,
+        "_nanoseconds": 164000000
+      },
+      "respuesta": "b",
+      "pregunta": "Observa el siguiente patrón de figuras:\n¿Qué figura continúa en el patrón?",
+      "id": "13"
+    },
+    {
+      "pregunta": "Observa con atención la siguiente imagen.\nSi 2 manzanas = 1 pelota, ¿Cuántas manzanas pesan lo mismo que 2 pelotas?",
+      "respuesta": "c",
+      "timestamp": {
+        "_seconds": 1772914746,
+        "_nanoseconds": 744000000
+      },
+      "order": 14,
+      "preguntaDocente": "Emplea diversas estrategias vinculadas al equilibrio para encontrar nuevas equivalencias.",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "2 manzanas.",
+          "selected": true
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "3 manzanas.",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "4 manzanas.",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "puntaje": "34",
+      "id": "14"
+    },
+    {
+      "order": 15,
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "3 botellas descartables.",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "9 botellas descartables.",
+          "selected": true
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "15 botellas descartables.",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "puntaje": "34",
+      "preguntaDocente": "Emplea diversas estrategias vinculadas al canje para encontrar nuevas equivalencias.",
+      "respuesta": "c",
+      "timestamp": {
+        "_seconds": 1772914901,
+        "_nanoseconds": 520000000
+      },
+      "pregunta": "En una feria artesanal de Juli se realiza el siguiente canje:\nRosa quiere canjear 5 llamitas de juguete. ¿Cuántas botellas descartables necesitará?",
+      "id": "15"
+    },
+    {
+      "respuesta": "a",
+      "timestamp": {
+        "_seconds": 1772914967,
+        "_nanoseconds": 902000000
+      },
+      "puntaje": "34",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "Chullo.",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "Guantes.",
+          "selected": true
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "Medias.",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "preguntaDocente": "Deduce cómo continúa un patrón de repetición para determinar un término lejano.",
+      "order": 16,
+      "pregunta": "En una feria campesina de Puno, Miriam ordena tejidos siguiendo este patrón:\nMiriam a ordenado 15 tejidos en total. ¿Cuál será el último tejido?",
+      "id": "16"
+    },
+    {
+      "respuesta": "b",
+      "timestamp": {
+        "_seconds": 1772915057,
+        "_nanoseconds": 246000000
+      },
+      "order": 17,
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "17 manos.",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "34 manos.",
+          "selected": true
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "11 manos.",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "puntaje": "32",
+      "preguntaDocente": "Establece relaciones entre las propiedades de una figura bidimensional para determinar la longitud de su contorno.",
+      "pregunta": "En el aula del segundo grado los niños están midiendo un cuadro con las manos: Observa la imagen y responde:\n¿Cuántas manos necesitarán para medir todo el cuadro?",
+      "id": "17"
+    },
+    {
+      "pregunta": "Esta imagen está formada por figuras geométricas:\n¿Cuántos triángulos hay en la imagen?",
+      "order": 18,
+      "preguntaDocente": "Identifica formas geométricas bidimensionales (triángulos) en un conjunto de polígonos.",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "1 triangulo.",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "2 triángulos.",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "3 triángulos.",
+          "selected": true
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "puntaje": "32",
+      "respuesta": "c",
+      "timestamp": {
+        "_seconds": 1772915188,
+        "_nanoseconds": 835000000
+      },
+      "id": "18"
+    },
+    {
+      "order": 19,
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "Círculos",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "Cuadrados.",
+          "selected": true
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "Triángulos.",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "puntaje": "32",
+      "preguntaDocente": "Identifica la forma de las caras de una figura geométrica tridimensional (prisma).",
+      "respuesta": "b",
+      "timestamp": {
+        "_seconds": 1772915255,
+        "_nanoseconds": 291000000
+      },
+      "pregunta": "Juan tiene una caja de regalo que tiene forma de cubo. Si Juan desarma la caja.\n¿Qué forma tendrán todas sus caras?",
+      "id": "19"
+    },
+    {
+      "order": 20,
+      "preguntaDocente": "Identifica la forma de la cara de un objeto tridimensional desde una posición determinada.",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "Cuadrado.",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "Rectángulo.",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "Círculo.",
+          "selected": true
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "puntaje": "32",
+      "respuesta": "c",
+      "timestamp": {
+        "_seconds": 1772915342,
+        "_nanoseconds": 683000000
+      },
+      "pregunta": "Miro una lata de leche desde arriba.\n¿Qué forma tiene la cara que veo?",
+      "id": "20"
+    },
+    {
+      "pregunta": "Ana dice: “Esta figura es un triángulo porque tiene tres lados”.\n¿Ana tiene razón?",
+      "order": 21,
+      "preguntaDocente": "Evalúa la validez de afirmaciones relacionadas con los elementos y características de los triángulos.",
+      "puntaje": "32",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "Sí, porque tiene tres lados.",
+          "selected": true
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "No, porque tiene cuatro lados.",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "No, porque es un cuadrado.",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "timestamp": {
+        "_seconds": 1772915424,
+        "_nanoseconds": 444000000
+      },
+      "respuesta": "a",
+      "id": "21"
+    },
+    {
+      "puntaje": "34",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "7 peluches capibara.",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "15 peluches capibara.",
+          "selected": true
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "30 peluches capibara.",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "preguntaDocente": "Interpreta información presentada en un pictograma (cada símbolo representa dos unidades).",
+      "order": 22,
+      "respuesta": "c",
+      "timestamp": {
+        "_seconds": 1772915888,
+        "_nanoseconds": 219000000
+      },
+      "pregunta": "En la juguetería de la señora Paquita tiene peluches de capibara en diferentes estantes. Observa.\nSegún el gráfico ¿Cuántos peluches capibara hay en la juguetería?",
+      "id": "22"
+    },
+    {
+      "respuesta": "c",
+      "timestamp": {
+        "_seconds": 1772915954,
+        "_nanoseconds": 699000000
+      },
+      "puntaje": "34",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "Es imposible que encuentre una regla.",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "Es posible que encuentre un lapicero.",
+          "selected": true
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "Es posible que encuentre un pincel.",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "preguntaDocente": "Expresa la ocurrencia de sucesos cotidianos usando la noción \"imposible\".",
+      "order": 23,
+      "pregunta": "Julio acomoda sus útiles escolares:\n¿Cuál de las siguientes situaciones puede suceder?",
+      "id": "23"
+    },
+    {
+      "timestamp": {
+        "_seconds": 1772916630,
+        "_nanoseconds": 138000000
+      },
+      "respuesta": "b",
+      "order": 24,
+      "preguntaDocente": "Emplea estrategias basadas en la visualización para construir una figura bidimensional con unidades no convencionales.",
+      "puntaje": "34",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "12 piezas de cerámica.",
+          "selected": false
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "14 piezas de cerámica.",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "16 piezas de cerámica.",
+          "selected": true
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "pregunta": "Juan quiere cubrir el piso del garaje usando solo cerámicas iguales a la pieza de cuatro cuadrados que se muestra en la parte superior. Observa la imagen con mucha atención.\n¿Cuántas piezas de cerámicas se necesitarán para cubrir el piso del garaje?",
+      "id": "24"
+    },
+    {
+      "timestamp": {
+        "_seconds": 1772916915,
+        "_nanoseconds": 661000000
+      },
+      "respuesta": "b",
+      "preguntaDocente": "Javier organiza las respuestas en una tabla. ¿Cuál de las tablas corresponde a la preferencia de platos? ",
+      "order": 25,
+      "puntaje": "34",
+      "alternativas": [
+        {
+          "alternativa": "a",
+          "descripcion": "a",
+          "selected": true
+        },
+        {
+          "alternativa": "b",
+          "descripcion": "b",
+          "selected": false
+        },
+        {
+          "alternativa": "c",
+          "descripcion": "c",
+          "selected": false
+        },
+        {
+          "alternativa": "D",
+          "descripcion": "-",
+          "selected": false
+        },
+        {
+          "alternativa": "E",
+          "descripcion": "no respondio",
+          "selected": false
+        }
+      ],
+      "pregunta": "En Ayaviri, Javier preguntó a su familia sobre la preferencia de platos para la cena. Las respuestas fueron las siguientes. Observa:  ",
+      "id": "25"
+    }
+  ],
+  "region": 13,
+  "dniDocente": "10627922",
+  "dniDirector": "01541531",
+  "puntaje": 408,
+  "nivel": "en inicio"
+}

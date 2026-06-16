@@ -12,6 +12,7 @@ const { getDocentesDeDirectores } = useRegistros()
   const route = useRouter()
   useEffect(() => {
     getDocentesDeDirectores(`${route.query.id}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[currentUserData.dni, route.query.id])
 
   console.log('route.query.id', route.query.id)

@@ -323,6 +323,7 @@ const EvaluarEstudiante = () => {
   // Efectos para inicialización y actualización de datos
   useEffect(() => {
     prEstudiantes(preguntasRespuestas);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preguntasRespuestas]);
 
   useEffect(() => {
@@ -330,6 +331,7 @@ const EvaluarEstudiante = () => {
       getEvaluacion(`${idExamen}`);
       getPreguntasRespuestas(`${idExamen}`);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idExamen]);
 
   // Efecto para establecer valores iniciales del formulario cuando se carga la evaluación
@@ -339,12 +341,14 @@ const EvaluarEstudiante = () => {
         grado: evaluacion.grado
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluacion?.grado, reset]);
 
-  // Efecto para validar formulario cuando cambian los datos
+  // Efecto para validar formulario cuando cambien los datos
   useEffect(() => {
     const formData = watch();
     validarFormularioCompleto(formData, preguntasRespuestasEstudiante);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watch(), preguntasRespuestasEstudiante]);
 
   // Efecto para limpiar formulario cuando no hay estudiantes en la sección seleccionada
@@ -360,6 +364,7 @@ const EvaluarEstudiante = () => {
         genero: ''
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estudiantesDeEvaluacion, nuevaSeccion, evaluacion?.grado, reset]);
 
   useEffect(() => {
@@ -374,6 +379,7 @@ const EvaluarEstudiante = () => {
       }
     };
     fetchEstudiantes();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluacion?.id, evaluacion?.grado, nuevaSeccion]);
   // Efecto para manejar el scroll y cambiar el top del header progresivamente
   useEffect(() => {

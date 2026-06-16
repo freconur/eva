@@ -112,6 +112,7 @@ const Reportes = () => {
     if (allEvaluacionesEspecialistas.length > 0) {
       filtrarReporteEspecialistas(allEvaluacionesEspecialistas, filtros);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtros, allEvaluacionesEspecialistas]);
 
   const iterateData = (data: DataEstadisticas, labels: string[]) => {
@@ -410,6 +411,7 @@ const Reportes = () => {
     getPreguntasRespuestasEspecialistas(`${route.query.idEvaluacion}`);
     getDimensionesEspecialistas(`${route.query.idEvaluacion}`);
     getDataEvaluacion(`${route.query.idEvaluacion}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.idEvaluacion, currentUserData.dni]);
 
   console.log('warning', warning);

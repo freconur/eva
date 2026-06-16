@@ -40,6 +40,8 @@ import { addNoRespondioAlternative } from '../utils/addNoRespondioAlternative';
 import { useState } from 'react';
 import { EstudianteImportado } from '@/features/types/estudiante';
 import { toast } from 'react-toastify';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/firebase/firebase.config';
 
 export const useAgregarEvaluaciones = () => {
   const dispatch = useGlobalContextDispatch();
@@ -557,6 +559,7 @@ export const useAgregarEvaluaciones = () => {
         añoDelExamen: value.añoDelExamen || `${currentYear}`,
         active: false,
         nivel: Number(value.nivel),
+        realtimeEnabled: true,
       });
       await updateEvaluacionesSentinel();
     } catch (error) {
@@ -838,6 +841,7 @@ export const useAgregarEvaluaciones = () => {
       totalPreguntas: sizePreguntas,
       respuestas: convertirRespuestasAMapa(pqConAlternativasAleatorias),
       dniDirector: currentUserData?.dniDirector || '',
+      distrito: currentUserData.distrito || '',
     });
     const rutaCrearEstudiante = doc(
       db,
@@ -877,14 +881,14 @@ export const useAgregarEvaluaciones = () => {
           genero: `${dataEstudiante.genero}`,
           respuestas: convertirRespuestasAMapa(pqConAlternativasAleatorias),
           region: currentUserData.region,
+          distrito: currentUserData.distrito || '',
           dniDocente: currentUserData.dni,
           dniDirector: currentUserData?.dniDirector || '',
         };
         // Solo agregar puntaje y nivel si tienen datos válidos
         if (
           dataEstudiante.puntaje !== undefined &&
-          dataEstudiante.puntaje !== null &&
-          dataEstudiante.puntaje !== 0
+          dataEstudiante.puntaje !== null
         ) {
           documentoEstudiante.puntaje = dataEstudiante.puntaje;
         }
@@ -896,21 +900,40 @@ export const useAgregarEvaluaciones = () => {
         ) {
           documentoEstudiante.nivel = dataEstudiante.nivel;
         }
-        await setDoc(rutaEstudianteParaEvaluacion, documentoEstudiante);
+
+        const callAggregate = httpsCallable(functions, 'aggregateStudentEvaluationRealtime');
+        await callAggregate({
+          idEvaluacion,
+          año,
+          mes: evaluacion.mesDelExamen,
+          dniEstudiante: data.dni,
+          newData: documentoEstudiante
+        });
       } catch (error) {
+        console.error('Error al guardar evaluación en tiempo real:', error);
       } finally {
         dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
       }
     }
     if (evaluacion.tipoDeEvaluacion === '0') {
-
       try {
-        await setDoc(rutaEstudianteParaEvaluacion, {
+        const documentoEstudiante = {
           ...dataConRespuestas,
           respuestas: convertirRespuestasAMapa(pqConAlternativasAleatorias),
           dniDirector: currentUserData?.dniDirector || '',
+          distrito: currentUserData.distrito || '',
+        };
+
+        const callAggregate = httpsCallable(functions, 'aggregateStudentEvaluationRealtime');
+        await callAggregate({
+          idEvaluacion,
+          año,
+          mes: evaluacion.mesDelExamen,
+          dniEstudiante: data.dni,
+          newData: documentoEstudiante
         });
       } catch (error) {
+        console.error('Error al guardar evaluación en tiempo real:', error);
       } finally {
         dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
       }

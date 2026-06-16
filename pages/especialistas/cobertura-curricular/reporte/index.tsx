@@ -140,13 +140,16 @@ const ReporteCurricular = () => {
     }else {
       /* reporteCD(String(idCurricular), String(currentUserData.dni), String(nivel)); */
     } 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nivel]);
   
   useEffect(() => {
     getInstrumentos()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[])
   useEffect(() => {
     currentUserData.region && nivel && idCurricular && reporteEspecialistaCCDocentes(currentUserData, String(nivel), String(idCurricular))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nivel, idCurricular, currentUserData.region])
  
   return (

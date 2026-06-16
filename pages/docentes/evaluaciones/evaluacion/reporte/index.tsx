@@ -87,6 +87,7 @@ const Reportes = () => {
   useEffect(() => {
     /*  estudiantesQueDieronExamen(`${route.query.idExamen}`, `${currentUserData.dni}`) */
     getPreguntasRespuestas(`${route.query.idExamen}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.idExamen, currentUserData.dni])
   const options = {
     plugins: {

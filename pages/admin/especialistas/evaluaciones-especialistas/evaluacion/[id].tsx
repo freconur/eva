@@ -105,6 +105,7 @@ const EvaluacionDocente = () => {
     if (valueDni.toString().length === 8) {
       buscarEspecialista(`${valueDni}`);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valueDni]);
 
   useEffect(() => {
@@ -112,6 +113,7 @@ const EvaluacionDocente = () => {
     getPreguntasRespuestasEspecialistas(`${router.query.id}`);
     getDimensionesEspecialistas(`${router.query.id}`);
     getEspecialistasEvaluados(`${router.query.id}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [`${router.query.id}`]);
 
   return (

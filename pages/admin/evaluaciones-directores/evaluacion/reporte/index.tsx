@@ -92,6 +92,7 @@ const Reportes = () => {
     getDataEvaluacion(`${route.query.idEvaluacion}`);
     reporteEvaluacionDocenteAdmin(`${route.query.idEvaluacion}`, `${route.query.idDirector}`);
     getPreguntasRespuestasDirectores(`${route.query.idEvaluacion}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.idEvaluacion, route.query.idDirector])
   return (
     <>

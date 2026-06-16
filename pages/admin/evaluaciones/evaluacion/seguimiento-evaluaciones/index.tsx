@@ -35,6 +35,7 @@ const SeguimientoEvaluaciones = () => {
   useEffect(() => {
     todasLasEvaluaciones()
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[])
   // Función handler (sin lógica aún)
   const handleSubmit = async () => {

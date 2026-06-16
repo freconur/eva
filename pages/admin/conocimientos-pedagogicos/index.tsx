@@ -199,6 +199,7 @@ const ConocimientoPedagogicosMain = () => {
         unsubscribeOptions()
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.rol])
 
   return (

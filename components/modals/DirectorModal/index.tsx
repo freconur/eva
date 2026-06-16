@@ -30,6 +30,7 @@ const DirectorModal = ({ onClose }: Props) => {
 
     useEffect(() => {
         getRegiones()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {
@@ -41,6 +42,7 @@ const DirectorModal = ({ onClose }: Props) => {
         } else {
             setDistritos([])
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [regionSeleccionada])
 
     const handleNivelChange = (nivelId: number) => {

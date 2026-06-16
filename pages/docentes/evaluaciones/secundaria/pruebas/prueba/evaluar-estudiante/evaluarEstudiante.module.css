@@ -1047,4 +1047,39 @@
   }
 }
 
+/* Botón Ver Reporte - Navegación de regreso */
+.headerTopActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  flex-shrink: 0;
+}
+
+.backToReportButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background-color: #ffffff;
+  color: #2563eb;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.backToReportButton:hover {
+  background-color: #f0f7ff;
+  border-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.backToReportButton:active {
+  background-color: #dbeafe;
+}
+
  

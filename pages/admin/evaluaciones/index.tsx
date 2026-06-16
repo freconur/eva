@@ -257,6 +257,7 @@ const Evaluaciones = () => {
 
   useEffect(() => {
     getGrades()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -271,6 +272,7 @@ const Evaluaciones = () => {
         unsubscribe();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni])
 
   // --- SINCRONIZACIÓN DE FILTROS CON URL (QUERY PARAMS) ---

@@ -63,6 +63,7 @@ const Evaluaciones = () => {
 
   useEffect(() => {
     getEvaluaciones();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni]);
 
   console.log("evaluaciones", evaluaciones);

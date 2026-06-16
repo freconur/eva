@@ -161,6 +161,7 @@ const BarChartUgelStacked = ({ data = [] }: BarChartUgelStackedProps) => {
                 }
             }
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [options, data]);
 
     if (!data || data.length === 0) return null;

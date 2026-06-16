@@ -38,6 +38,7 @@ const CoberturaCurricular = () => {
   useEffect(() => {
     getEvaluacionCurricular()
     getDocentesFromDirectores(0,`${currentUserData.dniDirector}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni])
   return (
     <div>

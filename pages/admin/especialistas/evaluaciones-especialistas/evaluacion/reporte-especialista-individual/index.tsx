@@ -159,6 +159,7 @@ const ReporteEspecialistaIndividual = () => {
       getPreguntasRespuestasEspecialistas(`${idEvaluacion}`);
       getDimensionesEspecialistas(`${idEvaluacion}`);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idEvaluacion]);
 
   useEffect(() => {
@@ -166,6 +167,7 @@ const ReporteEspecialistaIndividual = () => {
     if (idEvaluacion && targetId) {
       getDataSeguimientoRetroalimentacionEspecialista(`${idEvaluacion}`, targetId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idEvaluacion, idDirector, sessionId]);
 
   const defaultEscala: AlternativasDocente[] = [

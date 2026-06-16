@@ -48,6 +48,7 @@ const ACtualizarEvaluacion = () => {
         getPreguntasRespuestasEspecialistas(`${router.query.idEvaluacion}`)
         getDataSeguimientoRetroalimentacionEspecialista(`${router.query.idEvaluacion}`, `${router.query.dni}`)
         getDataEvaluacion(`${router.query.idEvaluacion}`)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [router.query.dni, router.query.idEvaluacion])
 
     // Actualizar copyPR cuando getPreguntaRespuestaDocentes cambie
@@ -97,6 +98,7 @@ const ACtualizarEvaluacion = () => {
             if (dataEspecialista.datosMonitor?.email) setEmailMonitor(dataEspecialista.datosMonitor.email);
             if (dataEspecialista.datosMonitor?.celular) setCelularMonitor(dataEspecialista.datosMonitor.celular);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dataEspecialista, copyPR.length])
 
 

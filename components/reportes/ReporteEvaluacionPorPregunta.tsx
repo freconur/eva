@@ -25,6 +25,7 @@ interface ReporteEvaluacionPorPreguntaProps {
   loading?: boolean;
   columns?: number;
   globalStyles?: any;
+  mostrarDistrito?: boolean;
 }
 
   const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> = ({
@@ -42,6 +43,7 @@ interface ReporteEvaluacionPorPreguntaProps {
   loading = false,
   columns = 2,
   globalStyles = {},
+  mostrarDistrito = false,
 }) => {
   const [popoverData, setPopoverData] = useState<{
     preguntaId: string;
@@ -72,6 +74,7 @@ interface ReporteEvaluacionPorPreguntaProps {
         handleFiltrar={handleFiltrar}
         loading={loading}
         soloUgel={true}
+        mostrarDistrito={mostrarDistrito}
       />
 
       <h2 className={styles.reportTitle}>Detalle por Pregunta</h2>

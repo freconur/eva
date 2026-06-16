@@ -37,6 +37,7 @@ const CoberturaCurricular = () => {
 
 
     /* getDirectorFromEspecialistaCurricular(Number(currentUserData.region)) */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni])
   return (
     <div>

@@ -445,25 +445,62 @@ const useUsuario = () => {
   const deleteEvaluacionEstudiante = async (
     idEvaluacion: string,
     idEstudiante: string,
-    monthSelected: number
+    monthSelected: number,
+    realtimeEnabled?: boolean
   ) => {
     if (checkAuditReadOnly()) return;
     console.log('idEvaluacion', idEvaluacion);
     console.log('idEstudiante', idEstudiante);
     console.log('monthSelected', monthSelected);
-    const pathRef = doc(
-      db,
-      `/usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${monthSelected}`,
-      idEstudiante
-    );
-    await deleteDoc(pathRef);
+    console.log('realtimeEnabled (parámetro):', realtimeEnabled);
 
-    const pathRefBorrarEstudianteEvaluacion = doc(
-      db,
-      `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${currentYear}/${monthSelected}`,
-      idEstudiante
-    );
-    await deleteDoc(pathRefBorrarEstudianteEvaluacion);
+    dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
+    try {
+      let isRealtime = realtimeEnabled;
+
+      // Si el parámetro local no es true, consultamos en caliente para evitar bypasses debido a retrasos de reactividad
+      if (!isRealtime) {
+        console.log('realtimeEnabled es falso o indefinido localmente. Consultando Firestore en caliente...');
+        const evalDocRef = doc(db, 'evaluaciones', idEvaluacion);
+        const evalSnap = await getDoc(evalDocRef);
+        if (evalSnap.exists()) {
+          isRealtime = evalSnap.data()?.realtimeEnabled === true;
+        }
+      }
+
+      console.log('¿Borrar usando flujo en tiempo real?:', isRealtime);
+
+      if (isRealtime) {
+        const { functions } = await import('@/firebase/firebase.config');
+        const { httpsCallable } = await import('firebase/functions');
+        const deleteFn = httpsCallable(functions, 'deleteStudentEvaluationRealtime');
+        await deleteFn({
+          idEvaluacion,
+          año: currentYear.toString(),
+          mes: `${monthSelected}`,
+          dniEstudiante: idEstudiante,
+          dniDocente: currentUserData.dni
+        });
+      } else {
+        const pathRef = doc(
+          db,
+          `/usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${monthSelected}`,
+          idEstudiante
+        );
+        await deleteDoc(pathRef);
+
+        const pathRefBorrarEstudianteEvaluacion = doc(
+          db,
+          `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${currentYear}/${monthSelected}`,
+          idEstudiante
+        );
+        await deleteDoc(pathRefBorrarEstudianteEvaluacion);
+      }
+    } catch (error) {
+      console.error('Error al eliminar evaluación:', error);
+    } finally {
+      dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: false });
+    }
   };
   const deleteEstudianteById = async (id: string, idExamen: string, estudiantes: Estudiante[]) => {
     if (checkAuditReadOnly()) return;

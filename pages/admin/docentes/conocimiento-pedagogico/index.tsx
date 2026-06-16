@@ -345,6 +345,7 @@ useEffect(() => {
       unsubscribe()
     }
   }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []) // Removemos las dependencias que causan re-renders innecesarios
 
 // Sincronizar preguntas locales con las del contexto global

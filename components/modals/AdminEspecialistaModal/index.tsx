@@ -115,6 +115,7 @@ const AdminEspecialistaModal = ({ onClose }: Props) => {
 
     useEffect(() => {
         getRegiones()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const onSubmit: SubmitHandler<FormValues> = useCallback(async (data) => {

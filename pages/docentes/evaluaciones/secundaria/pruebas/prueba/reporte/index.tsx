@@ -43,6 +43,8 @@ import { TablaPreguntas } from '@/components/tabla-preguntas';
 import { calculoNivel, calculoPreguntasCorrectas } from '@/features/utils/calculoNivel';
 import GraficoTendenciaColegio from '@/components/grafico-tendencia';
 import CorregirPuntajesModal from '@/modals/corregirPuntajes';
+import EvaluarEstudianteForm from '@/components/evaluar/EvaluarEstudianteForm';
+import ActualizarEvaluacionForm from '@/components/evaluar/ActualizarEvaluacionForm';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -59,6 +61,9 @@ const Reportes = () => {
   const [showTable, setShowtable] = useState<boolean>(true);
   const [showDeleteEstudiante, setShowDeleteEstudiante] = useState<boolean>(false);
   const [showCorregirPuntajesModal, setShowCorregirPuntajesModal] = useState<boolean>(false);
+  const [isEvaluarDrawerOpen, setIsEvaluarDrawerOpen] = useState<boolean>(false);
+  const [isActualizarDrawerOpen, setIsActualizarDrawerOpen] = useState<boolean>(false);
+  const [editingEstudianteDni, setEditingEstudianteDni] = useState<string | null>(null);
   const route = useRouter();
   const {
     estudiantesDeEvaluacion,
@@ -116,6 +121,7 @@ const Reportes = () => {
         }
       };
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluacion.id, monthSelected, sectionSelected]);
 
   // Obtener secciones únicas disponibles en la data
@@ -139,6 +145,7 @@ const Reportes = () => {
       if (route.query.nivel) setLevelSelected(route.query.nivel as string);
       if (route.query.seccion) setSectionSelected(route.query.seccion as string);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query, route.isReady]);
 
   // Cerrar dropdown al hacer click fuera
@@ -233,8 +240,8 @@ const Reportes = () => {
     const currentOrder = Number(route.query.order) || order;
     if (currentOrder !== 0) {
       filtered = [...filtered].sort((a, b) => {
-        const valA = Number(a.respuestasCorrectas) || 0;
-        const valB = Number(b.respuestasCorrectas) || 0;
+        const valA = Number(a.puntaje) || 0;
+        const valB = Number(b.puntaje) || 0;
         if (currentOrder === 1) return valA - valB;
         if (currentOrder === 2) return valB - valA;
         return 0;
@@ -283,6 +290,7 @@ const Reportes = () => {
 
       return orderA - orderB;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataEstadisticas, preguntasMap]);
 
   // Crear array de objetos con toda la información necesaria para el reporte
@@ -303,6 +311,7 @@ const Reportes = () => {
         graficoImagen: '', // Se llenará después de renderizar el gráfico
       };
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataEstadisticasOrdenadas, preguntasMap]);
 
 
@@ -417,12 +426,14 @@ const Reportes = () => {
       getPreguntasRespuestas(idExamen);
       getEvaluacion(`${idExamen}`);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.idExamen, currentUserData.dni]);
 
   useEffect(() => {
     if (evaluacion.añoDelExamen && !yearSelected) {
       setYearSelected(evaluacion.añoDelExamen);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluacion.añoDelExamen]);
 
   useEffect(() => {
@@ -436,6 +447,7 @@ const Reportes = () => {
         }
       };
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.idExamen, currentUserData.dni, evaluacion.id, yearSelected, monthSelected, preguntasRespuestas]);
 
   // Mostrar en consola el array completo con las imágenes
@@ -647,6 +659,14 @@ const Reportes = () => {
                     <span>Corregir Puntajes</span>
                   </button>
                 )}
+
+                <button
+                  onClick={() => setIsEvaluarDrawerOpen(true)}
+                  className={styles.evaluarButton}
+                >
+                  <span>📝</span>
+                  <span>Evaluar Estudiante</span>
+                </button>
               </div>
             </div>
             {showTable ? (
@@ -786,6 +806,10 @@ const Reportes = () => {
                       handleShowModalDelete();
                       setIdEstudiante(dni);
                     }}
+                    onEditEstudiante={(dni) => {
+                      setEditingEstudianteDni(dni);
+                      setIsActualizarDrawerOpen(true);
+                    }}
                     linkToEdit={`/docentes/evaluaciones/secundaria/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`}
                     customColumns={{
                       showPuntaje: hasValidPuntaje(),
@@ -832,6 +856,46 @@ const Reportes = () => {
           </div>
         </div>
       )}
+
+      {/* Backdrop del Drawer */}
+      {isEvaluarDrawerOpen && (
+        <div className={styles.drawerBackdrop} onClick={() => setIsEvaluarDrawerOpen(false)} />
+      )}
+
+      {/* Contenedor del Drawer */}
+      <div className={`${styles.drawerContainer} ${isEvaluarDrawerOpen ? styles.drawerOpen : ''}`}>
+        {isEvaluarDrawerOpen && (
+          <EvaluarEstudianteForm
+            idExamen={`${route.query.idExamen}`}
+            isInsideDrawer={true}
+            onClose={() => setIsEvaluarDrawerOpen(false)}
+          />
+        )}
+      </div>
+
+      {/* Backdrop del Drawer de Actualización */}
+      {isActualizarDrawerOpen && (
+        <div className={styles.drawerBackdrop} onClick={() => {
+          setIsActualizarDrawerOpen(false);
+          setEditingEstudianteDni(null);
+        }} />
+      )}
+
+      {/* Contenedor del Drawer de Actualización */}
+      <div className={`${styles.drawerContainer} ${isActualizarDrawerOpen ? styles.drawerOpen : ''}`}>
+        {isActualizarDrawerOpen && editingEstudianteDni && (
+          <ActualizarEvaluacionForm
+            idExamen={`${route.query.idExamen}`}
+            idEstudiante={editingEstudianteDni}
+            mes={String(monthSelected)}
+            isInsideDrawer={true}
+            onClose={() => {
+              setIsActualizarDrawerOpen(false);
+              setEditingEstudianteDni(null);
+            }}
+          />
+        )}
+      </div>
     </>
   );
 };

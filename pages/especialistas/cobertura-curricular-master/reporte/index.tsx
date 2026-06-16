@@ -137,10 +137,12 @@ const ReporteCurricular = () => {
     }else {
       reporteCD(String(idCurricular), String(currentUserData.dni), String(nivel));
     } 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nivel]);
   
   useEffect(() => {
     resetReporteCurricularDirector()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[])
   console.log('curricularDirectorDataFilter', curricularDirectorDataFilter)
   return (

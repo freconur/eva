@@ -34,6 +34,7 @@ const ModalImportarEstudiantes: React.FC<ModalImportarEstudiantesProps> = ({
   });
   useEffect(() => {
     getGrades()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[])
 
   // Efecto para manejar el reset desde el componente padre

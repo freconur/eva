@@ -90,6 +90,7 @@ const ReporteDirectorIndividual = () => {
     getDocente(`${route.query.idDirector}`)
     if (route.query.idEvaluacion && route.query.idDirector)
       buscarDirectorReporteDeEvaluacion(`${route.query.idEvaluacion}`, `${route.query.idDirector}`)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [`${route.query.idEvaluacion}`, `${route.query.idDirector}`, currentUserData.dni])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

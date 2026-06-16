@@ -291,6 +291,7 @@ const Evaluacion = () => {
       if (unsubscribeEvaluacion) unsubscribeEvaluacion();
       if (unsubscribePreguntas) unsubscribePreguntas();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.id]);
 
   // Sincronizar estado local al recibir las preguntas de Firestore

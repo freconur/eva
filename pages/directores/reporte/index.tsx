@@ -717,6 +717,7 @@ const EvaluacionReportCard = ({ evaluacion, onRemove, onDataLoaded }: Evaluacion
       }
     };
     loadResults();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluacion, currentUserData?.dni]);
 
   useEffect(() => {
@@ -726,6 +727,7 @@ const EvaluacionReportCard = ({ evaluacion, onRemove, onDataLoaded }: Evaluacion
         promedioPorDocente
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasLoaded, promedioPorDocente, onDataLoaded, evaluacion.id]);
 
   return (
@@ -845,6 +847,7 @@ const ReporteGlobalDirectores = () => {
     };
     checkGlobalSentinelAndLoadList();
     if (currentUserData?.dni) getDocentesDeDirectores(currentUserData.dni);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData?.dni]);
 
   // 1. Leer los query parameters de la URL al cargar la página (URL -> State)
@@ -876,6 +879,7 @@ const ReporteGlobalDirectores = () => {
     }
 
     setIsUrlInitialized(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.isReady, evaluaciones, isUrlInitialized]);
 
   // 2. Sincronizar cambios de filtros y selección hacia la URL (State -> URL)
@@ -903,6 +907,7 @@ const ReporteGlobalDirectores = () => {
       undefined,
       { shallow: true }
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, selectedMonth, selectedLevel, searchTerm, selectedEvals, gridColumns, isUrlInitialized]);
 
   // Lógica de Filtros en Cascada
@@ -933,10 +938,12 @@ const ReporteGlobalDirectores = () => {
   // Resets de filtros condicionados
   useEffect(() => {
     if (selectedMonth && !availableFilters.months.includes(selectedMonth)) setSelectedMonth('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, availableFilters.months]);
 
   useEffect(() => {
     if (selectedLevel && !availableFilters.levels.includes(selectedLevel)) setSelectedLevel('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth, availableFilters.levels]);
 
   const filteredEvaluaciones = useMemo(() => {

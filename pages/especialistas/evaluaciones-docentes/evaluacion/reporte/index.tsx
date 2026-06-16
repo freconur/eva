@@ -121,11 +121,13 @@ const Reportes = () => {
     getDataEvaluacion(`${route.query.idEvaluacion}`);
     reporteEspecialistaDeDocente(`${route.query.idEvaluacion}`,currentMonth);
     getPreguntasRespuestasDocentes(`${route.query.idEvaluacion}`)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.idEvaluacion, currentUserData.dni])
 
  
 useEffect(() => {
   reporteEspecialistaDeDocente(`${route.query.idEvaluacion}`, selectedMonth)
+// eslint-disable-next-line react-hooks/exhaustive-deps
 },[selectedMonth])
   const getBackgroundColor = (value: number) => {
     switch (value) {

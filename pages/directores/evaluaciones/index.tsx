@@ -49,6 +49,7 @@ const Evaluaciones = () => {
     }
 
     setIsUrlInitialized(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.isReady, evaluaciones, isUrlInitialized])
 
   // 2. Sincronizar cambios de filtros hacia la URL (State -> URL)
@@ -69,6 +70,7 @@ const Evaluaciones = () => {
       undefined,
       { shallow: true }
     )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, selectedMonth, selectedGrado, isUrlInitialized])
 
   useEffect(() => {
@@ -98,6 +100,7 @@ const Evaluaciones = () => {
     };
 
     checkGlobalSentinelAndLoadList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Extraer los años disponibles dinámicamente de las evaluaciones cargadas

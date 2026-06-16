@@ -115,6 +115,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
     } else {
       setInternalPage(1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentItemsPerPage]);
 
   // Función para validar respuestas usando la definición global como fuente de verdad
@@ -218,6 +219,7 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
       }, 300); // Duración de la transición CSS
       return () => clearTimeout(hideTimer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePopover]);
 
   // Funciones para el popover estático
@@ -389,6 +391,12 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
                               <Link
                                 href={`${linkToEdit}&idEstudiante=${estudiante.dni}`}
                                 className={styles.studentLink}
+                                onClick={(e) => {
+                                  if (onEditEstudiante && estudiante.dni) {
+                                    e.preventDefault();
+                                    onEditEstudiante(estudiante.dni);
+                                  }
+                                }}
                               >
                                 {estudiante.nombresApellidos || 'Sin nombre'}
                               </Link>

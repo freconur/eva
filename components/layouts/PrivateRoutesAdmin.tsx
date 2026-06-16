@@ -24,6 +24,7 @@ const PrivateRoute = ({ children }: Props) => {
         router.push('/login');
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -31,6 +32,7 @@ const PrivateRoute = ({ children }: Props) => {
     if (!currentUserData) {
           router.push('/login')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni]);
   return (
     <>{children}</>

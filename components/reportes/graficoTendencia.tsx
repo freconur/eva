@@ -45,6 +45,7 @@ const GraficoTendencia = ({ rangoMesAplicado, idEvaluacion, monthSelected, yearS
     if (rangoMesAplicado && rangoMesAplicado.length > 0) {
       getDataParaGraficoTendencia(rangoMesAplicado, idEvaluacion, evaluacion as any, yearSelected)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rangoMesAplicado, idEvaluacion, evaluacion])
 
   // Función para determinar el nivel según el puntaje promedio

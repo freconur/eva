@@ -44,6 +44,73 @@ export const useReporteEspecialistas = () => {
     try {
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: true });
 
+      const isRealtime = (evaluacion as any)?.realtimeEnabled === true;
+      const nivelesConfig = evaluacion.nivelYPuntaje || [];
+
+      if (isRealtime) {
+        console.log('⚡ [Firestore] Cargando distribución por niveles en tiempo real desde regiones...');
+        
+        const parseNiveles = (docData: any) => {
+          const result: Record<string, number> = {};
+          // 1. Extraer del mapa anidado 'niveles' (si existe)
+          if (docData.niveles && typeof docData.niveles === 'object') {
+            for (const [key, value] of Object.entries(docData.niveles)) {
+              result[key.toLowerCase().trim()] = typeof value === 'number' ? value : Number(value || 0);
+            }
+          }
+          // 2. Extraer de campos planos con notación de punto (ej. 'niveles.satisfactorio')
+          for (const [key, value] of Object.entries(docData)) {
+            if (key.startsWith('niveles.')) {
+              const levelName = key.substring(8).toLowerCase().trim();
+              result[levelName] = typeof value === 'number' ? value : Number(value || 0);
+            }
+          }
+          return result;
+        };
+
+        let dbNivelesLower: Record<string, number> = {};
+        
+        if (filtroRegion && filtroRegion !== 'all' && filtroRegion !== '') {
+          // Leer la UGEL específica
+          const docRef = doc(db, `evaluaciones/${idEvaluacion}/consolidados_realtime_regiones_${yearSelected}_${mes}/${filtroRegion}`);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const docData = docSnap.data();
+            dbNivelesLower = parseNiveles(docData);
+          }
+        } else {
+          // Leer todas las UGELs y sumar
+          const collRef = collection(db, `evaluaciones/${idEvaluacion}/consolidados_realtime_regiones_${yearSelected}_${mes}`);
+          const snap = await getDocs(collRef);
+          const totalNiveles: Record<string, number> = {};
+          
+          snap.forEach((doc) => {
+            const docData = doc.data();
+            const parsed = parseNiveles(docData);
+            for (const [key, value] of Object.entries(parsed)) {
+              totalNiveles[key] = (totalNiveles[key] || 0) + value;
+            }
+          });
+          
+          dbNivelesLower = totalNiveles;
+        }
+
+        const nivelesData = nivelesConfig.map((nivelData) => {
+          const key = (nivelData.nivel || '').toLowerCase().trim();
+          return {
+            nivel: nivelData.nivel || 'Sin Nombre',
+            cantidadDeEstudiantes: dbNivelesLower[key] || 0
+          };
+        });
+
+        dispatch({
+          type: AppAction.DATA_GRAFICO_PIE_CHART,
+          payload: [{ mes, niveles: nivelesData }],
+        });
+        return;
+      }
+
+      // --- Carga tradicional (No realtime) ---
       const studentsPath = `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`;
       const coll = collection(db, studentsPath);
 
@@ -62,7 +129,6 @@ export const useReporteEspecialistas = () => {
       }
 
       // 2. Ejecutar Consultas de Niveles en Paralelo (Optimization)
-      const nivelesConfig = evaluacion.nivelYPuntaje || [];
       const promesasNiveles = nivelesConfig.map(async (nivelData) => {
         const nivelNombre = nivelData.nivel?.toLowerCase() || '';
         const minPuntaje = nivelData.min || 0;
@@ -122,89 +188,89 @@ export const useReporteEspecialistas = () => {
     yearSelected?: number
   ) => {
     try {
-      console.log('🔍 [DEBUG UGEL] Iniciando carga de comparativa regional...');
-      console.log(`📍 Ruta: /evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`);
-      
       dispatch({ type: AppAction.LOADER_DATA_GRAFICO_UGEL_STACKED, payload: true });
 
-      const studentsPath = `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`;
-      const coll = collection(db, studentsPath);
+      const isRealtime = (evaluacion as any).realtimeEnabled === true;
+      let resultadoFiltrado: any[] = [];
 
-      // Verificación rápida: ¿Hay estudiantes en la ruta?
-      const snapGlobal = await getCountFromServer(coll);
-      const totalEnRuta = snapGlobal.data().count;
-      console.log(`📊 Estudiantes totales en esta ruta (sin filtros): ${totalEnRuta}`);
+      if (isRealtime) {
+        // --- NUEVA LÓGICA: Lee acumulados pre-computados por región ---
+        console.log('🔍 [DEBUG UGEL] Cargando desde consolidados realtime...');
+        const pathData = `evaluaciones/${idEvaluacion}/consolidados_realtime_regiones_${yearSelected}_${mes}`;
+        const collRef = collection(db, pathData);
+        const snap = await getDocs(collRef);
 
-      if (totalEnRuta > 0) {
-        // Verificación de tipo de dato: Tomar una muestra
-        const muestraQuery = query(coll, limit(1));
-        const muestraSnap = await getDocs(muestraQuery);
-        if (!muestraSnap.empty) {
-          const primerDoc = muestraSnap.docs[0].data();
-          console.log('💡 Muestra de datos del primer estudiante:', {
-            dni: primerDoc.dni,
-            region: primerDoc.region,
-            tipoRegion: typeof primerDoc.region,
-            puntaje: primerDoc.puntaje,
-            tipoPuntaje: typeof primerDoc.puntaje
+        const nivelesConfig = evaluacion.nivelYPuntaje || [];
+
+        const resultado = regiones.map((reg) => {
+          const ugelNombre = reg.region;
+          const ugelId = reg.id;
+
+          const regDoc = snap.docs.find(d => Number(d.id) === ugelId);
+          const regData = regDoc?.exists() ? regDoc.data() : null;
+
+          const nivelesData = nivelesConfig.map((nivelData) => {
+            const nivelNombre = nivelData.nivel || 'Sin Nombre';
+            let cantidad = 0;
+            if (regData) {
+              if (regData.niveles && typeof regData.niveles === 'object' && regData.niveles[nivelNombre] !== undefined) {
+                cantidad = regData.niveles[nivelNombre];
+              } else if (regData[`niveles.${nivelNombre}`] !== undefined) {
+                cantidad = regData[`niveles.${nivelNombre}`];
+              }
+            }
+            return { nivel: nivelNombre, cantidadDeEstudiantes: cantidad };
           });
-        }
-      }
 
-      const nivelesConfig = evaluacion.nivelYPuntaje || [];
-
-      const promesasUgels = regiones.map(async (reg) => {
-        const ugelNombre = reg.region;
-        const ugelId = reg.id;
-
-        const promesasNiveles = nivelesConfig.map(async (nivelData) => {
-          const nivelNombre = nivelData.nivel?.toLowerCase() || '';
-          const minPuntaje = nivelData.min || 0;
-          const maxPuntaje = nivelData.max || 1000;
-
-          let q;
-          if (nivelNombre.includes('previo')) {
-            q = query(
-              coll,
-              where('region', '==', ugelId),
-              where('puntaje', '>=', 0),
-              where('puntaje', '<=', maxPuntaje)
-            );
-          } else {
-            q = query(
-              coll,
-              where('region', '==', ugelId),
-              where('puntaje', '>=', minPuntaje),
-              where('puntaje', '<=', maxPuntaje)
-            );
-          }
-
-          const snap = await getCountFromServer(q);
-          return {
-            nivel: nivelData.nivel || 'Sin Nombre',
-            cantidadDeEstudiantes: snap.data().count,
-          };
+          return { ugel: ugelNombre, ugelId: ugelId, niveles: nivelesData };
         });
 
-        const nivelesData = await Promise.all(promesasNiveles);
-        const sumaUgel = nivelesData.reduce((acc, n) => acc + n.cantidadDeEstudiantes, 0);
-        
-        if (sumaUgel > 0) {
-          console.log(`✅ UGEL ${ugelNombre} (ID: ${ugelId}) -> Estudiantes encontrados: ${sumaUgel}`);
+        resultadoFiltrado = resultado.filter((r) =>
+          r.niveles.some((n) => n.cantidadDeEstudiantes > 0)
+        );
+      } else {
+        // --- LÓGICA ANTERIOR: Consulta estudiantes-evaluados filtrando por region y rangos de puntaje ---
+        console.log('🔍 [DEBUG UGEL] Cargando desde estudiantes-evaluados (lógica anterior)...');
+        const studentsPath = `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${yearSelected}/${mes}`;
+        const coll = collection(db, studentsPath);
+
+        const snapGlobal = await getCountFromServer(coll);
+        const totalEnRuta = snapGlobal.data().count;
+        console.log(`📊 Estudiantes totales en esta ruta (sin filtros): ${totalEnRuta}`);
+
+        if (totalEnRuta > 0) {
+          const promesasUgels = regiones.map(async (reg) => {
+            const ugelNombre = reg.region;
+            const ugelId = reg.id;
+
+            const promesasNiveles = (evaluacion.nivelYPuntaje || []).map(async (nivelData) => {
+              const minPuntaje = Number(nivelData.min ?? 0);
+              const maxPuntaje = Number(nivelData.max ?? 0);
+
+              const q = query(
+                coll,
+                where('region', '==', ugelId),
+                where('puntaje', '>=', minPuntaje),
+                where('puntaje', '<=', maxPuntaje)
+              );
+
+              const snap = await getCountFromServer(q);
+              return {
+                nivel: nivelData.nivel || 'Sin Nombre',
+                cantidadDeEstudiantes: snap.data().count,
+              };
+            });
+
+            const nivelesData = await Promise.all(promesasNiveles);
+            return { ugel: ugelNombre, ugelId: ugelId, niveles: nivelesData };
+          });
+
+          const resultado = await Promise.all(promesasUgels);
+          resultadoFiltrado = resultado.filter((r) =>
+            r.niveles.some((n) => n.cantidadDeEstudiantes > 0)
+          );
         }
-
-        return {
-          ugel: ugelNombre,
-          ugelId: ugelId,
-          niveles: nivelesData,
-        };
-      });
-
-      const resultado = await Promise.all(promesasUgels);
-
-      const resultadoFiltrado = resultado.filter((r) =>
-        r.niveles.some((n) => n.cantidadDeEstudiantes > 0)
-      );
+      }
 
       console.log('🏁 Resultado final filtrado para el gráfico:', resultadoFiltrado);
 

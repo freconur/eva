@@ -25,6 +25,7 @@ const AsignarEvaluacionUgelModal: React.FC<AsignarEvaluacionUgelModalProps> = ({
         if (showModal) {
             getEspecialistasUgel()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showModal])
 
     // Inicializar especialistas seleccionados si usuariosConPermisosUgel tiene datos

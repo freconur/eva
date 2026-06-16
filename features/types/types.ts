@@ -270,6 +270,7 @@ export type Evaluaciones = {
   nivel?: number[];
   activarEvidencias?: boolean;
   metaSatisfactorio?: number;
+  realtimeEnabled?: boolean;
 };
 export type Evaluacion = {
   id?: string;
@@ -290,6 +291,7 @@ export type Evaluacion = {
   usuariosConPermisosUgel?: string[];
   activarEvidencias?: boolean;
   metaSatisfactorio?: number;
+  realtimeEnabled?: boolean;
 };
 export type UserEstudiante = {
   id?: string;

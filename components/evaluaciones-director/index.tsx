@@ -18,6 +18,7 @@ const EvaluacionesDirector = () => {
   useEffect(() => {
     //aqui incovaremos la fiuncion que traera las evaluaciones que fuerionb creadfas por el diurector
     getEvaluacionesDirector()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // console.log('evaluacionesDirector', evaluacionesDirector)

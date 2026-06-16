@@ -29,6 +29,7 @@ const Login = () => {
         if (currentUserData.perfil?.rol === 5) router.push('/mi-cuenta')
       }
     })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.perfil?.rol, loaderLogin, warningLogin])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

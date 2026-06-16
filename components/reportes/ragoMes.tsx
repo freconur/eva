@@ -39,6 +39,7 @@ const RangoMes: React.FC<RangoMesProps> = ({ onRangoChange, className = '', setR
     if (setRangoMes) {
       setRangoMes(mesesIds);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Validar y actualizar cuando cambien los valores
@@ -48,6 +49,7 @@ const RangoMes: React.FC<RangoMesProps> = ({ onRangoChange, className = '', setR
     } else {
       setError('');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mesInicio, mesFin]);
 
   const handleMesInicioChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

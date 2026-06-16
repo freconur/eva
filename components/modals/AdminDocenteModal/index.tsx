@@ -61,6 +61,7 @@ const AdminDocenteModal = ({ onClose }: Props) => {
     useEffect(() => {
         console.log('AdminDocenteModal Mounted')
         getRegiones()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {
@@ -72,6 +73,7 @@ const AdminDocenteModal = ({ onClose }: Props) => {
             setDirectorAsignado(false)
             setNivelesDirector([])
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dniDirector])
 
     const searchDirector = async (dni: string) => {
@@ -151,6 +153,7 @@ const AdminDocenteModal = ({ onClose }: Props) => {
         } else {
             setDistritos([])
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [regionSeleccionada])
 
     // Limpiar grados si se desmarcan niveles

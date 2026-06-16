@@ -111,6 +111,7 @@ const Evaluacion = () => {
       if (unsubscribeEvaluacion) unsubscribeEvaluacion();
       if (unsubscribePreguntasFallback) unsubscribePreguntasFallback();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.id])
   // console.log('preguntasRespuestas', preguntasRespuestas)
   console.log('evaluacion', evaluacion)

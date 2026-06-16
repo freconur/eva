@@ -125,12 +125,14 @@ const AgregareEspecialista = () => {
     getUserData()
     getRegiones()
     /* getAllEspecialistas() */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     if (currentUserData && currentUserData.rol) {
       getUsuariosToAdmin(Number(currentUserData.rol))
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData?.rol, currentUserData?.dni])
 
   const handleShowModal = () => {

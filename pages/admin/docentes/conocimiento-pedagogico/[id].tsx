@@ -359,6 +359,7 @@ useEffect(() => {
         unsubscribe()
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]) // Agregamos id como dependencia para que se ejecute cuando esté disponible
 
 // Sincronizar preguntas locales con las del contexto global

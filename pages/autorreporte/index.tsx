@@ -67,6 +67,7 @@ const { idEvaluacion } = router.query
       setDistritosDisponibles([]);
       setDatos(prev => ({ ...prev, distrito: '' }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [datos.region]);
 
   // Actualizar datos cuando tengamos los datos necesarios
@@ -110,6 +111,7 @@ const { idEvaluacion } = router.query
       getEvaluacionEscalaLikert(`${router.query.idEvaluacion}`)
       getPreguntasEvaluacionEscalaLikert(`${router.query.idEvaluacion}`)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni, router.query.idEvaluacion]);
 
   // Efecto separado para autocompletar con datos de escalaLikertByUsuario cuando estén disponibles
@@ -136,6 +138,7 @@ const { idEvaluacion } = router.query
         };
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [escalaLikertByUsuario?.datosDocente]);
 
   const handleInputChange = (field: keyof ConocimientoPedagogico, value: string | string[] | {id?:number,name?:string}) => {
@@ -270,6 +273,7 @@ const { idEvaluacion } = router.query
   };
   useEffect(() => {
     evaluacionEscalaLikertByUsuario(`${idEvaluacion}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[currentUserData.dni, idEvaluacion])
 
 

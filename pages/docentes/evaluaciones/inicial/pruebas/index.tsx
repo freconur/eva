@@ -16,6 +16,7 @@ const Pruebas = () => {
   useEffect(() => {
     getEvaluacionesGradoYCategoria(Number(route.query.grado), Number(route.query.categoria))
     getCategories()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.grado, route.query.categoria])
   
   // Algoritmo super eficiente para ordenar evaluaciones alfabéticamente

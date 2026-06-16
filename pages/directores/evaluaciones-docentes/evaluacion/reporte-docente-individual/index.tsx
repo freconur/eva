@@ -90,6 +90,7 @@ const ReporteDocenteIndividual = () => {
       getDocente(`${route.query.idDocente}`)
       getDataEvaluacionMediacionDirector(`${route.query.idEvaluacion}`)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [`${route.query.idEvaluacion}`, `${route.query.idDocente}`, currentUserData.dni])
 
 

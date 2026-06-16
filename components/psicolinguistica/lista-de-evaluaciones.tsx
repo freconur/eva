@@ -17,6 +17,7 @@ const ListaEvaluaciones = () => {
 
   useEffect(() => {
     getPsicolinguistica()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   return (
     <div className='p-10'>

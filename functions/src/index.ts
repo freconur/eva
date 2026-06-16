@@ -50,6 +50,8 @@ export { getDataReporteEvaluacionPorPreguntas } from './getDataReporteEvaluacion
 export { getDataReporteAgregadoPorRol } from './reportsAggregation';
 export { startFullConsolidation } from './orchestrator';
 export { obtenerMetricasConsumo } from './obtenerMetricasConsumo';
+export { aggregateStudentEvaluationRealtime } from './aggregateStudentEvaluationRealtime';
+export { deleteStudentEvaluationRealtime } from './deleteStudentEvaluationRealtime';
 
 
 

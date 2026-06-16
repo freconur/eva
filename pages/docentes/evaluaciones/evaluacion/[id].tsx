@@ -29,6 +29,7 @@ const Evaluacion = () => {
     if (route.query.id) {
       getPreguntasRespuestas(`${route.query.id}`)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.id])
 
 

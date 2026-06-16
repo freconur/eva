@@ -20,6 +20,7 @@ const EvaluarCurricula = () => {
     getDocente(`${router.query.idDocente}`)
     getEvaluacionCurricular()
     getEvaluacionCurricularAlternativa()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.query.idDocente])
 
   useEffect(() => {
@@ -27,6 +28,7 @@ const EvaluarCurricula = () => {
       getPreguntaAlternativaCurricular(dataDocente)
       //esta funciona retorn el paHabilidad que solo tiene las preguntas de la habilidad lectora y lo pasa por props al componente CoberturaCurricular
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataDocente])
   return (
     <div className='m-auto w-[1000px] p-10'>

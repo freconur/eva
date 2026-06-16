@@ -20,6 +20,7 @@ interface FiltrosReporteProps {
   handleFiltrar?: () => void;
   loading?: boolean;
   soloUgel?: boolean;
+  mostrarDistrito?: boolean;
 }
 
 const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
@@ -30,7 +31,9 @@ const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
   handleFiltrar,
   loading = false,
   soloUgel = false,
+  mostrarDistrito = false,
 }) => {
+  const showDistrito = !soloUgel || mostrarDistrito;
   return (
     <div className={styles.filtersSection}>
       <div className={styles.filtersGrid}>
@@ -51,7 +54,7 @@ const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
           </select>
         </div>
 
-        {!soloUgel && (
+        {showDistrito && (
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>Distrito</label>
             <select

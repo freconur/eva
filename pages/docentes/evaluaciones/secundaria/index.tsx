@@ -35,6 +35,7 @@ const TercerNivel = () => {
 
   useEffect(() => {
     getCategories()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Toggle para expandir/colapsar acordeones

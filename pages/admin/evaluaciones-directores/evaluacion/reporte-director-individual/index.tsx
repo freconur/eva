@@ -41,6 +41,7 @@ const ReporteDocenteIndividual = () => {
   useEffect(() => {
     if (route.query.idEvaluacion && route.query.idDirector)
       buscarDirectorReporteDeEvaluacion(`${route.query.idEvaluacion}`, `${route.query.idDirector}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [`${route.query.idEvaluacion}`, `${route.query.idDirector}`, currentUserData.dni])
   // console.log('idDirector', route.query.idDirector)
   // console.log('route.query.idEvaluacion', route.query.idEvaluacion)

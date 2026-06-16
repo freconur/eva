@@ -13,6 +13,7 @@ import logo from '@/assets/cl-logo.png'
 import styles from './layout.module.css'
 import ModalTipoGestion from '@/modals/ModalTipoGestion'
 import ModalConfigurarSeguridad from '@/modals/ModalConfigurarSeguridad'
+import ModalConfigurarDistrito from '@/modals/ModalConfigurarDistrito'
 
 interface Props {
   children: JSX.Element | JSX.Element[]
@@ -29,6 +30,7 @@ const LayoutMenu = ({ children }: Props) => {
 
   useEffect(() => {
     getUserData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni])
 
   useEffect(() => {
@@ -47,6 +49,7 @@ const LayoutMenu = ({ children }: Props) => {
         setIsAuditing(false)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni])
 
   const handleExitAudit = () => {
@@ -148,6 +151,20 @@ const LayoutMenu = ({ children }: Props) => {
     return (
       <div className="min-h-screen w-screen bg-slate-950 flex items-center justify-center">
         <ModalConfigurarSeguridad />
+      </div>
+    )
+  }
+
+  const needsDistrictSetup = !isAuditing &&
+    currentUserData.perfil?.rol !== undefined &&
+    currentUserData.perfil?.rol === 3 &&
+    router.pathname !== '/login' &&
+    (!currentUserData.distrito || currentUserData.distrito.trim() === '');
+
+  if (needsDistrictSetup) {
+    return (
+      <div className="min-h-screen w-screen bg-slate-950 flex items-center justify-center">
+        <ModalConfigurarDistrito />
       </div>
     )
   }

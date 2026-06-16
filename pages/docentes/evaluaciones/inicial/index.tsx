@@ -14,6 +14,7 @@ const Inicial = () => {
 
   useEffect(() => {
     getCategories()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Datos de las evaluaciones disponibles para estándar 1 (3 años)

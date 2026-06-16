@@ -295,6 +295,7 @@ const ReporteAutorreporte = () => {
       getEvaluacionEscalaLikert(`${id}`)
       getPreguntasEvaluacionEscalaLikert(`${id}`)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   // Efecto para obtener datos cuando cambian los filtros o la configuración de la evaluación
@@ -302,6 +303,7 @@ const ReporteAutorreporte = () => {
     if (id) {
       getEvaluacionesEscalaLikert(`${id}`, evaluacionEscalaLikert, selectedMonth, selectedYear)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, selectedMonth, selectedYear, evaluacionEscalaLikert])
 
   const handleCalculoPuntaje = () => {
@@ -313,7 +315,7 @@ const ReporteAutorreporte = () => {
   let rta: any = []
   useEffect(() => {
     getDataParaGraficoPie(evaluacionEscalaLikert, selectedMonth, selectedYear, selectedRegion)
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluacionEscalaLikert, selectedMonth, selectedYear, selectedRegion])
 
   const pieData = useMemo(() => {

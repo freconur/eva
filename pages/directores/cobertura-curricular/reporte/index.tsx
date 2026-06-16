@@ -139,15 +139,18 @@ const ReporteCurricular = () => {
     if (idCurricular && currentUserData.dni && nivel) {
       reporteCD(String(idCurricular), String(currentUserData.dni), String(nivel), filter)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nivel, idCurricular, currentUserData.dni])
 
   useEffect(() => {
     if (nivel && filter.grado !== "" || filter.seccion !== "" || filter.genero !== "") {
       handleFilter()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nivel])
   useEffect(() => {
 		getInstrumentos()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
 	},[])
   console.log('curricularDirectorDataFilter', curricularDirectorDataFilter)
   return (

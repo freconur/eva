@@ -62,6 +62,7 @@ const Evaluacion = () => {
     if (route.query.idExamen) {
       getPreguntasRespuestas(`${route.query.idExamen}`);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.idExamen]);
 
   return (

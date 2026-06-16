@@ -71,6 +71,7 @@ const AgregarDirectores = () => {
   useEffect(() => {
     getUserData()
     getRegiones()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Lógica de Debouncing para la búsqueda en Firestore
@@ -102,6 +103,7 @@ const AgregarDirectores = () => {
       }
     }
     loadData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni, regionId, debouncedSearch === '', currentUserData.rol])
 
   // Efecto para búsqueda remota (Solo cuando NO hay región Y NO es rol 1)
@@ -115,6 +117,7 @@ const AgregarDirectores = () => {
       }
     }
     remoteSearch()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, regionId, currentUserData.rol])
 
   const docentesParaMostrar = useMemo(() => {
@@ -140,6 +143,7 @@ const AgregarDirectores = () => {
       setTotalGlobal(global)
     }
     fetchCounts()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -155,6 +159,7 @@ const AgregarDirectores = () => {
       }
     }
     fetchRegionCount()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionId, currentUserData.rol, currentUserData.region, totalGlobal])
 
   const handleShowModalDelete = () => {

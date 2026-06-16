@@ -34,6 +34,7 @@ const DocentesUsuariosPage = () => {
         }, 500) // Un poco más rápido para mejorar la sensación de "tiempo real"
 
         return () => clearTimeout(delayDebounceFn)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchTerm])
 
     const searchDocente = async (dni: string) => {

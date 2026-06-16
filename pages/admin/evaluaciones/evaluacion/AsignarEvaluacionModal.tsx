@@ -25,6 +25,7 @@ const AsignarEvaluacionModal: React.FC<AsignarEvaluacionModalProps> = ({
     if (showModal) {
       getEspecialistasRegionales()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showModal])
 
   // Inicializar especialistas seleccionados si usuariosConPermisos tiene datos

@@ -116,6 +116,7 @@ const Reportes = () => {
         }
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluacion.id, monthSelected, sectionSelected]);
 
   // Obtener secciones únicas disponibles en la data
@@ -139,6 +140,7 @@ const Reportes = () => {
       if (route.query.nivel) setLevelSelected(route.query.nivel as string);
       if (route.query.seccion) setSectionSelected(route.query.seccion as string);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query, route.isReady]);
 
   // Cerrar dropdown al hacer click fuera
@@ -239,8 +241,8 @@ const Reportes = () => {
     const currentOrder = Number(route.query.order) || order;
     if (currentOrder !== 0) {
       filtered = [...filtered].sort((a, b) => {
-        const valA = Number(a.respuestasCorrectas) || 0;
-        const valB = Number(b.respuestasCorrectas) || 0;
+        const valA = Number(a.puntaje) || 0;
+        const valB = Number(b.puntaje) || 0;
         if (currentOrder === 1) return valA - valB; // Ascendente
         if (currentOrder === 2) return valB - valA; // Descendente
         return 0;
@@ -332,6 +334,7 @@ const Reportes = () => {
 
       return orderA - orderB;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataEstadisticas, preguntasMap]);
 
   // Crear array de objetos con toda la información necesaria para el reporte
@@ -352,6 +355,7 @@ const Reportes = () => {
         graficoImagen: '', // Se llenará después de renderizar el gráfico
       };
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataEstadisticasOrdenadas, preguntasMap]);
 
   // Hook para generar PDF con imágenes
@@ -423,12 +427,14 @@ const Reportes = () => {
       getPreguntasRespuestas(idExamen);
       getEvaluacion(`${idExamen}`);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.idExamen, currentUserData.dni]);
 
   useEffect(() => {
     if (evaluacion.añoDelExamen && !yearSelected) {
       setYearSelected(evaluacion.añoDelExamen);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluacion.añoDelExamen]);
 
   useEffect(() => {
@@ -442,6 +448,7 @@ const Reportes = () => {
         }
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.idExamen, currentUserData.dni, evaluacion.id, yearSelected, monthSelected, preguntasRespuestas]);
 
   // Mostrar en consola el array completo con las imágenes

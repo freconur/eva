@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { RiCloseLine, RiCheckLine } from 'react-icons/ri';
 import { procesarArchivoExcel, validarArchivoExcel } from '@/features/utils/excelProcessor';
 import { EstudianteImportado, FileUploadState } from '@/features/types/estudiante';
@@ -28,6 +29,13 @@ const ModalImportarEstudiantes: React.FC<ModalImportarEstudiantesProps> = ({
   onReset,
 }) => {
   const {loaderCrearEstudiantes} = useAgregarEvaluaciones()
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   const [fileState, setFileState] = useState<FileUploadState>({
     file: null,
     isLoading: false,
@@ -36,6 +44,7 @@ const ModalImportarEstudiantes: React.FC<ModalImportarEstudiantesProps> = ({
   });
   useEffect(() => {
     getGrades()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[])
 
   // Efecto para manejar el reset desde el componente padre
@@ -43,6 +52,7 @@ const ModalImportarEstudiantes: React.FC<ModalImportarEstudiantesProps> = ({
     if (onReset && onReset()) {
       resetModalState();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onReset]);
   
   const [estudiantesImportados, setEstudiantesImportados] = useState<EstudianteImportado[]>([]);
@@ -153,6 +163,7 @@ const ModalImportarEstudiantes: React.FC<ModalImportarEstudiantesProps> = ({
   useEffect(() => {
     const puedeImportar = validarImportacion(estudiantesImportados, gradoSeleccionado, seccionSeleccionada);
     setCanImport(puedeImportar);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estudiantesImportados, gradoSeleccionado, seccionSeleccionada]);
 
   const handleFileSelect = async (file: File | null) => {
@@ -265,8 +276,7 @@ const ModalImportarEstudiantes: React.FC<ModalImportarEstudiantesProps> = ({
 
   if (!isOpen) return null;
 
-  
-  return (
+  const modalJSX = (
     <div className={styles.modalOverlay} onClick={handleClose}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         {/* Header del modal */}
@@ -426,6 +436,13 @@ const ModalImportarEstudiantes: React.FC<ModalImportarEstudiantesProps> = ({
       </div>
     </div>
   );
+
+  if (mounted) {
+    const portalContainer = document.getElementById('portal-modal') || document.body;
+    return createPortal(modalJSX, portalContainer);
+  }
+
+  return null;
 };
 
 export default ModalImportarEstudiantes;

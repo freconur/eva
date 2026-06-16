@@ -16,6 +16,7 @@ const TercerNivel = () => {
 
   useEffect(() => {
     getCategories()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Filter categories that are active and apply to Primaria (nivel 1)

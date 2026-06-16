@@ -63,6 +63,7 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
             setEditCategoryLevels([])
             setShowEditCategory(false)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectValues.categoria])
 
     const handleCreateCategory = async () => {
@@ -114,6 +115,7 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
         getGrades()
         getCategories()
         getTipoDeEvaluacion()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const getNivelGrado = (grado: number) => {

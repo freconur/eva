@@ -122,6 +122,7 @@ const Reportes = () => {
       reporteDeEspecialistaToDirectore(`${route.query.idEvaluacion}`, currentMonth, currentUserData);
       getPREspecialistaDirector(`${route.query.idEvaluacion}`)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.idEvaluacion, currentUserData.region])
 
   const getBackgroundColor = (value: number) => {
@@ -143,6 +144,7 @@ const Reportes = () => {
     if(route.query.idEvaluacion && currentUserData.region){
       reporteDeEspecialistaToDirectore(`${route.query.idEvaluacion}`, selectedMonth, currentUserData);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[selectedMonth])
   const iterarPregunta = (index: string) => {
     return (

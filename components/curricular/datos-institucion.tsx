@@ -71,6 +71,7 @@ const DatosInstitucion = ({ dataDocente }: Props) => {
 		} else {
 			setStartDate(dayjs());
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [dataDocente.fechaEvaluacion]);
 	const db = getFirestore();
 

@@ -25,6 +25,7 @@ const Evaluaciones = () => {
   const [dataEvaluacion, setDataEvaluacion] = useState(evaluacion)
   useEffect(() => {
     getEvaluaciones()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData?.dni])
 
   const currentYear = new Date().getFullYear()

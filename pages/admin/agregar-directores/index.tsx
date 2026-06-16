@@ -24,6 +24,7 @@ const AgregarDirectores = () => {
     getUserData()
     getRegiones()
     getUsersDirectores()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni])
   const handleAgregarDirector = handleSubmit(data => {
     console.log("data", data)

@@ -24,6 +24,7 @@ const PrivateRouteEspecialista = ({ children }: Props) => {
         router.push('/login');
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -39,6 +40,7 @@ const PrivateRouteEspecialista = ({ children }: Props) => {
         router.push('/login')
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni]);
   return (
     <>{children}</>

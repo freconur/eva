@@ -238,6 +238,7 @@ const Reporte = () => {
     if (currentUserData?.dni && currentUserData?.rol === 2) {
       getDocentesDeDirectores(currentUserData.dni);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData?.dni, currentUserData?.rol]);
 
   const docentesMap = useMemo(() => {
@@ -298,6 +299,7 @@ const Reporte = () => {
         const percB = b.cantidad > 0 ? (b.distribucion.satisfactorio / b.cantidad) : 0;
         return percB - percA;
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estudiantes, availableSections]);
 
 
@@ -434,6 +436,7 @@ const Reporte = () => {
         graficoImagen: '', // Se llenará después de renderizar el gráfico
       };
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reporteDirectorOrdenado, preguntasMap]);
   const {
     graficosImagenes,
@@ -459,6 +462,7 @@ const Reporte = () => {
     //me trae las preguntas y respuestas para los graficos
     getPreguntasRespuestas(`${route.query.idEvaluacion}`);
     getEvaluacion(`${route.query.idEvaluacion}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni, route.query.idEvaluacion]);
 
   // Reconstruir en memoria para compatibilidad del Director
@@ -541,9 +545,11 @@ const Reporte = () => {
         setLoadingMonth(false);
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.idEvaluacion, currentUserData.dni, yearSelected, monthSelected, evaluacion.id, obtenerCoberturaDirector, reporteDirectorEstudiantes]);
   useEffect(() => {
     getGrados();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   useEffect(() => {
     const trendKey = `${evaluacion.id}-${yearSelected}`;
@@ -556,6 +562,7 @@ const Reporte = () => {
       setGlobalTrendParams(trendKey);
       getAllEvaluacionesDeEstudiantesPorMes(evaluacion, yearSelected);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluacion.id, yearSelected, getAllEvaluacionesDeEstudiantesPorMes]);
 
   // Asegurar que el mes seleccionado sea válido para el nuevo año (COMENTADO TEMPORALMENTE PARA EVITAR SALTOS)

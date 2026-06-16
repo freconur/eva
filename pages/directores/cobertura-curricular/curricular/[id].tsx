@@ -37,10 +37,12 @@ const EvaluacionCurricularId = () => {
     if (valueDni.toString().length === 8) {
       buscarDocente(`${valueDni}`)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valueDni])
   useEffect(() => {
     getDataEvaluacion(`${router.query.id}`)
     getPreguntasRespuestasDocentes(`${router.query.id}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [`${router.query.id}`])
   return (
     <div>

@@ -22,6 +22,7 @@ const SearchUsuarios = () => {
       getDirectorById(dniUser.dni)
       setDniUser(initialValue)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dniUser.dni])
   console.log(dniUser.dni.length)
   return (

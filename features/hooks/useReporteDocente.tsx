@@ -11,7 +11,8 @@ import {
 } from '../types/types';
 import { AppAction } from '../actions/appAction';
 import { currentMonth, currentYear, getAllMonths } from '@/fuctions/dates';
-import { app } from '@/firebase/firebase.config';
+import { app, functions } from '@/firebase/firebase.config';
+import { httpsCallable } from 'firebase/functions';
 import {
   doc,
   getDoc,
@@ -444,11 +445,6 @@ export const useReporteDocente = () => {
       `/usuarios/${dni}/${idExamen}/${año}/${month}`,
       `${idEstudiante}`
     );
-    const docRefEstudianteEvaluado = doc(
-      db,
-      `/evaluaciones/${idExamen}/estudiantes-evaluados/${año}/${month}`,
-      `${idEstudiante}`
-    );
     if (evaluacion.tipoDeEvaluacion === '1') {
       if (data.respuestas && Array.isArray(data.respuestas)) {
         try {
@@ -479,9 +475,17 @@ export const useReporteDocente = () => {
             },
             { merge: true }
           );
-          await setDoc(docRefEstudianteEvaluado, estudianteUpdate, { merge: true });
+          
+          const callAggregate = httpsCallable(functions, 'aggregateStudentEvaluationRealtime');
+          await callAggregate({
+            idEvaluacion: idExamen,
+            año,
+            mes: month,
+            dniEstudiante: idEstudiante,
+            newData: estudianteUpdate
+          });
         } catch (error) {
-
+          console.error('Error al actualizar evaluación en tiempo real:', error);
         }
       }
     } else if (evaluacion.tipoDeEvaluacion === '0') {
@@ -489,11 +493,23 @@ export const useReporteDocente = () => {
         const dataEstudiante = calculoPreguntasCorrectas(data);
         const dataEstudianteUpdate = {
           ...dataEstudiante,
-          respuestas: dataEstudiante.respuestas ? convertirRespuestasAMapa(dataEstudiante.respuestas) : undefined
+          respuestas: dataEstudiante.respuestas ? convertirRespuestasAMapa(dataEstudiante.respuestas) : undefined,
+          region: currentUserData.region,
+          dniDocente: currentUserData.dni,
+          dniDirector: currentUserData?.dniDirector || '',
         };
-        await updateDoc(docRef, dataEstudianteUpdate);
-      } catch (error) {
+        await setDoc(docRef, dataEstudianteUpdate, { merge: true });
 
+        const callAggregate = httpsCallable(functions, 'aggregateStudentEvaluationRealtime');
+        await callAggregate({
+          idEvaluacion: idExamen,
+          año,
+          mes: month,
+          dniEstudiante: idEstudiante,
+          newData: dataEstudianteUpdate
+        });
+      } catch (error) {
+        console.error('Error al actualizar evaluación diagnóstica en tiempo real:', error);
       }
     }
   };

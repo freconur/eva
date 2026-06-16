@@ -31,6 +31,7 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
     if (rangoMes && rangoMes.length > 0 && rangoMesAplicado.length === 0) {
       setRangoMesAplicado(rangoMes);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rangoMes]);
 
   const handleAplicarRango = (mesInicio: number, mesFin: number, año: number, mesesIds: number[]) => {

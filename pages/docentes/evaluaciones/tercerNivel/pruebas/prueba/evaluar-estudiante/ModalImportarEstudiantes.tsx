@@ -34,6 +34,7 @@ const ModalImportarEstudiantes: React.FC<ModalImportarEstudiantesProps> = ({
   });
   useEffect(() => {
     getGrades()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[])
 
   // Efecto para manejar el reset desde el componente padre
@@ -41,6 +42,7 @@ const ModalImportarEstudiantes: React.FC<ModalImportarEstudiantesProps> = ({
     if (onReset && onReset()) {
       resetModalState();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onReset]);
   
   const [estudiantesImportados, setEstudiantesImportados] = useState<EstudianteImportado[]>([]);
@@ -151,6 +153,7 @@ const ModalImportarEstudiantes: React.FC<ModalImportarEstudiantesProps> = ({
   useEffect(() => {
     const puedeImportar = validarImportacion(estudiantesImportados, gradoSeleccionado, seccionSeleccionada);
     setCanImport(puedeImportar);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estudiantesImportados, gradoSeleccionado, seccionSeleccionada]);
 
   const handleFileSelect = async (file: File | null) => {

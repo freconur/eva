@@ -28,6 +28,7 @@ const EvaluacionesDesempeñoDocentes = () => {
 
   useEffect(() => {
     getEvaluacionesDocentes()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

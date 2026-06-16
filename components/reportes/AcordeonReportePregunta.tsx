@@ -26,6 +26,7 @@ interface AcordeonReportePreguntaProps {
   questionColumns: number;
   setQuestionColumns: (val: number) => void;
   globalStyles?: any;
+  mostrarDistrito?: boolean;
 }
 
 import { MdViewStream, MdGridView, MdViewModule } from 'react-icons/md';
@@ -46,7 +47,8 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
   loadingReportePreguntas,
   questionColumns,
   setQuestionColumns,
-  globalStyles = {}
+  globalStyles = {},
+  mostrarDistrito = false
 }) => {
   const [mostrarReporte, setMostrarReporte] = useState(false);
 
@@ -118,6 +120,7 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
             loading={loading}
             columns={questionColumns}
             globalStyles={globalStyles}
+            mostrarDistrito={mostrarDistrito}
           />
         </div>
       </div>

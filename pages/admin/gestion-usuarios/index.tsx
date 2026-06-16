@@ -100,10 +100,12 @@ const GestionUsuariosPage = () => {
     if (activeTab === 'consumo') {
       fetchMetrics()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab])
 
   useEffect(() => {
     getUserData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -132,6 +134,7 @@ const GestionUsuariosPage = () => {
     })
 
     return () => unsubscribe()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -151,6 +154,7 @@ const GestionUsuariosPage = () => {
     }, 500)
 
     return () => clearTimeout(delayDebounceFn)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm])
 
   const searchUsers = async (queryText: string) => {

@@ -173,6 +173,7 @@ const Reportes = () => {
     reporteEvaluacionDocentesTest(`${route.query.idEvaluacion}`,monthSelected)
     /* reporteEvaluacionDocentes(`${route.query.idEvaluacion}`); */
     getPreguntasRespuestasDocentes(`${route.query.idEvaluacion}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.idEvaluacion, currentUserData.dni])
 
   useEffect(() => {
@@ -201,9 +202,10 @@ const Reportes = () => {
 const handleMonthSelected = (e: React.ChangeEvent<HTMLSelectElement>) => {
   setMonthSelected(Number(e.target.value))
 }
-useEffect(() => {
-  reporteEvaluacionDocentesTest(`${route.query.idEvaluacion}`,monthSelected)
-},[monthSelected])
+  useEffect(() => {
+    reporteEvaluacionDocentesTest(`${route.query.idEvaluacion}`,monthSelected)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[monthSelected])
   return (
     <>
       {

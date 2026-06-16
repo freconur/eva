@@ -60,6 +60,7 @@ const BarChartDocenteDetalle = ({ data = [], selectedRange, metaSatisfactorio = 
     // Sincronizar con el valor global cuando cambie
     useEffect(() => {
         setThreshold(metaSatisfactorio);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [metaSatisfactorio]);
 
     const sortedData = useMemo(() => {
@@ -72,6 +73,7 @@ const BarChartDocenteDetalle = ({ data = [], selectedRange, metaSatisfactorio = 
     // Resetear a la página 0 si cambia el rango o la data filtrada
     useEffect(() => {
         setCurrentPage(0);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedRange, data.length, sortedData.length]);
 
     const paginatedData = useMemo(() => {
