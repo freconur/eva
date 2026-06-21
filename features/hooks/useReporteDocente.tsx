@@ -25,6 +25,8 @@ import {
   count,
   setDoc,
   writeBatch,
+  query,
+  where,
 } from 'firebase/firestore';
 import { puntajePreguntasMatemticaProgresiva } from '@/fuctions/correccionPuntaje';
 import {
@@ -110,9 +112,10 @@ export const useReporteDocente = () => {
       try {
         const pathRef = collection(
           db,
-          `/usuarios/${usuario}/${evaluacion.id}/${año}/${mes.id}`
+          `/evaluaciones/${evaluacion.id}/estudiantes-evaluados/${año}/${mes.id}`
         );
-        const snapshot = await getAggregateFromServer(pathRef, {
+        const q = query(pathRef, where('dniDocente', '==', usuario));
+        const snapshot = await getAggregateFromServer(q, {
           total: count(),
         });
 
@@ -132,11 +135,12 @@ export const useReporteDocente = () => {
     mesesConData.forEach((mes) => {
       const pathRef = collection(
         db,
-        `/usuarios/${currentUserData.dni}/${evaluacion.id}/${año}/${mes}`
+        `/evaluaciones/${evaluacion.id}/estudiantes-evaluados/${año}/${mes}`
       );
+      const q = query(pathRef, where('dniDocente', '==', currentUserData.dni));
 
       const unsubscribe = onSnapshot(
-        pathRef,
+        q,
         (snapshot) => {
           const estudiantesDelMes: Estudiante[] = [];
 
@@ -200,11 +204,9 @@ export const useReporteDocente = () => {
   ) => {
     setLoaderCorreccionPuntajes(true);
     const año = yearSelected || evaluacion.añoDelExamen || currentYear.toString();
-    const pathRef = `/usuarios/${dniDocente}/${evaluacion.id}/${año}/${month}`;
-    const estudiantesDelDocente: Estudiante[] = [];
-
     const pathParaEvaluacionGLobal = `/evaluaciones/${evaluacion.id}/estudiantes-evaluados/${año}/${month}`
-    const querySnapshot = await getDocs(collection(db, pathRef));
+    const estudiantesDelDocente: Estudiante[] = [];
+    const querySnapshot = await getDocs(query(collection(db, pathParaEvaluacionGLobal), where('dniDocente', '==', dniDocente)));
     querySnapshot.forEach((doc) => {
       estudiantesDelDocente.push(doc.data() as Estudiante);
     });
@@ -239,9 +241,7 @@ export const useReporteDocente = () => {
         const batch = writeBatch(db);
 
         chunk.forEach(({ estudiante, data }) => {
-          const docRef = doc(db, pathRef, `${estudiante.dni}`);
           const docRefParaEvaluacionGlobal = doc(db, pathParaEvaluacionGLobal, `${estudiante.dni}`);
-          batch.set(docRef, data);
           batch.set(docRefParaEvaluacionGlobal, data);
         });
 
@@ -269,9 +269,9 @@ export const useReporteDocente = () => {
     dispatch({ type: AppAction.LOADER_DATA_GRAFICO_PIE_CHART, payload: true });
     dispatch({ type: AppAction.WARNING_EVA_ESTUDIANTE_SIN_REGISTRO, payload: null });
     const año = yearSelected || evaluacion.añoDelExamen || currentYear.toString();
-    const queryEstudiantes = collection(
-      db,
-      `/usuarios/${currentUserData.dni}/${evaluacion.id}/${año}/${month}`
+    const queryEstudiantes = query(
+      collection(db, `/evaluaciones/${evaluacion.id}/estudiantes-evaluados/${año}/${month}`),
+      where('dniDocente', '==', currentUserData.dni)
     );
 
     const unsubscribe = onSnapshot(
@@ -440,11 +440,6 @@ export const useReporteDocente = () => {
     yearSelected?: string
   ) => {
     const año = yearSelected || evaluacion.añoDelExamen || currentYear.toString();
-    const docRef = doc(
-      db,
-      `/usuarios/${dni}/${idExamen}/${año}/${month}`,
-      `${idEstudiante}`
-    );
     if (evaluacion.tipoDeEvaluacion === '1') {
       if (data.respuestas && Array.isArray(data.respuestas)) {
         try {
@@ -463,18 +458,6 @@ export const useReporteDocente = () => {
             nivel: estudiante.nivel,
             nivelData: estudiante.nivelData,
           };
-          await setDoc(
-            docRef,
-            {
-              respuestas: estudianteUpdate.respuestas,
-              region: currentUserData.region,
-              puntaje: estudianteUpdate.puntaje,
-              dniDocente: currentUserData.dni,
-              nivel: estudianteUpdate.nivel,
-              nivelData: estudianteUpdate.nivelData,
-            },
-            { merge: true }
-          );
           
           const callAggregate = httpsCallable(functions, 'aggregateStudentEvaluationRealtime');
           await callAggregate({
@@ -498,7 +481,6 @@ export const useReporteDocente = () => {
           dniDocente: currentUserData.dni,
           dniDirector: currentUserData?.dniDirector || '',
         };
-        await setDoc(docRef, dataEstudianteUpdate, { merge: true });
 
         const callAggregate = httpsCallable(functions, 'aggregateStudentEvaluationRealtime');
         await callAggregate({
@@ -525,7 +507,7 @@ export const useReporteDocente = () => {
       const año = yearSelected || currentYear.toString();
       const queryEvaluacion = doc(
         db,
-        `/usuarios/${dni}/${idExamen}/${año}/${mes}`,
+        `/evaluaciones/${idExamen}/estudiantes-evaluados/${año}/${mes}`,
         `${idEstudiante}`
       );
       const evaluacion = await getDoc(queryEvaluacion);

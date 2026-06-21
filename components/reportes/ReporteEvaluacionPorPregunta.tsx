@@ -64,6 +64,27 @@ interface ReporteEvaluacionPorPreguntaProps {
     return alternativa?.descripcion || '';
   };
 
+  // Función para obtener la alternativa correcta (A, B, C, D) en vez de su descripción
+  const getCorrectAlternativeKey = (preguntaId: string, correctValue: string): string => {
+    if (!correctValue) return '';
+    const pregunta = preguntasMap.get(preguntaId);
+    if (!pregunta?.alternativas) return correctValue;
+
+    // 1. Intentar buscar si el valor ya es la clave (e.g. "a", "b", "c")
+    const matchByKey = pregunta.alternativas.find(alt =>
+      alt.alternativa?.toLowerCase() === correctValue.toLowerCase()
+    );
+    if (matchByKey) return matchByKey.alternativa || correctValue;
+
+    // 2. Intentar buscar por descripción (e.g. "adecuada") para devolver la clave (e.g. "a")
+    const matchByDesc = pregunta.alternativas.find(alt =>
+      alt.descripcion?.toLowerCase() === correctValue.toLowerCase()
+    );
+    if (matchByDesc) return matchByDesc.alternativa || correctValue;
+
+    return correctValue;
+  };
+
   return (
     <div className={styles.reportContainer}>
       <FiltrosReporte
@@ -93,7 +114,7 @@ interface ReporteEvaluacionPorPreguntaProps {
             ?.filter((dat: DataEstadisticas) => preguntasMap.has(dat.id || ''))
             .map((dat: DataEstadisticas, index: number) => {
               const id = dat.id || '';
-              const correctKey = obtenerRespuestaPorId(id);
+              const correctKey = getCorrectAlternativeKey(id, obtenerRespuestaPorId(id));
 
               return (
                 <div key={index} className={`${styles.questionContainer} ${columns === 1 ? globalStyles.gridItemFull : columns === 2 ? globalStyles.gridItemHalf : globalStyles.gridItemThird}`}>

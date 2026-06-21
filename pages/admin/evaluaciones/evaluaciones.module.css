@@ -217,11 +217,11 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
-  background: white;
+  /* background: white; */
   padding: 12px 24px;
-  border-radius: 12px;
+  /* border-radius: 12px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); */
 }
 
 .filterLabel {
@@ -573,7 +573,7 @@
   font-family: 'Inter', sans-serif;
 }
 
-.tableCell:first-child {
+.tableCellId {
   text-align: center;
   font-weight: 600;
   color: var(--color-tercero);
@@ -596,64 +596,22 @@
 }
 
 .actionIcon {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  padding: 0.4rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0.5rem;
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin: 0 0.2rem;
-  background: transparent;
-  border: 1px solid transparent;
-  color: #64748b;
+  margin: 0 0.25rem;
   width: 2.2rem;
   height: 2.2rem;
+  border: 1px solid transparent;
 }
 
 .actionIcon:hover {
-  background: white;
-  border-color: #e2e8f0;
-  color: #334155;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-/* Asegurar que los iconos tengan el color correcto */
-.actionIcon[class*="editIcon"] {
-  color: #f59e0b !important;
-}
-
-.actionIcon[class*="deleteIcon"] {
-  color: #ef4444 !important;
-}
-
-.actionIcon[class*="activeIcon"] {
-  color: #10b981 !important;
-}
-
-.actionIcon[class*="inactiveIcon"] {
-  color: #6b7280 !important;
-}
-
-/* Estilos minimalistas para los iconos */
-.actionIcon {
-  border: none !important;
-  background: transparent !important;
-}
-
-.actionIcon:hover {
-  background: rgba(0, 0, 0, 0.04) !important;
-  transform: translateY(-1px);
-}
-
-.inactiveIcon {
-  color: #6b7280 !important;
-}
-
-.inactiveIcon:hover {
-  background: rgba(107, 114, 128, 0.08) !important;
-  transform: translateY(-1px);
+  transform: translateY(-1.5px);
 }
 
 .sinAccesoIcon {
@@ -664,72 +622,100 @@
 .actionsContainer {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   justify-content: flex-start;
-  padding: 0.5rem;
-  min-height: 3rem;
-  align-items: center;
+  padding: 0.25rem;
+  min-height: 2.5rem;
 }
 
 .editIcon {
   color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.06) !important;
+  border: 1px solid rgba(245, 158, 11, 0.12) !important;
 }
 
 .editIcon:hover {
-  background: rgba(245, 158, 11, 0.08) !important;
-  transform: translateY(-1px);
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+  color: #d97706 !important;
+  box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.08);
 }
 
 .deleteIcon {
   color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.06) !important;
+  border: 1px solid rgba(239, 68, 68, 0.12) !important;
 }
 
 .deleteIcon:hover {
-  background: rgba(239, 68, 68, 0.08) !important;
-  transform: translateY(-1px);
+  background: rgba(239, 68, 68, 0.14) !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+  color: #dc2626 !important;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.08);
 }
 
 .activeIcon {
   color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.06) !important;
+  border: 1px solid rgba(16, 185, 129, 0.12) !important;
 }
 
 .activeIcon:hover {
-  background: rgba(16, 185, 129, 0.08) !important;
-  transform: translateY(-1px);
+  background: rgba(16, 185, 129, 0.14) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+  color: #059669 !important;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.08);
 }
 
 .inactiveIcon {
   color: #6b7280 !important;
+  background: rgba(107, 114, 128, 0.06) !important;
+  border: 1px solid rgba(107, 114, 128, 0.12) !important;
 }
 
 .inactiveIcon:hover {
-  background: rgba(107, 114, 128, 0.08) !important;
-  transform: translateY(-1px);
+  background: rgba(107, 114, 128, 0.14) !important;
+  border-color: rgba(107, 114, 128, 0.25) !important;
+  color: #4b5563 !important;
+  box-shadow: 0 4px 6px -1px rgba(107, 114, 128, 0.08);
 }
 
-.reportLink {
+.tableCell .reportLink {
   color: #3b82f6;
   font-weight: 600;
   text-decoration: none;
-  background: #eff6ff;
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  padding: 0.35rem 0.8rem;
+  border-radius: 9999px; /* Pill layout */
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.03);
+  margin: 0;
 }
 
-.reportLink:hover {
-  background: #dbeafe;
+.tableCell .reportLink:hover {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.3);
   color: #2563eb;
-  transform: translateY(-1px);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06);
 }
 
 .consolidadoIcon {
   color: #3b82f6 !important;
+  background: rgba(59, 130, 246, 0.06) !important;
+  border: 1px solid rgba(59, 130, 246, 0.12) !important;
 }
 
 .consolidadoIcon:hover {
-  background: rgba(59, 130, 246, 0.08) !important;
-  transform: translateY(-1px);
+  background: rgba(59, 130, 246, 0.14) !important;
+  border-color: rgba(59, 130, 246, 0.25) !important;
+  color: #2563eb !important;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.08);
 }
 
 /* Asegurar que las celdas de acciones tengan el ancho adecuado */
@@ -739,15 +725,15 @@
 }
 
 .monthContainer {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  justify-content: space-between;
-  padding: 0.5rem;
+  justify-content: center;
+  padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   background: rgba(248, 250, 252, 0.5);
   border: 1px solid rgba(226, 232, 240, 0.6);
   transition: all 0.2s ease;
+  width: fit-content;
 }
 
 .monthContainer:hover {
@@ -757,12 +743,13 @@
 }
 
 .monthText {
-  flex: 1;
   color: var(--color-paleta1);
   font-weight: 600;
   font-size: 0.875rem;
   text-transform: capitalize;
+  white-space: nowrap;
 }
+
 
 .editMonthButton {
   background: none;
@@ -792,14 +779,41 @@
 }
 
 .monthEditContainer {
-  display: flex;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 0.75rem;
-  border: 2px solid var(--color-tercero);
-  box-shadow: 0 4px 12px rgba(58, 190, 249, 0.15);
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.15);
+  z-index: 50;
+  width: max-content;
+}
+
+/* Material-UI DatePicker override to make it extremely compact */
+.monthEditContainer :global(.MuiInputBase-root) {
+  height: 30px;
+  font-size: 0.8rem;
+  background: white;
+  width: 105px !important;
+}
+
+.monthEditContainer :global(.MuiInputBase-input) {
+  padding: 4px 6px !important;
+  font-size: 0.8rem;
+}
+
+.monthEditContainer :global(.MuiIconButton-root) {
+  padding: 2px !important;
+}
+
+.monthEditContainer :global(.MuiSvgIcon-root) {
+  font-size: 1.1rem;
 }
 
 .monthSelect {
@@ -830,7 +844,7 @@
 
 .monthEditActions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.35rem;
   align-items: center;
 }
 
@@ -838,23 +852,24 @@
   background: linear-gradient(135deg, var(--color-paleta4), var(--color-paleta6));
   color: white;
   border: none;
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 600;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  min-height: 32px;
-  box-shadow: 0 4px 12px rgba(24, 150, 70, 0.3);
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  box-shadow: 0 4px 10px rgba(24, 150, 70, 0.2);
 }
 
 .saveMonthButton:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 8px 20px rgba(24, 150, 70, 0.4);
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 6px 14px rgba(24, 150, 70, 0.3);
 }
 
 .saveMonthButton:disabled {
@@ -868,23 +883,24 @@
   background: linear-gradient(135deg, #ef4444, #dc2626);
   color: white;
   border: none;
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 600;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  min-height: 32px;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
 }
 
 .cancelMonthButton:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 6px 14px rgba(239, 68, 68, 0.3);
 }
 
 @keyframes spin {
@@ -1062,4 +1078,288 @@
   .successModalContent {
     max-width: 100%;
   }
+}
+
+/* ── Selector de Columnas Visibles ── */
+.columnSelectorContainer {
+  position: relative;
+  display: inline-block;
+  z-index: 100;
+}
+
+.columnSelectorButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background: white;
+  color: #475569;
+  /* Slate 600 */
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.2s ease-in-out;
+  height: 38px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.columnSelectorButton:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.columnSelectorIcon {
+  font-size: 1.1rem;
+  color: #3b82f6;
+  /* Blue icon */
+}
+
+.columnSelectorOverlay {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 999;
+}
+
+.columnSelectorDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+  width: 200px;
+  padding: 1rem;
+  z-index: 1000;
+  animation: colDropdownAppear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes colDropdownAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.columnSelectorTitle {
+  font-size: 0.725rem;
+  font-weight: 700;
+  color: #94a3b8;
+  /* Slate 400 */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.75rem 0;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.5rem;
+}
+
+.columnSelectorOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.columnSelectorOption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #334155;
+  /* Slate 700 */
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+  padding: 0.25rem 0;
+}
+
+.columnSelectorOption:hover {
+  color: #0f172a;
+}
+
+.columnSelectorOption input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  accent-color: #3b82f6;
+  /* Modern blue accent */
+}
+
+/* ── Custom Select Dropdowns (Year & Grado) ── */
+.customSelectContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.customSelectButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  background: white;
+  color: #475569;
+  /* Slate 600 */
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.2s ease-in-out;
+  height: 38px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.customSelectButton:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.customSelectButtonActive {
+  background: white;
+  border-color: #3b82f6;
+  color: #0f172a;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.customSelectChevron {
+  font-size: 1.1rem;
+  color: #64748b;
+  transition: transform 0.2s ease-in-out;
+}
+
+.customSelectChevronRotate {
+  transform: rotate(180deg);
+}
+
+.customSelectOverlay {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 999;
+}
+
+.customSelectDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+  min-width: 150px;
+  padding: 0.5rem;
+  z-index: 1000;
+  max-height: 280px;
+  overflow-y: auto;
+  animation: customSelectDropdownAppear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Custom scrollbar for dropdown */
+.customSelectDropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.customSelectDropdown::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.customSelectDropdown::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.customSelectDropdown::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+@keyframes customSelectDropdownAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.customSelectOption {
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  color: #334155;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.customSelectOption:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.customSelectOptionActive {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+/* Drag & Drop Drag Handle Styles */
+.dragHandle {
+  cursor: grab;
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.dragHandle:hover {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+/* Niveles Column Interactive Container Styles */
+.nivelesContainer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(248, 250, 252, 0.5);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  transition: all 0.2s ease;
+  width: fit-content;
+}
+
+.nivelesContainerClickable {
+  cursor: pointer;
+}
+
+.nivelesContainerClickable:hover {
+  background: rgba(248, 250, 252, 0.8);
+  border-color: var(--color-tercero, #e2e8f0);
+  transform: translateY(-1px);
 }

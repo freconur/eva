@@ -2,7 +2,7 @@
   width: 100%;
   display: flex;
   align-items: center;
-  height: 64px;
+  height: 80px;
   background-color: #ffffff;
   border-bottom: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -15,7 +15,8 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  padding: 0 1.5rem;
+  padding: 1rem 1.5rem;
+
 }
 
 .leftSection {
@@ -32,18 +33,10 @@
 .nivelBadge {
   display: flex;
   align-items: center;
-  background: rgba(56, 189, 248, 0.1);
-  border: 1px solid rgba(56, 189, 248, 0.2);
-  padding: 0.4rem 1rem;
-  border-radius: 20px;
+  background: transparent;
+  border: none;
+  padding: 0;
   gap: 0.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  transition: all 0.2s ease;
-}
-
-.nivelBadge:hover {
-  background: rgba(56, 189, 248, 0.15);
-  transform: translateY(-1px);
 }
 
 .nivelLabel {

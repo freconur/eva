@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, getFirestore, limit, doc, getDoc, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, getDocs, getFirestore, limit, doc, getDoc, onSnapshot, deleteDoc } from 'firebase/firestore'
 import { app } from '@/firebase/firebase.config'
 import { User } from '@/features/types/types'
-import { RiSearchLine, RiLockPasswordLine, RiUserLine, RiEyeLine, RiBarChartLine, RiDatabase2Line, RiRefreshLine } from 'react-icons/ri'
+import { RiSearchLine, RiLockPasswordLine, RiUserLine, RiEyeLine, RiBarChartLine, RiDatabase2Line, RiRefreshLine, RiDeleteBin6Line } from 'react-icons/ri'
 import PrivateRoutesAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import { toast } from 'react-toastify'
 import useUsuario from '@/features/hooks/useUsuario'
@@ -33,6 +33,9 @@ const GestionUsuariosPage = () => {
 
   const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false)
   const [resettingBulk, setResettingBulk] = useState(false)
+
+  const [selectedRequestToDelete, setSelectedRequestToDelete] = useState<any | null>(null)
+  const [deletingRequest, setDeletingRequest] = useState<boolean>(false)
 
   // Estados para métricas de consumo
   const [metricsData, setMetricsData] = useState<any>(null)
@@ -246,9 +249,24 @@ const GestionUsuariosPage = () => {
     }
   }
 
+  const handleDeleteRequest = async () => {
+    if (!selectedRequestToDelete) return
+    setDeletingRequest(true)
+    try {
+      await deleteDoc(doc(db, 'solicitudes_reseteo', selectedRequestToDelete.id))
+      toast.success("Solicitud de soporte eliminada exitosamente")
+      setSelectedRequestToDelete(null)
+    } catch (error: any) {
+      console.error("Error al eliminar solicitud:", error)
+      toast.error(error.message || "Error al eliminar la solicitud")
+    } finally {
+      setDeletingRequest(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-10">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="w-full space-y-8">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
@@ -322,7 +340,7 @@ const GestionUsuariosPage = () => {
                   <span className="font-medium animate-pulse">Buscando usuarios...</span>
                 </div>
               ) : results.length > 0 ? (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
                   <table className="w-full border-collapse text-left">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-100 text-slate-600 font-semibold text-sm">
@@ -430,7 +448,7 @@ const GestionUsuariosPage = () => {
                 <span className="font-medium animate-pulse">Cargando solicitudes...</span>
               </div>
             ) : requests.length > 0 ? (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
                 <table className="w-full border-collapse text-left">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-100 text-slate-600 font-semibold text-sm">
@@ -492,6 +510,14 @@ const GestionUsuariosPage = () => {
                             >
                               <RiLockPasswordLine className="text-sm" />
                               Restablecer
+                            </button>
+                            <button
+                              onClick={() => setSelectedRequestToDelete(req as any)}
+                              className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 px-4 py-2 rounded-xl text-xs font-bold border border-red-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                              title="Eliminar solicitud"
+                            >
+                              <RiDeleteBin6Line className="text-sm" />
+                              Eliminar
                             </button>
                           </div>
                         </td>
@@ -900,6 +926,51 @@ const GestionUsuariosPage = () => {
                   </>
                 ) : (
                   'Sí, restablecer todos'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Support Request Modal */}
+      {selectedRequestToDelete && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 space-y-4">
+              <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-2xl mx-auto">
+                <RiDeleteBin6Line />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-bold text-slate-800">¿Eliminar solicitud?</h3>
+                <p className="text-slate-500 text-sm">
+                  Esta acción eliminará de forma permanente la solicitud de soporte para restablecer la contraseña del usuario <strong className="text-slate-700">{selectedRequestToDelete.nombres} {selectedRequestToDelete.apellidos}</strong>.
+                </p>
+                <p className="text-xs text-red-600 font-medium bg-red-50/50 p-2.5 rounded-lg border border-red-100">
+                  El usuario no podrá ingresar hasta que se resuelva su contraseña o vuelva a solicitar soporte.
+                </p>
+              </div>
+            </div>
+            <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                onClick={() => setSelectedRequestToDelete(null)}
+                className="px-4 py-2.5 rounded-xl text-slate-500 hover:bg-slate-200/55 text-sm font-semibold transition-colors"
+                disabled={deletingRequest}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteRequest}
+                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-all hover:shadow-lg hover:shadow-red-600/20 active:scale-[0.98] flex items-center gap-2"
+                disabled={deletingRequest}
+              >
+                {deletingRequest ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Eliminando...
+                  </>
+                ) : (
+                  'Sí, eliminar'
                 )}
               </button>
             </div>

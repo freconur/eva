@@ -44,11 +44,10 @@ export const useSeguimeintoEvaluaciones = () => {
 
   }
   const estudiantesDelDocente = async(dni:string,month:string,idEvaluacion:string,usuarioPorDni:User) => {
-      /* /usuarios/01287328/PPnzR009d0GOySiOEiQK/2025/6 */
       console.log(dni,month,idEvaluacion)
-      const pathRef = collection(db, `usuarios/${dni}/${idEvaluacion}/${currentYear}/${month}`)
-      /* const q = query(pathRef, where('dniDirector', '==', dni)) */
-      const resultadoBusquedaUsuario = await getDocs(pathRef)
+      const pathRef = collection(db, `evaluaciones/${idEvaluacion}/estudiantes-evaluados/${currentYear}/${month}`)
+      const q = query(pathRef, where('dniDocente', '==', dni))
+      const resultadoBusquedaUsuario = await getDocs(q)
       const estudiantesDelDocente:UserEstudiante[] = []
       if (resultadoBusquedaUsuario.size > 0) {
         resultadoBusquedaUsuario.docs.forEach((doc) => {

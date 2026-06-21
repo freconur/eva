@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { RiLoader4Line, RiFileExcel2Line, RiDownloadLine } from 'react-icons/ri';
-import { MdVisibility, MdAnalytics, MdClose, MdViewStream, MdGridView, MdViewModule, MdOutlineDashboardCustomize } from 'react-icons/md';
+import { MdVisibility, MdAnalytics, MdClose, MdViewStream, MdGridView, MdViewModule, MdOutlineDashboardCustomize, MdSettings } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import { getAllMonths } from '@/fuctions/dates';
 import { Evaluaciones } from '@/features/types/types';
@@ -56,8 +58,11 @@ const HeaderControlesReporte: React.FC<HeaderControlesReporteProps> = ({
   handleDetenerConsolidado,
   onOpenOrganizer,
 }) => {
+  const router = useRouter();
   const currentMonthId = new Date().getMonth();
   const currentYear = new Date().getFullYear();
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const idEvaluacion = evaluacion?.id || (router.query.idEvaluacion as string);
 
   const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedMonthName = e.target.value;
@@ -175,109 +180,156 @@ const HeaderControlesReporte: React.FC<HeaderControlesReporteProps> = ({
               <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>Organizar</span>
             </button>
           )}
+
+          {/* Botón Atajo a Configurar Evaluación */}
+          {idEvaluacion && (
+            <Link
+              href={`/admin/evaluaciones/evaluacion/${idEvaluacion}`}
+              className={styles.layoutButton}
+              style={{
+                marginLeft: '8px',
+                padding: '0 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                height: '38px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                backgroundColor: 'transparent',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                textDecoration: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f8fafc';
+                e.currentTarget.style.borderColor = '#94a3b8';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.borderColor = '#cbd5e1';
+              }}
+              title="Configurar y gestionar esta evaluación"
+            >
+              <MdSettings style={{ fontSize: '1.1rem', color: '#6366f1' }} />
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>Configurar</span>
+            </Link>
+          )}
         </div>
 
         <div className={styles.exportGroup}>
-          <button
-            onClick={handleExportEstudiantesToExcel}
-            className={styles.primaryButton}
-            disabled={loadingExportEstudiantes}
-          >
-            {loadingExportEstudiantes ? (
-              <>
-                <RiLoader4Line className={styles.loaderIcon} />
-                <span>Procesando...</span>
-              </>
-            ) : (
-              <>
-                <RiFileExcel2Line />
-                <span>Estudiantes</span>
-              </>
-            )}
-          </button>
-
-          <button
-            className={styles.secondaryButton}
-            onClick={handleExportToExcel}
-            disabled={loadingExport}
-          >
-            {loadingExport ? (
-              <>
-                <RiLoader4Line className={styles.loaderIcon} />
-                <span>Exportando...</span>
-              </>
-            ) : (
-              <>
-                <RiDownloadLine />
-                <span>Exportar Excel</span>
-              </>
-            )}
-          </button>
-
-          {currentUserData?.rol === 4 && !evaluacion?.realtimeEnabled && (
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={async () => {
-                  toast.info('⏳ Cargando datos consolidados...');
-                  await Promise.all([
-                    loadConsolidado(),
-                    fetchBarGraphicsData(),
-                    fetchReportePreguntas()
-                  ]);
-                  toast.success('✅ Carga desde Storage completada.');
-                }}
-                className={styles.secondaryButton}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#e5e7eb')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <MdVisibility />
-                <span>Ver Consolidado</span>
-              </button>
-
-              <button
-                onClick={handleGenerarConsolidado}
-                className={styles.primaryButton}
-                style={{ 
-                  backgroundColor: (loadingConsolidado || !hasPieChartData) ? '#94a3b8' : '#4f46e5', 
-                  color: 'white',
-                  cursor: (loadingConsolidado || !hasPieChartData) ? 'not-allowed' : 'pointer'
-                }}
-                disabled={loadingConsolidado || !hasPieChartData}
-              >
-                {consolidationStatus?.status === 'processing' ? (
-                  <>
-                    <RiLoader4Line className={styles.loaderIcon} />
-                    <span>{consolidationStatus.progress}% - {consolidationStatus.message || 'Procesando...'}</span>
-                  </>
-                ) : loadingConsolidado ? (
-                  <>
-                    <RiLoader4Line className={styles.loaderIcon} />
-                    <span>Iniciando...</span>
-                  </>
+          <div className={styles.customSelectContainer}>
+            <button
+              type="button"
+              onClick={() => setShowActionsMenu(prev => !prev)}
+              className={`${styles.customSelectButton} ${showActionsMenu ? styles.customSelectButtonActive : ''}`}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {loadingExportEstudiantes || loadingExport || loadingConsolidado || consolidationStatus?.status === 'processing' ? (
+                  <RiLoader4Line className={styles.loaderIcon} />
                 ) : (
-                  <>
-                    <MdAnalytics />
-                    <span>Generar Consolidado</span>
-                  </>
+                  <MdOutlineDashboardCustomize style={{ color: '#4f46e5', fontSize: '1.1rem' }} />
                 )}
-              </button>
+                <span>Acciones</span>
+              </span>
+              <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>▼</span>
+            </button>
 
-              {consolidationStatus?.status === 'processing' && (
-                <button
-                  onClick={handleDetenerConsolidado}
-                  className={styles.secondaryButton}
-                  style={{ 
-                    backgroundColor: '#ef4444', 
-                    color: 'white',
-                    marginLeft: '8px'
-                  }}
-                >
-                  <MdClose />
-                  <span>Detener</span>
-                </button>
-              )}
-            </div>
-          )}
+            {showActionsMenu && (
+              <>
+                <div className={styles.customSelectOverlay} onClick={() => setShowActionsMenu(false)} />
+                <div className={styles.customSelectDropdown}>
+                  {/* Option 1: Exportar Estudiantes */}
+                  <button
+                    onClick={() => {
+                      setShowActionsMenu(false);
+                      handleExportEstudiantesToExcel();
+                    }}
+                    disabled={loadingExportEstudiantes}
+                    className={styles.customSelectOption}
+                  >
+                    <RiFileExcel2Line style={{ color: '#22c55e', fontSize: '1.1rem' }} />
+                    <span>{loadingExportEstudiantes ? 'Exportando Estudiantes...' : 'Exportar Estudiantes'}</span>
+                  </button>
+
+                  {/* Option 2: Exportar Reporte (Excel) */}
+                  <button
+                    onClick={() => {
+                      setShowActionsMenu(false);
+                      handleExportToExcel();
+                    }}
+                    disabled={loadingExport}
+                    className={styles.customSelectOption}
+                  >
+                    <RiDownloadLine style={{ color: '#3b82f6', fontSize: '1.1rem' }} />
+                    <span>{loadingExport ? 'Exportando Excel...' : 'Exportar Excel'}</span>
+                  </button>
+
+                  {/* Admin & non-realtime actions */}
+                  {currentUserData?.rol === 4 && !evaluacion?.realtimeEnabled && (
+                    <>
+                      <div className={styles.divider} />
+
+                      {/* Option 3: Ver Consolidado */}
+                      <button
+                        onClick={async () => {
+                          setShowActionsMenu(false);
+                          toast.info('⏳ Cargando datos consolidados...');
+                          await Promise.all([
+                            loadConsolidado(),
+                            fetchBarGraphicsData(),
+                            fetchReportePreguntas()
+                          ]);
+                          toast.success('✅ Carga desde Storage completada.');
+                        }}
+                        className={styles.customSelectOption}
+                      >
+                        <MdVisibility style={{ color: '#6366f1', fontSize: '1.1rem' }} />
+                        <span>Ver Consolidado</span>
+                      </button>
+
+                      {/* Option 4: Generar Consolidado */}
+                      <button
+                        onClick={() => {
+                          setShowActionsMenu(false);
+                          handleGenerarConsolidado();
+                        }}
+                        disabled={loadingConsolidado || !hasPieChartData || consolidationStatus?.status === 'processing'}
+                        className={styles.customSelectOption}
+                      >
+                        <MdAnalytics style={{ color: '#f59e0b', fontSize: '1.1rem' }} />
+                        <span>
+                          {consolidationStatus?.status === 'processing'
+                            ? `Generando (${consolidationStatus.progress}%)`
+                            : loadingConsolidado
+                            ? 'Iniciando...'
+                            : 'Generar Consolidado'}
+                        </span>
+                      </button>
+
+                      {/* Option 5 (Conditional): Detener Consolidado */}
+                      {consolidationStatus?.status === 'processing' && (
+                        <button
+                          onClick={() => {
+                            setShowActionsMenu(false);
+                            handleDetenerConsolidado();
+                          }}
+                          className={styles.customSelectOption}
+                          style={{
+                            backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                            color: '#ef4444',
+                            fontWeight: 600
+                          }}
+                        >
+                          <MdClose style={{ color: '#ef4444', fontSize: '1.1rem' }} />
+                          <span>Detener Consolidación</span>
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </>

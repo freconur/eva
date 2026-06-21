@@ -15,6 +15,8 @@ import PermissionGate from '@/components/permissions/PermissionGate';
 import { PERMISSIONS } from '@/features/utils/permissions';
 import { useRouter } from 'next/router';
 
+import ModalConfirmarLogout from '@/modals/ModalConfirmarLogout';
+
 interface Props {
   showSidebar: boolean
 }
@@ -25,6 +27,7 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
   const { showSidebarValue, toggleSidebarCollapsed } = useRolUsers()
   const { currentUserData, isSidebarCollapsed } = useGlobalContext()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
 
   // Close sidebar on route change (Mobile only logic)
   useEffect(() => {
@@ -164,11 +167,21 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
           </div>
         </div>
 
-        <div onClick={() => { logout(); redirectLogin(); }} className={styles.logoutButton}>
+        <div onClick={() => setShowLogoutModal(true)} className={styles.logoutButton}>
           <FiLogOut className={styles.logoutIcon} />
           <p>cerrar sesión</p>
         </div>
       </div>
+
+      {showLogoutModal && (
+        <ModalConfirmarLogout
+          onClose={() => setShowLogoutModal(false)}
+          onConfirm={() => {
+            logout();
+            redirectLogin();
+          }}
+        />
+      )}
     </>
   )
 }

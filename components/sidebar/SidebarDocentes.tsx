@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import SidebarInfoUser from './SidebarInfoUser';
 import Link from 'next/link';
 import useUsuario from '@/features/hooks/useUsuario';
@@ -14,6 +14,7 @@ import { LuListTodo } from "react-icons/lu";
 import { IoIosArrowForward, IoIosArrowBack } from 'react-icons/io';
 import { FiLogOut } from 'react-icons/fi';
 import { useRouter } from 'next/router';
+import ModalConfirmarLogout from '@/modals/ModalConfirmarLogout';
 
 interface Props {
   showSidebar: boolean
@@ -24,6 +25,7 @@ const SidebarDocentes = ({ showSidebar }: Props) => {
   const { logout } = useUsuario()
   const { showSidebarValue, toggleSidebarCollapsed } = useRolUsers()
   const { isSidebarCollapsed } = useGlobalContext()
+  const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
 
   // Close sidebar on route change (Mobile only logic)
   useEffect(() => {
@@ -95,11 +97,21 @@ const SidebarDocentes = ({ showSidebar }: Props) => {
           </div>
         </div>
 
-        <div onClick={() => { logout(); redirectLogin(); }} className={styles.logoutButton}>
+        <div onClick={() => setShowLogoutModal(true)} className={styles.logoutButton}>
           <FiLogOut className={styles.logoutIcon} />
           <p>cerrar sesión</p>
         </div>
       </div>
+
+      {showLogoutModal && (
+        <ModalConfirmarLogout
+          onClose={() => setShowLogoutModal(false)}
+          onConfirm={() => {
+            logout();
+            redirectLogin();
+          }}
+        />
+      )}
     </>
   )
 }

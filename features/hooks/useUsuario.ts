@@ -482,13 +482,6 @@ const useUsuario = () => {
           dniDocente: currentUserData.dni
         });
       } else {
-        const pathRef = doc(
-          db,
-          `/usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${monthSelected}`,
-          idEstudiante
-        );
-        await deleteDoc(pathRef);
-
         const pathRefBorrarEstudianteEvaluacion = doc(
           db,
           `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${currentYear}/${monthSelected}`,

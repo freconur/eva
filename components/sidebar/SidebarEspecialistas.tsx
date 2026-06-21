@@ -13,6 +13,8 @@ import { IoIosArrowDown, IoIosArrowForward, IoIosArrowBack } from "react-icons/i
 import { FiLogOut } from 'react-icons/fi';
 import { useRouter } from 'next/router';
 
+import ModalConfirmarLogout from '@/modals/ModalConfirmarLogout';
+
 interface Props {
   showSidebar: boolean
 }
@@ -23,6 +25,7 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
   const { showSidebarValue, toggleSidebarCollapsed } = useRolUsers()
   const { currentUserData, isSidebarCollapsed } = useGlobalContext()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
 
   // Close sidebar on route change (Mobile only logic)
   // Auto-open accordion strictly on page load or navigation
@@ -181,11 +184,21 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
           </div>
         </div>
 
-        <div onClick={() => { logout(); redirectLogin(); }} className={styles.logoutButton}>
+        <div onClick={() => setShowLogoutModal(true)} className={styles.logoutButton}>
           <FiLogOut className={styles.logoutIcon} />
           <p>cerrar sesión</p>
         </div>
       </div>
+
+      {showLogoutModal && (
+        <ModalConfirmarLogout
+          onClose={() => setShowLogoutModal(false)}
+          onConfirm={() => {
+            logout();
+            redirectLogin();
+          }}
+        />
+      )}
     </>
   )
 }

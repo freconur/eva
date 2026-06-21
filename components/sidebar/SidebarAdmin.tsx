@@ -5,6 +5,8 @@ import useUsuario from '@/features/hooks/useUsuario';
 import SidebarRegional from './SidebarRegional';
 import { useRolUsers } from '@/features/hooks/useRolUsers';
 import SidebarRegion from './SidebarRegion';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '@/firebase/firebase.config';
 
 import styles from './sidebar.module.css'
 import { MdAccountBalance, MdAccountCircle, MdDashboard, MdPeople } from 'react-icons/md';
@@ -15,6 +17,8 @@ import { useRouter } from 'next/router';
 import { FiLogOut } from 'react-icons/fi';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
+
+import ModalConfirmarLogout from '@/modals/ModalConfirmarLogout';
 
 interface Props {
   showSidebar: boolean
@@ -27,6 +31,28 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
   const { currentUserData, isSidebarCollapsed } = useGlobalContext()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [perfilesOpen, setPerfilesOpen] = useState<boolean>(false);
+  const [requestCount, setRequestCount] = useState<number>(0);
+  const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
+
+  const userRol = currentUserData?.rol || currentUserData?.perfil?.rol;
+  const isAdmin = Number(userRol) === 4;
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const q = query(
+      collection(db, 'solicitudes_reseteo'),
+      where('estado', '==', 'pendiente')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setRequestCount(snapshot.size);
+    }, (error) => {
+      console.error("Error al obtener cantidad de solicitudes en sidebar:", error);
+    });
+
+    return () => unsubscribe();
+  }, [isAdmin]);
 
   // Auto-open accordion strictly on page load or navigation
   useEffect(() => {
@@ -115,17 +141,29 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 Mi cuenta
               </Link>
             </div>
+            {/*
             <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/dashboard/admin') ? styles.activeLink : ''}`}>
               <MdDashboard className={styles.dashboardIcon} />
               <Link className={styles.dashboardLink} href="/dashboard/admin" aria-haspopup="true">
                 Dashboard
               </Link>
             </div>
+            */}
             <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/gestion-usuarios') ? styles.activeLink : ''}`}>
-              <MdPeople className={styles.dashboardIcon} />
+              <div className="relative flex items-center">
+                <MdPeople className={styles.dashboardIcon} />
+                {isAdmin && requestCount > 0 && isSidebarCollapsed && (
+                  <span className={styles.badgeDot}></span>
+                )}
+              </div>
               <Link className={styles.dashboardLink} href="/admin/gestion-usuarios" aria-haspopup="true">
                 Gestión de Usuarios
               </Link>
+              {isAdmin && requestCount > 0 && !isSidebarCollapsed && (
+                <span className={styles.badge}>
+                  {requestCount}
+                </span>
+              )}
             </div>
             <div className={styles.menuContainer}>
               <div className={styles.menuHeader} onClick={(e) => {
@@ -338,11 +376,21 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
             </div>
           </div>
         </div>
-        <div onClick={() => { logout(); redirectLogion() }} className={styles.logoutButton}>
+        <div onClick={() => setShowLogoutModal(true)} className={styles.logoutButton}>
           <FiLogOut className={styles.logoutIcon} />
           <p>cerrar sesión</p>
         </div>
       </div>
+
+      {showLogoutModal && (
+        <ModalConfirmarLogout
+          onClose={() => setShowLogoutModal(false)}
+          onConfirm={() => {
+            logout();
+            redirectLogion();
+          }}
+        />
+      )}
     </>
   )
 }

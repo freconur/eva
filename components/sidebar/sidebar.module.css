@@ -10,9 +10,9 @@
   left: 0;
   width: 300px;
   border-radius: 0;
-  /* Deep Premium Gradient */
-  background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  /* Deep Navy Premium Gradient */
+  background: linear-gradient(160deg, #141d2b 0%, #1a2537 100%);
+  border-right: 1px solid #2d4260;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
@@ -90,12 +90,12 @@
   }
 
   .collapseToggleBtn:hover {
-    background: rgba(56, 189, 248, 0.15);
-    /* Light cyan wash */
-    color: #38bdf8;
-    border-color: rgba(56, 189, 248, 0.4);
+    background: rgba(245, 197, 24, 0.15);
+    /* Light yellow wash */
+    color: #f5c518;
+    border-color: rgba(245, 197, 24, 0.4);
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(56, 189, 248, 0.2);
+    box-shadow: 0 6px 16px rgba(245, 197, 24, 0.25);
   }
 
   .collapseToggleBtn:active {
@@ -107,7 +107,7 @@
     right: 50%;
     transform: translateX(50%);
     background: rgba(255, 255, 255, 0.08);
-    /* Slightly brighter when collapsed */
+    border-color: #2d4260;
   }
 }
 
@@ -139,10 +139,7 @@
 .collapsed .menuHeader:hover,
 .collapsed .dashboardMenuItem.activeLink {
   transform: translateY(-2px);
-  /* Override the translateX from expanded state */
-  border-left: none;
-  /* Remove left border highlight on collapsed state */
-  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+  box-shadow: 0 4px 12px rgba(245, 197, 24, 0.25);
 }
 
 .collapsed .dashboardIcon,
@@ -255,66 +252,48 @@
   margin: 4px 16px;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   background: transparent;
+  border: 1px solid transparent;
   position: relative;
   overflow: hidden;
 }
 
-.dashboardMenuItem::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 0;
-  background: rgba(56, 189, 248, 0.1);
-  /* Subtle Cyan wash */
-  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 0;
-}
-
-.dashboardMenuItem:hover::before {
-  width: 100%;
-}
-
 .dashboardMenuItem:hover {
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateX(6px);
-  border-left: 3px solid #38bdf8;
+  background: rgba(245, 197, 24, 0.05); /* Yellow wash */
+  border-color: rgba(245, 197, 24, 0.35); /* Yellow border */
+  box-shadow: 0 4px 12px rgba(245, 197, 24, 0.12); /* Subtle glow */
+  transform: translateY(-2px); /* Card-style lift */
 }
 
 .dashboardMenuItem.activeLink {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateX(6px);
-  border-left: 3px solid #38bdf8;
-}
-
-.dashboardMenuItem.activeLink::before {
-  width: 100%;
+  background: rgba(245, 197, 24, 0.08); /* Active yellow wash */
+  border-color: #f5c518; /* Solid yellow border */
+  box-shadow: 0 4px 14px rgba(245, 197, 24, 0.2); /* Active glow shadow */
+  transform: translateY(-2px);
 }
 
 .dashboardMenuItem.activeLink .dashboardIcon {
-  color: #38bdf8;
+  color: #f5c518;
   transform: scale(1.1);
 }
 
 .dashboardMenuItem.activeLink .dashboardLink {
   color: #ffffff;
   font-weight: 600;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  text-shadow: 0 0 10px rgba(245, 197, 24, 0.3);
 }
 
 .dashboardIcon {
   font-size: 1.35rem;
-  color: #94a3b8;
-  /* Slate 400 */
-  transition: color 0.3s ease, transform 0.3s ease;
+  color: rgba(255, 255, 255, 0.55);
+  /* Muted white from modal */
+  transition: color 0.25s ease, transform 0.25s ease;
   z-index: 1;
 }
 
 .dashboardMenuItem:hover .dashboardIcon {
-  color: #38bdf8;
+  color: #f5c518;
   transform: scale(1.1);
 }
 
@@ -352,48 +331,34 @@
   margin: 4px 16px;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
   background: transparent;
+  border: 1px solid transparent;
   position: relative;
   overflow: hidden;
 }
 
-.menuHeader::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 0;
-  background: rgba(56, 189, 248, 0.1);
-  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 0;
-}
-
-.menuHeader:hover::before {
-  width: 100%;
-}
-
 .menuHeader:hover {
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateX(6px);
-  border-left: 3px solid #38bdf8;
+  background: rgba(245, 197, 24, 0.05);
+  border-color: rgba(245, 197, 24, 0.35);
+  box-shadow: 0 4px 12px rgba(245, 197, 24, 0.12);
+  transform: translateY(-2px);
 }
 
 .menuHeader:active {
-  transform: translateX(6px) scale(0.98);
+  transform: translateY(0) scale(0.98);
 }
 
 .icon {
   font-size: 1.35rem;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.55);
   transition: color 0.3s ease, transform 0.3s ease;
   z-index: 1;
 }
 
 .menuHeader:hover .icon {
-  color: #38bdf8;
+  color: #f5c518;
   transform: scale(1.1);
 }
 
@@ -431,7 +396,7 @@
 
 .arrowRotate {
   transform: rotate(180deg);
-  color: #38bdf8 !important;
+  color: #f5c518 !important;
 }
 
 /* ── Submenus Grid/List ─────────────────────────────────── */
@@ -488,8 +453,7 @@
   position: relative;
   display: block;
   padding: 8px 12px 8px 26px;
-  color: #cbd5e1;
-  /* Slate 300 - excellent legibility */
+  color: rgba(255, 255, 255, 0.65);
   text-decoration: none;
   font-size: 0.88rem;
   font-weight: 400;
@@ -507,83 +471,139 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #64748b;
-  /* Slate 500 */
+  background: rgba(255, 255, 255, 0.3);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .submenuLink:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
-  /* Slightly brighter */
+  background: rgba(255, 255, 255, 0.06);
   transform: translateX(4px);
   padding-left: 30px;
 }
 
 .submenuLink:hover::before {
-  background: #38bdf8;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+  background: #f5c518;
+  box-shadow: 0 0 10px rgba(245, 197, 24, 0.8);
   height: 12px;
   border-radius: 4px;
 }
 
 .submenuLink.activeLink {
   color: #ffffff;
-  background: rgba(56, 189, 248, 0.15);
-  /* Primary cyan wash */
+  background: rgba(245, 197, 24, 0.1);
   transform: translateX(4px);
   padding-left: 30px;
   font-weight: 600;
 }
 
 .submenuLink.activeLink::before {
-  background: #38bdf8;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+  background: #f5c518;
+  box-shadow: 0 0 10px rgba(245, 197, 24, 0.8);
   height: 12px;
   border-radius: 4px;
 }
 
-/* ── Logout Button (Premium Red) ────────────────────────── */
+/* ── Logout Button (Redesigned Premium Action) ───────────── */
 .logoutButton {
   margin: 16px;
-  padding: 14px 20px;
+  padding: 12px 20px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
   cursor: pointer;
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(185, 28, 28, 0.1));
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  color: #fca5a5;
-  /* Red 300 */
+  background: rgba(30, 46, 66, 0.4); /* Glassy navy matching inputs */
+  border: 1px solid #2d4260;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .logoutButton:hover {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(185, 28, 28, 0.95));
-  border-color: rgba(239, 68, 68, 1);
-  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); /* Premium gradient red */
+  border-color: #ef4444;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35); /* Glowing shadow */
   color: #ffffff;
-  transform: translateY(-2px) scale(1.02);
+  transform: translateY(-2px); /* Card-style lift */
 }
 
 .logoutButton:active {
-  transform: translateY(0) scale(0.98);
+  transform: translateY(0) scale(0.96);
+  box-shadow: 0 2px 10px rgba(239, 68, 68, 0.2);
 }
 
 .logoutButton p {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.3s ease;
 }
 
 .logoutIcon {
   font-size: 1.25rem;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s ease;
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .logoutButton:hover .logoutIcon {
-  transform: translate(6px, -2px) rotate(10deg);
+  color: #ffffff;
+  transform: translateX(5px) rotate(-10deg) scale(1.15); /* High-tech exit motion */
+}
+
+/* ── Support Request Badges ── */
+.badge {
+  background-color: #ef4444;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 850;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  min-width: 20px;
+  margin-left: auto;
+  z-index: 2;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  animation: pulseBadge 2.5s infinite ease-in-out;
+}
+
+@keyframes pulseBadge {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.7);
+  }
+}
+
+.badgeDot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  border: 1.5px solid #141d2b;
+  z-index: 10;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  animation: pulseBadgeDot 2s infinite ease-in-out;
+}
+
+@keyframes pulseBadgeDot {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  }
+  50% {
+    transform: scale(1.25);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.9);
+  }
 }

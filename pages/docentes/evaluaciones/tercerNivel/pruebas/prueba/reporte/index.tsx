@@ -44,6 +44,8 @@ import { TablaPreguntas } from '@/components/tabla-preguntas';
 import { calculoNivel, calculoPreguntasCorrectas } from '@/features/utils/calculoNivel';
 import GraficoTendenciaColegio from '@/components/grafico-tendencia';
 import CorregirPuntajesModal from '@/modals/corregirPuntajes';
+import EvaluarEstudianteForm from '@/components/evaluar/EvaluarEstudianteForm';
+import ActualizarEvaluacionForm from '@/components/evaluar/ActualizarEvaluacionForm';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -60,6 +62,9 @@ const Reportes = () => {
   const [showTable, setShowtable] = useState<boolean>(true);
   const [showDeleteEstudiante, setShowDeleteEstudiante] = useState<boolean>(false);
   const [showCorregirPuntajesModal, setShowCorregirPuntajesModal] = useState<boolean>(false);
+  const [isEvaluarDrawerOpen, setIsEvaluarDrawerOpen] = useState<boolean>(false);
+  const [isActualizarDrawerOpen, setIsActualizarDrawerOpen] = useState<boolean>(false);
+  const [editingEstudianteDni, setEditingEstudianteDni] = useState<string | null>(null);
   const route = useRouter();
   const {
     estudiantes: estudiantesGlob,
@@ -664,6 +669,14 @@ const Reportes = () => {
                     <span>Corregir Puntajes</span>
                   </button>
                 )}
+
+                <button
+                  onClick={() => setIsEvaluarDrawerOpen(true)}
+                  className={styles.evaluarButton}
+                >
+                  <span>📝</span>
+                  <span>Evaluar Estudiante</span>
+                </button>
               </div>
             </div>
             {showTable ? (
@@ -803,6 +816,10 @@ const Reportes = () => {
                       handleShowModalDelete();
                       setIdEstudiante(dni);
                     }}
+                    onEditEstudiante={(dni) => {
+                      setEditingEstudianteDni(dni);
+                      setIsActualizarDrawerOpen(true);
+                    }}
                     linkToEdit={`/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`}
                     customColumns={{
                       showPuntaje: hasValidPuntaje(),
@@ -848,6 +865,46 @@ const Reportes = () => {
           </div>
         </div>
       )}
+
+      {/* Backdrop del Drawer */}
+      {isEvaluarDrawerOpen && (
+        <div className={styles.drawerBackdrop} onClick={() => setIsEvaluarDrawerOpen(false)} />
+      )}
+
+      {/* Contenedor del Drawer */}
+      <div className={`${styles.drawerContainer} ${isEvaluarDrawerOpen ? styles.drawerOpen : ''}`}>
+        {isEvaluarDrawerOpen && (
+          <EvaluarEstudianteForm
+            idExamen={`${route.query.idExamen}`}
+            isInsideDrawer={true}
+            onClose={() => setIsEvaluarDrawerOpen(false)}
+          />
+        )}
+      </div>
+
+      {/* Backdrop del Drawer de Actualización */}
+      {isActualizarDrawerOpen && (
+        <div className={styles.drawerBackdrop} onClick={() => {
+          setIsActualizarDrawerOpen(false);
+          setEditingEstudianteDni(null);
+        }} />
+      )}
+
+      {/* Contenedor del Drawer de Actualización */}
+      <div className={`${styles.drawerContainer} ${isActualizarDrawerOpen ? styles.drawerOpen : ''}`}>
+        {isActualizarDrawerOpen && editingEstudianteDni && (
+          <ActualizarEvaluacionForm
+            idExamen={`${route.query.idExamen}`}
+            idEstudiante={editingEstudianteDni}
+            mes={String(monthSelected)}
+            isInsideDrawer={true}
+            onClose={() => {
+              setIsActualizarDrawerOpen(false);
+              setEditingEstudianteDni(null);
+            }}
+          />
+        )}
+      </div>
     </>
   );
 };

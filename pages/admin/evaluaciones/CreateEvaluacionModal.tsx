@@ -217,7 +217,6 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
                                     textField: {
                                         size: 'small',
                                         fullWidth: true,
-                                        className: styles.input,
                                         sx: {
                                             backgroundColor: '#ffffff',
                                             borderRadius: '8px',
@@ -242,6 +241,11 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
                                                 color: '#0f172a',
                                                 fontSize: '0.925rem',
                                             }
+                                        }
+                                    },
+                                    popper: {
+                                        sx: {
+                                            zIndex: 99999
                                         }
                                     }
                                 }}

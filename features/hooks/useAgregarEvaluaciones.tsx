@@ -261,9 +261,9 @@ export const useAgregarEvaluaciones = () => {
     month: string
   ) => {
 
-    const rutaEstudiantesEvaluados = collection(
-      db,
-      `/usuarios/${currentUserData.dni}/${evaluacion.id}/${evaluacion.añoDelExamen || currentYear}/${month}/`
+    const rutaEstudiantesEvaluados = query(
+      collection(db, `/evaluaciones/${evaluacion.id}/estudiantes-evaluados/${evaluacion.añoDelExamen || currentYear}/${month}/`),
+      where('dniDocente', '==', currentUserData.dni)
     );
     const rutaEstudiantesRef = collection(
       db,
@@ -822,27 +822,6 @@ export const useAgregarEvaluaciones = () => {
     //guarda la informacion para el propio docente
     /* const rutaRef = doc(db, `/usuarios/${currentUserData.dni}/${id}/${data.dni}`); */
     const año = evaluacion.añoDelExamen || currentYear.toString();
-    const añoDocRef = doc(db, `usuarios/${currentUserData.dni}/${idEvaluacion}/${año}`);
-    await setDoc(añoDocRef, { existe: true }, { merge: true });
-
-    const rutaRef = doc(
-      db,
-      `usuarios/${currentUserData.dni}/${idEvaluacion}/${año}/${evaluacion.mesDelExamen}/${data.dni}`
-    );
-
-    await setDoc(rutaRef, {
-      nombresApellidos: data.nombresApellidos,
-      dni: data.dni,
-      dniDocente: currentUserData.dni,
-      grado: `${data.grado}`,
-      seccion: `${data.seccion}`,
-      genero: `${data.genero}`,
-      respuestasCorrectas: respuestasCorrectas,
-      totalPreguntas: sizePreguntas,
-      respuestas: convertirRespuestasAMapa(pqConAlternativasAleatorias),
-      dniDirector: currentUserData?.dniDirector || '',
-      distrito: currentUserData.distrito || '',
-    });
     const rutaCrearEstudiante = doc(
       db,
       `/usuarios/${currentUserData.dni}/estudiantes-docentes/${data.dni}`
