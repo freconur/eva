@@ -429,6 +429,7 @@ export type DataEstadisticas = {
   total?: number;
   order?: number;
   alternativas?: any[];
+  [key: string]: any;
 };
 export type ResultadosAcumuladosCC = {
   acumuladoDirector?: DataEstadisticasCurricular[];

@@ -1,8 +1,18 @@
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { IoIosArrowForward } from 'react-icons/io';
 import { AiOutlineHome } from 'react-icons/ai';
 import styles from './navbar.module.css';
+
+const NON_NAVIGABLE_PATHS = new Set([
+    '/admin',
+    '/docentes',
+    '/dashboard',
+    '/especialistas',
+    '/directores',
+    '/admin/evaluaciones/evaluacion',
+]);
 
 const Breadcrumbs = () => {
     const router = useRouter();
@@ -40,13 +50,14 @@ const Breadcrumbs = () => {
         <nav aria-label="Breadcrumb" className={styles.breadcrumbNav}>
             <ol className={styles.breadcrumbList}>
                 <li className={styles.breadcrumbItem}>
-                    <span className={styles.breadcrumbLink}>
+                    <Link href="/" className={styles.breadcrumbLink}>
                         <AiOutlineHome className={styles.homeIcon} />
-                    </span>
+                    </Link>
                 </li>
 
                 {breadcrumbs.map((crumb, index) => {
                     const isLast = index === breadcrumbs.length - 1;
+                    const isNavigable = !NON_NAVIGABLE_PATHS.has(crumb.href.toLowerCase());
 
                     return (
                         <React.Fragment key={crumb.href}>
@@ -58,8 +69,12 @@ const Breadcrumbs = () => {
                                     <span className={styles.breadcrumbCurrent} aria-current="page">
                                         {crumb.title}
                                     </span>
+                                ) : isNavigable ? (
+                                    <Link href={crumb.href} className={styles.breadcrumbLinkText}>
+                                        {crumb.title}
+                                    </Link>
                                 ) : (
-                                    <span className={styles.breadcrumbLinkText}>
+                                    <span className={styles.breadcrumbLinkTextDisabled}>
                                         {crumb.title}
                                     </span>
                                 )}

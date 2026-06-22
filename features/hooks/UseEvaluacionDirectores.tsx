@@ -73,7 +73,8 @@ const UseEvaluacionDirectores = () => {
   const getPreguntasRespuestasDirectores = async (idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     const path = `/evaluaciones-director/${idEvaluacion}/preguntasRespuestas`
-    onSnapshot(collection(db, path), (querySnapshot) => {
+    const q = query(collection(db, path), orderBy("order", "asc"))
+    onSnapshot(q, (querySnapshot) => {
       const arrayPreguntaRespuestaDocentes: PreviewPRDocentes[] = []
       querySnapshot.forEach((doc) => {
         arrayPreguntaRespuestaDocentes.push({ ...doc.data(), id: doc.id });
@@ -236,10 +237,17 @@ const UseEvaluacionDirectores = () => {
               console.log('index', index)
               console.log('response.size', response.size)
               // doc.data() is never undefined for query doc snapshots
+              const docData = doc.data();
+              let sum = 0;
+              Object.keys(docData).forEach((key) => {
+                if (key !== 'id' && key !== 'total' && typeof docData[key] === 'number') {
+                  sum += docData[key];
+                }
+              });
               arrayDataEstadisticas.push({
-                ...doc.data(),
+                ...docData,
                 id: doc.id,
-                total: doc.data().d === undefined ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) : Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) + Number(doc.data().d)
+                total: sum
               })
             })
             if (response.size === index) {
@@ -273,10 +281,17 @@ const UseEvaluacionDirectores = () => {
               console.log('index', index)
               console.log('response.size', response.size)
               // doc.data() is never undefined for query doc snapshots
+              const docData = doc.data();
+              let sum = 0;
+              Object.keys(docData).forEach((key) => {
+                if (key !== 'id' && key !== 'total' && typeof docData[key] === 'number') {
+                  sum += docData[key];
+                }
+              });
               arrayDataEstadisticas.push({
-                ...doc.data(),
+                ...docData,
                 id: doc.id,
-                total: doc.data().d === undefined ? Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) : Number(doc.data().a) + Number(doc.data().b) + Number(doc.data().c) + Number(doc.data().d)
+                total: sum
               })
             })
             if (response.size === index) {

@@ -223,12 +223,11 @@ const EvaluarEstudiante = () => {
   const handleCheckedRespuesta = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name: preguntaOrder, value: alternativaSeleccionada } = e.target;
 
-    // Actualizar estado de las alternativas
     preguntasRespuestasEstudiante?.forEach((pregunta) => {
       if (Number(pregunta.order) === Number(preguntaOrder)) {
         pregunta.alternativas?.forEach((alternativa) => {
           if (alternativa.descripcion?.length !== 0) {
-            alternativa.selected = alternativa.alternativa === alternativaSeleccionada;
+            alternativa.selected = !!alternativa.alternativa && !!alternativaSeleccionada && alternativa.alternativa.toLowerCase() === alternativaSeleccionada.toLowerCase();
           }
         });
       }

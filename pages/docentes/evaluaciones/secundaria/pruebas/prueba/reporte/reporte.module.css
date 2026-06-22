@@ -584,7 +584,7 @@
 /* Preguntas y Reportes */
 .reportContainer {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(var(--num-cols, 2), 1fr);
   gap: 1.5rem;
   width: 100%;
   transition: grid-template-columns 0.3s ease;

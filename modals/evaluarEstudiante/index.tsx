@@ -93,7 +93,7 @@ const EvaluarEstudiante = ({ id, handleShowModalEstudiante }: Props) => {
 
           // console.log('al', al)
           if (al.descripcion?.length !== 0) {
-            if (al.alternativa === e.target.value) {
+            if (!!al.alternativa && !!e.target.value && al.alternativa.toLowerCase() === e.target.value.toLowerCase()) {
               al.selected = true
               return al
             } else {

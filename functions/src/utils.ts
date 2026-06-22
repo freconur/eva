@@ -292,57 +292,65 @@ export const procesarEnLotes = async <T, R>(
 // ==========================================================
 
 /**
- * Calcula estadísticas de manera optimizada usando Map
+ * Calcula estadísticas de manera optimizada
  */
 export const calcularEstadisticasOptimizadas = (
   evaluacionesDocentes: Array<{
     docente: string;
     evaluaciones: Estudiante[];
     cantidadEvaluaciones: number;
-  }>
-): EstadisticaPregunta[] => {
+  }>,
+  preguntas?: any[]
+): any[] => {
   const acumuladoPorPregunta: Record<
     string,
-    { id: string; a: number; b: number; c: number; d?: number; total: number }
+    { id: string; total: number; [key: string]: any }
   > = {};
 
-  evaluacionesDocentes.forEach((estudiante) => {
-    estudiante.evaluaciones.forEach((evaluacion) => {
+  evaluacionesDocentes.forEach((docente) => {
+    docente.evaluaciones.forEach((evaluacion) => {
       if (evaluacion.respuestas && Array.isArray(evaluacion.respuestas)) {
         evaluacion.respuestas.forEach((respuesta) => {
           const idPregunta = String(respuesta.id);
           if (!idPregunta) return;
-          // Detectar si la alternativa 'd' existe en esta pregunta
-          let tieneD = false;
-          if (respuesta.alternativas && Array.isArray(respuesta.alternativas)) {
-            tieneD = respuesta.alternativas.some((alt) => alt.alternativa === 'd');
-          }
+
           if (!acumuladoPorPregunta[idPregunta]) {
-            acumuladoPorPregunta[idPregunta] = tieneD
-              ? { id: idPregunta, a: 0, b: 0, c: 0, d: 0, total: 0 }
-              : { id: idPregunta, a: 0, b: 0, c: 0, total: 0 };
+            const initialObj: any = { id: idPregunta, total: 0 };
+            
+            // Si tenemos las preguntas globales, inicializar todas sus alternativas en 0
+            const preguntaObj = preguntas?.find((p: any) => String(p.id) === idPregunta);
+            if (preguntaObj && Array.isArray(preguntaObj.alternativas)) {
+              preguntaObj.alternativas.forEach((alt: any) => {
+                if (alt.alternativa) {
+                  initialObj[alt.alternativa.toLowerCase()] = 0;
+                }
+              });
+            } else if (respuesta.alternativas && Array.isArray(respuesta.alternativas)) {
+              // Fallback con las alternativas del examen del estudiante
+              respuesta.alternativas.forEach((alt: any) => {
+                if (alt.alternativa) {
+                  initialObj[alt.alternativa.toLowerCase()] = 0;
+                }
+              });
+            } else {
+              // Fallback básico
+              initialObj.a = 0;
+              initialObj.b = 0;
+              initialObj.c = 0;
+              initialObj.d = 0;
+            }
+            acumuladoPorPregunta[idPregunta] = initialObj;
           }
+
           if (respuesta.alternativas && Array.isArray(respuesta.alternativas)) {
             respuesta.alternativas.forEach((alternativa) => {
-              if (alternativa.selected) {
-                switch (alternativa.alternativa) {
-                  case 'a':
-                    acumuladoPorPregunta[idPregunta].a += 1;
-                    break;
-                  case 'b':
-                    acumuladoPorPregunta[idPregunta].b += 1;
-                    break;
-                  case 'c':
-                    acumuladoPorPregunta[idPregunta].c += 1;
-                    break;
-                  case 'd':
-                    if (typeof acumuladoPorPregunta[idPregunta].d === 'number') {
-                      acumuladoPorPregunta[idPregunta].d! += 1;
-                    }
-                    break;
-                  default:
-                    break;
+              if (alternativa.selected && alternativa.alternativa) {
+                const altKey = alternativa.alternativa.toLowerCase();
+                // Asegurar que la propiedad existe e incrementar
+                if (acumuladoPorPregunta[idPregunta][altKey] === undefined) {
+                  acumuladoPorPregunta[idPregunta][altKey] = 0;
                 }
+                acumuladoPorPregunta[idPregunta][altKey] += 1;
               }
             });
           }
@@ -353,7 +361,13 @@ export const calcularEstadisticasOptimizadas = (
 
   // Calcular totales para cada pregunta
   Object.values(acumuladoPorPregunta).forEach((obj) => {
-    obj.total = obj.a + obj.b + obj.c + (typeof obj.d === 'number' ? obj.d : 0);
+    let sum = 0;
+    Object.keys(obj).forEach((key) => {
+      if (key !== 'id' && key !== 'total' && typeof obj[key] === 'number') {
+        sum += obj[key];
+      }
+    });
+    obj.total = sum;
   });
 
   const resultado = Object.values(acumuladoPorPregunta);
@@ -368,17 +382,12 @@ export const calcularEstadisticasOptimizadas = (
  * - Excluye directores con cantidades diferentes de preguntas
  */
 export const calcularAcumuladoGlobal = (
-  todosLosPuntajes: Array<
-    { id: string; a: number; b: number; c: number; d?: number; total: number }[]
-  >
+  todosLosPuntajes: Array<any[]>
 ): {
-  acumulado: Array<{ id: string; a: number; b: number; c: number; d?: number; total: number }>;
+  acumulado: any[];
   canti: number;
 } => {
-  const acumuladoGlobal: Record<
-    string,
-    { id: string; a: number; b: number; c: number; d?: number; total: number }
-  > = {};
+  const acumuladoGlobal: Record<string, any> = {};
 
   // Validar que hay datos antes de continuar
   if (todosLosPuntajes.length === 0) {
@@ -450,54 +459,35 @@ export const calcularAcumuladoGlobal = (
       const idPregunta = estadistica.id;
 
       if (!acumuladoGlobal[idPregunta]) {
-        // Inicializar con la estructura de la primera pregunta que encuentre
-        acumuladoGlobal[idPregunta] = {
-          id: idPregunta,
-          a: 0,
-          b: 0,
-          c: 0,
-          d: typeof estadistica.d === 'number' ? 0 : undefined,
-          total: 0,
-        };
+        acumuladoGlobal[idPregunta] = { id: idPregunta, total: 0 };
       }
 
-      // Sumar los valores
-      acumuladoGlobal[idPregunta].a += estadistica.a;
-      acumuladoGlobal[idPregunta].b += estadistica.b;
-      acumuladoGlobal[idPregunta].c += estadistica.c;
-
-      if (typeof estadistica.d === 'number' && typeof acumuladoGlobal[idPregunta].d === 'number') {
-        acumuladoGlobal[idPregunta].d! += estadistica.d;
-      }
+      // Sumar dinámicamente todas las claves numéricas (excepto 'id' y 'total')
+      Object.keys(estadistica).forEach((key) => {
+        if (key !== 'id' && key !== 'total' && typeof estadistica[key] === 'number') {
+          if (acumuladoGlobal[idPregunta][key] === undefined) {
+            acumuladoGlobal[idPregunta][key] = 0;
+          }
+          acumuladoGlobal[idPregunta][key] += estadistica[key];
+        }
+      });
     });
   });
 
   // Calcular totales finales
   Object.values(acumuladoGlobal).forEach((obj) => {
-    obj.total = obj.a + obj.b + obj.c + (typeof obj.d === 'number' ? obj.d : 0);
-  });
-
-  // Filtrar propiedades con valores undefined o null
-  const acumuladoLimpio = Object.values(acumuladoGlobal).map((obj) => {
-    const objLimpio: any = {
-      id: obj.id,
-      a: obj.a,
-      b: obj.b,
-      c: obj.c,
-      total: obj.total,
-    };
-
-    // Solo incluir la propiedad 'd' si tiene un valor válido (no undefined ni null)
-    if (typeof obj.d === 'number') {
-      objLimpio.d = obj.d;
-    }
-
-    return objLimpio;
+    let sum = 0;
+    Object.keys(obj).forEach((key) => {
+      if (key !== 'id' && key !== 'total' && typeof obj[key] === 'number') {
+        sum += obj[key];
+      }
+    });
+    obj.total = sum;
   });
 
   return {
-    acumulado: acumuladoLimpio,
-    canti: canti, // Cantidad de directores descartados por tener diferente cantidad de preguntas
+    acumulado: Object.values(acumuladoGlobal),
+    canti: canti,
   };
 };
 
@@ -642,7 +632,7 @@ export const reconstruirRespuestas = (respuestas: any, preguntas: any[]): any[] 
       const alternativasReconstruidas =
         p.alternativas?.map((alt: any) => ({
           ...alt,
-          selected: alt.alternativa === alternativaSeleccionada,
+          selected: !!alt.alternativa && !!alternativaSeleccionada && alt.alternativa.toLowerCase() === alternativaSeleccionada.toLowerCase(),
         })) || [];
 
       return {
@@ -780,3 +770,45 @@ export function agregarPuntajesARespuestas(
   estudiante.respuestas = respuestas;
   return estudiante;
 }
+
+/**
+ * Función para agregar una alternativa "no respondió" a todas las preguntas
+ * Identifica el correlativo actual de las alternativas y agrega la siguiente letra
+ */
+export const addNoRespondioAlternative = (preguntas: any[]): any[] => {
+  return preguntas.map(pregunta => {
+    if (!pregunta.alternativas || pregunta.alternativas.length === 0) {
+      return pregunta;
+    }
+
+    const alternativasExistentes = [...pregunta.alternativas];
+    
+    const correlativosExistentes = alternativasExistentes
+      .map(alt => alt.alternativa?.toLowerCase())
+      .filter(alt => alt && alt.length === 1 && alt >= 'a' && alt <= 'z')
+      .sort();
+
+    let siguienteLetra = 'd';
+    
+    if (correlativosExistentes.length > 0) {
+      const ultimaLetra = correlativosExistentes[correlativosExistentes.length - 1];
+      if (ultimaLetra) {
+        const codigoAscii = ultimaLetra.charCodeAt(0);
+        siguienteLetra = String.fromCharCode(codigoAscii + 1);
+      }
+    }
+
+    const nuevaAlternativa = {
+      alternativa: siguienteLetra.toUpperCase(),
+      descripcion: 'no respondio',
+      selected: false
+    };
+
+    const alternativasActualizadas = [...alternativasExistentes, nuevaAlternativa];
+
+    return {
+      ...pregunta,
+      alternativas: alternativasActualizadas
+    };
+  });
+};

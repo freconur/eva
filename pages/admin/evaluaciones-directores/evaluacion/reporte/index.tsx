@@ -22,6 +22,7 @@ import Image from 'next/image'
 import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
 import { regionTexto } from '@/fuctions/regiones'
 import UseEvaluacionDirectores from '@/features/hooks/UseEvaluacionDirectores'
+import { useColorsFromCSS } from '@/features/hooks/useColorsFromCSS'
 
 ChartJS.register(
   CategoryScale,
@@ -37,35 +38,67 @@ const Reportes = () => {
   const route = useRouter()
   const { currentUserData, dataEstadisticas, preguntasRespuestas, loaderPages, loaderReporteDirector, getPreguntaRespuestaDocentes, dataEvaluacionDocente, dataDirector } = useGlobalContext()
   const { reporteEvaluacionDocentes, getPreguntasRespuestasDirectores, getDataEvaluacion, reporteEvaluacionDocenteAdmin } = UseEvaluacionDirectores()
+  const { getAlternativaColor } = useColorsFromCSS()
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
+    const pregunta = getPreguntaRespuestaDocentes[Number(data.id) - 1];
+    
+    // Función para determinar si una opción es la respuesta correcta
+    const esRespuestaCorrecta = (opcion: string) => {
+      return opcion.toLowerCase() === respuesta.toLowerCase();
+    };
+
+    let alternativas = pregunta?.alternativas || [
+      { alternativa: 'A', descripcion: '' },
+      { alternativa: 'B', descripcion: '' },
+      { alternativa: 'C', descripcion: '' },
+      { alternativa: 'D', descripcion: '' }
+    ];
+
+    // Filtrar la alternativa 'no respondio' si su cantidad es 0
+    alternativas = alternativas.filter((alt: any) => {
+      const isNoRespondio = alt.descripcion?.toLowerCase() === 'no respondio';
+      if (isNoRespondio) {
+        const key = (alt.alternativa || '').toLowerCase();
+        const count = data[key] || 0;
+        return count > 0;
+      }
+      return true;
+    });
+
+    const labels = alternativas.map((alt: any) => {
+      const isNoRespondio = alt.descripcion?.toLowerCase() === 'no respondio';
+      if (isNoRespondio) return 'NR';
+      return (alt.alternativa || '').toUpperCase();
+    });
+
+    const dataValues = alternativas.map((alt: any) => {
+      const key = (alt.alternativa || '').toLowerCase();
+      return data[key] || 0;
+    });
+
+    const backgroundColor = alternativas.map((alt: any) => {
+      const key = (alt.alternativa || '').toLowerCase();
+      return esRespuestaCorrecta(key) ? 'rgba(34, 197, 94, 0.8)' : `${getAlternativaColor(key)}CC`;
+    });
+
+    const borderColor = alternativas.map((alt: any) => {
+      const key = (alt.alternativa || '').toLowerCase();
+      return esRespuestaCorrecta(key) ? 'rgb(34, 197, 94)' : getAlternativaColor(key);
+    });
+
     return {
-      labels: ['a', 'b', 'c', 'd'],
+      labels,
       datasets: [
         {
           label: "estadisticas de evaluación",
-          data: [data.a, data.b, data.c, data.d],
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.2)',
-            'rgba(153, 102, 255, 0.2)',
-            'rgba(54, 162, 235, 0.5)',
-            'rgba(75, 192, 192, 0.2)',
-            'rgba(153, 102, 255, 0.2)',
-            'rgba(201, 203, 207, 0.2)'
-          ],
-          borderColor: [
-            'rgb(255, 99, 132)',
-            'rgb(153, 102, 255)',
-            'rgb(54, 162, 235)',
-            'rgb(75, 192, 192)',
-            'rgb(255, 159, 64)',
-            'rgb(255, 205, 86)',
-            'rgb(201, 203, 207)'
-          ],
+          data: dataValues,
+          backgroundColor,
+          borderColor,
           borderWidth: 1
         }
       ]
-    }
-  }
+    };
+  };
 
   const options = {
     plugins: {
@@ -139,17 +172,35 @@ const Reportes = () => {
                             <div className='grid justify-center m-auto items-center w-[500px]'>
                               <Bar className="m-auto w-[500px] "
                                 options={options}
-                                data={iterateData(dat, `${preguntasRespuestas[Number(index) - 1]?.respuesta}`)}
+                                data={iterateData(dat, `${(getPreguntaRespuestaDocentes[Number(dat.id) - 1] as any)?.respuesta || ''}`)}
                               />
                             </div>
-                            <div className='text-sm  flex gap-[90px] items-center justify-center ml-[30px] text-slate-500'>
-                              <p>{dat.a} | {((100 * Number(dat.a)) / Number(dat.total)).toFixed(0)}%</p>
-                              <p>{dat.b} |{((100 * Number(dat.b)) / Number(dat.total)).toFixed(0)}%</p>
-                              <p>{dat.c} | {((100 * Number(dat.c)) / Number(dat.total)).toFixed(0)}%</p>
-                              {dat.d &&
-                                <p>{dat.d} | {((100 * Number(dat.d)) / Number(dat.total)).toFixed(0)}%</p>
-
-                              }
+                            <div className='text-sm flex gap-[40px] items-center justify-center ml-[30px] text-slate-500 flex-wrap'>
+                              {(getPreguntaRespuestaDocentes[Number(dat.id) - 1]?.alternativas || [
+                                { alternativa: 'A', descripcion: '' },
+                                { alternativa: 'B', descripcion: '' },
+                                { alternativa: 'C', descripcion: '' },
+                                { alternativa: 'D', descripcion: '' }
+                              ])
+                                .filter((alt: any) => {
+                                  const isNoRespondio = alt.descripcion?.toLowerCase() === 'no respondio';
+                                  if (isNoRespondio) {
+                                    const key = (alt.alternativa || '').toLowerCase();
+                                    const count = dat[key] || 0;
+                                    return count > 0;
+                                  }
+                                  return true;
+                                })
+                                .map((alt: any, idx: number) => {
+                                  const key = (alt.alternativa || '').toLowerCase();
+                                  const count = dat[key] || 0;
+                                  const total = dat.total || 1;
+                                  const percentage = total === 0 ? '0' : ((100 * Number(count)) / Number(total)).toFixed(0);
+                                  const labelText = alt.descripcion?.toLowerCase() === 'no respondio' ? 'NR' : key.toUpperCase();
+                                  return (
+                                    <p key={idx}>{labelText}: {count} | {percentage}%</p>
+                                  );
+                                })}
                             </div>
                           </div>
                         </div>

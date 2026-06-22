@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom"
 import styles from './agregarPreguntaRespuestas.module.css'
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones";
@@ -14,7 +14,7 @@ interface Props {
 
 const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) => {
 
-  const { currentUserData } = useGlobalContext()
+  const { currentUserData, preguntasRespuestas } = useGlobalContext()
   const { guardarPreguntasRespuestas } = useAgregarEvaluaciones()
 
   let container;
@@ -22,28 +22,97 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
     container = document.getElementById("portal-modal");
   }
 
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
+  const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm()
+  const [alternativas, setAlternativas] = useState<string[]>(['', '', '', ''])
+  const [validationError, setValidationError] = useState<string>("")
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleAlternativeChange = (index: number, val: string) => {
+    setAlternativas(prev => {
+      const updated = [...prev]
+      updated[index] = val
+      return updated
+    })
+  }
+
+  const handleAddAlternative = () => {
+    setAlternativas(prev => [...prev, ''])
+  }
+
+  const handleRemoveAlternative = (index: number) => {
+    if (alternativas.length <= 2) return
+    setAlternativas(prev => prev.filter((_, i) => i !== index))
+
+    const currentRespuesta = watch("respuesta")
+    const letterOfRemovedIndex = String.fromCharCode(97 + index)
+    const lastLetterAfterRemoval = String.fromCharCode(97 + alternativas.length - 2)
+
+    if (currentRespuesta === letterOfRemovedIndex || currentRespuesta > lastLetterAfterRemoval) {
+      setValue("respuesta", "")
+    }
+  }
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleshowModal();
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown);
+    };
+  }, [handleshowModal]);
+
+  const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      if ((e.target as HTMLElement).tagName === "BUTTON") {
+        return;
+      }
+      e.preventDefault();
+      e.currentTarget.requestSubmit();
+    }
+  };
 
   const handleSubmitform = handleSubmit(async (data) => {
-    console.log('data', data)
-    let rtaConvert: any = []
-    Object.entries(data).forEach(([key, value]) => {
-      if (key.length === 1 && typeof value === 'string') {
-        if (value.trim().length > 0)
-          rtaConvert.push({ alternativa: key, descripcion: value.trim() })
-      }
-    });
+    if (isSaving) return;
 
-    if (rtaConvert.length >= 3) {
+    const hasEmptyAlt = alternativas.some(alt => !alt.trim())
+    if (hasEmptyAlt) {
+      setValidationError("Todas las alternativas ingresadas son requeridas")
+      return;
+    }
+    
+    if (alternativas.length < 2) {
+      setValidationError("Debe ingresar al menos 2 alternativas")
+      return;
+    }
+
+    setValidationError("")
+    setIsSaving(true)
+
+    try {
+      const rtaConvert = alternativas.map((val, idx) => ({
+        alternativa: String.fromCharCode(97 + idx),
+        descripcion: val.trim(),
+        selected: false
+      }))
+
       await guardarPreguntasRespuestas({ 
         id: id, 
         preguntaDocente: data.preguntaDocente, 
         pregunta: data.pregunta, 
         respuesta: data.respuesta, 
-        alternativas: rtaConvert 
+        alternativas: rtaConvert,
+        puntaje: data.puntaje ? String(data.puntaje) : "0"
       })
-      console.log('rtaConvert', rtaConvert)
+      
       reset()
+      setAlternativas(['', '', '', ''])
+    } catch (error: any) {
+      alert(`❌ Error al guardar la pregunta: ${error.message || 'Error desconocido'}`)
+    } finally {
+      setIsSaving(false)
     }
   })
 
@@ -52,17 +121,20 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
       <div className={styles.containerModal}>
         <div className={styles.containerSale}>
           <div className={styles.closeModalContainer}>
-            <h3 className={styles.title}>agregar preguntas y respuestas</h3>
+            <h3 className={styles.title}>
+              agregar pregunta N° {(preguntasRespuestas?.length || 0) + 1}
+            </h3>
             <button type="button" className={styles.closeButton} onClick={handleshowModal} title="Cerrar">
               <MdClose />
             </button>
           </div>
 
-          <form className={styles.formulario} onSubmit={handleSubmitform} >
+          <form className={styles.formulario} onSubmit={handleSubmitform} onKeyDown={handleFormKeyDown}>
             <div className={styles.columnaIzquierda}>
               <div className={styles.formGroup}>
                 <label className={styles.labelPregunta}>Pregunta del examen *</label>
                 <textarea
+                  autoFocus
                   {...register("pregunta", {
                     required: "La pregunta de examen es requerida",
                     minLength: { value: 5, message: "La pregunta debe tener un mínimo de 5 caracteres" },
@@ -97,116 +169,95 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
               <p className={styles.titlePregunta}>alternativas</p>
               
               <div className={styles.inputAlternativas}>
-                {/* alternativa A */}
-                <div className={styles.alternativaRow}>
-                  <span className={styles.alternativaLabel}>a.</span>
-                  <div className={styles.alternativaInputWrapper}>
-                    <input
-                      {...register("a", {
-                        required: "La alternativa A es requerida",
-                        minLength: { value: 1, message: "Debe tener un mínimo de 1 carácter" },
-                        maxLength: { value: 150, message: "Debe tener un máximo de 150 caracteres" },
-                      })}
-                      className={styles.alternativaInput}
-                      type="text"
-                      placeholder="Escribe la alternativa a"
-                    />
-                    {errors.a && (
-                      <span className={styles.error}>{errors.a.message as string}</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* alternativa B */}
-                <div className={styles.alternativaRow}>
-                  <span className={styles.alternativaLabel}>b.</span>
-                  <div className={styles.alternativaInputWrapper}>
-                    <input
-                      {...register("b", {
-                        required: "La alternativa B es requerida",
-                        minLength: { value: 1, message: "Debe tener un mínimo de 1 carácter" },
-                        maxLength: { value: 150, message: "Debe tener un máximo de 150 caracteres" },
-                      })}
-                      className={styles.alternativaInput}
-                      type="text"
-                      placeholder="Escribe la alternativa b"
-                    />
-                    {errors.b && (
-                      <span className={styles.error}>{errors.b.message as string}</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* alternativa C */}
-                <div className={styles.alternativaRow}>
-                  <span className={styles.alternativaLabel}>c.</span>
-                  <div className={styles.alternativaInputWrapper}>
-                    <input
-                      {...register("c", {
-                        required: "La alternativa C es requerida",
-                        minLength: { value: 1, message: "Debe tener un mínimo de 1 carácter" },
-                        maxLength: { value: 150, message: "Debe tener un máximo de 150 caracteres" },
-                      })}
-                      className={styles.alternativaInput}
-                      type="text"
-                      placeholder="Escribe la alternativa c"
-                    />
-                    {errors.c && (
-                      <span className={styles.error}>{errors.c.message as string}</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* alternativa D */}
-                <div className={styles.alternativaRow}>
-                  <span className={styles.alternativaLabel}>d.</span>
-                  <div className={styles.alternativaInputWrapper}>
-                    <input
-                      {...register("d", {
-                        maxLength: { value: 150, message: "Debe tener un máximo de 150 caracteres" },
-                      })}
-                      className={styles.alternativaInput}
-                      type="text"
-                      placeholder="Escribe la alternativa d (Opcional)"
-                    />
-                    {errors.d && (
-                      <span className={styles.error}>{errors.d.message as string}</span>
-                    )}
-                  </div>
-                </div>
+                {alternativas.map((desc, idx) => {
+                  const letter = String.fromCharCode(97 + idx);
+                  return (
+                    <div key={idx} className={styles.alternativaRow}>
+                      <span className={styles.alternativaLabel}>{letter}.</span>
+                      <div className={styles.alternativaInputWrapper}>
+                        <input
+                          className={styles.alternativaInput}
+                          type="text"
+                          value={desc}
+                          onChange={(e) => handleAlternativeChange(idx, e.target.value)}
+                          placeholder={`Escribe la alternativa ${letter}`}
+                        />
+                      </div>
+                      {alternativas.length > 2 && (
+                        <button
+                          type="button"
+                          className={styles.deleteAlternativeBtn}
+                          onClick={() => handleRemoveAlternative(idx)}
+                          title="Eliminar alternativa"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
+
+              <button
+                type="button"
+                className={styles.addAlternativeBtn}
+                onClick={handleAddAlternative}
+              >
+                + Agregar Alternativa
+              </button>
 
               <div className={styles.formGroup}>
                 <label className={styles.labelPregunta}>respuesta correcta *</label>
                 <div className={styles.radioGroup}>
-                  {['a', 'b', 'c', 'd'].map((option) => (
-                    <label key={option} className={styles.radioLabel}>
-                      <input
-                        type="radio"
-                        value={option}
-                        {...register("respuesta", {
-                          required: "La respuesta correcta es requerida",
-                          validate: (val) => {
-                            if (val === 'd' && !watch('d')?.trim()) {
-                              return "La alternativa D debe tener contenido para ser la respuesta correcta";
-                            }
-                            return true;
-                          }
-                        })}
-                        className={styles.radioInput}
-                      />
-                      <span className={styles.radioCustomBadge}>{option.toUpperCase()}</span>
-                    </label>
-                  ))}
+                  {alternativas.map((_, idx) => {
+                    const option = String.fromCharCode(97 + idx);
+                    return (
+                      <label key={option} className={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          value={option}
+                          {...register("respuesta", {
+                            required: "La respuesta correcta es requerida"
+                          })}
+                          className={styles.radioInput}
+                        />
+                        <span className={styles.radioCustomBadge}>{option.toUpperCase()}</span>
+                      </label>
+                    );
+                  })}
                 </div>
-                {errors.respuesta && (
-                  <span className={styles.error}>{errors.respuesta.message as string}</span>
-                )}
-              </div>
+              {errors.respuesta && (
+                <span className={styles.error}>{errors.respuesta.message as string}</span>
+              )}
             </div>
 
-            <button type="submit" className={styles.submitButton}>
-              guardar pregunta
+            <div className={styles.formGroup}>
+              <label className={styles.labelPregunta}>Puntaje</label>
+              <input
+                type="text"
+                className={styles.alternativaInput}
+                placeholder="Ingrese el puntaje (opcional)"
+                {...register("puntaje", {
+                  validate: (val) => {
+                    if (val && !/^\d+$/.test(val)) {
+                      return "Solo se permiten números";
+                    }
+                    return true;
+                  }
+                })}
+              />
+              {errors.puntaje && (
+                <span className={styles.error}>{errors.puntaje.message as string}</span>
+              )}
+            </div>
+
+              {validationError && (
+                <span className={styles.error}>{validationError}</span>
+              )}
+            </div>
+
+            <button type="submit" className={styles.submitButton} disabled={isSaving}>
+              {isSaving ? "guardando..." : "guardar pregunta"}
             </button>
           </form>
         </div>

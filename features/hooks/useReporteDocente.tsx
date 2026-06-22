@@ -335,43 +335,41 @@ export const useReporteDocente = () => {
       async (estudiantes) => {
         const acumuladoPorPregunta: Record<
           string,
-          { id: string; a: number; b: number; c: number; d?: number; total: number }
+          { id: string; total: number; [key: string]: any }
         > = {};
         estudiantes.forEach((estudiante) => {
           if (estudiante.respuestas && Array.isArray(estudiante.respuestas)) {
             estudiante.respuestas.forEach((respuesta) => {
               const idPregunta = String(respuesta.id);
               if (!idPregunta) return;
-              let tieneD = false;
-              if (respuesta.alternativas && Array.isArray(respuesta.alternativas)) {
-                tieneD = respuesta.alternativas.some((alt) => alt.alternativa === 'd');
-              }
               if (!acumuladoPorPregunta[idPregunta]) {
-                acumuladoPorPregunta[idPregunta] = tieneD
-                  ? { id: idPregunta, a: 0, b: 0, c: 0, d: 0, total: 0 }
-                  : { id: idPregunta, a: 0, b: 0, c: 0, total: 0 };
+                const initialObj: any = { id: idPregunta, total: 0 };
+                // Encontrar la pregunta en el banco de preguntas para saber qué alternativas tiene e inicializarlas en 0
+                const preguntaObj = preguntaRespuestas.find((p) => String(p.id) === idPregunta);
+                if (preguntaObj && Array.isArray(preguntaObj.alternativas)) {
+                  preguntaObj.alternativas.forEach((alt) => {
+                    if (alt.alternativa) {
+                      initialObj[alt.alternativa.toLowerCase()] = 0;
+                    }
+                  });
+                } else {
+                  // Fallback si no se encuentra la pregunta o no tiene alternativas
+                  initialObj.a = 0;
+                  initialObj.b = 0;
+                  initialObj.c = 0;
+                  initialObj.d = 0;
+                }
+                acumuladoPorPregunta[idPregunta] = initialObj;
               }
               if (respuesta.alternativas && Array.isArray(respuesta.alternativas)) {
                 respuesta.alternativas.forEach((alternativa) => {
-                  if (alternativa.selected) {
-                    switch (alternativa.alternativa) {
-                      case 'a':
-                        acumuladoPorPregunta[idPregunta].a += 1;
-                        break;
-                      case 'b':
-                        acumuladoPorPregunta[idPregunta].b += 1;
-                        break;
-                      case 'c':
-                        acumuladoPorPregunta[idPregunta].c += 1;
-                        break;
-                      case 'd':
-                        if (typeof acumuladoPorPregunta[idPregunta].d === 'number') {
-                          acumuladoPorPregunta[idPregunta].d! += 1;
-                        }
-                        break;
-                      default:
-                        break;
+                  if (alternativa.selected && alternativa.alternativa) {
+                    const altKey = alternativa.alternativa.toLowerCase();
+                    // Asegurar que la propiedad existe e incrementar
+                    if (acumuladoPorPregunta[idPregunta][altKey] === undefined) {
+                      acumuladoPorPregunta[idPregunta][altKey] = 0;
                     }
+                    acumuladoPorPregunta[idPregunta][altKey] += 1;
                   }
                 });
               }
@@ -379,7 +377,13 @@ export const useReporteDocente = () => {
           }
         });
         Object.values(acumuladoPorPregunta).forEach((obj) => {
-          obj.total = obj.a + obj.b + obj.c + (typeof obj.d === 'number' ? obj.d : 0);
+          let sum = 0;
+          Object.keys(obj).forEach((key) => {
+            if (key !== 'id' && key !== 'total' && key !== 'alternativas' && typeof obj[key] === 'number') {
+              sum += obj[key];
+            }
+          });
+          obj.total = sum;
         });
         const resultado = Object.values(acumuladoPorPregunta);
         dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: resultado });
@@ -406,7 +410,7 @@ export const useReporteDocente = () => {
         const alternativasReconstruidas =
           p.alternativas?.map((alt) => ({
             ...alt,
-            selected: alt.alternativa === alternativaSeleccionada,
+            selected: !!alt.alternativa && !!alternativaSeleccionada && alt.alternativa.toLowerCase() === alternativaSeleccionada.toLowerCase(),
           })) || [];
 
         return {
@@ -422,9 +426,9 @@ export const useReporteDocente = () => {
     const mapa: Record<string, string> = {};
     if (!preguntas) return mapa;
     preguntas.forEach((p) => {
-      const seleccionada = p.alternativas?.find((alt) => alt.selected === true)?.alternativa;
-      if (seleccionada && p.id) {
-        mapa[p.id] = seleccionada;
+      const altSeleccionada = p.alternativas?.find((alt) => alt.selected === true);
+      if (altSeleccionada && p.id) {
+        mapa[p.id] = altSeleccionada.alternativa || "";
       }
     });
     return mapa;

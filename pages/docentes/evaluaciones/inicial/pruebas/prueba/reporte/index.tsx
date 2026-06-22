@@ -193,7 +193,7 @@ const Reportes = () => {
           const alternativaSeleccionada = (est.respuestas as any)[p.id || ''];
           const alternativasReconstruidas = p.alternativas?.map(alt => ({
             ...alt,
-            selected: alt.alternativa === alternativaSeleccionada
+            selected: !!alt.alternativa && !!alternativaSeleccionada && alt.alternativa.toLowerCase() === alternativaSeleccionada.toLowerCase()
           })) || [];
 
           return {
@@ -393,32 +393,23 @@ const Reportes = () => {
     }
   };
 
-  // Función para detectar si toda la evaluación tiene 3 o 4 opciones
+  // Función para detectar si toda la evaluación tiene 3 o 4 opciones basándose en la configuración de preguntas
   const detectarNumeroOpciones = useMemo(() => {
-    if (!dataEstadisticas || dataEstadisticas.length === 0) return 4; // Por defecto 4
+    if (!preguntasRespuestas || preguntasRespuestas.length === 0) return 4; // Por defecto 4
 
-    // Verificar si todas las preguntas tienen la opción D con valores válidos
-    const todasTienenOpcionD = dataEstadisticas.every(
-      (dat) => dat.d !== null && dat.d !== undefined && dat.d > 0
-    );
+    let maxOpciones = 3;
+    preguntasRespuestas.forEach((p) => {
+      // Excluir la opción dinámica "no respondió" del conteo de alternativas reales
+      const altsReales = p.alternativas?.filter(
+        (alt) => alt.descripcion?.toLowerCase() !== 'no respondio'
+      ) || [];
+      if (altsReales.length > maxOpciones) {
+        maxOpciones = altsReales.length;
+      }
+    });
 
-    // Verificar si todas las preguntas NO tienen la opción D
-    const ningunaTieneOpcionD = dataEstadisticas.every(
-      (dat) => dat.d === null || dat.d === undefined || dat.d === 0
-    );
-
-    // Si todas tienen opción D, es de 4 opciones
-    if (todasTienenOpcionD) return 4;
-
-    // Si ninguna tiene opción D, es de 3 opciones
-    if (ningunaTieneOpcionD) return 3;
-
-    // Si hay mezcla, mostrar advertencia y usar 4 por defecto
-    console.warn(
-      'Advertencia: La evaluación tiene preguntas con diferente número de opciones. Usando 4 opciones por defecto.'
-    );
-    return 4;
-  }, [dataEstadisticas]);
+    return maxOpciones;
+  }, [preguntasRespuestas]);
 
   useEffect(() => {
     const idExamen = route.query.idExamen as string;

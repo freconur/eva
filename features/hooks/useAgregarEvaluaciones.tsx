@@ -677,6 +677,13 @@ export const useAgregarEvaluaciones = () => {
 
       // Usar transacción para garantizar atomicidad en el contador
       const nextId = await runTransaction(db, async (transaction) => {
+        // Referencia a la evaluación para verificar si está activa
+        const evalRef = doc(db, `/evaluaciones/${data.id}`);
+        const evalDoc = await transaction.get(evalRef);
+        if (evalDoc.exists() && evalDoc.data().active) {
+          throw new Error("No se pueden agregar preguntas a una evaluación activa");
+        }
+
         // Referencia al documento contador
         const counterRef = doc(db, `/evaluaciones/${data.id}/metadata/counter`);
         const counterDoc = await transaction.get(counterRef);
@@ -700,6 +707,7 @@ export const useAgregarEvaluaciones = () => {
           respuesta: data.respuesta,
           alternativas: data.alternativas,
           preguntaDocente: data.preguntaDocente,
+          puntaje: data.puntaje || '0',
           order: nextCount,
           timestamp: serverTimestamp(),
         });
@@ -726,79 +734,16 @@ export const useAgregarEvaluaciones = () => {
   };
 
   const dataConAlternativasNoRespondidas = (preguntasRespuestas: PreguntasRespuestas[]): PreguntasRespuestas[] => {
-    return preguntasRespuestas.map((pregunta) => {
-      // Verificar si alguna alternativa tiene descripción "no respondio" y está seleccionada
-      const tieneNoRespondioSeleccionado = pregunta.alternativas?.some(
-        (alternativa) =>
-          alternativa.descripcion?.toLowerCase() === "no respondio" &&
-          alternativa.selected === true
-      );
-
-      if (tieneNoRespondioSeleccionado && pregunta.alternativas && pregunta.respuesta) {
-
-        // Crear una copia de las alternativas
-        const alternativasModificadas = [...pregunta.alternativas];
-
-        // Filtrar las alternativas que NO son "no respondio" y que NO coinciden con la respuesta
-        const alternativasElegibles = alternativasModificadas.filter((alternativa) => {
-          const esNoRespondio = alternativa.descripcion?.toLowerCase() === "no respondio";
-          const coincideConRespuesta = alternativa.alternativa?.toString().toLowerCase() === pregunta.respuesta?.toString().toLowerCase();
-          return !esNoRespondio && !coincideConRespuesta;
-        });
-
-
-        // Si hay alternativas elegibles, seleccionar una aleatoriamente
-        if (alternativasElegibles.length > 0) {
-          // Deseleccionar todas las alternativas primero
-          alternativasModificadas.forEach((alt) => {
-            alt.selected = false;
-          });
-
-          // Seleccionar una alternativa aleatoria de las elegibles
-          const indiceAleatorio = Math.floor(Math.random() * alternativasElegibles.length);
-          const alternativaSeleccionada = alternativasElegibles[indiceAleatorio];
-
-
-          // Encontrar y seleccionar la alternativa en el array original
-          const indiceEnArrayOriginal = alternativasModificadas.findIndex(
-            (alt) => alt.descripcion === alternativaSeleccionada.descripcion
-          );
-
-          if (indiceEnArrayOriginal !== -1) {
-            alternativasModificadas[indiceEnArrayOriginal].selected = true;
-          }
-
-          // Eliminar la alternativa "no respondió" del array
-          const alternativasSinNoRespondio = alternativasModificadas.filter(
-            (alt) => alt.descripcion?.toLowerCase() !== "no respondio"
-          );
-
-
-          // Actualizar el array de alternativas modificadas
-          alternativasModificadas.length = 0;
-          alternativasModificadas.push(...alternativasSinNoRespondio);
-
-        } else {
-        }
-
-
-        return {
-          ...pregunta,
-          alternativas: alternativasModificadas
-        };
-      }
-
-      // Si no hay "no respondio" seleccionado, devolver la pregunta sin cambios
-      return pregunta;
-    });
+    // Retornar las preguntas sin alteraciones aleatorias para conservar la alternativa 'no respondio' seleccionada
+    return preguntasRespuestas;
   };
   const convertirRespuestasAMapa = (preguntas?: PreguntasRespuestas[]): Record<string, string> => {
     const mapa: Record<string, string> = {};
     if (!preguntas) return mapa;
     preguntas.forEach((p) => {
-      const seleccionada = p.alternativas?.find((alt) => alt.selected === true)?.alternativa;
-      if (seleccionada && p.id) {
-        mapa[p.id] = seleccionada;
+      const altSeleccionada = p.alternativas?.find((alt) => alt.selected === true);
+      if (altSeleccionada && p.id) {
+        mapa[p.id] = altSeleccionada.alternativa || "";
       }
     });
     return mapa;
@@ -946,58 +891,28 @@ export const useAgregarEvaluaciones = () => {
     id: string
   ) => {
     if (checkAuditReadOnly()) return;
-    const pathRef = doc(db, `/evaluaciones/${id}/preguntasRespuestas`, `${data.id}`);
-    if (alternativass[3] === undefined) {
-      await updateDoc(pathRef, {
-        order: data.order,
-        pregunta: data.pregunta,
-        preguntaDocente: data.preguntaDocente,
-        respuesta: data.respuesta,
-        puntaje: data.puntaje || '0',
-        alternativas: [
-          {
-            descripcion: alternativass[0].descripcion,
-            alternativa: alternativass[0].alternativa,
-          },
-          {
-            descripcion: alternativass[1].descripcion,
-            alternativa: alternativass[1].alternativa,
-          },
-          {
-            descripcion: alternativass[2].descripcion,
-            alternativa: alternativass[2].alternativa,
-          },
-        ],
-      });
-      await updatePreguntasSentinel(id);
-    } else {
-      await updateDoc(pathRef, {
-        order: data.order,
-        pregunta: data.pregunta,
-        preguntaDocente: data.preguntaDocente,
-        respuesta: data.respuesta,
-        puntaje: data.puntaje || '0',
-        alternativas: [
-          {
-            descripcion: alternativass[0].descripcion,
-            alternativa: alternativass[0].alternativa,
-          },
-          {
-            descripcion: alternativass[1].descripcion,
-            alternativa: alternativass[1].alternativa,
-          },
-          {
-            descripcion: alternativass[2].descripcion,
-            alternativa: alternativass[2].alternativa,
-          },
-          {
-            descripcion: alternativass[3].descripcion,
-            alternativa: alternativass[3].alternativa,
-          },
-        ],
-      });
-      await updatePreguntasSentinel(id);
+
+    // Verificar si la evaluación está activa
+    const evalRef = doc(db, `/evaluaciones/${id}`);
+    const evalDoc = await getDoc(evalRef);
+    if (evalDoc.exists() && evalDoc.data().active) {
+      throw new Error("No se pueden modificar preguntas de una evaluación activa");
     }
+
+    const pathRef = doc(db, `/evaluaciones/${id}/preguntasRespuestas`, `${data.id}`);
+    const alternativasMapped = alternativass.map(alt => ({
+      descripcion: alt.descripcion,
+      alternativa: alt.alternativa,
+    }));
+    await updateDoc(pathRef, {
+      order: data.order,
+      pregunta: data.pregunta,
+      preguntaDocente: data.preguntaDocente,
+      respuesta: data.respuesta,
+      puntaje: data.puntaje || '0',
+      alternativas: alternativasMapped,
+    });
+    await updatePreguntasSentinel(id);
   };
 
   const updatePreguntaPuntaje = async (
@@ -1006,6 +921,14 @@ export const useAgregarEvaluaciones = () => {
     puntaje: string
   ) => {
     if (checkAuditReadOnly()) return;
+
+    // Verificar si la evaluación está activa
+    const evalRef = doc(db, `/evaluaciones/${idEvaluacion}`);
+    const evalDoc = await getDoc(evalRef);
+    if (evalDoc.exists() && evalDoc.data().active) {
+      throw new Error("No se pueden modificar puntajes de una evaluación activa");
+    }
+
     try {
       const pathRef = doc(db, `/evaluaciones/${idEvaluacion}/preguntasRespuestas`, `${idPregunta}`);
       await updateDoc(pathRef, {

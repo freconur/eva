@@ -41,7 +41,7 @@ const useScrollPosition = () => {
 const Evaluacion = () => {
   const route = useRouter()
   const { evaluacion, preguntasRespuestas, currentUserData, loaderPages } = useGlobalContext()
-  const { getEvaluacion, getPreguntasRespuestas, updatePreguntaRespuesta, updatePreguntaPuntaje, updatePreguntasOrder, deletePreguntaRespuesta } = useAgregarEvaluaciones()
+  const { getEvaluacion, getPreguntasRespuestas, updatePreguntaRespuesta, updatePreguntaPuntaje, updatePreguntasOrder, deletePreguntaRespuesta, updateEvaluacion } = useAgregarEvaluaciones()
   const [showModal, setShowModal] = useState(false)
   const [preguntasLocales, setPreguntasLocales] = useState<any[]>([])
   const [scoresLocales, setScoresLocales] = useState<Record<string, string>>({})
@@ -53,6 +53,66 @@ const Evaluacion = () => {
   const [showModalEstudiante, setShowModalEstudiante] = useState(false)
   const [pregunta, setPregunta] = useState({})
   const [showModalUpdatePReguntaRespuesta, setShowModalUpdatePReguntaRespuesta] = useState(false)
+  const handleToggleActive = async () => {
+    if (!route.query.id || !evaluacion) return
+
+    // Validaciones al activar la evaluación (cuando pasa de false a true)
+    if (!evaluacion.active) {
+      if (evaluacion.tipoDeEvaluacion === "1") {
+        // 1. Validar que existan rangos de nivel y puntaje
+        if (!evaluacion.nivelYPuntaje || !Array.isArray(evaluacion.nivelYPuntaje) || evaluacion.nivelYPuntaje.length === 0) {
+          alert("⚠️ No se puede activar la evaluación. Primero debes configurar los niveles y puntajes de la evaluación.");
+          return;
+        }
+
+        // 2. Validar que exista al menos una pregunta
+        if (!preguntasRespuestas || preguntasRespuestas.length === 0) {
+          alert("⚠️ No se puede activar la evaluación porque no tiene preguntas registradas.");
+          return;
+        }
+
+        // 3. Validar que todas las preguntas tengan puntuación >= 1
+        // Usamos la lista ordenada de preguntas para mostrar el número de pregunta correcto de cara al usuario
+        const preguntasOrdenadas = [...preguntasRespuestas].sort((a, b) => (a.order || 0) - (b.order || 0));
+        for (let i = 0; i < preguntasOrdenadas.length; i++) {
+          const p = preguntasOrdenadas[i];
+          const puntajeVal = Number(p.puntaje);
+          if (p.puntaje === undefined || p.puntaje === null || p.puntaje === '' || isNaN(puntajeVal) || puntajeVal < 1) {
+            alert(`⚠️ No se puede activar la evaluación. La pregunta N° ${i + 1} debe tener una puntuación igual o mayor a 1.`);
+            return;
+          }
+        }
+
+        // 4. Validar que la suma total de puntos sea igual al value max del nivel máximo
+        const totalPuntaje = preguntasRespuestas.reduce((total, pregunta) => {
+          return total + (Number(pregunta.puntaje) || 0);
+        }, 0);
+
+        const sortedLevels = [...evaluacion.nivelYPuntaje].sort((a, b) => (b.max || 0) - (a.max || 0));
+        const maxScoreOfHighestLevel = sortedLevels[0] ? Number(sortedLevels[0].max || 0) : 0;
+
+        if (totalPuntaje !== maxScoreOfHighestLevel) {
+          alert(`⚠️ No se puede activar la evaluación. La suma de los puntajes de las preguntas (${totalPuntaje}) debe ser igual al puntaje máximo del nivel más alto (${maxScoreOfHighestLevel}).`);
+          return;
+        }
+      }
+    }
+
+    const confirmMsg = evaluacion.active
+      ? '¿Estás seguro de que deseas desactivar esta evaluación? Las preguntas y puntajes volverán a ser editables.'
+      : '¿Estás seguro de que deseas activar esta evaluación? Esto bloqueará la edición de preguntas y puntajes.';
+    
+    if (window.confirm(confirmMsg)) {
+      try {
+        await updateEvaluacion({
+          ...evaluacion,
+          active: !evaluacion.active
+        }, `${route.query.id}`)
+      } catch (error: any) {
+        alert(`❌ Error al cambiar el estado de la evaluación: ${error.message || 'Error desconocido'}`)
+      }
+    }
+  }
   const [showModalDelete, setShowModalDelete] = useState(false)
   const [showModalPuntuacionYNivel, setShowModalPuntuacionYNivel] = useState(false)
   const [showModalAsignarEvaluacion, setShowModalAsignarEvaluacion] = useState(false)
@@ -173,6 +233,7 @@ const Evaluacion = () => {
   const isAssignedUgel = evaluacion.usuariosConPermisosUgel?.includes(currentUserData.dni || '')
 
   const canManageEvaluation = isOwnerOrAdmin || isAssignedRegional || isAssignedUgel
+  const canEditQuestions = canManageEvaluation && !evaluacion.active
 
   const handleshowModal = () => {
     setShowModal(!showModal)
@@ -377,9 +438,15 @@ const Evaluacion = () => {
 
             {/* Header Section */}
             <header className={styles.header}>
-              <h1 className={styles.title}>{evaluacion.nombre}</h1>
+              <h1 className={styles.title}>{evaluacion.nombre?.toUpperCase()}</h1>
               <span className={styles.subtitle}>Gestión y configuración de la evaluación</span>
             </header>
+
+            {evaluacion.active && (
+              <div className={styles.activeLockBanner}>
+                <span>🔒 Esta evaluación está activa. Para proteger la integridad de los resultados y calificaciones, no se permiten modificaciones en las preguntas, alternativas, orden o puntajes.</span>
+              </div>
+            )}
 
             {/* Actions Bar */}
             <div className={styles.actionsBar}>
@@ -397,13 +464,23 @@ const Evaluacion = () => {
                     }}
                   >
                     <option value="">⚙️ Herramientas de Gestión</option>
-                    {canManageEvaluation && <option value="agregar-preguntas">➕ Agregar Preguntas</option>}
-                    {currentUserData.rol === 4 && <option value="rango-nivel">📊 Configurar Niveles</option>}
+                    {canEditQuestions && <option value="agregar-preguntas">➕ Agregar Preguntas</option>}
+                    {currentUserData.rol === 4 && !evaluacion.active && <option value="rango-nivel">📊 Configurar Niveles</option>}
                     {currentUserData.rol === 4 && <option value="asignar-evaluacion">📋 Asignar a Región</option>}
                     {currentUserData.rol === 4 && <option value="asignar-evaluacion-ugel">🏢 Asignar a UGEL</option>}
                   </select>
                   <span className={styles.selectIcon}>▼</span>
                 </div>
+
+                {currentUserData.rol === 4 && (
+                  <button
+                    type="button"
+                    onClick={handleToggleActive}
+                    className={`${styles.linkButton} ${evaluacion.active ? styles.deactivateBtn : styles.activateBtn}`}
+                  >
+                    {evaluacion.active ? '🔒 Desactivar' : '🔓 Activar'}
+                  </button>
+                )}
 
                 <Link
                   href={`reporte?id=${currentUserData.dni}&idEvaluacion=${route.query.id}`}
@@ -412,15 +489,17 @@ const Evaluacion = () => {
                   <MdAssessment /> Reporte
                 </Link>
 
+                {/* 
                 <Link
                   href={`seguimiento-evaluaciones`}
                   className={styles.linkButton}
                 >
                   <MdTrendingUp /> Seguimiento
                 </Link>
+                */}
 
                 <div className={styles.newFeatureWrapper}>
-                  {showReorderCallout && !isCompactView && (
+                  {showReorderCallout && !isCompactView && !evaluacion.active && (
                     <div className={styles.featureCallout}>
                       <div className={styles.featureCalloutHeader}>
                         <span className={styles.newBadge}>NUEVO</span>
@@ -452,7 +531,7 @@ const Evaluacion = () => {
                     onClick={() => setIsCompactView(!isCompactView)}
                     className={`${styles.linkButton} ${isCompactView ? styles.activeViewBtn : ''}`}
                   >
-                    <MdViewList /> {isCompactView ? 'Vista Detallada' : 'Modo Reordenar'}
+                    <MdViewList /> {isCompactView ? 'Vista Detallada' : (evaluacion.active ? 'Vista Compacta' : 'Modo Reordenar')}
                   </button>
                 </div>
 
@@ -491,23 +570,25 @@ const Evaluacion = () => {
                     <li
                       key={pr.id || index}
                       className={`${styles.compactCard} ${draggedIndex === index ? styles.dragging : ''} ${dragOverIndex === index ? styles.dragOver : ''}`}
-                      draggable={canManageEvaluation}
+                      draggable={canEditQuestions}
                       onDragStart={(e) => handleDragStart(e, index)}
                       onDragOver={(e) => handleDragOver(e, index)}
                       onDrop={(e) => handleDrop(e, index)}
                       onDragEnd={handleDragEnd}
                     >
                       <div className={styles.compactMeta}>
-                        <span className={styles.compactDragHandle}>
-                          <MdDragIndicator />
-                        </span>
+                        {canEditQuestions && (
+                          <span className={styles.compactDragHandle}>
+                            <MdDragIndicator />
+                          </span>
+                        )}
                         <span className={styles.compactNumber}>{index + 1}</span>
                         <p className={styles.compactText} title={pr.pregunta}>{pr.pregunta}</p>
                       </div>
 
                       <div className={styles.compactRightSide}>
-                        {pr.puntaje !== undefined && pr.puntaje !== null && currentUserData.rol === 4 && (
-                          canManageEvaluation ? (
+                        {currentUserData.rol === 4 && (
+                          canEditQuestions ? (
                             <div className={styles.compactScoreEdit}>
                               <input
                                 type="text"
@@ -530,7 +611,7 @@ const Evaluacion = () => {
                             </span>
                           )
                         )}
-                        {canManageEvaluation && (
+                        {canEditQuestions && (
                           <div className={styles.compactControls}>
                             <button
                               type="button"
@@ -562,7 +643,7 @@ const Evaluacion = () => {
                     <li
                       key={pr.id || index}
                       className={`${styles.questionCard} ${draggedIndex === index ? styles.dragging : ''} ${dragOverIndex === index ? styles.dragOver : ''}`}
-                      draggable={canManageEvaluation}
+                      draggable={canEditQuestions}
                       onDragStart={(e) => handleDragStart(e, index)}
                       onDragOver={(e) => handleDragOver(e, index)}
                       onDrop={(e) => handleDrop(e, index)}
@@ -575,7 +656,7 @@ const Evaluacion = () => {
                           <p className={styles.questionText}>{pr.pregunta}</p>
                         </div>
 
-                        {canManageEvaluation && (
+                        {canEditQuestions && (
                           <div className={styles.controls}>
                             <button
                               onClick={() => handleMoveQuestion(index, 'up')}
@@ -603,7 +684,7 @@ const Evaluacion = () => {
                           <p className={styles.actionText}>{pr.preguntaDocente}</p>
                         </div>
 
-                        {canManageEvaluation && (
+                        {canEditQuestions && (
                           <div className={styles.actionButtons}>
                             <div
                               className={`${styles.iconButton} ${styles.editBtn}`}
@@ -641,8 +722,8 @@ const Evaluacion = () => {
                           <strong>{pr.respuesta}</strong>
                         </div>
 
-                        {pr.puntaje !== undefined && pr.puntaje !== null && currentUserData.rol === 4 && (
-                          canManageEvaluation ? (
+                         {currentUserData.rol === 4 && (
+                          canEditQuestions ? (
                             <div className={styles.inlineScoreWrapper}>
                               {index === 0 && showScoreCallout && (
                                 <div className={styles.featureCallout}>

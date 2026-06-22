@@ -178,9 +178,9 @@ export const useColorsFromCSS = () => {
         return opcion.toLowerCase() === respuesta.toLowerCase();
       };
 
-      const alternativasBase = ['a', 'b', 'c', 'd'];
+      const alternativasBase = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
       labels = alternativasBase.slice(0, numOpciones);
-      dataValues = labels.map(alt => data[alt]);
+      dataValues = labels.map(alt => data[alt] || 0);
       
       backgroundColor = labels.map(alt => 
         esRespuestaCorrecta(alt) ? 'rgba(34, 197, 94, 0.8)' : getAlternativaColorWithOpacity(alt)

@@ -380,10 +380,32 @@ const Reporte = () => {
   };
 
   const iterateData = (data: any, respuesta: string) => {
-    const chartData = prepareBarChartData(data, respuesta);
-    if (chartData && chartData.labels) {
-      chartData.labels = chartData.labels.map((label: string) => label.toUpperCase());
+    // Clonar data para no mutar el estado original
+    const clonedData = { ...data };
+    
+    if (Array.isArray(clonedData.alternativas)) {
+      // Filtrar la alternativa "no respondió" si su cantidad es 0
+      clonedData.alternativas = clonedData.alternativas.filter((alt: any) => {
+        const isNoRespondio = alt.descripcion?.toLowerCase() === 'no respondio';
+        if (isNoRespondio) {
+          return (alt.cantidad ?? 0) > 0;
+        }
+        return true;
+      });
     }
+
+    const chartData = prepareBarChartData(clonedData, respuesta);
+    
+    if (chartData && chartData.labels && Array.isArray(clonedData.alternativas)) {
+      chartData.labels = chartData.labels.map((label: string, idx: number) => {
+        const altObj = clonedData.alternativas[idx];
+        if (altObj && altObj.descripcion?.toLowerCase() === 'no respondio') {
+          return 'NR';
+        }
+        return label.toUpperCase();
+      });
+    }
+    
     return chartData;
   };
 

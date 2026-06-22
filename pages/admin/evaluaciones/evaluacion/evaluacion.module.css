@@ -41,6 +41,23 @@
   color: var(--primary-text);
 }
 
+.activeLockBanner {
+  background-color: var(--warning-bg);
+  border: 1px solid #fcd34d;
+  border-left: 4px solid var(--warning-color);
+  color: #78350f;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  line-height: 1.5;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 0.5rem;
+}
+
 .content {
   max-width: 1024px;
   margin: 0 auto;
@@ -912,4 +929,28 @@
 
 .compactScoreInput:focus {
   outline: none;
+}
+
+.activateBtn {
+  background-color: var(--success-bg);
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  cursor: pointer;
+}
+
+.activateBtn:hover {
+  background-color: #d1fae5;
+  border-color: var(--success-color);
+}
+
+.deactivateBtn {
+  background-color: var(--danger-bg);
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  cursor: pointer;
+}
+
+.deactivateBtn:hover {
+  background-color: #fee2e2;
+  border-color: var(--danger-color);
 }

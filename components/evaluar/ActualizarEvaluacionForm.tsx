@@ -62,7 +62,7 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
           const alternativaSeleccionada = (evaluacionEstudiante.respuestas as any)[p.id || ''];
           const alternativasReconstruidas = p.alternativas?.map(alt => ({
             ...alt,
-            selected: alt.alternativa === alternativaSeleccionada
+            selected: !!alt.alternativa && !!alternativaSeleccionada && alt.alternativa.toLowerCase() === alternativaSeleccionada.toLowerCase()
           })) || [];
 
           return {
@@ -90,7 +90,7 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
     if (nuevasRespuestas[preguntaIndex].alternativas) {
       nuevasRespuestas[preguntaIndex].alternativas = nuevasRespuestas[preguntaIndex].alternativas.map((alt: any) => ({
         ...alt,
-        selected: alt.alternativa === alternativaSeleccionada
+        selected: !!alt.alternativa && !!alternativaSeleccionada && alt.alternativa.toLowerCase() === alternativaSeleccionada.toLowerCase()
       }));
     }
     setRespuestasEditables(nuevasRespuestas);

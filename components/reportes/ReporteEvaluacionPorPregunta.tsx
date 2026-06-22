@@ -139,60 +139,82 @@ interface ReporteEvaluacionPorPreguntaProps {
                   <div className={styles.statsGrid}>
                     {dat?.alternativas && Array.isArray(dat.alternativas) ? (
                       // RENDERIZADO DINÁMICO (NUEVO)
-                      dat.alternativas.map((alt: any) => {
-                        const key = alt?.id;
-                        const value = alt?.cantidad ?? 0;
-                        const description = getAlternativeDescription(id, key);
-                        const total = dat?.total ?? 1; // Evitar división por cero
-                        const percentage = Math.round((100 * Number(value)) / Number(total));
+                      dat.alternativas
+                        .filter((alt: any) => {
+                          const isNoRespondio = alt.descripcion?.toLowerCase() === 'no respondio' || String(alt.id || '').toLowerCase() === 'nr';
+                          if (isNoRespondio) {
+                            return (alt.cantidad ?? 0) > 0;
+                          }
+                          return true;
+                        })
+                        .map((alt: any) => {
+                          const key = alt?.id;
+                          const value = alt?.cantidad ?? 0;
+                          const description = getAlternativeDescription(id, key);
+                          const total = dat?.total ?? 1; // Evitar división por cero
+                          const percentage = Math.round((100 * Number(value)) / Number(total));
 
-                        if (!key) return null;
+                          if (!key) return null;
 
-                        return (
-                          <div key={key} className={styles.statItemWrapper}>
-                            <div
-                              className={`${styles.statItem} ${alt?.esCorrecta ? styles.statItemCorrect : ''}`}
-                              onMouseEnter={() => {
-                                if (description) {
-                                  setPopoverData({
-                                    preguntaId: id,
-                                    alternativa: key,
-                                    description: description,
-                                    show: true
-                                  });
-                                }
-                              }}
-                              onMouseLeave={() => {
-                                setPopoverData(prev => prev ? { ...prev, show: false } : null);
-                              }}
-                            >
-                              <span>{String(key).toUpperCase()}: <span className={styles.statValue}>{value}</span></span>
-                              <span className={styles.statPercentage}>{percentage}%</span>
-                            </div>
+                          const labelText = alt.descripcion?.toLowerCase() === 'no respondio' || String(key).toLowerCase() === 'nr'
+                            ? 'NR'
+                            : String(key).toUpperCase();
 
-                            {popoverData?.show &&
-                              popoverData.preguntaId === id &&
-                              popoverData.alternativa === key && (
-                                <div className={styles.popover}>
-                                  <div className={styles.popoverContent}>
-                                    <div className={styles.popoverHeader}>Alternativa {popoverData.alternativa}</div>
-                                    {popoverData.description}
+                          return (
+                            <div key={key} className={styles.statItemWrapper}>
+                              <div
+                                className={`${styles.statItem} ${alt?.esCorrecta ? styles.statItemCorrect : ''}`}
+                                onMouseEnter={() => {
+                                  if (description) {
+                                    setPopoverData({
+                                      preguntaId: id,
+                                      alternativa: key,
+                                      description: description,
+                                      show: true
+                                    });
+                                  }
+                                }}
+                                onMouseLeave={() => {
+                                  setPopoverData(prev => prev ? { ...prev, show: false } : null);
+                                }}
+                              >
+                                <span>{labelText}: <span className={styles.statValue}>{value}</span></span>
+                                <span className={styles.statPercentage}>{percentage}%</span>
+                              </div>
+
+                              {popoverData?.show &&
+                                popoverData.preguntaId === id &&
+                                popoverData.alternativa === key && (
+                                  <div className={styles.popover}>
+                                    <div className={styles.popoverContent}>
+                                      <div className={styles.popoverHeader}>Alternativa {popoverData.alternativa}</div>
+                                      {popoverData.description}
+                                    </div>
+                                    <div className={styles.popoverArrow}></div>
                                   </div>
-                                  <div className={styles.popoverArrow}></div>
-                                </div>
-                              )}
-                          </div>
-                        );
-                      })
+                                )}
+                            </div>
+                          );
+                        })
                     ) : (
                       // RESPALDO ESTRUCTURA ANTIGUA
                       Object.entries(dat || {})
                         .filter(([key]) => key !== 'id' && key !== 'total' && key !== 'question_order' && key !== 'order' && key !== 'alternativas')
+                        .filter(([key, value]) => {
+                          const description = getAlternativeDescription(id, key);
+                          if (description.toLowerCase() === 'no respondio') {
+                            return (value as number) > 0;
+                          }
+                          return true;
+                        })
                         .sort(([a], [b]) => a.localeCompare(b))
                         .map(([key, value]) => {
                           const description = getAlternativeDescription(id, key);
                           const total = (dat as any)?.total ?? 1;
                           const percentage = Math.round((100 * (value as number)) / Number(total));
+                          const labelText = description.toLowerCase() === 'no respondio'
+                            ? 'NR'
+                            : key.toUpperCase();
 
                           return (
                             <div key={key} className={styles.statItemWrapper}>
@@ -212,7 +234,7 @@ interface ReporteEvaluacionPorPreguntaProps {
                                   setPopoverData(prev => prev ? { ...prev, show: false } : null);
                                 }}
                               >
-                                <span>{key.toUpperCase()}: <span className={styles.statValue}>{value as React.ReactNode}</span></span>
+                                <span>{labelText}: <span className={styles.statValue}>{value as React.ReactNode}</span></span>
                                 <span className={styles.statPercentage}>{percentage}%</span>
                               </div>
 

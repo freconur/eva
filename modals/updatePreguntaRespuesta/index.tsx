@@ -33,10 +33,7 @@ const initialValueAlternativas = { descripcion: "", alternativa: "", selected: f
 const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespuesta, id }: Props) => {
   const { loaderSalvarPregunta, evaluacion, preguntasRespuestas } = useGlobalContext()
   const [valueInput, setValueInput] = useState<PreguntasRespuestas>(initialValue)
-  const [valueInputA, setValueInputA] = useState<Alternativa>(initialValueAlternativas)
-  const [valueInputB, setValueInputB] = useState<Alternativa>(initialValueAlternativas)
-  const [valueInputC, setValueInputC] = useState<Alternativa>(initialValueAlternativas)
-  const [valueInputD, setValueInputD] = useState<Alternativa>(initialValueAlternativas)
+  const [alternativas, setAlternativas] = useState<Alternativa[]>([])
   const [puntajeError, setPuntajeError] = useState<string>("")
   const [validationError, setValidationError] = useState<string>("")
 
@@ -51,21 +48,36 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
     setValueInput({ ...valueInput, [e.target.name]: e.target.value })
   }
 
-  const handleA = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValueInputA({ ...valueInputA, descripcion: e.target.value })
-  }
-  const handleB = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValueInputB({ ...valueInputB, descripcion: e.target.value })
-  }
-  const handleC = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValueInputC({ ...valueInputC, descripcion: e.target.value })
-  }
-  const handleD = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValueInputD({
-      alternativa: 'd',
-      selected: valueInputD?.selected || false,
-      descripcion: e.target.value
+  const handleAlternativeChange = (index: number, val: string) => {
+    setAlternativas(prev => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], descripcion: val }
+      return updated
     })
+  }
+
+  const handleAddAlternative = () => {
+    setAlternativas(prev => [
+      ...prev,
+      { alternativa: String.fromCharCode(97 + prev.length), descripcion: "", selected: false }
+    ])
+  }
+
+  const handleRemoveAlternative = (index: number) => {
+    if (alternativas.length <= 2) return
+    const newAlts = alternativas.filter((_, i) => i !== index).map((alt, idx) => ({
+      ...alt,
+      alternativa: String.fromCharCode(97 + idx)
+    }))
+    setAlternativas(newAlts)
+
+    const letterOfRemovedIndex = String.fromCharCode(97 + index)
+    const lastLetterAfterRemoval = String.fromCharCode(97 + alternativas.length - 2)
+
+    const resLow = valueInput.respuesta?.toLowerCase();
+    if (resLow === letterOfRemovedIndex || (resLow && resLow > lastLetterAfterRemoval)) {
+      setValueInput(prev => ({ ...prev, respuesta: "" }))
+    }
   }
 
   const handlePuntajeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,18 +105,17 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
       setValidationError("La actuación docente es requerida");
       return;
     }
-    if (!valueInputA.descripcion?.trim() || !valueInputB.descripcion?.trim() || !valueInputC.descripcion?.trim()) {
-      setValidationError("Las alternativas A, B y C son requeridas");
+    const hasEmptyAlt = alternativas.some(alt => !alt.descripcion?.trim());
+    if (hasEmptyAlt) {
+      setValidationError("Todas las alternativas ingresadas son requeridas");
+      return;
+    }
+    if (alternativas.length < 2) {
+      setValidationError("Debe ingresar al menos 2 alternativas");
       return;
     }
     if (!valueInput.respuesta) {
       setValidationError("Debe seleccionar la respuesta correcta");
-      return;
-    }
-    
-    const descD = valueInputD?.descripcion?.trim();
-    if (valueInput.respuesta.toLowerCase() === 'd' && !descD) {
-      setValidationError("La alternativa D debe tener contenido para ser la respuesta correcta");
       return;
     }
     if (puntajeError) {
@@ -142,14 +153,11 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
 
     setValidationError("");
     
-    const array: Alternativa[] = []
-    array.push(valueInputA)
-    array.push(valueInputB)
-    array.push(valueInputC)
-    
-    if (descD && descD.length > 0) {
-      array.push(valueInputD)
-    }
+    const array = alternativas.map((alt, idx) => ({
+      alternativa: String.fromCharCode(97 + idx),
+      descripcion: (alt.descripcion || "").trim(),
+      selected: alt.selected || false
+    }))
     
     updatePreguntaRespuesta(valueInput, array, id)
     handleShowModalUpdatePreguntaRespuesta()
@@ -158,10 +166,18 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
   useEffect(() => {
     setValueInput(pregunta)
     if (pregunta.alternativas) {
-      setValueInputA(pregunta.alternativas[0] || initialValueAlternativas)
-      setValueInputB(pregunta.alternativas[1] || initialValueAlternativas)
-      setValueInputC(pregunta.alternativas[2] || initialValueAlternativas)
-      setValueInputD(pregunta.alternativas[3] || initialValueAlternativas)
+      setAlternativas(pregunta.alternativas.map(alt => ({
+        alternativa: alt.alternativa,
+        descripcion: alt.descripcion || "",
+        selected: alt.selected || false
+      })))
+    } else {
+      setAlternativas([
+        { alternativa: 'a', descripcion: "", selected: false },
+        { alternativa: 'b', descripcion: "", selected: false },
+        { alternativa: 'c', descripcion: "", selected: false },
+        { alternativa: 'd', descripcion: "", selected: false }
+      ])
     }
   }, [pregunta])
 
@@ -216,83 +232,63 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
                 <p className={styles.titlePregunta}>alternativas</p>
                 
                 <div className={styles.inputAlternativas}>
-                  {/* alternativa A */}
-                  <div className={styles.alternativaRow}>
-                    <span className={styles.alternativaLabel}>a.</span>
-                    <div className={styles.alternativaInputWrapper}>
-                      <input
-                        type="text"
-                        className={styles.alternativaInput}
-                        name="descripcion"
-                        value={valueInputA.descripcion}
-                        onChange={handleA}
-                        placeholder="Escribe la alternativa a"
-                      />
-                    </div>
-                  </div>
-
-                  {/* alternativa B */}
-                  <div className={styles.alternativaRow}>
-                    <span className={styles.alternativaLabel}>b.</span>
-                    <div className={styles.alternativaInputWrapper}>
-                      <input
-                        type="text"
-                        className={styles.alternativaInput}
-                        name="descripcion"
-                        value={valueInputB.descripcion}
-                        onChange={handleB}
-                        placeholder="Escribe la alternativa b"
-                      />
-                    </div>
-                  </div>
-
-                  {/* alternativa C */}
-                  <div className={styles.alternativaRow}>
-                    <span className={styles.alternativaLabel}>c.</span>
-                    <div className={styles.alternativaInputWrapper}>
-                      <input
-                        type="text"
-                        className={styles.alternativaInput}
-                        name="descripcion"
-                        value={valueInputC.descripcion}
-                        onChange={handleC}
-                        placeholder="Escribe la alternativa c"
-                      />
-                    </div>
-                  </div>
-
-                  {/* alternativa D */}
-                  <div className={styles.alternativaRow}>
-                    <span className={styles.alternativaLabel}>d.</span>
-                    <div className={styles.alternativaInputWrapper}>
-                      <input
-                        type="text"
-                        className={styles.alternativaInput}
-                        name="descripcion"
-                        value={valueInputD?.descripcion || ""}
-                        onChange={handleD}
-                        placeholder="Escribe la alternativa d (Opcional)"
-                      />
-                    </div>
-                  </div>
+                  {alternativas.map((alt, idx) => {
+                    const letter = String.fromCharCode(97 + idx);
+                    return (
+                      <div key={idx} className={styles.alternativaRow}>
+                        <span className={styles.alternativaLabel}>{letter}.</span>
+                        <div className={styles.alternativaInputWrapper}>
+                          <input
+                            type="text"
+                            className={styles.alternativaInput}
+                            name="descripcion"
+                            value={alt.descripcion}
+                            onChange={(e) => handleAlternativeChange(idx, e.target.value)}
+                            placeholder={`Escribe la alternativa ${letter}`}
+                          />
+                        </div>
+                        {alternativas.length > 2 && (
+                          <button
+                            type="button"
+                            className={styles.deleteAlternativeBtn}
+                            onClick={() => handleRemoveAlternative(idx)}
+                            title="Eliminar alternativa"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
+
+                <button
+                  type="button"
+                  className={styles.addAlternativeBtn}
+                  onClick={handleAddAlternative}
+                >
+                  + Agregar Alternativa
+                </button>
 
                 <div className={styles.formGroup}>
                   <label className={styles.labelPregunta}>respuesta correcta *</label>
                   <div className={styles.radioGroup}>
-                    {['a', 'b', 'c', 'd'].map((option) => (
-                      <label key={option} className={styles.radioLabel}>
-                        <input
-                          type="radio"
-                          name="respuesta"
-                          value={option}
-                          checked={valueInput.respuesta?.toLowerCase() === option}
-                          onChange={() => setValueInput({ ...valueInput, respuesta: option })}
-                          className={styles.radioInput}
-                        />
-                        <span className={styles.radioCustomBadge}>{option.toUpperCase()}</span>
-                      </label>
-                    ))}
+                    {alternativas.map((_, idx) => {
+                      const option = String.fromCharCode(97 + idx);
+                      return (
+                        <label key={option} className={styles.radioLabel}>
+                          <input
+                            type="radio"
+                            name="respuesta"
+                            value={option}
+                            checked={valueInput.respuesta?.toLowerCase() === option}
+                            onChange={() => setValueInput({ ...valueInput, respuesta: option })}
+                            className={styles.radioInput}
+                          />
+                          <span className={styles.radioCustomBadge}>{option.toUpperCase()}</span>
+                        </label>
+                      )
+                    })}
                   </div>
                 </div>
 

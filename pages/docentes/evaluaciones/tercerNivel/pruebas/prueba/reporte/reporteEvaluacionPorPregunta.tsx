@@ -24,77 +24,81 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
 
   const { prepareBarChartData } = useColorsFromCSS();
   const iterateData = (data: DataEstadisticas, respuesta: string) => {
-    // Usar el número de opciones detectado globalmente
-    const numOpciones = detectarNumeroOpciones;
-    const pregunta = preguntasMap.get(data.id || '');
-
-    // Calcular porcentajes para cada opción
-    const calcularPorcentaje = (valor: number | undefined) => {
-      if (valor === null || valor === undefined) return 0;
-      return data.total === 0 ? 0 : ((100 * Number(valor)) / Number(data.total));
-    };
-
-    // Calcular porcentajes sin redondear
-    const porcentajeARaw = calcularPorcentaje(data.a || 0);
-    const porcentajeBRaw = calcularPorcentaje(data.b || 0);
-    const porcentajeCRaw = calcularPorcentaje(data.c || 0);
-    const porcentajeDRaw = numOpciones === 4 ? calcularPorcentaje(data.d || 0) : 0;
-
-    // Función para determinar si una opción es la respuesta correcta
-    const esRespuestaCorrecta = (opcion: string) => {
-      return opcion.toLowerCase() === respuesta.toLowerCase();
-    };
-
-    const getLabel = (opcion: string, valor: number, porcentaje: number) => {
-      const label = opcion.toUpperCase();
-      const check = esRespuestaCorrecta(opcion) ? ' ✓' : '';
-      return `${label}(${valor} - ${porcentaje}%)${check}`;
-    };
-
-    if (numOpciones === 3) {
-      // Para 3 opciones: redondear las primeras 2 y calcular la tercera
-      const porcentajeA = Math.round(porcentajeARaw);
-      const porcentajeB = Math.round(porcentajeBRaw);
-      const porcentajeC = Math.max(0, 100 - porcentajeA - porcentajeB);
-
-      // Crear etiquetas solo para las 3 opciones con check para la respuesta correcta
-      const labels = [
-        getLabel('a', Number(data.a || 0), porcentajeA),
-        getLabel('b', Number(data.b || 0), porcentajeB),
-        getLabel('c', Number(data.c || 0), porcentajeC)
-      ];
-
-      // Usar el hook para preparar los datos del gráfico
-      const chartData = prepareBarChartData(data, respuesta, 3);
-
-      return {
-        labels: labels,
-        datasets: chartData.datasets
-      };
-    } else {
-      // Para 4 opciones: redondear las primeras 3 y calcular la cuarta
-      const porcentajeA = Math.round(porcentajeARaw);
-      const porcentajeB = Math.round(porcentajeBRaw);
-      const porcentajeC = Math.round(porcentajeCRaw);
-      const porcentajeD = Math.max(0, 100 - porcentajeA - porcentajeB - porcentajeC);
-
-      // Crear etiquetas para las 4 opciones con check para la respuesta correcta
-      const labels = [
-        getLabel('a', Number(data.a || 0), porcentajeA),
-        getLabel('b', Number(data.b || 0), porcentajeB),
-        getLabel('c', Number(data.c || 0), porcentajeC),
-        getLabel('d', Number(data.d || 0), porcentajeD)
-      ];
-
-      // Usar el hook para preparar los datos del gráfico
-      const chartData = prepareBarChartData(data, respuesta, 4);
-
-      return {
-        labels: labels,
-        datasets: chartData.datasets
-      };
-    }
-  };
+     const pregunta = preguntasMap.get(data.id || '');
+ 
+     // Función para determinar si una opción es la respuesta correcta
+     const esRespuestaCorrecta = (opcion: string) => {
+       return opcion.toLowerCase() === respuesta.toLowerCase();
+     };
+ 
+     const getLabel = (opcion: string, valor: number, porcentaje: number, descripcion?: string) => {
+       const labelText = descripcion?.toLowerCase() === 'no respondio' 
+         ? `NR` 
+         : opcion.toUpperCase();
+       const check = esRespuestaCorrecta(opcion) ? ' ✓' : '';
+       return `${labelText}(${valor} - ${porcentaje}%)${check}`;
+     };
+ 
+     // Obtener las alternativas de la pregunta (o por defecto A, B, C, D)
+     let alternativas = pregunta?.alternativas || [
+       { alternativa: 'A', descripcion: '', selected: false },
+       { alternativa: 'B', descripcion: '', selected: false },
+       { alternativa: 'C', descripcion: '', selected: false },
+       { alternativa: 'D', descripcion: '', selected: false }
+     ];
+ 
+     // Filtrar la alternativa 'no respondio' si su cantidad es 0
+     alternativas = alternativas.filter((alt) => {
+       if (alt.descripcion?.toLowerCase() === 'no respondio') {
+         const key = (alt.alternativa || '').toLowerCase();
+         const count = data[key] || 0;
+         return count > 0;
+       }
+       return true;
+     });
+ 
+     // Calcular porcentajes para cada opción
+     const calcularPorcentaje = (valor: number | undefined) => {
+       if (valor === null || valor === undefined) return 0;
+       return !data.total || data.total === 0 ? 0 : ((100 * Number(valor)) / Number(data.total));
+     };
+ 
+     const roundedPercentages: number[] = [];
+     if (!data.total || data.total === 0) {
+       alternativas.forEach(() => {
+         roundedPercentages.push(0);
+       });
+     } else {
+       let sumOfRounded = 0;
+       for (let i = 0; i < alternativas.length; i++) {
+         const key = (alternativas[i].alternativa || '').toLowerCase();
+         const rawPct = calcularPorcentaje(data[key] || 0);
+         if (i < alternativas.length - 1) {
+           const rounded = Math.round(rawPct);
+           roundedPercentages.push(rounded);
+           sumOfRounded += rounded;
+         } else {
+           // La última alternativa absorbe la diferencia para sumar exactamente 100
+           const rounded = Math.max(0, 100 - sumOfRounded);
+           roundedPercentages.push(rounded);
+         }
+       }
+     }
+ 
+     const labels = alternativas.map((alt, idx) => {
+       const key = (alt.alternativa || '').toLowerCase();
+       const count = data[key] || 0;
+       const pct = roundedPercentages[idx];
+       return getLabel(key, count, pct, alt.descripcion);
+     });
+ 
+     const chartData = prepareBarChartData(data, respuesta, alternativas.length);
+ 
+     return {
+       labels: labels,
+       datasets: chartData.datasets
+     };
+   };
 
   const options = {
     plugins: {

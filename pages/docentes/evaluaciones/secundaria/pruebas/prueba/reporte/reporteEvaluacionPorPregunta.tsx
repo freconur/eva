@@ -22,71 +22,78 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   // Estado para controlar el número de columnas (por defecto 2)
   const [numeroColumnas, setNumeroColumnas] = useState<number>(2);
 
-  const { prepareBarChartData } = useColorsFromCSS();
-  const iterateData = (data: DataEstadisticas, respuesta: string) => {
-    // Usar el número de opciones detectado globalmente
-    const numOpciones = detectarNumeroOpciones;
-
-    // Calcular porcentajes para cada opción
-    const calcularPorcentaje = (valor: number | undefined) => {
-      if (valor === null || valor === undefined) return 0;
-      return data.total === 0 ? 0 : ((100 * Number(valor)) / Number(data.total));
-    };
-
-    // Calcular porcentajes sin redondear
-    const porcentajeARaw = calcularPorcentaje(data.a || 0);
-    const porcentajeBRaw = calcularPorcentaje(data.b || 0);
-    const porcentajeCRaw = calcularPorcentaje(data.c || 0);
-    const porcentajeDRaw = numOpciones === 4 ? calcularPorcentaje(data.d || 0) : 0;
-
+  const { prepareBarChartData, getAlternativaColor } = useColorsFromCSS();
+  const iterateData = (data: DataEstadisticas, respuesta: string, pregunta?: PreguntasRespuestas) => {
     // Función para determinar si una opción es la respuesta correcta
     const esRespuestaCorrecta = (opcion: string) => {
       return opcion.toLowerCase() === respuesta.toLowerCase();
     };
 
-    if (numOpciones === 3) {
-      // Para 3 opciones: redondear las primeras 2 y calcular la tercera
-      const porcentajeA = Math.round(porcentajeARaw);
-      const porcentajeB = Math.round(porcentajeBRaw);
-      const porcentajeC = Math.max(0, 100 - porcentajeA - porcentajeB);
+    // Obtener las alternativas de la pregunta (o por defecto A, B, C, D)
+    let alternativas = pregunta?.alternativas || [
+      { alternativa: 'A', descripcion: '', selected: false },
+      { alternativa: 'B', descripcion: '', selected: false },
+      { alternativa: 'C', descripcion: '', selected: false },
+      { alternativa: 'D', descripcion: '', selected: false }
+    ];
 
-      // Crear etiquetas solo para las 3 opciones con check para la respuesta correcta
-      const labels = [
-        `A(${data.a || 0} - ${porcentajeA}%)${esRespuestaCorrecta('a') ? ' ✓' : ''}`,
-        `B(${data.b || 0} - ${porcentajeB}%)${esRespuestaCorrecta('b') ? ' ✓' : ''}`,
-        `C(${data.c || 0} - ${porcentajeC}%)${esRespuestaCorrecta('c') ? ' ✓' : ''}`
-      ];
+    // Filtrar la alternativa 'no respondio' si su cantidad es 0
+    alternativas = alternativas.filter((alt) => {
+      if (alt.descripcion?.toLowerCase() === 'no respondio') {
+        const key = (alt.alternativa || '').toLowerCase();
+        const count = data[key] || 0;
+        return count > 0;
+      }
+      return true;
+    });
 
-      // Usar el hook para preparar los datos del gráfico
-      const chartData = prepareBarChartData(data, respuesta, 3);
-      
-      return {
-        labels: labels,
-        datasets: chartData.datasets
-      };
+    // Calcular porcentajes para cada opción
+    const calcularPorcentaje = (valor: number | undefined) => {
+      if (valor === null || valor === undefined) return 0;
+      return !data.total || data.total === 0 ? 0 : ((100 * Number(valor)) / Number(data.total));
+    };
+
+    const roundedPercentages: number[] = [];
+    if (!data.total || data.total === 0) {
+      alternativas.forEach(() => {
+        roundedPercentages.push(0);
+      });
     } else {
-      // Para 4 opciones: redondear las primeras 3 y calcular la cuarta
-      const porcentajeA = Math.round(porcentajeARaw);
-      const porcentajeB = Math.round(porcentajeBRaw);
-      const porcentajeC = Math.round(porcentajeCRaw);
-      const porcentajeD = Math.max(0, 100 - porcentajeA - porcentajeB - porcentajeC);
-
-      // Crear etiquetas para las 4 opciones con check para la respuesta correcta
-      const labels = [
-        `A(${data.a || 0} - ${porcentajeA}%)${esRespuestaCorrecta('a') ? ' ✓' : ''}`,
-        `B(${data.b || 0} - ${porcentajeB}%)${esRespuestaCorrecta('b') ? ' ✓' : ''}`,
-        `C(${data.c || 0} - ${porcentajeC}%)${esRespuestaCorrecta('c') ? ' ✓' : ''}`,
-        `D(${data.d || 0} - ${porcentajeD}%)${esRespuestaCorrecta('d') ? ' ✓' : ''}`
-      ];
-
-      // Usar el hook para preparar los datos del gráfico
-      const chartData = prepareBarChartData(data, respuesta, 4);
-      
-      return {
-        labels: labels,
-        datasets: chartData.datasets
-      };
+      let sumOfRounded = 0;
+      for (let i = 0; i < alternativas.length; i++) {
+        const key = (alternativas[i].alternativa || '').toLowerCase();
+        const rawPct = calcularPorcentaje(data[key] || 0);
+        if (i < alternativas.length - 1) {
+          const rounded = Math.round(rawPct);
+          roundedPercentages.push(rounded);
+          sumOfRounded += rounded;
+        } else {
+          // La última alternativa absorbe la diferencia para sumar exactamente 100
+          const rounded = Math.max(0, 100 - sumOfRounded);
+          roundedPercentages.push(rounded);
+        }
+      }
     }
+
+    const labels = alternativas.map((alt, idx) => {
+      const key = (alt.alternativa || '').toLowerCase();
+      const count = data[key] || 0;
+      const pct = roundedPercentages[idx];
+      const check = esRespuestaCorrecta(key) ? ' ✓' : '';
+      
+      const labelText = alt.descripcion?.toLowerCase() === 'no respondio' 
+        ? `NR` 
+        : (alt.alternativa || '').toUpperCase();
+        
+      return `${labelText}(${count} - ${pct}%)${check}`;
+    });
+
+    const chartData = prepareBarChartData(data, respuesta, alternativas.length);
+    
+    return {
+      labels: labels,
+      datasets: chartData.datasets
+    };
   };
 
   const options = {
@@ -275,24 +282,31 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
                     <div className={styles.chartHeader}>
                       <h4 className={styles.chartTitle}>Distribución de Respuestas</h4>
                       <div className={styles.chartLegend}>
-                        <span className={styles.legendItem}>
-                          <span className={`${styles.legendColor} ${obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === 'a' ? styles.correctAnswerColor : styles.legendColorA}`}></span>
-                          Opción A
-                        </span>
-                        <span className={styles.legendItem}>
-                          <span className={`${styles.legendColor} ${obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === 'b' ? styles.correctAnswerColor : styles.legendColorB}`}></span>
-                          Opción B
-                        </span>
-                        <span className={styles.legendItem}>
-                          <span className={`${styles.legendColor} ${obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === 'c' ? styles.correctAnswerColor : styles.legendColorC}`}></span>
-                          Opción C
-                        </span>
-                        {detectarNumeroOpciones === 4 && (
-                          <span className={styles.legendItem}>
-                            <span className={`${styles.legendColor} ${obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === 'd' ? styles.correctAnswerColor : styles.legendColorD}`}></span>
-                            Opción D
-                          </span>
-                        )}
+                        {pregunta?.alternativas
+                          ?.filter((alt) => {
+                            if (alt.descripcion?.toLowerCase() === 'no respondio') {
+                              const altLetter = (alt.alternativa || '').toLowerCase();
+                              return (dat[altLetter] || 0) > 0;
+                            }
+                            return true;
+                          })
+                          ?.map((alt, altIdx) => {
+                            const altLetter = (alt.alternativa || '').toLowerCase();
+                            const isCorrect = obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === altLetter;
+                            const color = isCorrect ? '#22c55e' : getAlternativaColor(altLetter);
+                            const labelLegend = alt.descripcion?.toLowerCase() === 'no respondio'
+                              ? 'No respondió'
+                              : `Opción ${(alt.alternativa || '').toUpperCase()}`;
+                            return (
+                              <span key={altIdx} className={styles.legendItem}>
+                                <span 
+                                  className={styles.legendColor} 
+                                  style={{ backgroundColor: color, border: `1px solid ${color}` }}
+                                ></span>
+                                {labelLegend}
+                              </span>
+                            );
+                          })}
                       </div>
                     </div>
                     
@@ -314,7 +328,8 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
                         }}
                         data={iterateData(
                           dat,
-                          obtenerRespuestaPorId(`${dat.id}`)
+                          obtenerRespuestaPorId(`${dat.id}`),
+                          pregunta
                         )}
                         ref={(chartRef) => {
                           if (chartRef && chartRef.canvas) {

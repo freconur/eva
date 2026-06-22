@@ -215,7 +215,7 @@ const EvaluarEstudianteForm = ({
       if (Number(pregunta.order) === Number(preguntaOrder)) {
         pregunta.alternativas?.forEach((alternativa) => {
           if (alternativa.descripcion?.length !== 0) {
-            alternativa.selected = alternativa.alternativa === alternativaSeleccionada;
+            alternativa.selected = !!alternativa.alternativa && !!alternativaSeleccionada && alternativa.alternativa.toLowerCase() === alternativaSeleccionada.toLowerCase();
           }
         });
       }
