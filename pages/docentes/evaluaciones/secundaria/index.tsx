@@ -11,6 +11,13 @@ import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import { especialidad } from '@/fuctions/categorias'
 import { convertGrade } from '@/fuctions/regiones'
 import styles from './index.module.css'
+import { 
+  RiBookOpenLine, 
+  RiCalculatorLine, 
+  RiFlaskLine, 
+  RiShieldUserLine, 
+  RiGlobalLine 
+} from 'react-icons/ri';
 
 interface Evaluation {
   id: string;
@@ -20,6 +27,7 @@ interface Evaluation {
   isActive: boolean;
   isCompleted: boolean;
   progress: number;
+  icon?: React.ReactNode;
 }
 
 interface EvaluationsByGrado {
@@ -58,12 +66,39 @@ const TercerNivel = () => {
   const categoriesNivel2 = (categorias && categorias.length > 0 ? categorias : especialidad)
     .filter(cat => cat.activo !== false && cat.niveles && cat.niveles.includes(2))
 
-  // Color palettes per grade
-  const grade7Colors = ['#0891b2', '#0e7490', '#0a5c70', '#0f766e']
-  const grade8Colors = ['#059669', '#047857', '#064e3b', '#0d9488']
-  const grade9Colors = ['#dc2626', '#b91c1c', '#991b1b', '#ea580c']
-  const grade10Colors = ['#7c3aed', '#6d28d9', '#5b21b6', '#4c1d95']
-  const grade11Colors = ['#ea580c', '#c2410c', '#9a3412', '#0891b2']
+  const getMateriaColor = (catId: number) => {
+    switch (catId) {
+      case 3:
+        return 'var(--color-materia-comunicacion, #0891b2)';
+      case 4:
+        return 'var(--color-materia-matematica, #dc2626)';
+      case 5:
+        return 'var(--color-materia-ciencia, #059669)';
+      case 6:
+        return 'var(--color-materia-dpcc, #7c3aed)';
+      case 7:
+        return 'var(--color-materia-sociales, #ea580c)';
+      default:
+        return 'var(--color-tercero, #3ABEF9)';
+    }
+  };
+
+  const getMateriaIcon = (catId: number) => {
+    switch (catId) {
+      case 3:
+        return <RiBookOpenLine />;
+      case 4:
+        return <RiCalculatorLine />;
+      case 5:
+        return <RiFlaskLine />;
+      case 6:
+        return <RiShieldUserLine />;
+      case 7:
+        return <RiGlobalLine />;
+      default:
+        return <RiBookOpenLine />;
+    }
+  };
 
   // Datos de las evaluaciones disponibles
   const evaluationsNivel6 = [
@@ -72,19 +107,21 @@ const TercerNivel = () => {
         id: `com-7-${cat.id}`,
         title: cat.categoria.replace('-Secundaria', ''),
         href: `secundaria/pruebas?grado=7&categoria=${cat.id}`,
-        backgroundColor: grade7Colors[idx % grade7Colors.length],
+        backgroundColor: getMateriaColor(cat.id),
         isActive: false,
         isCompleted: false,
-        progress: 0
+        progress: 0,
+        icon: getMateriaIcon(cat.id)
       })),
       8: categoriesNivel2.map((cat, idx) => ({
         id: `com-8-${cat.id}`,
         title: cat.categoria.replace('-Secundaria', ''),
         href: `secundaria/pruebas?grado=8&categoria=${cat.id}`,
-        backgroundColor: grade8Colors[idx % grade8Colors.length],
+        backgroundColor: getMateriaColor(cat.id),
         isActive: false,
         isCompleted: false,
-        progress: 0
+        progress: 0,
+        icon: getMateriaIcon(cat.id)
       }))
     }
   ];
@@ -95,28 +132,31 @@ const TercerNivel = () => {
         id: `com-9-${cat.id}`,
         title: cat.categoria.replace('-Secundaria', ''),
         href: `secundaria/pruebas?grado=9&categoria=${cat.id}`,
-        backgroundColor: grade9Colors[idx % grade9Colors.length],
+        backgroundColor: getMateriaColor(cat.id),
         isActive: false,
         isCompleted: false,
-        progress: 0
+        progress: 0,
+        icon: getMateriaIcon(cat.id)
       })),
       10: categoriesNivel2.map((cat, idx) => ({
         id: `com-10-${cat.id}`,
         title: cat.categoria.replace('-Secundaria', ''),
         href: `secundaria/pruebas?grado=10&categoria=${cat.id}`,
-        backgroundColor: grade10Colors[idx % grade10Colors.length],
+        backgroundColor: getMateriaColor(cat.id),
         isActive: false,
         isCompleted: false,
-        progress: 0
+        progress: 0,
+        icon: getMateriaIcon(cat.id)
       })),
       11: categoriesNivel2.map((cat, idx) => ({
         id: `com-11-${cat.id}`,
         title: cat.categoria.replace('-Secundaria', ''),
         href: `secundaria/pruebas?grado=11&categoria=${cat.id}`,
-        backgroundColor: grade11Colors[idx % grade11Colors.length],
+        backgroundColor: getMateriaColor(cat.id),
         isActive: false,
         isCompleted: false,
-        progress: 0
+        progress: 0,
+        icon: getMateriaIcon(cat.id)
       }))
     }
   ];
@@ -231,6 +271,7 @@ const TercerNivel = () => {
                               isActive={evaluation.isActive}
                               isCompleted={evaluation.isCompleted}
                               progress={evaluation.progress}
+                              icon={evaluation.icon}
                             />
                           ))}
                         </div>
@@ -298,6 +339,7 @@ const TercerNivel = () => {
                               isActive={evaluation.isActive}
                               isCompleted={evaluation.isCompleted}
                               progress={evaluation.progress}
+                              icon={evaluation.icon}
                             />
                           ))}
                         </div>

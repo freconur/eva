@@ -3,7 +3,7 @@
     background: white;
     border-radius: 1rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    padding: 1.5rem;
+    /* padding: 1.5rem; */
     margin-bottom: auto;
 }
 
@@ -393,114 +393,203 @@
 }
 
 .relativeHeader {
-  position: relative !important;
+    position: relative !important;
 }
 
 .popupContainerHeader {
-  position: absolute;
-  bottom: calc(100% + 15px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10000;
-  pointer-events: none;
-  width: 320px;
+    position: absolute;
+    bottom: calc(100% + 15px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    pointer-events: none;
+    width: 320px;
 }
 
 .tourCardCompact {
-  background: white;
-  pointer-events: auto;
-  padding: 0.875rem 1.25rem;
-  border-radius: 0.875rem;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  border: 2px solid #3b82f6;
-  animation: popupIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  max-width: 350px;
+    background: white;
+    pointer-events: auto;
+    padding: 0.875rem 1.25rem;
+    border-radius: 0.875rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    border: 2px solid #3b82f6;
+    animation: popupIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 350px;
 }
 
 .tourContentCompact p {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #334155;
-  line-height: 1.5;
-  text-align: left !important;
-  white-space: normal !important;
-  font-weight: 400 !important;
+    margin: 0;
+    font-size: 0.9rem;
+    color: #334155;
+    line-height: 1.5;
+    text-align: left !important;
+    white-space: normal !important;
+    font-weight: 400 !important;
 }
 
 .popupCloseBtn {
-  background: #f1f5f9;
-  border: none;
-  font-size: 1.125rem;
-  color: #64748b;
-  cursor: pointer;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s;
-  flex-shrink: 0;
+    background: #f1f5f9;
+    border: none;
+    font-size: 1.125rem;
+    color: #64748b;
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .popupCloseBtn:hover {
-  background: #e2e8f0;
-  color: #1e293b;
+    background: #e2e8f0;
+    color: #1e293b;
 }
 
 .dontShowAgainBtn {
-  background: none;
-  border: none;
-  color: #2563eb;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-decoration: underline;
-  cursor: pointer;
-  padding: 0;
-  margin-top: 0.5rem;
-  display: block;
-  transition: color 0.2s;
-  text-align: left;
+    background: none;
+    border: none;
+    color: #2563eb;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 0.5rem;
+    display: block;
+    transition: color 0.2s;
+    text-align: left;
 }
 
 .tourArrow {
-  position: absolute;
-  bottom: -9px;
-  left: 50%;
-  margin-left: -8px;
-  width: 16px;
-  height: 16px;
-  background: white;
-  transform: rotate(45deg);
-  border-right: 2px solid #3b82f6;
-  border-bottom: 2px solid #3b82f6;
-  z-index: 10;
+    position: absolute;
+    bottom: -9px;
+    left: 50%;
+    margin-left: -8px;
+    width: 16px;
+    height: 16px;
+    background: white;
+    transform: rotate(45deg);
+    border-right: 2px solid #3b82f6;
+    border-bottom: 2px solid #3b82f6;
+    z-index: 10;
 }
 
 @keyframes popupIn {
-  from {
-    transform: translateX(-50%) scale(0.9) translateY(-8px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(-50%) scale(1) translateY(0);
-    opacity: 1;
-  }
+    from {
+        transform: translateX(-50%) scale(0.9) translateY(-8px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(-50%) scale(1) translateY(0);
+        opacity: 1;
+    }
 }
 
 .newBadge {
-  background-color: #ef4444;
-  color: white;
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 99px;
-  display: inline-block;
-  margin-bottom: 0.5rem;
-  letter-spacing: 0.05em;
-  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
-  text-transform: uppercase;
+    background-color: #ef4444;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 99px;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    text-transform: uppercase;
+}
+
+.headerFilterWrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    transition: background-color 0.2s;
+}
+
+.headerFilterWrapper:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.headerFilterIconContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.headerFilterIcon {
+    width: 12px;
+    height: 12px;
+    color: #9ca3af;
+    transition: all 0.2s ease;
+}
+
+.headerFilterIconActive {
+    color: #2563eb !important;
+    fill: rgba(37, 99, 235, 0.15);
+}
+
+.customDropdownMenu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 180px;
+    max-height: 250px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 100;
+    padding: 0.5rem 0;
+    animation: dropdownFadeIn 0.15s ease-out;
+}
+
+.customDropdownMenuRight {
+    left: auto;
+    right: 0;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.customDropdownItem {
+    padding: 0.5rem 1rem;
+    font-size: 0.825rem;
+    color: #374151;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.customDropdownItem:hover {
+    background-color: #f1f5f9;
+    color: #1e293b;
+}
+
+.customDropdownItemActive {
+    background-color: #eff6ff;
+    color: #2563eb;
+    font-weight: 700;
 }

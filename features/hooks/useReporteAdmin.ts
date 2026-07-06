@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { collection, doc, getDoc, getDocs, updateDoc, onSnapshot, query, where, documentId } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, setDoc, documentId, deleteDoc, getCountFromServer, updateDoc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { toast } from 'react-toastify';
 import { db, functions } from '@/firebase/firebase.config';
@@ -39,7 +39,7 @@ export const useReporteAdmin = () => {
     obtenerMensajeResumen,
   } = useCrearEstudiantesDeDocente();
   
-  const { exportEstudiantesToExcel, exportEstudiantesParaExcelFronted } = useExportExcel();
+  const { exportEstudiantesToExcel, exportEstudiantesParaExcelFronted, loading: loadingExportEstudiantes } = useExportExcel();
   
   const {
     loading: loadingCrearPuntajeProgresiva,
@@ -85,6 +85,8 @@ export const useReporteAdmin = () => {
   const [loadingConsolidado, setLoadingConsolidado] = useState(false);
   const [loadingProfesoresBuckets, setLoadingProfesoresBuckets] = useState(false);
   const [loadingExport, setLoadingExport] = useState(false);
+  const [loadingDetalleDirectores, setLoadingDetalleDirectores] = useState(false);
+  const [detalleDirectoresCargado, setDetalleDirectoresCargado] = useState(false);
 
   const [monthSelected, setMonthSelected] = useState(currentMonth);
   const currentYear = new Date().getFullYear();
@@ -233,87 +235,39 @@ export const useReporteAdmin = () => {
   // --- CARGA DE REPORTES PRINCIPALES ---
   const fetchBarGraphicsData = async () => {
     const idEval = route.query.idEvaluacion;
-    if (!idEval || monthSelected === undefined || !yearSelected) return;
+    if (!idEval || monthSelected === undefined || !yearSelected || !evaluacion) return;
     setLoadingDirectoresBar(true);
     try {
       const isRealtime = (evaluacion as any)?.realtimeEnabled === true;
       if (isRealtime) {
-        const collRef = collection(db, `evaluaciones/${idEval}/consolidados_realtime_directores`);
-        const snap = await getDocs(collRef);
-        
-        if (snap.empty) {
-          setDataDirectoresBar([]);
-          return;
-        }
+        // Optimización: getCountFromServer para evitar lecturas masivas de documentos iniciales
+        const targetNivel = Number(evaluacion.nivel);
+        const qTarget = query(
+          collection(db, 'usuarios'),
+          where('rol', '==', 2),
+          where('nivelDeInstitucion', 'array-contains', targetNivel)
+        );
+        const targetCountSnap = await getCountFromServer(qTarget);
+        const totalTarget = targetCountSnap.data().count;
 
-        const activeDirectors = snap.docs.map(doc => ({
-          dniDirector: doc.id,
-          ...doc.data()
-        }));
+        const qParticipantes = collection(db, `evaluaciones/${idEval}/consolidados_realtime_directores`);
+        const partCountSnap = await getCountFromServer(qParticipantes);
+        const totalParticiparon = partCountSnap.data().count;
 
-        const missingProfileDirectors = activeDirectors.filter((d: any) => !d.nombres || !d.apellidos || !d.institucion);
-        const missingDirectorIds = missingProfileDirectors.map(d => d.dniDirector);
+        const totalNoParticiparon = totalTarget - totalParticiparon;
 
-        const directorDetails = new Map<string, any>();
-        
-        if (missingDirectorIds.length > 0) {
-          const batches = [];
-          for (let i = 0; i < missingDirectorIds.length; i += 30) {
-            batches.push(missingDirectorIds.slice(i, i + 30));
-          }
+        // Generar lista simulación para el gráfico de torta de participación
+        const dummyData = [
+          ...Array(totalParticiparon).fill({ participo: true, totalEstudiantes: 1 }),
+          ...Array(totalNoParticiparon).fill({ participo: false, totalEstudiantes: 0 })
+        ];
 
-          const promesasDirectores = batches.map(async (chunk) => {
-            const q = query(collection(db, 'usuarios'), where(documentId(), 'in', chunk));
-            const snapDocentes = await getDocs(q);
-            snapDocentes.forEach(d => {
-              directorDetails.set(d.id, d.data());
-            });
-          });
-
-          await Promise.all(promesasDirectores);
-        }
-
-        const nivelesConfig = evaluacion?.nivelYPuntaje || [];
-
-        const formattedDirectors = activeDirectors.map((director: any) => {
-          const detail = directorDetails.get(director.dniDirector) || {};
-          
-          const mappedNiveles = nivelesConfig.map((n: any) => {
-            const nivelNombre = n.nivel || 'Sin Nombre';
-            let cantidad = 0;
-            if (director.niveles && typeof director.niveles === 'object' && director.niveles[nivelNombre] !== undefined) {
-              cantidad = director.niveles[nivelNombre];
-            } else if (director[`niveles.${nivelNombre}`] !== undefined) {
-              cantidad = director[`niveles.${nivelNombre}`];
-            }
-            return {
-              id: n.id,
-              nivel: nivelNombre,
-              cantidadDeEstudiantes: cantidad
-            };
-          });
-
-          const totalEstudiantes = director.totalEstudiantes || 0;
-          const sumaPuntajes = director.sumaPuntajes || 0;
-          const promedioGlobal = totalEstudiantes > 0 ? Math.round((sumaPuntajes / totalEstudiantes) * 100) / 100 : 0;
-
-          return {
-            dniDirector: director.dniDirector,
-            nombres: director.nombres || detail.nombres || 'Director',
-            apellidos: director.apellidos || detail.apellidos || 'N/A',
-            institucion: director.institucion || detail.institucion || 'N/A',
-            region: director.region || detail.region || 'N/A',
-            totalEstudiantes,
-            promedioGlobal,
-            niveles: mappedNiveles
-          };
-        });
-
-        formattedDirectors.sort((a, b) => b.promedioGlobal - a.promedioGlobal);
-        setDataDirectoresBar(formattedDirectors);
+        setDataDirectoresBar(dummyData);
+        setDetalleDirectoresCargado(false);
         return;
       }
 
+      // Código original no-realtime
       const consolidadoRef = doc(db, `evaluaciones/${idEval}/consolidados`, `directores_${yearSelected}_${monthSelected}`);
       const consolidadoSnap = await getDoc(consolidadoRef);
 
@@ -329,14 +283,223 @@ export const useReporteAdmin = () => {
           }
         }
       }
-      setDataDirectoresBar([]);
+
+      // Fallback: Consulta directa en Firestore si no existe el consolidado JSON
+      const q = query(collection(db, 'usuarios'), where('rol', '==', 2));
+      const directores = await getDocs(q);
+      console.log('cantidad total de directores', directores.size);
+
+      const pathRef = collection(db, `/evaluaciones/${idEval}/${yearSelected}-${monthSelected}`);
+      const querySnapshot = await getDocs(pathRef);
+      console.log('tamanio de la coleccion', querySnapshot.size);
+      const docentesDelDirector: any[] = [];
+      querySnapshot.forEach((doc) => {
+        docentesDelDirector.push(doc.data() as any);
+      });
+
+      const directorDetails = new Map<string, any>();
+      const missingProfileDirectors = docentesDelDirector.filter((d: any) => !d.nombres || !d.apellidos || !d.institucion);
+      const missingDirectorIds = missingProfileDirectors.map(d => d.dniDirector || d.dni);
+
+      if (missingDirectorIds.length > 0) {
+        const batches = [];
+        for (let i = 0; i < missingDirectorIds.length; i += 30) {
+          batches.push(missingDirectorIds.slice(i, i + 30));
+        }
+
+        const promesasDirectores = batches.map(async (chunk) => {
+          const q = query(collection(db, 'usuarios'), where(documentId(), 'in', chunk));
+          const snapDocentes = await getDocs(q);
+          snapDocentes.forEach(d => {
+            directorDetails.set(d.id, d.data());
+          });
+        });
+
+        await Promise.all(promesasDirectores);
+      }
+
+      const nivelesConfig = evaluacion?.nivelYPuntaje || [];
+
+      const formattedDirectors = directores.docs.map((doc) => {
+        const uData = doc.data();
+        const dni = doc.id;
+        const directorEvaluado = docentesDelDirector.find(d => d.dniDirector === dni || d.dni === dni);
+        const detail = directorDetails.get(dni) || {};
+
+        const mappedNiveles = nivelesConfig.map((n: any) => {
+          const nivelNombre = n.nivel || 'Sin Nombre';
+          let cantidad = 0;
+          if (directorEvaluado?.niveles && typeof directorEvaluado.niveles === 'object' && directorEvaluado.niveles[nivelNombre] !== undefined) {
+            cantidad = directorEvaluado.niveles[nivelNombre];
+          }
+          return {
+            id: n.id,
+            nivel: nivelNombre,
+            cantidadDeEstudiantes: cantidad
+          };
+        });
+
+        const totalEstudiantes = directorEvaluado?.totalEstudiantes || 0;
+        const sumaPuntajes = directorEvaluado?.sumaPuntajes || 0;
+        const promedioGlobal = totalEstudiantes > 0 ? Math.round((sumaPuntajes / totalEstudiantes) * 100) / 100 : 0;
+
+        return {
+          dniDirector: dni,
+          nombres: uData.nombres || detail.nombres || 'Director',
+          apellidos: uData.apellidos || detail.apellidos || 'N/A',
+          institucion: uData.institucion || detail.institucion || 'N/A',
+          region: uData.region || detail.region || 'N/A',
+          totalEstudiantes,
+          promedioGlobal,
+          niveles: mappedNiveles
+        };
+      });
+
+      formattedDirectors.sort((a, b) => b.promedioGlobal - a.promedioGlobal);
+      setDataDirectoresBar(formattedDirectors);
     } catch (error) {
-      console.error('❌ Error al cargar directores:', error);
-      setDataDirectoresBar([]);
+      console.error('Error al traer los datos de los directores para los graficos de barras', error);
     } finally {
       setLoadingDirectoresBar(false);
     }
   };
+
+  const fetchRealtimeDirectoresDetalle = async () => {
+    const idEval = route.query.idEvaluacion;
+    if (!idEval || !evaluacion || loadingDetalleDirectores || detalleDirectoresCargado) return;
+    setLoadingDetalleDirectores(true);
+    try {
+      const targetNivel = Number(evaluacion.nivel);
+      
+      // 1. Obtener todos los directores requeridos (universo)
+      const qTarget = query(
+        collection(db, 'usuarios'),
+        where('rol', '==', 2),
+        where('nivelDeInstitucion', 'array-contains', targetNivel)
+      );
+      const targetSnap = await getDocs(qTarget);
+      
+      // 2. Obtener directores participantes de consolidados_realtime_directores
+      const qParticipantes = collection(db, `evaluaciones/${idEval}/consolidados_realtime_directores`);
+      const partSnap = await getDocs(qParticipantes);
+      const participantesMap = new Map<string, any>();
+      partSnap.forEach(docSnap => {
+        participantesMap.set(docSnap.id, docSnap.data());
+      });
+
+      // Obtener preguntas ordenadas para estructurar reporteEstudiantes de cada director
+      const preguntasSnap = await getDocs(collection(db, `evaluaciones/${idEval}/preguntasRespuestas`));
+      const preguntasOrdenadas = preguntasSnap.docs
+        .map(d => ({ id: d.id, ...d.data() as any }))
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+      const nivelesConfig = evaluacion?.nivelYPuntaje || [];
+
+      // 3. Cruzar datos en memoria
+      const fullDirectoresList = targetSnap.docs.map(docSnap => {
+        const uData = docSnap.data();
+        const Dni = docSnap.id;
+        const rtData = participantesMap.get(Dni);
+
+        if (rtData) {
+          // Formatear reporteEstudiantes
+          const reporteEstudiantes = preguntasOrdenadas.map((pregunta, idx) => {
+            const qId = pregunta.id;
+            const orderStr = pregunta.order !== undefined ? String(pregunta.order) : String(idx + 1);
+            const getVal = (key: string) => rtData[key] !== undefined ? Number(rtData[key]) : 0;
+
+            const aVal = getVal(`preguntas.${orderStr}.A`) || getVal(`preguntas.${orderStr}.a`);
+            const bVal = getVal(`preguntas.${orderStr}.B`) || getVal(`preguntas.${orderStr}.b`);
+            const cVal = getVal(`preguntas.${orderStr}.C`) || getVal(`preguntas.${orderStr}.c`);
+            const dVal = getVal(`preguntas.${orderStr}.D`) || getVal(`preguntas.${orderStr}.d`);
+            const totalVal = getVal(`preguntas.${orderStr}.total`);
+
+            return {
+              id: qId,
+              a: aVal,
+              b: bVal,
+              c: cVal,
+              d: dVal,
+              total: totalVal
+            };
+          });
+
+          const mappedNiveles = nivelesConfig.map((n: any) => {
+            const nivelNombre = n.nivel || 'Sin Nombre';
+            let cantidad = 0;
+            if (rtData.niveles && typeof rtData.niveles === 'object' && rtData.niveles[nivelNombre] !== undefined) {
+              cantidad = rtData.niveles[nivelNombre];
+            } else if (rtData[`niveles.${nivelNombre}`] !== undefined) {
+              cantidad = rtData[`niveles.${nivelNombre}`];
+            }
+            return {
+              id: n.id,
+              nivel: nivelNombre,
+              cantidadDeEstudiantes: cantidad
+            };
+          });
+
+          const totalEstudiantes = rtData.totalEstudiantes || 0;
+          const sumaPuntajes = rtData.sumaPuntajes || 0;
+          const promedioGlobal = totalEstudiantes > 0 ? Math.round((sumaPuntajes / totalEstudiantes) * 100) / 100 : 0;
+
+          return {
+            dniDirector: Dni,
+            nombres: uData.nombres || rtData.nombres || 'Director',
+            apellidos: uData.apellidos || rtData.apellidos || 'N/A',
+            institucion: uData.institucion || rtData.institucion || 'N/A',
+            region: uData.region !== undefined ? Number(uData.region) : (rtData.region !== undefined ? Number(rtData.region) : undefined),
+            distrito: uData.distrito || rtData.distrito || '',
+            genero: uData.genero || rtData.genero || '',
+            area: uData.area !== undefined ? Number(uData.area) : (rtData.area !== undefined ? Number(rtData.area) : undefined),
+            caracteristicaCurricular: uData.caracteristicaCurricular || rtData.caracteristicaCurricular || '',
+            tipoGestion: uData.tipoGestion || rtData.tipoGestion || '',
+            totalEstudiantes,
+            sumaPuntajes,
+            promedioGlobal,
+            niveles: mappedNiveles,
+            participo: true
+          };
+        } else {
+          return {
+            dniDirector: Dni,
+            nombres: uData.nombres || 'Director',
+            apellidos: uData.apellidos || 'N/A',
+            institucion: uData.institucion || 'N/A',
+            region: uData.region !== undefined ? Number(uData.region) : undefined,
+            distrito: uData.distrito || '',
+            genero: uData.genero || '',
+            area: uData.area !== undefined ? Number(uData.area) : undefined,
+            caracteristicaCurricular: uData.caracteristicaCurricular || '',
+            tipoGestion: uData.tipoGestion || '',
+            totalEstudiantes: 0,
+            sumaPuntajes: 0,
+            promedioGlobal: 0,
+            niveles: [],
+            participo: false
+          };
+        }
+      });
+
+      // Ordenar por promedio global de forma descendente
+      fullDirectoresList.sort((a, b) => b.promedioGlobal - a.promedioGlobal);
+
+      setDataDirectoresBar(fullDirectoresList);
+      setDetalleDirectoresCargado(true);
+    } catch (error) {
+      console.error('Error al cargar detalle de directores:', error);
+      toast.error('❌ Error al cargar detalle de directores');
+    } finally {
+      setLoadingDetalleDirectores(false);
+    }
+  };
+
+  useEffect(() => {
+    const isRealtime = (evaluacion as any)?.realtimeEnabled === true;
+    if (isRealtime && !detalleDirectoresCargado && (selectedDirectorStatus !== null || selectedRegionDirector !== 'all')) {
+      fetchRealtimeDirectoresDetalle();
+    }
+  }, [selectedDirectorStatus, selectedRegionDirector, evaluacion, detalleDirectoresCargado]);
 
   const loadConsolidado = async () => {
     const idEval = route.query.idEvaluacion;
@@ -890,7 +1053,7 @@ export const useReporteAdmin = () => {
         return;
       }
       const fileName = `evaluaciones_director_docente_${new Date().toISOString().split('T')[0]}.xlsx`;
-      exportDirectorDocenteDataToExcel(resultado, fileName);
+      exportDirectorDocenteDataToExcel(resultado, fileName, evaluacion?.nivelYPuntaje);
       alert('Archivo Excel exportado exitosamente');
     } catch (error) {
       alert('Error al exportar los datos. Por favor, inténtalo de nuevo.');
@@ -904,6 +1067,10 @@ export const useReporteAdmin = () => {
     setFiltros,
     distritosDisponibles,
     loadingExport,
+    loadingExportEstudiantes,
+    loadingDetalleDirectores,
+    detalleDirectoresCargado,
+    fetchRealtimeDirectoresDetalle,
     rangoMes,
     setRangoMes,
     dataDirectoresBar,

@@ -1,9 +1,9 @@
 import { User } from '@/features/types/types'
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import styles from './tablasUsuarios.module.css'
 import Link from 'next/link'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
-import { convertRolToPath, convertRolToTitle, regionTexto } from '@/fuctions/regiones'
+import { convertRolToPath, convertRolToTitle, regionTexto, getAreaTexto, getCaracteristicasDirectivoTexto, nivelInstitucion } from '@/fuctions/regiones'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import { RiDeleteBinLine, RiLoader4Line } from 'react-icons/ri'
 import { MdEditSquare } from 'react-icons/md'
@@ -41,6 +41,19 @@ const HighlightedText = ({ text, highlight }: { text: string; highlight: string 
 	);
 };
 
+
+
+const getNivelInstitucionTexto = (niveles: number[] | undefined): string => {
+	if (!niveles || !Array.isArray(niveles)) return '';
+	return niveles
+		.map(id => {
+			const item = nivelInstitucion.find(n => n.id === id);
+			return item ? item.name.charAt(0).toUpperCase() + item.name.slice(1) : '';
+		})
+		.filter(Boolean)
+		.join(', ');
+};
+
 const TablaDirectores = ({
 	docentesDeDirectores,
 	rol,
@@ -55,6 +68,99 @@ const TablaDirectores = ({
 	const { currentUserData, resultadoBusquedaUsuario, lastVisible, warningDataDocente } = useGlobalContext()
 	const [dniUsuario, setDniUsuario] = useState<string>("")
 	const [error, setError] = useState<string>("")
+
+	const [headerFilters, setHeaderFilters] = useState({
+		distrito: '',
+		area: '',
+		caracteristica: '',
+		nivel: '',
+		gestion: ''
+	});
+
+	// Unique values extracted dynamically from memory
+	const uniqueDistritos = useMemo(() => {
+		const set = new Set<string>();
+		docentesDeDirectores?.forEach(d => {
+			if (d.distrito) set.add(d.distrito);
+		});
+		return Array.from(set).sort();
+	}, [docentesDeDirectores]);
+
+	const uniqueAreas = useMemo(() => {
+		const set = new Set<string>();
+		docentesDeDirectores?.forEach(d => {
+			const text = getAreaTexto(d.area);
+			if (text) set.add(text);
+		});
+		return Array.from(set).sort();
+	}, [docentesDeDirectores]);
+
+	const uniqueCD = useMemo(() => {
+		const set = new Set<string>();
+		docentesDeDirectores?.forEach(d => {
+			const text = getCaracteristicasDirectivoTexto(d.caracteristicaCurricular);
+			if (text) set.add(text);
+		});
+		return Array.from(set).sort();
+	}, [docentesDeDirectores]);
+
+	const uniqueNiveles = useMemo(() => {
+		const set = new Set<string>();
+		docentesDeDirectores?.forEach(d => {
+			if (d.nivelDeInstitucion && Array.isArray(d.nivelDeInstitucion)) {
+				d.nivelDeInstitucion.forEach(nId => {
+					const item = nivelInstitucion.find(n => n.id === nId);
+					if (item) set.add(item.name.charAt(0).toUpperCase() + item.name.slice(1));
+				});
+			}
+		});
+		return Array.from(set).sort();
+	}, [docentesDeDirectores]);
+
+	const uniqueGestiones = useMemo(() => {
+		const set = new Set<string>();
+		docentesDeDirectores?.forEach(d => {
+			const text = d.tipoGestion ? d.tipoGestion.charAt(0).toUpperCase() + d.tipoGestion.slice(1) : '';
+			if (text) set.add(text);
+		});
+		return Array.from(set).sort();
+	}, [docentesDeDirectores]);
+
+	// Filtered list
+	const filteredDocentes = useMemo(() => {
+		if (!docentesDeDirectores) return [];
+		return docentesDeDirectores.filter(d => {
+			// 1. Distrito filter
+			if (headerFilters.distrito) {
+				if (d.distrito !== headerFilters.distrito) return false;
+			}
+			// 2. Area filter
+			if (headerFilters.area) {
+				const text = getAreaTexto(d.area);
+				if (text !== headerFilters.area) return false;
+			}
+			// 3. Caracteristica filter
+			if (headerFilters.caracteristica) {
+				const text = getCaracteristicasDirectivoTexto(d.caracteristicaCurricular);
+				if (text !== headerFilters.caracteristica) return false;
+			}
+			// 4. Nivel filter
+			if (headerFilters.nivel) {
+				const hasNivel = d.nivelDeInstitucion?.some(nId => {
+					const item = nivelInstitucion.find(n => n.id === nId);
+					const name = item ? item.name.charAt(0).toUpperCase() + item.name.slice(1) : '';
+					return name === headerFilters.nivel;
+				});
+				if (!hasNivel) return false;
+			}
+			// 5. Gestion filter
+			if (headerFilters.gestion) {
+				const text = d.tipoGestion ? d.tipoGestion.charAt(0).toUpperCase() + d.tipoGestion.slice(1) : '';
+				if (text !== headerFilters.gestion) return false;
+			}
+			return true;
+		});
+	}, [docentesDeDirectores, headerFilters]);
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const { getDirectorFromEspecialistaCurricular, getNextUsuarios, getPreviousUsuarios, getNextUsuariosEspecialista, getPreviousUsuariosEspecialista, getNextDirectoresAdmin, getPreviousDirectoresAdmin } = useEvaluacionCurricular()
 	const { updateTipoGestion } = useUsuario()
@@ -69,31 +175,78 @@ const TablaDirectores = ({
 		}
 	}, [resultadoBusquedaUsuario, warningDataDocente])
 
-	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault()
-		if (dniUsuario.length !== 8) {
-			setError("El DNI debe tener 8 dígitos")
-			return
-		} else {
-			setIsLoading(true)
-			//aqui va la funcion que va a buscar al director
-			getDirectorFromEspecialistaCurricular(rol, dniUsuario)
-			console.log(dniUsuario)
-			setError("")
-		}
-	}
+	const [activeDropdown, setActiveDropdown] = useState<'distrito' | 'area' | 'caracteristica' | 'nivel' | 'gestion' | null>(null);
 
-	const handleDniChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value
-		setDniUsuario(value)
-		if (value.length !== 8 && value.length > 0) {
-			setError("El DNI debe tener 8 dígitos")
-		} else {
-			setError("")
-		}
-	}
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			const target = event.target as HTMLElement;
+			if (!target.closest(`.${styles.headerFilterWrapper}`)) {
+				setActiveDropdown(null);
+			}
+		};
+		document.addEventListener('click', handleClickOutside);
+		return () => document.removeEventListener('click', handleClickOutside);
+	}, []);
 
+	const renderFilterHeader = (title: string, key: 'distrito' | 'area' | 'caracteristica' | 'nivel' | 'gestion', options: string[]) => {
+		const isFiltered = !!headerFilters[key];
+		const isOpen = activeDropdown === key;
+		const alignRight = key === 'nivel' || key === 'gestion';
 
+		return (
+			<div 
+				className={styles.headerFilterWrapper}
+				onClick={() => setActiveDropdown(prev => prev === key ? null : key)}
+			>
+				<span>{title}</span>
+				<div className={styles.headerFilterIconContainer}>
+					<svg 
+						className={`${styles.headerFilterIcon} ${isFiltered ? styles.headerFilterIconActive : ''}`} 
+						viewBox="0 0 24 24" 
+						fill="none" 
+						stroke="currentColor" 
+						strokeWidth="2.5" 
+						strokeLinecap="round" 
+						strokeLinejoin="round"
+					>
+						<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+					</svg>
+				</div>
+
+				{isOpen && (
+					<div 
+						className={`${styles.customDropdownMenu} ${alignRight ? styles.customDropdownMenuRight : ''}`}
+						onClick={(e) => e.stopPropagation()}
+					>
+						<div 
+							className={`${styles.customDropdownItem} ${!headerFilters[key] ? styles.customDropdownItemActive : ''}`}
+							onClick={() => {
+								setHeaderFilters(prev => ({ ...prev, [key]: '' }));
+								setActiveDropdown(null);
+							}}
+						>
+							(Todas)
+						</div>
+						{options.map(opt => {
+							const isSelected = headerFilters[key] === opt;
+							return (
+								<div 
+									key={opt}
+									className={`${styles.customDropdownItem} ${isSelected ? styles.customDropdownItemActive : ''}`}
+									onClick={() => {
+										setHeaderFilters(prev => ({ ...prev, [key]: opt }));
+										setActiveDropdown(null);
+									}}
+								>
+									{opt}
+								</div>
+							);
+						})}
+					</div>
+				)}
+			</div>
+		);
+	};
 
 	return (
 		<div className={styles.tableSection}>
@@ -108,56 +261,12 @@ const TablaDirectores = ({
 				showDeleteUsuario &&
 				<DeleteUsuario handleShowModalDelete={() => setShowDeleteUsuario(false)} idUsuario={`${docente.dni}`} />
 			}
-			<h2 className={styles.sectionTitle}>
+			{/* <h2 className={styles.sectionTitle}>
 				<span className={styles.sectionTitleIndicator}></span>
-				{convertRolToTitle(rol)}
-			</h2>
+				{convertRolToTitle(rol)}sdasd
+			</h2> */}
 
-			<div>
-				<form className={styles.formulario} action="" onSubmit={handleSubmit}>
-					<div >
-						<div className={styles.formGroup}>
-							<label htmlFor="">Dni:</label>
-							<div className={styles.inputContainer}>
-								<input
-									className={`${styles.input} ${error ? styles.inputError : ''}`}
-									type="text"
-									placeholder='escribe el dni'
-									onChange={handleDniChange}
-									maxLength={8}
-								/>
-								<button type='submit' className={styles.button} disabled={isLoading}>
-									{isLoading ? <RiLoader4Line className={styles.buttonSpinner} /> : 'Buscar'}
-								</button>
-							</div>
-							{error && <span className={styles.errorMessage}>{error}</span>}
-						</div>
-					</div>
-				</form>
 
-				{isLoading ? (
-					<div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
-						<Loader variant="spinner" size="medium" text="Buscando directivo..." />
-					</div>
-				) : Object.keys(resultadoBusquedaUsuario).length > 0 ? (
-					<div className={styles.resultadoBusqueda}>
-						<div className={styles.resultadoBusquedaHeader}>
-							<h3>Resultado de la búsqueda</h3>
-							<div className={styles.actions}>
-								<MdEditSquare onClick={() => { setIdDirector(resultadoBusquedaUsuario.dni || ""); setShowUpdateDirector(true) }} className={styles.editButton} />
-								<RiDeleteBinLine onClick={() => { setShowDeleteUsuario(!showDeleteUsuario); setDocente(resultadoBusquedaUsuario) }} className={styles.deleteButton} />
-							</div>
-
-						</div>
-						<p><strong>DNI:</strong> {resultadoBusquedaUsuario.dni}</p>
-						<p><strong>Nombres:</strong> {resultadoBusquedaUsuario.nombres?.toLocaleUpperCase()}</p>
-						<p><strong>Apellidos:</strong> {resultadoBusquedaUsuario.apellidos?.toLocaleUpperCase()}</p>
-						<p><strong>UGEL:</strong> {regionTexto(String(resultadoBusquedaUsuario.region))}</p>
-					</div>
-				) : (
-					<p>{warningDataDocente}</p>
-				)}
-			</div>
 			<table className={`${styles.table} ${isLoadingExternal ? styles.tableLoading : ''}`}>
 				<thead className={styles.tableHeader}>
 					<tr>
@@ -166,8 +275,12 @@ const TablaDirectores = ({
 						<th>Directores</th>
 						<th>Institución</th>
 						<th>UGEL</th>
+						<th>{renderFilterHeader('Distrito', 'distrito', uniqueDistritos)}</th>
+						<th>{renderFilterHeader('Área', 'area', uniqueAreas)}</th>
+						<th>{renderFilterHeader('Característica', 'caracteristica', uniqueCD)}</th>
+						<th>{renderFilterHeader('Nivel', 'nivel', uniqueNiveles)}</th>
 						<th className={styles.relativeHeader}>
-							Gestión
+							{renderFilterHeader('Gestión', 'gestion', uniqueGestiones)}
 							{showLocalPopup && showGestionHelp && (
 								<div className={styles.popupContainerHeader}>
 									<div className={styles.tourArrow}></div>
@@ -189,7 +302,7 @@ const TablaDirectores = ({
 				</thead>
 				<tbody className={styles.tableBody}>
 					{
-						docentesDeDirectores?.map((director, index) => {
+						filteredDocentes?.map((director, index) => {
 							return (
 								<tr key={director.dni || index} className={styles.tableRow}>
 									<td className={styles.tableCell}>
@@ -206,6 +319,18 @@ const TablaDirectores = ({
 									</td>
 									<td className={styles.tableCell}>
 										{regionTexto(String(director.region))}
+									</td>
+									<td className={styles.tableCell}>
+										{director.distrito || ''}
+									</td>
+									<td className={styles.tableCell}>
+										{getAreaTexto(director.area)}
+									</td>
+									<td className={styles.tableCell}>
+										{getCaracteristicasDirectivoTexto(director.caracteristicaCurricular)}
+									</td>
+									<td className={styles.tableCell}>
+										{getNivelInstitucionTexto(director.nivelDeInstitucion)}
 									</td>
 									<td className={styles.tableCell}>
 										<select

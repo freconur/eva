@@ -115,7 +115,7 @@ const TablaParticipacionDirectores: React.FC<TablaParticipacionDirectoresProps> 
           </div>
 
           <div className={styles.tableResponsive}>
-            <table className={styles.detailTable}>
+            <table className={styles.customTable}>
               <thead>
                 <tr>
                   <th>DNI</th>
@@ -139,19 +139,17 @@ const TablaParticipacionDirectores: React.FC<TablaParticipacionDirectoresProps> 
                       const isParticipante = !!dir.participo || (dir.totalEstudiantes > 0);
                       return (
                         <tr key={dir.dniDirector || idx}>
-                          <td style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
+                          <td style={{ fontWeight: '600', color: '#334155', letterSpacing: '0.025em' }}>
                             {highlightText(dir.dniDirector || '', searchTermDirector)}
                           </td>
-                          <td style={{ fontWeight: '500' }}>
+                          <td style={{ fontWeight: '600', color: '#1e293b' }}>
                             {highlightText(`${dir.nombres} ${dir.apellidos}`, searchTermDirector)}
                           </td>
-                          <td>
+                          <td style={{ color: '#475569' }}>
                             {highlightText(dir.institucion, searchTermDirector)}
                           </td>
-                          <td>
-                            <span className={styles.regionBadge}>
-                              UGEL {regionTexto(dir.region)}
-                            </span>
+                          <td style={{ color: '#475569', fontWeight: '500' }}>
+                            UGEL {regionTexto(dir.region)}
                           </td>
                           <td>
                             <span className={isParticipante ? styles.statusBadgeActive : styles.statusBadgePending}>

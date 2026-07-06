@@ -298,6 +298,7 @@ export type UserEstudiante = {
   nombresApellidos?: string;
   dni?: string;
   dniDocente?: string;
+  institucion?: string;
   respuestasCorrectas?: number;
   totalPreguntas?: number;
   grado?: number | string;
@@ -317,6 +318,7 @@ export type Estudiante = {
   dni?: string;
   nombresApellidos?: string;
   dniDocente?: string;
+  institucion?: string;
   respuestasCorrectas?: number;
   totalPreguntas?: number;
   respuestasIncorrectas?: number;
@@ -327,6 +329,12 @@ export type Estudiante = {
   seccion?: string;
   genero?: string;
   dniDirector?: string;
+  distrito?: string;
+  region?: string;
+  area?: number | string;
+  caracteristicaCurricular?: string;
+  tipoGestion?: string;
+  nivelDeInstitucion?: number[];
 };
 
 export type AsignacionGradoSeccion = {
@@ -403,6 +411,8 @@ export type User = {
   idFase?: string;
   numeroEvaluacion?: number;
   tipoGestion?: 'publico' | 'privado';
+  totalEstudiantes?: number;
+  sumaPuntajes?: number;
 };
 
 export type ConocimientoPedagogico = {

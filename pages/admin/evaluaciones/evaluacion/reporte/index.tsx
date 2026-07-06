@@ -159,6 +159,10 @@ const Reporte = () => {
     setFiltros,
     distritosDisponibles,
     loadingExport,
+    loadingExportEstudiantes,
+    loadingDetalleDirectores,
+    detalleDirectoresCargado,
+    fetchRealtimeDirectoresDetalle,
     rangoMes,
     setRangoMes,
     dataDirectoresBar,
@@ -319,14 +323,39 @@ const Reporte = () => {
                 </div>
               </div>
             ) : (
-              dataDirectoresBar && dataDirectoresBar.length > 0 && (
-                <BarChartDirectores data={dataDirectoresBar} />
+              (evaluacion as any)?.realtimeEnabled && !detalleDirectoresCargado ? (
+                <div className={styles.loaderContainer} style={{ minHeight: '300px', flexDirection: 'column', gap: '1rem', justifyContent: 'center', alignItems: 'center', border: '1px dashed #cbd5e1', borderRadius: '12px', padding: '2rem', backgroundColor: '#f8fafc' }}>
+                  <p style={{ color: '#64748b', fontSize: '0.95rem', textAlign: 'center', maxWidth: '400px' }}>
+                    Las calificaciones detalladas por director se mostrarán una vez que se cargue el detalle de participación.
+                  </p>
+                  <button 
+                    onClick={() => fetchRealtimeDirectoresDetalle()}
+                    style={{ 
+                      padding: '0.5rem 1rem', 
+                      backgroundColor: '#3b82f6', 
+                      color: '#fff', 
+                      borderRadius: '6px', 
+                      border: 'none', 
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#2563eb')}
+                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#3b82f6')}
+                  >
+                    Cargar Detalle de Calificaciones
+                  </button>
+                </div>
+              ) : (
+                dataDirectoresBar && dataDirectoresBar.length > 0 && (
+                  <BarChartDirectores data={dataDirectoresBar} nivelYPuntaje={evaluacion?.nivelYPuntaje} />
+                )
               )
             )
           );
         case 'docentes_bar':
           return evaluacion.tipoDeEvaluacion === '1' && !loadingProfesoresBuckets && fullDocentesData && fullDocentesData.length > 0 && (
-            <BarChartDocentes data={fullDocentesData} />
+            <BarChartDocentes data={fullDocentesData} nivelYPuntaje={evaluacion?.nivelYPuntaje} />
           );
         case 'docentes_buckets':
           return evaluacion.tipoDeEvaluacion === '1' && (
@@ -475,7 +504,7 @@ const Reporte = () => {
             handleChangeYear={handleChangeYear}
             chartColumns={chartColumns}
             setChartColumns={setChartColumns}
-            loadingExportEstudiantes={loadingCrearEstudiantes || loadingExport}
+            loadingExportEstudiantes={loadingExportEstudiantes || loadingCrearEstudiantes || loadingExport}
             handleExportEstudiantesToExcel={handleExportEstudiantesToExcel}
             loadingExport={loadingExport}
             handleExportToExcel={handleExportToExcel}
@@ -545,20 +574,29 @@ const Reporte = () => {
 
           {/* Detalle de Directores (Participación) */}
           {elementosVisibles.includes('tabla_directores') && (
-            <TablaParticipacionDirectores
-              styles={styles}
-              directorsDetailRef={directorsDetailRef}
-              selectedDirectorStatus={selectedDirectorStatus}
-              setSelectedDirectorStatus={setSelectedDirectorStatus}
-              selectedRegionDirector={selectedRegionDirector}
-              setSelectedRegionDirector={setSelectedRegionDirector}
-              pageSizeDirector={pageSizeDirector}
-              setPageSizeDirector={setPageSizeDirector}
-              searchTermDirector={searchTermDirector}
-              setSearchTermDirector={setSearchTermDirector}
-              filteredDirectoresByStatus={filteredDirectoresByStatus}
-              directoresStats={directoresStats}
-            />
+            loadingDetalleDirectores ? (
+              <div className={styles.loaderContainer} style={{ minHeight: '150px', marginTop: '2rem' }}>
+                <div className={styles.loaderContent}>
+                  <RiLoader4Line className={styles.loaderIcon} />
+                  <span className={styles.loaderText}>Cargando perfiles y detalle de directores...</span>
+                </div>
+              </div>
+            ) : (
+              <TablaParticipacionDirectores
+                styles={styles}
+                directorsDetailRef={directorsDetailRef}
+                selectedDirectorStatus={selectedDirectorStatus}
+                setSelectedDirectorStatus={setSelectedDirectorStatus}
+                selectedRegionDirector={selectedRegionDirector}
+                setSelectedRegionDirector={setSelectedRegionDirector}
+                pageSizeDirector={pageSizeDirector}
+                setPageSizeDirector={setPageSizeDirector}
+                searchTermDirector={searchTermDirector}
+                setSearchTermDirector={setSearchTermDirector}
+                filteredDirectoresByStatus={filteredDirectoresByStatus}
+                directoresStats={directoresStats}
+              />
+            )
           )}
         </main>
 

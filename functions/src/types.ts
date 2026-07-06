@@ -4,6 +4,7 @@ export type Estudiante = {
   dni?: string;
   dniDocente?: string;
   dniDirector?: string;
+  institucion?: string;
   respuestasCorrectas?: string;
   totalPreguntas?: string;
   grado?: number;
@@ -22,6 +23,11 @@ export type Estudiante = {
   }[];
   region?: number;
   nivelData?: NivelYPuntaje;
+  distrito?: string;
+  area?: number | string;
+  caracteristicaCurricular?: string;
+  tipoGestion?: string;
+  nivelDeInstitucion?: number[];
 }
 export type Evaluacion = {
   id?: string;
@@ -83,6 +89,8 @@ export type User = {
   tipoEspecialista?: number,
   fechaEvaluacion?: Date,
   docentesDelDirector?: User[],
+  tipoGestion?: string;
+  nivelDeInstitucion?: number[];
   asignaciones?: AsignacionGradoSeccion[];
 };
 export type PreguntasRespuestas = {

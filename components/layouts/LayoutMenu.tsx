@@ -14,6 +14,8 @@ import styles from './layout.module.css'
 import ModalTipoGestion from '@/modals/ModalTipoGestion'
 import ModalConfigurarSeguridad from '@/modals/ModalConfigurarSeguridad'
 import ModalConfigurarDistrito from '@/modals/ModalConfigurarDistrito'
+import { doc, onSnapshot } from 'firebase/firestore'
+import { db } from '@/firebase/firebase.config'
 
 interface Props {
   children: JSX.Element | JSX.Element[]
@@ -32,6 +34,80 @@ const LayoutMenu = ({ children }: Props) => {
     getUserData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni])
+
+  useEffect(() => {
+    const applyBrandingColors = (data: any) => {
+      const root = document.documentElement;
+      if (data.colorPrincipal) {
+        root.style.setProperty('--color-principal', data.colorPrincipal);
+      }
+      if (data.colorSecundario) {
+        root.style.setProperty('--color-secundario', data.colorSecundario);
+      }
+      if (data.colorTercero) {
+        root.style.setProperty('--color-tercero', data.colorTercero);
+      }
+      if (data.colorBackground) {
+        root.style.setProperty('--color-background', data.colorBackground);
+      }
+      if (data.colorLoginBackground) {
+        root.style.setProperty('--color-login-background', data.colorLoginBackground);
+      }
+      if (data.colorLoginAccent) {
+        root.style.setProperty('--color-login-accent', data.colorLoginAccent);
+      }
+      if (data.colorSidebarBackground) {
+        root.style.setProperty('--color-sidebar-bg', data.colorSidebarBackground);
+      }
+      if (data.colorSidebarAccent) {
+        root.style.setProperty('--color-sidebar-accent', data.colorSidebarAccent);
+      }
+      if (data.colorMateriaComunicacion) {
+        root.style.setProperty('--color-materia-comunicacion', data.colorMateriaComunicacion);
+      }
+      if (data.colorMateriaMatematica) {
+        root.style.setProperty('--color-materia-matematica', data.colorMateriaMatematica);
+      }
+      if (data.colorMateriaCiencia) {
+        root.style.setProperty('--color-materia-ciencia', data.colorMateriaCiencia);
+      }
+      if (data.colorMateriaDpcc) {
+        root.style.setProperty('--color-materia-dpcc', data.colorMateriaDpcc);
+      }
+      if (data.colorMateriaSociales) {
+        root.style.setProperty('--color-materia-sociales', data.colorMateriaSociales);
+      }
+    };
+
+    // Cargar colores en caché inmediatamente
+    if (typeof window !== 'undefined') {
+      const cachedBranding = localStorage.getItem('branding_colors');
+      if (cachedBranding) {
+        try {
+          const data = JSON.parse(cachedBranding);
+          applyBrandingColors(data);
+        } catch (e) {
+          console.error("Error al parsear branding cached:", e);
+        }
+      }
+    }
+
+    const brandDocRef = doc(db, 'configuracion', 'branding');
+    const unsubscribe = onSnapshot(brandDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        applyBrandingColors(data);
+        // Guardar en localStorage para futuras visitas
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('branding_colors', JSON.stringify(data));
+        }
+      }
+    }, (err) => {
+      console.error("Error al escuchar cambios de branding:", err);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -188,7 +264,7 @@ const LayoutMenu = ({ children }: Props) => {
             </button>
           </div>
         )}
-        {currentUserData.perfil?.rol && router.pathname !== '/login' && (
+        {currentUserData.perfil?.rol && router.pathname !== '/login' && router.pathname !== '/admin/pruebas' && (
           <Navbar />
         )}
         <main className={styles.mainContent}>

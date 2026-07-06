@@ -9,6 +9,7 @@ interface EvaluationCardProps {
   isActive?: boolean;
   isCompleted?: boolean;
   progress?: number;
+  icon?: React.ReactNode;
 }
 
 const EvaluationCard: React.FC<EvaluationCardProps> = ({
@@ -17,7 +18,8 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({
   backgroundColor,
   isActive = false,
   isCompleted = false,
-  progress = 0
+  progress = 0,
+  icon
 }) => {
   return (
     <Link 
@@ -25,6 +27,7 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({
       className={`${styles.evaluationCard} ${isActive ? styles.active : ''} ${isCompleted ? styles.completed : ''}`}
       style={{ '--card-bg': backgroundColor } as React.CSSProperties}
     >
+      {icon && <div className={styles.backgroundIcon}>{icon}</div>}
       <div className={styles.cardContent}>
         <h3 className={styles.cardTitle}>{title}</h3>
         

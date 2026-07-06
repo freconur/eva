@@ -4,18 +4,19 @@ import useUsuario from '@/features/hooks/useUsuario'
 import DeleteUsuario from '@/modals/deleteUsuario'
 import UpdateUsuarioDirector from '@/modals/updateUsuarioDirector'
 import React, { useEffect, useState, useMemo } from 'react'
-import { RiAddLine, RiSearchLine, RiLoader4Line, RiInformationLine } from 'react-icons/ri'
+import { RiAddLine, RiSearchLine, RiLoader4Line, RiInformationLine, RiDeleteBinLine } from 'react-icons/ri'
+import { MdEditSquare } from 'react-icons/md'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import TablaDirectores from '@/components/curricular/tablas/tablaDirectores'
 import DirectorModal from '@/components/modals/DirectorModal'
 import CustomDropdown from '@/components/common/CustomDropdown'
 import styles from './agregar-directores.module.css'
-import { regiones } from '@/fuctions/regiones'
+import { regiones, regionTexto } from '@/fuctions/regiones'
 
 const AgregarDirectores = () => {
   const { getUserData, getRegiones } = useUsuario()
-  const { currentUserData, docentesDeDirectores } = useGlobalContext()
-  const { getDirectoresTabla, getDirectoresBySearch, getTotalDirectoresCount } = useEvaluacionCurricular()
+  const { currentUserData, docentesDeDirectores, resultadoBusquedaUsuario, warningDataDocente } = useGlobalContext()
+  const { getDirectoresTabla, getDirectoresBySearch, getTotalDirectoresCount, getDirectorFromEspecialistaCurricular } = useEvaluacionCurricular()
   const [showModal, setShowModal] = useState<boolean>(false)
   const [idUsuario, setIdUsuario] = useState<string>("")
   const [showDeleteUsuario, setShowDeleteUsuario] = useState<boolean>(false)
@@ -27,6 +28,10 @@ const AgregarDirectores = () => {
   const [totalRegion, setTotalRegion] = useState<number>(0)
   const [activePopup, setActivePopup] = useState<string | null>(null)
   const [showPopupsHelp, setShowPopupsHelp] = useState(true)
+
+  const [dniUsuario, setDniUsuario] = useState<string>("")
+  const [dniError, setDniError] = useState<string>("")
+  const [isDniLoading, setIsDniLoading] = useState<boolean>(false)
 
   useEffect(() => {
     const saved = localStorage.getItem('hideDirectorsPopups_v2')
@@ -162,6 +167,34 @@ const AgregarDirectores = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionId, currentUserData.rol, currentUserData.region, totalGlobal])
 
+  useEffect(() => {
+    if (Object.keys(resultadoBusquedaUsuario).length > 0 || warningDataDocente) {
+      setIsDniLoading(false)
+    }
+  }, [resultadoBusquedaUsuario, warningDataDocente])
+
+  const handleSubmitDni = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (dniUsuario.length !== 8) {
+      setDniError("El DNI debe tener 8 dígitos")
+      return
+    } else {
+      setIsDniLoading(true)
+      getDirectorFromEspecialistaCurricular(2, dniUsuario)
+      setDniError("")
+    }
+  }
+
+  const handleDniChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setDniUsuario(value)
+    if (value.length !== 8 && value.length > 0) {
+      setDniError("El DNI debe tener 8 dígitos")
+    } else {
+      setDniError("")
+    }
+  }
+
   const handleShowModalDelete = () => {
     setShowDeleteUsuario(!showDeleteUsuario)
   }
@@ -271,22 +304,60 @@ const AgregarDirectores = () => {
               )}
             </div>
           )}
+
+          <div className={styles.statsPillsContainer}>
+            <div className={styles.statsPillUgel}>
+              EN ESTA UGEL: <span className={styles.statsPillValue}>{totalRegion}</span>
+            </div>
+            <div className={styles.statsPillGlobal}>
+              TOTAL GLOBAL: <span className={styles.statsPillValue}>{totalGlobal}</span>
+            </div>
+          </div>
+
+          <form className={styles.dniForm} onSubmit={handleSubmitDni}>
+            <div className={styles.dniFormGroup}>
+              <label className={styles.filterLabel}>Dni:</label>
+              <div className={styles.dniInputContainer}>
+                <input
+                  className={`${styles.dniInput} ${dniError ? styles.dniInputError : ''}`}
+                  type="text"
+                  placeholder="escribe el dni"
+                  value={dniUsuario}
+                  onChange={handleDniChange}
+                  maxLength={8}
+                />
+                <button type="submit" className={styles.dniSubmitBtn} disabled={isDniLoading}>
+                  {isDniLoading ? <RiLoader4Line className={styles.spinner} /> : 'Buscar'}
+                </button>
+              </div>
+              {dniError && <span className={styles.dniErrorMessage}>{dniError}</span>}
+            </div>
+          </form>
         </div>
 
         <div className={styles.mainContent}>
-          <div className={styles.tableHeaderSection}>
-            <h3 className={styles.tableTitle}>Directores Registrados</h3>
-            <div className={styles.statsContainer}>
-              <div className={styles.tableStats}>
-                <span className={styles.statsLabel}>En esta UGEL:</span>
-                <span className={styles.statsValue}>{totalRegion}</span>
-              </div>
-              <div className={`${styles.tableStats} ${styles.globalStats}`}>
-                <span className={styles.statsLabel}>Total Global:</span>
-                <span className={styles.statsValue}>{totalGlobal}</span>
-              </div>
+          {isDniLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '20px', marginBottom: '1.5rem' }}>
+              <RiLoader4Line className={styles.spinner} style={{ fontSize: '2rem' }} />
             </div>
-          </div>
+          ) : Object.keys(resultadoBusquedaUsuario).length > 0 ? (
+            <div className={styles.resultadoBusqueda}>
+              <div className={styles.resultadoBusquedaHeader}>
+                <h3>Resultado de la búsqueda</h3>
+                <div className={styles.actions}>
+                  <MdEditSquare onClick={() => { setIdUsuario(resultadoBusquedaUsuario.dni || ""); setShowModal(true) }} className={styles.editButton} />
+                  <RiDeleteBinLine onClick={() => { setShowDeleteUsuario(true); setIdUsuario(resultadoBusquedaUsuario.dni || "") }} className={styles.deleteButton} />
+                </div>
+              </div>
+              <p><strong>DNI:</strong> {resultadoBusquedaUsuario.dni}</p>
+              <p><strong>Nombres:</strong> {resultadoBusquedaUsuario.nombres?.toLocaleUpperCase()}</p>
+              <p><strong>Apellidos:</strong> {resultadoBusquedaUsuario.apellidos?.toLocaleUpperCase()}</p>
+              <p><strong>UGEL:</strong> {regionTexto(String(resultadoBusquedaUsuario.region))}</p>
+            </div>
+          ) : warningDataDocente ? (
+            <div className={styles.warningText}>{warningDataDocente}</div>
+          ) : null}
+
           <TablaDirectores
             rol={2}
             docentesDeDirectores={docentesParaMostrar}

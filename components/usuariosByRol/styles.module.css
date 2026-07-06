@@ -322,3 +322,65 @@
   color: #94a3b8;
   font-size: 0.9375rem;
 }
+
+.tableText {
+  font-size: 0.875rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+.levelBadge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid #dcfce7;
+  white-space: nowrap;
+}
+
+.cardTextValue {
+  font-size: 0.875rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+.gestionBadge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  background-color: #fef3c7;
+  color: #d97706;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid #fde68a;
+  white-space: nowrap;
+}
+
+.caracteristicaBadge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  background-color: #eff6ff;
+  color: #2563eb;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid #dbeafe;
+  white-space: nowrap;
+}
+
+.gradosContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  align-items: flex-start;
+}
+
+.gradoFila {
+  font-size: 0.8125rem;
+  color: #2563eb;
+  font-weight: 500;
+  white-space: nowrap;
+}

@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { Estudiante, UserEstudiante, PreguntasRespuestas, User } from '../types/types';
-import { converGenero, converSeccion, convertGrade, regionTexto, rolTexto } from '@/fuctions/regiones';
+import { converGenero, converSeccion, convertGrade, regionTexto, rolTexto, getAreaTexto, getCaracteristicasDirectivoTexto } from '@/fuctions/regiones';
 
 type BaseData = {
   'DNI': string;
@@ -8,11 +8,17 @@ type BaseData = {
   'Respuestas Correctas': string;
   'Total Preguntas': string;
   'DNI Docente': string;
+  'Institución'?: string;
   'Nivel'?: string;
   'Puntaje'?: string;
   'Grado'?: string;
   'Sección'?: string;
   'Género'?: string;
+  'Distrito'?: string;
+  'Región'?: string;
+  'Área'?: string;
+  'Característica Curricular'?: string;
+  'Tipo Gestión'?: string;
 };
 
 export const exportEstudiantesToExcel = (
@@ -32,6 +38,7 @@ export const exportEstudiantesToExcel = (
       'Respuestas Correctas': String(estudiante.respuestasCorrectas || ''),
       'Total Preguntas': String(estudiante.totalPreguntas || ''),
       'DNI Docente': estudiante.dniDocente || '',
+      'Institución': estudiante.institucion || '',
       'Nivel': estudiante.nivel || '',
       'Puntaje': String(estudiante.puntaje || '')
     };
@@ -45,6 +52,22 @@ export const exportEstudiantesToExcel = (
     }
     if ('genero' in estudiante) {
       baseData['Género'] = converGenero(String(estudiante.genero || ''));
+    }
+    if ('distrito' in estudiante) {
+      baseData['Distrito'] = estudiante.distrito || '';
+    }
+    if ('region' in estudiante) {
+      baseData['Región'] = regionTexto(String(estudiante.region || '')) || '';
+    }
+    if ('area' in estudiante) {
+      baseData['Área'] = getAreaTexto(estudiante.area);
+    }
+    if ('caracteristicaCurricular' in estudiante) {
+      baseData['Característica Curricular'] = getCaracteristicasDirectivoTexto(estudiante.caracteristicaCurricular);
+    }
+    if ('tipoGestion' in estudiante) {
+      const val = estudiante.tipoGestion || '';
+      baseData['Tipo Gestión'] = val ? val.charAt(0).toUpperCase() + val.slice(1) : '';
     }
 
     // Agregar las respuestas del estudiante
@@ -115,7 +138,12 @@ export const exportEstudiantesToExcel = (
   const optionalColumnWidths = [
     { wch: 10 }, // Grado
     { wch: 10 }, // Sección
-    { wch: 10 }  // Género
+    { wch: 10 }, // Género
+    { wch: 20 }, // Distrito
+    { wch: 15 }, // Región
+    { wch: 12 }, // Área
+    { wch: 25 }, // Característica Curricular
+    { wch: 15 }  // Tipo Gestión
   ];
 
   // Agregar anchos para las columnas de respuestas
@@ -135,12 +163,34 @@ export const exportEstudiantesToExcel = (
   XLSX.writeFile(workbook, fileName);
 };
 
-export const exportDirectorDocenteDataToExcel = (datos: any[], fileName: string = 'evaluaciones_director_docente.xlsx') => {
+export const exportDirectorDocenteDataToExcel = (
+  datos: any[],
+  fileName: string = 'evaluaciones_director_docente.xlsx',
+  nivelYPuntaje?: any[]
+) => {
   // Crear un nuevo libro de Excel
   const workbook = XLSX.utils.book_new();
 
   // Preparar los datos para la exportación, incluyendo reporteEstudiantes
   const dataToExport = datos.map((item: User, index) => {
+    const total = Number(item.totalEstudiantes || 0);
+    const sum = Number(item.sumaPuntajes || 0);
+    const promedio = total > 0 ? Math.round((sum / total) * 100) / 100 : 0;
+
+    let nivelNombre = '';
+    if (nivelYPuntaje && Array.isArray(nivelYPuntaje) && nivelYPuntaje.length > 0 && total > 0) {
+      const nivelesOrdenados = [...nivelYPuntaje].sort((a, b) => (a.min || 0) - (b.min || 0));
+      for (const nivelData of nivelesOrdenados) {
+        const minPuntaje = nivelData.min || 0;
+        const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
+        if (promedio >= minPuntaje && promedio <= maxPuntaje) {
+          nivelNombre = nivelData.nivel || '';
+          break;
+        }
+      }
+    }
+    const nivelCapitalizado = nivelNombre ? nivelNombre.charAt(0).toUpperCase() + nivelNombre.slice(1) : '';
+
     // Crear el objeto base con solo las propiedades requeridas
     const baseData: any = {
       'N°': index + 1,
@@ -152,6 +202,13 @@ export const exportDirectorDocenteDataToExcel = (datos: any[], fileName: string 
       'region': regionTexto(String(item.region)) || '',
       'rol': rolTexto(Number(item.rol)) || '',
       'Género': converGenero(String(item.genero || '')) || '',
+      'Área': getAreaTexto(item.area),
+      'Característica Curricular': getCaracteristicasDirectivoTexto(item.caracteristicaCurricular),
+      'Tipo Gestión': item.tipoGestion ? item.tipoGestion.charAt(0).toUpperCase() + item.tipoGestion.slice(1) : '',
+      'Total Estudiantes': total,
+      'Suma Puntajes': sum,
+      'Puntaje Promedio': promedio,
+      'Nivel': nivelCapitalizado,
     };
 
     // Agregar datos de reporteEstudiantes si existe
@@ -200,6 +257,13 @@ export const exportDirectorDocenteDataToExcel = (datos: any[], fileName: string 
     { wch: 10 },  // Región
     { wch: 8 },   // Rol
     { wch: 12 },  // Género
+    { wch: 12 },  // Área
+    { wch: 25 },  // Característica Curricular
+    { wch: 15 },  // Tipo Gestión
+    { wch: 15 },  // Total Estudiantes
+    { wch: 15 },  // Suma Puntajes
+    { wch: 18 },  // Puntaje Promedio
+    { wch: 15 }   // Nivel
   ];
 
   // Agregar anchos para las columnas de reporte

@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #0b132b;
+  background-color: var(--color-login-background, #0b132b);
   background-image: url('/login-bg.png');
   background-size: cover;
   background-position: center;
@@ -22,7 +22,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(4, 35, 84, 0.90) 0%, rgba(2, 10, 24, 0.85) 50%, rgba(242, 110, 39, 0.15) 100%);
+  background: linear-gradient(135deg, rgba(4, 35, 84, 0.90) 0%, rgba(2, 10, 24, 0.85) 50%, color-mix(in srgb, var(--color-login-accent, #facc15) 15%, transparent) 100%);
   z-index: 1;
 }
 
@@ -128,7 +128,7 @@
 .divider {
   width: 80px;
   height: 4px;
-  background-color: #facc15;
+  background-color: var(--color-login-accent, #facc15);
   border-radius: 2px;
   margin-top: 1rem;
 }
@@ -211,8 +211,8 @@
 .input:focus {
   outline: none;
   background: rgba(255, 255, 255, 0.08);
-  border-color: #facc15;
-  box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.1);
+  border-color: var(--color-login-accent, #facc15);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-login-accent, #facc15) 10%, transparent);
 }
 
 .input::placeholder {
@@ -222,7 +222,7 @@
 .button {
   width: 100%;
   padding: 1.125rem;
-  background-color: #facc15;
+  background-color: var(--color-login-accent, #facc15);
   color: #0f172a;
   border: none;
   border-radius: 12px;
@@ -236,9 +236,9 @@
 }
 
 .button:hover {
-  background-color: #fde047;
+  background-color: color-mix(in srgb, var(--color-login-accent, #facc15) 85%, #ffffff);
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(250, 204, 21, 0.3);
+  box-shadow: 0 10px 25px color-mix(in srgb, var(--color-login-accent, #facc15) 30%, transparent);
 }
 
 .button:active {
@@ -271,7 +271,7 @@
 .loaderIcon {
   animation: spin 1s linear infinite;
   font-size: 1.5rem;
-  color: #facc15;
+  color: var(--color-login-accent, #facc15);
 }
 
 .loaderText {
@@ -331,5 +331,5 @@
 }
 
 .forgotPasswordLink:hover {
-  color: #facc15;
+  color: var(--color-login-accent, #facc15);
 }

@@ -708,13 +708,80 @@ export const useReporteEspecialistas = () => {
   };
 
   const getAllReporteDeDirectoreToAdmin = async (idEvaluacion: string, month: number, yearSelected: number) => {
+    // 1. Obtener la evaluacion para verificar si realtimeEnabled está activo
+    const evalDoc = await getDoc(doc(db, 'evaluaciones', idEvaluacion));
+    const isRealtime = evalDoc.exists() && (evalDoc.data() as any)?.realtimeEnabled === true;
+
+    if (isRealtime) {
+      // Obtener acumulados de tiempo real (solo directores participantes)
+      const pathRef = collection(db, `evaluaciones/${idEvaluacion}/consolidados_realtime_directores`);
+      const querySnapshot = await getDocs(pathRef);
+
+      // Obtener y ordenar preguntas para formatear el reporteEstudiantes en el orden correcto
+      const preguntasSnap = await getDocs(collection(db, `evaluaciones/${idEvaluacion}/preguntasRespuestas`));
+      const preguntasOrdenadas = preguntasSnap.docs
+        .map(d => ({ id: d.id, ...d.data() as any }))
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+      const directoresList: User[] = [];
+      querySnapshot.forEach((docSnap) => {
+        const rtData = docSnap.data();
+        const dni = docSnap.id;
+
+        const reporteEstudiantes = preguntasOrdenadas.map((pregunta, idx) => {
+          const qId = pregunta.id;
+          const orderStr = pregunta.order !== undefined ? String(pregunta.order) : String(idx + 1);
+
+          // Helper para leer propiedades planas directas de Firestore
+          const getVal = (key: string) => rtData[key] !== undefined ? Number(rtData[key]) : 0;
+
+          const aVal = getVal(`preguntas.${orderStr}.A`) || getVal(`preguntas.${orderStr}.a`);
+          const bVal = getVal(`preguntas.${orderStr}.B`) || getVal(`preguntas.${orderStr}.b`);
+          const cVal = getVal(`preguntas.${orderStr}.C`) || getVal(`preguntas.${orderStr}.c`);
+          const dVal = getVal(`preguntas.${orderStr}.D`) || getVal(`preguntas.${orderStr}.d`);
+          const totalVal = getVal(`preguntas.${orderStr}.total`);
+
+          return {
+            id: qId,
+            a: aVal,
+            b: bVal,
+            c: cVal,
+            d: dVal,
+            total: totalVal
+          };
+        });
+
+        directoresList.push({
+          dni: dni,
+          nombres: rtData.nombres || 'Director',
+          apellidos: rtData.apellidos || 'N/A',
+          institucion: rtData.institucion || 'N/A',
+          region: rtData.region !== undefined ? Number(rtData.region) : undefined,
+          distrito: rtData.distrito || '',
+          genero: rtData.genero || '',
+          area: rtData.area !== undefined ? Number(rtData.area) : undefined,
+          caracteristicaCurricular: rtData.caracteristicaCurricular || '',
+          tipoGestion: rtData.tipoGestion || '',
+          rol: 2, // Director
+          sumaPuntajes: rtData.sumaPuntajes || 0,
+          totalEstudiantes: rtData.totalEstudiantes || 0,
+          reporteEstudiantes: reporteEstudiantes
+        } as any);
+      });
+
+      console.log('directoresList (realtime)', directoresList);
+      dispatch({ type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE, payload: directoresList });
+      return directoresList;
+    }
+
+    // Código original para evaluaciones no-realtime
     const q = query(collection(db, 'usuarios'), where('rol', '==', 2));
 
     const directores = await getDocs(q);
-    console.log('cantidad total de directores', directores.size); //esto se creo solo para saber el total de directores que exite en la coleccion de usuarios
+    console.log('cantidad total de directores', directores.size);
 
     const pathRef = collection(db, `/evaluaciones/${idEvaluacion}/${yearSelected}-${month}`);
-    const querySnapshot = await getDocs(pathRef); //me traigo todos los directores que se encuentran en esta coleccion de una evaluacion especifica
+    const querySnapshot = await getDocs(pathRef);
     console.log('tamanio de la coleccion', querySnapshot.size);
     const docentesDelDirector: User[] = [];
     querySnapshot.forEach((doc) => {

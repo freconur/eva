@@ -1,6 +1,6 @@
 .container {
     padding: 2rem;
-    max-width: 1200px;
+    max-width: 100%;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -134,4 +134,162 @@
     .title {
         font-size: 1.5rem;
     }
+}
+
+/* Controls and Filters Layout */
+.controlsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.searchBar {
+    flex: 1 1 280px;
+    max-width: 320px;
+    position: relative;
+}
+
+.filterGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1 1 160px;
+    max-width: 220px;
+}
+
+.filterSelect {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #1e293b;
+    background-color: white;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+    height: 44px;
+}
+
+.filterSelect:hover {
+    border-color: #cbd5e1;
+}
+
+.filterSelect:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.clearFiltersButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.25rem;
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    height: 44px;
+    white-space: nowrap;
+}
+
+.clearFiltersButton:hover {
+    background-color: #e2e8f0;
+    color: #1e293b;
+}
+
+.resultsCount {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 600;
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+    .resultsCount {
+        margin-left: 0;
+        width: 100%;
+        text-align: left;
+        margin-top: 0.5rem;
+    }
+}
+
+/* Filter Submit and Pagination Styles */
+.filterSubmitButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    height: 44px;
+    white-space: nowrap;
+}
+
+.filterSubmitButton:hover {
+    background-color: #2563eb;
+}
+
+.filterSubmitButton:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.45);
+}
+
+.paginationContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    padding: 1rem;
+    background-color: #f8fafc;
+    border-radius: 1rem;
+    border: 1px solid #f1f5f9;
+}
+
+.paginationButton {
+    padding: 0.625rem 1.25rem;
+    background-color: white;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.paginationButton:hover:not(:disabled) {
+    border-color: #cbd5e1;
+    color: #1e293b;
+    background-color: #f8fafc;
+    transform: translateY(-1px);
+}
+
+.paginationButton:disabled {
+    background-color: #f1f5f9;
+    color: #cbd5e1;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.pageIndicator {
+    font-size: 0.9rem;
+    color: #475569;
+    font-weight: 700;
 }

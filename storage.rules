@@ -10,9 +10,13 @@ service firebase.storage {
     match /evidencias_especialistas/{allPaths=**} {
       allow read, write: if request.auth != null;
     }
+
+    // Permitir a usuarios autenticados subir y leer capturas de la pizarra
+    match /pizarras_capturas/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
     
     // Permitir acceso a otras carpetas según sea necesario
-    // Por ahora, solo excel-exports y evidencias_especialistas están permitidos
     match /{allPaths=**} {
       allow read, write: if false; // Denegar acceso por defecto a otras rutas
     }

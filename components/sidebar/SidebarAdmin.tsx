@@ -9,7 +9,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/firebase/firebase.config';
 
 import styles from './sidebar.module.css'
-import { MdAccountBalance, MdAccountCircle, MdDashboard, MdPeople } from 'react-icons/md';
+import { MdAccountBalance, MdAccountCircle, MdDashboard, MdPeople, MdSettings, MdAssignment } from 'react-icons/md';
 import { FaUserGraduate, FaUserNinja, FaUserTie } from 'react-icons/fa';
 import { LuListTodo } from "react-icons/lu";
 import { IoIosArrowDown } from "react-icons/io";
@@ -165,6 +165,22 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 </span>
               )}
             </div>
+            {isAdmin && (
+              <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/configuracion') ? styles.activeLink : ''}`}>
+                <MdSettings className={styles.dashboardIcon} />
+                <Link className={styles.dashboardLink} href="/admin/configuracion" aria-haspopup="true">
+                  Configuración
+                </Link>
+              </div>
+            )}
+            {isAdmin && (
+              <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/pruebas') ? styles.activeLink : ''}`}>
+                <MdAssignment className={styles.dashboardIcon} />
+                <Link className={styles.dashboardLink} href="/admin/pruebas" aria-haspopup="true">
+                  Pruebas
+                </Link>
+              </div>
+            )}
             <div className={styles.menuContainer}>
               <div className={styles.menuHeader} onClick={(e) => {
                 e.stopPropagation();

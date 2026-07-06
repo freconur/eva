@@ -237,3 +237,21 @@ export const rangoEdad = [
   { id: 4, name: "50-60" },
   { id: 5, name: "60-70" },
 ]
+
+export const getAreaTexto = (idArea: string | number | undefined): string => {
+  if (idArea === undefined || idArea === null || idArea === '') return '';
+  const item = area.find(a => a.id === Number(idArea));
+  if (item) {
+    return item.name.charAt(0).toUpperCase() + item.name.slice(1);
+  }
+  return String(idArea);
+};
+
+export const getCaracteristicasDirectivoTexto = (idCD: string | number | undefined): string => {
+  if (idCD === undefined || idCD === null || idCD === '') return '';
+  const item = caracteristicasDirectivo.find(c => c.id === Number(idCD));
+  if (item) {
+    return item.name.charAt(0).toUpperCase() + item.name.slice(1);
+  }
+  return String(idCD);
+};
