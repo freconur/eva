@@ -3,11 +3,12 @@
   display: flex;
   align-items: center;
   height: 80px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  background-color: var(--color-principal, #ffffff);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   z-index: 50;
   position: relative;
+  transition: background-color 0.3s ease;
 }
 
 .navbarContainer {
@@ -16,7 +17,6 @@
   align-items: center;
   width: 100%;
   padding: 1rem 1.5rem;
-
 }
 
 .leftSection {
@@ -41,7 +41,8 @@
 
 .nivelLabel {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--color-principal-contrast, #64748b);
+  opacity: 0.8;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -49,8 +50,7 @@
 
 .nivelValue {
   font-size: 0.9rem;
-  color: #0369a1;
-  /* Sky 700 */
+  color: var(--color-principal-contrast, #0369a1);
   font-weight: 600;
 }
 
@@ -73,18 +73,19 @@
 }
 
 .menuButton:hover {
-  background-color: #f3f4f6;
+  background-color: var(--color-navbar-hover, #f3f4f6);
 }
 
 .menuIcon {
-  color: #4b5563;
+  color: var(--color-principal-contrast, #4b5563);
   font-size: 1.5rem;
   transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .menuButton:hover .menuIcon {
-  color: var(--color-principal);
+  color: var(--color-principal-contrast, var(--color-principal));
   transform: scale(1.05);
+  opacity: 0.9;
 }
 
 /* ── Breadcrumbs ───────────────────────────────────────── */
@@ -111,15 +112,14 @@
 .breadcrumbSeparator {
   display: flex;
   align-items: center;
-  color: #94a3b8;
-  /* Slate 400 */
+  color: var(--color-principal-contrast, #94a3b8);
+  opacity: 0.7;
   margin: 0 8px;
   font-size: 0.85rem;
 }
 
 .homeIcon {
-  color: #64748b;
-  /* Slate 500 */
+  color: var(--color-principal-contrast, #64748b);
   font-size: 1.2rem;
   transition: color 0.2s ease, transform 0.2s ease;
 }
@@ -130,8 +130,7 @@
 }
 
 .breadcrumbLinkText {
-  color: #64748b;
-  /* Slate 500 */
+  color: var(--color-principal-contrast, #64748b);
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
@@ -144,7 +143,8 @@
 }
 
 .breadcrumbLinkTextDisabled {
-  color: #94a3b8;
+  color: var(--color-principal-contrast, #94a3b8);
+  opacity: 0.7;
   font-size: 0.9rem;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -152,8 +152,7 @@
 }
 
 .breadcrumbCurrent {
-  color: #0f172a;
-  /* Deep Slate 900 */
+  color: var(--color-principal-contrast, #0f172a);
   font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: 0.01em;

@@ -17,6 +17,20 @@ import ModalConfigurarDistrito from '@/modals/ModalConfigurarDistrito'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase/firebase.config'
 
+const getContrastColor = (hexcolor: string): string => {
+  if (!hexcolor) return '#ffffff';
+  let cleanHex = hexcolor.startsWith('#') ? hexcolor.slice(1) : hexcolor;
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex.split('').map(char => char + char).join('');
+  }
+  if (cleanHex.length !== 6) return '#ffffff';
+  const r = parseInt(cleanHex.slice(0, 2), 16);
+  const g = parseInt(cleanHex.slice(2, 4), 16);
+  const b = parseInt(cleanHex.slice(4, 6), 16);
+  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+  return (yiq >= 128) ? '#0f172a' : '#ffffff';
+};
+
 interface Props {
   children: JSX.Element | JSX.Element[]
 }
@@ -40,12 +54,20 @@ const LayoutMenu = ({ children }: Props) => {
       const root = document.documentElement;
       if (data.colorPrincipal) {
         root.style.setProperty('--color-principal', data.colorPrincipal);
+        const contrastColor = getContrastColor(data.colorPrincipal);
+        root.style.setProperty('--color-principal-contrast', contrastColor);
+        const hoverBg = contrastColor === '#ffffff' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+        root.style.setProperty('--color-navbar-hover', hoverBg);
       }
       if (data.colorSecundario) {
         root.style.setProperty('--color-secundario', data.colorSecundario);
+        const contrastColor = getContrastColor(data.colorSecundario);
+        root.style.setProperty('--color-secundario-contrast', contrastColor);
       }
       if (data.colorTercero) {
         root.style.setProperty('--color-tercero', data.colorTercero);
+        const contrastColor = getContrastColor(data.colorTercero);
+        root.style.setProperty('--color-tercero-contrast', contrastColor);
       }
       if (data.colorBackground) {
         root.style.setProperty('--color-background', data.colorBackground);
@@ -246,6 +268,7 @@ const LayoutMenu = ({ children }: Props) => {
   }
 
   const hasSidebar = Boolean(currentUserData.perfil?.rol && router.pathname !== '/login');
+  const isFullScreenPage = router.pathname === '/admin/pruebas';
 
   return (
     <div className={`${styles.container} ${hasSidebar ? styles.withSidebar : ''} ${isSidebarCollapsed ? styles.collapsedSidebar : ''}`}>
@@ -267,7 +290,7 @@ const LayoutMenu = ({ children }: Props) => {
         {currentUserData.perfil?.rol && router.pathname !== '/login' && router.pathname !== '/admin/pruebas' && (
           <Navbar />
         )}
-        <main className={styles.mainContent}>
+        <main className={`${styles.mainContent} ${isFullScreenPage ? styles.noPadding : ''}`}>
           {children}
         </main>
       </div>

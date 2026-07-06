@@ -294,10 +294,10 @@ const PersonalizacionMarcaPage = () => {
               <div>
                 <h3 className="text-sm font-bold text-slate-700 mb-4">Colores del Portal</h3>
                 
-                {/* Color Principal */}
+                {/* Color de Navbar */}
                 <div className="mb-5">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Color Principal (Cabeceras y Menús)
+                    Color de Navbar (Cabeceras y Menús)
                   </label>
                   <div className="flex gap-2">
                     <input 
@@ -316,10 +316,10 @@ const PersonalizacionMarcaPage = () => {
                   </div>
                 </div>
 
-                {/* Color Secundario */}
+                {/* Color de Fondo */}
                 <div className="mb-5">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Color Secundario (Hover y Submenús)
+                    Color de Fondo (Contenido Principal)
                   </label>
                   <div className="flex gap-2">
                     <input 
@@ -660,7 +660,7 @@ const PersonalizacionMarcaPage = () => {
             style={{ 
               backgroundColor: 
                 (activeSection === 'general' || activeSection === 'sidebar')
-                  ? colorBackground 
+                  ? colorSecundario
                   : activeSection === 'login' 
                     ? colorLoginBackground 
                     : '#f8fafc' 

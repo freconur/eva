@@ -113,6 +113,35 @@ export const useReporteAdmin = () => {
       [e.target.name]: e.target.value,
     }));
   };
+  // --- LIMPIAR ESTADOS AL CAMBIAR DE EVALUACIÓN ---
+  useEffect(() => {
+    const currentId = route.query.idEvaluacion as string;
+    if (currentId) {
+      // 1. Resetear estados locales del hook
+      setDataDirectoresBar([]);
+      setDetalleDirectoresCargado(false);
+      setDataReportePreguntas([]);
+      setFullDocentesData(null);
+      setSelectedRange(null);
+      setSelectedDirectorStatus(null);
+      setSearchTermDirector('');
+      setSelectedRegionDirector('all');
+      setConsolidationStatus(null);
+      setSyncedId(null);
+      
+      // 2. Resetear estados en el Contexto Global (Gráficos y Estadísticas)
+      dispatch({ type: AppAction.EVALUACION, payload: {} as any });
+      dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: [] });
+      dispatch({ type: AppAction.DATA_GRAFICO_PIE_CHART, payload: [] });
+      dispatch({ type: AppAction.DATA_GRAFICO_TENDENCIA_NIVELES, payload: [] });
+      dispatch({ type: AppAction.DATA_GRAFICO_TENDENCIA, payload: [] });
+      dispatch({ type: AppAction.DATA_GRAFICO_UGEL_STACKED, payload: [] });
+      dispatch({ type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE, payload: [] });
+      dispatch({ type: AppAction.ALL_EVALUACIONES_ESTUDIANTES, payload: [] });
+      dispatch({ type: AppAction.DATA_ESTADISTICAS, payload: [] });
+      dispatch({ type: AppAction.REPORTE_DIRECTOR, payload: [] });
+    }
+  }, [route.query.idEvaluacion]);
 
   // --- SINCRONIZACIÓN INICIAL CON EL MES Y AÑO DEL EXAMEN ---
   useEffect(() => {
@@ -496,10 +525,10 @@ export const useReporteAdmin = () => {
 
   useEffect(() => {
     const isRealtime = (evaluacion as any)?.realtimeEnabled === true;
-    if (isRealtime && !detalleDirectoresCargado && (selectedDirectorStatus !== null || selectedRegionDirector !== 'all')) {
+    if (isRealtime && !detalleDirectoresCargado) {
       fetchRealtimeDirectoresDetalle();
     }
-  }, [selectedDirectorStatus, selectedRegionDirector, evaluacion, detalleDirectoresCargado]);
+  }, [evaluacion, detalleDirectoresCargado]);
 
   const loadConsolidado = async () => {
     const idEval = route.query.idEvaluacion;

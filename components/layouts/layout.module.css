@@ -116,3 +116,41 @@
 .exitAuditBtn:active {
   transform: translateY(0);
 }
+
+/* --- ESTILOS DEL CONTENIDO PRINCIPAL Y CONTRASTE DINÁMICO --- */
+.mainContent {
+  background-color: var(--color-secundario, #f8fafc);
+  color: var(--color-secundario-contrast, #0f172a);
+  flex: 1;
+  padding: 1.5rem;
+  transition: background-color 0.3s ease, padding 0.3s ease;
+}
+
+.mainContent.noPadding {
+  padding: 0;
+}
+
+/* 1. Hace transparente el fondo del contenedor de cualquier página hija para que se perciba el fondo del main */
+.mainContent > div[class*="container"],
+.mainContent > div[class*="Container"] {
+  background: transparent !important;
+}
+
+/* 2. Aplica contraste dinámico a textos principales de la página (profundidad 1, 2 y 3) */
+.mainContent > h1,
+.mainContent > h2,
+.mainContent > h3,
+.mainContent > p,
+.mainContent > span,
+.mainContent > div > h1,
+.mainContent > div > h2,
+.mainContent > div > h3,
+.mainContent > div > p,
+.mainContent > div > span:not([class*="Icon"]),
+.mainContent > div > div > h1,
+.mainContent > div > div > h2,
+.mainContent > div > div > h3,
+.mainContent > div > div > p,
+.mainContent > div > div > span:not([class*="Icon"]) {
+  color: var(--color-secundario-contrast) !important;
+}

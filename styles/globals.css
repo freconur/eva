@@ -85,3 +85,50 @@ body {
 .Toastify__toast-container {
   z-index: 1000000 !important;
 }
+
+/* --- CONFIGURACIÓN DINÁMICA DE BOTONES ACCIÓN/PRIMARIOS --- */
+.bg-blue-600,
+.bg-indigo-600,
+.bg-violet-600,
+.bg-sky-600,
+.bg-blue-500,
+.bg-indigo-500,
+.bg-violet-500,
+[class*="registerButton"],
+[class*="filterSubmitButton"],
+[class*="submitButton"],
+[class*="primaryButton"],
+[class*="btnPrimary"],
+[class*="actionButton"],
+[class*="addButton"],
+[class*="saveButton"],
+[class*="confirmButton"],
+[class*="acceptButton"] {
+  background-color: var(--color-tercero) !important;
+  color: var(--color-tercero-contrast) !important;
+  border-color: var(--color-tercero) !important;
+}
+
+/* Efecto hover dinámico nativo (oscurece sutilmente el color sin importar cuál elijan) */
+.hover\:bg-blue-700:hover,
+.hover\:bg-indigo-700:hover,
+.hover\:bg-violet-700:hover,
+.hover\:bg-sky-700:hover,
+.hover\:bg-blue-600:hover:hover,
+.hover\:bg-indigo-600:hover:hover,
+.hover\:bg-violet-600:hover:hover,
+[class*="registerButton"]:hover,
+[class*="filterSubmitButton"]:hover,
+[class*="submitButton"]:hover,
+[class*="primaryButton"]:hover,
+[class*="btnPrimary"]:hover,
+[class*="actionButton"]:hover,
+[class*="addButton"]:hover,
+[class*="saveButton"]:hover,
+[class*="confirmButton"]:hover,
+[class*="acceptButton"]:hover {
+  background-color: var(--color-tercero) !important;
+  filter: brightness(0.9) !important;
+  color: var(--color-tercero-contrast) !important;
+  border-color: var(--color-tercero) !important;
+}
