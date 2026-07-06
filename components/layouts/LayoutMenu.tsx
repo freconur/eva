@@ -268,7 +268,7 @@ const LayoutMenu = ({ children }: Props) => {
   }
 
   const hasSidebar = Boolean(currentUserData.perfil?.rol && router.pathname !== '/login');
-  const isFullScreenPage = router.pathname === '/admin/pruebas';
+  const isFullScreenPage = router.pathname === '/admin/pruebas' || router.pathname === '/login';
 
   return (
     <div className={`${styles.container} ${hasSidebar ? styles.withSidebar : ''} ${isSidebarCollapsed ? styles.collapsedSidebar : ''}`}>

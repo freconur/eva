@@ -130,9 +130,9 @@
   padding: 0;
 }
 
-/* 1. Hace transparente el fondo del contenedor de cualquier página hija para que se perciba el fondo del main */
-.mainContent > div[class*="container"],
-.mainContent > div[class*="Container"] {
+/* 1. Hace transparente el fondo del contenedor de cualquier página hija (excepto de pantalla completa) */
+.mainContent:not(.noPadding) > div[class*="container"],
+.mainContent:not(.noPadding) > div[class*="Container"] {
   background: transparent !important;
 }
 
