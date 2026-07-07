@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, getFirestore, limit, doc, getDoc, onSnapshot, deleteDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs, getFirestore, doc, onSnapshot, deleteDoc } from 'firebase/firestore'
 import { app } from '@/firebase/firebase.config'
 import { User } from '@/features/types/types'
-import { RiSearchLine, RiLockPasswordLine, RiUserLine, RiEyeLine, RiBarChartLine, RiDatabase2Line, RiRefreshLine, RiDeleteBin6Line } from 'react-icons/ri'
+import { RiSearchLine, RiLockPasswordLine, RiUserLine, RiEyeLine, RiBarChartLine, RiDatabase2Line, RiRefreshLine, RiDeleteBin6Line, RiFilterLine, RiFilter3Line, RiArrowLeftSLine, RiArrowRightSLine, RiCloseLine } from 'react-icons/ri'
 import PrivateRoutesAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import { toast } from 'react-toastify'
 import useUsuario from '@/features/hooks/useUsuario'
 import { useGlobalContext, useGlobalContextDispatch } from '@/features/context/GlolbalContext'
 import { AppAction } from '@/features/actions/appAction'
-import { regionTexto } from '@/fuctions/regiones'
+import { regionTexto, regiones, nivelInstitucion, area, caracteristicasDirectivo, getCaracteristicasDirectivoTexto, getAreaTexto } from '@/fuctions/regiones'
+import { distritosPuno } from '@/fuctions/provinciasPuno'
 import { useRouter } from 'next/router'
 
 const ROLES_TEXT: Record<number, string> = {
@@ -19,10 +20,39 @@ const ROLES_TEXT: Record<number, string> = {
   5: 'Especialista Regional'
 }
 
+
+
+type Filters = {
+  region: string
+  distrito: string
+  rol: string
+  caracteristicaCurricular: string
+  tipoGestion: string
+  area: string
+  nivelDeInstitucion: string[]
+}
+
+const INITIAL_FILTERS: Filters = {
+  region: '',
+  distrito: '',
+  rol: '',
+  caracteristicaCurricular: '',
+  tipoGestion: '',
+  area: '',
+  nivelDeInstitucion: [],
+}
+
 const GestionUsuariosPage = () => {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [results, setResults] = useState<User[]>([])
+  // Filtros
+  const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS)
+  const [rawResults, setRawResults] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
+
+  // Paginación local (en memoria)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
+
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [resetting, setResetting] = useState(false)
@@ -47,6 +77,136 @@ const GestionUsuariosPage = () => {
   const { currentUserData } = useGlobalContext()
   const router = useRouter()
   const dispatch = useGlobalContextDispatch()
+
+  // Distritos filtrados por region seleccionada
+  const distritosDisponibles = filters.region
+    ? distritosPuno.find(p => p.id === Number(filters.region))?.distritos || []
+    : []
+
+  const hasActiveFilters = filters.region || filters.distrito || filters.rol || filters.caracteristicaCurricular || filters.tipoGestion || filters.area || filters.nivelDeInstitucion.length > 0
+
+  const handleFilterChange = (key: keyof Filters, value: string | string[]) => {
+    setFilters(prev => {
+      const updated = { ...prev, [key]: value }
+      // Limpiar distrito si cambia la región
+      if (key === 'region') {
+        updated.distrito = ''
+      }
+      return updated
+    })
+  }
+
+  const handleNivelToggle = (nivelId: string) => {
+    setFilters(prev => {
+      const current = prev.nivelDeInstitucion
+      const updated = current.includes(nivelId)
+        ? current.filter(n => n !== nivelId)
+        : [...current, nivelId]
+      return { ...prev, nivelDeInstitucion: updated }
+    })
+  }
+
+  const clearFilters = () => {
+    setFilters(INITIAL_FILTERS)
+    setRawResults([])
+    setHasSearched(false)
+    setCurrentPage(1)
+  }
+
+  const searchWithFilters = async () => {
+    if (!filters.region || !filters.rol) {
+      toast.warning('Debe seleccionar una Región y un Rol para buscar')
+      return
+    }
+    setLoading(true)
+    try {
+      const pathRef = collection(db, 'usuarios')
+      // Consultamos a Firestore usando únicamente el filtro de región
+      // para evitar totalmente la creación de índices compuestos en Firebase console
+      const q = query(pathRef, where('region', '==', Number(filters.region)))
+      const snapshot = await getDocs(q)
+
+      const docs: User[] = []
+      snapshot.forEach((docSnap) => {
+        docs.push(docSnap.data() as User)
+      })
+
+      setRawResults(docs)
+      setCurrentPage(1)
+      setHasSearched(true)
+    } catch (error: any) {
+      console.error('Error searching users with filters:', error)
+      toast.error('Error al buscar usuarios en Firestore')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSearch = () => {
+    searchWithFilters()
+  }
+
+  // Filtrado local en memoria (Reactivo, 0ms latencia, 0 costo lecturas)
+  const getFilteredResults = () => {
+    return rawResults.filter(user => {
+      // 1. Filtrar por Rol (que es obligatorio)
+      const userRol = Number(user.rol || user.perfil?.rol)
+      if (Number(filters.rol) !== userRol) return false
+
+      // 2. Filtrar por Distrito (opcional, en memoria)
+      if (filters.distrito && user.distrito !== filters.distrito) return false
+
+      // 3. Filtrar por Característica Curricular (opcional, en memoria)
+      if (filters.caracteristicaCurricular && String(user.caracteristicaCurricular) !== filters.caracteristicaCurricular) return false
+
+      // 4. Filtrar por Tipo de Gestión (opcional, en memoria)
+      if (filters.tipoGestion && user.tipoGestion !== filters.tipoGestion) return false
+
+      // 5. Filtrar por Área (opcional, en memoria)
+      if (filters.area && Number(user.area) !== Number(filters.area)) return false
+
+      // 6. Filtrar por Nivel de Institución (opcional, en memoria)
+      if (filters.nivelDeInstitucion.length > 0) {
+        const userNiveles = user.nivelDeInstitucion || []
+        const hasLevel = filters.nivelDeInstitucion.some(nivel => userNiveles.includes(Number(nivel)))
+        if (!hasLevel) return false
+      }
+
+      return true
+    })
+  }
+
+  const filteredResults = getFilteredResults()
+
+  // Helper local para convertir el array de nivelDeInstitucion a string
+  const getNivelInstitucionTexto = (niveles: number[] | undefined): string => {
+    if (!niveles || !Array.isArray(niveles)) return '—';
+    return niveles
+      .map(id => {
+        const item = nivelInstitucion.find(n => n.id === id);
+        return item ? item.name.charAt(0).toUpperCase() + item.name.slice(1) : '';
+      })
+      .filter(Boolean)
+      .join(', ');
+  };
+
+  // Conteo de usuarios que coinciden únicamente con la búsqueda obligatoria (región + rol)
+  const initialMatchesCount = rawResults.filter(user => {
+    const userRol = Number(user.rol || user.perfil?.rol)
+    return Number(filters.rol) === userRol
+  }).length
+
+  // Paginación local
+  const totalPages = Math.ceil(filteredResults.length / pageSize)
+  const paginatedResults = filteredResults.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1)
+  }
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1)
+  }
 
   const handleStartAudit = async (user: User) => {
     if (!user) return
@@ -139,67 +299,6 @@ const GestionUsuariosPage = () => {
     return () => unsubscribe()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setResults([])
-      setLoading(false)
-      return
-    }
-
-    if (searchTerm.length < 3) {
-      setResults([])
-      return
-    }
-
-    const delayDebounceFn = setTimeout(() => {
-      searchUsers(searchTerm)
-    }, 500)
-
-    return () => clearTimeout(delayDebounceFn)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm])
-
-  const searchUsers = async (queryText: string) => {
-    setLoading(true)
-    try {
-      const pathRef = collection(db, 'usuarios')
-      let docs: User[] = []
-
-      // Si es un número (DNI), buscamos por DNI exacto o prefijo
-      if (/^\d+$/.test(queryText)) {
-        const qPrefix = query(
-          pathRef,
-          where('dni', '>=', queryText),
-          where('dni', '<=', queryText + '\uf8ff'),
-          limit(15)
-        )
-        const snapshot = await getDocs(qPrefix)
-        snapshot.forEach((doc) => {
-          docs.push(doc.data() as User)
-        })
-      } else {
-        // De lo contrario, buscamos por nombre (insensible a mayúsculas/minúsculas o coincidencia parcial en frontend)
-        const snapshot = await getDocs(query(pathRef, limit(100)))
-        snapshot.forEach((doc) => {
-          const data = doc.data() as User
-          const fullName = `${data.nombres || ''} ${data.apellidos || ''}`.toLowerCase()
-          if (fullName.includes(queryText.toLowerCase())) {
-            docs.push(data)
-          }
-        })
-        // Limitar a 15 resultados
-        docs = docs.slice(0, 15)
-      }
-
-      setResults(docs)
-    } catch (error) {
-      console.error("Error searching users:", error)
-      toast.error("Error al buscar usuarios")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleOpenResetModal = (user: User) => {
     setSelectedUser(user)
@@ -318,18 +417,195 @@ const GestionUsuariosPage = () => {
 
       {activeTab === 'buscar' && (
         <>
-            {/* Search Section */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-              <div className="relative max-w-lg">
-                <RiSearchLine className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Ingrese DNI o nombre completo del usuario..."
-                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700 placeholder:text-slate-400"
-                />
+            {/* Filters Section */}
+            <div className="space-y-6">
+              {/* Mandatory Filters Card */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <RiFilter3Line className="text-lg text-blue-600" />
+                    <span className="font-bold text-sm">Búsqueda Inicial (Requerido)</span>
+                  </div>
+                  {hasSearched && (
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-500 font-semibold transition-colors"
+                    >
+                      <RiCloseLine className="text-sm" />
+                      Limpiar todo
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Region / UGEL */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">UGEL / Región *</label>
+                    <select
+                      value={filters.region}
+                      onChange={(e) => {
+                        handleFilterChange('region', e.target.value);
+                        if (hasSearched) {
+                          // Si ya se había buscado, al cambiar los mandatorios reseteamos la búsqueda
+                          setRawResults([]);
+                          setHasSearched(false);
+                        }
+                      }}
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700 text-sm bg-white"
+                    >
+                      <option value="">Seleccione una región</option>
+                      {regiones.map(r => (
+                        <option key={r.id} value={r.id}>{r.region}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Rol */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Rol *</label>
+                    <select
+                      value={filters.rol}
+                      onChange={(e) => {
+                        handleFilterChange('rol', e.target.value);
+                        if (hasSearched) {
+                          // Cambiar rol de búsqueda inicial
+                          setRawResults([]);
+                          setHasSearched(false);
+                        }
+                      }}
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700 text-sm bg-white"
+                    >
+                      <option value="">Seleccione un rol</option>
+                      {Object.entries(ROLES_TEXT).map(([id, name]) => (
+                        <option key={id} value={id}>{name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Buscar Button */}
+                <div className="flex items-center gap-3 pt-2">
+                  <button
+                    onClick={handleSearch}
+                    disabled={loading || !filters.region || !filters.rol}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all hover:shadow-lg hover:shadow-blue-600/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Buscando...
+                      </>
+                    ) : (
+                      <>
+                        <RiSearchLine className="text-sm" />
+                        Buscar Usuarios
+                      </>
+                    )}
+                  </button>
+                  {hasSearched && (
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg">
+                        ✓ Datos cargados en memoria
+                      </span>
+                      <span className="text-xs text-slate-500 font-semibold">
+                        Se encontraron <strong className="text-slate-800 font-bold">{initialMatchesCount}</strong> usuarios que coinciden con Región y Rol.
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Secondary Filters Card (Only renders after first search) */}
+              {hasSearched && (
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="flex items-center gap-2 text-slate-700 border-b border-slate-50 pb-2">
+                    <RiFilterLine className="text-lg text-indigo-600" />
+                    <span className="font-bold text-sm">Filtros Secundarios (Instantáneos en Memoria)</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Distrito */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Distrito</label>
+                      <select
+                        value={filters.distrito}
+                        onChange={(e) => handleFilterChange('distrito', e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700 text-sm bg-white"
+                      >
+                        <option value="">Todos los distritos</option>
+                        {distritosDisponibles.map(d => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Caracteristica Curricular */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Característica Curricular</label>
+                      <select
+                        value={filters.caracteristicaCurricular}
+                        onChange={(e) => handleFilterChange('caracteristicaCurricular', e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700 text-sm bg-white"
+                      >
+                        <option value="">Todas</option>
+                        {caracteristicasDirectivo.map(c => (
+                          <option key={c.id} value={String(c.id)}>{c.name.charAt(0).toUpperCase() + c.name.slice(1)}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Tipo de Gestion */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tipo de Gestión</label>
+                      <select
+                        value={filters.tipoGestion}
+                        onChange={(e) => handleFilterChange('tipoGestion', e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700 text-sm bg-white"
+                      >
+                        <option value="">Todos</option>
+                        <option value="publico">Público</option>
+                        <option value="privado">Privado</option>
+                      </select>
+                    </div>
+
+                    {/* Area */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Área</label>
+                      <select
+                        value={filters.area}
+                        onChange={(e) => handleFilterChange('area', e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700 text-sm bg-white"
+                      >
+                        <option value="">Todas</option>
+                        {area.map(a => (
+                          <option key={a.id} value={a.id}>{a.name.charAt(0).toUpperCase() + a.name.slice(1)}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Nivel de Institucion - Checkboxes */}
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Nivel de Institución</label>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {nivelInstitucion.map(n => (
+                          <button
+                            key={n.id}
+                            type="button"
+                            onClick={() => handleNivelToggle(String(n.id))}
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
+                              filters.nivelDeInstitucion.includes(String(n.id))
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600'
+                            }`}
+                          >
+                            {n.name.charAt(0).toUpperCase() + n.name.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Results Table */}
@@ -339,81 +615,153 @@ const GestionUsuariosPage = () => {
                   <div className="w-10 h-10 border-4 border-slate-100 border-t-blue-500 rounded-full animate-spin"></div>
                   <span className="font-medium animate-pulse">Buscando usuarios...</span>
                 </div>
-              ) : results.length > 0 ? (
-                <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
-                  <table className="w-full border-collapse text-left">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-100 text-slate-600 font-semibold text-sm">
-                        <th className="p-4 pl-6">Usuario</th>
-                        <th className="p-4">DNI</th>
-                        <th className="p-4">Rol</th>
-                        <th className="p-4">Correo Electrónico</th>
-                        <th className="p-4 pr-6 text-center">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-700">
-                      {results.map((user) => (
-                        <tr key={user.dni} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="p-4 pl-6">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
-                                {user.nombres?.charAt(0)}{user.apellidos?.charAt(0)}
-                              </div>
+              ) : paginatedResults.length > 0 ? (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-left">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100 text-slate-600 font-semibold text-sm">
+                          <th className="p-4 pl-6">Usuario</th>
+                          <th className="p-4">DNI</th>
+                          <th className="p-4">Rol</th>
+                          <th className="p-4">Región</th>
+                          <th className="p-4">Distrito</th>
+                          <th className="p-4">Tipo</th>
+                          <th className="p-4">Gestión</th>
+                          <th className="p-4">Área</th>
+                          <th className="p-4">Nivel</th>
+                          <th className="p-4">Correo Electrónico</th>
+                          <th className="p-4 pr-6 text-center">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
+                        {paginatedResults.map((user) => (
+                          <tr key={user.dni} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="p-4 pl-6">
                               <div>
                                 <div className="font-semibold text-slate-800">{user.nombres} {user.apellidos}</div>
                                 <div className="text-xs text-slate-400">{user.celular || 'Sin celular'}</div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg text-xs font-semibold tracking-wider">
-                              {user.dni}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span className="text-slate-600 text-sm">
-                              {ROLES_TEXT[Number(user.rol || user.perfil?.rol)] || 'Usuario'}
-                            </span>
-                          </td>
-                          <td className="p-4 text-sm text-slate-500">
-                            {user.email || `${user.dni}@competencelab.com`}
-                          </td>
-                          <td className="p-4 pr-6">
-                            <div className="flex justify-center gap-2">
-                              <button
-                                onClick={() => handleStartAudit(user)}
-                                className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-xs font-bold border border-blue-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                title="Auditar cuenta del usuario"
-                              >
-                                <RiEyeLine className="text-sm" />
-                                Auditar
-                              </button>
-                              <button
-                                onClick={() => handleOpenResetModal(user)}
-                                className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold border border-amber-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                title="Restablecer contraseña"
-                              >
-                                <RiLockPasswordLine className="text-sm" />
-                                Restablecer
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : searchTerm.trim() ? (
+                            </td>
+                            <td className="p-4">
+                              <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg text-xs font-semibold tracking-wider">
+                                {user.dni}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-slate-600 text-sm">
+                                {ROLES_TEXT[Number(user.rol || user.perfil?.rol)] || 'Usuario'}
+                              </span>
+                            </td>
+                            <td className="p-4 text-sm text-slate-500">
+                              {user.region ? regionTexto(String(user.region)) : '—'}
+                            </td>
+                            <td className="p-4 text-sm text-slate-550">
+                              {user.distrito || '—'}
+                            </td>
+                            <td className="p-4 text-sm text-slate-550">
+                              {getCaracteristicasDirectivoTexto(user.caracteristicaCurricular) || '—'}
+                            </td>
+                            <td className="p-4 text-sm text-slate-550">
+                              {user.tipoGestion ? user.tipoGestion.charAt(0).toUpperCase() + user.tipoGestion.slice(1) : '—'}
+                            </td>
+                            <td className="p-4 text-sm text-slate-550">
+                              {getAreaTexto(user.area) || '—'}
+                            </td>
+                            <td className="p-4 text-sm text-slate-550">
+                              {getNivelInstitucionTexto(user.nivelDeInstitucion)}
+                            </td>
+                            <td className="p-4 text-sm text-slate-500">
+                              {user.email || `${user.dni}@competencelab.com`}
+                            </td>
+                            <td className="p-4 pr-6">
+                              <div className="flex justify-center gap-2">
+                                <button
+                                  onClick={() => handleStartAudit(user)}
+                                  className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-xs font-bold border border-blue-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                  title="Auditar cuenta del usuario"
+                                >
+                                  <RiEyeLine className="text-sm" />
+                                  Auditar
+                                </button>
+                                <button
+                                  onClick={() => handleOpenResetModal(user)}
+                                  className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold border border-amber-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                  title="Restablecer contraseña"
+                                >
+                                  <RiLockPasswordLine className="text-sm" />
+                                  Restablecer
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {filteredResults.length > 0 && (
+                    <div className="bg-slate-50 border-t border-slate-100 px-6 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 flex-wrap">
+                        <div className="text-xs text-slate-500 font-medium">
+                          Página {currentPage} de {totalPages || 1} — Mostrando {paginatedResults.length} de {filteredResults.length}
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Mostrar:</span>
+                          <select
+                            value={pageSize}
+                            onChange={e => {
+                              setPageSize(Number(e.target.value))
+                              setCurrentPage(1)
+                            }}
+                            className="px-2.5 py-1 text-xs font-bold border border-slate-200 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer shadow-sm hover:border-slate-300"
+                          >
+                            <option value={50}>50 filas</option>
+                            <option value={100}>100 filas</option>
+                            <option value={200}>200 filas</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {totalPages > 1 && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={handlePrevPage}
+                            disabled={currentPage <= 1}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-600 hover:bg-white hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-slate-200 disabled:hover:text-slate-600"
+                          >
+                            <RiArrowLeftSLine className="text-sm" />
+                            Anterior
+                          </button>
+                          <span className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg min-w-[32px] text-center">
+                            {currentPage}
+                          </span>
+                          <button
+                            onClick={handleNextPage}
+                            disabled={currentPage >= totalPages}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-600 hover:bg-white hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-slate-200 disabled:hover:text-slate-600"
+                          >
+                            Siguiente
+                            <RiArrowRightSLine className="text-sm" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : hasSearched ? (
                 <div className="p-12 text-center text-slate-400">
                   <RiUserLine className="mx-auto text-4xl mb-3 text-slate-300" />
-                  <p className="font-medium">No se encontraron usuarios coincidentes.</p>
-                  <p className="text-sm text-slate-400 mt-1">Verifique el DNI o la ortografía del nombre.</p>
+                  <p className="font-medium">No se encontraron usuarios con los filtros seleccionados.</p>
+                  <p className="text-sm text-slate-400 mt-1">Intente con una combinación diferente de filtros.</p>
                 </div>
               ) : (
                 <div className="p-12 text-center text-slate-400">
-                  <RiUserLine className="mx-auto text-4xl mb-3 text-slate-300" />
-                  <p className="font-medium">Ingrese un criterio de búsqueda arriba.</p>
-                  <p className="text-sm text-slate-400 mt-1">Puede escribir el DNI o nombres de cualquier usuario.</p>
+                  <RiFilterLine className="mx-auto text-4xl mb-3 text-slate-300" />
+                  <p className="font-medium">Seleccione filtros y presione &quot;Buscar Usuarios&quot;.</p>
+                  <p className="text-sm text-slate-400 mt-1">Use los filtros de arriba para encontrar usuarios por región, rol, área y más.</p>
                 </div>
               )}
             </div>

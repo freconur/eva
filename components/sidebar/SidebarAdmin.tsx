@@ -177,7 +177,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
               <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/pruebas') ? styles.activeLink : ''}`}>
                 <MdAssignment className={styles.dashboardIcon} />
                 <Link className={styles.dashboardLink} href="/admin/pruebas" aria-haspopup="true">
-                  Pruebas
+                  Pizarra
                 </Link>
               </div>
             )}

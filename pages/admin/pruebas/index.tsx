@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import PrivateRoutesAdmin from '@/components/layouts/PrivateRoutesAdmin';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { db, storage } from '@/firebase/firebase.config';
@@ -93,7 +94,7 @@ const PruebasPage = () => {
   const userDni = currentUserData?.dni || '';
 
   const [shapes, setShapes] = useState<Shape[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [tool, setTool] = useState<Tool>('select');
   const [fillColor, setFillColor] = useState('#3b82f6');
   const [strokeColor, setStrokeColor] = useState('#1e293b');
@@ -137,6 +138,15 @@ const PruebasPage = () => {
   const [hoverShapeId, setHoverShapeId] = useState<string | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<AnchorPoint | null>(null);
   const [, setMousePos] = useState({ x: 0, y: 0 });
+
+  // Refs de duplicación con Alt-Drag
+  const hasDuplicatedThisDrag = useRef(false);
+  const dragStartCoords = useRef<Record<string, { x: number; y: number; x2?: number; y2?: number }>>({});
+  const dragOffsetsRef = useRef<Record<string, { dx: number; dy: number }>>({});
+
+  // Selección por área (Marquee)
+  const [isSelectingArea, setIsSelectingArea] = useState(false);
+  const [selectionBox, setSelectionBox] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const textInputRef = useRef<HTMLInputElement>(null);
@@ -230,8 +240,8 @@ const PruebasPage = () => {
   }, [shapes, selectedBoardId]);
 
   // Refs para atajos de teclado (evita stale closures y re-suscripciones)
-  const selectedIdRefForShortcut = useRef(selectedId);
-  selectedIdRefForShortcut.current = selectedId;
+  const selectedIdsRefForShortcut = useRef(selectedIds);
+  selectedIdsRefForShortcut.current = selectedIds;
 
   const deleteSelectedRefForShortcut = useRef<() => void>();
 
@@ -275,7 +285,7 @@ const PruebasPage = () => {
           break;
         case 'delete':
         case 'backspace':
-          if (selectedIdRefForShortcut.current) {
+          if (selectedIdsRefForShortcut.current.length > 0) {
             deleteSelectedRefForShortcut.current?.();
           }
           break;
@@ -604,13 +614,19 @@ const PruebasPage = () => {
     }
   }, []);
 
-  // ─── ELIMINAR PROYECTO ────────────────────────────────
   const handleDeleteBoard = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('¿Seguro que deseas eliminar permanentemente este proyecto?')) {
+    
+    const boardToDelete = boards.find(b => b.id === id);
+    if (!boardToDelete) return;
+
+    const confirmation = window.prompt(
+      `¡ATENCIÓN! Estás a punto de eliminar permanentemente el proyecto.\n\nPara confirmar, escribe el título del proyecto a continuación:\n"${boardToDelete.titulo}"`
+    );
+
+    if (confirmation === boardToDelete.titulo) {
       try {
-        const boardToDelete = boards.find(b => b.id === id);
-        if (boardToDelete && boardToDelete.shapes) {
+        if (boardToDelete.shapes) {
           boardToDelete.shapes.forEach(s => {
             if (s.type === 'image' && s.text) {
               deleteImageFromStorage(s.text);
@@ -620,17 +636,26 @@ const PruebasPage = () => {
         await deleteDoc(doc(db, 'pizarras_pruebas', id));
         if (selectedBoardId === id) {
           setSelectedBoardId(null);
+          setSelectedIds([]);
           setShapes([]);
         }
+        toast.success('Proyecto eliminado correctamente');
       } catch (e) {
         console.error("Error deleting board:", e);
+        toast.error('No se pudo eliminar el proyecto');
       }
+    } else if (confirmation !== null) {
+      toast.warn('El nombre del proyecto no coincide. Cancelando eliminación.');
     }
   };
 
-  // ─── Eventos del Lienzo ────────────────────────────────
   const handleCanvasMouseDown = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
+      // Cerrar dropdowns activos al hacer clic en el lienzo
+      setShowBoardList(false);
+      setShowFillDropdown(false);
+      setShowStrokeDropdown(false);
+
       if (e.button === 1 || tool === 'pan' || isSpacePressed) {
         e.preventDefault();
         setIsPanning(true);
@@ -643,20 +668,39 @@ const PruebasPage = () => {
       const point = getSVGPoint(e);
 
       if (tool === 'select') {
-        setSelectedId(null);
+        setSelectedIds([]);
+        setIsSelectingArea(true);
+        setSelectionBox({ x1: point.x, y1: point.y, x2: point.x, y2: point.y });
         return;
       }
 
       if (tool === 'text') {
         e.preventDefault();
         if (textInput && textValue.trim()) {
+          const lines = textValue.split('\n');
+          const longestLineLength = Math.max(...lines.map(l => l.length));
           if (textInput.editingId) {
-            setShapes(prev => prev.map(s => s.id === textInput.editingId ? { ...s, text: textValue, width: textValue.length * (s.height * 0.6), creadoPorNombre: userName, creadoPorDni: userDni } : s));
+            setShapes(prev => prev.map(s => {
+              if (s.id === textInput.editingId) {
+                const prevLinesCount = s.text?.split('\n').length || 1;
+                const singleLineHeight = s.height / prevLinesCount;
+                return {
+                  ...s,
+                  text: textValue,
+                  width: longestLineLength * (singleLineHeight * 0.6),
+                  height: lines.length * singleLineHeight,
+                  creadoPorNombre: userName,
+                  creadoPorDni: userDni
+                };
+              }
+              return s;
+            }));
           } else {
+            const singleLineHeight = 24;
             setShapes(prev => [...prev, {
               id: uid(), type: 'text' as const,
               x: textInput.x, y: textInput.y,
-              width: textValue.length * 10, height: 24,
+              width: longestLineLength * 10, height: lines.length * singleLineHeight,
               fill: fillColor, stroke: 'transparent', strokeWidth: 0,
               text: textValue,
               creadoPorNombre: userName, creadoPorDni: userDni
@@ -701,13 +745,28 @@ const PruebasPage = () => {
 
   const handleCanvasMouseMove = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
+      const point = getSVGPoint(e);
+      setMousePos(point);
+
+      // Si el botón izquierdo no está activamente presionado (ej. soltado fuera del navegador), 
+      // limpiamos inmediatamente cualquier estado de arrastre, selección, paneo o dibujo activo.
+      if (e.buttons !== 1) {
+        if (isSelectingArea) {
+          setIsSelectingArea(false);
+          setSelectionBox(null);
+        }
+        if (isDragging) setIsDragging(false);
+        if (isPanning) setIsPanning(false);
+        if (isDrawing) {
+          setIsDrawing(false);
+          setCurrentShape(null);
+        }
+      }
+
       if (isPanning) {
         setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
         return;
       }
-
-      const point = getSVGPoint(e);
-      setMousePos(point);
 
       if (tool === 'arrow' && !isDrawing) {
         const snap = findClosestAnchor(point);
@@ -742,7 +801,13 @@ const PruebasPage = () => {
         return;
       }
 
-      if (isResizing && selectedId && resizeHandle) {
+      if (isSelectingArea && selectionBox) {
+        setSelectionBox(prev => prev ? { ...prev, x2: point.x, y2: point.y } : null);
+        return;
+      }
+
+      if (isResizing && selectedIds.length === 1 && resizeHandle) {
+        const selectedId = selectedIds[0];
         if (resizeHandle === 'arrow-start' || resizeHandle === 'arrow-end') {
           const snap = findClosestAnchor(point, selectedId);
           setHoverShapeId(snap?.shape.id ?? null);
@@ -790,18 +855,128 @@ const PruebasPage = () => {
         return;
       }
 
-      if (isDragging && selectedId) {
-        setShapes(prev => prev.map(s =>
-          s.id === selectedId ? { ...s, x: point.x - dragOffset.x, y: point.y - dragOffset.y } : s
-        ));
+      if (isDragging && selectedIds.length > 0) {
+        // Alt Drag Duplicación múltiple
+        if (e.altKey && !hasDuplicatedThisDrag.current && dragStartCoords.current) {
+          const clones: Shape[] = [];
+          const cloneIdMapping: Record<string, string> = {};
+
+          selectedIds.forEach(id => {
+            const s = shapes.find(sh => sh.id === id);
+            if (s) {
+              const cloneId = uid();
+              cloneIdMapping[id] = cloneId;
+              clones.push({
+                ...s,
+                id: cloneId,
+                startShapeId: null,
+                endShapeId: null,
+                startAnchor: null,
+                endAnchor: null,
+              });
+            }
+          });
+
+          if (clones.length > 0) {
+            // Restauramos los originales a su sitio pre-drag
+            setShapes(prev => {
+              const restored = prev.map(s => {
+                const origCoords = dragStartCoords.current[s.id];
+                if (origCoords) {
+                  return {
+                    ...s,
+                    x: origCoords.x,
+                    y: origCoords.y,
+                    ...(s.type === 'arrow' ? {
+                      x2: origCoords.x2 ?? s.x2,
+                      y2: origCoords.y2 ?? s.y2
+                    } : {})
+                  };
+                }
+                return s;
+              });
+              return [...restored, ...clones];
+            });
+
+            // Re-enfocamos el arrastre sobre los clones
+            const cloneIds = Object.values(cloneIdMapping);
+            setSelectedIds(cloneIds);
+
+            // Recalcular offsets para los nuevos clones
+            const newOffsets: Record<string, { dx: number; dy: number }> = {};
+            cloneIds.forEach((cId, idx) => {
+              const origId = selectedIds[idx];
+              const origOffset = dragOffsetsRef.current[origId];
+              if (origOffset) {
+                newOffsets[cId] = origOffset;
+              }
+            });
+            dragOffsetsRef.current = newOffsets;
+
+            hasDuplicatedThisDrag.current = true;
+            return;
+          }
+        }
+
+        // Arrastre normal múltiple
+        setShapes(prev => prev.map(s => {
+          const offset = dragOffsetsRef.current[s.id];
+          if (offset) {
+            if (s.type === 'arrow') {
+              const newX = point.x - offset.dx;
+              const newY = point.y - offset.dy;
+              const dx = newX - s.x;
+              const dy = newY - s.y;
+              return {
+                ...s,
+                x: newX,
+                y: newY,
+                x2: s.x2 !== undefined ? s.x2 + dx : s.x2,
+                y2: s.y2 !== undefined ? s.y2 + dy : s.y2,
+              };
+            }
+            return { ...s, x: point.x - offset.dx, y: point.y - offset.dy };
+          }
+          return s;
+        }));
       }
     },
-    [isPanning, panStart, isDrawing, currentShape, drawStart, isResizing, selectedId, resizeHandle, resizeOrigin, isDragging, dragOffset, tool, getSVGPoint, findClosestAnchor, getAnchorPos]
+    [isPanning, panStart, isDrawing, currentShape, drawStart, isResizing, selectedIds, resizeHandle, resizeOrigin, isDragging, tool, getSVGPoint, findClosestAnchor, getAnchorPos, shapes, isSelectingArea, selectionBox]
   );
 
   const handleCanvasMouseUp = useCallback(() => {
     if (isPanning) {
       setIsPanning(false);
+      return;
+    }
+
+    if (isSelectingArea && selectionBox) {
+      const xMin = Math.min(selectionBox.x1, selectionBox.x2);
+      const xMax = Math.max(selectionBox.x1, selectionBox.x2);
+      const yMin = Math.min(selectionBox.y1, selectionBox.y2);
+      const yMax = Math.max(selectionBox.y1, selectionBox.y2);
+
+      // Encontrar formas dentro de la caja de selección
+      const newlySelected = shapes.filter(s => {
+        if (s.type === 'arrow') {
+          const coords = getArrowCoords(s);
+          const sxIn = coords.sx >= xMin && coords.sx <= xMax && coords.sy >= yMin && coords.sy <= yMax;
+          const exIn = coords.ex >= xMin && coords.ex <= xMax && coords.ey >= yMin && coords.ey <= yMax;
+          return sxIn || exIn;
+        }
+        
+        // Bounds de la figura
+        const sXMin = s.x;
+        const sXMax = s.x + s.width;
+        const sYMin = s.y;
+        const sYMax = s.y + s.height;
+
+        return !(sXMax < xMin || sXMin > xMax || sYMax < yMin || sYMin > yMax);
+      }).map(s => s.id);
+
+      setSelectedIds(newlySelected);
+      setIsSelectingArea(false);
+      setSelectionBox(null);
       return;
     }
 
@@ -811,12 +986,12 @@ const PruebasPage = () => {
         const dy = (currentShape.y2 ?? currentShape.y) - currentShape.y;
         if (Math.hypot(dx, dy) > 10) {
           setShapes(prev => [...prev, currentShape]);
-          setSelectedId(currentShape.id);
+          setSelectedIds([currentShape.id]);
         }
       } else {
         if (currentShape.width > 5 || currentShape.height > 5) {
           setShapes(prev => [...prev, currentShape]);
-          setSelectedId(currentShape.id);
+          setSelectedIds([currentShape.id]);
         }
       }
       setCurrentShape(null);
@@ -826,7 +1001,7 @@ const PruebasPage = () => {
     }
     if (isDragging) setIsDragging(false);
     if (isResizing) { setIsResizing(false); setResizeHandle(null); setHoverShapeId(null); setHoverAnchor(null); }
-  }, [isPanning, isDrawing, currentShape, isDragging, isResizing]);
+  }, [isPanning, isDrawing, currentShape, isDragging, isResizing, shapes, isSelectingArea, selectionBox, getArrowCoords]);
 
   const handleResizeMouseDown = useCallback(
     (e: React.MouseEvent, handle: ResizeHandle, shape: Shape) => {
@@ -839,6 +1014,11 @@ const PruebasPage = () => {
 
   const handleShapeMouseDown = useCallback(
     (e: React.MouseEvent, shape: Shape) => {
+      // Cerrar dropdowns activos al hacer clic en una figura
+      setShowBoardList(false);
+      setShowFillDropdown(false);
+      setShowStrokeDropdown(false);
+
       if (tool === 'pan' || isSpacePressed) return;
 
       e.stopPropagation();
@@ -858,33 +1038,90 @@ const PruebasPage = () => {
             return Object.keys(u).length ? { ...s, ...u } : s;
           })
         );
-        setSelectedId(null);
+        setSelectedIds([]);
         return;
       }
 
-      if (tool === 'select') {
-        setSelectedId(shape.id);
-        setDragOffset({ x: point.x - shape.x, y: point.y - shape.y });
-        setIsDragging(true);
+    if (tool === 'select') {
+      let newSelectedIds = [...selectedIds];
+      if (e.shiftKey) {
+        // Toggle item en la selección
+        if (selectedIds.includes(shape.id)) {
+          newSelectedIds = selectedIds.filter(id => id !== shape.id);
+        } else {
+          newSelectedIds.push(shape.id);
+        }
+      } else {
+        // Clic simple selecciona solo el elemento si no estaba ya seleccionado
+        if (!selectedIds.includes(shape.id)) {
+          newSelectedIds = [shape.id];
+        }
       }
-    },
-    [tool, getSVGPoint, getArrowCoords, isSpacePressed, deleteImageFromStorage]
-  );
+      
+      setSelectedIds(newSelectedIds);
+
+      // Calcular offsets de arrastre individuales para todos los elementos seleccionados
+      const offsets: Record<string, { dx: number; dy: number }> = {};
+      newSelectedIds.forEach(id => {
+        const s = shapes.find(sh => sh.id === id);
+        if (s) {
+          offsets[id] = { dx: point.x - s.x, dy: point.y - s.y };
+        }
+      });
+      dragOffsetsRef.current = offsets;
+      setIsDragging(true);
+
+      // Inicializar estados de duplicación con Alt-drag para toda la selección
+      hasDuplicatedThisDrag.current = false;
+      const startCoords: Record<string, { x: number; y: number; x2?: number; y2?: number }> = {};
+      newSelectedIds.forEach(id => {
+        const s = shapes.find(sh => sh.id === id);
+        if (s) {
+          startCoords[id] = {
+            x: s.x,
+            y: s.y,
+            x2: s.x2,
+            y2: s.y2
+          };
+        }
+      });
+      dragStartCoords.current = startCoords;
+    }
+  },
+  [tool, getSVGPoint, getArrowCoords, isSpacePressed, deleteImageFromStorage, selectedIds, shapes]
+);
 
   // Confirmar texto
   const handleTextConfirm = useCallback((force?: boolean) => {
     if (textInput) {
       if (textInput.editingId) {
         if (textValue.trim()) {
-          setShapes(prev => prev.map(s => s.id === textInput.editingId ? { ...s, text: textValue, width: textValue.length * (s.height * 0.6) } : s));
+          const lines = textValue.split('\n');
+          const longestLineLength = Math.max(...lines.map(l => l.length));
+          setShapes(prev => prev.map(s => {
+            if (s.id === textInput.editingId) {
+              const prevLinesCount = s.text?.split('\n').length || 1;
+              const singleLineHeight = s.height / prevLinesCount;
+              return { 
+                ...s, 
+                text: textValue, 
+                width: longestLineLength * (singleLineHeight * 0.6),
+                height: lines.length * singleLineHeight
+              };
+            }
+            return s;
+          }));
         } else {
           setShapes(prev => prev.filter(s => s.id !== textInput.editingId));
         }
       } else if (textValue.trim()) {
+        const lines = textValue.split('\n');
+        const longestLineLength = Math.max(...lines.map(l => l.length));
+        const singleLineHeight = 24;
         setShapes(prev => [...prev, {
           id: uid(), type: 'text' as const,
           x: textInput.x, y: textInput.y,
-          width: textValue.length * 10, height: 24,
+          width: longestLineLength * 10, height: lines.length * singleLineHeight,
           fill: fillColor, stroke: 'transparent', strokeWidth: 0,
           text: textValue,
           creadoPorNombre: userName, creadoPorDni: userDni
@@ -898,48 +1135,70 @@ const PruebasPage = () => {
     }
   }, [textInput, textValue, fillColor, userName, userDni]);
 
-  const updateSelectedFill = (c: string) => { if (selectedId) setShapes(p => p.map(s => s.id === selectedId ? { ...s, fill: c } : s)); };
-  const updateSelectedStroke = (c: string) => { if (selectedId) setShapes(p => p.map(s => s.id === selectedId ? { ...s, stroke: c } : s)); };
+  const updateSelectedFill = (c: string) => { 
+    if (selectedIds.length > 0) {
+      setShapes(p => p.map(s => selectedIds.includes(s.id) ? { ...s, fill: c } : s));
+    }
+  };
+
+  const updateSelectedStroke = (c: string) => { 
+    if (selectedIds.length > 0) {
+      setShapes(p => p.map(s => selectedIds.includes(s.id) ? { ...s, stroke: c } : s));
+    }
+  };
 
   const bringToFront = () => {
-    if (!selectedId) return;
+    if (selectedIds.length === 0) return;
     setShapes(prev => {
-      const shape = prev.find(s => s.id === selectedId);
-      if (!shape) return prev;
-      return [...prev.filter(s => s.id !== selectedId), shape];
+      const selectedShapes = prev.filter(s => selectedIds.includes(s.id));
+      const remainingShapes = prev.filter(s => !selectedIds.includes(s.id));
+      return [...remainingShapes, ...selectedShapes];
     });
   };
 
   const sendToBack = () => {
-    if (!selectedId) return;
+    if (selectedIds.length === 0) return;
     setShapes(prev => {
-      const shape = prev.find(s => s.id === selectedId);
-      if (!shape) return prev;
-      return [shape, ...prev.filter(s => s.id !== selectedId)];
+      const selectedShapes = prev.filter(s => selectedIds.includes(s.id));
+      const remainingShapes = prev.filter(s => !selectedIds.includes(s.id));
+      return [...selectedShapes, ...remainingShapes];
     });
   };
 
   const deleteSelected = () => {
-    if (!selectedId) return;
-    const shape = shapes.find(s => s.id === selectedId);
-    if (shape && shape.type !== 'arrow') {
-      if (shape.type === 'image' && shape.text) {
+    if (selectedIds.length === 0) return;
+
+    // Borrar imágenes físicas en Storage para cualquier imagen seleccionada
+    selectedIds.forEach(id => {
+      const shape = shapes.find(s => s.id === id);
+      if (shape && shape.type === 'image' && shape.text) {
         deleteImageFromStorage(shape.text);
       }
-      setShapes(prev => prev
-        .filter(s => s.id !== selectedId)
-        .map(s => {
-          if (s.type !== 'arrow') return s;
-          const u: Partial<Shape> = {};
-          if (s.startShapeId === selectedId) { const c = getArrowCoords(s); u.startShapeId = null; u.startAnchor = null; u.x = c.sx; u.y = c.sy; }
-          if (s.endShapeId === selectedId) { const c = getArrowCoords(s); u.endShapeId = null; u.endAnchor = null; u.x2 = c.ex; u.y2 = c.ey; }
-          return Object.keys(u).length ? { ...s, ...u } : s;
-        })
-      );
-    } else {
-      setShapes(prev => prev.filter(s => s.id !== selectedId));
-    }
-    setSelectedId(null);
+    });
+
+    setShapes(prev => prev
+      .filter(s => !selectedIds.includes(s.id))
+      .map(s => {
+        if (s.type !== 'arrow') return s;
+        const u: Partial<Shape> = {};
+        if (s.startShapeId && selectedIds.includes(s.startShapeId)) {
+          const c = getArrowCoords(s);
+          u.startShapeId = null;
+          u.startAnchor = null;
+          u.x = c.sx;
+          u.y = c.sy;
+        }
+        if (s.endShapeId && selectedIds.includes(s.endShapeId)) {
+          const c = getArrowCoords(s);
+          u.endShapeId = null;
+          u.endAnchor = null;
+          u.x2 = c.ex;
+          u.y2 = c.ey;
+        }
+        return Object.keys(u).length ? { ...s, ...u } : s;
+      })
+    );
+    setSelectedIds([]);
   };
   deleteSelectedRefForShortcut.current = deleteSelected;
 
@@ -952,7 +1211,7 @@ const PruebasPage = () => {
         }
       });
       setShapes([]);
-      setSelectedId(null);
+      setSelectedIds([]);
     }
   };
 
@@ -966,7 +1225,7 @@ const PruebasPage = () => {
     { id: 'eraser', label: 'Borrador', shortcut: 'E', icon: <RiEraserLine /> },
   ];
 
-  const selectedShape = shapes.find(s => s.id === selectedId);
+  const selectedShape = shapes.find(s => selectedIds.includes(s.id));
   const activeBoard = boards.find(b => b.id === selectedBoardId);
 
   // Render anclajes
@@ -1048,7 +1307,8 @@ const PruebasPage = () => {
 
   // Render formas
   const renderShape = (shape: Shape, isPreview = false) => {
-    const isSelected = !isPreview && shape.id === selectedId;
+    const isSelected = !isPreview && selectedIds.includes(shape.id);
+    const showResize = isSelected && selectedIds.length === 1;
     const strokeW = (isSelected ? 3 : shape.strokeWidth) / zoom;
     const outlineStrokeW = 2 / zoom;
 
@@ -1073,7 +1333,7 @@ const PruebasPage = () => {
             strokeWidth={strokeW}
             markerEnd={`url(#${mid})`} strokeLinecap="round"
           />
-          {isSelected && renderResizeHandles(shape)}
+          {showResize && renderResizeHandles(shape)}
         </g>
       );
     }
@@ -1090,7 +1350,7 @@ const PruebasPage = () => {
               <rect x={shape.x - 1/zoom} y={shape.y - 1/zoom} width={shape.width + 2/zoom} height={shape.height + 2/zoom}
                 fill="none" stroke="#7c3aed" strokeWidth={outlineStrokeW} strokeDasharray={`${6/zoom} ${3/zoom}`} rx={4 / zoom} ry={4 / zoom} pointerEvents="none"
               />
-              {renderResizeHandles(shape)}
+              {showResize && renderResizeHandles(shape)}
             </>
           )}
         </g>
@@ -1111,7 +1371,7 @@ const PruebasPage = () => {
               <ellipse cx={cx} cy={cy} rx={rx + 2/zoom} ry={ry + 2/zoom}
                 fill="none" stroke="#7c3aed" strokeWidth={outlineStrokeW} strokeDasharray={`${6/zoom} ${3/zoom}`} pointerEvents="none"
               />
-              {renderResizeHandles(shape)}
+              {showResize && renderResizeHandles(shape)}
             </>
           )}
         </g>
@@ -1119,7 +1379,12 @@ const PruebasPage = () => {
     }
 
     if (shape.type === 'text') {
-      const fontSize = shape.height * 0.8;
+      const lines = (shape.text || '').split('\n');
+      const linesCount = lines.length || 1;
+      const singleLineHeight = shape.height / linesCount;
+      const fontSize = singleLineHeight * 0.8;
+      
+      const isEditingThis = textInput && textInput.editingId === shape.id;
       return (
         <g key={shape.id} {...commonProps} onDoubleClick={(e) => {
           if (tool !== 'select') return;
@@ -1127,16 +1392,29 @@ const PruebasPage = () => {
           setTextInput({ x: shape.x, y: shape.y, editingId: shape.id });
           setTextValue(shape.text || '');
         }}>
-          {isSelected && (
+          {isSelected && !isEditingThis && (
             <>
               <rect x={shape.x - 2/zoom} y={shape.y - 2/zoom} width={shape.width + 4/zoom} height={shape.height + 4/zoom}
                 fill="none" stroke="#7c3aed" strokeWidth={outlineStrokeW} strokeDasharray={`${6/zoom} ${3/zoom}`} rx={4 / zoom} ry={4 / zoom} pointerEvents="none"
               />
-              {renderResizeHandles(shape)}
+              {showResize && renderResizeHandles(shape)}
             </>
           )}
-          <text x={shape.x} y={shape.y + shape.height * 0.85} fill={shape.fill} fontSize={fontSize} fontFamily="Inter, system-ui, sans-serif" fontWeight={600}>
-            {shape.text}
+          <text 
+            x={shape.x} 
+            y={shape.y + singleLineHeight * 0.85} 
+            fill={shape.fill} 
+            fontSize={fontSize} 
+            fontFamily="Inter, system-ui, sans-serif" 
+            fontWeight={600}
+            opacity={isEditingThis ? 0 : 1}
+            pointerEvents={isEditingThis ? 'none' : 'auto'}
+          >
+            {lines.map((line, index) => (
+              <tspan key={index} x={shape.x} dy={index === 0 ? 0 : singleLineHeight}>
+                {line}
+              </tspan>
+            ))}
           </text>
         </g>
       );
@@ -1158,7 +1436,7 @@ const PruebasPage = () => {
               <rect x={shape.x - 2/zoom} y={shape.y - 2/zoom} width={shape.width + 4/zoom} height={shape.height + 4/zoom}
                 fill="none" stroke="#7c3aed" strokeWidth={outlineStrokeW} strokeDasharray={`${6/zoom} ${3/zoom}`} rx={4 / zoom} ry={4 / zoom} pointerEvents="none"
               />
-              {renderResizeHandles(shape)}
+              {showResize && renderResizeHandles(shape)}
             </>
           )}
         </g>
@@ -1207,6 +1485,21 @@ const PruebasPage = () => {
           {currentShape && renderShape(currentShape, true)}
 
           {renderAnchorPoints()}
+
+          {/* Marquee de Selección Múltiple */}
+          {isSelectingArea && selectionBox && (
+            <rect
+              x={Math.min(selectionBox.x1, selectionBox.x2)}
+              y={Math.min(selectionBox.y1, selectionBox.y2)}
+              width={Math.abs(selectionBox.x2 - selectionBox.x1)}
+              height={Math.abs(selectionBox.y2 - selectionBox.y1)}
+              fill="rgba(124, 58, 237, 0.04)"
+              stroke="#7c3aed"
+              strokeWidth={1.5 / zoom}
+              strokeDasharray={`${6/zoom} ${3/zoom}`}
+              pointerEvents="none"
+            />
+          )}
         </g>
       </svg>
 
@@ -1263,11 +1556,11 @@ const PruebasPage = () => {
       </div>
 
       {/* ─── BARRA DE HERRAMIENTAS FLOTANTE (Top Central) ────────── */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-white/85 backdrop-blur-md border border-slate-200/50 shadow-xl px-4 py-2 rounded-2xl max-w-[90vw] overflow-x-auto">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-white/85 backdrop-blur-md border border-slate-200/50 shadow-xl px-4 py-2 rounded-2xl max-w-[90vw]">
         <div className="flex items-center gap-1 bg-slate-100/75 p-1 rounded-xl">
           {toolsList.map(t => (
             <button key={t.id}
-              onClick={() => { setTool(t.id); if (t.id !== 'select') setSelectedId(null); }}
+              onClick={() => { setTool(t.id); if (t.id !== 'select') setSelectedIds([]); }}
               title={`${t.label} (${t.shortcut})`}
               className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all ${
                 tool === t.id ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-sm'
@@ -1285,25 +1578,42 @@ const PruebasPage = () => {
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-slate-100 transition-all text-xs font-semibold text-slate-600 border border-slate-200/60"
             title="Color de Relleno"
           >
-            <span className="w-4 h-4 rounded-full border border-slate-300" style={{ backgroundColor: fillColor }} />
+            {fillColor === 'transparent' ? (
+              <span className="w-4 h-4 rounded-full border border-slate-300 relative overflow-hidden bg-white">
+                <span className="absolute inset-0 bg-red-500 w-[1.5px] h-[20px] left-[7px] top-[-2px] rotate-45" />
+              </span>
+            ) : (
+              <span className="w-4 h-4 rounded-full border border-slate-300" style={{ backgroundColor: fillColor }} />
+            )}
             <span className="hidden md:inline">Relleno</span>
             <RiArrowDownSLine className="text-slate-400" />
           </button>
           
           {showFillDropdown && (
-            <div className="absolute top-11 left-0 z-20 bg-white/95 backdrop-blur-md border border-slate-200 shadow-2xl rounded-2xl p-2 grid grid-cols-4 gap-1.5 min-w-[128px]">
-              {PALETTE.map(c => (
+            <div className="absolute top-11 left-0 z-20 bg-white/95 backdrop-blur-md border border-slate-200 shadow-2xl rounded-2xl p-2.5 flex flex-col gap-2 min-w-[150px]">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-50 pb-1">Colores</span>
+              <div className="grid grid-cols-4 gap-1.5">
+                {/* Opción Transparente (Sin Relleno) */}
                 <button
-                  key={`f-${c}`}
-                  onClick={() => { setFillColor(c); setShowFillDropdown(false); }}
-                  className={`w-6 h-6 rounded-md border transition-all hover:scale-110 ${fillColor === c ? 'border-violet-500 scale-110 shadow-sm' : 'border-slate-200'}`}
-                  style={{ backgroundColor: c }}
-                  title={c}
-                />
-              ))}
-              <div className="col-span-4 flex items-center justify-between border-t border-slate-100 pt-2 mt-1 px-1">
+                  onClick={() => { setFillColor('transparent'); setShowFillDropdown(false); }}
+                  className={`w-6 h-6 rounded-md border transition-all hover:scale-110 relative overflow-hidden bg-white ${fillColor === 'transparent' ? 'border-violet-500 scale-110 shadow-sm' : 'border-slate-200'}`}
+                  title="Sin Relleno"
+                >
+                  <span className="absolute inset-0 bg-red-500 w-[1.5px] h-[30px] left-[11px] top-[-4px] rotate-45" />
+                </button>
+                {PALETTE.map(c => (
+                  <button
+                    key={`f-${c}`}
+                    onClick={() => { setFillColor(c); setShowFillDropdown(false); }}
+                    className={`w-6 h-6 rounded-md border transition-all hover:scale-110 ${fillColor === c ? 'border-violet-500 scale-110 shadow-sm' : 'border-slate-200'}`}
+                    style={{ backgroundColor: c }}
+                    title={c}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center justify-between border-t border-slate-100 pt-2 mt-1 px-1">
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Más</span>
-                <input type="color" value={fillColor} onChange={e => setFillColor(e.target.value)}
+                <input type="color" value={fillColor === 'transparent' ? '#ffffff' : fillColor} onChange={e => setFillColor(e.target.value)}
                   className="w-5 h-5 rounded-md border border-slate-200 cursor-pointer p-0 bg-transparent"
                 />
               </div>
@@ -1460,13 +1770,21 @@ const PruebasPage = () => {
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Color de Relleno</span>
               <div className="flex gap-1 flex-wrap">
+                {/* Opción Transparente (Sin Relleno) en panel lateral */}
+                <button
+                  onClick={() => updateSelectedFill('transparent')}
+                  className={`w-6 h-6 rounded-md border transition-all hover:scale-110 relative overflow-hidden bg-white ${selectedShape.fill === 'transparent' ? 'border-violet-500 scale-110 shadow-sm' : 'border-slate-200'}`}
+                  title="Sin Relleno"
+                >
+                  <span className="absolute inset-0 bg-red-500 w-[1.5px] h-[30px] left-[11px] top-[-4px] rotate-45" />
+                </button>
                 {PALETTE.slice(0, 10).map(c => (
                   <button key={`sf-${c}`} onClick={() => updateSelectedFill(c)}
                     className={`w-6 h-6 rounded-md border transition-all hover:scale-110 ${selectedShape.fill === c ? 'border-violet-500 scale-110 shadow-sm' : 'border-slate-200'}`}
                     style={{ backgroundColor: c }}
                   />
                 ))}
-                <input type="color" value={selectedShape.fill} onChange={e => updateSelectedFill(e.target.value)}
+                <input type="color" value={selectedShape.fill === 'transparent' ? '#ffffff' : selectedShape.fill} onChange={e => updateSelectedFill(e.target.value)}
                   className="w-6 h-6 rounded-md border border-slate-200 cursor-pointer p-0"
                 />
               </div>
@@ -1521,18 +1839,61 @@ const PruebasPage = () => {
       )}
 
       {/* ─── INPUT FLOTANTE DE TEXTO ──────────────────────── */}
-      {textInput && (
-        <div className="absolute z-20" style={{ left: textInput.x * zoom + pan.x, top: textInput.y * zoom + pan.y }}>
-          <input ref={textInputRef} type="text" value={textValue}
-            onChange={e => setTextValue(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') handleTextConfirm(); if (e.key === 'Escape') handleTextConfirm(true); }}
-            onBlur={() => setTimeout(() => handleTextConfirm(), 200)}
-            placeholder="Escribe aquí..."
-            className="px-2 py-1 text-sm font-semibold border-2 border-violet-500 rounded-lg bg-white shadow-lg shadow-violet-600/10 focus:outline-none min-w-[140px]"
-            style={{ color: fillColor }}
-          />
-        </div>
-      )}
+      {(() => {
+        if (!textInput) return null;
+        
+        const editingShape = textInput.editingId ? shapes.find(s => s.id === textInput.editingId) : null;
+        const prevLinesCount = editingShape?.text?.split('\n').length || 1;
+        const singleLineHeight = editingShape ? (editingShape.height / prevLinesCount) : 24;
+        const inputColor = editingShape ? editingShape.fill : fillColor;
+        
+        const lines = textValue.split('\n');
+        const linesCount = lines.length || 1;
+        const longestLineLength = Math.max(...lines.map(l => l.length));
+        
+        const charWidthFactor = singleLineHeight * 0.6;
+        const dynamicWidth = Math.max(150, longestLineLength * charWidthFactor);
+        const textareaHeight = linesCount * singleLineHeight;
+        
+        return (
+          <div 
+            className="absolute z-20 pointer-events-none" 
+            style={{ 
+              left: textInput.x * zoom + pan.x, 
+              top: (textInput.y * zoom) + pan.y
+            }}
+          >
+            <textarea 
+              ref={textInputRef as any} 
+              value={textValue}
+              onChange={e => setTextValue(e.target.value)}
+              onKeyDown={e => { 
+                // Ctrl+Enter o Cmd+Enter guarda el texto
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault();
+                  handleTextConfirm();
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  handleTextConfirm(true);
+                }
+              }}
+              onBlur={() => setTimeout(() => handleTextConfirm(), 200)}
+              placeholder="Escribe aquí..."
+              className="focus:outline-none bg-transparent border-none p-0 m-0 font-semibold pointer-events-auto select-text resize-none overflow-hidden"
+              style={{ 
+                color: inputColor,
+                fontSize: `${singleLineHeight * 0.8 * zoom}px`,
+                fontFamily: 'Inter, system-ui, sans-serif',
+                height: `${textareaHeight * zoom}px`,
+                width: `${(dynamicWidth + 10) * zoom}px`,
+                caretColor: inputColor,
+                lineHeight: `${singleLineHeight * zoom}px`,
+              }}
+            />
+          </div>
+        );
+      })()}
       {/* Banner flotante de carga de imágenes */}
       {isUploadingImage && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-35 bg-violet-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg shadow-violet-600/30 flex items-center gap-2 animate-bounce">
