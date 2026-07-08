@@ -14,7 +14,7 @@ interface Props {
 
 const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) => {
 
-  const { currentUserData, preguntasRespuestas } = useGlobalContext()
+  const { currentUserData, preguntasRespuestas, evaluacion } = useGlobalContext()
   const { guardarPreguntasRespuestas } = useAgregarEvaluaciones()
 
   let container;
@@ -149,7 +149,7 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
               </div>
 
               <div className={styles.formGroup}>
-                <label className={styles.labelPregunta}>Actuación Docente (Especialidad) *</label>
+                <label className={styles.labelPregunta}>{evaluacion?.labelActuacion || 'Actuación Docente'} (Especialidad) *</label>
                 <textarea
                   {...register("preguntaDocente", {
                     required: "La pregunta de actuación es requerida",
@@ -157,7 +157,7 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
                     maxLength: { value: 400, message: "La actuación debe tener un máximo de 400 caracteres" },
                   })}
                   className={styles.textAreaPregunta}
-                  placeholder="Escribe la actuación docente aquí..."
+                  placeholder={`Escribe la ${(evaluacion?.labelActuacion || 'Actuación Docente').toLowerCase()} aquí...`}
                 />
                 {errors.preguntaDocente && (
                   <span className={styles.error}>{errors.preguntaDocente.message as string}</span>

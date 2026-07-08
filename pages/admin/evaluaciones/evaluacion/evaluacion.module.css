@@ -81,6 +81,45 @@
   color: var(--primary-text);
   letter-spacing: -0.025em;
   line-height: 1.2;
+  margin: 0;
+}
+
+.titleEditableWrapper {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.titleEditPencil {
+  font-size: 1.25rem;
+  color: var(--secondary-text);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.titleEditableWrapper:hover .titleEditPencil {
+  opacity: 1;
+}
+
+.titleEditPencil:hover {
+  color: var(--primary-color, #3b82f6);
+}
+
+.titleInput {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--primary-text);
+  border: 1px solid var(--primary-color, #3b82f6);
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  outline: none;
+  background: white;
+  width: 100%;
+  max-width: 600px;
 }
 
 .subtitle {
@@ -109,45 +148,114 @@
   align-items: center;
 }
 
-/* Select Styling */
-.selectWrapper {
+/* Custom Dropdown Styling */
+.customDropdown {
   position: relative;
   display: inline-block;
 }
 
-.selectAction {
-  appearance: none;
+.dropdownTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   background-color: var(--bg-color);
   border: 1px solid var(--border-color);
-  padding: 0.625rem 2.5rem 0.625rem 1rem;
+  padding: 0.625rem 1rem;
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--primary-text);
   cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 200px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 220px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.selectAction:hover {
-  border-color: var(--primary-color);
-  background-color: #fff;
+.dropdownTrigger:hover {
+  border-color: var(--primary-color, #3b82f6);
+  background-color: #ffffff;
 }
 
-.selectAction:focus {
+.dropdownTrigger:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--primary-color, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-.selectIcon {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
+.triggerIcon {
+  font-size: 1.1rem;
   color: var(--secondary-text);
-  font-size: 0.75rem;
+}
+
+.chevron {
+  font-size: 0.65rem;
+  color: var(--secondary-text);
+  transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 100;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 240px;
+  animation: slideDropdownMenu 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--primary-text);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.dropdownItem:hover {
+  background-color: #f1f5f9;
+  color: var(--primary-hover, #2563eb);
+}
+
+.itemIcon {
+  font-size: 1.1rem;
+  color: var(--secondary-text);
+  transition: color 0.15s ease;
+}
+
+.dropdownItem:hover .itemIcon {
+  color: var(--primary-hover, #2563eb);
+}
+
+@keyframes slideDropdownMenu {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Link Buttons */
@@ -436,6 +544,13 @@
   margin: 0;
 }
 
+.questionActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
 /* Control Buttons (Move) */
 .controls {
   display: flex;
@@ -466,7 +581,6 @@
   cursor: not-allowed;
 }
 
-/* Teacher Action Block */
 .teacherAction {
   background-color: #f1f5f9;
   /* Slate-100 */
@@ -477,7 +591,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  border-left: 4px solid var(--primary-color);
+  border: 1px solid #bfdbfe;
 }
 
 .actionContent {
@@ -494,6 +608,42 @@
   letter-spacing: 0.05em;
 }
 
+.actionLabelEditable {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.actionLabelPencil {
+  font-size: 0.8rem;
+  color: var(--secondary-text);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.actionLabelEditable:hover .actionLabelPencil {
+  opacity: 1;
+}
+
+.actionLabelPencil:hover {
+  color: var(--primary-color, #3b82f6);
+}
+
+.actionLabelInput {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary-text);
+  border: 1px solid var(--primary-color, #3b82f6);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  outline: none;
+  background: white;
+  min-width: 180px;
+}
+
 .actionText {
   font-size: 0.95rem;
   color: var(--primary-text);
@@ -501,7 +651,7 @@
   margin: 0;
 }
 
-.actionButtons {
+.btnGroup {
   display: flex;
   gap: 0.5rem;
 }
@@ -509,31 +659,39 @@
 .iconButton {
   width: 2rem;
   height: 2rem;
-  border-radius: 6px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid transparent;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .editBtn {
-  color: var(--warning-color);
-  background-color: var(--warning-bg);
+  color: #f59e0b; /* Amber */
 }
 
 .editBtn:hover {
-  border-color: var(--warning-color);
+  background-color: #f59e0b;
+  border-color: #d97706;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
 }
 
 .deleteBtn {
-  color: var(--danger-color);
-  background-color: var(--danger-bg);
+  color: #ef4444; /* Red */
 }
 
 .deleteBtn:hover {
-  border-color: var(--danger-color);
+  background-color: #ef4444;
+  border-color: #dc2626;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
 
 /* Alternatives */
@@ -648,7 +806,15 @@
     align-items: stretch;
   }
 
-  .selectAction {
+  .customDropdown {
+    width: 100%;
+  }
+
+  .dropdownTrigger {
+    width: 100%;
+  }
+
+  .dropdownMenu {
     width: 100%;
   }
 
@@ -656,9 +822,18 @@
     flex-direction: column;
   }
 
+  .questionActions {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
   .controls {
     flex-direction: row;
-    align-self: flex-end;
+    align-self: auto;
   }
 
   .teacherAction {
@@ -666,8 +841,8 @@
     align-items: flex-start;
   }
 
-  .actionButtons {
-    width: 100%;
+  .btnGroup {
+    width: auto;
     justify-content: flex-end;
   }
 }

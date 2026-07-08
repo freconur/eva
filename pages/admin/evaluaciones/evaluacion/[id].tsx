@@ -13,7 +13,7 @@ import AsignarEvaluacionUgelModal from './AsignarEvaluacionUgelModal'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState, useRef, useCallback } from 'react'
-import { MdEditSquare, MdDelete, MdAssignment, MdAddCircle, MdSettings, MdAssessment, MdTrendingUp, MdEmojiEvents, MdDragIndicator, MdViewList } from 'react-icons/md'
+import { MdEditSquare, MdEdit, MdDelete, MdAssignment, MdAddCircle, MdSettings, MdAssessment, MdTrendingUp, MdEmojiEvents, MdDragIndicator, MdViewList } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 import { FaArrowUp, FaArrowDown } from 'react-icons/fa'
 import styles from './evaluacion.module.css'
@@ -53,6 +53,107 @@ const Evaluacion = () => {
   const [showModalEstudiante, setShowModalEstudiante] = useState(false)
   const [pregunta, setPregunta] = useState({})
   const [showModalUpdatePReguntaRespuesta, setShowModalUpdatePReguntaRespuesta] = useState(false)
+
+  // Estado para editar el label "Actuación Docente"
+  const [isEditingLabel, setIsEditingLabel] = useState(false)
+  const [labelActuacionLocal, setLabelActuacionLocal] = useState('')
+  const labelInputRef = useRef<HTMLInputElement>(null)
+
+  // Sincronizar el label local cuando la evaluación se carga
+  useEffect(() => {
+    if (evaluacion) {
+      setLabelActuacionLocal(evaluacion.labelActuacion || 'Actuación Docente')
+    }
+  }, [evaluacion])
+
+  // Autofocus al input cuando se activa la edición
+  useEffect(() => {
+    if (isEditingLabel && labelInputRef.current) {
+      labelInputRef.current.focus()
+      labelInputRef.current.select()
+    }
+  }, [isEditingLabel])
+
+  const handleSaveLabelActuacion = async () => {
+    const newLabel = labelActuacionLocal.trim()
+    if (!newLabel || !evaluacion || !route.query.id) {
+      setLabelActuacionLocal(evaluacion?.labelActuacion || 'Actuación Docente')
+      setIsEditingLabel(false)
+      return
+    }
+    // Solo guardar si realmente cambió
+    if (newLabel !== (evaluacion.labelActuacion || 'Actuación Docente')) {
+      try {
+        await updateEvaluacion({
+          ...evaluacion,
+          labelActuacion: newLabel
+        }, `${route.query.id}`)
+      } catch (error: any) {
+        alert(`❌ Error al guardar el título: ${error.message || 'Error desconocido'}`)
+        setLabelActuacionLocal(evaluacion.labelActuacion || 'Actuación Docente')
+      }
+    }
+    setIsEditingLabel(false)
+  }
+
+  // Estado para editar el nombre (título) de la evaluación
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [titleLocal, setTitleLocal] = useState('')
+  const titleInputRef = useRef<HTMLInputElement>(null)
+
+  // Sincronizar el título local cuando la evaluación se carga
+  useEffect(() => {
+    if (evaluacion) {
+      setTitleLocal(evaluacion.nombre || '')
+    }
+  }, [evaluacion])
+
+  // Autofocus al input del título cuando se activa la edición
+  useEffect(() => {
+    if (isEditingTitle && titleInputRef.current) {
+      titleInputRef.current.focus()
+      titleInputRef.current.select()
+    }
+  }, [isEditingTitle])
+
+  const handleSaveTitle = async () => {
+    const newTitle = titleLocal.trim()
+    if (!newTitle || !evaluacion || !route.query.id) {
+      setTitleLocal(evaluacion?.nombre || '')
+      setIsEditingTitle(false)
+      return
+    }
+    // Solo guardar si realmente cambió
+    if (newTitle !== evaluacion.nombre) {
+      try {
+        await updateEvaluacion({
+          ...evaluacion,
+          nombre: newTitle
+        }, `${route.query.id}`)
+      } catch (error: any) {
+        alert(`❌ Error al guardar el título: ${error.message || 'Error desconocido'}`)
+        setTitleLocal(evaluacion.nombre || '')
+      }
+    }
+    setIsEditingTitle(false)
+  }
+
+  // Estado para el menú desplegable personalizado de Herramientas de Gestión
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Cerrar el dropdown al hacer clic fuera de él
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
   const handleToggleActive = async () => {
     if (!route.query.id || !evaluacion) return
 
@@ -438,7 +539,36 @@ const Evaluacion = () => {
 
             {/* Header Section */}
             <header className={styles.header}>
-              <h1 className={styles.title}>{evaluacion.nombre?.toUpperCase()}</h1>
+              {isOwnerOrAdmin && !evaluacion.active ? (
+                isEditingTitle ? (
+                  <input
+                    ref={titleInputRef}
+                    type="text"
+                    className={styles.titleInput}
+                    value={titleLocal}
+                    onChange={(e) => setTitleLocal(e.target.value)}
+                    onBlur={handleSaveTitle}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveTitle()
+                      if (e.key === 'Escape') {
+                        setTitleLocal(evaluacion?.nombre || '')
+                        setIsEditingTitle(false)
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className={styles.titleEditableWrapper}>
+                    <h1 className={styles.title}>{evaluacion.nombre?.toUpperCase()}</h1>
+                    <MdEdit
+                      className={styles.titleEditPencil}
+                      onClick={() => setIsEditingTitle(true)}
+                      title="Editar título de evaluación"
+                    />
+                  </div>
+                )
+              ) : (
+                <h1 className={styles.title}>{evaluacion.nombre?.toUpperCase()}</h1>
+              )}
               <span className={styles.subtitle}>Gestión y configuración de la evaluación</span>
             </header>
 
@@ -451,25 +581,75 @@ const Evaluacion = () => {
             {/* Actions Bar */}
             <div className={styles.actionsBar}>
               <div className={styles.actionGroup}>
-                <div className={styles.selectWrapper}>
-                  <select
-                    className={styles.selectAction}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value === 'agregar-preguntas') handleshowModal();
-                      else if (value === 'rango-nivel') handleShowModalPuntuacionYNivel();
-                      else if (value === 'asignar-evaluacion') handleShowModalAsignarEvaluacion();
-                      else if (value === 'asignar-evaluacion-ugel') handleShowModalAsignarEvaluacionUgel();
-                      e.target.value = '';
-                    }}
+                <div className={styles.customDropdown} ref={dropdownRef}>
+                  <button
+                    type="button"
+                    className={styles.dropdownTrigger}
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   >
-                    <option value="">⚙️ Herramientas de Gestión</option>
-                    {canEditQuestions && <option value="agregar-preguntas">➕ Agregar Preguntas</option>}
-                    {currentUserData.rol === 4 && !evaluacion.active && <option value="rango-nivel">📊 Configurar Niveles</option>}
-                    {currentUserData.rol === 4 && <option value="asignar-evaluacion">📋 Asignar a Región</option>}
-                    {currentUserData.rol === 4 && <option value="asignar-evaluacion-ugel">🏢 Asignar a UGEL</option>}
-                  </select>
-                  <span className={styles.selectIcon}>▼</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <MdSettings className={styles.triggerIcon} />
+                      <span>Herramientas de Gestión</span>
+                    </div>
+                    <span className={`${styles.chevron} ${isDropdownOpen ? styles.chevronOpen : ''}`}>▼</span>
+                  </button>
+
+                  {isDropdownOpen && (
+                    <div className={styles.dropdownMenu}>
+                      {canEditQuestions && (
+                        <button
+                          type="button"
+                          className={styles.dropdownItem}
+                          onClick={() => {
+                            handleshowModal();
+                            setIsDropdownOpen(false);
+                          }}
+                        >
+                          <MdAddCircle className={styles.itemIcon} />
+                          <span>Agregar Preguntas</span>
+                        </button>
+                      )}
+                      {currentUserData.rol === 4 && !evaluacion.active && (
+                        <button
+                          type="button"
+                          className={styles.dropdownItem}
+                          onClick={() => {
+                            handleShowModalPuntuacionYNivel();
+                            setIsDropdownOpen(false);
+                          }}
+                        >
+                          <MdTrendingUp className={styles.itemIcon} />
+                          <span>Configurar Niveles</span>
+                        </button>
+                      )}
+                      {currentUserData.rol === 4 && (
+                        <button
+                          type="button"
+                          className={styles.dropdownItem}
+                          onClick={() => {
+                            handleShowModalAsignarEvaluacion();
+                            setIsDropdownOpen(false);
+                          }}
+                        >
+                          <MdAssignment className={styles.itemIcon} />
+                          <span>Asignar a Región</span>
+                        </button>
+                      )}
+                      {currentUserData.rol === 4 && (
+                        <button
+                          type="button"
+                          className={styles.dropdownItem}
+                          onClick={() => {
+                            handleShowModalAsignarEvaluacionUgel();
+                            setIsDropdownOpen(false);
+                          }}
+                        >
+                          <MdAssignment className={styles.itemIcon} />
+                          <span>Asignar a UGEL</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {currentUserData.rol === 4 && (
@@ -657,54 +837,83 @@ const Evaluacion = () => {
                         </div>
 
                         {canEditQuestions && (
-                          <div className={styles.controls}>
-                            <button
-                              onClick={() => handleMoveQuestion(index, 'up')}
-                              disabled={index === 0}
-                              className={styles.controlButton}
-                              title="Mover arriba"
-                            >
-                              <FaArrowUp />
-                            </button>
-                            <button
-                              onClick={() => handleMoveQuestion(index, 'down')}
-                              disabled={index === preguntasLocales.length - 1}
-                              className={styles.controlButton}
-                              title="Mover abajo"
-                            >
-                              <FaArrowDown />
-                            </button>
+                          <div className={styles.questionActions}>
+                            <div className={styles.btnGroup}>
+                              <div
+                                className={`${styles.iconButton} ${styles.editBtn}`}
+                                onClick={() => {
+                                  handleSelectPregunta(index);
+                                  handleShowModalUpdatePreguntaRespuesta();
+                                }}
+                                title="Editar"
+                              >
+                                <MdEditSquare />
+                              </div>
+                              <div
+                                className={`${styles.iconButton} ${styles.deleteBtn}`}
+                                onClick={() => handleSelectPreguntaToDelete(index)}
+                                title="Eliminar"
+                              >
+                                <MdDelete />
+                              </div>
+                            </div>
+
+                            <div className={styles.controls}>
+                              <button
+                                onClick={() => handleMoveQuestion(index, 'up')}
+                                disabled={index === 0}
+                                className={styles.controlButton}
+                                title="Mover arriba"
+                              >
+                                <FaArrowUp />
+                              </button>
+                              <button
+                                onClick={() => handleMoveQuestion(index, 'down')}
+                                disabled={index === preguntasLocales.length - 1}
+                                className={styles.controlButton}
+                                title="Mover abajo"
+                              >
+                                <FaArrowDown />
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
 
                       <div className={styles.teacherAction}>
                         <div className={styles.actionContent}>
-                          <span className={styles.actionLabel}>Actuación Docente</span>
+                          {currentUserData.rol === 4 && !evaluacion.active ? (
+                            isEditingLabel ? (
+                              <input
+                                ref={labelInputRef}
+                                type="text"
+                                className={styles.actionLabelInput}
+                                value={labelActuacionLocal}
+                                onChange={(e) => setLabelActuacionLocal(e.target.value)}
+                                onBlur={handleSaveLabelActuacion}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSaveLabelActuacion()
+                                  if (e.key === 'Escape') {
+                                    setLabelActuacionLocal(evaluacion?.labelActuacion || 'Actuación Docente')
+                                    setIsEditingLabel(false)
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <span className={styles.actionLabelEditable}>
+                                <span className={styles.actionLabel}>{evaluacion?.labelActuacion || 'Actuación Docente'}</span>
+                                <MdEdit
+                                  className={styles.actionLabelPencil}
+                                  onClick={() => setIsEditingLabel(true)}
+                                  title="Editar título"
+                                />
+                              </span>
+                            )
+                          ) : (
+                            <span className={styles.actionLabel}>{evaluacion?.labelActuacion || 'Actuación Docente'}</span>
+                          )}
                           <p className={styles.actionText}>{pr.preguntaDocente}</p>
                         </div>
-
-                        {canEditQuestions && (
-                          <div className={styles.actionButtons}>
-                            <div
-                              className={`${styles.iconButton} ${styles.editBtn}`}
-                              onClick={() => {
-                                handleSelectPregunta(index);
-                                handleShowModalUpdatePreguntaRespuesta();
-                              }}
-                              title="Editar"
-                            >
-                              <MdEditSquare />
-                            </div>
-                            <div
-                              className={`${styles.iconButton} ${styles.deleteBtn}`}
-                              onClick={() => handleSelectPreguntaToDelete(index)}
-                              title="Eliminar"
-                            >
-                              <MdDelete />
-                            </div>
-                          </div>
-                        )}
                       </div>
 
                       <div className={styles.alternativesList}>

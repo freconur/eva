@@ -217,13 +217,13 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label className={styles.labelPregunta}>Actuación Docente (Especialidad) *</label>
+                  <label className={styles.labelPregunta}>{evaluacion?.labelActuacion || 'Actuación Docente'} (Especialidad) *</label>
                   <textarea
                     className={styles.textAreaPregunta}
                     name="preguntaDocente"
                     value={valueInput.preguntaDocente}
                     onChange={handleChangeInput}
-                    placeholder="Escribe la actuación docente aquí..."
+                    placeholder={`Escribe la ${(evaluacion?.labelActuacion || 'Actuación Docente').toLowerCase()} aquí...`}
                   />
                 </div>
               </div>

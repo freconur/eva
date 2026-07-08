@@ -271,6 +271,7 @@ export type Evaluaciones = {
   activarEvidencias?: boolean;
   metaSatisfactorio?: number;
   realtimeEnabled?: boolean;
+  labelActuacion?: string;
 };
 export type Evaluacion = {
   id?: string;
