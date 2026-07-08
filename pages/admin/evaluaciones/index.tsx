@@ -8,6 +8,7 @@ import DeleteEvaluacion from '@/modals/deleteEvaluacion'
 import UpdateEvaluacion from '@/modals/updateEvaluacion'
 import AlertModal from '@/modals/alertModal/AlertModal'
 import PuntuacionYNivel from '@/modals/PuntuacionYNivel/puntuacionYNivel'
+import Link from 'next/link'
 
 import React, { useEffect, useState } from 'react'
 import { MdAddCircle } from 'react-icons/md'
@@ -285,14 +286,28 @@ const Evaluaciones = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '2rem 2rem 0 2rem' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>Seguimiento y retroalimentación al desempeño del estudiante</h1>
 
-          <button
-            onClick={handleShowCreateModal}
-            className={styles.createButton}
-            title="Crear nueva evaluación"
-          >
-            <MdAddCircle />
-            <span>Crear Evaluación</span>
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            {currentUserData?.perfil?.rol === 4 && (
+              <Link href="/admin/evaluaciones/demo-propuestas" style={{ textDecoration: 'none' }}>
+                <button
+                  className={styles.createButton}
+                  style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', boxShadow: '0 4px 10px rgba(139, 92, 246, 0.2)' }}
+                  title="Ver propuestas de rediseño de UX/UI"
+                >
+                  <span>✨ Ver Demos de UX</span>
+                </button>
+              </Link>
+            )}
+
+            <button
+              onClick={handleShowCreateModal}
+              className={styles.createButton}
+              title="Crear nueva evaluación"
+            >
+              <MdAddCircle />
+              <span>Crear Evaluación</span>
+            </button>
+          </div>
         </div>
 
         {/* Controles de filtro (Año y Grados) */}

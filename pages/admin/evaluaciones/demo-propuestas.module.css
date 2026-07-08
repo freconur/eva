@@ -1,0 +1,795 @@
+/* demo-propuestas.module.css */
+
+.container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1e293b;
+  padding: 2rem;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+  background: white;
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+  border: 1px solid #f1f5f9;
+}
+
+.headerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.titleContainer h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.02em;
+}
+
+.titleContainer p {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.controlPanel {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.simulateButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.simulateButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(59, 130, 246, 0.3);
+}
+
+.resetButton {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.resetButton:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Selector de Propuestas */
+.viewSelector {
+  display: flex;
+  background: #f1f5f9;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  width: max-content;
+}
+
+.selectorButton {
+  background: transparent;
+  color: #64748b;
+  border: none;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.selectorButtonActive {
+  background: white;
+  color: #1d4ed8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Explorador de Carpetas */
+.explorerContainer {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01);
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 2rem;
+  background: #f8fafc;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+
+.breadcrumbItem {
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.breadcrumbItem:hover {
+  color: #1d4ed8;
+}
+
+.breadcrumbSeparator {
+  color: #94a3b8;
+}
+
+.folderGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+.folderCard {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.folderCard:hover {
+  background: white;
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -6px rgba(59, 130, 246, 0.15);
+}
+
+.folderIcon {
+  font-size: 2.25rem;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.folderInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.folderName {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folderCount {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* Tabla de Evaluaciones dentro de Carpetas */
+.evaluationsListContainer {
+  margin-top: 1rem;
+}
+
+.tableHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.tableTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.evaluationsTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.evaluationsTable th {
+  padding: 0.75rem 1rem;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.evaluationsTable td {
+  padding: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.875rem;
+}
+
+.evaluationsTable tr:hover {
+  background-color: #f8fafc;
+}
+
+.evalName {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Spotlight Search */
+.spotlightSearchContainer {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.searchHeader {
+  max-width: 500px;
+}
+
+.searchHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.5rem 0;
+}
+
+.searchHeader p {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.searchBarWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.spotlightInput {
+  width: 100%;
+  padding: 1rem 1.25rem 1rem 3rem;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 1rem;
+  color: #1e293b;
+  outline: none;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.spotlightInput:focus {
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.spotlightIcon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 1.4rem;
+}
+
+.searchResultsGroup {
+  margin-bottom: 2rem;
+}
+
+.groupTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  background: #eff6ff;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  width: max-content;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.resultsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.resultItem {
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.resultItem:hover {
+  background: white;
+  border-color: #e2e8f0;
+  transform: translateX(4px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+}
+
+.resultLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.resultName {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.resultPath {
+  font-size: 0.75rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.resultRight {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+
+.badgeActive {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.badgeInactive {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* Empty State */
+.emptyState {
+  background: white;
+  border: 2px dashed #e2e8f0;
+  border-radius: 16px;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.emptyStateIcon {
+  font-size: 3.5rem;
+  color: #cbd5e1;
+}
+
+.emptyStateTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #334155;
+  margin: 0;
+}
+
+.emptyStateText {
+  font-size: 0.875rem;
+  margin: 0;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+/* ========================================= */
+/* Propuesta C: Tablero Kanban por Grado     */
+/* ========================================= */
+
+.kanbanWrapper {
+  overflow-x: auto;
+  padding-bottom: 1rem;
+}
+
+.kanbanBoard {
+  display: flex;
+  gap: 1.25rem;
+  min-width: max-content;
+  align-items: flex-start;
+}
+
+.kanbanColumn {
+  background: #f1f5f9;
+  border-radius: 14px;
+  width: 290px;
+  min-width: 290px;
+  display: flex;
+  flex-direction: column;
+  max-height: 75vh;
+  border: 1px solid #e2e8f0;
+}
+
+.kanbanColumnHeader {
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  background: #f1f5f9;
+  border-radius: 14px 14px 0 0;
+  z-index: 1;
+}
+
+.kanbanColumnTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.kanbanColumnCount {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  background: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+}
+
+.kanbanColumnBody {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.kanbanCard {
+  background: white;
+  border-radius: 10px;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.kanbanCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+}
+
+.kanbanCardTitle {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #0f172a;
+  line-height: 1.4;
+}
+
+.kanbanCardMeta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.kanbanTag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.kanbanCardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.kanbanColumnEmpty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* Nivel Color Indicators for Kanban */
+.kanbanNivelInicial {
+  border-top: 3px solid #f59e0b;
+}
+
+.kanbanNivelPrimaria {
+  border-top: 3px solid #3b82f6;
+}
+
+.kanbanNivelSecundaria {
+  border-top: 3px solid #8b5cf6;
+}
+
+/* ========================================= */
+/* Propuesta D: Sidebar Árbol + Panel Detail */
+/* ========================================= */
+
+.sidebarLayout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+  min-height: 65vh;
+}
+
+.sidebarPanel {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem;
+  overflow-y: auto;
+  max-height: 75vh;
+  position: sticky;
+  top: 2rem;
+}
+
+.sidebarTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+  padding: 0 0.5rem;
+}
+
+.treeGroup {
+  margin-bottom: 0.75rem;
+}
+
+.treeNivelButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+  text-align: left;
+}
+
+.treeNivelButton:hover {
+  background: #f8fafc;
+}
+
+.treeNivelIcon {
+  font-size: 1.1rem;
+  color: #64748b;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.treeNivelIconOpen {
+  transform: rotate(90deg);
+}
+
+.treeNivelLabel {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.treeNivelCount {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-left: auto;
+}
+
+.treeGradosList {
+  padding-left: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.25rem;
+  animation: slideDown 0.2s ease-out;
+}
+
+.treeGradoItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.825rem;
+  color: #475569;
+  border: 1px solid transparent;
+}
+
+.treeGradoItem:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.treeGradoItemActive {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+  border-color: #dbeafe;
+}
+
+.treeGradoIcon {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.treeGradoCount {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-left: auto;
+  background: #f1f5f9;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.detailPanel {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01);
+}
+
+.detailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.detailTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detailCount {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+}
+
+.detailPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 5rem 2rem;
+  color: #94a3b8;
+  gap: 1rem;
+}
+
+.detailPlaceholderIcon {
+  font-size: 4rem;
+  opacity: 0.3;
+}
+
+.detailPlaceholderText {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.detailPlaceholderSub {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  max-width: 300px;
+}
+
+/* Shared action buttons for new views */
+.actionButton {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.actionButton:hover {
+  background: #f1f5f9;
+  color: #1d4ed8;
+  border-color: #cbd5e1;
+}
+
+.actionButtonDelete:hover {
+  background: #fef2f2;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
