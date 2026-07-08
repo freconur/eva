@@ -10,7 +10,8 @@ import { MdClose } from 'react-icons/md';
 interface Props {
   pregunta: PreguntasRespuestas,
   id: string,
-  handleShowModalUpdatePreguntaRespuesta: () => void
+  handleShowModalUpdatePreguntaRespuesta: () => void,
+  labelActuacion?: string
 }
 
 const initialValue = {
@@ -30,7 +31,7 @@ const initialValue = {
 
 const initialValueAlternativas = { descripcion: "", alternativa: "", selected: false }
 
-const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespuesta, id }: Props) => {
+const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespuesta, id, labelActuacion = 'Actuación Docente' }: Props) => {
   const { loaderSalvarPregunta, evaluacion, preguntasRespuestas } = useGlobalContext()
   const [valueInput, setValueInput] = useState<PreguntasRespuestas>(initialValue)
   const [alternativas, setAlternativas] = useState<Alternativa[]>([])
@@ -217,13 +218,13 @@ const UpdatePreguntaRespuesta = ({ pregunta, handleShowModalUpdatePreguntaRespue
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label className={styles.labelPregunta}>{evaluacion?.labelActuacion || 'Actuación Docente'} (Especialidad) *</label>
+                  <label className={styles.labelPregunta}>{labelActuacion} (Especialidad) *</label>
                   <textarea
                     className={styles.textAreaPregunta}
                     name="preguntaDocente"
                     value={valueInput.preguntaDocente}
                     onChange={handleChangeInput}
-                    placeholder={`Escribe la ${(evaluacion?.labelActuacion || 'Actuación Docente').toLowerCase()} aquí...`}
+                    placeholder={`Escribe la ${labelActuacion.toLowerCase()} aquí...`}
                   />
                 </div>
               </div>

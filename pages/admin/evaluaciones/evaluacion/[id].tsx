@@ -1,6 +1,7 @@
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
-import { writeBatch } from 'firebase/firestore'
+import { writeBatch, doc, onSnapshot, setDoc } from 'firebase/firestore'
+import { db } from '@/firebase/firebase.config'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import { Alternativas } from '@/features/types/types'
 import AgregarPreguntasRespuestas from '@/modals/agregarPreguntasYRespuestas'
@@ -54,17 +55,27 @@ const Evaluacion = () => {
   const [pregunta, setPregunta] = useState({})
   const [showModalUpdatePReguntaRespuesta, setShowModalUpdatePReguntaRespuesta] = useState(false)
 
-  // Estado para editar el label "Actuación Docente"
+  // Estado para el label "Actuación Docente" a nivel global
+  const [labelActuacion, setLabelActuacion] = useState('Actuación Docente')
   const [isEditingLabel, setIsEditingLabel] = useState(false)
   const [labelActuacionLocal, setLabelActuacionLocal] = useState('')
   const labelInputRef = useRef<HTMLInputElement>(null)
 
-  // Sincronizar el label local cuando la evaluación se carga
+  // Escuchar el label global desde la configuración de branding
   useEffect(() => {
-    if (evaluacion) {
-      setLabelActuacionLocal(evaluacion.labelActuacion || 'Actuación Docente')
-    }
-  }, [evaluacion])
+    const brandDocRef = doc(db, 'configuracion', 'branding')
+    const unsubscribe = onSnapshot(brandDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data()
+        const globalLabel = data.labelActuacion || 'Actuación Docente'
+        setLabelActuacion(globalLabel)
+        setLabelActuacionLocal(globalLabel)
+      }
+    }, (err) => {
+      console.error("Error al escuchar cambios globales de labelActuacion:", err)
+    })
+    return () => unsubscribe()
+  }, [])
 
   // Autofocus al input cuando se activa la edición
   useEffect(() => {
@@ -76,21 +87,19 @@ const Evaluacion = () => {
 
   const handleSaveLabelActuacion = async () => {
     const newLabel = labelActuacionLocal.trim()
-    if (!newLabel || !evaluacion || !route.query.id) {
-      setLabelActuacionLocal(evaluacion?.labelActuacion || 'Actuación Docente')
+    if (!newLabel) {
+      setLabelActuacionLocal(labelActuacion)
       setIsEditingLabel(false)
       return
     }
-    // Solo guardar si realmente cambió
-    if (newLabel !== (evaluacion.labelActuacion || 'Actuación Docente')) {
+    // Solo guardar si realmente cambió globalmente
+    if (newLabel !== labelActuacion) {
       try {
-        await updateEvaluacion({
-          ...evaluacion,
-          labelActuacion: newLabel
-        }, `${route.query.id}`)
+        const brandDocRef = doc(db, 'configuracion', 'branding')
+        await setDoc(brandDocRef, { labelActuacion: newLabel }, { merge: true })
       } catch (error: any) {
-        alert(`❌ Error al guardar el título: ${error.message || 'Error desconocido'}`)
-        setLabelActuacionLocal(evaluacion.labelActuacion || 'Actuación Docente')
+        alert(`❌ Error al guardar la etiqueta global: ${error.message || 'Error desconocido'}`)
+        setLabelActuacionLocal(labelActuacion)
       }
     }
     setIsEditingLabel(false)
@@ -480,6 +489,7 @@ const Evaluacion = () => {
           id={`${route.query.id}`}
           showModal={showModal}
           handleshowModal={handleshowModal}
+          labelActuacion={labelActuacion}
         />
       )}
 
@@ -488,6 +498,7 @@ const Evaluacion = () => {
           id={`${route.query.id}`}
           pregunta={pregunta}
           handleShowModalUpdatePreguntaRespuesta={handleShowModalUpdatePreguntaRespuesta}
+          labelActuacion={labelActuacion}
         />
       )}
 
@@ -894,14 +905,14 @@ const Evaluacion = () => {
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') handleSaveLabelActuacion()
                                   if (e.key === 'Escape') {
-                                    setLabelActuacionLocal(evaluacion?.labelActuacion || 'Actuación Docente')
+                                    setLabelActuacionLocal(labelActuacion)
                                     setIsEditingLabel(false)
                                   }
                                 }}
                               />
                             ) : (
                               <span className={styles.actionLabelEditable}>
-                                <span className={styles.actionLabel}>{evaluacion?.labelActuacion || 'Actuación Docente'}</span>
+                                <span className={styles.actionLabel}>{labelActuacion}</span>
                                 <MdEdit
                                   className={styles.actionLabelPencil}
                                   onClick={() => setIsEditingLabel(true)}
@@ -910,7 +921,7 @@ const Evaluacion = () => {
                               </span>
                             )
                           ) : (
-                            <span className={styles.actionLabel}>{evaluacion?.labelActuacion || 'Actuación Docente'}</span>
+                            <span className={styles.actionLabel}>{labelActuacion}</span>
                           )}
                           <p className={styles.actionText}>{pr.preguntaDocente}</p>
                         </div>

@@ -9,12 +9,13 @@ import { MdClose } from 'react-icons/md';
 interface Props {
   showModal: boolean,
   handleshowModal: () => void,
-  id: string
+  id: string,
+  labelActuacion?: string
 }
 
-const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) => {
+const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal, labelActuacion = 'Actuación Docente' }: Props) => {
 
-  const { currentUserData, preguntasRespuestas, evaluacion } = useGlobalContext()
+  const { currentUserData, preguntasRespuestas } = useGlobalContext()
   const { guardarPreguntasRespuestas } = useAgregarEvaluaciones()
 
   let container;
@@ -149,7 +150,7 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
               </div>
 
               <div className={styles.formGroup}>
-                <label className={styles.labelPregunta}>{evaluacion?.labelActuacion || 'Actuación Docente'} (Especialidad) *</label>
+                <label className={styles.labelPregunta}>{labelActuacion} (Especialidad) *</label>
                 <textarea
                   {...register("preguntaDocente", {
                     required: "La pregunta de actuación es requerida",
@@ -157,7 +158,7 @@ const AgregarPreguntasRespuestas = ({ id, showModal, handleshowModal }: Props) =
                     maxLength: { value: 400, message: "La actuación debe tener un máximo de 400 caracteres" },
                   })}
                   className={styles.textAreaPregunta}
-                  placeholder={`Escribe la ${(evaluacion?.labelActuacion || 'Actuación Docente').toLowerCase()} aquí...`}
+                  placeholder={`Escribe la ${labelActuacion.toLowerCase()} aquí...`}
                 />
                 {errors.preguntaDocente && (
                   <span className={styles.error}>{errors.preguntaDocente.message as string}</span>
