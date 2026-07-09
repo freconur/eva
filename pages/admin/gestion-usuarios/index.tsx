@@ -51,8 +51,13 @@ const GestionUsuariosPage = () => {
 
   // Búsqueda específica por DNI
   const [dniQuery, setDniQuery] = useState('')
+  const [dniResults, setDniResults] = useState<User[]>([])
   const [isDniActive, setIsDniActive] = useState(false)
-  const resultsTableRef = useRef<HTMLDivElement>(null)
+  const generalTableRef = useRef<HTMLDivElement>(null)
+  const dniTableRef = useRef<HTMLDivElement>(null)
+
+  // Filtro de búsqueda rápida local en memoria
+  const [localSearchQuery, setLocalSearchQuery] = useState('')
 
   // Paginación local (en memoria)
   const [currentPage, setCurrentPage] = useState(1)
@@ -115,7 +120,9 @@ const GestionUsuariosPage = () => {
     setFilters(INITIAL_FILTERS)
     setDniQuery('')
     setIsDniActive(false)
+    setLocalSearchQuery('')
     setRawResults([])
+    setDniResults([])
     setHasSearched(false)
     setCurrentPage(1)
   }
@@ -123,9 +130,8 @@ const GestionUsuariosPage = () => {
   const clearDniSearch = () => {
     setDniQuery('')
     setIsDniActive(false)
-    setRawResults([])
-    setHasSearched(false)
-    setCurrentPage(1)
+    setDniResults([])
+    setLocalSearchQuery('')
   }
 
   const searchWithFilters = async () => {
@@ -149,6 +155,13 @@ const GestionUsuariosPage = () => {
       setRawResults(docs)
       setCurrentPage(1)
       setHasSearched(true)
+
+      // Scroll suave a la tabla general si tiene resultados
+      if (docs.length > 0) {
+        setTimeout(() => {
+          generalTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 100)
+      }
     } catch (error: any) {
       console.error('Error searching users with filters:', error)
       toast.error('Error al buscar usuarios en Firestore')
@@ -161,12 +174,11 @@ const GestionUsuariosPage = () => {
     searchWithFilters()
   }
 
-  // Filtrado local en memoria (Reactivo, 0ms latencia, 0 costo lecturas)
+  // Filtrado local en memoria para búsqueda general
   const getFilteredResults = () => {
-    if (isDniActive) {
-      return rawResults
-    }
-    return rawResults.filter(user => {
+    let results = rawResults
+
+    results = results.filter(user => {
       // 1. Filtrar por Rol (que es obligatorio)
       const userRol = Number(user.rol || user.perfil?.rol)
       if (Number(filters.rol) !== userRol) return false
@@ -192,9 +204,54 @@ const GestionUsuariosPage = () => {
 
       return true
     })
+
+    // Filtrado secundario por término de búsqueda en memoria (DNI, nombres, apellidos, institución)
+    if (localSearchQuery.trim()) {
+      const q = localSearchQuery.toLowerCase().trim()
+      results = results.filter(user => {
+        const dni = (user.dni || '').toLowerCase()
+        const nombres = (user.nombres || '').toLowerCase()
+        const apellidos = (user.apellidos || '').toLowerCase()
+        const institucion = (user.institucion || '').toLowerCase()
+
+        return (
+          dni.includes(q) ||
+          nombres.includes(q) ||
+          apellidos.includes(q) ||
+          institucion.includes(q)
+        )
+      })
+    }
+
+    return results
+  }
+
+  // Filtrado local en memoria para búsqueda por DNI
+  const getDniFilteredResults = () => {
+    let results = dniResults
+
+    if (localSearchQuery.trim()) {
+      const q = localSearchQuery.toLowerCase().trim()
+      results = results.filter(user => {
+        const dni = (user.dni || '').toLowerCase()
+        const nombres = (user.nombres || '').toLowerCase()
+        const apellidos = (user.apellidos || '').toLowerCase()
+        const institucion = (user.institucion || '').toLowerCase()
+
+        return (
+          dni.includes(q) ||
+          nombres.includes(q) ||
+          apellidos.includes(q) ||
+          institucion.includes(q)
+        )
+      })
+    }
+
+    return results
   }
 
   const filteredResults = getFilteredResults()
+  const filteredDniResults = getDniFilteredResults()
 
   // Helper local para convertir el array de nivelDeInstitucion a string
   const getNivelInstitucionTexto = (niveles: number[] | undefined): string => {
@@ -309,15 +366,14 @@ const GestionUsuariosPage = () => {
           snapshot.forEach((docSnap) => {
             docs.push(docSnap.data() as User)
           })
-          setRawResults(docs)
+          setDniResults(docs)
           setIsDniActive(true)
-          setHasSearched(true)
           setCurrentPage(1)
 
           // Scroll automático únicamente si llegó a la longitud máxima de 8 dígitos
           if (docs.length > 0 && dniQuery.length === 8) {
             setTimeout(() => {
-              resultsTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              dniTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }, 100)
           }
         } catch (error) {
@@ -332,8 +388,7 @@ const GestionUsuariosPage = () => {
     } else {
       if (isDniActive) {
         setIsDniActive(false)
-        setRawResults([])
-        setHasSearched(false)
+        setDniResults([])
         setCurrentPage(1)
       }
     }
@@ -518,8 +573,8 @@ const GestionUsuariosPage = () => {
                         }
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && paginatedResults.length > 0) {
-                          resultsTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        if (e.key === 'Enter' && filteredDniResults.length > 0) {
+                          dniTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                         }
                       }}
                       placeholder="Ingrese al menos 4 dígitos para buscar..."
@@ -539,6 +594,115 @@ const GestionUsuariosPage = () => {
                   )}
                 </div>
               </div>
+
+              {/* Tabla de Resultados por DNI */}
+              {isDniActive && (
+                <div ref={dniTableRef} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                  <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <RiSearchLine className="text-lg text-blue-600" />
+                      <span className="font-bold text-slate-800 text-sm">Resultados de la Búsqueda por DNI</span>
+                    </div>
+                    <span className="text-xs text-slate-500 font-semibold">
+                      Se encontraron <strong className="text-slate-800 font-bold">{filteredDniResults.length}</strong> coincidencias.
+                    </span>
+                  </div>
+                  {loading ? (
+                    <div className="flex flex-col items-center justify-center p-12 text-slate-500 gap-4">
+                      <div className="w-10 h-10 border-4 border-slate-100 border-t-blue-500 rounded-full animate-spin"></div>
+                      <span className="font-medium animate-pulse">Buscando usuarios...</span>
+                    </div>
+                  ) : filteredDniResults.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-left">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-100 text-slate-600 font-semibold text-sm">
+                            <th className="p-4 pl-6">Usuario</th>
+                            <th className="p-4">DNI</th>
+                            <th className="p-4">Rol</th>
+                            <th className="p-4">Región</th>
+                            <th className="p-4">Distrito</th>
+                            <th className="p-4">Tipo</th>
+                            <th className="p-4">Gestión</th>
+                            <th className="p-4">Área</th>
+                            <th className="p-4">Nivel</th>
+                            <th className="p-4">Correo Electrónico</th>
+                            <th className="p-4 pr-6 text-center">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-slate-700">
+                          {filteredDniResults.map((user) => (
+                            <tr key={user.dni} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="p-4 pl-6">
+                                <div>
+                                  <div className="font-semibold text-slate-800">{user.nombres} {user.apellidos}</div>
+                                  <div className="text-xs text-slate-400">{user.celular || 'Sin celular'}</div>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg text-xs font-semibold tracking-wider">
+                                  {user.dni}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <span className="text-slate-600 text-sm">
+                                  {ROLES_TEXT[Number(user.rol || user.perfil?.rol)] || 'Usuario'}
+                                </span>
+                              </td>
+                              <td className="p-4 text-sm text-slate-500">
+                                {user.region ? regionTexto(String(user.region)) : '—'}
+                              </td>
+                              <td className="p-4 text-sm text-slate-550">
+                                {user.distrito || '—'}
+                              </td>
+                              <td className="p-4 text-sm text-slate-550">
+                                {getCaracteristicasDirectivoTexto(user.caracteristicaCurricular) || '—'}
+                              </td>
+                              <td className="p-4 text-sm text-slate-550">
+                                {user.tipoGestion ? user.tipoGestion.charAt(0).toUpperCase() + user.tipoGestion.slice(1) : '—'}
+                              </td>
+                              <td className="p-4 text-sm text-slate-550">
+                                {getAreaTexto(user.area) || '—'}
+                              </td>
+                              <td className="p-4 text-sm text-slate-550">
+                                {getNivelInstitucionTexto(user.nivelDeInstitucion)}
+                              </td>
+                              <td className="p-4 text-sm text-slate-500">
+                                {user.email || `${user.dni}@competencelab.com`}
+                              </td>
+                              <td className="p-4 pr-6">
+                                <div className="flex justify-center gap-2">
+                                  <button
+                                    onClick={() => handleStartAudit(user)}
+                                    className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-xs font-bold border border-blue-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    title="Auditar cuenta del usuario"
+                                  >
+                                    <RiEyeLine className="text-sm" />
+                                    Auditar
+                                  </button>
+                                  <button
+                                    onClick={() => handleOpenResetModal(user)}
+                                    className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold border border-amber-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    title="Restablecer contraseña"
+                                  >
+                                    <RiLockPasswordLine className="text-sm" />
+                                    Restablecer
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="p-12 text-center text-slate-400">
+                      <RiUserLine className="mx-auto text-4xl mb-3 text-slate-300" />
+                      <p className="font-medium">No se encontraron usuarios que coincidan con el DNI especificado.</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Mandatory Filters Card */}
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
@@ -566,7 +730,6 @@ const GestionUsuariosPage = () => {
                       value={filters.region}
                       onChange={(e) => {
                         handleFilterChange('region', e.target.value);
-                        setDniQuery('');
                         if (hasSearched) {
                           // Si ya se había buscado, al cambiar los mandatorios reseteamos la búsqueda
                           setRawResults([]);
@@ -589,7 +752,6 @@ const GestionUsuariosPage = () => {
                       value={filters.rol}
                       onChange={(e) => {
                         handleFilterChange('rol', e.target.value);
-                        setDniQuery('');
                         if (hasSearched) {
                           // Cambiar rol de búsqueda inicial
                           setRawResults([]);
@@ -648,6 +810,23 @@ const GestionUsuariosPage = () => {
                   <div className="flex items-center gap-2 text-slate-700 border-b border-slate-50 pb-2">
                     <RiFilterLine className="text-lg text-indigo-600" />
                     <span className="font-bold text-sm">Filtros Secundarios (Instantáneos en Memoria)</span>
+                  </div>
+
+                  {/* Buscador rápido en memoria */}
+                  <div className="space-y-1.5 border-b border-slate-100 pb-4">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Buscador Rápido (Nombres, Apellidos, DNI, Institución)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={localSearchQuery}
+                        onChange={(e) => setLocalSearchQuery(e.target.value)}
+                        placeholder="Escriba para filtrar instantáneamente..."
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-slate-700 text-sm bg-white"
+                      />
+                      <RiSearchLine className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -733,164 +912,172 @@ const GestionUsuariosPage = () => {
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Results Table */}
-            <div ref={resultsTableRef} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center p-12 text-slate-500 gap-4">
-                  <div className="w-10 h-10 border-4 border-slate-100 border-t-blue-500 rounded-full animate-spin"></div>
-                  <span className="font-medium animate-pulse">Buscando usuarios...</span>
-                </div>
-              ) : paginatedResults.length > 0 ? (
-                <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-left">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-100 text-slate-600 font-semibold text-sm">
-                          <th className="p-4 pl-6">Usuario</th>
-                          <th className="p-4">DNI</th>
-                          <th className="p-4">Rol</th>
-                          <th className="p-4">Región</th>
-                          <th className="p-4">Distrito</th>
-                          <th className="p-4">Tipo</th>
-                          <th className="p-4">Gestión</th>
-                          <th className="p-4">Área</th>
-                          <th className="p-4">Nivel</th>
-                          <th className="p-4">Correo Electrónico</th>
-                          <th className="p-4 pr-6 text-center">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-slate-700">
-                        {paginatedResults.map((user) => (
-                          <tr key={user.dni} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="p-4 pl-6">
-                              <div>
-                                <div className="font-semibold text-slate-800">{user.nombres} {user.apellidos}</div>
-                                <div className="text-xs text-slate-400">{user.celular || 'Sin celular'}</div>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg text-xs font-semibold tracking-wider">
-                                {user.dni}
-                              </span>
-                            </td>
-                            <td className="p-4">
-                              <span className="text-slate-600 text-sm">
-                                {ROLES_TEXT[Number(user.rol || user.perfil?.rol)] || 'Usuario'}
-                              </span>
-                            </td>
-                            <td className="p-4 text-sm text-slate-500">
-                              {user.region ? regionTexto(String(user.region)) : '—'}
-                            </td>
-                            <td className="p-4 text-sm text-slate-550">
-                              {user.distrito || '—'}
-                            </td>
-                            <td className="p-4 text-sm text-slate-550">
-                              {getCaracteristicasDirectivoTexto(user.caracteristicaCurricular) || '—'}
-                            </td>
-                            <td className="p-4 text-sm text-slate-550">
-                              {user.tipoGestion ? user.tipoGestion.charAt(0).toUpperCase() + user.tipoGestion.slice(1) : '—'}
-                            </td>
-                            <td className="p-4 text-sm text-slate-550">
-                              {getAreaTexto(user.area) || '—'}
-                            </td>
-                            <td className="p-4 text-sm text-slate-550">
-                              {getNivelInstitucionTexto(user.nivelDeInstitucion)}
-                            </td>
-                            <td className="p-4 text-sm text-slate-500">
-                              {user.email || `${user.dni}@competencelab.com`}
-                            </td>
-                            <td className="p-4 pr-6">
-                              <div className="flex justify-center gap-2">
-                                <button
-                                  onClick={() => handleStartAudit(user)}
-                                  className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-xs font-bold border border-blue-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                  title="Auditar cuenta del usuario"
-                                >
-                                  <RiEyeLine className="text-sm" />
-                                  Auditar
-                                </button>
-                                <button
-                                  onClick={() => handleOpenResetModal(user)}
-                                  className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold border border-amber-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                  title="Restablecer contraseña"
-                                >
-                                  <RiLockPasswordLine className="text-sm" />
-                                  Restablecer
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+            {/* Tabla de Resultados General */}
+            {hasSearched && (
+              <div ref={generalTableRef} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <RiFilterLine className="text-lg text-indigo-600" />
+                    <span className="font-bold text-slate-800 text-sm">Resultados de la Búsqueda General (UGEL y Rol)</span>
                   </div>
-
-                  {/* Pagination Controls */}
-                  {filteredResults.length > 0 && (
-                    <div className="bg-slate-50 border-t border-slate-100 px-6 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                      <div className="flex items-center gap-4 flex-wrap">
-                        <div className="text-xs text-slate-500 font-medium">
-                          Página {currentPage} de {totalPages || 1} — Mostrando {paginatedResults.length} de {filteredResults.length}
-                        </div>
-                        
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Mostrar:</span>
-                          <select
-                            value={pageSize}
-                            onChange={e => {
-                              setPageSize(Number(e.target.value))
-                              setCurrentPage(1)
-                            }}
-                            className="px-2.5 py-1 text-xs font-bold border border-slate-200 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer shadow-sm hover:border-slate-300"
-                          >
-                            <option value={50}>50 filas</option>
-                            <option value={100}>100 filas</option>
-                            <option value={200}>200 filas</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {totalPages > 1 && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={handlePrevPage}
-                            disabled={currentPage <= 1}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-600 hover:bg-white hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-slate-200 disabled:hover:text-slate-600"
-                          >
-                            <RiArrowLeftSLine className="text-sm" />
-                            Anterior
-                          </button>
-                          <span className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg min-w-[32px] text-center">
-                            {currentPage}
-                          </span>
-                          <button
-                            onClick={handleNextPage}
-                            disabled={currentPage >= totalPages}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-600 hover:bg-white hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-slate-200 disabled:hover:text-slate-600"
-                          >
-                            Siguiente
-                            <RiArrowRightSLine className="text-sm" />
-                          </button>
-                        </div>
-                      )}
+                </div>
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center p-12 text-slate-500 gap-4">
+                    <div className="w-10 h-10 border-4 border-slate-100 border-t-blue-500 rounded-full animate-spin"></div>
+                    <span className="font-medium animate-pulse">Buscando usuarios...</span>
+                  </div>
+                ) : paginatedResults.length > 0 ? (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-left">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-100 text-slate-600 font-semibold text-sm">
+                            <th className="p-4 pl-6">Usuario</th>
+                            <th className="p-4">DNI</th>
+                            <th className="p-4">Rol</th>
+                            <th className="p-4">Región</th>
+                            <th className="p-4">Distrito</th>
+                            <th className="p-4">Tipo</th>
+                            <th className="p-4">Gestión</th>
+                            <th className="p-4">Área</th>
+                            <th className="p-4">Nivel</th>
+                            <th className="p-4">Correo Electrónico</th>
+                            <th className="p-4 pr-6 text-center">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-slate-700">
+                          {paginatedResults.map((user) => (
+                            <tr key={user.dni} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="p-4 pl-6">
+                                <div>
+                                  <div className="font-semibold text-slate-800">{user.nombres} {user.apellidos}</div>
+                                  <div className="text-xs text-slate-400">{user.celular || 'Sin celular'}</div>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg text-xs font-semibold tracking-wider">
+                                  {user.dni}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <span className="text-slate-600 text-sm">
+                                  {ROLES_TEXT[Number(user.rol || user.perfil?.rol)] || 'Usuario'}
+                                </span>
+                              </td>
+                              <td className="p-4 text-sm text-slate-500">
+                                {user.region ? regionTexto(String(user.region)) : '—'}
+                              </td>
+                              <td className="p-4 text-sm text-slate-550">
+                                {user.distrito || '—'}
+                              </td>
+                              <td className="p-4 text-sm text-slate-550">
+                                {getCaracteristicasDirectivoTexto(user.caracteristicaCurricular) || '—'}
+                              </td>
+                              <td className="p-4 text-sm text-slate-550">
+                                {user.tipoGestion ? user.tipoGestion.charAt(0).toUpperCase() + user.tipoGestion.slice(1) : '—'}
+                              </td>
+                              <td className="p-4 text-sm text-slate-550">
+                                {getAreaTexto(user.area) || '—'}
+                              </td>
+                              <td className="p-4 text-sm text-slate-550">
+                                {getNivelInstitucionTexto(user.nivelDeInstitucion)}
+                              </td>
+                              <td className="p-4 text-sm text-slate-500">
+                                {user.email || `${user.dni}@competencelab.com`}
+                              </td>
+                              <td className="p-4 pr-6">
+                                <div className="flex justify-center gap-2">
+                                  <button
+                                    onClick={() => handleStartAudit(user)}
+                                    className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-xs font-bold border border-blue-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    title="Auditar cuenta del usuario"
+                                  >
+                                    <RiEyeLine className="text-sm" />
+                                    Auditar
+                                  </button>
+                                  <button
+                                    onClick={() => handleOpenResetModal(user)}
+                                    className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold border border-amber-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    title="Restablecer contraseña"
+                                  >
+                                    <RiLockPasswordLine className="text-sm" />
+                                    Restablecer
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  )}
-                </>
-              ) : hasSearched ? (
-                <div className="p-12 text-center text-slate-400">
-                  <RiUserLine className="mx-auto text-4xl mb-3 text-slate-300" />
-                  <p className="font-medium">No se encontraron usuarios con los filtros seleccionados.</p>
-                  <p className="text-sm text-slate-400 mt-1">Intente con una combinación diferente de filtros.</p>
-                </div>
-              ) : (
-                <div className="p-12 text-center text-slate-400">
-                  <RiFilterLine className="mx-auto text-4xl mb-3 text-slate-300" />
-                  <p className="font-medium">Seleccione filtros y presione &quot;Buscar Usuarios&quot;.</p>
-                  <p className="text-sm text-slate-400 mt-1">Use los filtros de arriba para encontrar usuarios por región, rol, área y más.</p>
-                </div>
-              )}
+
+                    {/* Pagination Controls */}
+                    {filteredResults.length > 0 && (
+                      <div className="bg-slate-50 border-t border-slate-100 px-6 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 flex-wrap">
+                          <div className="text-xs text-slate-500 font-medium">
+                            Página {currentPage} de {totalPages || 1} — Mostrando {paginatedResults.length} de {filteredResults.length}
+                          </div>
+                          
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Mostrar:</span>
+                            <select
+                              value={pageSize}
+                              onChange={e => {
+                                setPageSize(Number(e.target.value))
+                                setCurrentPage(1)
+                              }}
+                              className="px-2.5 py-1 text-xs font-bold border border-slate-200 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer shadow-sm hover:border-slate-300"
+                            >
+                              <option value={50}>50 filas</option>
+                              <option value={100}>100 filas</option>
+                              <option value={200}>200 filas</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {totalPages > 1 && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={handlePrevPage}
+                              disabled={currentPage <= 1}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-600 hover:bg-white hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-slate-200 disabled:hover:text-slate-600"
+                            >
+                              <RiArrowLeftSLine className="text-sm" />
+                              Anterior
+                            </button>
+                            <span className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg min-w-[32px] text-center">
+                              {currentPage}
+                            </span>
+                            <button
+                              onClick={handleNextPage}
+                              disabled={currentPage >= totalPages}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-600 hover:bg-white hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-slate-200 disabled:hover:text-slate-600"
+                            >
+                              Siguiente
+                              <RiArrowRightSLine className="text-sm" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : hasSearched ? (
+                  <div className="p-12 text-center text-slate-400">
+                    <RiUserLine className="mx-auto text-4xl mb-3 text-slate-300" />
+                    <p className="font-medium">No se encontraron usuarios con los filtros seleccionados.</p>
+                    <p className="text-sm text-slate-400 mt-1">Intente con una combinación diferente de filtros.</p>
+                  </div>
+                ) : (
+                  <div className="p-12 text-center text-slate-400">
+                    <RiFilterLine className="mx-auto text-4xl mb-3 text-slate-300" />
+                    <p className="font-medium">Seleccione filtros y presione &quot;Buscar Usuarios&quot;.</p>
+                    <p className="text-sm text-slate-400 mt-1">Use los filtros de arriba para encontrar usuarios por región, rol, área y más.</p>
+                  </div>
+                )}
+              </div>
+            )}
             </div>
           </>
         )}
