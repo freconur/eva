@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { collection, query, where, getDocs, getFirestore, doc, onSnapshot, deleteDoc } from 'firebase/firestore'
+import React, { useEffect, useState, useRef } from 'react'
+import { collection, query, where, getDocs, getFirestore, doc, onSnapshot, deleteDoc, limit } from 'firebase/firestore'
 import { app } from '@/firebase/firebase.config'
 import { User } from '@/features/types/types'
 import { RiSearchLine, RiLockPasswordLine, RiUserLine, RiEyeLine, RiBarChartLine, RiDatabase2Line, RiRefreshLine, RiDeleteBin6Line, RiFilterLine, RiFilter3Line, RiArrowLeftSLine, RiArrowRightSLine, RiCloseLine } from 'react-icons/ri'
@@ -48,6 +48,11 @@ const GestionUsuariosPage = () => {
   const [rawResults, setRawResults] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+
+  // Búsqueda específica por DNI
+  const [dniQuery, setDniQuery] = useState('')
+  const [isDniActive, setIsDniActive] = useState(false)
+  const resultsTableRef = useRef<HTMLDivElement>(null)
 
   // Paginación local (en memoria)
   const [currentPage, setCurrentPage] = useState(1)
@@ -108,6 +113,16 @@ const GestionUsuariosPage = () => {
 
   const clearFilters = () => {
     setFilters(INITIAL_FILTERS)
+    setDniQuery('')
+    setIsDniActive(false)
+    setRawResults([])
+    setHasSearched(false)
+    setCurrentPage(1)
+  }
+
+  const clearDniSearch = () => {
+    setDniQuery('')
+    setIsDniActive(false)
     setRawResults([])
     setHasSearched(false)
     setCurrentPage(1)
@@ -148,6 +163,9 @@ const GestionUsuariosPage = () => {
 
   // Filtrado local en memoria (Reactivo, 0ms latencia, 0 costo lecturas)
   const getFilteredResults = () => {
+    if (isDniActive) {
+      return rawResults
+    }
     return rawResults.filter(user => {
       // 1. Filtrar por Rol (que es obligatorio)
       const userRol = Number(user.rol || user.perfil?.rol)
@@ -191,10 +209,12 @@ const GestionUsuariosPage = () => {
   };
 
   // Conteo de usuarios que coinciden únicamente con la búsqueda obligatoria (región + rol)
-  const initialMatchesCount = rawResults.filter(user => {
-    const userRol = Number(user.rol || user.perfil?.rol)
-    return Number(filters.rol) === userRol
-  }).length
+  const initialMatchesCount = isDniActive
+    ? rawResults.length
+    : rawResults.filter(user => {
+        const userRol = Number(user.rol || user.perfil?.rol)
+        return Number(filters.rol) === userRol
+      }).length
 
   // Paginación local
   const totalPages = Math.ceil(filteredResults.length / pageSize)
@@ -270,6 +290,54 @@ const GestionUsuariosPage = () => {
     getUserData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Hook de efecto para búsqueda en tiempo real por DNI con Debouncing
+  useEffect(() => {
+    if (dniQuery.length >= 4) {
+      setLoading(true)
+      const delayDebounceFn = setTimeout(async () => {
+        try {
+          const pathRef = collection(db, 'usuarios')
+          const q = query(
+            pathRef,
+            where('dni', '>=', dniQuery),
+            where('dni', '<=', dniQuery + '\uf8ff'),
+            limit(100)
+          )
+          const snapshot = await getDocs(q)
+          const docs: User[] = []
+          snapshot.forEach((docSnap) => {
+            docs.push(docSnap.data() as User)
+          })
+          setRawResults(docs)
+          setIsDniActive(true)
+          setHasSearched(true)
+          setCurrentPage(1)
+
+          // Scroll automático únicamente si llegó a la longitud máxima de 8 dígitos
+          if (docs.length > 0 && dniQuery.length === 8) {
+            setTimeout(() => {
+              resultsTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }, 100)
+          }
+        } catch (error) {
+          console.error("Error searching by DNI:", error)
+          toast.error("Error al buscar por DNI")
+        } finally {
+          setLoading(false)
+        }
+      }, 400) // 400ms debounce
+
+      return () => clearTimeout(delayDebounceFn)
+    } else {
+      if (isDniActive) {
+        setIsDniActive(false)
+        setRawResults([])
+        setHasSearched(false)
+        setCurrentPage(1)
+      }
+    }
+  }, [dniQuery, db])
 
   useEffect(() => {
     setLoadingRequests(true)
@@ -419,6 +487,59 @@ const GestionUsuariosPage = () => {
         <>
             {/* Filters Section */}
             <div className="space-y-6">
+              {/* Búsqueda por DNI Card */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <RiSearchLine className="text-lg text-blue-600" />
+                    <span className="font-bold text-sm">Búsqueda Directa por DNI</span>
+                  </div>
+                  {dniQuery && (
+                    <button
+                      onClick={clearDniSearch}
+                      className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-500 font-semibold transition-colors"
+                    >
+                      <RiCloseLine className="text-sm" />
+                      Limpiar DNI
+                    </button>
+                  )}
+                </div>
+
+                <div className="max-w-md space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Número de DNI</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={dniQuery}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^\d*$/.test(val) && val.length <= 8) {
+                          setDniQuery(val);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && paginatedResults.length > 0) {
+                          resultsTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }
+                      }}
+                      placeholder="Ingrese al menos 4 dígitos para buscar..."
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700 text-sm bg-white"
+                    />
+                    <RiSearchLine className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
+                  </div>
+                  {dniQuery.length > 0 && dniQuery.length < 4 && (
+                    <span className="text-xs text-amber-600 font-medium block mt-1">
+                      Escriba al menos 4 dígitos (faltan {4 - dniQuery.length})
+                    </span>
+                  )}
+                  {loading && dniQuery.length >= 4 && (
+                    <span className="text-xs text-blue-600 animate-pulse font-medium block mt-1">
+                      Buscando coincidencias de DNI...
+                    </span>
+                  )}
+                </div>
+              </div>
+
               {/* Mandatory Filters Card */}
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
                 <div className="flex items-center justify-between">
@@ -445,6 +566,7 @@ const GestionUsuariosPage = () => {
                       value={filters.region}
                       onChange={(e) => {
                         handleFilterChange('region', e.target.value);
+                        setDniQuery('');
                         if (hasSearched) {
                           // Si ya se había buscado, al cambiar los mandatorios reseteamos la búsqueda
                           setRawResults([]);
@@ -467,6 +589,7 @@ const GestionUsuariosPage = () => {
                       value={filters.rol}
                       onChange={(e) => {
                         handleFilterChange('rol', e.target.value);
+                        setDniQuery('');
                         if (hasSearched) {
                           // Cambiar rol de búsqueda inicial
                           setRawResults([]);
@@ -508,7 +631,11 @@ const GestionUsuariosPage = () => {
                         ✓ Datos cargados en memoria
                       </span>
                       <span className="text-xs text-slate-500 font-semibold">
-                        Se encontraron <strong className="text-slate-800 font-bold">{initialMatchesCount}</strong> usuarios que coinciden con Región y Rol.
+                        {isDniActive ? (
+                          <>Se encontraron <strong className="text-slate-800 font-bold">{rawResults.length}</strong> usuarios que coinciden con el DNI.</>
+                        ) : (
+                          <>Se encontraron <strong className="text-slate-800 font-bold">{initialMatchesCount}</strong> usuarios que coinciden con Región y Rol.</>
+                        )}
                       </span>
                     </div>
                   )}
@@ -609,7 +736,7 @@ const GestionUsuariosPage = () => {
             </div>
 
             {/* Results Table */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div ref={resultsTableRef} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
               {loading ? (
                 <div className="flex flex-col items-center justify-center p-12 text-slate-500 gap-4">
                   <div className="w-10 h-10 border-4 border-slate-100 border-t-blue-500 rounded-full animate-spin"></div>
