@@ -1,0 +1,237 @@
+/* CSS Modular para gráficos y matriz comparativa */
+
+.container {
+  width: 100%;
+  max-width: 80rem; /* max-w-7xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* space-y-6 */
+  box-sizing: border-box;
+}
+
+.gridTwoCols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .gridTwoCols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.chartCard {
+  background-color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 1rem; /* rounded-2xl */
+  border: 1px solid #f1f5f9; /* border-slate-100 */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05); /* shadow-sm */
+  box-sizing: border-box;
+}
+
+.chartContainer {
+  height: 24rem; /* h-96 = 384px */
+  position: relative;
+  width: 100%;
+}
+
+.tableCard {
+  background-color: #ffffff;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.tableTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1e293b; /* slate-800 */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.comparisonTable {
+  width: 100%;
+  min-width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.tableHeaderRow {
+  border-bottom: 1px solid #f1f5f9;
+  background-color: rgba(248, 250, 252, 0.7); /* slate-50/70 */
+}
+
+.tableHeaderCell {
+  padding: 0.625rem 0.75rem;
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8; /* slate-400 */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tableHeaderCellRight {
+  composes: tableHeaderCell;
+  text-align: right;
+}
+
+.tableBodyRow {
+  border-bottom: 1px solid #f8fafc;
+}
+
+.totalRow {
+  composes: tableBodyRow;
+  font-weight: 600;
+  color: #0f172a; /* slate-900 */
+  background-color: rgba(248, 250, 252, 0.2);
+}
+
+.tableBodyCell {
+  padding: 0.75rem 0.75rem;
+  font-size: 0.75rem;
+  color: #334155; /* slate-700 */
+  vertical-align: middle;
+}
+
+.tableBodyCellRight {
+  composes: tableBodyCell;
+  text-align: right;
+  font-weight: 700;
+}
+
+.cellActualTotal {
+  composes: tableBodyCellRight;
+  color: #4f46e5; /* indigo-600 */
+}
+
+.achievementCell {
+  composes: tableBodyCell;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.circleIndicator {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.circleSatisfactorio {
+  composes: circleIndicator;
+  background-color: #22c55e; /* green-500 */
+}
+
+.circleProceso {
+  composes: circleIndicator;
+  background-color: #f97316; /* orange-500 */
+}
+
+.circleInicio {
+  composes: circleIndicator;
+  background-color: #94a3b8; /* slate-400 */
+}
+
+.badgePercent {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  margin-left: 0.25rem;
+  display: inline-block;
+}
+
+.badgeSatisfactorio {
+  composes: badgePercent;
+  color: #15803d; /* green-700 */
+  background-color: #f0fdf4; /* green-50 */
+}
+
+.badgeProceso {
+  composes: badgePercent;
+  color: #c2410c; /* orange-700 */
+  background-color: #fff7ed; /* orange-50 */
+}
+
+.badgeInicio {
+  composes: badgePercent;
+  color: #475569; /* slate-600 */
+  background-color: #f1f5f9; /* slate-100 */
+}
+
+.glossaryContainer {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+  font-size: 10px;
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-weight: 500;
+}
+
+.glossaryItem {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.glossaryCircle {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.loaderWrapper {
+  width: 100%;
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 24rem;
+}
+
+.overlayContainer {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+  border-radius: 1rem;
+  backdrop-filter: blur(1.5px);
+  pointer-events: all;
+}

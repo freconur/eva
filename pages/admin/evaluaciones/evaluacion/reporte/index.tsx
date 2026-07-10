@@ -540,11 +540,6 @@ const Reporte = () => {
 
           {elementosVisibles.includes('graficos_tendencia') && evaluacion.tipoDeEvaluacion === '1' && (
             <AcordeonGraficosTendencia
-              rangoMes={rangoMes}
-              monthSelected={monthSelected}
-              yearSelected={yearSelected}
-              setRangoMes={setRangoMes}
-              onRangoChange={handleRangoChange}
               idEvaluacion={`${router.query.idEvaluacion}`}
             />
           )}

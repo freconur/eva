@@ -114,3 +114,257 @@
     font-size: 0.875rem;
     line-height: 1.5;
 }
+
+/* ===== ESTILOS DEL DROPDOWN DE COMPARATIVA PERSONALIZADO ===== */
+
+.comparisonContainer {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.comparisonTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 0.25rem 0;
+}
+
+.comparisonTitleIcon {
+    color: #2563eb;
+    font-size: 1.125rem;
+}
+
+.comparisonDesc {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin: 0 0 1rem 0;
+}
+
+.dropdownWrapper {
+    position: relative;
+    max-width: 448px;
+    width: 100%;
+}
+
+.triggerGroup {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dropdownTrigger {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 1rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dropdownTrigger:hover {
+    border-color: #cbd5e1;
+}
+
+.triggerTextPlaceholder {
+    color: #94a3b8;
+}
+
+.triggerTextValue {
+    color: #1e293b;
+}
+
+.chevronIcon {
+    color: #94a3b8;
+    font-size: 1.125rem;
+    transition: transform 0.2s ease;
+}
+
+.chevronIconOpen {
+    transform: rotate(180deg);
+}
+
+.clearButton {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: 12px;
+    border: 1px solid #fee2e2;
+    background-color: #fef2f2;
+    color: #dc2626;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clearButton:hover {
+    background-color: #fee2e2;
+    border-color: #fca5a5;
+}
+
+.optionsPanel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin-top: 0.5rem;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    border: 1px solid #f1f5f9;
+    z-index: 50;
+    overflow: hidden;
+}
+
+.searchContainer {
+    padding: 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+    background-color: #f8fafc;
+}
+
+.searchRelative {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 0.5rem 2rem 0.5rem 2.25rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    outline: none;
+    font-size: 0.875rem;
+    color: #334155;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.searchInput:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.searchIcon {
+    position: absolute;
+    left: 0.75rem;
+    color: #94a3b8;
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+.searchClearButton {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0;
+}
+
+.searchClearButton:hover {
+    color: #475569;
+}
+
+.optionsList {
+    max-height: 15rem;
+    overflow-y: auto;
+}
+
+.optionItem {
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #334155;
+    transition: background-color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.optionItem:hover {
+    background-color: #f8fafc;
+}
+
+.optionItemActive {
+    background-color: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 700;
+}
+
+.optionItemActive:hover {
+    background-color: #dbeafe;
+}
+
+.optionItemSub {
+    font-size: 0.625rem;
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.noResults {
+    padding: 1.5rem;
+    text-align: center;
+    color: #94a3b8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+}
+
+.noResultsIcon {
+    font-size: 1.5rem;
+    color: #cbd5e1;
+}
+
+.noResultsText {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.loaderWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    font-weight: 500;
+    gap: 0.5rem;
+}
+
+.loaderSpinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid #e2e8f0;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
