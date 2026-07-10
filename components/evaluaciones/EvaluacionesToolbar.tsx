@@ -26,10 +26,6 @@ interface EvaluacionesToolbarProps {
   setShowMonthMenu: (val: boolean | ((prev: boolean) => boolean)) => void
   availableMonths: { id: string; name: string }[]
 
-  // Active filter
-  onlyActive: boolean
-  setOnlyActive: (val: boolean) => void
-
   // Column visibility
   visibleColumns: Record<string, boolean>
   showColMenu: boolean
@@ -37,7 +33,7 @@ interface EvaluacionesToolbarProps {
   toggleColumn: (colKey: string) => void
 
   // Actions
-  updateQueryParams: (newYear: string, newGrado: string, newMonth?: string, newActive?: boolean) => void
+  updateQueryParams: (newYear: string, newGrado: string, newMonth?: string) => void
 }
 
 const EvaluacionesToolbar = ({
@@ -56,8 +52,6 @@ const EvaluacionesToolbar = ({
   showMonthMenu,
   setShowMonthMenu,
   availableMonths,
-  onlyActive,
-  setOnlyActive,
   visibleColumns,
   showColMenu,
   setShowColMenu,
@@ -66,7 +60,7 @@ const EvaluacionesToolbar = ({
 }: EvaluacionesToolbarProps) => {
   return (
     <div className={styles.toolbar}>
-      <div className={styles.filtersContainer} style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className={styles.filtersContainer} style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
         <div className={styles.yearFilterContainer} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span className={styles.filterLabel}>Año:</span>
           <div className={styles.customSelectContainer}>
@@ -87,7 +81,7 @@ const EvaluacionesToolbar = ({
                       key={year}
                       onClick={() => {
                         setSelectedYear(year);
-                        updateQueryParams(year, selectedGrado, selectedMonth, onlyActive);
+                        updateQueryParams(year, selectedGrado, selectedMonth);
                         setShowYearMenu(false);
                       }}
                       className={`${styles.customSelectOption} ${selectedYear === year ? styles.customSelectOptionActive : ''}`}
@@ -125,7 +119,7 @@ const EvaluacionesToolbar = ({
                   <div
                     onClick={() => {
                       setSelectedMonth('');
-                      updateQueryParams(selectedYear, selectedGrado, '', onlyActive);
+                      updateQueryParams(selectedYear, selectedGrado, '');
                       setShowMonthMenu(false);
                     }}
                     className={`${styles.customSelectOption} ${selectedMonth === '' ? styles.customSelectOptionActive : ''}`}
@@ -137,7 +131,7 @@ const EvaluacionesToolbar = ({
                       key={month.id}
                       onClick={() => {
                         setSelectedMonth(month.id);
-                        updateQueryParams(selectedYear, selectedGrado, month.id, onlyActive);
+                        updateQueryParams(selectedYear, selectedGrado, month.id);
                         setShowMonthMenu(false);
                       }}
                       className={`${styles.customSelectOption} ${selectedMonth === month.id ? styles.customSelectOptionActive : ''}`}
@@ -175,7 +169,7 @@ const EvaluacionesToolbar = ({
                   <div
                     onClick={() => {
                       setSelectedGrado('all');
-                      updateQueryParams(selectedYear, 'all', selectedMonth, onlyActive);
+                      updateQueryParams(selectedYear, 'all', selectedMonth);
                       setShowGradoMenu(false);
                     }}
                     className={`${styles.customSelectOption} ${selectedGrado === 'all' ? styles.customSelectOptionActive : ''}`}
@@ -188,7 +182,7 @@ const EvaluacionesToolbar = ({
                       onClick={() => {
                         const val = grado.grado?.toString() || '';
                         setSelectedGrado(val);
-                        updateQueryParams(selectedYear, val, selectedMonth, onlyActive);
+                        updateQueryParams(selectedYear, val, selectedMonth);
                         setShowGradoMenu(false);
                       }}
                       className={`${styles.customSelectOption} ${selectedGrado === grado.grado?.toString() ? styles.customSelectOptionActive : ''}`}
@@ -200,46 +194,6 @@ const EvaluacionesToolbar = ({
               </>
             )}
           </div>
-        </div>
-
-        {/* Interruptor para mostrar solo activas */}
-        <div className={styles.activeFilterContainer} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span className={styles.filterLabel}>Solo activas:</span>
-          <button
-            type="button"
-            onClick={() => {
-              const val = !onlyActive;
-              setOnlyActive(val);
-              updateQueryParams(selectedYear, selectedGrado, selectedMonth, val);
-            }}
-            style={{
-              width: '46px',
-              height: '24px',
-              borderRadius: '9999px',
-              backgroundColor: onlyActive ? '#10b981' : '#cbd5e1',
-              position: 'relative',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s ease',
-              padding: 0,
-              display: 'flex',
-              alignItems: 'center'
-            }}
-            title={onlyActive ? "Mostrando solo activas" : "Mostrando todas"}
-          >
-            <div
-              style={{
-                width: '18px',
-                height: '18px',
-                borderRadius: '50%',
-                backgroundColor: '#ffffff',
-                position: 'absolute',
-                left: onlyActive ? '24px' : '4px',
-                transition: 'left 0.2s ease',
-                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-              }}
-            />
-          </button>
         </div>
       </div>
 

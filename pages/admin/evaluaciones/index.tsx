@@ -43,8 +43,6 @@ const Evaluaciones = () => {
     setSelectedGrado,
     selectedMonth,
     setSelectedMonth,
-    onlyActive,
-    setOnlyActive,
     showYearMenu,
     setShowYearMenu,
     showGradoMenu,
@@ -343,8 +341,6 @@ const Evaluaciones = () => {
               showMonthMenu={showMonthMenu}
               setShowMonthMenu={setShowMonthMenu}
               availableMonths={availableMonths}
-              onlyActive={onlyActive}
-              setOnlyActive={setOnlyActive}
               visibleColumns={visibleColumns}
               showColMenu={showColMenu}
               setShowColMenu={setShowColMenu}

@@ -25,7 +25,6 @@ export const useEvaluacionesFilters = () => {
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
   const [selectedGrado, setSelectedGrado] = useState<string>('1')
   const [selectedMonth, setSelectedMonth] = useState<string>('')
-  const [onlyActive, setOnlyActive] = useState<boolean>(true)
   const [showYearMenu, setShowYearMenu] = useState<boolean>(false)
   const [showGradoMenu, setShowGradoMenu] = useState<boolean>(false)
   const [showMonthMenu, setShowMonthMenu] = useState<boolean>(false)
@@ -142,19 +141,13 @@ export const useEvaluacionesFilters = () => {
   useEffect(() => {
     if (!router.isReady) return;
 
-    const { year, grado, month, active } = router.query;
+    const { year, grado, month } = router.query;
     if (year) setSelectedYear(year as string);
     
     if (grado) {
       setSelectedGrado(grado as string);
     } else {
       setSelectedGrado('1');
-    }
-
-    if (active) {
-      setOnlyActive(active === 'true');
-    } else {
-      setOnlyActive(true);
     }
 
     if (month) {
@@ -168,7 +161,7 @@ export const useEvaluacionesFilters = () => {
     }
   }, [router.isReady, router.query, availableMonths]);
 
-  const updateQueryParams = (newYear: string, newGrado: string, newMonth?: string, newActive?: boolean) => {
+  const updateQueryParams = (newYear: string, newGrado: string, newMonth?: string) => {
     const nextQuery: any = { ...router.query, year: newYear, grado: newGrado };
     if (newMonth !== undefined) {
       if (newMonth === '') {
@@ -176,13 +169,6 @@ export const useEvaluacionesFilters = () => {
       } else {
         nextQuery.month = newMonth;
       }
-    }
-    
-    const activeVal = newActive !== undefined ? newActive : onlyActive;
-    if (activeVal) {
-      nextQuery.active = 'true';
-    } else {
-      delete nextQuery.active;
     }
 
     router.push({
@@ -200,11 +186,6 @@ export const useEvaluacionesFilters = () => {
       if (selectedMonth !== '') {
         matchesMonth = eva.mesDelExamen?.toString() === selectedMonth
       }
-
-      let matchesActive = true
-      if (onlyActive) {
-        matchesActive = eva.active === true
-      }
       
       let matchesGrado = true
       if (selectedGrado !== 'all') {
@@ -213,7 +194,7 @@ export const useEvaluacionesFilters = () => {
         const idsDeGradosPermitidos = gradosFiltrados.map(g => g.grado)
         matchesGrado = idsDeGradosPermitidos.includes(eva.grado)
       }
-      return matchesYear && matchesMonth && matchesActive && matchesGrado
+      return matchesYear && matchesMonth && matchesGrado
     })
 
     if (selectedGrado !== 'all') {
@@ -238,7 +219,7 @@ export const useEvaluacionesFilters = () => {
     }
 
     setOrderedEvaluaciones(filtered)
-  }, [evaluaciones, selectedYear, selectedMonth, onlyActive, selectedGrado, gradosFiltrados, currentYear])
+  }, [evaluaciones, selectedYear, selectedMonth, selectedGrado, gradosFiltrados, currentYear])
 
   // --- DRAG & DROP ---
   const handleDragEnd = (event: DragEndEvent) => {
@@ -270,8 +251,6 @@ export const useEvaluacionesFilters = () => {
     setSelectedGrado,
     selectedMonth,
     setSelectedMonth,
-    onlyActive,
-    setOnlyActive,
     showYearMenu,
     setShowYearMenu,
     showGradoMenu,
