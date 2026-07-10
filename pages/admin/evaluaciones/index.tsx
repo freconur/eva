@@ -41,10 +41,17 @@ const Evaluaciones = () => {
     setSelectedYear,
     selectedGrado,
     setSelectedGrado,
+    selectedMonth,
+    setSelectedMonth,
+    onlyActive,
+    setOnlyActive,
     showYearMenu,
     setShowYearMenu,
     showGradoMenu,
     setShowGradoMenu,
+    showMonthMenu,
+    setShowMonthMenu,
+    availableMonths,
     visibleColumns,
     showColMenu,
     setShowColMenu,
@@ -331,6 +338,13 @@ const Evaluaciones = () => {
               showGradoMenu={showGradoMenu}
               setShowGradoMenu={setShowGradoMenu}
               gradosFiltrados={gradosFiltrados}
+              selectedMonth={selectedMonth}
+              setSelectedMonth={setSelectedMonth}
+              showMonthMenu={showMonthMenu}
+              setShowMonthMenu={setShowMonthMenu}
+              availableMonths={availableMonths}
+              onlyActive={onlyActive}
+              setOnlyActive={setOnlyActive}
               visibleColumns={visibleColumns}
               showColMenu={showColMenu}
               setShowColMenu={setShowColMenu}

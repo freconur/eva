@@ -8,6 +8,7 @@ import {
 } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
+import { getMonthName } from '@/fuctions/dates'
 
 // Helper para mostrar nivel
 export const getNivelGrado = (gradoNum: number) => {
@@ -22,9 +23,12 @@ export const useEvaluacionesFilters = () => {
   const router = useRouter()
 
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
-  const [selectedGrado, setSelectedGrado] = useState<string>('all')
+  const [selectedGrado, setSelectedGrado] = useState<string>('1')
+  const [selectedMonth, setSelectedMonth] = useState<string>('')
+  const [onlyActive, setOnlyActive] = useState<boolean>(true)
   const [showYearMenu, setShowYearMenu] = useState<boolean>(false)
   const [showGradoMenu, setShowGradoMenu] = useState<boolean>(false)
+  const [showMonthMenu, setShowMonthMenu] = useState<boolean>(false)
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     id: true,
@@ -114,19 +118,76 @@ export const useEvaluacionesFilters = () => {
     localStorage.setItem('eva_visible_columns', JSON.stringify(updated))
   }
 
+  // --- MESES DISPONIBLES EN BASE AL AÑO ---
+  const availableMonths = useMemo(() => {
+    const uniqueMonthsSet = new Set<string>();
+    evaluaciones.forEach(eva => {
+      const yr = eva.añoDelExamen || new Date().getFullYear().toString();
+      if (yr === selectedYear && eva.mesDelExamen !== undefined && eva.mesDelExamen !== null) {
+        uniqueMonthsSet.add(eva.mesDelExamen.toString());
+      }
+    });
+
+    const sortedMonthIds = Array.from(uniqueMonthsSet)
+      .map(Number)
+      .sort((a, b) => a - b);
+
+    return sortedMonthIds.map(id => ({
+      id: id.toString(),
+      name: getMonthName(id)
+    }));
+  }, [evaluaciones, selectedYear]);
+
   // --- SINCRONIZACIÓN DE FILTROS CON URL (QUERY PARAMS) ---
   useEffect(() => {
     if (!router.isReady) return;
 
-    const { year, grado } = router.query;
+    const { year, grado, month, active } = router.query;
     if (year) setSelectedYear(year as string);
-    if (grado) setSelectedGrado(grado as string);
-  }, [router.isReady, router.query]);
+    
+    if (grado) {
+      setSelectedGrado(grado as string);
+    } else {
+      setSelectedGrado('1');
+    }
 
-  const updateQueryParams = (newYear: string, newGrado: string) => {
+    if (active) {
+      setOnlyActive(active === 'true');
+    } else {
+      setOnlyActive(true);
+    }
+
+    if (month) {
+      setSelectedMonth(month as string);
+    } else if (availableMonths.length > 0) {
+      // Por defecto colocar el último mes disponible si no hay parámetro en la URL
+      const lastMonth = availableMonths[availableMonths.length - 1];
+      setSelectedMonth(lastMonth.id);
+    } else {
+      setSelectedMonth('');
+    }
+  }, [router.isReady, router.query, availableMonths]);
+
+  const updateQueryParams = (newYear: string, newGrado: string, newMonth?: string, newActive?: boolean) => {
+    const nextQuery: any = { ...router.query, year: newYear, grado: newGrado };
+    if (newMonth !== undefined) {
+      if (newMonth === '') {
+        delete nextQuery.month;
+      } else {
+        nextQuery.month = newMonth;
+      }
+    }
+    
+    const activeVal = newActive !== undefined ? newActive : onlyActive;
+    if (activeVal) {
+      nextQuery.active = 'true';
+    } else {
+      delete nextQuery.active;
+    }
+
     router.push({
       pathname: router.pathname,
-      query: { ...router.query, year: newYear, grado: newGrado },
+      query: nextQuery,
     }, undefined, { shallow: true });
   }
 
@@ -134,6 +195,17 @@ export const useEvaluacionesFilters = () => {
   useEffect(() => {
     const filtered = evaluaciones.filter(eva => {
       const matchesYear = (eva.añoDelExamen || currentYear) === selectedYear
+      
+      let matchesMonth = true
+      if (selectedMonth !== '') {
+        matchesMonth = eva.mesDelExamen?.toString() === selectedMonth
+      }
+
+      let matchesActive = true
+      if (onlyActive) {
+        matchesActive = eva.active === true
+      }
+      
       let matchesGrado = true
       if (selectedGrado !== 'all') {
         matchesGrado = eva.grado === Number(selectedGrado)
@@ -141,7 +213,7 @@ export const useEvaluacionesFilters = () => {
         const idsDeGradosPermitidos = gradosFiltrados.map(g => g.grado)
         matchesGrado = idsDeGradosPermitidos.includes(eva.grado)
       }
-      return matchesYear && matchesGrado
+      return matchesYear && matchesMonth && matchesActive && matchesGrado
     })
 
     if (selectedGrado !== 'all') {
@@ -166,7 +238,7 @@ export const useEvaluacionesFilters = () => {
     }
 
     setOrderedEvaluaciones(filtered)
-  }, [evaluaciones, selectedYear, selectedGrado, gradosFiltrados, currentYear])
+  }, [evaluaciones, selectedYear, selectedMonth, onlyActive, selectedGrado, gradosFiltrados, currentYear])
 
   // --- DRAG & DROP ---
   const handleDragEnd = (event: DragEndEvent) => {
@@ -196,10 +268,17 @@ export const useEvaluacionesFilters = () => {
     setSelectedYear,
     selectedGrado,
     setSelectedGrado,
+    selectedMonth,
+    setSelectedMonth,
+    onlyActive,
+    setOnlyActive,
     showYearMenu,
     setShowYearMenu,
     showGradoMenu,
     setShowGradoMenu,
+    showMonthMenu,
+    setShowMonthMenu,
+    availableMonths,
 
     // Column visibility
     visibleColumns,

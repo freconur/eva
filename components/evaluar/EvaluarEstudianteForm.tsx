@@ -564,7 +564,11 @@ const EvaluarEstudianteForm = ({
                 {!isInsideDrawer ? (
                   <Link
                     href={{
-                      pathname: '/docentes/evaluaciones/secundaria/pruebas/prueba/reporte',
+                      pathname: router.pathname.includes('/tercerNivel')
+                        ? '/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte'
+                        : router.pathname.includes('/inicial')
+                        ? '/docentes/evaluaciones/inicial/pruebas/prueba/reporte'
+                        : '/docentes/evaluaciones/secundaria/pruebas/prueba/reporte',
                       query: { idExamen: idExamen },
                     }}
                     className={styles.backToReportButton}
