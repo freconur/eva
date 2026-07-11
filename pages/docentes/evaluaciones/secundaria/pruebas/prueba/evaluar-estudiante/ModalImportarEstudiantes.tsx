@@ -210,7 +210,7 @@ const ModalImportarEstudiantes: React.FC<ModalImportarEstudiantesProps> = ({
       // Asignar el grado de la evaluación a todos los estudiantes importados
       const estudiantesConGrado = resultado.estudiantes.map(estudiante => ({
         ...estudiante,
-        grado: evaluacion?.grado?.toString()
+        grado: (evaluacion?.grado ? evaluacion.grado.toString() : gradoSeleccionado) || ''
       }));
       
       console.log('Estudiantes con grado asignado:', estudiantesConGrado);
@@ -290,9 +290,9 @@ const ModalImportarEstudiantes: React.FC<ModalImportarEstudiantesProps> = ({
                 <div className={styles.headerSelector}>
                   <select
                     className={styles.headerSelect}
-                    value={evaluacion?.grado?.toString()}
-                    disabled
-                    /* onChange={(e) => handleGradoChange(e.target.value)} */
+                    value={evaluacion?.grado ? evaluacion.grado.toString() : gradoSeleccionado}
+                    disabled={!!evaluacion?.grado}
+                    onChange={(e) => handleGradoChange(e.target.value)}
                   >
                     <option value="">Grados</option>
                     {grados.map((grado) => (

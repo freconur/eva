@@ -9,7 +9,7 @@ import { PERMISSIONS } from '@/features/utils/permissions';
 import PermissionGate from '../permissions/PermissionGate';
 import styles from './sidebar.module.css';
 import { MdAccountCircle } from 'react-icons/md';
-import { FaUserGraduate } from 'react-icons/fa';
+import { FaUserGraduate, FaUsers } from 'react-icons/fa';
 import { LuListTodo } from "react-icons/lu";
 import { IoIosArrowForward, IoIosArrowBack } from 'react-icons/io';
 import { FiLogOut } from 'react-icons/fi';
@@ -82,6 +82,13 @@ const SidebarDocentes = ({ showSidebar }: Props) => {
                 <FaUserGraduate className={styles.dashboardIcon} />
                 <Link className={styles.dashboardLink} href="/docentes/evaluaciones" aria-haspopup="true">
                   Seguimiento de aprendizajes
+                </Link>
+              </div>
+
+              <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/docentes/estudiantes') ? styles.activeLink : ''}`}>
+                <FaUsers className={styles.dashboardIcon} />
+                <Link className={styles.dashboardLink} href="/docentes/estudiantes" aria-haspopup="true">
+                  Mis Estudiantes
                 </Link>
               </div>
 

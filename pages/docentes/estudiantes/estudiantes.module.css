@@ -1,0 +1,170 @@
+/* ===== ESTUDIANTES GENERAL CSS MODULE ===== */
+
+.headerContainer {
+  position: relative;
+  margin-bottom: 2rem;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background-color: #ffffff;
+  padding: 2rem;
+  color: #1f2937;
+  border: 1px solid #f3f4f6;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 8px -1px rgba(0, 0, 0, 0.02);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  background-color: #eff6ff;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.badgeIcon {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+.pageTitle {
+  margin-top: 0.5rem;
+  font-size: 1.875rem; /* text-3xl */
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #111827;
+}
+
+@media (min-width: 768px) {
+  .pageTitle {
+    font-size: 2.25rem; /* text-4xl */
+  }
+}
+
+.description {
+  margin-top: 0.5rem;
+  color: #4b5563;
+  max-width: 36rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  background-color: #f3f4f6;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  height: 2.75rem;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.backButton:hover {
+  background-color: #e5e7eb;
+  color: #1f2937;
+}
+
+.helpButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  width: 2.75rem;
+  border-radius: 0.75rem;
+  background-color: transparent;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.helpButton:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+  border-color: #9ca3af;
+}
+
+.helpButton:active {
+  transform: scale(0.95);
+}
+
+.helpButtonText {
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.importButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #059669, #0d9488);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding: 0.75rem 1.25rem;
+  height: 2.75rem;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.importButton:hover {
+  background: linear-gradient(135deg, #10b981, #14b8a6);
+  box-shadow: 0 8px 12px -3px rgba(16, 185, 129, 0.25);
+}
+
+.importButton:active {
+  transform: scale(0.95);
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  background-color: #2563eb;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding: 0.75rem 1.25rem;
+  height: 2.75rem;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.addButton:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 8px 12px -3px rgba(37, 99, 235, 0.25);
+}
+
+.addButton:active {
+  transform: scale(0.95);
+}
