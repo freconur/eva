@@ -62,24 +62,19 @@
 .contentWrapper {
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease-out, padding 0.3s ease;
 }
 
 .contentWrapperOpen {
     max-height: none;
-    /* Suficientemente grande para el contenido */
     padding: 1.5rem;
 }
 
 .contentInner {
     opacity: 0;
-    transform: translateY(-8px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .innerVisible {
     opacity: 1;
-    transform: translateY(0);
 }
 
 /* Empty State / Loader in Accordion */

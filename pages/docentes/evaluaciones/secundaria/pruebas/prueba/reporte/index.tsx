@@ -23,7 +23,7 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
-import { RiLoader4Line, RiFileExcel2Line, RiFilePdfLine } from 'react-icons/ri';
+import { RiLoader4Line, RiFileExcel2Line, RiFilePdfLine, RiArrowDownSLine, RiSearchLine, RiCloseLine, RiErrorWarningLine } from 'react-icons/ri';
 import { IoIosArrowDown } from 'react-icons/io';
 import { HiOutlineDownload } from 'react-icons/hi';
 import * as XLSX from 'xlsx';
@@ -42,6 +42,9 @@ import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafic
 import { TablaPreguntas } from '@/components/tabla-preguntas';
 import { calculoNivel, calculoPreguntasCorrectas } from '@/features/utils/calculoNivel';
 import GraficoTendenciaColegio from '@/components/grafico-tendencia';
+import GraficoTendencia from '@/components/reportes/graficoTendencia';
+import accordionStyles from '@/components/reportes/Acordeon.module.css';
+import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 import CorregirPuntajesModal from '@/modals/corregirPuntajes';
 import EvaluarEstudianteForm from '@/components/evaluar/EvaluarEstudianteForm';
 import ActualizarEvaluacionForm from '@/components/evaluar/ActualizarEvaluacionForm';
@@ -109,6 +112,66 @@ const Reportes = () => {
   const [order, setOrder] = useState<number>(Number(route.query.order) || 0);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [evaluacionesAComparar, setEvaluacionesAComparar] = useState<string[]>([]);
+  const [isCompDropdownOpen, setIsCompDropdownOpen] = useState<boolean>(false);
+  const [searchCompQuery, setSearchCompQuery] = useState<string>('');
+  const compDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [mostrarGraficos, setMostrarGraficos] = useState<boolean>(false);
+  const [mostrarReportePreguntas, setMostrarReportePreguntas] = useState<boolean>(false);
+
+  // Estados para cargar todas las evaluaciones de estudiantes disponibles
+  const [evaluacionesDb, setEvaluacionesDb] = useState<any[]>([]);
+  const [loadingEvaluaciones, setLoadingEvaluaciones] = useState<boolean>(false);
+
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Click outside detector para cerrar el selector de comparativa
+  useEffect(() => {
+    const handleClickOutsideComp = (event: MouseEvent) => {
+      if (compDropdownRef.current && !compDropdownRef.current.contains(event.target as Node)) {
+        setIsCompDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutsideComp);
+    return () => document.removeEventListener('mousedown', handleClickOutsideComp);
+  }, []);
+
+  // Cargar lista de todas las evaluaciones de estudiantes disponibles
+  useEffect(() => {
+    const loadEvaluaciones = async () => {
+      try {
+        setLoadingEvaluaciones(true);
+        const db = getFirestore();
+        const coll = collection(db, 'evaluaciones');
+        const q = query(coll, where('tipoDeEvaluacion', '==', '1'));
+        const snap = await getDocs(q);
+        const list: any[] = [];
+        snap.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+        setEvaluacionesDb(list);
+      } catch (error) {
+        console.error('Error al cargar evaluaciones:', error);
+      } finally {
+        setLoadingEvaluaciones(false);
+      }
+    };
+    loadEvaluaciones();
+  }, []);
+
+  const evaluacionesCompFiltradas = useMemo(() => {
+    let list = evaluacionesDb.filter((ev) => ev.id !== evaluacion?.id);
+    if (searchCompQuery.trim()) {
+      const q = searchCompQuery.toLowerCase().trim();
+      list = list.filter((ev) => (ev.nombre || '').toLowerCase().includes(q));
+    }
+    return list;
+  }, [evaluacionesDb, evaluacion?.id, searchCompQuery]);
 
 
   // Obtener estudiantes pendientes (no evaluados)
@@ -571,7 +634,7 @@ const Reportes = () => {
         error={correccionPuntajesError}
         onCloseError={handleCerrarModalError}
       />
-      {loaderReporteDirector ? (
+      {loaderReporteDirector || !isMounted ? (
         <div className={styles.loaderContainer}>
           <div className={styles.loaderContent}>
             <RiLoader4Line className={styles.loaderIcon} />
@@ -817,33 +880,196 @@ const Reportes = () => {
             ) : null}
 
             {evaluacion.tipoDeEvaluacion === '1' ? (
-              <div className={styles.graficosContainer}>
-                <GraficoTendenciaColegio
-                  evaluacion={evaluacion}
-                  datosPorMes={datosPorMes}
-                  mesesConDataDisponibles={mesesConDataDisponibles}
-                  promedioGlobal={promedioGlobal}
-                  monthSelected={monthSelected}
-                  evaluados={estudiantes.length}
-                  pendientes={0} // En secundaria parece no estar mapeado el conteo de pendientes de la misma forma
-                  listaPendientes={[]}
-                  promedioPorSeccion={promedioPorSeccion}
-                  dataGraficoTendenciaNiveles={[
-                    generarDataGraficoPiechart(estudiantes, monthSelected, evaluacion),
-                  ]}
-                />
-              </div>
+              <>
+                {/* 2. Distribución Niveles y Cobertura de Evaluación */}
+                <div className={styles.graficosContainer} style={{ marginTop: '2rem' }}>
+                  <GraficoTendenciaColegio
+                    evaluacion={evaluacion}
+                    datosPorMes={datosPorMes}
+                    mesesConDataDisponibles={mesesConDataDisponibles}
+                    promedioGlobal={promedioGlobal}
+                    monthSelected={monthSelected}
+                    evaluados={estudiantes.length}
+                    pendientes={0}
+                    listaPendientes={[]}
+                    promedioPorSeccion={promedioPorSeccion}
+                    dataGraficoTendenciaNiveles={[
+                      generarDataGraficoPiechart(estudiantes, monthSelected, evaluacion),
+                    ]}
+                    soloPieYCobertura={true}
+                  />
+                </div>
 
+                {/* 3. Comparativa por Secciones */}
+                <div className={styles.graficosContainer} style={{ marginTop: '2rem' }}>
+                  <GraficoTendenciaColegio
+                    evaluacion={evaluacion}
+                    datosPorMes={datosPorMes}
+                    mesesConDataDisponibles={mesesConDataDisponibles}
+                    promedioGlobal={promedioGlobal}
+                    monthSelected={monthSelected}
+                    evaluados={estudiantes.length}
+                    pendientes={0}
+                    listaPendientes={[]}
+                    promedioPorSeccion={promedioPorSeccion}
+                    dataGraficoTendenciaNiveles={[
+                      generarDataGraficoPiechart(estudiantes, monthSelected, evaluacion),
+                    ]}
+                    soloDocentesYSecciones={true}
+                  />
+                </div>
+
+                {/* 4. Gráficos de Tendencia (Acordeón 1) */}
+                <div className={accordionStyles.accordionContainer} style={{ overflow: mostrarGraficos ? 'visible' : 'hidden', marginTop: '2rem' }}>
+                  <div
+                    onClick={() => setMostrarGraficos(!mostrarGraficos)}
+                    className={mostrarGraficos ? accordionStyles.headerOpen : accordionStyles.header}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className={accordionStyles.titleGroup}>
+                      <span className={accordionStyles.icon}>📊</span>
+                      <h3 className={accordionStyles.title}>Gráficos de Tendencia</h3>
+                    </div>
+                    <div className={mostrarGraficos ? accordionStyles.chevronOpen : accordionStyles.chevron}>
+                      ▼
+                    </div>
+                  </div>
+
+                  <div className={`${accordionStyles.contentWrapper} ${mostrarGraficos ? accordionStyles.contentWrapperOpen : ''}`}>
+                    <div className={`${accordionStyles.contentInner} ${mostrarGraficos ? accordionStyles.innerVisible : ''}`}>
+                      {/* Custom Searchable Dropdown de Selección de Comparativa Múltiple */}
+                      <div className={styles.evalDropdownWrapper} ref={compDropdownRef} style={{ marginBottom: '1.5rem', width: '100%', maxWidth: '320px' }}>
+                        {loadingEvaluaciones ? (
+                          <div className={styles.evalDropdownTrigger} style={{ cursor: 'wait' }}>
+                            <span className={styles.triggerText}>Cargando evaluaciones...</span>
+                            <RiLoader4Line className={styles.loaderIcon} style={{ fontSize: '1rem', margin: 0 }} />
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setIsCompDropdownOpen(!isCompDropdownOpen)}
+                              className={styles.evalDropdownTrigger}
+                            >
+                              <span className={styles.triggerText}>
+                                {evaluacionesAComparar.length === 0
+                                  ? 'Comparar con otras evaluaciones...'
+                                  : `${evaluacionesAComparar.length} seleccionada(s) para comparar`}
+                              </span>
+                              <RiArrowDownSLine className={`${styles.chevronIcon} ${isCompDropdownOpen ? styles.chevronIconOpen : ''}`} />
+                            </button>
+
+                            {isCompDropdownOpen && (
+                              <div className={styles.evalOptionsPanel}>
+                                <div className={styles.evalSearchContainer}>
+                                  <div className={styles.evalSearchRelative}>
+                                    <input
+                                      type="text"
+                                      autoFocus
+                                      value={searchCompQuery}
+                                      onChange={(e) => setSearchCompQuery(e.target.value)}
+                                      placeholder="Buscar evaluación..."
+                                      className={styles.evalSearchInput}
+                                    />
+                                    <RiSearchLine className={styles.evalSearchIcon} />
+                                    {searchCompQuery && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setSearchCompQuery('')}
+                                        className={styles.evalSearchClearButton}
+                                      >
+                                        <RiCloseLine />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className={styles.evalOptionsList}>
+                                  {evaluacionesCompFiltradas.map((evalOption) => {
+                                    const isSelected = evaluacionesAComparar.includes(evalOption.id);
+                                    return (
+                                      <button
+                                        key={evalOption.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setEvaluacionesAComparar((prev) =>
+                                            prev.includes(evalOption.id)
+                                                  ? prev.filter((id) => id !== evalOption.id)
+                                                  : [...prev, evalOption.id]
+                                          );
+                                        }}
+                                        className={`${styles.evalOptionItem} ${
+                                          isSelected ? styles.evalOptionItemActive : ''
+                                        }`}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={isSelected}
+                                          readOnly
+                                          style={{ cursor: 'pointer' }}
+                                        />
+                                        <span>{evalOption.nombre || 'Sin nombre'}</span>
+                                      </button>
+                                    );
+                                  })}
+                                  {evaluacionesCompFiltradas.length === 0 && (
+                                    <div className={styles.evalNoResults}>
+                                      <RiErrorWarningLine className={styles.evalNoResultsIcon} />
+                                      <span className={styles.evalNoResultsText}>No se encontraron evaluaciones para comparar.</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      <div className={styles.graficosContainer}>
+                        <GraficoTendencia
+                          idEvaluacion={route.query.idExamen as string}
+                          evaluacionesAComparar={evaluacionesAComparar}
+                          dniDocente={currentUserData.dni}
+                          monthSelected={monthSelected}
+                          yearSelected={yearSelected}
+                          ocultarTabla={true}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
             ) : null}
 
-            {/* <GraficoTendenciaColegio estudiantes={estudiantes} monthSelected={monthSelected} evaluacion={evaluacion} /> */}
-            <ReporteEvaluacionPorPregunta
-              dataEstadisticasOrdenadas={dataEstadisticasOrdenadas}
-              preguntasMap={preguntasMap}
-              detectarNumeroOpciones={detectarNumeroOpciones}
-              warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined}
-              convertirGraficoAImagen={convertirGraficoAImagen}
-            />
+            {/* 5. Reporte de Evaluación por Pregunta (Acordeón 2) */}
+            <div className={accordionStyles.accordionContainer} style={{ marginTop: '2rem' }}>
+              <div
+                onClick={() => setMostrarReportePreguntas(!mostrarReportePreguntas)}
+                className={mostrarReportePreguntas ? accordionStyles.headerOpen : accordionStyles.header}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className={accordionStyles.titleGroup}>
+                  <span className={accordionStyles.icon}>📋</span>
+                  <h3 className={accordionStyles.title}>Reporte de Evaluación por Pregunta</h3>
+                </div>
+                <div className={mostrarReportePreguntas ? accordionStyles.chevronOpen : accordionStyles.chevron}>
+                  ▼
+                </div>
+              </div>
+
+              <div className={`${accordionStyles.contentWrapper} ${mostrarReportePreguntas ? accordionStyles.contentWrapperOpen : ''}`}>
+                <div className={`${accordionStyles.contentInner} ${mostrarReportePreguntas ? accordionStyles.innerVisible : ''}`}>
+                  <ReporteEvaluacionPorPregunta
+                    dataEstadisticasOrdenadas={dataEstadisticasOrdenadas}
+                    preguntasMap={preguntasMap}
+                    detectarNumeroOpciones={detectarNumeroOpciones}
+                    warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined}
+                    convertirGraficoAImagen={convertirGraficoAImagen}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

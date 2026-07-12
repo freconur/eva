@@ -21,7 +21,7 @@ import {
 } from '@/fuctions/regiones';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { DataEstadisticas, PreguntasRespuestas, UserEstudiante } from '@/features/types/types';
-import { RiLoader4Line, RiSettings4Line } from 'react-icons/ri';
+import { RiLoader4Line, RiSettings4Line, RiArrowDownSLine, RiSearchLine, RiCloseLine, RiErrorWarningLine } from 'react-icons/ri';
 import styles from './Reporte.module.css';
 import { currentMonth, getAllMonths } from '@/fuctions/dates';
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
@@ -31,9 +31,12 @@ import { generarPDFReporte } from '@/features/utils/pdfExportEstadisticasDocente
 import { useGenerarPDFReporte } from '@/features/hooks/useGenerarPDFReporte';
 import { TablaPreguntas } from '@/components/tabla-preguntas';
 import GraficoTendenciaColegio from '@/components/grafico-tendencia';
+import GraficoTendencia from '@/components/reportes/graficoTendencia';
 import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafico-piechart';
 import ReporteEvaluacionPorPregunta from '@/pages/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/reporteEvaluacionPorPregunta';
 import Loader from '@/components/loader/loader';
+import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
+import accordionStyles from '@/components/reportes/Acordeon.module.css';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -69,7 +72,69 @@ const Reporte = () => {
   });
   const [loadingMonth, setLoadingMonth] = useState<boolean>(false);
   const [showConfig, setShowConfig] = useState<boolean>(false);
+  const [mostrarGraficos, setMostrarGraficos] = useState<boolean>(false);
+  const [mostrarReportePreguntas, setMostrarReportePreguntas] = useState<boolean>(false);
   const configRef = useRef<HTMLDivElement>(null);
+
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Estados para el custom searchable selector de evaluación (Base)
+  const [evaluacionesDb, setEvaluacionesDb] = useState<any[]>([]);
+  const [loadingEvaluaciones, setLoadingEvaluaciones] = useState<boolean>(false);
+
+  // Estados para la comparación de evaluaciones
+  const [evaluacionesAComparar, setEvaluacionesAComparar] = useState<string[]>([]);
+  const [isCompDropdownOpen, setIsCompDropdownOpen] = useState<boolean>(false);
+  const [searchCompQuery, setSearchCompQuery] = useState<string>('');
+  const compDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Click outside detector para cerrar el selector de comparativa
+  useEffect(() => {
+    const handleClickOutsideComp = (event: MouseEvent) => {
+      if (compDropdownRef.current && !compDropdownRef.current.contains(event.target as Node)) {
+        setIsCompDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutsideComp);
+    return () => document.removeEventListener('mousedown', handleClickOutsideComp);
+  }, []);
+
+  const evaluacionesCompFiltradas = useMemo(() => {
+    let list = evaluacionesDb.filter((ev) => ev.id !== evaluacion?.id);
+    if (searchCompQuery.trim()) {
+      const q = searchCompQuery.toLowerCase().trim();
+      list = list.filter((ev) => (ev.nombre || '').toLowerCase().includes(q));
+    }
+    return list;
+  }, [evaluacionesDb, evaluacion?.id, searchCompQuery]);
+
+  // Cargar lista de todas las evaluaciones de estudiantes disponibles
+  useEffect(() => {
+    const loadEvaluaciones = async () => {
+      try {
+        setLoadingEvaluaciones(true);
+        const db = getFirestore();
+        const coll = collection(db, 'evaluaciones');
+        const q = query(coll, where('tipoDeEvaluacion', '==', '1'));
+        const snap = await getDocs(q);
+        const list: any[] = [];
+        snap.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+        setEvaluacionesDb(list);
+      } catch (error) {
+        console.error('Error al cargar evaluaciones:', error);
+      } finally {
+        setLoadingEvaluaciones(false);
+      }
+    };
+    loadEvaluaciones();
+  }, []);
+
+
 
   // Cerrar el menú de configuración al hacer click fuera
   useEffect(() => {
@@ -103,7 +168,11 @@ const Reporte = () => {
 
   const [monthSelected, setMonthSelected] = useState<number>(() => {
     const m = route.query.mes;
-    return m ? Number(m) : currentMonth;
+    if (m) return Number(m);
+    if (evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null) {
+      return Number(evaluacion.mesDelExamen);
+    }
+    return currentMonth;
   });
 
   const updateQuery = useCallback((params: Record<string, any>) => {
@@ -130,9 +199,25 @@ const Reporte = () => {
         nivel: (route.query.nivel as string) || '',
       });
       if (route.query.year) setYearSelected(Number(route.query.year));
-      if (route.query.mes) setMonthSelected(Number(route.query.mes));
+      
+      if (evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null) {
+        setMonthSelected(Number(evaluacion.mesDelExamen));
+      } else if (route.query.mes) {
+        setMonthSelected(Number(route.query.mes));
+      }
     }
-  }, [route.query, route.isReady]);
+  }, [route.query, route.isReady, evaluacion?.mesDelExamen]);
+
+  // Sincronizar mes con mesDelExamen de la evaluación
+  useEffect(() => {
+    if (evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null) {
+      const examMonth = Number(evaluacion.mesDelExamen);
+      setMonthSelected(examMonth);
+      if (route.isReady && Number(route.query.mes) !== examMonth) {
+        updateQuery({ mes: examMonth });
+      }
+    }
+  }, [evaluacion?.mesDelExamen, route.isReady, updateQuery]);
 
   useEffect(() => {
     console.log("EVA-LOG: >>> Componente Reporte MONTADO <<<");
@@ -624,7 +709,7 @@ const Reporte = () => {
 
   return (
     <>
-      {loaderReporteDirector ? (
+      {loaderReporteDirector || !isMounted ? (
         <div className={styles.loaderContainer}>
           <div className={styles.loaderContent}>
             <RiLoader4Line className={styles.loaderIcon} />
@@ -635,37 +720,6 @@ const Reporte = () => {
         <div className={styles.mainContainer}>
           <div className={styles.content}>
             <div className={styles.selectContainer}>
-              {/* <button
-                onClick={handleGenerarPDF}
-                disabled={
-                  loadingPDF || reporteCompletoConImagenes.length === 0 || !imagenesGeneradas
-                }
-                className={`${styles.pdfButton} ${
-                  loadingPDF
-                    ? styles.pdfButtonLoading
-                    : !imagenesGeneradas
-                    ? styles.pdfButtonGenerating
-                    : styles.pdfButtonReady
-                }`}
-              >
-                {loadingPDF ? (
-                  <>
-                    <RiLoader4Line className={styles.loaderIcon} />
-                    <span>Generando PDF...</span>
-                  </>
-                ) : !imagenesGeneradas ? (
-                  <>
-                    <RiLoader4Line className={styles.loaderIcon} />
-                    <span>Preparando gráficos...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>📄</span>
-                    <span>Generar PDF</span>
-                  </>
-                )}
-              </button> */}
-
               <div className={styles.selectWrapper}>
                 <select
                   className={styles.select}
@@ -685,15 +739,29 @@ const Reporte = () => {
                   className={styles.select}
                   onChange={handleChangeMonth}
                   value={monthSelected}
-                  disabled={loadingMonth}
+                  disabled={true}
                   id=""
                 >
-                  <option value="">Mes</option>
-                  {getAllMonths.filter(mes => mesesConDataDisponibles.includes(mes.id)).map((mes) => (
-                    <option key={mes.id} value={mes.id}>
-                      {mes.name}
-                    </option>
-                  ))}
+                  {evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null ? (
+                    (() => {
+                      const examMonthId = Number(evaluacion.mesDelExamen);
+                      const mes = getAllMonths.find(m => m.id === examMonthId);
+                      return mes ? (
+                        <option key={mes.id} value={mes.id}>
+                          {mes.name}
+                        </option>
+                      ) : null;
+                    })()
+                  ) : (
+                    <>
+                      <option value="">Mes</option>
+                      {getAllMonths.filter(mes => mesesConDataDisponibles.includes(mes.id)).map((mes) => (
+                        <option key={mes.id} value={mes.id}>
+                          {mes.name}
+                        </option>
+                      ))}
+                    </>
+                  )}
                 </select>
                 {loadingMonth && (
                   <div className={styles.monthLoader}>
@@ -875,31 +943,196 @@ const Reporte = () => {
                 />
 
                 {evaluacion.tipoDeEvaluacion === '1' ? (
-                  <div className={styles.graficosContainer}>
-                    <GraficoTendenciaColegio
-                      evaluacion={evaluacion}
-                      datosPorMes={datosPorMes}
-                      mesesConDataDisponibles={mesesConDataDisponibles}
-                      promedioGlobal={promedioGlobal}
-                      monthSelected={monthSelected}
-                      promedioPorSeccion={promedioPorSeccion}
-                      promedioPorDocente={promedioPorDocente}
-                      evaluados={estudiantes.length}
-                      pendientes={estudiantesDeEvaluacion.length}
-                      listaPendientes={estudiantesDeEvaluacion}
-                      dataGraficoTendenciaNiveles={[
-                        generarDataGraficoPiechart(estudiantesFiltrados, monthSelected, evaluacion),
-                      ]}
-                    />
-                  </div>
+                  <>
+                    {/* Distribución Niveles y Cobertura de Evaluación */}
+                    <div className={styles.graficosContainer} style={{ marginTop: '2rem' }}>
+                      <GraficoTendenciaColegio
+                        evaluacion={evaluacion}
+                        datosPorMes={datosPorMes}
+                        mesesConDataDisponibles={mesesConDataDisponibles}
+                        promedioGlobal={promedioGlobal}
+                        monthSelected={monthSelected}
+                        promedioPorSeccion={promedioPorSeccion}
+                        promedioPorDocente={promedioPorDocente}
+                        evaluados={estudiantes.length}
+                        pendientes={estudiantesDeEvaluacion.length}
+                        listaPendientes={estudiantesDeEvaluacion}
+                        dataGraficoTendenciaNiveles={[
+                          generarDataGraficoPiechart(estudiantesFiltrados, monthSelected, evaluacion),
+                        ]}
+                        soloPieYCobertura={true}
+                      />
+                    </div>
+
+                    {/* Comparativa de Niveles por Docentes y Comparativa por Secciones */}
+                    <div className={styles.graficosContainer} style={{ marginTop: '2rem' }}>
+                      <GraficoTendenciaColegio
+                        evaluacion={evaluacion}
+                        datosPorMes={datosPorMes}
+                        mesesConDataDisponibles={mesesConDataDisponibles}
+                        promedioGlobal={promedioGlobal}
+                        monthSelected={monthSelected}
+                        promedioPorSeccion={promedioPorSeccion}
+                        promedioPorDocente={promedioPorDocente}
+                        evaluados={estudiantes.length}
+                        pendientes={estudiantesDeEvaluacion.length}
+                        listaPendientes={estudiantesDeEvaluacion}
+                        dataGraficoTendenciaNiveles={[
+                          generarDataGraficoPiechart(estudiantesFiltrados, monthSelected, evaluacion),
+                        ]}
+                        soloDocentesYSecciones={true}
+                      />
+                    </div>
+
+                    {/* Gráficos de Tendencia (Acordeón 1) */}
+                    <div className={accordionStyles.accordionContainer} style={{ overflow: mostrarGraficos ? 'visible' : 'hidden', marginTop: '2rem' }}>
+                      <div
+                        onClick={() => setMostrarGraficos(!mostrarGraficos)}
+                        className={mostrarGraficos ? accordionStyles.headerOpen : accordionStyles.header}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className={accordionStyles.titleGroup}>
+                          <span className={accordionStyles.icon}>📊</span>
+                          <h3 className={accordionStyles.title}>Gráficos de Tendencia</h3>
+                        </div>
+                        <div className={mostrarGraficos ? accordionStyles.chevronOpen : accordionStyles.chevron}>
+                          ▼
+                        </div>
+                      </div>
+
+                      <div className={`${accordionStyles.contentWrapper} ${mostrarGraficos ? accordionStyles.contentWrapperOpen : ''}`}>
+                        <div className={`${accordionStyles.contentInner} ${mostrarGraficos ? accordionStyles.innerVisible : ''}`}>
+                          {/* Custom Searchable Dropdown de Selección de Comparativa Múltiple */}
+                          <div className={styles.evalDropdownWrapper} ref={compDropdownRef} style={{ marginBottom: '1.5rem', width: '100%', maxWidth: '320px' }}>
+                            {loadingEvaluaciones ? (
+                              <div className={styles.evalDropdownTrigger} style={{ cursor: 'wait' }}>
+                                <span className={styles.triggerText}>Cargando evaluaciones...</span>
+                                <RiLoader4Line className={styles.loaderIcon} style={{ fontSize: '1rem', margin: 0 }} />
+                              </div>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setIsCompDropdownOpen(!isCompDropdownOpen)}
+                                  className={styles.evalDropdownTrigger}
+                                >
+                                  <span className={styles.triggerText}>
+                                    {evaluacionesAComparar.length === 0
+                                      ? 'Comparar con otras evaluaciones...'
+                                      : `${evaluacionesAComparar.length} seleccionada(s) para comparar`}
+                                  </span>
+                                  <RiArrowDownSLine className={`${styles.chevronIcon} ${isCompDropdownOpen ? styles.chevronIconOpen : ''}`} />
+                                </button>
+
+                                {isCompDropdownOpen && (
+                                  <div className={styles.evalOptionsPanel}>
+                                    <div className={styles.evalSearchContainer}>
+                                      <div className={styles.evalSearchRelative}>
+                                        <input
+                                          type="text"
+                                          autoFocus
+                                          value={searchCompQuery}
+                                          onChange={(e) => setSearchCompQuery(e.target.value)}
+                                          placeholder="Buscar evaluación..."
+                                          className={styles.evalSearchInput}
+                                        />
+                                        <RiSearchLine className={styles.evalSearchIcon} />
+                                        {searchCompQuery && (
+                                          <button
+                                            type="button"
+                                            onClick={() => setSearchCompQuery('')}
+                                            className={styles.evalSearchClearButton}
+                                          >
+                                            <RiCloseLine />
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className={styles.evalOptionsList}>
+                                      {evaluacionesCompFiltradas.map((evalOption) => {
+                                        const isSelected = evaluacionesAComparar.includes(evalOption.id);
+                                        return (
+                                          <button
+                                            key={evalOption.id}
+                                            type="button"
+                                            onClick={() => {
+                                              setEvaluacionesAComparar((prev) =>
+                                                prev.includes(evalOption.id)
+                                                  ? prev.filter((id) => id !== evalOption.id)
+                                                  : [...prev, evalOption.id]
+                                              );
+                                            }}
+                                            className={`${styles.evalOptionItem} ${
+                                              isSelected ? styles.evalOptionItemActive : ''
+                                            }`}
+                                            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={isSelected}
+                                              readOnly
+                                              style={{ cursor: 'pointer' }}
+                                            />
+                                            <span>{evalOption.nombre || 'Sin nombre'}</span>
+                                          </button>
+                                        );
+                                      })}
+                                      {evaluacionesCompFiltradas.length === 0 && (
+                                        <div className={styles.evalNoResults}>
+                                          <RiErrorWarningLine className={styles.evalNoResultsIcon} />
+                                          <span className={styles.evalNoResultsText}>No se encontraron evaluaciones para comparar.</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+
+                          <div className={styles.graficosContainer}>
+                            <GraficoTendencia
+                              idEvaluacion={route.query.idEvaluacion as string}
+                              evaluacionesAComparar={evaluacionesAComparar}
+                              dniDirector={currentUserData.dni}
+                              monthSelected={monthSelected}
+                              yearSelected={Number(yearSelected)}
+                              ocultarTabla={true}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 ) : null}
-                <ReporteEvaluacionPorPregunta
-                  dataEstadisticasOrdenadas={reporteDirectorOrdenado}
-                  preguntasMap={preguntasMap}
-                  detectarNumeroOpciones={detectarNumeroOpciones}
-                  warningEvaEstudianteSinRegistro={undefined}
-                  convertirGraficoAImagen={convertirGraficoAImagen}
-                />
+                <div className={accordionStyles.accordionContainer} style={{ marginTop: '2rem' }}>
+                  <div
+                    onClick={() => setMostrarReportePreguntas(!mostrarReportePreguntas)}
+                    className={mostrarReportePreguntas ? accordionStyles.headerOpen : accordionStyles.header}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className={accordionStyles.titleGroup}>
+                      <span className={accordionStyles.icon}>📋</span>
+                      <h3 className={accordionStyles.title}>Reporte de Evaluación por Pregunta</h3>
+                    </div>
+                    <div className={mostrarReportePreguntas ? accordionStyles.chevronOpen : accordionStyles.chevron}>
+                      ▼
+                    </div>
+                  </div>
+
+                  <div className={`${accordionStyles.contentWrapper} ${mostrarReportePreguntas ? accordionStyles.contentWrapperOpen : ''}`}>
+                    <div className={`${accordionStyles.contentInner} ${mostrarReportePreguntas ? accordionStyles.innerVisible : ''}`}>
+                      <ReporteEvaluacionPorPregunta
+                        dataEstadisticasOrdenadas={reporteDirectorOrdenado}
+                        preguntasMap={preguntasMap}
+                        detectarNumeroOpciones={detectarNumeroOpciones}
+                        warningEvaEstudianteSinRegistro={undefined}
+                        convertirGraficoAImagen={convertirGraficoAImagen}
+                      />
+                    </div>
+                  </div>
+                </div>
               </>
             )}
           </div>

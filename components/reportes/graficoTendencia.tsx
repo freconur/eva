@@ -14,7 +14,9 @@ import {
 import { Line, Bar } from 'react-chartjs-2'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import Loader from '@/components/loader/loader'
-import { getFirestore, collection, getAggregateFromServer, average, query, where, getCountFromServer, doc, getDoc } from 'firebase/firestore'
+import { getFirestore, doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { getFunctions, httpsCallable } from 'firebase/functions'
+import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafico-piechart'
 import { Evaluaciones } from '@/features/types/types'
 import styles from './graficoTendencia.module.css'
 
@@ -33,7 +35,12 @@ ChartJS.register(
 
 interface GraficoTendenciaProps {
   idEvaluacion: string,
-  evaluacionesAComparar?: string[]
+  evaluacionesAComparar?: string[],
+  dniDirector?: string,
+  dniDocente?: string,
+  monthSelected?: number | string,
+  yearSelected?: number | string,
+  ocultarTabla?: boolean
 }
 
 interface EvaluacionDataLocal {
@@ -44,7 +51,7 @@ interface EvaluacionDataLocal {
   niveles: { nivel: string; cantidadDeEstudiantes: number }[];
 }
 
-const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [] }: GraficoTendenciaProps) => {
+const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [], dniDirector, dniDocente, monthSelected, yearSelected, ocultarTabla = false }: GraficoTendenciaProps) => {
   const { evaluacion } = useGlobalContext();
 
   const [dataActual, setDataActual] = useState<EvaluacionDataLocal | null>(null);
@@ -79,82 +86,90 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [] }: GraficoT
   // Cargar datos de la evaluación actual
   useEffect(() => {
     let isMounted = true;
-    if (!evaluacion || !idEvaluacion) return;
+    if (!idEvaluacion) return;
 
     const loadDataActual = async () => {
       try {
         setLoading(true);
         const db = getFirestore();
-        const año = evaluacion.añoDelExamen || new Date().getFullYear().toString();
-        const mes = evaluacion.mesDelExamen || '0';
+        
+        // Obtener la configuración de la evaluación primero
+        const evalDocSnap = await getDoc(doc(db, 'evaluaciones', idEvaluacion));
+        if (!evalDocSnap.exists()) return;
+        const evalObj = evalDocSnap.data() as Evaluaciones;
 
-        const coll = collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${año}/${mes}`);
+        const año = (yearSelected !== undefined && yearSelected !== '' && Number(yearSelected) !== 0) ? String(yearSelected) : (evalObj.añoDelExamen || new Date().getFullYear().toString());
+        const mes = (monthSelected !== undefined && monthSelected !== '' && String(monthSelected) !== '-1') ? String(monthSelected) : (evalObj.mesDelExamen || '0');
 
-        // 1. Puntaje promedio
-        const snapshotAvg = await getAggregateFromServer(coll, {
-          averagePopulation: average('puntaje')
-        });
-        const puntajeMedia = snapshotAvg.data().averagePopulation || 0;
+        let puntajeMedia = 0;
+        let totalEstudiantes = 0;
+        let niveles: any[] = [];
 
-        // 2. Conteo total y por niveles
-        const totalCountSnap = await getCountFromServer(coll);
-        const totalEstudiantes = totalCountSnap.data().count;
-
-        const nivelesData: any[] = [];
-        if (totalEstudiantes > 0 && evaluacion.nivelYPuntaje) {
-          const queriesPorNivel: Record<string, any> = {};
-
-          for (const nivelData of evaluacion.nivelYPuntaje) {
-            const nivelNombre = nivelData.nivel?.toLowerCase() || '';
-            const minPuntaje = nivelData.min || 0;
-            const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
-
-            let q;
-            if (nivelNombre === 'previo al inicio') {
-              q = query(coll, where('puntaje', '<=', maxPuntaje), where('puntaje', '>=', 0));
-            } else {
-              q = query(coll, where('puntaje', '<=', maxPuntaje), where('puntaje', '>=', minPuntaje));
+        if (dniDocente) {
+          // Lógica de docente: consulta directa de estudiantes filtrada por dniDocente
+          const coll = collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${año}/${mes}`);
+          const q = query(coll, where('dniDocente', '==', dniDocente));
+          const snap = await getDocs(q);
+          const alumnos: any[] = [];
+          snap.forEach(doc => {
+            const data = doc.data();
+            const puntaje = data.puntaje || 0;
+            let nivelData = undefined;
+            if (evalObj.nivelYPuntaje) {
+              nivelData = evalObj.nivelYPuntaje.find((np: any) => puntaje >= (np.min || 0) && puntaje <= (np.max || 20));
             }
-            queriesPorNivel[nivelNombre] = q;
+            alumnos.push({
+              ...data,
+              nivelData
+            });
+          });
+
+          const validAlumnos = alumnos.filter(a => a.puntaje !== undefined && a.puntaje !== null);
+          if (validAlumnos.length > 0) {
+            const sum = validAlumnos.reduce((acc, curr) => acc + (curr.puntaje || 0), 0);
+            puntajeMedia = sum / validAlumnos.length;
           }
+          totalEstudiantes = alumnos.length;
 
-          for (const nivelData of evaluacion.nivelYPuntaje) {
-            const nivelNombre = nivelData.nivel?.toLowerCase() || '';
-            if (queriesPorNivel[nivelNombre]) {
-              const snapshotNivel = await getCountFromServer(queriesPorNivel[nivelNombre]);
-              nivelesData.push({
-                nivel: nivelData.nivel || nivelNombre,
-                cantidadDeEstudiantes: snapshotNivel.data().count
-              });
-            }
-          }
+          const pieData = generarDataGraficoPiechart(alumnos, Number(mes), evalObj);
+          niveles = pieData.niveles;
+        } else {
+          // Lógica de director (Cloud Function)
+          const functions = getFunctions();
+          const getReporte = httpsCallable(functions, 'getReporteDirector');
+          const response: any = await getReporte({
+            idEvaluacion,
+            month: Number(mes),
+            year: Number(año),
+            dniDirector,
+          });
 
-          // Ajustar estudiantes no contabilizados por nulos
-          const sumaNiveles = nivelesData.reduce((s, n) => s + n.cantidadDeEstudiantes, 0);
-          const diff = totalEstudiantes - sumaNiveles;
-          if (diff > 0) {
-            const previo = nivelesData.find(n => n.nivel?.toLowerCase() === 'previo al inicio');
-            if (previo) {
-              previo.cantidadDeEstudiantes += diff;
-            } else {
-              nivelesData.push({ nivel: 'previo al inicio', cantidadDeEstudiantes: diff });
-            }
+          if (response.data.success) {
+            const { estudiantes: alumnos, promedioGlobal: avgData } = response.data;
+            const matchAvg = avgData?.find((item: any) => Number(item.mes) === Number(mes));
+            puntajeMedia = matchAvg ? matchAvg.promedioGlobal : 0;
+            totalEstudiantes = matchAvg ? matchAvg.totalEstudiantes : 0;
+
+            const pieData = generarDataGraficoPiechart(alumnos || [], Number(mes), evalObj);
+            niveles = pieData.niveles;
           }
         }
 
         if (isMounted) {
           setDataActual({
             id: idEvaluacion,
-            nombre: `${evaluacion.nombre || 'Evaluación Actual'} (${getNombreMes(evaluacion.mesDelExamen)})`,
+            nombre: `${evalObj.nombre || 'Evaluación Actual'} (${getNombreMes(mes)})`,
             puntajeMedia,
             totalEstudiantes,
-            niveles: nivelesData
+            niveles
           });
         }
       } catch (error) {
         console.error('Error al cargar datos de evaluación actual:', error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -163,7 +178,7 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [] }: GraficoT
     return () => {
       isMounted = false;
     };
-  }, [idEvaluacion, evaluacion]);
+  }, [idEvaluacion, dniDirector, dniDocente, monthSelected, yearSelected]);
 
   // Cargar datos de las múltiples evaluaciones comparadas
   useEffect(() => {
@@ -187,65 +202,66 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [] }: GraficoT
           const año = evalComparada.añoDelExamen || new Date().getFullYear().toString();
           const mes = evalComparada.mesDelExamen || '0';
 
-          const coll = collection(db, `/evaluaciones/${idComp}/estudiantes-evaluados/${año}/${mes}`);
+          let puntajeMedia = 0;
+          let totalEstudiantes = 0;
+          let niveles: any[] = [];
 
-          // 1. Puntaje promedio
-          const snapshotAvg = await getAggregateFromServer(coll, {
-            averagePopulation: average('puntaje')
-          });
-          const puntajeMedia = snapshotAvg.data().averagePopulation || 0;
-
-          // 2. Conteo total y por niveles
-          const totalCountSnap = await getCountFromServer(coll);
-          const totalEstudiantes = totalCountSnap.data().count;
-
-          const nivelesData: any[] = [];
-          if (totalEstudiantes > 0 && evalComparada.nivelYPuntaje) {
-            const queriesPorNivel: Record<string, any> = {};
-
-            for (const nivelData of evalComparada.nivelYPuntaje) {
-              const nivelNombre = nivelData.nivel?.toLowerCase() || '';
-              const minPuntaje = nivelData.min || 0;
-              const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
-
-              let q;
-              if (nivelNombre === 'previo al inicio') {
-                q = query(coll, where('puntaje', '<=', maxPuntaje), where('puntaje', '>=', 0));
-              } else {
-                q = query(coll, where('puntaje', '<=', maxPuntaje), where('puntaje', '>=', minPuntaje));
+          if (dniDocente) {
+            // Lógica de docente
+            const coll = collection(db, `/evaluaciones/${idComp}/estudiantes-evaluados/${año}/${mes}`);
+            const q = query(coll, where('dniDocente', '==', dniDocente));
+            const snap = await getDocs(q);
+            const alumnos: any[] = [];
+            snap.forEach(doc => {
+              const data = doc.data();
+              const puntaje = data.puntaje || 0;
+              let nivelData = undefined;
+              if (evalComparada.nivelYPuntaje) {
+                nivelData = evalComparada.nivelYPuntaje.find((np: any) => puntaje >= (np.min || 0) && puntaje <= (np.max || 20));
               }
-              queriesPorNivel[nivelNombre] = q;
+              alumnos.push({
+                ...data,
+                nivelData
+              });
+            });
+
+            const validAlumnos = alumnos.filter(a => a.puntaje !== undefined && a.puntaje !== null);
+            if (validAlumnos.length > 0) {
+              const sum = validAlumnos.reduce((acc, curr) => acc + (curr.puntaje || 0), 0);
+              puntajeMedia = sum / validAlumnos.length;
             }
+            totalEstudiantes = alumnos.length;
 
-            for (const nivelData of evalComparada.nivelYPuntaje) {
-              const nivelNombre = nivelData.nivel?.toLowerCase() || '';
-              if (queriesPorNivel[nivelNombre]) {
-                const snapshotNivel = await getCountFromServer(queriesPorNivel[nivelNombre]);
-                nivelesData.push({
-                  nivel: nivelData.nivel || nivelNombre,
-                  cantidadDeEstudiantes: snapshotNivel.data().count
-                });
-              }
-            }
+            const pieData = generarDataGraficoPiechart(alumnos, Number(mes), evalComparada);
+            niveles = pieData.niveles;
+          } else {
+            // Lógica de director (Cloud Function)
+            const functions = getFunctions();
+            const getReporte = httpsCallable(functions, 'getReporteDirector');
+            const response: any = await getReporte({
+              idEvaluacion: idComp,
+              month: Number(mes),
+              year: Number(año),
+              dniDirector,
+            });
 
-            const sumaNiveles = nivelesData.reduce((s, n) => s + n.cantidadDeEstudiantes, 0);
-            const diff = totalEstudiantes - sumaNiveles;
-            if (diff > 0) {
-              const previo = nivelesData.find(n => n.nivel?.toLowerCase() === 'previo al inicio');
-              if (previo) {
-                previo.cantidadDeEstudiantes += diff;
-              } else {
-                nivelesData.push({ nivel: 'previo al inicio', cantidadDeEstudiantes: diff });
-              }
+            if (response.data.success) {
+              const { estudiantes: alumnos, promedioGlobal: avgData } = response.data;
+              const matchAvg = avgData?.find((item: any) => Number(item.mes) === Number(mes));
+              puntajeMedia = matchAvg ? matchAvg.promedioGlobal : 0;
+              totalEstudiantes = matchAvg ? matchAvg.totalEstudiantes : 0;
+
+              const pieData = generarDataGraficoPiechart(alumnos || [], Number(mes), evalComparada);
+              niveles = pieData.niveles;
             }
           }
 
           results.push({
             id: idComp,
-            nombre: `${evalComparada.nombre || 'Evaluación Comparada'} (${getNombreMes(evalComparada.mesDelExamen)})`,
+            nombre: `${evalComparada.nombre || 'Evaluación Comparada'} (${getNombreMes(mes)})`,
             puntajeMedia,
             totalEstudiantes,
-            niveles: nivelesData
+            niveles
           });
         });
 
@@ -272,7 +288,7 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [] }: GraficoT
     return () => {
       isMounted = false;
     };
-  }, [evaluacionesAComparar]);
+  }, [evaluacionesAComparar, dniDirector, dniDocente, monthSelected, yearSelected]);
 
   // Configuración del gráfico de promedios (barras y líneas)
   const labelsPromedios = [dataActual?.nombre || 'Evaluación Actual'];
@@ -441,6 +457,28 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [] }: GraficoT
     }
   };
 
+  const findCantidadPorNivel = (niveles: any[], levelName: string) => {
+    if (!niveles || !Array.isArray(niveles)) return 0;
+    const target = levelName.toLowerCase();
+    const match = niveles.find((n: any) => {
+      const name = n.nivel?.toLowerCase() || '';
+      if (target.includes('previo')) {
+        return name.includes('previo');
+      }
+      if (target.includes('inicio')) {
+        return name.includes('inicio') && !name.includes('previo');
+      }
+      if (target.includes('proceso')) {
+        return name.includes('proceso');
+      }
+      if (target.includes('satisfactorio')) {
+        return name.includes('satisfactorio');
+      }
+      return name === target;
+    });
+    return match ? match.cantidadDeEstudiantes : 0;
+  };
+
   // Configuración del gráfico de líneas de niveles (Nivel en Eje X)
   const datasetsNiveles: any[] = [];
 
@@ -448,10 +486,10 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [] }: GraficoT
     datasetsNiveles.push({
       label: dataActual.nombre,
       data: [
-        dataActual.niveles.find((n: any) => n.nivel?.toLowerCase() === 'previo al inicio')?.cantidadDeEstudiantes || 0,
-        dataActual.niveles.find((n: any) => n.nivel?.toLowerCase() === 'en inicio')?.cantidadDeEstudiantes || 0,
-        dataActual.niveles.find((n: any) => n.nivel?.toLowerCase() === 'en proceso')?.cantidadDeEstudiantes || 0,
-        dataActual.niveles.find((n: any) => n.nivel?.toLowerCase() === 'satisfactorio')?.cantidadDeEstudiantes || 0
+        findCantidadPorNivel(dataActual.niveles, 'previo al inicio'),
+        findCantidadPorNivel(dataActual.niveles, 'en inicio'),
+        findCantidadPorNivel(dataActual.niveles, 'en proceso'),
+        findCantidadPorNivel(dataActual.niveles, 'satisfactorio')
       ],
       borderColor: getColoresParaIndex(0).border,
       backgroundColor: getColoresParaIndex(0).bg,
@@ -471,10 +509,10 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [] }: GraficoT
     datasetsNiveles.push({
       label: d.nombre,
       data: [
-        d.niveles.find((n: any) => n.nivel?.toLowerCase() === 'previo al inicio')?.cantidadDeEstudiantes || 0,
-        d.niveles.find((n: any) => n.nivel?.toLowerCase() === 'en inicio')?.cantidadDeEstudiantes || 0,
-        d.niveles.find((n: any) => n.nivel?.toLowerCase() === 'en proceso')?.cantidadDeEstudiantes || 0,
-        d.niveles.find((n: any) => n.nivel?.toLowerCase() === 'satisfactorio')?.cantidadDeEstudiantes || 0
+        findCantidadPorNivel(d.niveles, 'previo al inicio'),
+        findCantidadPorNivel(d.niveles, 'en inicio'),
+        findCantidadPorNivel(d.niveles, 'en proceso'),
+        findCantidadPorNivel(d.niveles, 'satisfactorio')
       ],
       borderColor: colObj.border,
       backgroundColor: colObj.bg,
@@ -630,13 +668,13 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [] }: GraficoT
         <div className={styles.gridTwoCols}>
           <div className={styles.chartCard}>
             <div className={styles.chartContainer}>
-              <Line options={opcionesGrafico} data={datosChart} />
+              <Bar options={opcionesGraficoBar} data={datosChartBar} />
             </div>
           </div>
 
           <div className={styles.chartCard}>
             <div className={styles.chartContainer}>
-              <Bar options={opcionesGraficoBar} data={datosChartBar} />
+              <Line options={opcionesGrafico} data={datosChart} />
             </div>
           </div>
         </div>
@@ -649,115 +687,117 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [] }: GraficoT
         </div>
 
         {/* Tabla / Matriz de Resumen Comparativo Múltiple */}
-        <div className={styles.tableCard}>
-          <h3 className={styles.tableTitle}>
-            Resumen Comparativo
-          </h3>
+        {!ocultarTabla && dataComparadas.length > 0 && (
+          <div className={styles.tableCard}>
+            <h3 className={styles.tableTitle}>
+              Resumen Comparativo
+            </h3>
 
-          <div className={styles.tableWrapper}>
-            <table className={styles.comparisonTable}>
-              <thead>
-                <tr className={styles.tableHeaderRow}>
-                  <th className={styles.tableHeaderCell}>Logro</th>
-                  <th className={styles.tableHeaderCellRight}>Actual</th>
-                  {dataComparadas.map((d, idx) => (
-                    <th key={d.id} className={styles.tableHeaderCellRight} style={{ color: getColoresParaIndex(idx + 1).border }}>
-                      Comp. {idx + 1}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {/* Total Evaluados */}
-                <tr className={styles.totalRow}>
-                  <td className={styles.tableBodyCell} style={{ fontWeight: 600 }}>Total Evaluados</td>
-                  <td className={styles.cellActualTotal}>{totalActual}</td>
-                  {dataComparadas.map((d, idx) => (
-                    <td key={d.id} className={styles.tableBodyCellRight} style={{ color: getColoresParaIndex(idx + 1).border }}>
-                      {d.totalEstudiantes}
+            <div className={styles.tableWrapper}>
+              <table className={styles.comparisonTable}>
+                <thead>
+                  <tr className={styles.tableHeaderRow}>
+                    <th className={styles.tableHeaderCell}>Logro</th>
+                    <th className={styles.tableHeaderCellRight}>Actual</th>
+                    {dataComparadas.map((d, idx) => (
+                      <th key={d.id} className={styles.tableHeaderCellRight} style={{ color: getColoresParaIndex(idx + 1).border }}>
+                        Comp. {idx + 1}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Total Evaluados */}
+                  <tr className={styles.totalRow}>
+                    <td className={styles.tableBodyCell} style={{ fontWeight: 600 }}>Total Evaluados</td>
+                    <td className={styles.cellActualTotal}>{totalActual}</td>
+                    {dataComparadas.map((d, idx) => (
+                      <td key={d.id} className={styles.tableBodyCellRight} style={{ color: getColoresParaIndex(idx + 1).border }}>
+                        {d.totalEstudiantes}
+                      </td>
+                    ))}
+                  </tr>
+
+                  {/* Satisfactorio */}
+                  <tr className={styles.tableBodyRow}>
+                    <td className={styles.achievementCell}>
+                      <span className={styles.circleSatisfactorio} />
+                      Satisfactorio
                     </td>
-                  ))}
-                </tr>
-
-                {/* Satisfactorio */}
-                <tr className={styles.tableBodyRow}>
-                  <td className={styles.achievementCell}>
-                    <span className={styles.circleSatisfactorio} />
-                    Satisfactorio
-                  </td>
-                  <td className={styles.tableBodyCellRight}>
-                    {datosSatis.cantActual} <span className={styles.badgeSatisfactorio}>{datosSatis.pctActual}%</span>
-                  </td>
-                  {datosSatis.comparativas.map((c, idx) => (
-                    <td key={idx} className={styles.tableBodyCellRight}>
-                      {c.cant} <span className={styles.badgeSatisfactorio}>{c.pct}%</span>
+                    <td className={styles.tableBodyCellRight}>
+                      {datosSatis.cantActual} <span className={styles.badgeSatisfactorio}>{datosSatis.pctActual}%</span>
                     </td>
-                  ))}
-                </tr>
+                    {datosSatis.comparativas.map((c, idx) => (
+                      <td key={idx} className={styles.tableBodyCellRight}>
+                        {c.cant} <span className={styles.badgeSatisfactorio}>{c.pct}%</span>
+                      </td>
+                    ))}
+                  </tr>
 
-                {/* En Proceso */}
-                <tr className={styles.tableBodyRow}>
-                  <td className={styles.achievementCell}>
-                    <span className={styles.circleProceso} />
-                    En Proceso
-                  </td>
-                  <td className={styles.tableBodyCellRight}>
-                    {datosProce.cantActual} <span className={styles.badgeProceso}>{datosProce.pctActual}%</span>
-                  </td>
-                  {datosProce.comparativas.map((c, idx) => (
-                    <td key={idx} className={styles.tableBodyCellRight}>
-                      {c.cant} <span className={styles.badgeProceso}>{c.pct}%</span>
+                  {/* En Proceso */}
+                  <tr className={styles.tableBodyRow}>
+                    <td className={styles.achievementCell}>
+                      <span className={styles.circleProceso} />
+                      En Proceso
                     </td>
-                  ))}
-                </tr>
-
-                {/* En Inicio */}
-                <tr className={styles.tableBodyRow}>
-                  <td className={styles.achievementCell}>
-                    <span className={styles.circleInicio} />
-                    En Inicio
-                  </td>
-                  <td className={styles.tableBodyCellRight}>
-                    {datosInicio.cantActual} <span className={styles.badgeInicio}>{datosInicio.pctActual}%</span>
-                  </td>
-                  {datosInicio.comparativas.map((c, idx) => (
-                    <td key={idx} className={styles.tableBodyCellRight}>
-                      {c.cant} <span className={styles.badgeInicio}>{c.pct}%</span>
+                    <td className={styles.tableBodyCellRight}>
+                      {datosProce.cantActual} <span className={styles.badgeProceso}>{datosProce.pctActual}%</span>
                     </td>
-                  ))}
-                </tr>
+                    {datosProce.comparativas.map((c, idx) => (
+                      <td key={idx} className={styles.tableBodyCellRight}>
+                        {c.cant} <span className={styles.badgeProceso}>{c.pct}%</span>
+                      </td>
+                    ))}
+                  </tr>
 
-                {/* Previo al Inicio */}
-                <tr className={styles.tableBodyRow}>
-                  <td className={styles.achievementCell}>
-                    <span className={styles.circleIndicator} style={{ backgroundColor: '#8B4513' }} />
-                    Previo al Inicio
-                  </td>
-                  <td className={styles.tableBodyCellRight}>
-                    {datosPrevio.cantActual} <span className={styles.badgePercent} style={{ color: '#8B4513', backgroundColor: 'rgba(139, 69, 19, 0.1)' }}>{datosPrevio.pctActual}%</span>
-                  </td>
-                  {datosPrevio.comparativas.map((c, idx) => (
-                    <td key={idx} className={styles.tableBodyCellRight}>
-                      {c.cant} <span className={styles.badgePercent} style={{ color: '#8B4513', backgroundColor: 'rgba(139, 69, 19, 0.1)' }}>{c.pct}%</span>
+                  {/* En Inicio */}
+                  <tr className={styles.tableBodyRow}>
+                    <td className={styles.achievementCell}>
+                      <span className={styles.circleInicio} />
+                      En Inicio
                     </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                    <td className={styles.tableBodyCellRight}>
+                      {datosInicio.cantActual} <span className={styles.badgeInicio}>{datosInicio.pctActual}%</span>
+                    </td>
+                    {datosInicio.comparativas.map((c, idx) => (
+                      <td key={idx} className={styles.tableBodyCellRight}>
+                        {c.cant} <span className={styles.badgeInicio}>{c.pct}%</span>
+                      </td>
+                    ))}
+                  </tr>
 
-          {/* Glosario de Comparativas */}
-          {dataComparadas.length > 0 && (
-            <div className={styles.glossaryContainer}>
-              {dataComparadas.map((d, idx) => (
-                <div key={d.id} className={styles.glossaryItem}>
-                  <span className={styles.glossaryCircle} style={{ backgroundColor: getColoresParaIndex(idx + 1).border }} />
-                  <span><strong>Comp. {idx + 1}:</strong> {d.nombre}</span>
-                </div>
-              ))}
+                  {/* Previo al Inicio */}
+                  <tr className={styles.tableBodyRow}>
+                    <td className={styles.achievementCell}>
+                      <span className={styles.circleIndicator} style={{ backgroundColor: '#8B4513' }} />
+                      Previo al Inicio
+                    </td>
+                    <td className={styles.tableBodyCellRight}>
+                      {datosPrevio.cantActual} <span className={styles.badgePercent} style={{ color: '#8B4513', backgroundColor: 'rgba(139, 69, 19, 0.1)' }}>{datosPrevio.pctActual}%</span>
+                    </td>
+                    {datosPrevio.comparativas.map((c, idx) => (
+                      <td key={idx} className={styles.tableBodyCellRight}>
+                        {c.cant} <span className={styles.badgePercent} style={{ color: '#8B4513', backgroundColor: 'rgba(139, 69, 19, 0.1)' }}>{c.pct}%</span>
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
+
+            {/* Glosario de Comparativas */}
+            {dataComparadas.length > 0 && (
+              <div className={styles.glossaryContainer}>
+                {dataComparadas.map((d, idx) => (
+                  <div key={d.id} className={styles.glossaryItem}>
+                    <span className={styles.glossaryCircle} style={{ backgroundColor: getColoresParaIndex(idx + 1).border }} />
+                    <span><strong>Comp. {idx + 1}:</strong> {d.nombre}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

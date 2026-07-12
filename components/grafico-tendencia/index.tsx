@@ -56,6 +56,11 @@ interface Props {
   promedioPorSeccion?: any[];
   promedioPorDocente?: any[];
   isFlat?: boolean;
+  ocultarPieYCobertura?: boolean;
+  soloPrincipales?: boolean;
+  soloSecundarios?: boolean;
+  soloPieYCobertura?: boolean;
+  soloDocentesYSecciones?: boolean;
 }
 
 const GraficoTendenciaColegio = ({
@@ -71,6 +76,11 @@ const GraficoTendenciaColegio = ({
   promedioPorSeccion = [],
   promedioPorDocente = [],
   isFlat = false,
+  ocultarPieYCobertura = false,
+  soloPrincipales = false,
+  soloSecundarios = false,
+  soloPieYCobertura = false,
+  soloDocentesYSecciones = false,
 }: Props) => {
   console.log("DEBUG-GRAFICOS: Recibiendo datos en GraficoTendenciaColegio:", {
     datosPorMes,
@@ -98,6 +108,7 @@ const GraficoTendenciaColegio = ({
     datosNiveles,
     valorMaximoNiveles,
     datosPromedio,
+    datosBarrasPromedio,
   } = useGraficoTendenciaData({
     datosPorMes,
     mesesConDataDisponibles,
@@ -235,85 +246,87 @@ const GraficoTendenciaColegio = ({
 
   return (
     <div className={styles.containerWrapper}>
-      <div className={styles.controlsContainer}>
-        <div className={styles.tabsWrapper}>
-          <button
-            onClick={() => setGridColumns(1)}
-            className={`${styles.tabButton} ${gridColumns === 1 ? styles.tabButtonActive : ''}`}
-            title="1 columna"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="4" y="7" width="16" height="3" rx="1.5" />
-              <rect x="4" y="14" width="16" height="3" rx="1.5" />
-            </svg>
-          </button>
-          <button
-            onClick={() => setGridColumns(2)}
-            className={`${styles.tabButton} ${gridColumns === 2 ? styles.tabButtonActive : ''}`}
-            title="2 columnas"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="4" y="4" width="7" height="7" rx="1.5" />
-              <rect x="13" y="4" width="7" height="7" rx="1.5" />
-              <rect x="4" y="13" width="7" height="7" rx="1.5" />
-              <rect x="13" y="13" width="7" height="7" rx="1.5" />
-            </svg>
-          </button>
-          <button
-            onClick={() => setGridColumns(3)}
-            className={`${styles.tabButton} ${gridColumns === 3 ? styles.tabButtonActive : ''}`}
-            title="3 columnas"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="3" y="3" width="4" height="4" rx="1" />
-              <rect x="10" y="3" width="4" height="4" rx="1" />
-              <rect x="17" y="3" width="4" height="4" rx="1" />
-              <rect x="3" y="10" width="4" height="4" rx="1" />
-              <rect x="10" y="10" width="4" height="4" rx="1" />
-              <rect x="17" y="10" width="4" height="4" rx="1" />
-              <rect x="3" y="17" width="4" height="4" rx="1" />
-              <rect x="10" y="17" width="4" height="4" rx="1" />
-              <rect x="17" y="17" width="4" height="4" rx="1" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div className={`${styles.threeColumnGrid} ${styles[`gridColumns${gridColumns}`]}`}>
-        {datosMesSeleccionado && (
-          <div className={styles.column}>
-            <div className={styles.chartCard}>
-              <div className={styles.cardHeader}><div className={styles.headerBarPurple}></div><h3 className={styles.cardTitle}>Distribución Niveles</h3></div>
-              <div className={styles.chartContainer}>
-                {loaderDataGraficoPieChart ? <Loader text="Cargando..." /> : <Pie data={datosChartPie as any} options={opcionesGraficoPie as any} />}
+      {/* 1. Fila superior: Gráficos de Promedio Global (Barra a la izquierda, Línea a la derecha) */}
+      {!soloSecundarios && !soloPieYCobertura && !soloDocentesYSecciones && (
+        <div className={`${styles.threeColumnGrid} ${styles.gridColumns2}`}>
+          {datosBarrasPromedio && (
+            <div className={styles.column}>
+              <div className={styles.chartCard}>
+                <div className={styles.cardHeader}>
+                  <div className={styles.headerBarGreen}></div>
+                  <h3 className={styles.cardTitle}>Promedio Global</h3>
+                </div>
+                <div className={styles.chartContainer}>
+                  <Bar data={datosBarrasPromedio as any} options={opcionesPromedio as any} />
+                </div>
               </div>
             </div>
-          </div>
-        )}
-        {datosNiveles && (
-          <div className={styles.column}>
-            <div className={styles.chartCard}>
-              <div className={styles.cardHeader}><div className={styles.headerBarBlue}></div><h3 className={styles.cardTitle}>Tendencia Niveles</h3></div>
-              <div className={styles.chartContainer}><Line data={datosNiveles as any} options={opcionesComunes as any} /></div>
+          )}
+
+          {datosPromedio && (
+            <div className={styles.column}>
+              <div className={styles.chartCard}>
+                <div className={styles.cardHeader}>
+                  <div className={styles.headerBarGreen}></div>
+                  <h3 className={styles.cardTitle}>Promedio Global</h3>
+                </div>
+                <div className={styles.chartContainer}>
+                  <Line data={datosPromedio as any} options={opcionesPromedio as any} />
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-        {datosPromedio && (
-          <div className={styles.column}>
-            <div className={styles.chartCard}>
-              <div className={styles.cardHeader}><div className={styles.headerBarGreen}></div><h3 className={styles.cardTitle}>Promedio Global</h3></div>
-              <div className={styles.chartContainer}><Line data={datosPromedio as any} options={opcionesPromedio as any} /></div>
-            </div>
-          </div>
-        )}
-        <div className={styles.column}>
-          <CoverageChart evaluados={evaluados} pendientes={pendientes} listaPendientes={listaPendientes} />
+          )}
         </div>
-        
-        {/* GRÁFICOS FULL WIDTH */}
-        {renderDocentesChart()}
-        {renderSeccionesChart()}
-      </div>
+      )}
+
+      {/* 2. Fila media: Ancho completo para el gráfico de Tendencia Niveles */}
+      {!soloSecundarios && !soloPieYCobertura && !soloDocentesYSecciones && (
+        <div className={styles.threeColumnGrid} style={{ marginTop: '2rem' }}>
+          {datosNiveles && (
+            <div className={`${styles.column} ${styles.columnFullWidth}`}>
+              <div className={styles.chartCard}>
+                <div className={styles.cardHeader}>
+                  <div className={styles.headerBarBlue}></div>
+                  <h3 className={styles.cardTitle}>Tendencia Niveles</h3>
+                </div>
+                <div className={styles.chartContainer}>
+                  <Line data={datosNiveles as any} options={opcionesComunes as any} />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. Fila inferior: Distribución Niveles (Pie) y Cobertura */}
+      {(soloPieYCobertura || (!soloPrincipales && !ocultarPieYCobertura && !soloDocentesYSecciones)) && (
+        <div className={`${styles.threeColumnGrid} ${styles.gridColumns2}`} style={{ marginTop: '2rem' }}>
+          {datosMesSeleccionado && (
+            <div className={styles.column}>
+              <div className={styles.chartCard}>
+                <div className={styles.cardHeader}>
+                  <div className={styles.headerBarPurple}></div>
+                  <h3 className={styles.cardTitle}>Distribución Niveles</h3>
+                </div>
+                <div className={styles.chartContainer}>
+                  {loaderDataGraficoPieChart ? <Loader text="Cargando..." /> : <Pie data={datosChartPie as any} options={opcionesGraficoPie as any} />}
+                </div>
+              </div>
+            </div>
+          )}
+          <div className={styles.column}>
+            <CoverageChart evaluados={evaluados} pendientes={pendientes} listaPendientes={listaPendientes} />
+          </div>
+        </div>
+      )}
+
+      {/* 4. Gráficos de Comparativa de Secciones y Docentes (Full Width) */}
+      {(soloDocentesYSecciones || (!soloPrincipales && !soloSecundarios && !soloPieYCobertura)) && (
+        <div className={styles.threeColumnGrid} style={{ marginTop: '2rem' }}>
+          {renderDocentesChart()}
+          {renderSeccionesChart()}
+        </div>
+      )}
     </div>
   );
 };

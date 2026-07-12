@@ -8,10 +8,12 @@ import { getFirestore, collection, getDocs } from 'firebase/firestore';
 
 interface AcordeonGraficosTendenciaProps {
   idEvaluacion: string;
+  dniDirector?: string;
 }
 
 const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
-  idEvaluacion
+  idEvaluacion,
+  dniDirector
 }) => {
   const [mostrarGraficos, setMostrarGraficos] = useState(false);
   const [evaluacionesAComparar, setEvaluacionesAComparar] = useState<string[]>([]);
@@ -273,6 +275,7 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
             <GraficoTendencia
               idEvaluacion={idEvaluacion}
               evaluacionesAComparar={evaluacionesAComparar}
+              dniDirector={dniDirector}
             />
           )}
         </div>

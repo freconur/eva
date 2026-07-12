@@ -892,3 +892,174 @@
   color: #374151;
   font-weight: 500;
 }
+
+/* Custom Evaluation Selector Dropdown */
+.evalDropdownWrapper {
+  position: relative;
+  width: 320px;
+}
+
+.evalDropdownTrigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.evalDropdownTrigger:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.evalDropdownTrigger:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.triggerText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 0.5rem;
+}
+
+.chevronIcon {
+  font-size: 1.25rem;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.chevronIconOpen {
+  transform: rotate(180deg);
+}
+
+.evalOptionsPanel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 50;
+  width: 100%;
+  margin-top: 0.5rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.evalSearchContainer {
+  padding: 0.5rem;
+  border-bottom: 1px solid #f3f4f6;
+  background-color: #f9fafb;
+}
+
+.evalSearchRelative {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.evalSearchInput {
+  width: 100%;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: #ffffff;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.evalSearchInput:focus {
+  border-color: #3b82f6;
+}
+
+.evalSearchIcon {
+  position: absolute;
+  right: 0.75rem;
+  color: #9ca3af;
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.evalSearchClearButton {
+  position: absolute;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  color: #9ca3af;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.evalSearchClearButton:hover {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.evalOptionsList {
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 0.25rem 0;
+}
+
+.evalOptionItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  color: #374151;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.evalOptionItem:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.evalOptionItemActive {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.evalNoResults {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  color: #6b7280;
+  gap: 0.5rem;
+}
+
+.evalNoResultsIcon {
+  font-size: 1.5rem;
+  color: #9ca3af;
+}
+
+.evalNoResultsText {
+  font-size: 0.875rem;
+  text-align: center;
+}
