@@ -1098,7 +1098,7 @@ const Reporte = () => {
                               dniDirector={currentUserData.dni}
                               monthSelected={monthSelected}
                               yearSelected={Number(yearSelected)}
-                              ocultarTabla={true}
+                              ocultarTabla={false}
                             />
                           </div>
                         </div>

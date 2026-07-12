@@ -14,7 +14,7 @@ import {
 import { Line, Bar } from 'react-chartjs-2'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import Loader from '@/components/loader/loader'
-import { getFirestore, doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, getAggregateFromServer, average, getCountFromServer } from 'firebase/firestore'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafico-piechart'
 import { Evaluaciones } from '@/features/types/types'
@@ -133,7 +133,7 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [], dniDirecto
 
           const pieData = generarDataGraficoPiechart(alumnos, Number(mes), evalObj);
           niveles = pieData.niveles;
-        } else {
+        } else if (dniDirector) {
           // Lógica de director (Cloud Function)
           const functions = getFunctions();
           const getReporte = httpsCallable(functions, 'getReporteDirector');
@@ -153,6 +153,62 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [], dniDirecto
             const pieData = generarDataGraficoPiechart(alumnos || [], Number(mes), evalObj);
             niveles = pieData.niveles;
           }
+        } else {
+          // Lógica de Administrador: consulta global sin filtros de docente o director (como el main original)
+          const coll = collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${año}/${mes}`);
+
+          // 1. Puntaje promedio
+          const snapshotAvg = await getAggregateFromServer(coll, {
+            averagePopulation: average('puntaje')
+          });
+          puntajeMedia = snapshotAvg.data().averagePopulation || 0;
+
+          // 2. Conteo total y por niveles
+          const totalCountSnap = await getCountFromServer(coll);
+          totalEstudiantes = totalCountSnap.data().count;
+
+          const nivelesData: any[] = [];
+          if (totalEstudiantes > 0 && evalObj.nivelYPuntaje) {
+            const queriesPorNivel: Record<string, any> = {};
+
+            for (const nivelData of evalObj.nivelYPuntaje) {
+              const nivelNombre = nivelData.nivel?.toLowerCase() || '';
+              const minPuntaje = nivelData.min || 0;
+              const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
+
+              let q;
+              if (nivelNombre === 'previo al inicio') {
+                q = query(coll, where('puntaje', '<=', maxPuntaje), where('puntaje', '>=', 0));
+              } else {
+                q = query(coll, where('puntaje', '<=', maxPuntaje), where('puntaje', '>=', minPuntaje));
+              }
+              queriesPorNivel[nivelNombre] = q;
+            }
+
+            for (const nivelData of evalObj.nivelYPuntaje) {
+              const nivelNombre = nivelData.nivel?.toLowerCase() || '';
+              if (queriesPorNivel[nivelNombre]) {
+                const snapshotNivel = await getCountFromServer(queriesPorNivel[nivelNombre]);
+                nivelesData.push({
+                  nivel: nivelData.nivel || nivelNombre,
+                  cantidadDeEstudiantes: snapshotNivel.data().count
+                });
+              }
+            }
+
+            // Ajustar estudiantes no contabilizados por nulos
+            const sumaNiveles = nivelesData.reduce((s, n) => s + n.cantidadDeEstudiantes, 0);
+            const diff = totalEstudiantes - sumaNiveles;
+            if (diff > 0) {
+              const previo = nivelesData.find(n => n.nivel?.toLowerCase() === 'previo al inicio');
+              if (previo) {
+                previo.cantidadDeEstudiantes += diff;
+              } else {
+                nivelesData.push({ nivel: 'previo al inicio', cantidadDeEstudiantes: diff });
+              }
+            }
+          }
+          niveles = nivelesData;
         }
 
         if (isMounted) {
@@ -234,7 +290,7 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [], dniDirecto
 
             const pieData = generarDataGraficoPiechart(alumnos, Number(mes), evalComparada);
             niveles = pieData.niveles;
-          } else {
+          } else if (dniDirector) {
             // Lógica de director (Cloud Function)
             const functions = getFunctions();
             const getReporte = httpsCallable(functions, 'getReporteDirector');
@@ -254,6 +310,61 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [], dniDirecto
               const pieData = generarDataGraficoPiechart(alumnos || [], Number(mes), evalComparada);
               niveles = pieData.niveles;
             }
+          } else {
+            // Lógica de Administrador: consulta global sin filtros de docente o director (como el main original)
+            const coll = collection(db, `/evaluaciones/${idComp}/estudiantes-evaluados/${año}/${mes}`);
+
+            // 1. Puntaje promedio
+            const snapshotAvg = await getAggregateFromServer(coll, {
+              averagePopulation: average('puntaje')
+            });
+            puntajeMedia = snapshotAvg.data().averagePopulation || 0;
+
+            // 2. Conteo total y por niveles
+            const totalCountSnap = await getCountFromServer(coll);
+            totalEstudiantes = totalCountSnap.data().count;
+
+            const nivelesData: any[] = [];
+            if (totalEstudiantes > 0 && evalComparada.nivelYPuntaje) {
+              const queriesPorNivel: Record<string, any> = {};
+
+              for (const nivelData of evalComparada.nivelYPuntaje) {
+                const nivelNombre = nivelData.nivel?.toLowerCase() || '';
+                const minPuntaje = nivelData.min || 0;
+                const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
+
+                let q;
+                if (nivelNombre === 'previo al inicio') {
+                  q = query(coll, where('puntaje', '<=', maxPuntaje), where('puntaje', '>=', 0));
+                } else {
+                  q = query(coll, where('puntaje', '<=', maxPuntaje), where('puntaje', '>=', minPuntaje));
+                }
+                queriesPorNivel[nivelNombre] = q;
+              }
+
+              for (const nivelData of evalComparada.nivelYPuntaje) {
+                const nivelNombre = nivelData.nivel?.toLowerCase() || '';
+                if (queriesPorNivel[nivelNombre]) {
+                  const snapshotNivel = await getCountFromServer(queriesPorNivel[nivelNombre]);
+                  nivelesData.push({
+                    nivel: nivelData.nivel || nivelNombre,
+                    cantidadDeEstudiantes: snapshotNivel.data().count
+                  });
+                }
+              }
+
+              const sumaNiveles = nivelesData.reduce((s, n) => s + n.cantidadDeEstudiantes, 0);
+              const diff = totalEstudiantes - sumaNiveles;
+              if (diff > 0) {
+                const previo = nivelesData.find(n => n.nivel?.toLowerCase() === 'previo al inicio');
+                if (previo) {
+                  previo.cantidadDeEstudiantes += diff;
+                } else {
+                  nivelesData.push({ nivel: 'previo al inicio', cantidadDeEstudiantes: diff });
+                }
+              }
+            }
+            niveles = nivelesData;
           }
 
           results.push({
