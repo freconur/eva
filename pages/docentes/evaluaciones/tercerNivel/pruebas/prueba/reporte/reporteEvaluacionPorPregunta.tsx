@@ -22,83 +22,79 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   // Estado para controlar el número de columnas (por defecto 2)
   const [numeroColumnas, setNumeroColumnas] = useState<number>(2);
 
-  const { prepareBarChartData } = useColorsFromCSS();
-  const iterateData = (data: DataEstadisticas, respuesta: string) => {
-     const pregunta = preguntasMap.get(data.id || '');
- 
-     // Función para determinar si una opción es la respuesta correcta
-     const esRespuestaCorrecta = (opcion: string) => {
-       return opcion.toLowerCase() === respuesta.toLowerCase();
-     };
- 
-     const getLabel = (opcion: string, valor: number, porcentaje: number, descripcion?: string) => {
-       const labelText = descripcion?.toLowerCase() === 'no respondio' 
-         ? `NR` 
-         : opcion.toUpperCase();
-       const check = esRespuestaCorrecta(opcion) ? ' ✓' : '';
-       return `${labelText}(${valor} - ${porcentaje}%)${check}`;
-     };
- 
-     // Obtener las alternativas de la pregunta (o por defecto A, B, C, D)
-     let alternativas = pregunta?.alternativas || [
-       { alternativa: 'A', descripcion: '', selected: false },
-       { alternativa: 'B', descripcion: '', selected: false },
-       { alternativa: 'C', descripcion: '', selected: false },
-       { alternativa: 'D', descripcion: '', selected: false }
-     ];
- 
-     // Filtrar la alternativa 'no respondio' si su cantidad es 0
-     alternativas = alternativas.filter((alt) => {
-       if (alt.descripcion?.toLowerCase() === 'no respondio') {
-         const key = (alt.alternativa || '').toLowerCase();
-         const count = data[key] || 0;
-         return count > 0;
-       }
-       return true;
-     });
- 
-     // Calcular porcentajes para cada opción
-     const calcularPorcentaje = (valor: number | undefined) => {
-       if (valor === null || valor === undefined) return 0;
-       return !data.total || data.total === 0 ? 0 : ((100 * Number(valor)) / Number(data.total));
-     };
- 
-     const roundedPercentages: number[] = [];
-     if (!data.total || data.total === 0) {
-       alternativas.forEach(() => {
-         roundedPercentages.push(0);
-       });
-     } else {
-       let sumOfRounded = 0;
-       for (let i = 0; i < alternativas.length; i++) {
-         const key = (alternativas[i].alternativa || '').toLowerCase();
-         const rawPct = calcularPorcentaje(data[key] || 0);
-         if (i < alternativas.length - 1) {
-           const rounded = Math.round(rawPct);
-           roundedPercentages.push(rounded);
-           sumOfRounded += rounded;
-         } else {
-           // La última alternativa absorbe la diferencia para sumar exactamente 100
-           const rounded = Math.max(0, 100 - sumOfRounded);
-           roundedPercentages.push(rounded);
-         }
-       }
-     }
- 
-     const labels = alternativas.map((alt, idx) => {
-       const key = (alt.alternativa || '').toLowerCase();
-       const count = data[key] || 0;
-       const pct = roundedPercentages[idx];
-       return getLabel(key, count, pct, alt.descripcion);
-     });
- 
-     const chartData = prepareBarChartData(data, respuesta, alternativas.length);
- 
-     return {
-       labels: labels,
-       datasets: chartData.datasets
-     };
-   };
+  const { prepareBarChartData, getAlternativaColor } = useColorsFromCSS();
+  const iterateData = (data: DataEstadisticas, respuesta: string, pregunta?: PreguntasRespuestas) => {
+    // Función para determinar si una opción es la respuesta correcta
+    const esRespuestaCorrecta = (opcion: string) => {
+      return opcion.toLowerCase() === respuesta.toLowerCase();
+    };
+
+    // Obtener las alternativas de la pregunta (o por defecto A, B, C, D)
+    let alternativas = pregunta?.alternativas || [
+      { alternativa: 'A', descripcion: '', selected: false },
+      { alternativa: 'B', descripcion: '', selected: false },
+      { alternativa: 'C', descripcion: '', selected: false },
+      { alternativa: 'D', descripcion: '', selected: false }
+    ];
+
+    // Filtrar la alternativa 'no respondio' si su cantidad es 0
+    alternativas = alternativas.filter((alt) => {
+      if (alt.descripcion?.toLowerCase() === 'no respondio') {
+        const key = (alt.alternativa || '').toLowerCase();
+        const count = data[key] || 0;
+        return count > 0;
+      }
+      return true;
+    });
+
+    // Calcular porcentajes para cada opción
+    const calcularPorcentaje = (valor: number | undefined) => {
+      if (valor === null || valor === undefined) return 0;
+      return !data.total || data.total === 0 ? 0 : ((100 * Number(valor)) / Number(data.total));
+    };
+
+    const roundedPercentages: number[] = [];
+    if (!data.total || data.total === 0) {
+      alternativas.forEach(() => {
+        roundedPercentages.push(0);
+      });
+    } else {
+      let sumOfRounded = 0;
+      for (let i = 0; i < alternativas.length; i++) {
+        const key = (alternativas[i].alternativa || '').toLowerCase();
+        const rawPct = calcularPorcentaje(data[key] || 0);
+        if (i < alternativas.length - 1) {
+          const rounded = Math.round(rawPct);
+          roundedPercentages.push(rounded);
+          sumOfRounded += rounded;
+        } else {
+          // La última alternativa absorbe la diferencia para sumar exactamente 100
+          const rounded = Math.max(0, 100 - sumOfRounded);
+          roundedPercentages.push(rounded);
+        }
+      }
+    }
+
+    const labels = alternativas.map((alt, idx) => {
+      const key = (alt.alternativa || '').toLowerCase();
+      const count = data[key] || 0;
+      const pct = roundedPercentages[idx];
+      const check = esRespuestaCorrecta(key) ? ' ✓' : '';
+      
+      const labelText = alt.descripcion?.toLowerCase() === 'no respondio' 
+        ? `NR` 
+        : (alt.alternativa || '').toUpperCase();
+        
+      return `${labelText}(${count} - ${pct}%)${check}`;
+    });
+
+    const chartData = prepareBarChartData(data, respuesta, alternativas.length);
+    
+    return {
+      labels: labels,
+      datasets: chartData.datasets
+    };
+  };
 
   const options = {
     plugins: {
@@ -120,12 +116,24 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
         borderWidth: 1,
         cornerRadius: 8,
         displayColors: true,
+        callbacks: {
+          title: function(context: any) {
+            return `Opción ${context[0].label.split(' ')[0].toUpperCase()}`;
+          },
+          label: function(context: any) {
+            const label = context.label;
+            const value = context.parsed.y;
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+            return `Respuestas: ${value} (${percentage}%)`;
+          }
+        }
       }
     },
     scales: {
       x: {
         ticks: {
-          color: function (context: any) {
+          color: function(context: any) {
             const label = context.tick.label;
             // Si la etiqueta contiene un check, usar color verde
             if (label && label.includes('✓')) {
@@ -156,7 +164,6 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
     },
     onHover: (event: any, activeElements: any) => {
       if (event.native) {
-        // @ts-ignore
         event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
       }
     }
@@ -171,7 +178,7 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   return (
     <div className={styles.containerPrincipal}>
       <h1 className={styles.title}>Reporte de Evaluación</h1>
-
+      
       {/* Selector de número de columnas */}
       <div className={styles.columnSelectorContainer}>
         <span className={styles.columnSelectorLabel}>
@@ -223,7 +230,7 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
         </div>
       </div>
 
-      <div
+      <div 
         className={styles.reportContainer}
         style={{
           '--num-cols': numeroColumnas,
@@ -235,6 +242,7 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
         ) : (
           dataEstadisticasOrdenadas?.map((dat, index) => {
             const pregunta = preguntasMap.get(dat.id || '');
+            const numeroOrden = pregunta?.order || index + 1;
             return (
               <div key={dat.id || index} className={styles.questionCard}>
                 {/* Header de la pregunta */}
@@ -255,8 +263,35 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
                   <div className={styles.chartSection}>
                     <div className={styles.chartHeader}>
                       <h4 className={styles.chartTitle}>Distribución de Respuestas</h4>
+                      <div className={styles.chartLegend}>
+                        {pregunta?.alternativas
+                          ?.filter((alt) => {
+                            if (alt.descripcion?.toLowerCase() === 'no respondio') {
+                              const altLetter = (alt.alternativa || '').toLowerCase();
+                              return (dat[altLetter] || 0) > 0;
+                            }
+                            return true;
+                          })
+                          ?.map((alt, altIdx) => {
+                            const altLetter = (alt.alternativa || '').toLowerCase();
+                            const isCorrect = obtenerRespuestaPorId(`${dat.id}`).toLowerCase() === altLetter;
+                            const color = isCorrect ? '#22c55e' : getAlternativaColor(altLetter);
+                            const labelLegend = alt.descripcion?.toLowerCase() === 'no respondio'
+                              ? 'No respondió'
+                              : `Opción ${(alt.alternativa || '').toUpperCase()}`;
+                            return (
+                              <span key={altIdx} className={styles.legendItem}>
+                                <span 
+                                  className={styles.legendColor} 
+                                  style={{ backgroundColor: color, border: `1px solid ${color}` }}
+                                ></span>
+                                {labelLegend}
+                              </span>
+                            );
+                          })}
+                      </div>
                     </div>
-
+                    
                     <div className={styles.chartWrapper}>
                       <Bar
                         options={{
@@ -271,42 +306,18 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
                             title: {
                               display: false,
                             },
-                            tooltip: {
-                              ...options.plugins?.tooltip,
-                              callbacks: {
-                                title: function (context: any) {
-                                  const labelChar = context[0].label.charAt(0).toUpperCase();
-                                  return `Opción ${labelChar}`;
-                                },
-                                label: function (context: any) {
-                                  const value = context.parsed.y;
-                                  const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-                                  const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-
-                                  const labelStr = context.label as string;
-                                  const char = labelStr.charAt(0).toLowerCase();
-                                  const alt = pregunta?.alternativas?.find(a => a.alternativa?.toLowerCase() === char);
-                                  const fullDescription = alt?.descripcion || '';
-
-                                  return [
-                                    fullDescription ? `Opción: ${fullDescription}` : '',
-                                    `Resultados: ${value} de ${total} (${percentage}%)`
-                                  ].filter(Boolean);
-                                }
-                              }
-                            }
                           },
                         }}
                         data={iterateData(
                           dat,
-                          obtenerRespuestaPorId(`${dat.id}`)
+                          obtenerRespuestaPorId(`${dat.id}`),
+                          pregunta
                         )}
-                        // @ts-ignore
                         ref={(chartRef) => {
                           if (chartRef && chartRef.canvas) {
                             setTimeout(() => {
                               convertirGraficoAImagen(dat.id || '', chartRef.canvas);
-                            }, 500); // Aumentado a 500ms para asegurar renderizado
+                            }, 500); // Aumentado para asegurar renderizado completo
                           }
                         }}
                       />

@@ -24,7 +24,7 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
-import { RiLoader4Line, RiFileExcel2Line, RiFilePdfLine } from 'react-icons/ri';
+import { RiLoader4Line, RiFileExcel2Line, RiFilePdfLine, RiArrowDownSLine, RiSearchLine, RiCloseLine, RiErrorWarningLine } from 'react-icons/ri';
 import { IoIosArrowDown } from 'react-icons/io';
 import { HiOutlineDownload } from 'react-icons/hi';
 import * as XLSX from 'xlsx';
@@ -43,6 +43,9 @@ import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafic
 import { TablaPreguntas } from '@/components/tabla-preguntas';
 import { calculoNivel, calculoPreguntasCorrectas } from '@/features/utils/calculoNivel';
 import GraficoTendenciaColegio from '@/components/grafico-tendencia';
+import GraficoTendencia from '@/components/reportes/graficoTendencia';
+import accordionStyles from '@/components/reportes/Acordeon.module.css';
+import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 import CorregirPuntajesModal from '@/modals/corregirPuntajes';
 import EvaluarEstudianteForm from '@/components/evaluar/EvaluarEstudianteForm';
 import ActualizarEvaluacionForm from '@/components/evaluar/ActualizarEvaluacionForm';
@@ -67,6 +70,7 @@ const Reportes = () => {
   const [editingEstudianteDni, setEditingEstudianteDni] = useState<string | null>(null);
   const route = useRouter();
   const {
+    estudiantesDeEvaluacion,
     estudiantes: estudiantesGlob,
     currentUserData,
     dataEstadisticas,
@@ -75,7 +79,6 @@ const Reportes = () => {
     loaderPages,
     loaderReporteDirector,
     warningEvaEstudianteSinRegistro,
-    estudiantesDeEvaluacion,
   } = useGlobalContext();
   const {
     estudiantesQueDieronExamen,
@@ -111,6 +114,67 @@ const Reportes = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [evaluacionesAComparar, setEvaluacionesAComparar] = useState<string[]>([]);
+  const [isCompDropdownOpen, setIsCompDropdownOpen] = useState<boolean>(false);
+  const [searchCompQuery, setSearchCompQuery] = useState<string>('');
+  const compDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [mostrarGraficos, setMostrarGraficos] = useState<boolean>(false);
+  const [mostrarReportePreguntas, setMostrarReportePreguntas] = useState<boolean>(false);
+
+  // Estados para cargar todas las evaluaciones de estudiantes disponibles
+  const [evaluacionesDb, setEvaluacionesDb] = useState<any[]>([]);
+  const [loadingEvaluaciones, setLoadingEvaluaciones] = useState<boolean>(false);
+
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Click outside detector para cerrar el selector de comparativa
+  useEffect(() => {
+    const handleClickOutsideComp = (event: MouseEvent) => {
+      if (compDropdownRef.current && !compDropdownRef.current.contains(event.target as Node)) {
+        setIsCompDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutsideComp);
+    return () => document.removeEventListener('mousedown', handleClickOutsideComp);
+  }, []);
+
+  // Cargar lista de todas las evaluaciones de estudiantes disponibles
+  useEffect(() => {
+    const loadEvaluaciones = async () => {
+      try {
+        setLoadingEvaluaciones(true);
+        const db = getFirestore();
+        const coll = collection(db, 'evaluaciones');
+        const q = query(coll, where('tipoDeEvaluacion', '==', '1'));
+        const snap = await getDocs(q);
+        const list: any[] = [];
+        snap.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+        setEvaluacionesDb(list);
+      } catch (error) {
+        console.error('Error al cargar evaluaciones:', error);
+      } finally {
+        setLoadingEvaluaciones(false);
+      }
+    };
+    loadEvaluaciones();
+  }, []);
+
+  const evaluacionesCompFiltradas = useMemo(() => {
+    let list = evaluacionesDb.filter((ev) => ev.id !== evaluacion?.id);
+    if (searchCompQuery.trim()) {
+      const q = searchCompQuery.toLowerCase().trim();
+      list = list.filter((ev) => (ev.nombre || '').toLowerCase().includes(q));
+    }
+    return list;
+  }, [evaluacionesDb, evaluacion?.id, searchCompQuery]);
+
+
   // Obtener estudiantes pendientes (no evaluados)
   useEffect(() => {
     if (evaluacion.id && monthSelected !== undefined && monthSelected !== null) {
@@ -133,7 +197,7 @@ const Reportes = () => {
     return Array.from(new Set(sections)).sort();
   }, [estudiantesGlob]);
 
-  // Sincronizar estados locales con la URL cuando esta cambie (ej. al navegar atrás/adelante)
+  // Sincronizar estados locales con la URL cuando esta cambie
   useEffect(() => {
     if (route.isReady) {
       if (route.query.year) setYearSelected(route.query.year as string);
@@ -161,17 +225,15 @@ const Reportes = () => {
 
   // Función para actualizar la URL con los filtros actuales
   const updateQuery = (params: Record<string, any>) => {
-    if (!route.isReady) return; // No actualizar si el router no está listo
+    if (!route.isReady) return;
 
     const newQuery = { ...route.query, ...params };
-    // Eliminar parámetros vacíos o nulos para mantener la URL limpia
     Object.keys(newQuery).forEach(key => {
       if (newQuery[key] === '' || newQuery[key] === undefined || newQuery[key] === null) {
         delete newQuery[key];
       }
     });
 
-    // Solo navegar si hay un cambio real para evitar bucles o refrescos innecesarios
     route.push({ pathname: route.pathname, query: newQuery }, undefined, { shallow: true });
   };
 
@@ -208,7 +270,6 @@ const Reportes = () => {
         });
       }
 
-      // 2. Recalcular respuestas correctas, puntaje y nivel dinámicamente para el reporte
       let tempEst = { ...est, respuestas: respuestasReconstruidas } as any;
       tempEst = calculoPreguntasCorrectas(tempEst);
       tempEst = calculoNivel(tempEst, evaluacion);
@@ -217,14 +278,13 @@ const Reportes = () => {
     });
   }, [estudiantesGlob, preguntasRespuestas, evaluacion]);
 
-  // Aplicar filtro por nivel y sección sobre los estudiantes base
+  // Aplicar filtro por nivel y sección
   const estudiantes = useMemo(() => {
     const filterLevel = (route.query.nivel as string) || levelSelected;
     const filterSection = (route.query.seccion as string) || sectionSelected;
 
     let filtered = estudiantesBase;
 
-    // Filtrar por nivel
     if (filterLevel) {
       filtered = filtered.filter(est => {
         if (!est.nivel) return false;
@@ -237,68 +297,23 @@ const Reportes = () => {
       });
     }
 
-    // Filtrar por sección
     if (filterSection) {
       filtered = filtered.filter(est => est.seccion === filterSection);
     }
 
-    // Aplicar ordenamiento
     const currentOrder = Number(route.query.order) || order;
     if (currentOrder !== 0) {
       filtered = [...filtered].sort((a, b) => {
         const valA = Number(a.puntaje) || 0;
         const valB = Number(b.puntaje) || 0;
-        if (currentOrder === 1) return valA - valB; // Ascendente
-        if (currentOrder === 2) return valB - valA; // Descendente
+        if (currentOrder === 1) return valA - valB;
+        if (currentOrder === 2) return valB - valA;
         return 0;
       });
     }
 
     return filtered;
   }, [estudiantesBase, levelSelected, sectionSelected, order, route.query.nivel, route.query.seccion, route.query.order]);
-
-  // Calcular promedios y distribución por niveles por sección para el gráfico comparativo
-  const promedioPorSeccion = useMemo(() => {
-    if (seccionesDisponibles.length < 2) return [];
-
-    return seccionesDisponibles.map(seccion => {
-      // Usar estudiantesBase que tiene todos los alumnos del grado sin el filtro de sección de la UI
-      const estudiantesSeccion = estudiantesBase.filter(est => est.seccion === seccion);
-
-      const totalPuntaje = estudiantesSeccion.reduce((acc, est) => acc + (est.puntaje || 0), 0);
-      const promedio = estudiantesSeccion.length > 0 ? totalPuntaje / estudiantesSeccion.length : 0;
-
-      // Contar niveles
-      const niveles = {
-        satisfactorio: 0,
-        proceso: 0,
-        inicio: 0,
-        previo: 0
-      };
-
-      estudiantesSeccion.forEach(est => {
-        const nivel = (est.nivel || '').toLowerCase();
-        if (nivel.includes('satisfactorio')) niveles.satisfactorio++;
-        else if (nivel.includes('proceso')) niveles.proceso++;
-        else if (nivel.includes('previo')) niveles.previo++;
-        else if (nivel.includes('inicio')) niveles.inicio++;
-      });
-
-      return {
-        seccion: converSeccion(Number(seccion))?.toUpperCase() || seccion,
-        promedio: Number(promedio.toFixed(2)),
-        cantidad: estudiantesSeccion.length,
-        distribucion: niveles
-      };
-    })
-      // Ordenar por el porcentaje de estudiantes en nivel Satisfactorio (de mayor a menor)
-      .sort((a, b) => {
-        const percA = a.cantidad > 0 ? (a.distribucion.satisfactorio / a.cantidad) : 0;
-        const percB = b.cantidad > 0 ? (b.distribucion.satisfactorio / b.cantidad) : 0;
-        return percB - percA;
-      });
-  }, [seccionesDisponibles, estudiantesBase]);
-
   const handleShowTable = () => {
     setShowtable(!showTable);
   };
@@ -363,21 +378,6 @@ const Reportes = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataEstadisticasOrdenadas, preguntasMap]);
 
-  // Hook para generar PDF con imágenes
-  const {
-    graficosImagenes,
-    imagenesGeneradas,
-    loadingPDF,
-    reporteCompletoConImagenes,
-    convertirGraficoAImagen,
-    handleGenerarPDF
-  } = useGenerarPDFReporte({
-    reporteCompleto,
-    currentUserData,
-    titulo: 'Reporte de Evaluación',
-    tipoUsuario: 'Docente',
-    monthSelected
-  });
 
   const handleExportarGrillaPDF = async () => {
     const { exportarGrillaHeatmapPDF } = await import('@/features/utils/exportarGrillaHeatmapPDF');
@@ -397,6 +397,64 @@ const Reportes = () => {
       setLoading(false);
     }
   };
+
+  // Cálculo de promedios y distribución por sección para el gráfico de barras horizontales
+  const promedioPorSeccion = useMemo(() => {
+    if (seccionesDisponibles.length < 2) return [];
+
+    return seccionesDisponibles.map(seccion => {
+      // Usar estudiantesBase que tiene todos los alumnos del grado sin el filtro de sección de la UI
+      const estudiantesSeccion = estudiantesBase.filter(est => est.seccion === seccion);
+
+      const totalPuntaje = estudiantesSeccion.reduce((acc, est) => acc + (est.puntaje || 0), 0);
+      const promedio = estudiantesSeccion.length > 0 ? totalPuntaje / estudiantesSeccion.length : 0;
+
+      // Contar niveles
+      const niveles = {
+        satisfactorio: 0,
+        proceso: 0,
+        inicio: 0,
+        previo: 0
+      };
+
+      estudiantesSeccion.forEach(est => {
+        const nivel = (est.nivel || '').toLowerCase();
+        if (nivel.includes('satisfactorio')) niveles.satisfactorio++;
+        else if (nivel.includes('proceso')) niveles.proceso++;
+        else if (nivel.includes('previo')) niveles.previo++;
+        else if (nivel.includes('inicio')) niveles.inicio++;
+      });
+
+      return {
+        seccion: converSeccion(Number(seccion))?.toUpperCase() || seccion,
+        promedio: Number(promedio.toFixed(2)),
+        cantidad: estudiantesSeccion.length,
+        distribucion: niveles
+      };
+    })
+      // Ordenar por el porcentaje de estudiantes en nivel Satisfactorio (de mayor a menor)
+      .sort((a, b) => {
+        const percA = a.cantidad > 0 ? (a.distribucion.satisfactorio / a.cantidad) : 0;
+        const percB = b.cantidad > 0 ? (b.distribucion.satisfactorio / b.cantidad) : 0;
+        return percB - percA;
+      });
+  }, [estudiantesBase, seccionesDisponibles]);
+
+  // Hook para generar PDF con imágenes
+  const {
+    graficosImagenes,
+    imagenesGeneradas,
+    loadingPDF,
+    reporteCompletoConImagenes,
+    convertirGraficoAImagen,
+    handleGenerarPDF
+  } = useGenerarPDFReporte({
+    reporteCompleto,
+    currentUserData,
+    titulo: 'Reporte de Evaluación',
+    tipoUsuario: 'Docente',
+    monthSelected
+  });
 
   // Función para detectar si toda la evaluación tiene 3 o 4 opciones basándose en la configuración de preguntas
   const detectarNumeroOpciones = useMemo(() => {
@@ -529,6 +587,7 @@ const Reportes = () => {
         estudiante.puntaje !== null &&
         estudiante.nivel !== undefined &&
         estudiante.nivel !== null &&
+        estudiante.nivel !== null &&
         estudiante.nivel !== ''
     );
   };
@@ -576,7 +635,7 @@ const Reportes = () => {
         error={correccionPuntajesError}
         onCloseError={handleCerrarModalError}
       />
-      {loaderReporteDirector ? (
+      {loaderReporteDirector || !isMounted ? (
         <div className={styles.loaderContainer}>
           <div className={styles.loaderContent}>
             <RiLoader4Line className={styles.loaderIcon} />
@@ -587,11 +646,6 @@ const Reportes = () => {
         <div className={styles.container}>
           <div className={styles.content}>
             <div className={styles.headerActions}>
-              {/* <div className={styles.toggleButtonContainer}>
-                <div onClick={handleShowTable} className={styles.toggleButton}>
-                  {showTable ? 'ocultar tabla de estudiantes' : 'mostrar tabla de estudiantes'}
-                </div>
-              </div> */}
               <div className={styles.exportButtonsContainer}>
                 <div className={styles.customDropdown} ref={dropdownRef}>
                   <button
@@ -827,32 +881,196 @@ const Reportes = () => {
             ) : null}
 
             {evaluacion.tipoDeEvaluacion === '1' ? (
-              <div className={styles.graficosContainer}>
-                <GraficoTendenciaColegio
-                  evaluacion={evaluacion}
-                  datosPorMes={datosPorMes}
-                  mesesConDataDisponibles={mesesConDataDisponibles}
-                  promedioGlobal={promedioGlobal}
-                  monthSelected={monthSelected}
-                  evaluados={estudiantes.length}
-                  pendientes={estudiantesDeEvaluacion.length}
-                  listaPendientes={estudiantesDeEvaluacion}
-                  promedioPorSeccion={promedioPorSeccion}
-                  dataGraficoTendenciaNiveles={[
-                    generarDataGraficoPiechart(estudiantes, monthSelected, evaluacion),
-                  ]}
-                />
-              </div>
+              <>
+                {/* 2. Distribución Niveles y Cobertura de Evaluación */}
+                <div className={styles.graficosContainer} style={{ marginTop: '2rem' }}>
+                  <GraficoTendenciaColegio
+                    evaluacion={evaluacion}
+                    datosPorMes={datosPorMes}
+                    mesesConDataDisponibles={mesesConDataDisponibles}
+                    promedioGlobal={promedioGlobal}
+                    monthSelected={monthSelected}
+                    evaluados={estudiantes.length}
+                    pendientes={0}
+                    listaPendientes={[]}
+                    promedioPorSeccion={promedioPorSeccion}
+                    dataGraficoTendenciaNiveles={[
+                      generarDataGraficoPiechart(estudiantes, monthSelected, evaluacion),
+                    ]}
+                    soloPieYCobertura={true}
+                  />
+                </div>
+
+                {/* 3. Comparativa por Secciones */}
+                <div className={styles.graficosContainer} style={{ marginTop: '2rem' }}>
+                  <GraficoTendenciaColegio
+                    evaluacion={evaluacion}
+                    datosPorMes={datosPorMes}
+                    mesesConDataDisponibles={mesesConDataDisponibles}
+                    promedioGlobal={promedioGlobal}
+                    monthSelected={monthSelected}
+                    evaluados={estudiantes.length}
+                    pendientes={0}
+                    listaPendientes={[]}
+                    promedioPorSeccion={promedioPorSeccion}
+                    dataGraficoTendenciaNiveles={[
+                      generarDataGraficoPiechart(estudiantes, monthSelected, evaluacion),
+                    ]}
+                    soloDocentesYSecciones={true}
+                  />
+                </div>
+
+                {/* 4. Gráficos de Tendencia (Acordeón 1) */}
+                <div className={accordionStyles.accordionContainer} style={{ overflow: mostrarGraficos ? 'visible' : 'hidden', marginTop: '2rem' }}>
+                  <div
+                    onClick={() => setMostrarGraficos(!mostrarGraficos)}
+                    className={mostrarGraficos ? accordionStyles.headerOpen : accordionStyles.header}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className={accordionStyles.titleGroup}>
+                      <span className={accordionStyles.icon}>📊</span>
+                      <h3 className={accordionStyles.title}>Gráficos de Tendencia</h3>
+                    </div>
+                    <div className={mostrarGraficos ? accordionStyles.chevronOpen : accordionStyles.chevron}>
+                      ▼
+                    </div>
+                  </div>
+
+                  <div className={`${accordionStyles.contentWrapper} ${mostrarGraficos ? accordionStyles.contentWrapperOpen : ''}`}>
+                    <div className={`${accordionStyles.contentInner} ${mostrarGraficos ? accordionStyles.innerVisible : ''}`}>
+                      {/* Custom Searchable Dropdown de Selección de Comparativa Múltiple */}
+                      <div className={styles.evalDropdownWrapper} ref={compDropdownRef} style={{ marginBottom: '1.5rem', width: '100%', maxWidth: '320px' }}>
+                        {loadingEvaluaciones ? (
+                          <div className={styles.evalDropdownTrigger} style={{ cursor: 'wait' }}>
+                            <span className={styles.triggerText}>Cargando evaluaciones...</span>
+                            <RiLoader4Line className={styles.loaderIcon} style={{ fontSize: '1rem', margin: 0 }} />
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setIsCompDropdownOpen(!isCompDropdownOpen)}
+                              className={styles.evalDropdownTrigger}
+                            >
+                              <span className={styles.triggerText}>
+                                {evaluacionesAComparar.length === 0
+                                  ? 'Comparar con otras evaluaciones...'
+                                  : `${evaluacionesAComparar.length} seleccionada(s) para comparar`}
+                              </span>
+                              <RiArrowDownSLine className={`${styles.chevronIcon} ${isCompDropdownOpen ? styles.chevronIconOpen : ''}`} />
+                            </button>
+
+                            {isCompDropdownOpen && (
+                              <div className={styles.evalOptionsPanel}>
+                                <div className={styles.evalSearchContainer}>
+                                  <div className={styles.evalSearchRelative}>
+                                    <input
+                                      type="text"
+                                      autoFocus
+                                      value={searchCompQuery}
+                                      onChange={(e) => setSearchCompQuery(e.target.value)}
+                                      placeholder="Buscar evaluación..."
+                                      className={styles.evalSearchInput}
+                                    />
+                                    <RiSearchLine className={styles.evalSearchIcon} />
+                                    {searchCompQuery && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setSearchCompQuery('')}
+                                        className={styles.evalSearchClearButton}
+                                      >
+                                        <RiCloseLine />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className={styles.evalOptionsList}>
+                                  {evaluacionesCompFiltradas.map((evalOption) => {
+                                    const isSelected = evaluacionesAComparar.includes(evalOption.id);
+                                    return (
+                                      <button
+                                        key={evalOption.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setEvaluacionesAComparar((prev) =>
+                                            prev.includes(evalOption.id)
+                                                  ? prev.filter((id) => id !== evalOption.id)
+                                                  : [...prev, evalOption.id]
+                                          );
+                                        }}
+                                        className={`${styles.evalOptionItem} ${
+                                          isSelected ? styles.evalOptionItemActive : ''
+                                        }`}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={isSelected}
+                                          readOnly
+                                          style={{ cursor: 'pointer' }}
+                                        />
+                                        <span>{evalOption.nombre || 'Sin nombre'}</span>
+                                      </button>
+                                    );
+                                  })}
+                                  {evaluacionesCompFiltradas.length === 0 && (
+                                    <div className={styles.evalNoResults}>
+                                      <RiErrorWarningLine className={styles.evalNoResultsIcon} />
+                                      <span className={styles.evalNoResultsText}>No se encontraron evaluaciones para comparar.</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      <div className={styles.graficosContainer}>
+                        <GraficoTendencia
+                          idEvaluacion={route.query.idExamen as string}
+                          evaluacionesAComparar={evaluacionesAComparar}
+                          dniDocente={currentUserData.dni}
+                          monthSelected={monthSelected}
+                          yearSelected={yearSelected}
+                          ocultarTabla={false}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
             ) : null}
 
-            {/* <GraficoTendenciaColegio estudiantes={estudiantes} monthSelected={monthSelected} evaluacion={evaluacion} /> */}
-            <ReporteEvaluacionPorPregunta
-              dataEstadisticasOrdenadas={dataEstadisticasOrdenadas}
-              preguntasMap={preguntasMap}
-              detectarNumeroOpciones={detectarNumeroOpciones}
-              warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined}
-              convertirGraficoAImagen={convertirGraficoAImagen}
-            />
+            {/* 5. Reporte de Evaluación por Pregunta (Acordeón 2) */}
+            <div className={accordionStyles.accordionContainer} style={{ marginTop: '2rem' }}>
+              <div
+                onClick={() => setMostrarReportePreguntas(!mostrarReportePreguntas)}
+                className={mostrarReportePreguntas ? accordionStyles.headerOpen : accordionStyles.header}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className={accordionStyles.titleGroup}>
+                  <span className={accordionStyles.icon}>📋</span>
+                  <h3 className={accordionStyles.title}>Reporte de Evaluación por Pregunta</h3>
+                </div>
+                <div className={mostrarReportePreguntas ? accordionStyles.chevronOpen : accordionStyles.chevron}>
+                  ▼
+                </div>
+              </div>
+
+              <div className={`${accordionStyles.contentWrapper} ${mostrarReportePreguntas ? accordionStyles.contentWrapperOpen : ''}`}>
+                <div className={`${accordionStyles.contentInner} ${mostrarReportePreguntas ? accordionStyles.innerVisible : ''}`}>
+                  <ReporteEvaluacionPorPregunta
+                    dataEstadisticasOrdenadas={dataEstadisticasOrdenadas}
+                    preguntasMap={preguntasMap}
+                    detectarNumeroOpciones={detectarNumeroOpciones}
+                    warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined}
+                    convertirGraficoAImagen={convertirGraficoAImagen}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
