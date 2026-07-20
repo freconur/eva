@@ -27,6 +27,7 @@ interface AcordeonReportePreguntaProps {
   setQuestionColumns: (val: number) => void;
   globalStyles?: any;
   mostrarDistrito?: boolean;
+  hideUgelSelect?: boolean;
 }
 
 import { MdViewStream, MdGridView, MdViewModule } from 'react-icons/md';
@@ -48,7 +49,8 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
   questionColumns,
   setQuestionColumns,
   globalStyles = {},
-  mostrarDistrito = false
+  mostrarDistrito = false,
+  hideUgelSelect = false
 }) => {
   const [mostrarReporte, setMostrarReporte] = useState(false);
 
@@ -121,6 +123,7 @@ const AcordeonReportePregunta: React.FC<AcordeonReportePreguntaProps> = ({
             columns={questionColumns}
             globalStyles={globalStyles}
             mostrarDistrito={mostrarDistrito}
+            hideUgelSelect={hideUgelSelect}
           />
         </div>
       </div>

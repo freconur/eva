@@ -97,6 +97,22 @@ export const useReporteAdmin = () => {
   const drillDownRef = useRef<HTMLDivElement>(null);
   const directorsDetailRef = useRef<HTMLDivElement>(null);
 
+  // --- SINCRONIZACIÓN DE REGION DE ESPECIALISTA UGEL ---
+  useEffect(() => {
+    if (currentUserData?.rol === 1 && currentUserData.region) {
+      setFiltros(prev => {
+        const regionStr = String(currentUserData.region);
+        if (prev.region !== regionStr) {
+          return {
+            ...prev,
+            region: regionStr
+          };
+        }
+        return prev;
+      });
+    }
+  }, [currentUserData]);
+
   // --- SINCRONIZACIÓN DE DISTRITOS SEGÚN LA REGION ---
   useEffect(() => {
     if (filtros.region) {
@@ -108,6 +124,9 @@ export const useReporteAdmin = () => {
   }, [filtros.region]);
 
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (e.target.name === 'region' && currentUserData?.rol === 1) {
+      return; // Bloquear cambio de región para especialista UGEL
+    }
     setFiltros(prev => ({
       ...prev,
       [e.target.name]: e.target.value,
@@ -721,18 +740,37 @@ export const useReporteAdmin = () => {
         return;
       }
 
-      const consolidadoRef = doc(db, `evaluaciones/${idEval}/consolidados`, `preguntas_${yearSelected}_${monthSelected}`);
-      const consolidadoSnap = await getDoc(consolidadoRef);
+      const hasRegionFilter = currentFiltros.region && currentFiltros.region !== 'all' && currentFiltros.region !== '';
 
-      if (consolidadoSnap.exists()) {
-        const { url } = consolidadoSnap.data();
-        if (url) {
-          const cacheBuster = `?t=${Date.now()}`;
-          const response = await fetch(url + cacheBuster);
-          const res = await response.json();
-          if (res.success && Array.isArray(res.data)) {
-            setDataReportePreguntas(res.data);
-            return;
+      if (hasRegionFilter) {
+        // Cargar reporte de preguntas filtrado por región llamando a la Cloud Function
+        const getReportePreguntasCall = httpsCallable(functions, 'getDataReporteEvaluacionPorPreguntas');
+        const response: any = await getReportePreguntasCall({
+          idEvaluacion: idEval,
+          año: String(yearSelected),
+          mes: String(monthSelected),
+          region: currentFiltros.region
+        });
+
+        if (response.data?.success && Array.isArray(response.data.data)) {
+          setDataReportePreguntas(response.data.data);
+          return;
+        }
+      } else {
+        // Carga global original vía JSON estático
+        const consolidadoRef = doc(db, `evaluaciones/${idEval}/consolidados`, `preguntas_${yearSelected}_${monthSelected}`);
+        const consolidadoSnap = await getDoc(consolidadoRef);
+
+        if (consolidadoSnap.exists()) {
+          const { url } = consolidadoSnap.data();
+          if (url) {
+            const cacheBuster = `?t=${Date.now()}`;
+            const response = await fetch(url + cacheBuster);
+            const res = await response.json();
+            if (res.success && Array.isArray(res.data)) {
+              setDataReportePreguntas(res.data);
+              return;
+            }
           }
         }
       }
@@ -778,7 +816,7 @@ export const useReporteAdmin = () => {
 
   const handleRestablecerFiltros = () => {
     const defaultFiltros = {
-      region: '',
+      region: currentUserData?.rol === 1 ? String(currentUserData.region) : '',
       distrito: '',
       genero: '',
       area: '',

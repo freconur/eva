@@ -354,3 +354,15 @@
     color: #059669 !important;
     font-weight: 700 !important;
 }
+
+.lockedFilterText {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    background-color: #f1f5f9;
+    color: #64748b;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+}

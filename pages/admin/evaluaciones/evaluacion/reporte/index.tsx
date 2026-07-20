@@ -564,6 +564,7 @@ const Reporte = () => {
               setQuestionColumns={setQuestionColumns}
               globalStyles={styles}
               mostrarDistrito={(evaluacion as any)?.realtimeEnabled === true}
+              hideUgelSelect={currentUserData?.rol === 1}
             />
           )}
 

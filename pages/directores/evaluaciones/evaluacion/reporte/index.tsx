@@ -468,7 +468,8 @@ const Reporte = () => {
         preguntasRespuestas,
         evaluacion,
         monthSelected,
-        nombreDocente: `${currentUserData.nombres || ''} ${currentUserData.apellidos || ''}`.trim() || 'Director'
+        nombreDocente: `${currentUserData.nombres || ''} ${currentUserData.apellidos || ''}`.trim() || 'Director',
+        tipoUsuario: 'Director'
       });
     } catch (error) {
       console.error('Error al exportar grilla:', error);

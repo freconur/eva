@@ -9,6 +9,7 @@ interface ExportarGrillaProps {
   evaluacion: any;
   monthSelected: number;
   nombreDocente: string;
+  tipoUsuario?: string;
 }
 
 export const exportarGrillaHeatmapPDF = ({
@@ -16,7 +17,8 @@ export const exportarGrillaHeatmapPDF = ({
   preguntasRespuestas,
   evaluacion,
   monthSelected,
-  nombreDocente
+  nombreDocente,
+  tipoUsuario
 }: ExportarGrillaProps) => {
   // Crear documento en formato horizontal (landscape)
   const doc = new jsPDF({
@@ -30,9 +32,10 @@ export const exportarGrillaHeatmapPDF = ({
   doc.setTextColor(40);
   doc.text(`Reporte de Evaluación: ${evaluacion.nombre || 'Sin nombre'}`, 14, 15);
   
+  const rolLabel = tipoUsuario || 'Docente';
   doc.setFontSize(9);
   doc.setTextColor(80);
-  doc.text(`Docente: ${nombreDocente}`, 14, 22);
+  doc.text(`${rolLabel}: ${nombreDocente}`, 14, 22);
   doc.text(`Mes: ${getMonthName(monthSelected)}`, 14, 26);
   doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 30);
 

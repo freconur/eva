@@ -21,6 +21,7 @@ interface FiltrosReporteProps {
   loading?: boolean;
   soloUgel?: boolean;
   mostrarDistrito?: boolean;
+  hideUgelSelect?: boolean;
 }
 
 const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
@@ -32,27 +33,39 @@ const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
   loading = false,
   soloUgel = false,
   mostrarDistrito = false,
+  hideUgelSelect = false,
 }) => {
   const showDistrito = !soloUgel || mostrarDistrito;
+  const showActions = !hideUgelSelect || showDistrito || !soloUgel;
+
   return (
     <div className={styles.filtersSection}>
       <div className={styles.filtersGrid}>
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>UGEL</label>
-          <select
-            name="region"
-            className={styles.filterSelect}
-            onChange={handleChangeFiltros}
-            value={filtros.region}
-          >
-            <option value="">Todas las UGEL</option>
-            {regiones.map((region, index) => (
-              <option key={index} value={region.id}>
-                {region.region}
-              </option>
-            ))}
-          </select>
-        </div>
+        {hideUgelSelect ? (
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>UGEL</label>
+            <div className={styles.lockedFilterText}>
+              {regiones.find(r => String(r.id) === filtros.region)?.region.toUpperCase() || 'MI UGEL'}
+            </div>
+          </div>
+        ) : (
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>UGEL</label>
+            <select
+              name="region"
+              className={styles.filterSelect}
+              onChange={handleChangeFiltros}
+              value={filtros.region}
+            >
+              <option value="">Todas las UGEL</option>
+              {regiones.map((region, index) => (
+                <option key={index} value={region.id}>
+                  {region.region}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {showDistrito && (
           <div className={styles.filterGroup}>
@@ -112,19 +125,20 @@ const FiltrosReporte: React.FC<FiltrosReporteProps> = ({
           </div>
         )}
 
-        <div className={styles.filterActions}>
-          <button
-            className={styles.primaryAction}
-            onClick={handleFiltrar}
-            disabled={loading}
-          >
-            {loading ? 'Filtrando...' : 'Filtrar'}
-          </button>
-          <button className={styles.secondaryAction} onClick={handleRestablecerFiltros}>
-            Limpiar
-          </button>
-
-        </div>
+        {showActions && (
+          <div className={styles.filterActions}>
+            <button
+              className={styles.primaryAction}
+              onClick={handleFiltrar}
+              disabled={loading}
+            >
+              {loading ? 'Filtrando...' : 'Filtrar'}
+            </button>
+            <button className={styles.secondaryAction} onClick={handleRestablecerFiltros}>
+              Limpiar
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

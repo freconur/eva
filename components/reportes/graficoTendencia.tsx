@@ -52,7 +52,7 @@ interface EvaluacionDataLocal {
 }
 
 const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [], dniDirector, dniDocente, monthSelected, yearSelected, ocultarTabla = false }: GraficoTendenciaProps) => {
-  const { evaluacion } = useGlobalContext();
+  const { evaluacion, currentUserData } = useGlobalContext();
 
   const [dataActual, setDataActual] = useState<EvaluacionDataLocal | null>(null);
   const [dataComparadas, setDataComparadas] = useState<EvaluacionDataLocal[]>([]);
@@ -155,7 +155,14 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [], dniDirecto
           }
         } else {
           // Lógica de Administrador: consulta global sin filtros de docente o director (como el main original)
-          const coll = collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${año}/${mes}`);
+          const baseColl = collection(db, `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${año}/${mes}`);
+
+          const esEspecialistaUgel = currentUserData?.perfil?.rol === 1 || currentUserData?.rol === 1;
+          const regionId = currentUserData?.region;
+
+          const coll = (esEspecialistaUgel && regionId !== undefined && regionId !== null)
+            ? query(baseColl, where('region', '==', Number(regionId)))
+            : baseColl;
 
           // 1. Puntaje promedio
           const snapshotAvg = await getAggregateFromServer(coll, {
@@ -234,7 +241,7 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [], dniDirecto
     return () => {
       isMounted = false;
     };
-  }, [idEvaluacion, dniDirector, dniDocente, monthSelected, yearSelected]);
+  }, [idEvaluacion, dniDirector, dniDocente, monthSelected, yearSelected, currentUserData?.region, currentUserData?.perfil?.rol, currentUserData?.rol]);
 
   // Cargar datos de las múltiples evaluaciones comparadas
   useEffect(() => {
@@ -312,7 +319,14 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [], dniDirecto
             }
           } else {
             // Lógica de Administrador: consulta global sin filtros de docente o director (como el main original)
-            const coll = collection(db, `/evaluaciones/${idComp}/estudiantes-evaluados/${año}/${mes}`);
+            const baseColl = collection(db, `/evaluaciones/${idComp}/estudiantes-evaluados/${año}/${mes}`);
+
+            const esEspecialistaUgel = currentUserData?.perfil?.rol === 1 || currentUserData?.rol === 1;
+            const regionId = currentUserData?.region;
+
+            const coll = (esEspecialistaUgel && regionId !== undefined && regionId !== null)
+              ? query(baseColl, where('region', '==', Number(regionId)))
+              : baseColl;
 
             // 1. Puntaje promedio
             const snapshotAvg = await getAggregateFromServer(coll, {
@@ -399,7 +413,7 @@ const GraficoTendencia = ({ idEvaluacion, evaluacionesAComparar = [], dniDirecto
     return () => {
       isMounted = false;
     };
-  }, [evaluacionesAComparar, dniDirector, dniDocente, monthSelected, yearSelected]);
+  }, [evaluacionesAComparar, dniDirector, dniDocente, monthSelected, yearSelected, currentUserData?.region, currentUserData?.perfil?.rol, currentUserData?.rol]);
 
   // Configuración del gráfico de promedios (barras y líneas)
   const labelsPromedios = [dataActual?.nombre || 'Evaluación Actual'];
