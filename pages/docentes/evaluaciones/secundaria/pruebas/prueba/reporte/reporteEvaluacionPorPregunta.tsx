@@ -10,6 +10,7 @@ interface ReporteEvaluacionPorPreguntaProps {
   detectarNumeroOpciones: number;
   warningEvaEstudianteSinRegistro?: string;
   convertirGraficoAImagen: (idPregunta: string, canvasRef: HTMLCanvasElement | null) => void;
+  forceOneColumn?: boolean;
 }
 
 const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> = ({
@@ -17,7 +18,8 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   preguntasMap,
   detectarNumeroOpciones,
   warningEvaEstudianteSinRegistro,
-  convertirGraficoAImagen
+  convertirGraficoAImagen,
+  forceOneColumn = false
 }) => {
   // Estado para controlar el número de columnas (por defecto 2)
   const [numeroColumnas, setNumeroColumnas] = useState<number>(2);
@@ -97,6 +99,7 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
   };
 
   const options = {
+    animation: false as const, // Desactivar animaciones para asegurar la captura completa e inmediata del gráfico
     plugins: {
       legend: {
         position: 'center' as const,
@@ -133,6 +136,8 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
     scales: {
       x: {
         ticks: {
+          maxRotation: 0,
+          minRotation: 0,
           color: function(context: any) {
             const label = context.tick.label;
             // Si la etiqueta contiene un check, usar color verde
@@ -143,7 +148,7 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
           },
           font: {
             family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-            size: 12,
+            size: 11,
             weight: 'bold' as const
           }
         }
@@ -251,7 +256,7 @@ const ReporteEvaluacionPorPregunta: React.FC<ReporteEvaluacionPorPreguntaProps> 
       <div 
         className={styles.reportContainer}
         style={{
-          '--num-cols': numeroColumnas,
+          '--num-cols': forceOneColumn ? 1 : numeroColumnas,
           display: 'grid'
         } as React.CSSProperties}
       >

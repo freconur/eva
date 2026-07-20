@@ -21,9 +21,9 @@ export const useGenerarImagenesGraficos = ({ reporteDirectorOrdenado }: UseGener
       const tempCanvas = document.createElement('canvas');
       const tempCtx = tempCanvas.getContext('2d');
       
-      // Dimensiones optimizadas para calidad y tamaño balanceado
-      const pdfWidth = 900; // Reducido de 1200 a 900 para tamaño más compacto
-      const pdfHeight = 600; // Reducido de 800 a 600 para tamaño más compacto
+      // Dimensiones optimizadas para calidad y tamaño balanceado (1.75 de relación de aspecto)
+      const pdfWidth = 1050;
+      const pdfHeight = 600;
       
       tempCanvas.width = pdfWidth;
       tempCanvas.height = pdfHeight;

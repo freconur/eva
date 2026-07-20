@@ -9,14 +9,17 @@
 .selectContainer {
   display: flex;
   flex-wrap: wrap;
-  justify-content: start;
+  justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  /* padding: 1.5rem;
-  background-color: white;
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); */
-  /*  margin-bottom: 1rem; */
+  width: 100%;
+}
+
+.leftSelects {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .loaderContent {
@@ -1062,4 +1065,185 @@
 .evalNoResultsText {
   font-size: 0.875rem;
   text-align: center;
+}
+
+/* ============================================
+   Export Dropdown Styles
+   ============================================ */
+
+.headerActions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.exportButtonsContainer {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Custom Dropdown for Export */
+.customDropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdownTrigger {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  background-color: #ffffff;
+  color: #111827;
+  border: 1.5px solid #3b82f6;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.875rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 200px;
+  justify-content: space-between;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dropdownTrigger:hover:not(:disabled) {
+  background-color: #f0f7ff;
+  border-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06);
+}
+
+.dropdownTrigger:disabled {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.dropdownActive {
+  border-color: #1d4ed8;
+  background-color: #f0f7ff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.dropdownIcon {
+  font-size: 1.125rem;
+  color: #3b82f6;
+}
+
+.arrowIcon {
+  font-size: 1rem;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.arrowRotate {
+  transform: rotate(180deg);
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  min-width: 280px;
+  z-index: 1000;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.dropdownItem:hover:not(.itemDisabled) {
+  background-color: #f9fafb;
+}
+
+.dropdownItem:active:not(.itemDisabled) {
+  background-color: #f3f4f6;
+}
+
+.itemDisabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.itemIconPdf {
+  font-size: 1.5rem;
+  color: #ef4444;
+}
+
+.itemIconExcel {
+  font-size: 1.5rem;
+  color: #10b981;
+}
+
+.itemIconQuestions {
+  font-size: 1.5rem;
+  color: #8b5cf6;
+}
+
+.itemContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.itemTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.itemDescription {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.loaderIconSmall {
+  animation: spin 1s linear infinite;
+  font-size: 1rem;
+  color: #8b5cf6;
+}
+
+/* Responsive for export dropdown */
+@media (max-width: 768px) {
+  .headerActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .exportButtonsContainer {
+    flex-direction: column;
+  }
 }

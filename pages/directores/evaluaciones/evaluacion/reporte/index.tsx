@@ -21,9 +21,12 @@ import {
 } from '@/fuctions/regiones';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { DataEstadisticas, PreguntasRespuestas, UserEstudiante } from '@/features/types/types';
-import { RiLoader4Line, RiSettings4Line, RiArrowDownSLine, RiSearchLine, RiCloseLine, RiErrorWarningLine } from 'react-icons/ri';
+import { RiLoader4Line, RiSettings4Line, RiArrowDownSLine, RiSearchLine, RiCloseLine, RiErrorWarningLine, RiFileExcel2Line, RiFilePdfLine } from 'react-icons/ri';
+import { IoIosArrowDown } from 'react-icons/io';
+import { HiOutlineDownload } from 'react-icons/hi';
 import styles from './Reporte.module.css';
-import { currentMonth, getAllMonths } from '@/fuctions/dates';
+import { currentMonth, getAllMonths, getMonthName } from '@/fuctions/dates';
+import { exportEstudiantesToExcel } from '@/features/utils/excelExport';
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
 import { useGlobalContextDispatch } from '@/features/context/GlolbalContext';
 import { AppAction } from '@/features/actions/appAction';
@@ -71,10 +74,13 @@ const Reporte = () => {
     nivel: (route.query.nivel as string) || '',
   });
   const [loadingMonth, setLoadingMonth] = useState<boolean>(false);
+  const [loadingExport, setLoadingExport] = useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   const [showConfig, setShowConfig] = useState<boolean>(false);
   const [mostrarGraficos, setMostrarGraficos] = useState<boolean>(false);
   const [mostrarReportePreguntas, setMostrarReportePreguntas] = useState<boolean>(false);
   const configRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [isMounted, setIsMounted] = useState<boolean>(false);
   useEffect(() => {
@@ -152,6 +158,17 @@ const Reporte = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showConfig]);
+
+  // Cerrar el dropdown de exportación al hacer click fuera
+  useEffect(() => {
+    const handleClickOutsideExport = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutsideExport);
+    return () => document.removeEventListener('mousedown', handleClickOutsideExport);
+  }, []);
 
   const [columnasVisibles, setColumnasVisibles] = useState({
     showRC: true,
@@ -425,6 +442,50 @@ const Reporte = () => {
       genero: '',
       nivel: ''
     });
+  };
+
+  // --- Handlers de exportación ---
+  const handleExportToExcel = () => {
+    setLoadingExport(true);
+    try {
+      const evalName = evaluacion?.nombre || 'evaluacion';
+      const fileName = `reporte_director_${evalName}_${getMonthName(monthSelected)}.xlsx`;
+      exportEstudiantesToExcel(estudiantesFiltrados, fileName, preguntasRespuestas);
+    } catch (error) {
+      console.error('Error al exportar a Excel:', error);
+    } finally {
+      setLoadingExport(false);
+    }
+  };
+
+  const handleExportarGrillaPDF = async () => {
+    const { exportarGrillaHeatmapPDF } = await import('@/features/utils/exportarGrillaHeatmapPDF');
+
+    setLoadingExport(true);
+    try {
+      exportarGrillaHeatmapPDF({
+        estudiantes: estudiantesFiltrados,
+        preguntasRespuestas,
+        evaluacion,
+        monthSelected,
+        nombreDocente: `${currentUserData.nombres || ''} ${currentUserData.apellidos || ''}`.trim() || 'Director'
+      });
+    } catch (error) {
+      console.error('Error al exportar grilla:', error);
+    } finally {
+      setLoadingExport(false);
+    }
+  };
+
+  const handleExportOption = (type: string) => {
+    if (type === 'excel') {
+      handleExportToExcel();
+    } else if (type === 'pdf-tabla') {
+      handleExportarGrillaPDF();
+    } else if (type === 'pdf-preguntas') {
+      handleGenerarPDF();
+    }
+    setIsOpen(false);
   };
 
   const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
@@ -720,54 +781,115 @@ const Reporte = () => {
         <div className={styles.mainContainer}>
           <div className={styles.content}>
             <div className={styles.selectContainer}>
-              <div className={styles.selectWrapper}>
-                <select
-                  className={styles.select}
-                  onChange={handleChangeYear}
-                  value={yearSelected}
-                >
-                  {yearsAvailable.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
+              <div className={styles.leftSelects}>
+                <div className={styles.selectWrapper}>
+                  <select
+                    className={styles.select}
+                    onChange={handleChangeYear}
+                    value={yearSelected}
+                  >
+                    {yearsAvailable.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={styles.selectWrapper}>
+                  <select
+                    className={styles.select}
+                    onChange={handleChangeMonth}
+                    value={monthSelected}
+                    disabled={true}
+                    id=""
+                  >
+                    {evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null ? (
+                      (() => {
+                        const examMonthId = Number(evaluacion.mesDelExamen);
+                        const mes = getAllMonths.find(m => m.id === examMonthId);
+                        return mes ? (
+                          <option key={mes.id} value={mes.id}>
+                            {mes.name}
+                          </option>
+                        ) : null;
+                      })()
+                    ) : (
+                      <>
+                        <option value="">Mes</option>
+                        {getAllMonths.filter(mes => mesesConDataDisponibles.includes(mes.id)).map((mes) => (
+                          <option key={mes.id} value={mes.id}>
+                            {mes.name}
+                          </option>
+                        ))}
+                      </>
+                    )}
+                  </select>
+                  {loadingMonth && (
+                    <div className={styles.monthLoader}>
+                      <RiLoader4Line className={styles.loaderIcon} />
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className={styles.selectWrapper}>
-                <select
-                  className={styles.select}
-                  onChange={handleChangeMonth}
-                  value={monthSelected}
-                  disabled={true}
-                  id=""
-                >
-                  {evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null ? (
-                    (() => {
-                      const examMonthId = Number(evaluacion.mesDelExamen);
-                      const mes = getAllMonths.find(m => m.id === examMonthId);
-                      return mes ? (
-                        <option key={mes.id} value={mes.id}>
-                          {mes.name}
-                        </option>
-                      ) : null;
-                    })()
-                  ) : (
-                    <>
-                      <option value="">Mes</option>
-                      {getAllMonths.filter(mes => mesesConDataDisponibles.includes(mes.id)).map((mes) => (
-                        <option key={mes.id} value={mes.id}>
-                          {mes.name}
-                        </option>
-                      ))}
-                    </>
-                  )}
-                </select>
-                {loadingMonth && (
-                  <div className={styles.monthLoader}>
-                    <RiLoader4Line className={styles.loaderIcon} />
+              {/* Dropdown de exportación */}
+              <div className={styles.headerActions} style={{ marginBottom: 0 }}>
+                <div className={styles.exportButtonsContainer}>
+                  <div className={styles.customDropdown} ref={dropdownRef}>
+                    <button
+                      className={`${styles.dropdownTrigger} ${isOpen ? styles.dropdownActive : ''}`}
+                      onClick={() => setIsOpen(!isOpen)}
+                      disabled={loadingExport || loadingPDF || !estudiantesFiltrados || estudiantesFiltrados.length === 0}
+                    >
+                      <HiOutlineDownload className={styles.dropdownIcon} />
+                      <span>{loadingExport || loadingPDF ? 'Procesando...' : 'Exportar Reporte'}</span>
+                      <IoIosArrowDown className={`${styles.arrowIcon} ${isOpen ? styles.arrowRotate : ''}`} />
+                    </button>
+
+                    {isOpen && (
+                      <div className={styles.dropdownMenu}>
+                        <div
+                          className={styles.dropdownItem}
+                          onClick={() => handleExportOption('pdf-tabla')}
+                        >
+                          <RiFilePdfLine className={styles.itemIconPdf} />
+                          <div className={styles.itemContent}>
+                            <span className={styles.itemTitle}>Exportar Grilla PDF</span>
+                            <span className={styles.itemDescription}>Reporte tabular de resultados</span>
+                          </div>
+                        </div>
+                        <div
+                          className={styles.dropdownItem}
+                          onClick={() => handleExportOption('excel')}
+                        >
+                          <RiFileExcel2Line className={styles.itemIconExcel} />
+                          <div className={styles.itemContent}>
+                            <span className={styles.itemTitle}>Exportar a Excel</span>
+                            <span className={styles.itemDescription}>Datos crudos para análisis</span>
+                          </div>
+                        </div>
+                        <div
+                          className={`${styles.dropdownItem} ${(!imagenesGeneradas || reporteCompletoConImagenes.length === 0) ? styles.itemDisabled : ''}`}
+                          onClick={() => {
+                            if (imagenesGeneradas && reporteCompletoConImagenes.length > 0) {
+                              handleExportOption('pdf-preguntas');
+                            }
+                          }}
+                        >
+                          <RiFilePdfLine className={styles.itemIconQuestions} />
+                          <div className={styles.itemContent}>
+                            <span className={styles.itemTitle}>
+                              {!imagenesGeneradas ? 'Preparando PDF Preguntas...' : 'Generar PDF Preguntas'}
+                            </span>
+                            <span className={styles.itemDescription}>Reporte gráfico detallado</span>
+                          </div>
+                          {!imagenesGeneradas && <RiLoader4Line className={styles.loaderIconSmall} />}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
             <div className={styles.filtersContainer}>
@@ -939,6 +1061,7 @@ const Reporte = () => {
                     showTP: columnasVisibles.showTP,
                     showDniDocente: columnasVisibles.showDniDocente
                   }}
+                  showEditButton={false}
                   className={styles.tableWrapper}
                 />
 
@@ -1128,10 +1251,22 @@ const Reporte = () => {
                         preguntasMap={preguntasMap}
                         detectarNumeroOpciones={detectarNumeroOpciones}
                         warningEvaEstudianteSinRegistro={undefined}
-                        convertirGraficoAImagen={convertirGraficoAImagen}
+                        convertirGraficoAImagen={() => {}} // No-op para la vista interactiva
                       />
                     </div>
                   </div>
+                </div>
+
+                {/* Renderizado off-screen para asegurar que los gráficos se generen siempre para el PDF, incluso con el acordeón cerrado */}
+                <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '700px', height: 'auto', overflow: 'hidden', pointerEvents: 'none' }}>
+                  <ReporteEvaluacionPorPregunta
+                    dataEstadisticasOrdenadas={reporteDirectorOrdenado}
+                    preguntasMap={preguntasMap}
+                    detectarNumeroOpciones={detectarNumeroOpciones}
+                    warningEvaEstudianteSinRegistro={undefined}
+                    convertirGraficoAImagen={convertirGraficoAImagen}
+                    forceOneColumn={true}
+                  />
                 </div>
               </>
             )}

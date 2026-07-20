@@ -33,8 +33,8 @@ export const useGenerarPDFReporte = ({
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
 
-        // Dimensiones optimizadas para calidad y tamaño balanceado
-        const pdfWidth = 900;
+        // Dimensiones optimizadas para calidad y tamaño balanceado (1.75 de relación de aspecto)
+        const pdfWidth = 1050;
         const pdfHeight = 600;
 
         tempCanvas.width = pdfWidth;

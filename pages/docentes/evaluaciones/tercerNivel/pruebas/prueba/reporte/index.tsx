@@ -1066,10 +1066,22 @@ const Reportes = () => {
                     preguntasMap={preguntasMap}
                     detectarNumeroOpciones={detectarNumeroOpciones}
                     warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined}
-                    convertirGraficoAImagen={convertirGraficoAImagen}
+                    convertirGraficoAImagen={() => {}} // No-op para la vista interactiva
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Renderizado off-screen para asegurar que los gráficos se generen siempre para el PDF, incluso con el acordeón cerrado */}
+            <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '700px', height: 'auto', overflow: 'hidden', pointerEvents: 'none' }}>
+              <ReporteEvaluacionPorPregunta
+                dataEstadisticasOrdenadas={dataEstadisticasOrdenadas}
+                preguntasMap={preguntasMap}
+                detectarNumeroOpciones={detectarNumeroOpciones}
+                warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined}
+                convertirGraficoAImagen={convertirGraficoAImagen}
+                forceOneColumn={true}
+              />
             </div>
           </div>
         </div>

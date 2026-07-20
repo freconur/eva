@@ -207,27 +207,30 @@ const PreguntaItem = ({ item }: { item: ReporteItem }) => {
   const calcularPorcentaje = (valor: number) => ((valor / total) * 100).toFixed(0);
   
   return (
-    <View style={[styles.questionSection, { marginBottom: 40 }]}>
-      <Text style={[styles.questionNumber, { textAlign: 'left' }]}>
-        {item.index}. {limpiarTexto(item.pregunta).replace(/^\d+\.\s*/, '')}
+    <View style={[styles.questionSection, { marginBottom: 35 }]}>
+      {/* Título: Pregunta X */}
+      <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#111827', marginBottom: 4, textAlign: 'left' }}>
+        Pregunta {item.index}
       </Text>
       
-      <View style={styles.questionDetails}>
-        <Text style={{ textAlign: 'left' }}>
-          <Text style={styles.questionLabel}>Actuación:</Text>
-          <Text style={styles.questionValue}> {limpiarTexto(item.actuacion)}</Text>
-        </Text>
-      </View>
+      {/* Texto de la pregunta */}
+      <Text style={{ fontSize: 10, color: '#374151', marginBottom: 12, paddingLeft: 10, textAlign: 'left', lineHeight: 1.3 }}>
+        {item.index}.{limpiarTexto(item.pregunta).replace(/^\d+\.\s*/, '')}
+      </Text>
       
-      <View style={styles.questionDetails}>
-        <Text style={{ textAlign: 'left' }}>
-          <Text style={styles.questionLabel}>Respuesta correcta:</Text>
-          <Text style={styles.questionValue}> {item.respuesta}</Text>
-        </Text>
-      </View>
+      {/* Etiqueta Actuacion: */}
+      <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#111827', marginBottom: 4, paddingLeft: 10, textAlign: 'left' }}>
+        Actuacion:
+      </Text>
+      
+      {/* Contenido de la actuación */}
+      <Text style={{ fontSize: 10, color: '#374151', marginBottom: 15, paddingLeft: 10, textAlign: 'left', lineHeight: 1.3 }}>
+        {limpiarTexto(item.actuacion)}
+      </Text>
 
+      {/* Imagen del gráfico */}
       {item.graficoImagen && (
-        <View style={[styles.chartContainer, { marginTop: 10 }]}>
+        <View style={styles.chartContainer}>
           <Image 
             src={item.graficoImagen} 
             style={styles.chartImage}
@@ -236,7 +239,8 @@ const PreguntaItem = ({ item }: { item: ReporteItem }) => {
         </View>
       )}
 
-      <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 10, marginBottom: 20 }}>
+      {/* Leyenda de alternativas debajo del gráfico */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 10, marginBottom: 5 }}>
         {[
           { label: 'A', val: a, color: '#9bbb58' },
           { label: 'B', val: b, color: '#f89646' },
@@ -246,8 +250,8 @@ const PreguntaItem = ({ item }: { item: ReporteItem }) => {
           const isCorrect = item.respuesta?.toLowerCase() === alt.label.toLowerCase();
           return (
             <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 8 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: alt.color, marginRight: 4 }} />
-              <Text style={{ fontSize: 9, color: '#34495e', fontWeight: isCorrect ? 'bold' : 'normal' }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: alt.color, marginRight: 4 }} />
+              <Text style={{ fontSize: 8, color: '#4b5563', fontWeight: isCorrect ? 'bold' : 'normal' }}>
                 {alt.label}({alt.val} - {calcularPorcentaje(alt.val)}%){isCorrect ? ' ✓' : ''}
               </Text>
             </View>
