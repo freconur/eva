@@ -1,0 +1,33 @@
+name: CI - Verificación de compilación
+
+on:
+  push:
+    branches:
+      - '**' # Se activa para cualquier push a cualquier rama (incluyendo la tuya)
+  pull_request:
+    branches:
+      - '**' # Se activa para cualquier PR en cualquier rama
+
+jobs:
+  verify:
+    name: Build & Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Validar tipos de TypeScript
+        run: npx tsc --noEmit
+
+      - name: Compilar proyecto (Next.js Build)
+        run: npm run build
