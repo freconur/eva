@@ -1,6 +1,6 @@
 import { Estudiante, LoginData, Region, User } from '../types/types';
 import {
-  browserSessionPersistence,
+  browserLocalPersistence,
   getAuth,
   onAuthStateChanged,
   setPersistence,
@@ -136,6 +136,7 @@ const useUsuario = () => {
           nivel: user.data()?.nivel || 0,
           nivelesInstitucion: user.data()?.nivelesInstitucion || [],
           area: user.data()?.area,
+          caracteristicaCurricular: user.data()?.caracteristicaCurricular,
           distrito: user.data()?.distrito || '',
           email: user.data()?.email || '',
           celular: user.data()?.celular || '',
@@ -166,7 +167,7 @@ const useUsuario = () => {
     console.log('loginDatad', loginData);
     try {
       // return await signInWithEmailAndPassword(auth, loginData.usuario, loginData.contrasena)
-      await setPersistence(auth, browserSessionPersistence)
+      await setPersistence(auth, browserLocalPersistence)
         .then(async () => {
           return await signInWithEmailAndPassword(auth, loginData.usuario, loginData.contrasena);
         })

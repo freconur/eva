@@ -179,11 +179,12 @@ export const exportDirectorDocenteDataToExcel = (
 
     let nivelNombre = '';
     if (nivelYPuntaje && Array.isArray(nivelYPuntaje) && nivelYPuntaje.length > 0 && total > 0) {
+      const promedioParaNivel = Math.round(promedio);
       const nivelesOrdenados = [...nivelYPuntaje].sort((a, b) => (a.min || 0) - (b.min || 0));
       for (const nivelData of nivelesOrdenados) {
         const minPuntaje = nivelData.min || 0;
         const maxPuntaje = nivelData.max || Number.MAX_SAFE_INTEGER;
-        if (promedio >= minPuntaje && promedio <= maxPuntaje) {
+        if (promedioParaNivel >= minPuntaje && promedioParaNivel <= maxPuntaje) {
           nivelNombre = nivelData.nivel || '';
           break;
         }

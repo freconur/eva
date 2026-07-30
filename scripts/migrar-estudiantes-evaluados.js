@@ -2,33 +2,71 @@ const admin = require('firebase-admin');
 const serviceAccount = require('../eva-ugel.json');
 
 // Inicializar Firebase Admin
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+}
 
 const db = admin.firestore();
 
 // CONSTANTES CONFIGURABLES
-const ID_EVALUACION = 'nbzUoQbbKgIDvSEURc4p'; // Pon el ID de la evaluación aquí
+// Puede ser una sola cadena (string) "id_evaluacion" o un arreglo (Array) de cadenas ["id1", "id2", ...]
+
+const IDS_EVALUACIONES = [
+  "0r2RvV5vMwCj993ub2aI",
+  "13yP88FwKVVQwREpOeg9",
+  "1igVIs8tD91unSAy8Bv5",
+  "4u54TaVqAEGsajItfwnE",
+  "7a7tcReh0PmObm6CXCXB",
+  "9iW7yTanY368mqvG0tk2",
+  "A03SoBidQLgzqznVktoC",
+  "DLw1tV0Aw2ifFVXD2NHu",
+  "GDQaRsvAPZgBGrmTlF8D",
+  "HuPxUrbtMcARXK7lt0MW",
+  "KDF3bnjOGJ09wLy4v5VO",
+  "SYodnwI1WCA8uH4Y9rFo",
+  "UihuHA37DhKgrJGNtWpm",
+  "XDiX3VGecMrbw14RVWPj",
+  "bdqn123aSS7KxHC8fZ06",
+  "bqemoSFPwkqxg1U3kauW",
+  "dG03PPrsxeEcL6Ehxb0T",
+  "deliVGyCw8AbUDyBC46U",
+  "eS22sTjZCAQL3ulebEbU",
+  "eiYpjTfa0MRzUSF79HeI",
+  "iDcUub7RZj3PwYgptLvc",
+  "mIciQwXo8hDTuJmLgCer",
+  "nbzUoQbbKgIDvSEURc4p",
+  "qXeUiomrPgxZo9aBrgVF",
+  "qZPpfFkLOR3FW1cV54S7",
+  "s7xdkMLKfiZeqiUmL4sd",
+  "sxB9Ebzs4tQ1ZP7iz4il",
+  "uFP0X7TP2gyyCc764M4E",
+  "yxWQOSOfGkdpWKKFMmpQ"
+];
+
 const ANIO = '2026';
 const MES = '6';
 
 async function migrarEstudiantes() {
   console.log('--- Iniciando migración eficiente de estudiantes-evaluados ---');
-  console.log(`Evaluación: ${ID_EVALUACION}`);
-  console.log(`Año: ${ANIO}, Mes: ${MES}`);
 
-  if (ID_EVALUACION === 'REEMPLAZAR_CON_ID_EVALUACION') {
-    console.error('ERROR: Por favor especifica un ID_EVALUACION válido en el script.');
+  // Convertir a arreglo en caso de que se pase una sola cadena de ID
+  const listaEvaluaciones = Array.isArray(IDS_EVALUACIONES) ? IDS_EVALUACIONES : [IDS_EVALUACIONES];
+
+  if (!listaEvaluaciones || listaEvaluaciones.length === 0) {
+    console.error('ERROR: Por favor especifica al menos un ID de evaluación en IDS_EVALUACIONES.');
     process.exit(1);
   }
 
+  console.log(`Año: ${ANIO}, Mes: ${MES}`);
+  console.log(`Total de evaluaciones a procesar: ${listaEvaluaciones.length}`);
+
   try {
-    // 1. Obtener directores (rol === 2) con select y get
-    console.log('Obteniendo información de directores (rol === 2)...');
+    // 1. Obtener directores (rol === 2) con select y get (Carga 1 sola vez en RAM)
+    console.log('\nObteniendo información de directores (rol === 2)...');
     const usuariosRef = db.collection('usuarios');
 
-    // Seleccionar únicamente los campos requeridos para ahorrar ancho de banda
     const directoresSnapshot = await usuariosRef
       .where('rol', '==', 2)
       .select('area', 'caracteristicaCurricular', 'institucion', 'nivelDeInstitucion', 'tipoGestion', 'dni')
@@ -55,79 +93,87 @@ async function migrarEstudiantes() {
         tipoGestion: data.tipoGestion !== undefined ? data.tipoGestion : ''
       };
 
-      // Mapear también por el campo 'dni' si existe y es diferente de doc.id
       if (data.dni && data.dni !== doc.id) {
         directorMap[data.dni] = directorMap[dni];
       }
     });
 
-    // 2. Obtener estudiantes evaluados usando select y stream
-    const estudiantesRef = db
-      .collection('evaluaciones')
-      .doc(ID_EVALUACION)
-      .collection('estudiantes-evaluados')
-      .doc(ANIO)
-      .collection(MES);
+    let totalGlobalActualizados = 0;
+    let totalGlobalIgnorados = 0;
 
-    console.log(`Abriendo stream de estudiantes evaluados en /evaluaciones/${ID_EVALUACION}/estudiantes-evaluados/${ANIO}/${MES}...`);
+    // 2. Iterar sobre la lista de evaluaciones
+    for (let index = 0; index < listaEvaluaciones.length; index++) {
+      const idEvaluacion = listaEvaluaciones[index];
+      console.log(`\n==================================================`);
+      console.log(`[${index + 1}/${listaEvaluaciones.length}] Procesando Evaluación: ${idEvaluacion}`);
+      console.log(`==================================================`);
 
-    // Seleccionamos solo el dniDirector del estudiante para el cruce (máxima eficiencia de lectura)
-    const estudiantesStream = estudiantesRef
-      .select('dniDirector')
-      .stream();
+      const estudiantesRef = db
+        .collection('evaluaciones')
+        .doc(idEvaluacion)
+        .collection('estudiantes-evaluados')
+        .doc(ANIO)
+        .collection(MES);
 
-    let count = 0;
-    let skippedCount = 0;
-    let batch = db.batch();
-    let batchCount = 0;
+      const estudiantesStream = estudiantesRef
+        .select('dniDirector')
+        .stream();
 
-    // Procesamiento secuencial del stream
-    for await (const doc of estudiantesStream) {
-      const studentData = doc.data();
-      const dniDirector = studentData.dniDirector;
+      let count = 0;
+      let skippedCount = 0;
+      let batch = db.batch();
+      let batchCount = 0;
 
-      if (!dniDirector) {
-        skippedCount++;
-        continue;
+      for await (const doc of estudiantesStream) {
+        const studentData = doc.data();
+        const dniDirector = studentData.dniDirector;
+
+        if (!dniDirector) {
+          skippedCount++;
+          continue;
+        }
+
+        const directorData = directorMap[dniDirector];
+
+        if (!directorData) {
+          skippedCount++;
+          continue;
+        }
+
+        batch.update(doc.ref, {
+          area: directorData.area,
+          caracteristicaCurricular: directorData.caracteristicaCurricular,
+          institucion: directorData.institucion,
+          nivelDeInstitucion: directorData.nivelDeInstitucion,
+          tipoGestion: directorData.tipoGestion,
+          ultimaActualizacion: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        count++;
+        batchCount++;
+
+        if (batchCount === 499) {
+          await batch.commit();
+          console.log(`  Lote enviado. Estudiantes actualizados en esta evaluación: ${count}`);
+          batch = db.batch();
+          batchCount = 0;
+        }
       }
 
-      const directorData = directorMap[dniDirector];
-
-      if (!directorData) {
-        skippedCount++;
-        continue;
-      }
-
-      // Preparar la actualización con las 5 propiedades del director
-      batch.update(doc.ref, {
-        area: directorData.area,
-        caracteristicaCurricular: directorData.caracteristicaCurricular,
-        institucion: directorData.institucion,
-        nivelDeInstitucion: directorData.nivelDeInstitucion,
-        tipoGestion: directorData.tipoGestion,
-        ultimaActualizacion: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      count++;
-      batchCount++;
-
-      // Enviar lotes de hasta 500 escrituras (límite de Firestore)
-      if (batchCount === 499) {
+      if (batchCount > 0) {
         await batch.commit();
-        console.log(`Lote enviado. Estudiantes actualizados: ${count}`);
-        batch = db.batch();
-        batchCount = 0;
       }
+
+      console.log(`  Resumen Evaluación (${idEvaluacion}): ${count} actualizados, ${skippedCount} ignorados.`);
+      totalGlobalActualizados += count;
+      totalGlobalIgnorados += skippedCount;
     }
 
-    // Enviar el último lote restante si contiene operaciones
-    if (batchCount > 0) {
-      await batch.commit();
-    }
-
-    console.log('--- Proceso de migración finalizado con éxito ---');
-    console.log(`Total de estudiantes actualizados: ${count}`);
-    console.log(`Total de estudiantes ignorados (sin cruce de director): ${skippedCount}`);
+    console.log('\n==================================================');
+    console.log('🎉 --- Proceso global de migración finalizado con éxito --- 🎉');
+    console.log(`Total acumulado de estudiantes actualizados: ${totalGlobalActualizados}`);
+    console.log(`Total acumulado de estudiantes ignorados: ${totalGlobalIgnorados}`);
+    console.log('==================================================');
 
   } catch (error) {
     console.error('Error durante la migración:', error);

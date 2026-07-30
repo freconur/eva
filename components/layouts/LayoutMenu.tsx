@@ -12,6 +12,7 @@ import Image from 'next/image'
 import logo from '@/assets/cl-logo.png'
 import styles from './layout.module.css'
 import ModalTipoGestion from '@/modals/ModalTipoGestion'
+import ModalConfigurarPerfilDirector, { isDirectorProfileIncomplete } from '@/modals/ModalConfigurarPerfilDirector'
 import ModalConfigurarSeguridad from '@/modals/ModalConfigurarSeguridad'
 import ModalConfigurarDistrito from '@/modals/ModalConfigurarDistrito'
 import { doc, onSnapshot } from 'firebase/firestore'
@@ -295,12 +296,12 @@ const LayoutMenu = ({ children }: Props) => {
         </main>
       </div>
 
-      {/* Modal obligatorio para directores sin tipo de gestión definido */}
+      {/* Modal obligatorio para directores con información incompleta */}
       {!isAuditing &&
         currentUserData.perfil?.rol === 2 &&
-        currentUserData.tipoGestion === undefined &&
+        isDirectorProfileIncomplete(currentUserData) &&
         router.pathname !== '/login' && (
-          <ModalTipoGestion currentUserData={currentUserData} />
+          <ModalConfigurarPerfilDirector currentUserData={currentUserData} />
       )}
     </div>
   )
