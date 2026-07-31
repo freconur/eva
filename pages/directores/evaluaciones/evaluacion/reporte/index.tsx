@@ -18,6 +18,7 @@ import {
   convertGrade,
   converSeccion,
   gradosDeColegio,
+  getGradoTexto,
 } from '@/fuctions/regiones';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { DataEstadisticas, PreguntasRespuestas, UserEstudiante } from '@/features/types/types';
@@ -112,7 +113,11 @@ const Reporte = () => {
     let list = evaluacionesDb.filter((ev) => ev.id !== evaluacion?.id);
     if (searchCompQuery.trim()) {
       const q = searchCompQuery.toLowerCase().trim();
-      list = list.filter((ev) => (ev.nombre || '').toLowerCase().includes(q));
+      list = list.filter((ev) => {
+        const nombreMatch = (ev.nombre || '').toLowerCase().includes(q);
+        const gradoTexto = getGradoTexto(ev.grado).toLowerCase();
+        return nombreMatch || gradoTexto.includes(q);
+      });
     }
     return list;
   }, [evaluacionesDb, evaluacion?.id, searchCompQuery]);
@@ -1127,7 +1132,7 @@ const Reporte = () => {
                       <div className={`${accordionStyles.contentWrapper} ${mostrarGraficos ? accordionStyles.contentWrapperOpen : ''}`}>
                         <div className={`${accordionStyles.contentInner} ${mostrarGraficos ? accordionStyles.innerVisible : ''}`}>
                           {/* Custom Searchable Dropdown de Selección de Comparativa Múltiple */}
-                          <div className={styles.evalDropdownWrapper} ref={compDropdownRef} style={{ marginBottom: '1.5rem', width: '100%', maxWidth: '320px' }}>
+                          <div className={styles.evalDropdownWrapper} ref={compDropdownRef} style={{ marginBottom: '1.5rem', width: '100%', maxWidth: '600px' }}>
                             {loadingEvaluaciones ? (
                               <div className={styles.evalDropdownTrigger} style={{ cursor: 'wait' }}>
                                 <span className={styles.triggerText}>Cargando evaluaciones...</span>
@@ -1176,6 +1181,7 @@ const Reporte = () => {
                                     <div className={styles.evalOptionsList}>
                                       {evaluacionesCompFiltradas.map((evalOption) => {
                                         const isSelected = evaluacionesAComparar.includes(evalOption.id);
+                                        const gradoNombre = getGradoTexto(evalOption.grado);
                                         return (
                                           <button
                                             key={evalOption.id}
@@ -1190,15 +1196,33 @@ const Reporte = () => {
                                             className={`${styles.evalOptionItem} ${
                                               isSelected ? styles.evalOptionItemActive : ''
                                             }`}
-                                            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}
                                           >
-                                            <input
-                                              type="checkbox"
-                                              checked={isSelected}
-                                              readOnly
-                                              style={{ cursor: 'pointer' }}
-                                            />
-                                            <span>{evalOption.nombre || 'Sin nombre'}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+                                              <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                readOnly
+                                                style={{ cursor: 'pointer', flexShrink: 0 }}
+                                              />
+                                              <span style={{ fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {evalOption.nombre || 'Sin nombre'}
+                                              </span>
+                                            </div>
+                                            <span
+                                              style={{
+                                                fontSize: '0.75rem',
+                                                padding: '2px 8px',
+                                                borderRadius: '6px',
+                                                backgroundColor: isSelected ? '#3b82f6' : '#e2e8f0',
+                                                color: isSelected ? '#ffffff' : '#475569',
+                                                fontWeight: 600,
+                                                whiteSpace: 'nowrap',
+                                                flexShrink: 0
+                                              }}
+                                            >
+                                              {gradoNombre}
+                                            </span>
                                           </button>
                                         );
                                       })}

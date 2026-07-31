@@ -899,7 +899,8 @@
 /* Custom Evaluation Selector Dropdown */
 .evalDropdownWrapper {
   position: relative;
-  width: 320px;
+  width: 100%;
+  max-width: 600px;
 }
 
 .evalDropdownTrigger {

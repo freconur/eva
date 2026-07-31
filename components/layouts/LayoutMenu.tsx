@@ -100,6 +100,9 @@ const LayoutMenu = ({ children }: Props) => {
       if (data.colorMateriaSociales) {
         root.style.setProperty('--color-materia-sociales', data.colorMateriaSociales);
       }
+      if (data.colorHeaderEstandar) {
+        root.style.setProperty('--color-header-estandar', data.colorHeaderEstandar);
+      }
     };
 
     // Cargar colores en caché inmediatamente

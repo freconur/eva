@@ -35,7 +35,8 @@ const DEFAULT_COLORS = {
   colorMateriaMatematica: '#dc2626',
   colorMateriaCiencia: '#059669',
   colorMateriaDpcc: '#7c3aed',
-  colorMateriaSociales: '#ea580c'
+  colorMateriaSociales: '#ea580c',
+  colorHeaderEstandar: '#1d4ed8'
 };
 
 const PersonalizacionMarcaPage = () => {
@@ -51,14 +52,16 @@ const PersonalizacionMarcaPage = () => {
   const [colorSidebarBackground, setColorSidebarBackground] = useState(DEFAULT_COLORS.colorSidebarBackground);
   const [colorSidebarAccent, setColorSidebarAccent] = useState(DEFAULT_COLORS.colorSidebarAccent);
 
-  // Estados de colores por materia
+  // Estados de colores por materia y acordeón
   const [colorMateriaComunicacion, setColorMateriaComunicacion] = useState(DEFAULT_COLORS.colorMateriaComunicacion);
   const [colorMateriaMatematica, setColorMateriaMatematica] = useState(DEFAULT_COLORS.colorMateriaMatematica);
   const [colorMateriaCiencia, setColorMateriaCiencia] = useState(DEFAULT_COLORS.colorMateriaCiencia);
   const [colorMateriaDpcc, setColorMateriaDpcc] = useState(DEFAULT_COLORS.colorMateriaDpcc);
   const [colorMateriaSociales, setColorMateriaSociales] = useState(DEFAULT_COLORS.colorMateriaSociales);
+  const [colorHeaderEstandar, setColorHeaderEstandar] = useState(DEFAULT_COLORS.colorHeaderEstandar);
 
   const [activeSection, setActiveSection] = useState<'general' | 'login' | 'sidebar' | 'tarjetas'>('general');
+  const [previewNivel, setPreviewNivel] = useState<'primaria' | 'secundaria'>('primaria');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -85,6 +88,7 @@ const PersonalizacionMarcaPage = () => {
           if (data.colorMateriaCiencia) setColorMateriaCiencia(data.colorMateriaCiencia);
           if (data.colorMateriaDpcc) setColorMateriaDpcc(data.colorMateriaDpcc);
           if (data.colorMateriaSociales) setColorMateriaSociales(data.colorMateriaSociales);
+          if (data.colorHeaderEstandar) setColorHeaderEstandar(data.colorHeaderEstandar);
         }
       } catch (error) {
         console.error('Error al obtener la configuración de marca:', error);
@@ -115,6 +119,7 @@ const PersonalizacionMarcaPage = () => {
         colorMateriaCiencia,
         colorMateriaDpcc,
         colorMateriaSociales,
+        colorHeaderEstandar,
         ultimaActualizacion: new Date()
       }, { merge: true });
       toast.success('¡Branding de marca guardado exitosamente!');
@@ -145,6 +150,7 @@ const PersonalizacionMarcaPage = () => {
         setColorMateriaCiencia(DEFAULT_COLORS.colorMateriaCiencia);
         setColorMateriaDpcc(DEFAULT_COLORS.colorMateriaDpcc);
         setColorMateriaSociales(DEFAULT_COLORS.colorMateriaSociales);
+        setColorHeaderEstandar(DEFAULT_COLORS.colorHeaderEstandar);
       }
     }
   };
@@ -502,12 +508,35 @@ const PersonalizacionMarcaPage = () => {
 
             {activeSection === 'tarjetas' && (
               <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-4">Colores por Materia (Secundaria)</h3>
+                {/* Cabecera de Estándar / Acordeón */}
+                <div className="mb-6 pb-5 border-b border-slate-100">
+                  <h3 className="text-sm font-bold text-slate-700 mb-3">Cabecera de Estándar de Aprendizaje</h3>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Color del Acordeón (Estándar)
+                  </label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="color" 
+                      value={colorHeaderEstandar}
+                      onChange={(e) => setColorHeaderEstandar(e.target.value)}
+                      className="w-12 h-12 border border-slate-200 rounded-xl cursor-pointer p-1 bg-white"
+                    />
+                    <input 
+                      type="text" 
+                      value={colorHeaderEstandar}
+                      onChange={(e) => setColorHeaderEstandar(e.target.value)}
+                      maxLength={7}
+                      className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-700 font-mono text-sm focus:outline-none focus:border-violet-500"
+                    />
+                  </div>
+                </div>
+
+                <h3 className="text-sm font-bold text-slate-700 mb-4">Colores por Materia (Primaria y Secundaria)</h3>
                 
                 {/* Comunicación */}
                 <div className="mb-5">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Comunicación
+                    Comunicación (Primaria / Secundaria)
                   </label>
                   <div className="flex gap-2">
                     <input 
@@ -529,7 +558,7 @@ const PersonalizacionMarcaPage = () => {
                 {/* Matemática */}
                 <div className="mb-5">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Matemática
+                    Matemática (Primaria / Secundaria)
                   </label>
                   <div className="flex gap-2">
                     <input 
@@ -551,7 +580,7 @@ const PersonalizacionMarcaPage = () => {
                 {/* Ciencia y Tecnología */}
                 <div className="mb-5">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Ciencia y Tecnología
+                    Ciencia y Tecnología (Primaria / Secundaria)
                   </label>
                   <div className="flex gap-2">
                     <input 
@@ -564,6 +593,28 @@ const PersonalizacionMarcaPage = () => {
                       type="text" 
                       value={colorMateriaCiencia}
                       onChange={(e) => setColorMateriaCiencia(e.target.value)}
+                      maxLength={7}
+                      className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-700 font-mono text-sm focus:outline-none focus:border-violet-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Personal Social / Ciencias Sociales */}
+                <div className="mb-5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Personal Social / Ciencias Sociales
+                  </label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="color" 
+                      value={colorMateriaSociales}
+                      onChange={(e) => setColorMateriaSociales(e.target.value)}
+                      className="w-12 h-12 border border-slate-200 rounded-xl cursor-pointer p-1 bg-white"
+                    />
+                    <input 
+                      type="text" 
+                      value={colorMateriaSociales}
+                      onChange={(e) => setColorMateriaSociales(e.target.value)}
                       maxLength={7}
                       className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-700 font-mono text-sm focus:outline-none focus:border-violet-500"
                     />
@@ -573,7 +624,7 @@ const PersonalizacionMarcaPage = () => {
                 {/* DPCC */}
                 <div className="mb-5">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    DPCC (Desarrollo Personal, Ciudadanía y Cívica)
+                    DPCC (Secundaria)
                   </label>
                   <div className="flex gap-2">
                     <input 
@@ -592,22 +643,22 @@ const PersonalizacionMarcaPage = () => {
                   </div>
                 </div>
 
-                {/* Ciencias Sociales */}
+                {/* Otras Materias / Escribe */}
                 <div className="mb-5">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Ciencias Sociales
+                    Otras Materias / Escribe
                   </label>
                   <div className="flex gap-2">
                     <input 
                       type="color" 
-                      value={colorMateriaSociales}
-                      onChange={(e) => setColorMateriaSociales(e.target.value)}
+                      value={colorTercero}
+                      onChange={(e) => setColorTercero(e.target.value)}
                       className="w-12 h-12 border border-slate-200 rounded-xl cursor-pointer p-1 bg-white"
                     />
                     <input 
                       type="text" 
-                      value={colorMateriaSociales}
-                      onChange={(e) => setColorMateriaSociales(e.target.value)}
+                      value={colorTercero}
+                      onChange={(e) => setColorTercero(e.target.value)}
                       maxLength={7}
                       className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-700 font-mono text-sm focus:outline-none focus:border-violet-500"
                     />
@@ -758,17 +809,69 @@ const PersonalizacionMarcaPage = () => {
             )}
 
             {activeSection === 'tarjetas' && (
-              /* VISTA 2: TARJETAS DOCENTE (Evaluaciones Secundaria) */
+              /* VISTA 2: TARJETAS DOCENTE (Primaria y Secundaria) */
               <div className="p-6 flex-1 flex flex-col bg-slate-50">
-                <div className="flex items-center gap-2 mb-4">
-                  <RiBookOpenLine className="text-slate-400 text-lg" />
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    Educación Secundaria (Vista Docente)
-                  </span>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <RiBookOpenLine className="text-slate-400 text-lg" />
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Vista Docente: {previewNivel === 'primaria' ? 'Educación Primaria' : 'Educación Secundaria'}
+                    </span>
+                  </div>
+
+                  {/* Selector de Nivel para la Previsualización */}
+                  <div className="flex bg-slate-200/80 p-0.5 rounded-lg text-xs font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewNivel('primaria')}
+                      className={`px-2.5 py-1 rounded-md transition-all ${
+                        previewNivel === 'primaria'
+                          ? 'bg-white text-slate-800 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Primaria
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewNivel('secundaria')}
+                      className={`px-2.5 py-1 rounded-md transition-all ${
+                        previewNivel === 'secundaria'
+                          ? 'bg-white text-slate-800 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Secundaria
+                    </button>
+                  </div>
+                </div>
+
+                {/* Previsualización del Acordeón / Estándar */}
+                <div 
+                  className="mb-4 p-3.5 rounded-xl flex items-center justify-between text-white shadow-md transition-all relative overflow-hidden"
+                  style={{ background: colorHeaderEstandar }}
+                >
+                  <div className="flex items-center gap-3 relative z-10">
+                    <div className="w-8 h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center font-bold text-xs">
+                      {previewNivel === 'primaria' ? '3' : '6'}
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-white leading-tight">Estándar de aprendizaje</h5>
+                      <p className="text-[10px] text-white/80">
+                        {previewNivel === 'primaria' 
+                          ? 'Evaluaciones para estudiantes de 1° y 2° de primaria' 
+                          : 'Evaluaciones para estudiantes de 1° y 2° de secundaria'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-4xl font-extrabold opacity-10 absolute right-2 bottom-0 select-none">
+                    {previewNivel === 'primaria' ? '3' : '6'}
+                  </div>
                 </div>
 
                 <h4 className="text-slate-800 font-extrabold text-base mb-1">
-                  1ro sec. <span className="text-slate-400 font-normal text-xs">(5 materias)</span>
+                  {previewNivel === 'primaria' ? '1ro grado' : '1ro sec.'}{' '}
+                  <span className="text-slate-400 font-normal text-xs">(5 categorías)</span>
                 </h4>
                 
                 {/* Cuadrícula simulada de tarjetas */}
@@ -782,7 +885,6 @@ const PersonalizacionMarcaPage = () => {
                       borderColor: `color-mix(in srgb, ${colorMateriaComunicacion} 22%, #e5e7eb)` 
                     }}
                   >
-                    {/* Background Icon */}
                     <div 
                       className="absolute -right-2 -bottom-3 text-5xl pointer-events-none transition-all group-hover:scale-110 group-hover:-rotate-6 opacity-[0.09]"
                       style={{ color: colorMateriaComunicacion }}
@@ -807,7 +909,6 @@ const PersonalizacionMarcaPage = () => {
                       borderColor: `color-mix(in srgb, ${colorMateriaMatematica} 22%, #e5e7eb)` 
                     }}
                   >
-                    {/* Background Icon */}
                     <div 
                       className="absolute -right-2 -bottom-3 text-5xl pointer-events-none transition-all group-hover:scale-110 group-hover:-rotate-6 opacity-[0.09]"
                       style={{ color: colorMateriaMatematica }}
@@ -824,76 +925,73 @@ const PersonalizacionMarcaPage = () => {
                     </div>
                   </div>
 
-                  {/* Tarjeta 3 - Ciencia y Tecnología */}
+                  {/* Tarjeta 3 - Personal Social (Primaria) / Ciencia y Tecnología (Secundaria) */}
                   <div 
                     className="relative p-4 rounded-xl border transition-all shadow-sm hover:shadow flex flex-col justify-between h-[100px] cursor-pointer group overflow-hidden"
                     style={{ 
-                      backgroundColor: `color-mix(in srgb, ${colorMateriaCiencia} 6%, #ffffff)`,
-                      borderColor: `color-mix(in srgb, ${colorMateriaCiencia} 22%, #e5e7eb)` 
+                      backgroundColor: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorMateriaSociales : colorMateriaCiencia} 6%, #ffffff)`,
+                      borderColor: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorMateriaSociales : colorMateriaCiencia} 22%, #e5e7eb)` 
                     }}
                   >
-                    {/* Background Icon */}
                     <div 
                       className="absolute -right-2 -bottom-3 text-5xl pointer-events-none transition-all group-hover:scale-110 group-hover:-rotate-6 opacity-[0.09]"
-                      style={{ color: colorMateriaCiencia }}
+                      style={{ color: previewNivel === 'primaria' ? colorMateriaSociales : colorMateriaCiencia }}
                     >
-                      <RiFlaskLine />
+                      {previewNivel === 'primaria' ? <RiShieldUserLine /> : <RiFlaskLine />}
                     </div>
 
-                    <h5 className="text-xs font-bold font-sans relative z-10" style={{ color: `color-mix(in srgb, ${colorMateriaCiencia} 80%, #1f2937)` }}>
-                      Ciencia y Tecnología
+                    <h5 className="text-xs font-bold font-sans relative z-10" style={{ color: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorMateriaSociales : colorMateriaCiencia} 80%, #1f2937)` }}>
+                      {previewNivel === 'primaria' ? 'Personal Social' : 'Ciencia y Tecnología'}
                     </h5>
-                    <div className="flex items-center justify-between text-[10px] pt-2 border-t relative z-10" style={{ color: `color-mix(in srgb, ${colorMateriaCiencia} 75%, #6b7280)`, borderColor: `color-mix(in srgb, ${colorMateriaCiencia} 15%, rgba(0,0,0,0.05))` }}>
+                    <div className="flex items-center justify-between text-[10px] pt-2 border-t relative z-10" style={{ color: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorMateriaSociales : colorMateriaCiencia} 75%, #6b7280)`, borderColor: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorMateriaSociales : colorMateriaCiencia} 15%, rgba(0,0,0,0.05))` }}>
                       <span>Disponible</span>
                       <RiArrowRightLine className="group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
 
-                  {/* Tarjeta 4 - DPCC */}
+                  {/* Tarjeta 4 - Ciencia y Tecnología (Primaria) / DPCC (Secundaria) */}
                   <div 
                     className="relative p-4 rounded-xl border transition-all shadow-sm hover:shadow flex flex-col justify-between h-[100px] cursor-pointer group overflow-hidden"
                     style={{ 
-                      backgroundColor: `color-mix(in srgb, ${colorMateriaDpcc} 6%, #ffffff)`,
-                      borderColor: `color-mix(in srgb, ${colorMateriaDpcc} 22%, #e5e7eb)` 
+                      backgroundColor: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorMateriaCiencia : colorMateriaDpcc} 6%, #ffffff)`,
+                      borderColor: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorMateriaCiencia : colorMateriaDpcc} 22%, #e5e7eb)` 
                     }}
                   >
-                    {/* Background Icon */}
                     <div 
                       className="absolute -right-2 -bottom-3 text-5xl pointer-events-none transition-all group-hover:scale-110 group-hover:-rotate-6 opacity-[0.09]"
-                      style={{ color: colorMateriaDpcc }}
+                      style={{ color: previewNivel === 'primaria' ? colorMateriaCiencia : colorMateriaDpcc }}
                     >
-                      <RiShieldUserLine />
+                      {previewNivel === 'primaria' ? <RiFlaskLine /> : <RiShieldUserLine />}
                     </div>
 
-                    <h5 className="text-xs font-bold font-sans relative z-10" style={{ color: `color-mix(in srgb, ${colorMateriaDpcc} 80%, #1f2937)` }}>
-                      DPCC
+                    <h5 className="text-xs font-bold font-sans relative z-10" style={{ color: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorMateriaCiencia : colorMateriaDpcc} 80%, #1f2937)` }}>
+                      {previewNivel === 'primaria' ? 'Ciencia y Tecnología' : 'DPCC'}
                     </h5>
-                    <div className="flex items-center justify-between text-[10px] pt-2 border-t relative z-10" style={{ color: `color-mix(in srgb, ${colorMateriaDpcc} 75%, #6b7280)`, borderColor: `color-mix(in srgb, ${colorMateriaDpcc} 15%, rgba(0,0,0,0.05))` }}>
+                    <div className="flex items-center justify-between text-[10px] pt-2 border-t relative z-10" style={{ color: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorMateriaCiencia : colorMateriaDpcc} 75%, #6b7280)`, borderColor: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorMateriaCiencia : colorMateriaDpcc} 15%, rgba(0,0,0,0.05))` }}>
                       <span>Disponible</span>
                       <RiArrowRightLine className="group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
 
-                  {/* Tarjeta 5 - Ciencias Sociales */}
+                  {/* Tarjeta 5 - Escribe (Primaria) / Ciencias Sociales (Secundaria) */}
                   <div 
                     className="relative p-4 rounded-xl border transition-all shadow-sm hover:shadow flex flex-col justify-between h-[100px] cursor-pointer group overflow-hidden"
                     style={{ 
-                      backgroundColor: `color-mix(in srgb, ${colorMateriaSociales} 6%, #ffffff)`,
-                      borderColor: `color-mix(in srgb, ${colorMateriaSociales} 22%, #e5e7eb)` 
+                      backgroundColor: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorTercero : colorMateriaSociales} 6%, #ffffff)`,
+                      borderColor: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorTercero : colorMateriaSociales} 22%, #e5e7eb)` 
                     }}
                   >
-                    {/* Background Icon */}
                     <div 
                       className="absolute -right-2 -bottom-3 text-5xl pointer-events-none transition-all group-hover:scale-110 group-hover:-rotate-6 opacity-[0.09]"
-                      style={{ color: colorMateriaSociales }}
+                      style={{ color: previewNivel === 'primaria' ? colorTercero : colorMateriaSociales }}
                     >
-                      <RiGlobalLine />
+                      {previewNivel === 'primaria' ? <RiBookOpenLine /> : <RiGlobalLine />}
                     </div>
 
-                    <h5 className="text-xs font-bold font-sans relative z-10" style={{ color: `color-mix(in srgb, ${colorMateriaSociales} 80%, #1f2937)` }}>
-                      Ciencias Sociales
+                    <h5 className="text-xs font-bold font-sans relative z-10" style={{ color: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorTercero : colorMateriaSociales} 80%, #1f2937)` }}>
+                      {previewNivel === 'primaria' ? 'Escribe' : 'Ciencias Sociales'}
                     </h5>
-                    <div className="flex items-center justify-between text-[10px] pt-2 border-t relative z-10" style={{ color: `color-mix(in srgb, ${colorMateriaSociales} 75%, #6b7280)`, borderColor: `color-mix(in srgb, ${colorMateriaSociales} 15%, rgba(0,0,0,0.05))` }}>
+                    <div className="flex items-center justify-between text-[10px] pt-2 border-t relative z-10" style={{ color: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorTercero : colorMateriaSociales} 75%, #6b7280)`, borderColor: `color-mix(in srgb, ${previewNivel === 'primaria' ? colorTercero : colorMateriaSociales} 15%, rgba(0,0,0,0.05))` }}>
                       <span>Disponible</span>
                       <RiArrowRightLine className="group-hover:translate-x-1 transition-transform" />
                     </div>

@@ -5,6 +5,7 @@ import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { RiSearchLine, RiArrowDownSLine, RiCloseLine, RiExchangeLine, RiErrorWarningLine } from 'react-icons/ri';
 import { Evaluaciones } from '@/features/types/types';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getGradoTexto } from '@/fuctions/regiones';
 
 interface AcordeonGraficosTendenciaProps {
   idEvaluacion: string;
@@ -85,9 +86,12 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
     
     if (searchQuery.trim()) {
       const queryNormalized = searchQuery.toLowerCase().trim();
-      filtradas = evaluacionesDisponiblesParaComparar.filter((ev: Evaluaciones) =>
-        (ev.nombre || '').toLowerCase().includes(queryNormalized)
-      );
+      filtradas = evaluacionesDisponiblesParaComparar.filter((ev: Evaluaciones) => {
+        const nombreMatch = (ev.nombre || '').toLowerCase().includes(queryNormalized);
+        const gradoTexto = getGradoTexto(ev.grado).toLowerCase();
+        const gradoMatch = gradoTexto.includes(queryNormalized);
+        return nombreMatch || gradoMatch;
+      });
     }
 
     // Ordenar: seleccionadas primero
@@ -103,50 +107,40 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
 
   // Manejar selección / deselección múltiple
   const handleToggleSeleccion = (id: string) => {
-    setEvaluacionesAComparar((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((item) => item !== id);
-      } else {
-        return [...prev, id];
-      }
-    });
+    setEvaluacionesAComparar(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
   };
 
   // Trigger text dinámico según la cantidad seleccionada
   const triggerText = useMemo(() => {
-    if (evaluacionesAComparar.length === 0) {
-      return 'Seleccione una o más evaluaciones para comparar...';
-    }
+    if (evaluacionesAComparar.length === 0) return 'Seleccionar evaluaciones para comparar...';
     if (evaluacionesAComparar.length === 1) {
-      const match = evaluacionesDisponiblesParaComparar.find((e) => e.id === evaluacionesAComparar[0]);
-      return match?.nombre || '1 evaluación seleccionada';
+      const ev = evaluacionesDisponiblesParaComparar.find(e => e.id === evaluacionesAComparar[0]);
+      return ev ? `${ev.nombre || 'Evaluación'} (${getGradoTexto(ev.grado)})` : '1 evaluación seleccionada';
     }
-    return `${evaluacionesAComparar.length} evaluaciones seleccionadas para comparar`;
+    return `${evaluacionesAComparar.length} evaluaciones seleccionadas`;
   }, [evaluacionesAComparar, evaluacionesDisponiblesParaComparar]);
 
   return (
     <div className={styles.accordionContainer}>
-      <div
+      <div 
         onClick={toggleGraficos}
         className={mostrarGraficos ? styles.headerOpen : styles.header}
+        style={{ cursor: 'pointer' }}
       >
         <div className={styles.titleGroup}>
-          <span className={styles.icon}>
-            {mostrarGraficos ? '📊' : '📈'}
-          </span>
-          <h3 className={styles.title}>
-            Gráficos de Tendencia
-          </h3>
+          <RiExchangeLine style={{ fontSize: '1.25rem', color: '#3b82f6' }} />
+          <h3 className={styles.title}>Gráfico Comparativo de Tendencias entre Evaluaciones</h3>
         </div>
         <div className={mostrarGraficos ? styles.chevronOpen : styles.chevron}>
-          ▼
+          <RiArrowDownSLine style={{ fontSize: '1.25rem' }} />
         </div>
       </div>
 
       <div className={`${styles.contentWrapper} ${mostrarGraficos ? styles.contentWrapperOpen : ''}`}>
         <div className={`${styles.contentInner} ${mostrarGraficos ? styles.innerVisible : ''}`}>
           
-          {/* Custom Searchable Dropdown de Comparativa Múltiple */}
           {mostrarGraficos && (
             <div className={styles.comparisonContainer}>
               <h4 className={styles.comparisonTitle}>
@@ -165,7 +159,6 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
                   </div>
                 ) : evaluacionesDisponiblesParaComparar.length > 0 ? (
                   <>
-                    {/* Trigger Button */}
                     <div className={styles.triggerGroup}>
                       <button
                         type="button"
@@ -194,10 +187,8 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
                       )}
                     </div>
 
-                    {/* Dropdown Options Panel */}
                     {isOpen && (
                       <div className={styles.optionsPanel}>
-                        {/* Search Input Box */}
                         <div className={styles.searchContainer}>
                           <div className={styles.searchRelative}>
                             <input
@@ -205,7 +196,7 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
                               autoFocus
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              placeholder="Buscar evaluación por nombre..."
+                              placeholder="Buscar por nombre o grado (ej. 5to grado, 1ro sec)..."
                               className={styles.searchInput}
                             />
                             <RiSearchLine className={styles.searchIcon} />
@@ -221,11 +212,11 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
                           </div>
                         </div>
 
-                        {/* Options List */}
                         <div className={styles.optionsList}>
                           {evaluacionesFiltradas.length > 0 ? (
                             evaluacionesFiltradas.map((evalOption: Evaluaciones) => {
                               const isSelected = evalOption.id ? evaluacionesAComparar.includes(evalOption.id) : false;
+                              const gradoNombre = getGradoTexto(evalOption.grado);
                               return (
                                 <button
                                   key={evalOption.id}
@@ -238,23 +229,40 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
                                   className={`${styles.optionItem} ${
                                     isSelected ? styles.optionItemActive : ''
                                   }`}
-                                  style={{ flexDirection: 'row', alignItems: 'center', gap: '0.75rem' }}
+                                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}
                                 >
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => {}} // Manejado por el click del botón
-                                    className={styles.optionCheckbox}
-                                    style={{ cursor: 'pointer' }}
-                                  />
-                                  <span>{evalOption.nombre || 'Sin nombre'}</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => {}}
+                                      className={styles.optionCheckbox}
+                                      style={{ cursor: 'pointer', flexShrink: 0 }}
+                                    />
+                                    <span style={{ fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {evalOption.nombre || 'Sin nombre'}
+                                    </span>
+                                  </div>
+                                  <span
+                                    style={{
+                                      fontSize: '0.75rem',
+                                      padding: '2px 8px',
+                                      borderRadius: '6px',
+                                      backgroundColor: isSelected ? '#3b82f6' : '#e2e8f0',
+                                      color: isSelected ? '#ffffff' : '#475569',
+                                      fontWeight: 600,
+                                      whiteSpace: 'nowrap',
+                                      flexShrink: 0
+                                    }}
+                                  >
+                                    {gradoNombre}
+                                  </span>
                                 </button>
                               );
                             })
                           ) : (
-                            <div className={styles.noResults}>
-                              <RiErrorWarningLine className={styles.noResultsIcon} />
-                              <span className={styles.noResultsText}>No se encontraron evaluaciones.</span>
+                            <div className={styles.noOptions}>
+                              No se encontraron evaluaciones que coincidan con &quot;{searchQuery}&quot;.
                             </div>
                           )}
                         </div>
