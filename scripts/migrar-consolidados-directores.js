@@ -13,6 +13,7 @@ const db = admin.firestore();
 //   "0kYS9yzOo42FXSpfVHos"]
 // 30 Evaluaciones Activas de Julio 2026
 const IDS_EVALUACIONES = [
+  "0kYS9yzOo42FXSpfVHos",
   "0r2RvV5vMwCj993ub2aI",
   "13yP88FwKVVQwREpOeg9",
   "1igVIs8tD91unSAy8Bv5",
@@ -49,24 +50,27 @@ async function migrarConsolidadosDirectores() {
 
   const listaEvaluaciones = Array.isArray(IDS_EVALUACIONES) ? IDS_EVALUACIONES : [IDS_EVALUACIONES];
 
-  // 1. Cargar Directores desde /usuarios (rol === 2) únicamente con los campos requeridos
+  // 1. Cargar Directores desde /usuarios (rol === 2) únicamente con nivelDeInstitucion
   console.log('Cargando perfiles de directores en memoria (RAM)...');
   const snapshot = await db.collection('usuarios')
     .where('rol', '==', 2)
-    .select('genero', 'area', 'caracteristicaCurricular', 'tipoGestion', 'region', 'distrito', 'dni')
+    .select('nivelDeInstitucion', 'dni')
     .get();
 
   const directorMap = {};
   snapshot.forEach(doc => {
     const data = doc.data();
     const dni = data.dni || doc.id;
+
+    let nivel = [];
+    if (Array.isArray(data.nivelDeInstitucion)) {
+      nivel = data.nivelDeInstitucion;
+    } else if (data.nivelDeInstitucion !== undefined && data.nivelDeInstitucion !== null) {
+      nivel = [data.nivelDeInstitucion];
+    }
+
     directorMap[dni] = {
-      genero: data.genero !== undefined ? data.genero : '',
-      area: data.area !== undefined ? Number(data.area) : '',
-      caracteristicaCurricular: data.caracteristicaCurricular !== undefined ? data.caracteristicaCurricular : '',
-      tipoGestion: data.tipoGestion !== undefined ? data.tipoGestion : '',
-      region: data.region !== undefined ? data.region : '',
-      distrito: data.distrito !== undefined ? data.distrito : ''
+      nivelDeInstitucion: nivel
     };
   });
 

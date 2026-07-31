@@ -181,6 +181,8 @@ const Reporte = () => {
     setSearchTermDirector,
     selectedRegionDirector,
     setSelectedRegionDirector,
+    selectedNivelDirector,
+    setSelectedNivelDirector,
     pageSizeDirector,
     setPageSizeDirector,
     consolidationStatus,
@@ -526,7 +528,7 @@ const Reporte = () => {
               .map((idGrafico) => renderChart(idGrafico))}
           </div>
 
-          {/* Detalle de Docentes (Leaderboard Stacked) */}
+          {/* Detalle de Docentes y Directores (Drill-Down en posición de gráficos) */}
           <div ref={drillDownRef}>
             {elementosVisibles.includes('docente_detalle') && selectedRange && filteredDocentesByRange.length > 0 && (
               <BarChartDocenteDetalle
@@ -534,6 +536,25 @@ const Reporte = () => {
                 selectedRange={selectedRange || ''}
                 metaSatisfactorio={evaluacion?.metaSatisfactorio || 80}
                 onSaveMeta={handleSaveMeta}
+              />
+            )}
+
+            {selectedDirectorStatus && (
+              <TablaParticipacionDirectores
+                styles={styles}
+                directorsDetailRef={directorsDetailRef}
+                selectedDirectorStatus={selectedDirectorStatus}
+                setSelectedDirectorStatus={setSelectedDirectorStatus}
+                selectedRegionDirector={selectedRegionDirector}
+                setSelectedRegionDirector={setSelectedRegionDirector}
+                selectedNivelDirector={selectedNivelDirector}
+                setSelectedNivelDirector={setSelectedNivelDirector}
+                pageSizeDirector={pageSizeDirector}
+                setPageSizeDirector={setPageSizeDirector}
+                searchTermDirector={searchTermDirector}
+                setSearchTermDirector={setSearchTermDirector}
+                filteredDirectoresByStatus={filteredDirectoresByStatus}
+                directoresStats={directoresStats}
               />
             )}
           </div>
@@ -568,8 +589,8 @@ const Reporte = () => {
             />
           )}
 
-          {/* Detalle de Directores (Participación) */}
-          {elementosVisibles.includes('tabla_directores') && (
+          {/* Detalle de Directores (Tabla al pie si no hay filtro activo de segmento) */}
+          {elementosVisibles.includes('tabla_directores') && !selectedDirectorStatus && (
             loadingDetalleDirectores ? (
               <div className={styles.loaderContainer} style={{ minHeight: '150px', marginTop: '2rem' }}>
                 <div className={styles.loaderContent}>
@@ -585,6 +606,8 @@ const Reporte = () => {
                 setSelectedDirectorStatus={setSelectedDirectorStatus}
                 selectedRegionDirector={selectedRegionDirector}
                 setSelectedRegionDirector={setSelectedRegionDirector}
+                selectedNivelDirector={selectedNivelDirector}
+                setSelectedNivelDirector={setSelectedNivelDirector}
                 pageSizeDirector={pageSizeDirector}
                 setPageSizeDirector={setPageSizeDirector}
                 searchTermDirector={searchTermDirector}

@@ -23,8 +23,10 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow: auto; /* Scroll independiente para el contenido (X e Y) */
-  scrollbar-gutter: stable; /* Evita saltos de layout al aparecer el scroll */
+  overflow: auto;
+  /* Scroll independiente para el contenido (X e Y) */
+  scrollbar-gutter: stable;
+  /* Evita saltos de layout al aparecer el scroll */
 }
 
 .logoContainer {
@@ -64,7 +66,8 @@
 }
 
 .auditBanner {
-  background: linear-gradient(135deg, #b45309 0%, #78350f 100%); /* Warm warning-like dark amber gradient */
+  background: linear-gradient(135deg, #b45309 0%, #78350f 100%);
+  /* Warm warning-like dark amber gradient */
   color: #ffffff;
   padding: 0.75rem 1.5rem;
   display: flex;
@@ -122,7 +125,7 @@
   background-color: var(--color-secundario, #f8fafc);
   color: var(--color-secundario-contrast, #0f172a);
   flex: 1;
-  padding: 1.5rem;
+  /* padding: 1.5rem; */
   transition: background-color 0.3s ease, padding 0.3s ease;
 }
 
@@ -131,26 +134,26 @@
 }
 
 /* 1. Hace transparente el fondo del contenedor de cualquier página hija (excepto de pantalla completa) */
-.mainContent:not(.noPadding) > div[class*="container"],
-.mainContent:not(.noPadding) > div[class*="Container"] {
+.mainContent:not(.noPadding)>div[class*="container"],
+.mainContent:not(.noPadding)>div[class*="Container"] {
   background: transparent !important;
 }
 
 /* 2. Aplica contraste dinámico a textos principales de la página (profundidad 1, 2 y 3) */
-.mainContent > h1,
-.mainContent > h2,
-.mainContent > h3,
-.mainContent > p,
-.mainContent > span,
-.mainContent > div > h1,
-.mainContent > div > h2,
-.mainContent > div > h3,
-.mainContent > div > p,
-.mainContent > div > span:not([class*="Icon"]),
-.mainContent > div > div > h1,
-.mainContent > div > div > h2,
-.mainContent > div > div > h3,
-.mainContent > div > div > p,
-.mainContent > div > div > span:not([class*="Icon"]) {
+.mainContent>h1,
+.mainContent>h2,
+.mainContent>h3,
+.mainContent>p,
+.mainContent>span,
+.mainContent>div>h1,
+.mainContent>div>h2,
+.mainContent>div>h3,
+.mainContent>div>p,
+.mainContent>div>span:not([class*="Icon"]),
+.mainContent>div>div>h1,
+.mainContent>div>div>h2,
+.mainContent>div>div>h3,
+.mainContent>div>div>p,
+.mainContent>div>div>span:not([class*="Icon"]) {
   color: var(--color-secundario-contrast) !important;
 }

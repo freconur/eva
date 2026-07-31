@@ -12,6 +12,7 @@ import { useExportExcel } from '@/features/hooks/useExportExcel';
 import { useCrearPuntajeProgresiva } from '@/features/hooks/useCrearPuntajeProgresiva';
 import { useReporteEspecialistas } from '@/features/hooks/useReporteEspecialistas';
 import { distritosPuno } from '@/fuctions/provinciasPuno';
+import { gradosDeColegio } from '@/fuctions/regiones';
 import { currentMonth } from '@/fuctions/dates';
 import { PreguntasRespuestas } from '@/features/types/types';
 import { exportDirectorDocenteDataToExcel } from '@/features/utils/excelExport';
@@ -80,7 +81,8 @@ export const useReporteAdmin = () => {
   const [selectedDirectorStatus, setSelectedDirectorStatus] = useState<'participo' | 'no_participo' | 'all' | null>(null);
   const [searchTermDirector, setSearchTermDirector] = useState('');
   const [selectedRegionDirector, setSelectedRegionDirector] = useState<string>('all');
-  const [pageSizeDirector, setPageSizeDirector] = useState<number | 'all'>(100);
+  const [selectedNivelDirector, setSelectedNivelDirector] = useState<string>('all');
+  const [pageSizeDirector, setPageSizeDirector] = useState<number | 'all'>(25);
   const [consolidationStatus, setConsolidationStatus] = useState<any>(null);
   const [loadingConsolidado, setLoadingConsolidado] = useState(false);
   const [loadingProfesoresBuckets, setLoadingProfesoresBuckets] = useState(false);
@@ -391,12 +393,40 @@ export const useReporteAdmin = () => {
         const sumaPuntajes = directorEvaluado?.sumaPuntajes || 0;
         const promedioGlobal = totalEstudiantes > 0 ? Math.round((sumaPuntajes / totalEstudiantes) * 100) / 100 : 0;
 
+        const getSafeNum = (val1: any, val2?: any) => {
+          if (val1 !== undefined && val1 !== null && val1 !== '') {
+            const num = Number(val1);
+            if (!isNaN(num) && num > 0) return num;
+          }
+          if (val2 !== undefined && val2 !== null && val2 !== '') {
+            const num = Number(val2);
+            if (!isNaN(num) && num > 0) return num;
+          }
+          return undefined;
+        };
+
+        const getSafeStr = (val1: any, val2?: any) => {
+          if (val1 !== undefined && val1 !== null && String(val1).trim() !== '') {
+            return String(val1).trim();
+          }
+          if (val2 !== undefined && val2 !== null && String(val2).trim() !== '') {
+            return String(val2).trim();
+          }
+          return '';
+        };
+
         return {
           dniDirector: dni,
-          nombres: uData.nombres || detail.nombres || 'Director',
-          apellidos: uData.apellidos || detail.apellidos || 'N/A',
-          institucion: uData.institucion || detail.institucion || 'N/A',
-          region: uData.region || detail.region || 'N/A',
+          nombres: getSafeStr(uData.nombres, detail.nombres) || 'Director',
+          apellidos: getSafeStr(uData.apellidos, detail.apellidos) || 'N/A',
+          institucion: getSafeStr(uData.institucion, detail.institucion) || 'N/A',
+          region: getSafeNum(uData.region, detail.region),
+          distrito: getSafeStr(uData.distrito, detail.distrito),
+          genero: getSafeStr(uData.genero, detail.genero),
+          area: getSafeNum(uData.area, detail.area),
+          caracteristicaCurricular: getSafeStr(uData.caracteristicaCurricular, detail.caracteristicaCurricular),
+          tipoGestion: getSafeStr(uData.tipoGestion, detail.tipoGestion),
+          nivelDeInstitucion: uData.nivelDeInstitucion || detail.nivelDeInstitucion || [],
           totalEstudiantes,
           promedioGlobal,
           niveles: mappedNiveles
@@ -417,14 +447,30 @@ export const useReporteAdmin = () => {
     if (!idEval || !evaluacion || loadingDetalleDirectores || detalleDirectoresCargado) return;
     setLoadingDetalleDirectores(true);
     try {
-      const targetNivel = Number(evaluacion.nivel);
-      
+      let targetNivel: number | null = null;
+      const rawNivel = (evaluacion as any)?.nivel;
+      const rawGrado = (evaluacion as any)?.grado;
+
+      if (typeof rawNivel === 'number' || (typeof rawNivel === 'string' && String(rawNivel).trim() !== '')) {
+        targetNivel = Number(rawNivel);
+      } else if (typeof rawGrado === 'number' || (typeof rawGrado === 'string' && String(rawGrado).trim() !== '')) {
+        const gradoObj = gradosDeColegio.find((g) => g.id === Number(rawGrado));
+        if (gradoObj && gradoObj.nivel !== undefined) {
+          targetNivel = gradoObj.nivel;
+        }
+      }
+
       // 1. Obtener todos los directores requeridos (universo)
-      const qTarget = query(
+      const qTargetConstraints: any[] = [
         collection(db, 'usuarios'),
-        where('rol', '==', 2),
-        where('nivelDeInstitucion', 'array-contains', targetNivel)
-      );
+        where('rol', '==', 2)
+      ];
+
+      if (targetNivel !== null && !isNaN(targetNivel)) {
+        qTargetConstraints.push(where('nivelDeInstitucion', 'array-contains', targetNivel));
+      }
+
+      const qTarget = query(...(qTargetConstraints as [any, ...any[]]));
       const targetSnap = await getDocs(qTarget);
       
       // 2. Obtener directores participantes de consolidados_realtime_directores
@@ -443,9 +489,31 @@ export const useReporteAdmin = () => {
 
       const nivelesConfig = evaluacion?.nivelYPuntaje || [];
 
+      const getSafeNum = (val1: any, val2?: any) => {
+        if (val1 !== undefined && val1 !== null && val1 !== '') {
+          const num = Number(val1);
+          if (!isNaN(num) && num > 0) return num;
+        }
+        if (val2 !== undefined && val2 !== null && val2 !== '') {
+          const num = Number(val2);
+          if (!isNaN(num) && num > 0) return num;
+        }
+        return undefined;
+      };
+
+      const getSafeStr = (val1: any, val2?: any) => {
+        if (val1 !== undefined && val1 !== null && String(val1).trim() !== '') {
+          return String(val1).trim();
+        }
+        if (val2 !== undefined && val2 !== null && String(val2).trim() !== '') {
+          return String(val2).trim();
+        }
+        return '';
+      };
+
       // 3. Cruzar datos en memoria
       const fullDirectoresList = targetSnap.docs.map(docSnap => {
-        const uData = docSnap.data();
+        const uData = docSnap.data() as any;
         const Dni = docSnap.id;
         const rtData = participantesMap.get(Dni);
 
@@ -493,15 +561,16 @@ export const useReporteAdmin = () => {
 
           return {
             dniDirector: Dni,
-            nombres: uData.nombres || rtData.nombres || 'Director',
-            apellidos: uData.apellidos || rtData.apellidos || 'N/A',
-            institucion: uData.institucion || rtData.institucion || 'N/A',
-            region: uData.region !== undefined ? Number(uData.region) : (rtData.region !== undefined ? Number(rtData.region) : undefined),
-            distrito: uData.distrito || rtData.distrito || '',
-            genero: uData.genero || rtData.genero || '',
-            area: uData.area !== undefined ? Number(uData.area) : (rtData.area !== undefined ? Number(rtData.area) : undefined),
-            caracteristicaCurricular: uData.caracteristicaCurricular || rtData.caracteristicaCurricular || '',
-            tipoGestion: uData.tipoGestion || rtData.tipoGestion || '',
+            nombres: getSafeStr(uData.nombres, rtData.nombres) || 'Director',
+            apellidos: getSafeStr(uData.apellidos, rtData.apellidos) || 'N/A',
+            institucion: getSafeStr(uData.institucion, rtData.institucion) || 'N/A',
+            region: getSafeNum(uData.region, rtData.region),
+            distrito: getSafeStr(uData.distrito, rtData.distrito),
+            genero: getSafeStr(uData.genero, rtData.genero),
+            area: getSafeNum(uData.area, rtData.area),
+            caracteristicaCurricular: getSafeStr(uData.caracteristicaCurricular, rtData.caracteristicaCurricular),
+            tipoGestion: getSafeStr(uData.tipoGestion, rtData.tipoGestion),
+            nivelDeInstitucion: uData.nivelDeInstitucion || rtData.nivelDeInstitucion || [],
             totalEstudiantes,
             sumaPuntajes,
             promedioGlobal,
@@ -511,15 +580,16 @@ export const useReporteAdmin = () => {
         } else {
           return {
             dniDirector: Dni,
-            nombres: uData.nombres || 'Director',
-            apellidos: uData.apellidos || 'N/A',
-            institucion: uData.institucion || 'N/A',
-            region: uData.region !== undefined ? Number(uData.region) : undefined,
-            distrito: uData.distrito || '',
-            genero: uData.genero || '',
-            area: uData.area !== undefined ? Number(uData.area) : undefined,
-            caracteristicaCurricular: uData.caracteristicaCurricular || '',
-            tipoGestion: uData.tipoGestion || '',
+            nombres: getSafeStr(uData.nombres) || 'Director',
+            apellidos: getSafeStr(uData.apellidos) || 'N/A',
+            institucion: getSafeStr(uData.institucion) || 'N/A',
+            region: getSafeNum(uData.region),
+            distrito: getSafeStr(uData.distrito),
+            genero: getSafeStr(uData.genero),
+            area: getSafeNum(uData.area),
+            caracteristicaCurricular: getSafeStr(uData.caracteristicaCurricular),
+            tipoGestion: getSafeStr(uData.tipoGestion),
+            nivelDeInstitucion: uData.nivelDeInstitucion || [],
             totalEstudiantes: 0,
             sumaPuntajes: 0,
             promedioGlobal: 0,
@@ -810,7 +880,7 @@ export const useReporteAdmin = () => {
   const handleDirectorSegmentClick = (status: 'participo' | 'no_participo' | 'all') => {
     setSelectedDirectorStatus(status);
     setTimeout(() => {
-      directorsDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      drillDownRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
   };
 
@@ -1008,6 +1078,15 @@ export const useReporteAdmin = () => {
       filtered = filtered.filter(d => String(d.region) === selectedRegionDirector);
     }
 
+    if (selectedNivelDirector !== 'all') {
+      filtered = filtered.filter(d => {
+        if (Array.isArray(d.nivelDeInstitucion)) {
+          return d.nivelDeInstitucion.some((n: any) => String(n) === String(selectedNivelDirector));
+        }
+        return String(d.nivelDeInstitucion) === String(selectedNivelDirector);
+      });
+    }
+
     if (!searchTermDirector.trim()) return filtered;
 
     const term = searchTermDirector.toLowerCase().trim();
@@ -1017,7 +1096,7 @@ export const useReporteAdmin = () => {
       d.apellidos?.toLowerCase().includes(term) ||
       d.institucion?.toLowerCase().includes(term)
     );
-  }, [dataDirectoresBar, selectedDirectorStatus, searchTermDirector, selectedRegionDirector]);
+  }, [dataDirectoresBar, selectedDirectorStatus, searchTermDirector, selectedRegionDirector, selectedNivelDirector]);
 
   const directoresStats = useMemo(() => {
     if (!dataDirectoresBar) return { participo: 0, no_participo: 0, total: 0 };
@@ -1157,6 +1236,8 @@ export const useReporteAdmin = () => {
     setSearchTermDirector,
     selectedRegionDirector,
     setSelectedRegionDirector,
+    selectedNivelDirector,
+    setSelectedNivelDirector,
     pageSizeDirector,
     setPageSizeDirector,
     consolidationStatus,

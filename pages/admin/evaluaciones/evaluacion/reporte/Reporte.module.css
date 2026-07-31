@@ -1,5 +1,5 @@
 .mainContainer {
-  padding: 2rem 3rem;
+  padding: 2rem 1rem;
   max-width: 100%;
   margin: 0 auto;
   color: #334155;
@@ -770,6 +770,7 @@
     opacity: 0;
     transform: translateY(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
