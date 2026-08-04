@@ -489,11 +489,14 @@ const Reportes = () => {
   }, [route.query.idExamen, currentUserData.dni]);
 
   useEffect(() => {
-    if (evaluacion.añoDelExamen && !yearSelected) {
+    if (evaluacion.añoDelExamen) {
       setYearSelected(evaluacion.añoDelExamen);
     }
+    if (evaluacion.mesDelExamen) {
+      setMonthSelected(Number(evaluacion.mesDelExamen));
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [evaluacion.añoDelExamen]);
+  }, [evaluacion.añoDelExamen, evaluacion.mesDelExamen]);
 
   useEffect(() => {
     const idExamen = route.query.idExamen as string;
@@ -719,13 +722,16 @@ const Reportes = () => {
                   </button>
                 )}
 
-                <button
-                  onClick={() => setIsEvaluarDrawerOpen(true)}
-                  className={styles.evaluarButton}
-                >
-                  <span>📝</span>
-                  <span>Evaluar Estudiante</span>
-                </button>
+                {/* Botón oculto temporalmente para futura re-implementación */}
+                {false && (
+                  <button
+                    onClick={() => setIsEvaluarDrawerOpen(true)}
+                    className={styles.evaluarButton}
+                  >
+                    <span>📝</span>
+                    <span>Evaluar Estudiante</span>
+                  </button>
+                )}
               </div>
             </div>
             {showTable ? (
@@ -759,12 +765,17 @@ const Reportes = () => {
                         className={styles.modernSelect}
                         aria-label="Seleccionar año para el reporte"
                       >
-                        <option value="">-- Año --</option>
-                        {Array.from({ length: new Date().getFullYear() - 2025 + 1 }, (_, i) => (2025 + i).toString()).map((year) => (
-                          <option key={year} value={year}>
-                            {year}
-                          </option>
-                        ))}
+                        {evaluacion.añoDelExamen ? (
+                          <option value={evaluacion.añoDelExamen}>{evaluacion.añoDelExamen}</option>
+                        ) : (
+                          Array.from({ length: new Date().getFullYear() - 2025 + 1 }, (_, i) => (2025 + i).toString())
+                            .filter((year) => !yearSelected || year === yearSelected)
+                            .map((year) => (
+                              <option key={year} value={year}>
+                                {year}
+                              </option>
+                            ))
+                        )}
                       </select>
                     </div>
 
@@ -777,16 +788,16 @@ const Reportes = () => {
                         className={styles.modernSelect}
                         aria-label="Seleccionar mes para el reporte"
                       >
-                        <option value="">-- Mes --</option>
-                        {getAllMonths.map((month) => (
-                          <option
-                            key={month.id}
-                            value={String(month.id)}
-                            disabled={mesesConDataDisponibles.length > 0 && !mesesConDataDisponibles.includes(month.id)}
-                          >
-                            {month.name}
-                          </option>
-                        ))}
+                        {getAllMonths
+                          .filter((month) => !evaluacion.mesDelExamen || month.id === Number(evaluacion.mesDelExamen))
+                          .map((month) => (
+                            <option
+                              key={month.id}
+                              value={String(month.id)}
+                            >
+                              {month.name}
+                            </option>
+                          ))}
                       </select>
                     </div>
 

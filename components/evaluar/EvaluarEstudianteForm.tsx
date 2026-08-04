@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { PreguntasRespuestas, UserEstudiante } from '@/features/types/types';
-import { RiLoader4Line, RiArrowUpLine, RiPlayFill, RiPauseFill, RiUploadLine, RiCloseLine } from 'react-icons/ri';
+import { RiLoader4Line, RiArrowUpLine, RiPlayFill, RiPauseFill, RiUploadLine, RiCloseLine, RiCheckboxCircleLine, RiCheckLine, RiSearchLine } from 'react-icons/ri';
+import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { gradosDeColegio, sectionByGrade, genero } from '@/fuctions/regiones';
 import { currentYear, getMonthName } from '@/fuctions/dates';
 import { useRouter } from 'next/router';
@@ -18,6 +19,21 @@ interface EvaluarEstudianteFormProps {
   idExamen: string;
   isInsideDrawer?: boolean;
   onClose?: () => void;
+}
+
+interface EstudianteEvaluadoRealtime {
+  id: string;
+  dni: string;
+  nombresApellidos: string;
+  grado?: string;
+  seccion?: string;
+  genero?: string;
+  puntaje?: number;
+  nivel?: string;
+  dniDocente?: string;
+  ultimaActualizacion?: any;
+  fechaCreacion?: any;
+  timestamp?: any;
 }
 
 const EvaluarEstudianteForm = ({
@@ -35,6 +51,7 @@ const EvaluarEstudianteForm = ({
     loaderSalvarPregunta,
     evaluacion,
     estudiantesDeEvaluacion,
+    currentUserData,
   } = useGlobalContext();
 
   // Estados locales
@@ -54,6 +71,110 @@ const EvaluarEstudianteForm = ({
     seccion: string;
   } | null>(null); // Datos para el mensaje de confirmación
   const [resetModal, setResetModal] = useState<boolean>(false); // Estado para resetear el modal
+
+  // Estados para estudiantes evaluados en tiempo real
+  const [estudiantesEvaluadosRealtime, setEstudiantesEvaluadosRealtime] = useState<EstudianteEvaluadoRealtime[]>([]);
+  const [cargandoEvaluados, setCargandoEvaluados] = useState<boolean>(true);
+  const [busquedaEvaluados, setBusquedaEvaluados] = useState<string>('');
+
+  // Listener en tiempo real de estudiantes evaluados por este docente
+  useEffect(() => {
+    if (!evaluacion?.id || !currentUserData?.dni) return;
+
+    const db = getFirestore();
+    const año = evaluacion.añoDelExamen || currentYear.toString();
+    const mes = evaluacion.mesDelExamen;
+
+    const pathRef = collection(
+      db,
+      `/evaluaciones/${evaluacion.id}/estudiantes-evaluados/${año}/${mes}`
+    );
+
+    const q = query(
+      pathRef,
+      where('dniDocente', '==', currentUserData.dni)
+    );
+
+    setCargandoEvaluados(true);
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const lista: EstudianteEvaluadoRealtime[] = [];
+        snapshot.forEach((doc) => {
+          lista.push({ id: doc.id, ...doc.data() } as EstudianteEvaluadoRealtime);
+        });
+
+        // Filtrar por sección si está seleccionada
+        const listaFiltrada = nuevaSeccion && nuevaSeccion !== '-- Selecciona una sección --'
+          ? lista.filter((est) => String(est.seccion) === String(nuevaSeccion))
+          : lista;
+
+        const getTime = (val: any): number => {
+          if (!val) return 0;
+          if (typeof val.toMillis === 'function') return val.toMillis();
+          if (typeof val.toDate === 'function') return val.toDate().getTime();
+          if (val?.seconds) return val.seconds * 1000;
+          if (val instanceof Date) return val.getTime();
+          if (typeof val === 'number') return val;
+          if (typeof val === 'string') {
+            const parsed = Date.parse(val);
+            return isNaN(parsed) ? 0 : parsed;
+          }
+          return 0;
+        };
+
+        // Ordenar por ultimaActualizacion descendente (el último evaluado aparece PRIMERO)
+        listaFiltrada.sort((a, b) => {
+          const timeA = getTime(a.ultimaActualizacion || a.fechaCreacion || a.timestamp);
+          const timeB = getTime(b.ultimaActualizacion || b.fechaCreacion || b.timestamp);
+          return timeB - timeA;
+        });
+
+        setEstudiantesEvaluadosRealtime(listaFiltrada);
+        setCargandoEvaluados(false);
+      },
+      (error) => {
+        console.error('Error al obtener estudiantes evaluados en tiempo real:', error);
+        setCargandoEvaluados(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [evaluacion?.id, evaluacion?.añoDelExamen, evaluacion?.mesDelExamen, currentUserData?.dni, nuevaSeccion]);
+
+  const evaluadosFiltrados = estudiantesEvaluadosRealtime.filter((est) => {
+    if (!busquedaEvaluados.trim()) return true;
+    const term = busquedaEvaluados.toLowerCase();
+    return (
+      est.nombresApellidos?.toLowerCase().includes(term) ||
+      est.dni?.toLowerCase().includes(term)
+    );
+  });
+
+  const formatearFechaHora = (val: any): string => {
+    if (!val) return '';
+    let date: Date | null = null;
+    if (typeof val.toDate === 'function') date = val.toDate();
+    else if (val?.seconds) date = new Date(val.seconds * 1000);
+    else if (val instanceof Date) date = val;
+    else if (typeof val === 'string' || typeof val === 'number') {
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) date = d;
+    }
+    if (!date) return '';
+
+    const fecha = date.toLocaleDateString('es-PE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+    });
+    const hora = date.toLocaleTimeString('es-PE', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+    return `${fecha} • ${hora}`;
+  };
 
   // Función para manejar el reset del modal
   const handleResetModal = () => {
@@ -782,79 +903,188 @@ const EvaluarEstudianteForm = ({
               {!isInsideDrawer && (
                 <h2 className={styles.evaluacionTitle}>{evaluacion?.nombre} - {getMonthName(Number(evaluacion?.mesDelExamen))}</h2>
               )}
-              <form onSubmit={handleSubmitform} onChange={handleFormChange}>
-                <div className={styles.preguntasContainer}>
-                  {preguntasOrdenadas.map((pregunta, preguntaIndex) => (
-                    <div key={preguntaIndex} id={`pregunta-${preguntaIndex}`} className="mb-8 border-b border-gray-200 pb-6">
-                      <p className={styles.preguntaTitulo}>
-                        <span className={styles.numeroPregunta}>{preguntaIndex + 1}.</span>
-                        {pregunta.pregunta}
-                      </p>
 
-                      <ul className={styles.respuestaContainer}>
-                        {pregunta.alternativas?.map((alternativa, index) => {
-                          if (alternativa.descripcion?.length === 0) return null;
+              <div className="flex flex-col lg:flex-row gap-6 items-start">
+                {/* Columna izquierda: Formulario de Evaluación */}
+                <div className="flex-1 w-full min-w-0">
+                  <form onSubmit={handleSubmitform} onChange={handleFormChange}>
+                    <div className={styles.preguntasContainer}>
+                      {preguntasOrdenadas.map((pregunta, preguntaIndex) => (
+                        <div key={preguntaIndex} id={`pregunta-${preguntaIndex}`} className="mb-8 border-b border-gray-200 pb-6">
+                          <p className={styles.preguntaTitulo}>
+                            <span className={styles.numeroPregunta}>{preguntaIndex + 1}.</span>
+                            {pregunta.pregunta}
+                          </p>
 
-                          return (
-                            <li key={index} className={styles.respuestas}>
-                              <div
-                                className={`${styles.respuestaItem} ${alternativa.selected ? styles.selected : ''
-                                  }`}
-                                onClick={() => {
-                                  handleContenedorClick(
-                                    pregunta.order || 0,
-                                    alternativa.alternativa || ''
-                                  );
-                                  scrollToNextQuestion(preguntaIndex);
-                                }}
-                              >
-                                <div className="flex items-start gap-3">
-                                  <input
-                                    className={styles.radio}
-                                    type="radio"
-                                    name={`${pregunta.order}`}
-                                    value={alternativa.alternativa}
-                                    checked={
-                                      alternativa?.selected === undefined
-                                        ? false
-                                        : alternativa.selected
-                                    }
-                                    onChange={(e) => {
-                                      handleCheckedRespuesta(e);
+                          <ul className={styles.respuestaContainer}>
+                            {pregunta.alternativas?.map((alternativa, index) => {
+                              if (alternativa.descripcion?.length === 0) return null;
+
+                              return (
+                                <li key={index} className={styles.respuestas}>
+                                  <div
+                                    className={`${styles.respuestaItem} ${alternativa.selected ? styles.selected : ''
+                                      }`}
+                                    onClick={() => {
+                                      handleContenedorClick(
+                                        pregunta.order || 0,
+                                        alternativa.alternativa || ''
+                                      );
                                       scrollToNextQuestion(preguntaIndex);
                                     }}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                  <div className="flex-1">
-                                    <p className={styles.alternativa}>
-                                      {alternativa.alternativa}.{' '}
-                                    </p>
-                                    <p className={styles.descripcionrespuesta}>
-                                      {alternativa.descripcion}
-                                    </p>
+                                  >
+                                    <div className="flex items-start gap-3">
+                                      <input
+                                        className={styles.radio}
+                                        type="radio"
+                                        name={`${pregunta.order}`}
+                                        value={alternativa.alternativa}
+                                        checked={
+                                          alternativa?.selected === undefined
+                                            ? false
+                                            : alternativa.selected
+                                        }
+                                        onChange={(e) => {
+                                          handleCheckedRespuesta(e);
+                                          scrollToNextQuestion(preguntaIndex);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                      />
+                                      <div className="flex-1">
+                                        <p className={styles.alternativa}>
+                                          {alternativa.alternativa}.{' '}
+                                        </p>
+                                        <p className={styles.descripcionrespuesta}>
+                                          {alternativa.descripcion}
+                                        </p>
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+
+                    <button
+                      disabled={!todasRespondidas || (!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0)}
+                      className={styles.saveButton}
+                    >
+                      {!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0
+                        ? 'Selecciona un estudiante para continuar'
+                        : !todasRespondidas
+                          ? 'Complete todas las preguntas para guardar'
+                          : 'Guardar Evaluación'
+                      }
+                    </button>
+                  </form>
                 </div>
 
-                <button
-                  disabled={!todasRespondidas || (!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0)}
-                  className={styles.saveButton}
+                {/* Columna derecha: Sidebar de Estudiantes Evaluados en Tiempo Real (Sticky) */}
+                <div
+                  className="w-full lg:w-80 shrink-0 lg:sticky flex flex-col bg-white border border-emerald-200 rounded-2xl p-4 shadow-md z-10 overflow-hidden"
+                  style={{
+                    top: `${isInsideDrawer ? 220 : 285}px`,
+                    height: `calc(100vh - ${isInsideDrawer ? 240 : 305}px)`,
+                    maxHeight: '520px'
+                  }}
                 >
-                  {!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0
-                    ? 'Selecciona un estudiante para continuar'
-                    : !todasRespondidas
-                      ? 'Complete todas las preguntas para guardar'
-                      : 'Guardar Evaluación'
-                  }
-                </button>
-              </form>
+                  <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-3 shrink-0">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+                        <RiCheckboxCircleLine className="text-xl" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="font-bold text-gray-800 text-sm">Evaluados</h3>
+                          <span className="relative flex h-2.5 w-2.5" title="Sincronizado en tiempo real">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-gray-500">Confirmación en tiempo real</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+                      {estudiantesEvaluadosRealtime.length}
+                    </span>
+                  </div>
+
+                  {estudiantesEvaluadosRealtime.length > 3 && (
+                    <div className="relative mb-3 shrink-0">
+                      <input
+                        type="text"
+                        placeholder="Buscar por DNI o nombre..."
+                        value={busquedaEvaluados}
+                        onChange={(e) => setBusquedaEvaluados(e.target.value)}
+                        className="w-full pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      />
+                      <RiSearchLine className="absolute left-2 top-2 text-gray-400 text-xs" />
+                    </div>
+                  )}
+
+                  <div className="flex-1 overflow-y-auto pr-1.5 space-y-2 min-h-0">
+                    {cargandoEvaluados ? (
+                      <div className="flex items-center justify-center py-6 text-gray-400 gap-2 text-xs">
+                        <RiLoader4Line className="animate-spin text-base text-emerald-500" />
+                        <span>Cargando en tiempo real...</span>
+                      </div>
+                    ) : evaluadosFiltrados.length === 0 ? (
+                      <div className="text-center py-6 px-3 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+                        <RiCheckLine className="mx-auto text-3xl text-gray-300 mb-1" />
+                        <p className="text-xs font-semibold text-gray-600">
+                          {busquedaEvaluados ? 'Sin coincidencias' : 'Sin estudiantes evaluados'}
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-1">
+                          {busquedaEvaluados ? 'Prueba con otro término' : 'Al guardar, aparecerán aquí automáticamente.'}
+                        </p>
+                      </div>
+                    ) : (
+                      evaluadosFiltrados.map((est) => (
+                        <div
+                          key={est.id || est.dni}
+                          className="flex items-center justify-between p-2.5 bg-emerald-50/60 hover:bg-emerald-50 border border-emerald-200/80 rounded-xl transition-all duration-150 shadow-2xs"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                              ✓
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-gray-800 truncate" title={est.nombresApellidos}>
+                                {est.nombresApellidos}
+                              </p>
+                              <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
+                                <span>DNI: {est.dni}</span>
+                                {est.seccion && <span>• Sec: {est.seccion}</span>}
+                              </div>
+                              {formatearFechaHora(est.ultimaActualizacion || est.fechaCreacion || est.timestamp) && (
+                                <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                                  🕒 {formatearFechaHora(est.ultimaActualizacion || est.fechaCreacion || est.timestamp)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {est.puntaje !== undefined && est.puntaje !== null && (
+                            <div className="text-right shrink-0 ml-1">
+                              <span className="inline-block text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                                {est.puntaje} pts
+                              </span>
+                              {est.nivel && (
+                                <p className="text-[9px] text-emerald-600 font-medium truncate max-w-[70px]">
+                                  {est.nivel}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </>
         )}

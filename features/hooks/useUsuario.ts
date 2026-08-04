@@ -40,6 +40,19 @@ const useUsuario = () => {
 
   const checkAuditReadOnly = (): boolean => {
     if (typeof window !== 'undefined' && sessionStorage.getItem('audited_user')) {
+      const realAdminStr = sessionStorage.getItem('real_admin_user');
+      if (realAdminStr) {
+        try {
+          const realAdmin = JSON.parse(realAdminStr);
+          const rol = Number(realAdmin.rol || realAdmin.perfil?.rol);
+          const rolNombre = realAdmin.perfil?.nombre?.toLowerCase() || '';
+          if (rol === 4 || rol === 5 || rolNombre.includes('admin')) {
+            return false;
+          }
+        } catch (e) {
+          console.error('Error al verificar real_admin_user:', e);
+        }
+      }
       toast.warning('Modo de Auditoría: No se permite modificar información en este modo.');
       return true;
     }
