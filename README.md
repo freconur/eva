@@ -38,3 +38,16 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+## Documentación del Proyecto
+
+Toda la documentación técnica del proyecto se encuentra organizada en la carpeta [`docs/`](file:///home/frecodev/Documentos/eva/docs):
+
+- [`docs/ESTRATEGIAS_BLOQUEO_FIREBASE.md`](file:///home/frecodev/Documentos/eva/docs/ESTRATEGIAS_BLOQUEO_FIREBASE.md) - Estrategias de bloqueo de acceso, suspensión y kill-switch en Firebase.
+- [`docs/COSTOS_Y_ALMACENAMIENTO.md`](file:///home/frecodev/Documentos/eva/docs/COSTOS_Y_ALMACENAMIENTO.md)
+- [`docs/OPTIMIZACION_BASE_DE_DATOS.md`](file:///home/frecodev/Documentos/eva/docs/OPTIMIZACION_BASE_DE_DATOS.md)
+- [`docs/PROPUESTA_CONSOLIDADO_REALTIME.md`](file:///home/frecodev/Documentos/eva/docs/PROPUESTA_CONSOLIDADO_REALTIME.md)
+- [`docs/REFACTORIZACION_GRAFICO_TENDENCIA.md`](file:///home/frecodev/Documentos/eva/docs/REFACTORIZACION_GRAFICO_TENDENCIA.md)
+- [`docs/SECURITY.md`](file:///home/frecodev/Documentos/eva/docs/SECURITY.md)
+- [`docs/SISTEMA_PERMISOS.md`](file:///home/frecodev/Documentos/eva/docs/SISTEMA_PERMISOS.md)
+
