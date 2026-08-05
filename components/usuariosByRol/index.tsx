@@ -2,7 +2,7 @@ import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { User } from '@/features/types/types'
 import React, { useState } from 'react'
 import styles from './styles.module.css'
-import { RiDeleteBinLine, RiSearchLine } from 'react-icons/ri'
+import { RiDeleteBinLine, RiSearchLine, RiUserAddLine } from 'react-icons/ri'
 import { MdEditSquare } from 'react-icons/md'
 import DeleteUsuario from '@/modals/deleteUsuario'
 import DocenteModal from '@/components/modals/DocenteModal'
@@ -11,9 +11,10 @@ import { getGradoTexto, getSeccionTexto, regiones, area, getCaracteristicasDirec
 interface Props {
     usuariosByRol: User[]
     showSearch?: boolean
+    onReclamarDocente?: (user: User) => void
 }
 
-const UsuariosByRol = ({ usuariosByRol, showSearch = true }: Props) => {
+const UsuariosByRol = ({ usuariosByRol, showSearch = true, onReclamarDocente }: Props) => {
     const [showModalEdit, setShowModalEdit] = useState(false)
     const [showModalDelete, setShowModalDelete] = useState(false)
     const [dataDocente, setDataDocente] = useState<User>({} as User)
@@ -165,22 +166,33 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true }: Props) => {
                                         </span>
                                     </td>
                                     <td>
-                                        <div className={styles.actions}>
+                                        {onReclamarDocente ? (
                                             <button
-                                                className={`${styles.actionButton} ${styles.editButton}`}
-                                                onClick={() => handleEdit(user)}
-                                                title="Editar docente"
+                                                className={styles.reclamarBtn}
+                                                onClick={() => onReclamarDocente(user)}
+                                                title="Reclamar docente para mi plantilla"
                                             >
-                                                <MdEditSquare />
+                                                <RiUserAddLine size={16} />
+                                                <span>Reclamar</span>
                                             </button>
-                                            <button
-                                                className={`${styles.actionButton} ${styles.deleteButton}`}
-                                                onClick={() => handleDelete(user)}
-                                                title="Eliminar docente"
-                                            >
-                                                <RiDeleteBinLine />
-                                            </button>
-                                        </div>
+                                        ) : (
+                                            <div className={styles.actions}>
+                                                <button
+                                                    className={`${styles.actionButton} ${styles.editButton}`}
+                                                    onClick={() => handleEdit(user)}
+                                                    title="Editar docente"
+                                                >
+                                                    <MdEditSquare />
+                                                </button>
+                                                <button
+                                                    className={`${styles.actionButton} ${styles.deleteButton}`}
+                                                    onClick={() => handleDelete(user)}
+                                                    title="Eliminar docente"
+                                                >
+                                                    <RiDeleteBinLine />
+                                                </button>
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                             ))
@@ -205,12 +217,21 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true }: Props) => {
                                     <span className={styles.cardDni}>DNI: {user.dni}</span>
                                 </div>
                                 <div className={styles.cardActions}>
-                                    <button className={styles.mobileEditButton} onClick={() => handleEdit(user)}>
-                                        <MdEditSquare size={20} />
-                                    </button>
-                                    <button className={styles.mobileDeleteButton} onClick={() => handleDelete(user)}>
-                                        <RiDeleteBinLine size={20} />
-                                    </button>
+                                    {onReclamarDocente ? (
+                                        <button className={styles.reclamarBtn} onClick={() => onReclamarDocente(user)}>
+                                            <RiUserAddLine size={16} />
+                                            <span>Reclamar</span>
+                                        </button>
+                                    ) : (
+                                        <>
+                                            <button className={styles.mobileEditButton} onClick={() => handleEdit(user)}>
+                                                <MdEditSquare size={20} />
+                                            </button>
+                                            <button className={styles.mobileDeleteButton} onClick={() => handleDelete(user)}>
+                                                <RiDeleteBinLine size={20} />
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
 

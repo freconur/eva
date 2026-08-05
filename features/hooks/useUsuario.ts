@@ -471,18 +471,21 @@ const useUsuario = () => {
     dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
     try {
       let isRealtime = realtimeEnabled;
+      let añoExamen = currentYear.toString();
 
-      // Si el parámetro local no es true, consultamos en caliente para evitar bypasses debido a retrasos de reactividad
-      if (!isRealtime) {
-        console.log('realtimeEnabled es falso o indefinido localmente. Consultando Firestore en caliente...');
-        const evalDocRef = doc(db, 'evaluaciones', idEvaluacion);
-        const evalSnap = await getDoc(evalDocRef);
-        if (evalSnap.exists()) {
-          isRealtime = evalSnap.data()?.realtimeEnabled === true;
+      const evalDocRef = doc(db, 'evaluaciones', idEvaluacion);
+      const evalSnap = await getDoc(evalDocRef);
+      if (evalSnap.exists()) {
+        const evalData = evalSnap.data();
+        if (!isRealtime) {
+          isRealtime = evalData?.realtimeEnabled === true;
+        }
+        if (evalData?.añoDelExamen) {
+          añoExamen = evalData.añoDelExamen;
         }
       }
 
-      console.log('¿Borrar usando flujo en tiempo real?:', isRealtime);
+      console.log('¿Borrar usando flujo en tiempo real?:', isRealtime, 'Año:', añoExamen);
 
       if (isRealtime) {
         const { functions } = await import('@/firebase/firebase.config');
@@ -490,7 +493,7 @@ const useUsuario = () => {
         const deleteFn = httpsCallable(functions, 'deleteStudentEvaluationRealtime');
         await deleteFn({
           idEvaluacion,
-          año: currentYear.toString(),
+          año: añoExamen,
           mes: `${monthSelected}`,
           dniEstudiante: idEstudiante,
           dniDocente: currentUserData.dni
@@ -498,7 +501,7 @@ const useUsuario = () => {
       } else {
         const pathRefBorrarEstudianteEvaluacion = doc(
           db,
-          `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${currentYear}/${monthSelected}`,
+          `/evaluaciones/${idEvaluacion}/estudiantes-evaluados/${añoExamen}/${monthSelected}`,
           idEstudiante
         );
         await deleteDoc(pathRefBorrarEstudianteEvaluacion);

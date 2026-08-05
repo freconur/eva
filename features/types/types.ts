@@ -360,6 +360,8 @@ export type User = {
   perfil?: UserPerfil;
   modular?: string;
   dniDirector?: string;
+  dniDirectorAnterior?: string;
+  fechaActualizacion?: any;
   rolDirector?: number;
   rol?: number;
   region?: number;

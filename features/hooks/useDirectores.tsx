@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, getFirestore, onSnapshot, query, updateDoc, where } from "firebase/firestore"
+import { collection, doc, getDocs, getFirestore, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore"
 import { app } from "@/firebase/firebase.config";
 import { AppAction } from "../actions/appAction";
 import { useGlobalContextDispatch } from "../context/GlolbalContext";
@@ -72,9 +72,64 @@ export const useDirectores = () => {
 
     // Set the "capital" field of the city 'DC'
   }
+  const getDocentesCoincidentesByNombreApellido = async (docentesDirector: User[]): Promise<User[]> => {
+    if (!docentesDirector || docentesDirector.length === 0) return []
+
+    // Conjunto de DNIs normalizados ya presentes en la primera tabla (para descartarlos)
+    const dnisAsignados = new Set(
+      docentesDirector
+        .map(d => String(d.dni || '').trim())
+        .filter(Boolean)
+    )
+
+    // Normalizar nombres y apellidos de los docentes del director
+    const targetKeys = new Set(
+      docentesDirector
+        .filter(d => d.nombres && d.apellidos)
+        .map(d => `${(d.nombres || '').trim().toLowerCase()}|${(d.apellidos || '').trim().toLowerCase()}`)
+    )
+
+    if (targetKeys.size === 0) return []
+
+    const pathRef = collection(db, "usuarios")
+    const querySnapshot = await getDocs(pathRef)
+    const coincidentesMap = new Map<string, User>()
+
+    querySnapshot.forEach((docSnap) => {
+      const user = docSnap.data() as User
+
+      // Descartar si el usuario ya existe en la primera tabla (por DNI)
+      if (user.dni && dnisAsignados.has(String(user.dni).trim())) {
+        return
+      }
+
+      if (user.nombres && user.apellidos) {
+        const key = `${user.nombres.trim().toLowerCase()}|${user.apellidos.trim().toLowerCase()}`
+        if (targetKeys.has(key)) {
+          // Guardar por clave única (docSnap.id o dni) para evitar duplicados en los resultados
+          const uniqueId = docSnap.id || user.dni || `${user.nombres}-${user.apellidos}`
+          coincidentesMap.set(uniqueId, user)
+        }
+      }
+    })
+
+    return Array.from(coincidentesMap.values())
+  }
+
+  const reclamarDocente = async (dniDocente: string, nuevoDniDirector: string, dniDirectorAnterior?: string) => {
+    const pathRef = doc(db, "usuarios", `${dniDocente}`)
+    await updateDoc(pathRef, {
+      dniDirector: `${nuevoDniDirector}`,
+      dniDirectorAnterior: dniDirectorAnterior || null,
+      fechaActualizacion: serverTimestamp()
+    })
+  }
+
   return {
     getDocentesByDniDirector,
     gettAllProfesores,
-    fixedgrado
+    fixedgrado,
+    getDocentesCoincidentesByNombreApellido,
+    reclamarDocente
   }
 }
