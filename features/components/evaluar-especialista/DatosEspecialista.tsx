@@ -27,6 +27,10 @@ interface DatosEspecialistaProps {
     setTituloReporte: (v: string) => void;
     warningDataDocente: string;
     handleCerrarEspecialista: () => void;
+    selectedFaseId?: string;
+    setSelectedFaseId?: (v: string) => void;
+    handleFaseChange?: (v: string) => void;
+    fasesDisponibles?: { id: string; nombre: string }[];
 }
 
 const DatosEspecialista: React.FC<DatosEspecialistaProps> = ({
@@ -52,16 +56,54 @@ const DatosEspecialista: React.FC<DatosEspecialistaProps> = ({
     setTituloReporte,
     warningDataDocente,
     handleCerrarEspecialista,
+    selectedFaseId,
+    setSelectedFaseId,
+    handleFaseChange,
+    fasesDisponibles,
 }) => (
     <div className={styles.premiumInfoContainer}>
-        {dataEvaluacionDocente?.faseNombre && (
+        {fasesDisponibles && fasesDisponibles.length > 0 ? (
+            <div className={styles.phaseBanner}>
+                <MdAssignment className={styles.phaseIcon} />
+                <div className={styles.phaseSelectorContent}>
+                    <span className={styles.phaseLabelText}>Etapa de Evaluación:</span>
+                    <select
+                        className={styles.phaseSelect}
+                        value={selectedFaseId || dataEvaluacionDocente?.faseActualID || ''}
+                        onChange={(e) => {
+                            if (handleFaseChange) {
+                                handleFaseChange(e.target.value);
+                            } else if (setSelectedFaseId) {
+                                setSelectedFaseId(e.target.value);
+                            }
+                        }}
+                    >
+                        {fasesDisponibles.map((fase) => (
+                            <option key={fase.id} value={fase.id}>
+                                {fase.nombre} {fase.id === dataEvaluacionDocente?.faseActualID ? '(Actual)' : ''}
+                            </option>
+                        ))}
+                    </select>
+                    {selectedFaseId && selectedFaseId !== dataEvaluacionDocente?.faseActualID && (
+                        <span className={styles.pastPhaseBadge}>
+                            Etapa Anterior
+                        </span>
+                    )}
+                    {selectedFaseId === dataEvaluacionDocente?.faseActualID && (
+                        <span className={styles.activePhaseBadge}>
+                            Etapa Actual
+                        </span>
+                    )}
+                </div>
+            </div>
+        ) : dataEvaluacionDocente?.faseNombre ? (
             <div className={styles.phaseBanner}>
                 <MdAssignment />
                 <span>
                     Etapa de Evaluación Actual: <strong>{dataEvaluacionDocente.faseNombre}</strong>
                 </span>
             </div>
-        )}
+        ) : null}
 
         {/* Datos del monitoreado - siempre visible */}
         <div className={styles.infoSectionHeader}>

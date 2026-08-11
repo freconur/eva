@@ -412,6 +412,9 @@ export type User = {
   fechaCreacion?: any;
   id?: string;
   idFase?: string;
+  faseActualID?: string;
+  faseNombre?: string;
+  especialistaDni?: string;
   numeroEvaluacion?: number;
   tipoGestion?: 'publico' | 'privado';
   totalEstudiantes?: number;
@@ -571,6 +574,7 @@ export type DataEvaluacion = {
   camposRetroalimentacion?: Array<string | CampoRetroalimentacionConfig>;
   faseActualID?: string;
   faseNombre?: string;
+  fases?: Array<{ id: string; nombre: string }>;
   descripcion?: string;
 };
 

@@ -44,6 +44,12 @@ const EvaluarEspecialista = () => {
     tituloReporte,
     setTituloReporte,
     currentEscala,
+    // Fases
+    selectedFaseId,
+    setSelectedFaseId,
+    fasesDisponibles,
+    handleFaseChange,
+    loadingFase,
     // Búsqueda
     dniDocente,
     especialistasFiltrados,
@@ -81,10 +87,12 @@ const EvaluarEspecialista = () => {
       <div className={styles.contentWrapper}>
         <div className={styles.content}>
           <div className={styles.contentInner}>
-            {loaderSalvarPregunta ? (
+            {loaderSalvarPregunta || loadingFase ? (
               <div className={styles.loadingContainer}>
                 <RiLoader4Line className={styles.loadingIcon} />
-                <span className={styles.loadingText}>Guardando evaluación...</span>
+                <span className={styles.loadingText}>
+                  {loadingFase ? 'Cargando datos de la etapa...' : 'Guardando evaluación...'}
+                </span>
               </div>
             ) : (
               <>
@@ -129,6 +137,10 @@ const EvaluarEspecialista = () => {
                       setTituloReporte={setTituloReporte}
                       warningDataDocente={warningDataDocente}
                       handleCerrarEspecialista={handleCerrarEspecialista}
+                      selectedFaseId={selectedFaseId}
+                      setSelectedFaseId={setSelectedFaseId}
+                      handleFaseChange={handleFaseChange}
+                      fasesDisponibles={fasesDisponibles}
                     />
                   )}
                 </div>

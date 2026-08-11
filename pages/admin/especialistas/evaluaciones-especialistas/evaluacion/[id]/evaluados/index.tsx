@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { MdArrowBack, MdSearch, MdPeople, MdExpandMore, MdExpandLess, MdTrendingUp, MdTrendingDown, MdTrendingFlat, MdHistory, MdDelete, MdWarning } from 'react-icons/md';
+import { MdArrowBack, MdSearch, MdPeople, MdExpandMore, MdExpandLess, MdTrendingUp, MdTrendingDown, MdTrendingFlat, MdHistory, MdDelete, MdWarning, MdSort, MdArrowUpward, MdArrowDownward } from 'react-icons/md';
 import { RiLoader4Line } from 'react-icons/ri';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas';
@@ -43,6 +43,9 @@ const EvaluadosPage = () => {
 	const { getEspecialistasEvaluados, getDataEvaluacion, getHistorialEspecialista, getPreguntasRespuestasEspecialistas, getDimensionesEspecialistas, deleteEvaluadoSession } = UseEvaluacionEspecialistas();
 	const [searchQuery, setSearchQuery] = useState<string>('');
 	const [selectedFase, setSelectedFase] = useState<string>('');
+	const [sortOrder, setSortOrder] = useState<'default' | 'score-desc' | 'score-asc'>('default');
+	const [showSortDropdown, setShowSortDropdown] = useState(false);
+	const sortDropdownRef = useRef<HTMLDivElement>(null);
 	const [showModalEvolucion, setShowModalEvolucion] = useState(false);
 	const [selectedEspecialista, setSelectedEspecialista] = useState<User | null>(null);
 	const [historialSelected, setHistorialSelected] = useState<User[]>([]);
@@ -52,6 +55,16 @@ const EvaluadosPage = () => {
 	const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 	const [evaluacionToDelete, setEvaluacionToDelete] = useState<{ id: string; name: string } | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
+
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target as Node)) {
+				setShowSortDropdown(false);
+			}
+		};
+		document.addEventListener('mousedown', handleClickOutside);
+		return () => document.removeEventListener('mousedown', handleClickOutside);
+	}, []);
 
 	useEffect(() => {
 		if (id) {
@@ -145,16 +158,36 @@ const EvaluadosPage = () => {
 
 		const result = Object.values(groups);
 
-		if (!searchQuery) return result;
+		const filteredResult = searchQuery
+			? result.filter(group => {
+				const q = searchQuery.toLowerCase();
+				return (
+					group.info.nombres?.toLowerCase().includes(q) ||
+					group.info.apellidos?.toLowerCase().includes(q) ||
+					group.info.dni?.toLowerCase().includes(q) ||
+					group.info.ugel?.toLowerCase().includes(q)
+				);
+			})
+			: result;
 
-		const q = searchQuery.toLowerCase();
-		return result.filter(group =>
-			group.info.nombres?.toLowerCase().includes(q) ||
-			group.info.apellidos?.toLowerCase().includes(q) ||
-			group.info.dni?.toLowerCase().includes(q) ||
-			group.info.ugel?.toLowerCase().includes(q)
-		);
-	}, [evaluadosEspecialista, searchQuery, selectedFase]);
+		if (sortOrder === 'score-desc') {
+			return [...filteredResult].sort((a, b) => {
+				const scoreA = a.evaluations[0]?.calificacion ?? -1;
+				const scoreB = b.evaluations[0]?.calificacion ?? -1;
+				return scoreB - scoreA;
+			});
+		}
+
+		if (sortOrder === 'score-asc') {
+			return [...filteredResult].sort((a, b) => {
+				const scoreA = a.evaluations[0]?.calificacion ?? Infinity;
+				const scoreB = b.evaluations[0]?.calificacion ?? Infinity;
+				return scoreA - scoreB;
+			});
+		}
+
+		return filteredResult;
+	}, [evaluadosEspecialista, searchQuery, selectedFase, sortOrder]);
 
 	const toggleRow = (dni: string) => {
 		const newExpanded = new Set(expandedRows);
@@ -502,6 +535,44 @@ const EvaluadosPage = () => {
 							</select>
 						</div>
 					)}
+					<div className={styles.sortDropdownContainer} ref={sortDropdownRef}>
+						<button
+							type="button"
+							className={styles.sortDropdownButton}
+							onClick={() => setShowSortDropdown(!showSortDropdown)}
+						>
+							<MdSort className={styles.sortIcon} />
+							<span>
+								{sortOrder === 'score-desc' && 'Calif: Mayor a Menor'}
+								{sortOrder === 'score-asc' && 'Calif: Menor a Mayor'}
+								{sortOrder === 'default' && 'Ordenar por calif.'}
+							</span>
+							<MdExpandMore className={`${styles.sortArrow} ${showSortDropdown ? styles.sortArrowOpen : ''}`} />
+						</button>
+
+						{showSortDropdown && (
+							<div className={styles.sortDropdownMenu}>
+								<div
+									className={`${styles.sortDropdownItem} ${sortOrder === 'default' ? styles.sortItemActive : ''}`}
+									onClick={() => { setSortOrder('default'); setShowSortDropdown(false); }}
+								>
+									<MdSort /> Sin orden especial
+								</div>
+								<div
+									className={`${styles.sortDropdownItem} ${sortOrder === 'score-desc' ? styles.sortItemActive : ''}`}
+									onClick={() => { setSortOrder('score-desc'); setShowSortDropdown(false); }}
+								>
+									<MdArrowDownward style={{ color: '#16a34a' }} /> Mayor a Menor (Descendente)
+								</div>
+								<div
+									className={`${styles.sortDropdownItem} ${sortOrder === 'score-asc' ? styles.sortItemActive : ''}`}
+									onClick={() => { setSortOrder('score-asc'); setShowSortDropdown(false); }}
+								>
+									<MdArrowUpward style={{ color: '#2563eb' }} /> Menor a Mayor (Ascendente)
+								</div>
+							</div>
+						)}
+					</div>
 					<span className={styles.resultCount}>
 						{groupedEvaluados.length} especialista{groupedEvaluados.length !== 1 ? 's' : ''}
 					</span>

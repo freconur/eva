@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas';
@@ -25,6 +25,7 @@ export const useEvaluarEspecialista = () => {
         dataEvaluacionDocente,
         currentUserData,
         dataDirector,
+        evaluadosEspecialista,
     } = useGlobalContext();
 
     const {
@@ -35,12 +36,14 @@ export const useEvaluarEspecialista = () => {
         getDimensionesEspecialistas,
         getDataEvaluacion,
         dataEspecialista,
+        setDataEspecialista,
         getDataSeguimientoRetroalimentacionEspecialista,
         uploadEvidencia,
         deleteEvidencia,
         updateConfiguracionCamposRetro,
         getHistorialEspecialista,
         getTodosLosEspecialistas,
+        getEspecialistasEvaluados,
     } = UseEvaluacionEspecialistas();
 
     // Condicional de rol
@@ -61,7 +64,68 @@ export const useEvaluarEspecialista = () => {
     const [tituloReporte, setTituloReporte] = useState<string>('');
     const [monitorDataFijo, setMonitorDataFijo] = useState<any>(null);
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+    const [selectedFaseId, setSelectedFaseId] = useState<string>('');
+    const [loadingFase, setLoadingFase] = useState<boolean>(false);
     const isDataLoadedRef = useRef(false);
+
+    // ── Fases disponibles ─────────────────────────────────────────────────────
+    const fasesDisponibles = useMemo(() => {
+        const fases: { id: string; nombre: string }[] = [];
+
+        const getCleanPhaseName = (faseNombre?: string, idFase?: string) => {
+            if (faseNombre) return faseNombre;
+            if (!idFase) return '—';
+            const parts = idFase.split('_');
+            if (parts.length > 1 && !isNaN(Number(parts[parts.length - 1]))) {
+                return parts.slice(0, -1).join(' ').replace(/_/g, ' ');
+            }
+            return idFase.replace(/_/g, ' ');
+        };
+
+        // 1. Fases guardadas en el documento de evaluación principal
+        if (dataEvaluacionDocente?.fases && Array.isArray(dataEvaluacionDocente.fases)) {
+            dataEvaluacionDocente.fases.forEach((f: any) => {
+                if (f.id && !fases.find(x => x.id === f.id)) {
+                    fases.push({ id: f.id, nombre: f.nombre || getCleanPhaseName(undefined, f.id) });
+                }
+            });
+        }
+
+        // 2. Fase actual del documento de evaluación
+        if (dataEvaluacionDocente?.faseActualID) {
+            if (!fases.find(x => x.id === dataEvaluacionDocente.faseActualID)) {
+                fases.push({
+                    id: dataEvaluacionDocente.faseActualID,
+                    nombre: dataEvaluacionDocente.faseNombre || getCleanPhaseName(undefined, dataEvaluacionDocente.faseActualID)
+                });
+            }
+        }
+
+        // 3. Fases presentes en la lista de evaluados
+        if (evaluadosEspecialista) {
+            evaluadosEspecialista.forEach((esp: any) => {
+                const rawId = esp.idFase || esp.faseActualID;
+                if (!rawId) return;
+                if (!fases.find(f => f.id === rawId)) {
+                    fases.push({
+                        id: rawId,
+                        nombre: esp.faseNombre || getCleanPhaseName(undefined, rawId)
+                    });
+                }
+            });
+        }
+
+        return fases;
+    }, [dataEvaluacionDocente, evaluadosEspecialista]);
+
+    // Establecer fase por defecto cuando se cargue la evaluación
+    useEffect(() => {
+        if (!selectedFaseId && dataEvaluacionDocente?.faseActualID) {
+            setSelectedFaseId(dataEvaluacionDocente.faseActualID);
+        } else if (!selectedFaseId && fasesDisponibles.length > 0) {
+            setSelectedFaseId(fasesDisponibles[0].id);
+        }
+    }, [dataEvaluacionDocente?.faseActualID, fasesDisponibles, selectedFaseId]);
 
     // ── Sub-hooks ─────────────────────────────────────────────────────────────
 
@@ -115,6 +179,7 @@ export const useEvaluarEspecialista = () => {
         getHistorialEspecialista,
         getDataSeguimientoRetroalimentacionEspecialista,
         evaluacionId,
+        selectedFaseId,
         dataEspecialista,
         dataDirector,
         dataEvaluacionDocente,
@@ -126,6 +191,47 @@ export const useEvaluarEspecialista = () => {
         setCurrentSessionId,
         setHoraInicio,
     });
+
+    // Cambiar de fase y buscar automáticamente sesión existente o limpiar formulario
+    const handleFaseChange = async (newFaseId: string) => {
+        setSelectedFaseId(newFaseId);
+        const targetDni = dataDirector?.dni || dataEspecialista?.dni || dataEspecialista?.especialistaDni;
+        if (!evaluacionId || !targetDni) return;
+
+        setLoadingFase(true);
+        try {
+            const history = await getHistorialEspecialista(evaluacionId, targetDni);
+            const foundSession = history.find(h => (h.idFase === newFaseId || h.faseActualID === newFaseId));
+
+            if (foundSession && foundSession.id) {
+                setCurrentSessionId(foundSession.id);
+                getDataSeguimientoRetroalimentacionEspecialista(evaluacionId, foundSession.id);
+                isDataLoadedRef.current = false;
+            } else {
+                setCurrentSessionId(null);
+                setDataEspecialista({});
+                const basePR = originalPR.length > 0 ? originalPR : copyPR;
+                const cleanPR = basePR.map(p => ({
+                    ...p,
+                    alternativas: p.alternativas?.map(a => ({ ...a, selected: false })) || [],
+                    evidencias: []
+                }));
+                setCopyPR(cleanPR);
+                setRetroalimentacionDinamica([]);
+                setFechaMonitoreo(new Date().toISOString().split('T')[0]);
+                setHoraInicio('');
+                setHoraFinal('');
+                setTituloReporte('');
+                isDataLoadedRef.current = false;
+            }
+        } catch (error) {
+            console.error("Error al cambiar de fase:", error);
+        } finally {
+            setTimeout(() => {
+                setLoadingFase(false);
+            }, 300);
+        }
+    };
 
     // ── Efectos ───────────────────────────────────────────────────────────────
 
@@ -194,12 +300,13 @@ export const useEvaluarEspecialista = () => {
         fetchMonitor();
     }, [isAutoreporte]);
 
-    // Cargar preguntas, dimensiones y modelo de evaluación
+    // Cargar preguntas, dimensiones, modelo de evaluación y evaluados
     useEffect(() => {
         if (evaluacionId) {
             getPreguntasRespuestasEspecialistas(evaluacionId);
             getDimensionesEspecialistas(evaluacionId);
             getDataEvaluacion(evaluacionId);
+            getEspecialistasEvaluados(evaluacionId);
         }
     }, [evaluacionId]);
 
@@ -216,11 +323,12 @@ export const useEvaluarEspecialista = () => {
         if (
             dataDirector.dni &&
             dataEspecialista &&
-            dataEspecialista.dni === dataDirector.dni &&
+            (dataEspecialista.dni === dataDirector.dni || dataEspecialista.especialistaDni === dataDirector.dni) &&
             !isDataLoadedRef.current
         ) {
             if (dataEspecialista.resultadosSeguimientoRetroalimentacion) {
-                const copyPRConRespuestas = copyPR.map(pregunta => {
+                const basePR = originalPR.length > 0 ? originalPR : copyPR;
+                const copyPRConRespuestas = basePR.map(pregunta => {
                     const respuesta = dataEspecialista.resultadosSeguimientoRetroalimentacion?.find(
                         (r: any) => r.order === pregunta.order
                     );
@@ -237,9 +345,21 @@ export const useEvaluarEspecialista = () => {
                             evidencias: respuesta.evidencias || [],
                         };
                     }
-                    return pregunta;
+                    return {
+                        ...pregunta,
+                        alternativas: pregunta.alternativas?.map(a => ({ ...a, selected: false })),
+                        evidencias: []
+                    };
                 });
                 setCopyPR(copyPRConRespuestas);
+            } else {
+                const basePR = originalPR.length > 0 ? originalPR : copyPR;
+                const cleanPR = basePR.map(p => ({
+                    ...p,
+                    alternativas: p.alternativas?.map(a => ({ ...a, selected: false })) || [],
+                    evidencias: []
+                }));
+                setCopyPR(cleanPR);
             }
 
             if (dataEspecialista.fechaMonitoreo) setFechaMonitoreo(dataEspecialista.fechaMonitoreo);
@@ -250,10 +370,13 @@ export const useEvaluarEspecialista = () => {
             if (dataEspecialista.datosMonitor?.email) setEmailMonitor(dataEspecialista.datosMonitor.email);
             if (dataEspecialista.datosMonitor?.celular) setCelularMonitor(dataEspecialista.datosMonitor.celular);
             if (dataEspecialista.tituloReporte) setTituloReporte(dataEspecialista.tituloReporte);
+            if (dataEspecialista.idFase || dataEspecialista.faseActualID) {
+                setSelectedFaseId(dataEspecialista.idFase || dataEspecialista.faseActualID || '');
+            }
 
             isDataLoadedRef.current = true;
         }
-    }, [dataEspecialista, dataDirector.dni, copyPR.length]);
+    }, [dataEspecialista, dataDirector.dni, originalPR]);
 
     // Capturar hora de inicio al encontrar al especialista
     useEffect(() => {
@@ -290,6 +413,17 @@ export const useEvaluarEspecialista = () => {
         });
     };
 
+    const getSelectedFaseOverride = () => {
+        const targetFaseObj = fasesDisponibles.find(f => f.id === selectedFaseId) || (
+            dataEvaluacionDocente?.faseActualID
+                ? { id: dataEvaluacionDocente.faseActualID, nombre: dataEvaluacionDocente.faseNombre || '' }
+                : undefined
+        );
+        return targetFaseObj
+            ? { idFase: targetFaseObj.id, faseNombre: targetFaseObj.nombre }
+            : undefined;
+    };
+
     const handleAutoSave = async (
         currentPR = copyPR,
         currentFeedback = retroalimentacionDinamica
@@ -315,7 +449,8 @@ export const useEvaluarEspecialista = () => {
             monitorData,
             tituloReporte,
             true,
-            currentSessionId || undefined
+            currentSessionId || undefined,
+            getSelectedFaseOverride()
         );
         if (!currentSessionId && savedId) setCurrentSessionId(savedId);
     };
@@ -353,7 +488,8 @@ export const useEvaluarEspecialista = () => {
             monitorData,
             tituloReporte,
             false,
-            currentSessionId || undefined
+            currentSessionId || undefined,
+            getSelectedFaseOverride()
         );
         if (!currentSessionId && savedId) setCurrentSessionId(savedId);
         return savedId;
@@ -429,6 +565,12 @@ export const useEvaluarEspecialista = () => {
         setTituloReporte,
         currentSessionId,
         currentEscala,
+        // Fases
+        selectedFaseId,
+        setSelectedFaseId,
+        fasesDisponibles,
+        handleFaseChange,
+        loadingFase,
         // Búsqueda
         dniDocente,
         especialistasFiltrados,

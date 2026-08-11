@@ -680,9 +680,25 @@ const UseEvaluacionEspecialistas = () => {
     try {
       const docRef = doc(db, 'evaluaciones-especialista', idEvaluacion);
       const faseActualID = `${nombreFase.toUpperCase().replace(/\s+/g, '_')}_${Date.now()}`;
+      
+      const docSnap = await getDoc(docRef);
+      const currentData = docSnap.exists() ? docSnap.data() : {};
+      const fasesPrevias: { id: string; nombre: string }[] = currentData?.fases || [];
+      if (currentData?.faseActualID && !fasesPrevias.some(f => f.id === currentData.faseActualID)) {
+        fasesPrevias.push({
+          id: currentData.faseActualID,
+          nombre: currentData.faseNombre || currentData.faseActualID
+        });
+      }
+      const newFaseObj = { id: faseActualID, nombre: nombreFase };
+      const updatedFases = fasesPrevias.some(f => f.id === faseActualID)
+        ? fasesPrevias
+        : [...fasesPrevias, newFaseObj];
+
       await updateDoc(docRef, {
         faseActualID,
-        faseNombre: nombreFase
+        faseNombre: nombreFase,
+        fases: updatedFases
       });
     } catch (error) {
       console.error("Error updating phase:", error);
@@ -804,7 +820,8 @@ const UseEvaluacionEspecialistas = () => {
     datosMonitor?: any,
     tituloReporte?: string,
     silent?: boolean,
-    sessionId?: string
+    sessionId?: string,
+    selectedFaseOverride?: { idFase?: string; faseNombre?: string }
   ) => {
 
     console.log('entrando a guardar datos')
@@ -822,17 +839,17 @@ const UseEvaluacionEspecialistas = () => {
       const nombreMes = getMonthName(currentMonth).toUpperCase();
       const idFaseAuto = `${nombreMes}_${currentYear}`;
 
-      let idFase = dataEvaluacionDocente?.faseActualID || idFaseAuto;
-      let faseNombre = dataEvaluacionDocente?.faseNombre || '';
+      let idFase = selectedFaseOverride?.idFase || dataEvaluacionDocente?.faseActualID || idFaseAuto;
+      let faseNombre = selectedFaseOverride?.faseNombre || dataEvaluacionDocente?.faseNombre || '';
       let numeroEvaluacion = 1;
 
       if (sessionId) {
-        // Si ya tiene sessionID, recuperamos la fase y el número que ya tenía
+        // Si ya tiene sessionID, recuperamos la fase y el número que ya tenía, salvo que se haya enviado una nueva fase explícitamente
         const docSnap = await getDoc(path);
         if (docSnap.exists()) {
           const docData = docSnap.data();
-          idFase = docData.idFase || idFase;
-          faseNombre = docData.faseNombre || faseNombre;
+          idFase = selectedFaseOverride?.idFase || docData.idFase || idFase;
+          faseNombre = selectedFaseOverride?.faseNombre || docData.faseNombre || faseNombre;
           numeroEvaluacion = docData.numeroEvaluacion || 1;
         }
       } else {

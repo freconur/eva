@@ -162,6 +162,92 @@
     white-space: nowrap;
 }
 
+/* ── Sort Dropdown Custom ──────────────────────────── */
+.sortDropdownContainer {
+    position: relative;
+    display: inline-block;
+}
+
+.sortDropdownButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #1e293b;
+    background: white;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.sortDropdownButton:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.sortIcon {
+    font-size: 1.1rem;
+    color: #2563eb;
+}
+
+.sortArrow {
+    font-size: 1.1rem;
+    color: #64748b;
+    transition: transform 0.2s ease;
+}
+
+.sortArrowOpen {
+    transform: rotate(180deg);
+}
+
+.sortDropdownMenu {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    right: 0;
+    min-width: 235px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 50;
+    overflow: hidden;
+    padding: 0.35rem 0;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.sortDropdownItem {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sortDropdownItem:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.sortItemActive {
+    background: #eff6ff;
+    color: #2563eb;
+    font-weight: 600;
+}
+
+.sortItemActive:hover {
+    background: #dbeafe;
+}
+
 /* ── Table ──────────────────────────────── */
 .tableWrapper {
     overflow-x: auto;

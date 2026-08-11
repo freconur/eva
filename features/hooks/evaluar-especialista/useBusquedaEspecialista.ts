@@ -9,6 +9,7 @@ interface UseBusquedaOptions {
     getHistorialEspecialista: (evaluacionId: string, dni: string) => Promise<User[]>;
     getDataSeguimientoRetroalimentacionEspecialista: (evaluacionId: string, dni: string) => void;
     evaluacionId?: string;
+    selectedFaseId?: string;
     // Estado compartido de lectura
     dataEspecialista: any;
     dataDirector: any;
@@ -30,6 +31,7 @@ export const useBusquedaEspecialista = ({
     getHistorialEspecialista,
     getDataSeguimientoRetroalimentacionEspecialista,
     evaluacionId,
+    selectedFaseId,
     dataEspecialista,
     dataDirector,
     dataEvaluacionDocente,
@@ -109,13 +111,14 @@ export const useBusquedaEspecialista = ({
             setHistorialEspecialista(history);
 
             if (history.length > 0) {
-                // Verificar si hay una sesión de la fase actual para autocompletar
-                const currentPhaseSession = dataEvaluacionDocente?.faseActualID
-                    ? history.find(h => h.idFase === dataEvaluacionDocente.faseActualID)
+                // Verificar si hay una sesión de la fase seleccionada (o activa) para autocompletar
+                const targetPhaseId = selectedFaseId || dataEvaluacionDocente?.faseActualID;
+                const phaseSession = targetPhaseId
+                    ? history.find(h => (h.idFase === targetPhaseId || h.faseActualID === targetPhaseId))
                     : null;
 
-                if (currentPhaseSession) {
-                    handleContinueEvaluation(currentPhaseSession.id!);
+                if (phaseSession && phaseSession.id) {
+                    handleContinueEvaluation(phaseSession.id);
                 } else {
                     setShowSessionSelector(true);
                 }
@@ -139,13 +142,14 @@ export const useBusquedaEspecialista = ({
             setHistorialEspecialista(history);
 
             if (history.length > 0) {
-                // Verificar si hay una sesión de la fase actual para autocompletar
-                const currentPhaseSession = dataEvaluacionDocente?.faseActualID
-                    ? history.find(h => h.idFase === dataEvaluacionDocente.faseActualID)
+                // Verificar si hay una sesión de la fase seleccionada (o activa) para autocompletar
+                const targetPhaseId = selectedFaseId || dataEvaluacionDocente?.faseActualID;
+                const phaseSession = targetPhaseId
+                    ? history.find(h => (h.idFase === targetPhaseId || h.faseActualID === targetPhaseId))
                     : null;
 
-                if (currentPhaseSession) {
-                    handleContinueEvaluation(currentPhaseSession.id!);
+                if (phaseSession && phaseSession.id) {
+                    handleContinueEvaluation(phaseSession.id);
                 } else {
                     setShowSessionSelector(true);
                 }
