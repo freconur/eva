@@ -759,18 +759,7 @@ const UseEvaluacionEspecialistas = () => {
   const deleteFaseEvaluacion = async (idEvaluacion: string, idFase: string) => {
     dispatch({ type: AppAction.LOADER_MODALES, payload: true });
     try {
-      // 1. Eliminar evaluaciones asociadas
-      const evaluadosRef = collection(db, `/evaluaciones-especialista/${idEvaluacion}/evaluados`);
-      const q = query(evaluadosRef, where("idFase", "==", idFase));
-      const querySnapshot = await getDocs(q);
-      
-      const batch = writeBatch(db);
-      querySnapshot.forEach((documento) => {
-        batch.delete(doc(db, `/evaluaciones-especialista/${idEvaluacion}/evaluados`, documento.id));
-      });
-      await batch.commit();
-
-      // 2. Actualizar documento principal (remover del arreglo fases y resetear faseActualID si correspondía)
+      // Se desvincula la etapa del documento principal sin eliminar los registros de evaluaciones existentes
       const mainDocRef = doc(db, 'evaluaciones-especialista', idEvaluacion);
       const mainSnap = await getDoc(mainDocRef);
       if (mainSnap.exists()) {

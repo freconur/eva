@@ -53,7 +53,7 @@ const ConfigurarFaseEspecialistas = ({ handleShowConfigurarFase, idEvaluacion, f
     };
 
     const handleDeleteFase = async (idFase: string, nombre: string) => {
-        if (window.confirm(`¿Estás seguro de que deseas eliminar la fase "${nombre}"? \n\n¡ATENCIÓN! Se eliminarán todas las evaluaciones realizadas bajo esta etapa de forma permanente.`)) {
+        if (window.confirm(`¿Estás seguro de que deseas eliminar la etapa "${nombre}" de la configuración? \n\nLos datos de las evaluaciones guardadas se conservarán intactos.`)) {
             try {
                 await deleteFaseEvaluacion(idEvaluacion, idFase);
             } catch (error) {

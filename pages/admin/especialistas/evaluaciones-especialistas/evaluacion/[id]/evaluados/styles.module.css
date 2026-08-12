@@ -484,31 +484,38 @@
 
 .detailGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
 }
 
 .evaluationItem {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.25rem;
+    flex-direction: column;
+    padding: 1.15rem 1.25rem;
     background: white;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
+    border-radius: 12px;
     transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .evaluationItem:hover {
     border-color: #cbd5e1;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
     transform: translateY(-2px);
+}
+
+.evalCardHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .evalMainInfo {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: 0.25rem;
 }
 
 .evalDateWrapper {
@@ -518,68 +525,84 @@
 }
 
 .evalDate {
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 0.9rem;
+    font-weight: 700;
     color: #1e293b;
+    white-space: nowrap;
 }
 
 .evalTime {
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     color: #94a3b8;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .evalFaseBadge {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
+    font-weight: 600;
     background: #f1f5f9;
     color: #475569;
-    padding: 0.15rem 0.5rem;
-    border-radius: 4px;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
     border: 1px solid #e2e8f0;
-    margin-top: 0.25rem;
-    display: inline-block;
+    width: fit-content;
+    white-space: nowrap;
+    margin-top: 0.15rem;
 }
 
 .evalScoreGroup {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.5rem;
+    gap: 0.2rem;
 }
 
 .evalLevelText {
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
 }
 
 .evalScore {
-    font-size: 0.8rem;
+    font-size: 0.95rem;
     color: #2563eb;
-    font-weight: 700;
+    font-weight: 800;
+    white-space: nowrap;
 }
 
 .evalActions {
     display: flex;
-    gap: 0.75rem;
     align-items: center;
+    gap: 0.6rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid #f1f5f9;
+    width: 100%;
 }
 
 .viewReportLink {
-    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.78rem;
     font-weight: 600;
     color: #2563eb;
     text-decoration: none;
-    padding: 0.35rem 0.75rem;
+    padding: 0.4rem 0.75rem;
     background: #eff6ff;
+    border: 1px solid #bfdbfe;
     border-radius: 6px;
     transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .viewReportLink:hover {
     background: #2563eb;
     color: white;
+    border-color: #2563eb;
 }
 
 .textMuted {
@@ -682,16 +705,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 99999;
     animation: fadeIn 0.2s ease-out;
 }
 
 .modalContent {
     background: white;
-    width: 90%;
-    max-width: 800px;
+    width: 95vw;
+    max-width: 1400px;
+    height: 90vh;
+    max-height: 900px;
     border-radius: 16px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     overflow: hidden;
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -728,7 +755,11 @@
 }
 
 .modalBody {
-    padding: 2rem;
+    padding: 1.5rem 2rem;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .modalTabs {
@@ -891,4 +922,26 @@
 .confirmDeleteButton:hover {
     background: #dc2626;
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.stageEvolucionButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #059669;
+    text-decoration: none;
+    padding: 0.35rem 0.65rem;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.stageEvolucionButton:hover {
+    background: #059669;
+    color: white;
+    border-color: #059669;
 }
