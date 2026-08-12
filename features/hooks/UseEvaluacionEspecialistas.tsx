@@ -679,7 +679,8 @@ const UseEvaluacionEspecialistas = () => {
     dispatch({ type: AppAction.LOADER_MODALES, payload: true });
     try {
       const docRef = doc(db, 'evaluaciones-especialista', idEvaluacion);
-      const faseActualID = `${nombreFase.toUpperCase().replace(/\s+/g, '_')}_${Date.now()}`;
+      const cleanNombre = nombreFase.trim();
+      const faseActualID = `${cleanNombre.toUpperCase().replace(/\s+/g, '_')}_${Date.now()}`;
       
       const docSnap = await getDoc(docRef);
       const currentData = docSnap.exists() ? docSnap.data() : {};
@@ -690,14 +691,22 @@ const UseEvaluacionEspecialistas = () => {
           nombre: currentData.faseNombre || currentData.faseActualID
         });
       }
-      const newFaseObj = { id: faseActualID, nombre: nombreFase };
-      const updatedFases = fasesPrevias.some(f => f.id === faseActualID)
-        ? fasesPrevias
-        : [...fasesPrevias, newFaseObj];
+
+      // Si ya existe una fase con el mismo nombre normalizado, actualizamos su ID
+      const existingIndex = fasesPrevias.findIndex(
+        f => f.nombre?.trim().toLowerCase() === cleanNombre.toLowerCase()
+      );
+
+      let updatedFases = [...fasesPrevias];
+      if (existingIndex !== -1) {
+        updatedFases[existingIndex] = { id: faseActualID, nombre: cleanNombre };
+      } else {
+        updatedFases.push({ id: faseActualID, nombre: cleanNombre });
+      }
 
       await updateDoc(docRef, {
         faseActualID,
-        faseNombre: nombreFase,
+        faseNombre: cleanNombre,
         fases: updatedFases
       });
     } catch (error) {
@@ -710,6 +719,8 @@ const UseEvaluacionEspecialistas = () => {
   const updateNombreFaseEvaluacion = async (idEvaluacion: string, idFase: string, nuevoNombre: string) => {
     dispatch({ type: AppAction.LOADER_MODALES, payload: true });
     try {
+      const cleanNombre = nuevoNombre.trim();
+
       // 1. Actualizar registros históricos en la subcolección 'evaluados'
       const evaluadosRef = collection(db, `/evaluaciones-especialista/${idEvaluacion}/evaluados`);
       const q = query(evaluadosRef, where("idFase", "==", idFase));
@@ -718,15 +729,24 @@ const UseEvaluacionEspecialistas = () => {
       const batch = writeBatch(db);
       querySnapshot.forEach((documento) => {
         batch.update(doc(db, `/evaluaciones-especialista/${idEvaluacion}/evaluados`, documento.id), {
-          faseNombre: nuevoNombre
+          faseNombre: cleanNombre
         });
       });
       await batch.commit();
 
-      // 2. Si es la fase actual, actualizar también el documento principal
-      if (dataEvaluacionDocente?.faseActualID === idFase) {
-        const mainDocRef = doc(db, 'evaluaciones-especialista', idEvaluacion);
-        await updateDoc(mainDocRef, { faseNombre: nuevoNombre });
+      // 2. Actualizar documento principal (arreglo de fases y si es la fase actual)
+      const mainDocRef = doc(db, 'evaluaciones-especialista', idEvaluacion);
+      const mainSnap = await getDoc(mainDocRef);
+      if (mainSnap.exists()) {
+        const mainData = mainSnap.data();
+        const updatedFases = (mainData.fases || []).map((f: any) =>
+          f.id === idFase ? { ...f, nombre: cleanNombre } : f
+        );
+        const updates: any = { fases: updatedFases };
+        if (mainData.faseActualID === idFase) {
+          updates.faseNombre = cleanNombre;
+        }
+        await updateDoc(mainDocRef, updates);
       }
     } catch (error) {
       console.error("Error al actualizar nombre de fase:", error);
@@ -750,13 +770,18 @@ const UseEvaluacionEspecialistas = () => {
       });
       await batch.commit();
 
-      // 2. Si es la fase actual, resetear en el documento principal
-      if (dataEvaluacionDocente?.faseActualID === idFase) {
-        const mainDocRef = doc(db, 'evaluaciones-especialista', idEvaluacion);
-        await updateDoc(mainDocRef, {
-          faseActualID: null,
-          faseNombre: null
-        });
+      // 2. Actualizar documento principal (remover del arreglo fases y resetear faseActualID si correspondía)
+      const mainDocRef = doc(db, 'evaluaciones-especialista', idEvaluacion);
+      const mainSnap = await getDoc(mainDocRef);
+      if (mainSnap.exists()) {
+        const mainData = mainSnap.data();
+        const updatedFases = (mainData.fases || []).filter((f: any) => f.id !== idFase);
+        const updates: any = { fases: updatedFases };
+        if (mainData.faseActualID === idFase) {
+          updates.faseActualID = null;
+          updates.faseNombre = null;
+        }
+        await updateDoc(mainDocRef, updates);
       }
     } catch (error) {
       console.error("Error al eliminar fase:", error);

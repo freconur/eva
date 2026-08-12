@@ -9,6 +9,8 @@ import { useBusquedaEspecialista } from './useBusquedaEspecialista';
 import { db } from '@/firebase/firebase.config';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
+import { getUniquePhases } from '@/features/utils/phaseUtils';
+
 const defaultEscala = [
     { value: 0, alternativa: '0', descripcion: 'No evidencia' },
     { value: 1, alternativa: '1', descripcion: 'En proceso' },
@@ -70,62 +72,21 @@ export const useEvaluarEspecialista = () => {
 
     // ── Fases disponibles ─────────────────────────────────────────────────────
     const fasesDisponibles = useMemo(() => {
-        const fases: { id: string; nombre: string }[] = [];
-
-        const getCleanPhaseName = (faseNombre?: string, idFase?: string) => {
-            if (faseNombre) return faseNombre;
-            if (!idFase) return '—';
-            const parts = idFase.split('_');
-            if (parts.length > 1 && !isNaN(Number(parts[parts.length - 1]))) {
-                return parts.slice(0, -1).join(' ').replace(/_/g, ' ');
-            }
-            return idFase.replace(/_/g, ' ');
-        };
-
-        // 1. Fases guardadas en el documento de evaluación principal
-        if (dataEvaluacionDocente?.fases && Array.isArray(dataEvaluacionDocente.fases)) {
-            dataEvaluacionDocente.fases.forEach((f: any) => {
-                if (f.id && !fases.find(x => x.id === f.id)) {
-                    fases.push({ id: f.id, nombre: f.nombre || getCleanPhaseName(undefined, f.id) });
-                }
-            });
-        }
-
-        // 2. Fase actual del documento de evaluación
-        if (dataEvaluacionDocente?.faseActualID) {
-            if (!fases.find(x => x.id === dataEvaluacionDocente.faseActualID)) {
-                fases.push({
-                    id: dataEvaluacionDocente.faseActualID,
-                    nombre: dataEvaluacionDocente.faseNombre || getCleanPhaseName(undefined, dataEvaluacionDocente.faseActualID)
-                });
-            }
-        }
-
-        // 3. Fases presentes en la lista de evaluados
-        if (evaluadosEspecialista) {
-            evaluadosEspecialista.forEach((esp: any) => {
-                const rawId = esp.idFase || esp.faseActualID;
-                if (!rawId) return;
-                if (!fases.find(f => f.id === rawId)) {
-                    fases.push({
-                        id: rawId,
-                        nombre: esp.faseNombre || getCleanPhaseName(undefined, rawId)
-                    });
-                }
-            });
-        }
-
-        return fases;
+        return getUniquePhases(dataEvaluacionDocente, evaluadosEspecialista);
     }, [dataEvaluacionDocente, evaluadosEspecialista]);
 
     // Establecer fase por defecto cuando se cargue la evaluación
     useEffect(() => {
         if (!selectedFaseId && dataEvaluacionDocente?.faseActualID) {
-            setSelectedFaseId(dataEvaluacionDocente.faseActualID);
+            const matching = fasesDisponibles.find(
+                f => f.id === dataEvaluacionDocente.faseActualID ||
+                     f.nombre.toLowerCase() === dataEvaluacionDocente.faseNombre?.toLowerCase()
+            );
+            setSelectedFaseId(matching ? matching.id : dataEvaluacionDocente.faseActualID);
         } else if (!selectedFaseId && fasesDisponibles.length > 0) {
             setSelectedFaseId(fasesDisponibles[0].id);
         }
-    }, [dataEvaluacionDocente?.faseActualID, fasesDisponibles, selectedFaseId]);
+    }, [dataEvaluacionDocente?.faseActualID, dataEvaluacionDocente?.faseNombre, fasesDisponibles, selectedFaseId]);
 
     // ── Sub-hooks ─────────────────────────────────────────────────────────────
 
@@ -198,10 +159,17 @@ export const useEvaluarEspecialista = () => {
         const targetDni = dataDirector?.dni || dataEspecialista?.dni || dataEspecialista?.especialistaDni;
         if (!evaluacionId || !targetDni) return;
 
+        const targetFaseObj = fasesDisponibles.find(f => f.id === newFaseId);
+        const targetNombre = targetFaseObj?.nombre?.trim().toLowerCase();
+
         setLoadingFase(true);
         try {
             const history = await getHistorialEspecialista(evaluacionId, targetDni);
-            const foundSession = history.find(h => (h.idFase === newFaseId || h.faseActualID === newFaseId));
+            const foundSession = history.find(h => {
+                if (h.idFase === newFaseId || h.faseActualID === newFaseId) return true;
+                if (targetNombre && h.faseNombre && h.faseNombre.trim().toLowerCase() === targetNombre) return true;
+                return false;
+            });
 
             if (foundSession && foundSession.id) {
                 setCurrentSessionId(foundSession.id);
@@ -370,8 +338,15 @@ export const useEvaluarEspecialista = () => {
             if (dataEspecialista.datosMonitor?.email) setEmailMonitor(dataEspecialista.datosMonitor.email);
             if (dataEspecialista.datosMonitor?.celular) setCelularMonitor(dataEspecialista.datosMonitor.celular);
             if (dataEspecialista.tituloReporte) setTituloReporte(dataEspecialista.tituloReporte);
-            if (dataEspecialista.idFase || dataEspecialista.faseActualID) {
-                setSelectedFaseId(dataEspecialista.idFase || dataEspecialista.faseActualID || '');
+            if (dataEspecialista.idFase || dataEspecialista.faseActualID || dataEspecialista.faseNombre) {
+                const targetId = dataEspecialista.idFase || dataEspecialista.faseActualID;
+                const targetNombre = dataEspecialista.faseNombre;
+                const matchingFase = fasesDisponibles.find(
+                    f => f.id === targetId || (targetNombre && f.nombre.toLowerCase() === targetNombre.toLowerCase())
+                );
+                if (matchingFase) {
+                    setSelectedFaseId(matchingFase.id);
+                }
             }
 
             isDataLoadedRef.current = true;

@@ -6,6 +6,8 @@ import { useState, useMemo } from "react";
 import UseEvaluacionEspecialistas from "@/features/hooks/UseEvaluacionEspecialistas";
 import { MdEdit, MdDelete, MdCheck, MdClose, MdHistory } from "react-icons/md";
 
+import { getUniquePhases } from "@/features/utils/phaseUtils";
+
 interface Props {
     handleShowConfigurarFase: () => void,
     idEvaluacion: string,
@@ -24,43 +26,9 @@ const ConfigurarFaseEspecialistas = ({ handleShowConfigurarFase, idEvaluacion, f
     const [editingFaseId, setEditingFaseId] = useState<string | null>(null);
     const [editingNombre, setEditingNombre] = useState("");
 
-    // Helper para limpiar nombres (duplicado para simplicidad local)
-    const getCleanPhaseName = (faseNombre?: string, idFase?: string) => {
-        if (faseNombre) return faseNombre;
-        if (!idFase) return '—';
-        const parts = idFase.split('_');
-        if (parts.length > 1 && !isNaN(Number(parts[parts.length - 1]))) {
-            return parts.slice(0, -1).join(' ').replace(/_/g, ' ');
-        }
-        return idFase.replace(/_/g, ' ');
-    };
-
-    // Obtener fases únicas de los evaluados + fase actual
+    // Obtener fases únicas unificadas
     const fasesExistentes = useMemo(() => {
-        const fases: { id: string; nombre: string }[] = [];
-        
-        // 1. Agregar la fase actual de la configuración si existe
-        if (dataEvaluacionDocente?.faseActualID) {
-            fases.push({
-                id: dataEvaluacionDocente.faseActualID,
-                nombre: dataEvaluacionDocente.faseNombre || getCleanPhaseName(undefined, dataEvaluacionDocente.faseActualID)
-            });
-        }
-
-        // 2. Agregar fases de los evaluados
-        if (evaluadosEspecialista) {
-            evaluadosEspecialista.forEach((esp: any) => {
-                const rawId = esp.idFase || esp.faseActualID;
-                if (!rawId) return;
-                if (!fases.find(f => f.id === rawId)) {
-                    fases.push({ 
-                        id: rawId, 
-                        nombre: esp.faseNombre || getCleanPhaseName(undefined, rawId) 
-                    });
-                }
-            });
-        }
-        return fases;
+        return getUniquePhases(dataEvaluacionDocente, evaluadosEspecialista);
     }, [evaluadosEspecialista, dataEvaluacionDocente]);
 
     const handleSaveNew = async () => {
