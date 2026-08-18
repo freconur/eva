@@ -257,6 +257,14 @@ const EvaluadosPage = () => {
 		if (typeof dateString === 'string' && dateString.length >= 10) {
 			return dateString.substring(0, 10);
 		}
+		const ts = getTimestamp(dateString);
+		if (ts > 0) {
+			const date = new Date(ts);
+			const year = date.getFullYear();
+			const month = String(date.getMonth() + 1).padStart(2, '0');
+			const day = String(date.getDate()).padStart(2, '0');
+			return `${year}-${month}-${day}`;
+		}
 		return String(dateString);
 	};
 
@@ -287,7 +295,11 @@ const EvaluadosPage = () => {
 	};
 
 	const chartData = {
-		labels: historialSelected.map(h => getCleanPhaseName((h as any).faseNombre, (h as any).idFase || (h as any).faseActualID)),
+		labels: historialSelected.map(h => {
+			const phaseName = getCleanPhaseName((h as any).faseNombre, (h as any).idFase || (h as any).faseActualID);
+			const dateStr = getLocalDateString(h.fechaMonitoreo || h.fechaCreacion);
+			return dateStr && dateStr !== '—' ? `${phaseName} (${dateStr})` : phaseName;
+		}),
 		datasets: [
 			{
 				label: 'Calificación',
@@ -327,7 +339,7 @@ const EvaluadosPage = () => {
 						if (item) {
 							const phaseName = getCleanPhaseName((item as any).faseNombre, (item as any).idFase || (item as any).faseActualID);
 							const dateStr = getLocalDateString(item.fechaMonitoreo || item.fechaCreacion);
-							return `${phaseName} - ${dateStr}`;
+							return dateStr && dateStr !== '—' ? `${phaseName} (${dateStr})` : phaseName;
 						}
 						return context[0]?.label;
 					}
