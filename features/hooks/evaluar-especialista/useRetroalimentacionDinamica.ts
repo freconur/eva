@@ -26,7 +26,11 @@ export const useRetroalimentacionDinamica = ({
     useEffect(() => {
         if (!dataEvaluacionDocente) return;
 
-        const camposGlobales = dataEvaluacionDocente.camposRetroalimentacion || [];
+        const defaultCampos = ['AVANCES', 'DIFICULTADES', 'COMPROMISOS'];
+        const camposGlobales = (dataEvaluacionDocente.camposRetroalimentacion && dataEvaluacionDocente.camposRetroalimentacion.length > 0)
+            ? dataEvaluacionDocente.camposRetroalimentacion
+            : defaultCampos;
+
         let dataGuardada: RetroalimentacionDinamica[] = dataEspecialista.retroalimentacionDinamica || [];
 
         if (isDataLoadedRef.current && retroalimentacionDinamica.length > 0) {
@@ -40,18 +44,29 @@ export const useRetroalimentacionDinamica = ({
                 : (campoConfig as CampoRetroalimentacionConfig).etiqueta;
             const descripcion = esString ? '' : (campoConfig as CampoRetroalimentacionConfig).descripcion;
 
-            const guardado = dataGuardada.find(r => r.etiqueta === etiqueta);
-            if (guardado) return { ...guardado, descripcion };
+            const etiquetaNorm = (etiqueta || '').trim().toUpperCase();
+            const guardado = dataGuardada.find(
+                r => (r.etiqueta || '').trim().toUpperCase() === etiquetaNorm
+            );
 
-            // Compatibilidad con campos legados
-            if (etiqueta === 'AVANCES')
-                return { etiqueta, descripcion, contenido: dataEspecialista.avancesRetroalimentacion || '' };
-            if (etiqueta === 'DIFICULTADES')
-                return { etiqueta, descripcion, contenido: dataEspecialista.dificultadesRetroalimentacion || '' };
-            if (etiqueta === 'COMPROMISOS')
-                return { etiqueta, descripcion, contenido: dataEspecialista.compromisosRetroalimentacion || '' };
+            let contenido = guardado?.contenido || '';
 
-            return { etiqueta, descripcion, contenido: '' };
+            // Fallback con datos legados en caso de que el contenido de la sección dinámica esté vacío
+            if (!contenido) {
+                if (etiquetaNorm.includes('AVANCE') || etiquetaNorm.includes('FORTALEZA')) {
+                    contenido = dataEspecialista.avancesRetroalimentacion || '';
+                } else if (etiquetaNorm.includes('DIFICULTAD')) {
+                    contenido = dataEspecialista.dificultadesRetroalimentacion || '';
+                } else if (etiquetaNorm.includes('COMPROMISO') || etiquetaNorm.includes('MEJORA')) {
+                    contenido = dataEspecialista.compromisosRetroalimentacion || '';
+                }
+            }
+
+            return {
+                etiqueta,
+                descripcion,
+                contenido,
+            };
         });
 
         setRetroalimentacionDinamica(fusion);

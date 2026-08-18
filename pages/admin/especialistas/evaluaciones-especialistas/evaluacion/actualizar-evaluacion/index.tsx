@@ -141,7 +141,26 @@ const ACtualizarEvaluacion = () => {
         try {
             const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
             setHoraFinal(now);
-            // Crear el objeto actualizado con las nuevas respuestas
+            // Construir o actualizar retroalimentacionDinamica como fuente única de verdad
+            const prevDinamica = dataEspecialista.retroalimentacionDinamica || [];
+            let updatedDinamica: any[] = [];
+            if (prevDinamica.length > 0) {
+                updatedDinamica = prevDinamica.map((item: any) => {
+                    const tag = (item.etiqueta || '').trim().toUpperCase();
+                    let val = item.contenido || '';
+                    if (tag.includes('AVANCE') || tag.includes('FORTALEZA')) val = avances;
+                    else if (tag.includes('DIFICULTAD')) val = dificultades;
+                    else if (tag.includes('COMPROMISO') || tag.includes('MEJORA')) val = compromisos;
+                    return { ...item, contenido: val };
+                });
+            } else {
+                updatedDinamica = [
+                    { etiqueta: 'AVANCES', descripcion: 'Avances observados', contenido: avances },
+                    { etiqueta: 'DIFICULTADES', descripcion: 'Dificultades identificadas', contenido: dificultades },
+                    { etiqueta: 'COMPROMISOS', descripcion: 'Compromisos asumidos', contenido: compromisos }
+                ];
+            }
+
             const especialistaActualizado = {
                 ...dataEspecialista,
                 resultadosSeguimientoRetroalimentacion: copyPR.map(pregunta => ({
@@ -152,6 +171,7 @@ const ACtualizarEvaluacion = () => {
                 avancesRetroalimentacion: avances,
                 dificultadesRetroalimentacion: dificultades,
                 compromisosRetroalimentacion: compromisos,
+                retroalimentacionDinamica: updatedDinamica,
                 fechaMonitoreo: fechaMonitoreo,
                 horaInicio: horaInicio,
                 horaFinal: now,

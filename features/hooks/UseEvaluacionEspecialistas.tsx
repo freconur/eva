@@ -885,9 +885,18 @@ const UseEvaluacionEspecialistas = () => {
         resultadosSeguimientoRetroalimentacion: data,
         calificacion: calificacion,
         // fechaCreacion will be set below with serverTimestamp
-        avancesRetroalimentacion: retroalimentacionDinamica?.find(r => r.etiqueta === 'AVANCES')?.contenido || '',
-        dificultadesRetroalimentacion: retroalimentacionDinamica?.find(r => r.etiqueta === 'DIFICULTADES')?.contenido || '',
-        compromisosRetroalimentacion: retroalimentacionDinamica?.find(r => r.etiqueta === 'COMPROMISOS')?.contenido || '',
+        avancesRetroalimentacion: retroalimentacionDinamica?.find(r => {
+          const tag = (r.etiqueta || '').trim().toUpperCase();
+          return tag.includes('AVANCE') || tag.includes('FORTALEZA');
+        })?.contenido || '',
+        dificultadesRetroalimentacion: retroalimentacionDinamica?.find(r => {
+          const tag = (r.etiqueta || '').trim().toUpperCase();
+          return tag.includes('DIFICULTAD');
+        })?.contenido || '',
+        compromisosRetroalimentacion: retroalimentacionDinamica?.find(r => {
+          const tag = (r.etiqueta || '').trim().toUpperCase();
+          return tag.includes('COMPROMISO') || tag.includes('MEJORA');
+        })?.contenido || '',
         retroalimentacionDinamica: retroalimentacionDinamica || [],
         fechaMonitoreo: fechaMonitoreo || '',
         horaInicio: horaInicio || '',

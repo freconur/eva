@@ -769,9 +769,16 @@ const ReporteEspecialistaPDF = ({
 
                 {/* ── Retroalimentación Dinámica ──────────────────────────── */}
                 {especialista?.retroalimentacionDinamica && especialista.retroalimentacionDinamica.length > 0 ? (
-                    especialista.retroalimentacionDinamica.map((item, index) => (
-                        <FeedbackBlock key={index} label={item.etiqueta} value={item.contenido} />
-                    ))
+                    especialista.retroalimentacionDinamica.map((item, index) => {
+                        const tag = (item.etiqueta || '').trim().toUpperCase();
+                        let displayVal = item.contenido;
+                        if (!displayVal) {
+                            if (tag.includes('AVANCE') || tag.includes('FORTALEZA')) displayVal = especialista?.avancesRetroalimentacion || '';
+                            else if (tag.includes('DIFICULTAD')) displayVal = especialista?.dificultadesRetroalimentacion || '';
+                            else if (tag.includes('COMPROMISO') || tag.includes('MEJORA')) displayVal = especialista?.compromisosRetroalimentacion || '';
+                        }
+                        return <FeedbackBlock key={index} label={item.etiqueta} value={displayVal} />;
+                    })
                 ) : (
                     // Fallback para datos antiguos
                     <>

@@ -123,14 +123,20 @@ const TablaEvaluacion: React.FC<TablaEvaluacionProps> = ({
                                             </td>
                                         </tr>
                                         {preguntasDimension.map(pregunta => {
-                                            const realIndex = copyPR.findIndex(p => p.id === pregunta.id);
+                                            const realIndex = copyPR.findIndex(
+                                                p => (p.id && pregunta.id && String(p.id) === String(pregunta.id)) ||
+                                                     (p.order !== undefined && pregunta.order !== undefined && String(p.order) === String(pregunta.order))
+                                            );
+                                            const actualIndex = realIndex !== -1 ? realIndex : copyPR.indexOf(pregunta);
                                             return (
-                                                <tr key={pregunta.id} id={`question-${realIndex}`} className={styles.questionRow}>
+                                                <tr key={pregunta.id || `q-${pregunta.order}`} id={`question-${actualIndex}`} className={styles.questionRow}>
                                                     <td className={styles.cellNumber}>{pregunta.order}</td>
                                                     <td className={styles.cellCriterio}>{pregunta.criterio}</td>
                                                     {currentEscala.map((escala: any) => {
                                                         const val = escala.alternativa || '';
-                                                        const alt = pregunta.alternativas?.find(a => a.alternativa === val);
+                                                        const alt = pregunta.alternativas?.find(
+                                                            a => (a.alternativa || '').toString() === val.toString()
+                                                        );
                                                         return (
                                                             <td key={val} className={styles.cellRadio}>
                                                                 <input
@@ -138,7 +144,7 @@ const TablaEvaluacion: React.FC<TablaEvaluacionProps> = ({
                                                                     name={`question-${pregunta.id}`}
                                                                     value={val}
                                                                     checked={alt?.selected || false}
-                                                                    onChange={() => handleCheckedRespuesta(val, realIndex)}
+                                                                    onChange={() => handleCheckedRespuesta(val, actualIndex)}
                                                                     className={styles.radioInput}
                                                                 />
                                                             </td>

@@ -298,17 +298,16 @@ export const useEvaluarEspecialista = () => {
                 const basePR = originalPR.length > 0 ? originalPR : copyPR;
                 const copyPRConRespuestas = basePR.map(pregunta => {
                     const respuesta = dataEspecialista.resultadosSeguimientoRetroalimentacion?.find(
-                        (r: any) => r.order === pregunta.order
+                        (r: any) =>
+                            (r.order !== undefined && pregunta.order !== undefined && String(r.order) === String(pregunta.order)) ||
+                            (r.id && pregunta.id && String(r.id) === String(pregunta.id))
                     );
-                    if (respuesta?.alternativas) {
+                    if (respuesta?.alternativas && respuesta.alternativas.length > 0) {
                         return {
                             ...pregunta,
-                            alternativas: pregunta.alternativas?.map(alternativa => ({
-                                ...alternativa,
-                                selected:
-                                    (respuesta.alternativas as any[])?.find(
-                                        (alt: any) => alt.alternativa === alternativa.alternativa
-                                    )?.selected || false,
+                            alternativas: respuesta.alternativas.map((alt: any) => ({
+                                ...alt,
+                                selected: !!alt.selected,
                             })),
                             evidencias: respuesta.evidencias || [],
                         };

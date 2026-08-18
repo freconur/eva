@@ -115,7 +115,7 @@ const ReporteEspecialistaIndividual = () => {
         const newAlternativas = currentEscala.map(e => ({
           id: e.id || e.alternativa,
           alternativa: e.alternativa,
-          selected: e.alternativa === val,
+          selected: String(e.alternativa || '') === String(val || ''),
           value: e.value,
           descripcion: e.descripcion
         }));
@@ -134,7 +134,23 @@ const ReporteEspecialistaIndividual = () => {
     if (!localData?.retroalimentacionDinamica) return;
     const newFeedback = [...localData.retroalimentacionDinamica];
     newFeedback[index] = { ...newFeedback[index], contenido: val };
-    setLocalData({ ...localData, retroalimentacionDinamica: newFeedback });
+    const tag = (newFeedback[index].etiqueta || '').trim().toUpperCase();
+
+    let avances = localData.avancesRetroalimentacion || '';
+    let dificultades = localData.dificultadesRetroalimentacion || '';
+    let compromisos = localData.compromisosRetroalimentacion || '';
+
+    if (tag.includes('AVANCE') || tag.includes('FORTALEZA')) avances = val;
+    else if (tag.includes('DIFICULTAD')) dificultades = val;
+    else if (tag.includes('COMPROMISO') || tag.includes('MEJORA')) compromisos = val;
+
+    setLocalData({
+      ...localData,
+      retroalimentacionDinamica: newFeedback,
+      avancesRetroalimentacion: avances,
+      dificultadesRetroalimentacion: dificultades,
+      compromisosRetroalimentacion: compromisos,
+    });
     setHasChanges(true);
   };
 
@@ -188,18 +204,18 @@ const ReporteEspecialistaIndividual = () => {
   // Merge respuestas del especialista sobre las preguntas base
   const preguntasConRespuestas = getPreguntaRespuestaDocentes?.map((pregunta) => {
     const respuestaGuardada = activeData?.resultadosSeguimientoRetroalimentacion?.find(
-      (r) => r.order === pregunta.order
+      (r) => (r.order !== undefined && pregunta.order !== undefined && String(r.order) === String(pregunta.order)) || (r.id && pregunta.id && String(r.id) === String(pregunta.id))
     );
 
     // Mapeamos las alternativas basándonos siempre en la escala actual del reporte
     const alternativasMapeadas = currentEscala.map((e) => {
       // Si hay una respuesta guardada, buscamos su estado, si no, buscamos en la pregunta base
-      const guardada = respuestaGuardada?.alternativas?.find(a => a.alternativa === e.alternativa);
-      const base = pregunta.alternativas?.find(a => a.alternativa === e.alternativa);
+      const guardada = respuestaGuardada?.alternativas?.find(a => String(a.alternativa || '') === String(e.alternativa || ''));
+      const base = pregunta.alternativas?.find(a => String(a.alternativa || '') === String(e.alternativa || ''));
 
       return {
         ...e,
-        selected: guardada ? guardada.selected : (base ? base.selected : false)
+        selected: guardada ? !!guardada.selected : (base ? !!base.selected : false)
       };
     });
 
@@ -575,7 +591,7 @@ const ReporteEspecialistaIndividual = () => {
                                   <td className={styles.cellCriterio}>{pregunta.criterio}</td>
                                   {currentEscala.map((e, index) => {
                                     const val = e.alternativa || '';
-                                    const alt = pregunta.alternativas?.find((a) => a.alternativa === val);
+                                    const alt = pregunta.alternativas?.find((a) => String(a.alternativa || '') === String(val || ''));
                                     return (
                                       <td key={e.id || e.alternativa || index} className={styles.cellRadio}>
                                         <input
@@ -626,7 +642,7 @@ const ReporteEspecialistaIndividual = () => {
                             <td className={styles.cellCriterio}>{pregunta.criterio}</td>
                             {currentEscala.map((e, index) => {
                               const val = e.alternativa || '';
-                              const alt = pregunta.alternativas?.find((a) => a.alternativa === val);
+                              const alt = pregunta.alternativas?.find((a) => String(a.alternativa || '') === String(val || ''));
                               return (
                                 <td key={e.id || e.alternativa || index} className={styles.cellRadio}>
                                   <input
