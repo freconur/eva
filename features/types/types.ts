@@ -418,6 +418,7 @@ export type User = {
   numeroEvaluacion?: number;
   tipoGestion?: 'publico' | 'privado';
   totalEstudiantes?: number;
+  estudiantesPorGrado?: Record<string, number>;
   sumaPuntajes?: number;
 };
 

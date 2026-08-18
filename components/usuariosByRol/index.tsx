@@ -93,13 +93,16 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true, onReclamarDocente }: 
                             <th>Tipo</th>
                             <th>Gestión</th>
                             <th>Grados</th>
+                            <th>Estudiantes</th>
                             <th>Secciones</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredUsers.length > 0 ? (
-                            filteredUsers.map((user, index) => (
+                            filteredUsers.map((user, index) => {
+                                const porGrado = user.estudiantesPorGrado || {};
+                                return (
                                 <tr key={user.dni || index}>
                                     <td>
                                         <div className={styles.teacherInfo}>
@@ -138,25 +141,41 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true, onReclamarDocente }: 
                                     </td>
                                     <td>
                                         <div className={styles.gradosContainer}>
-                                            {Array.isArray(user.grados) && user.grados.length > 0 ? (
-                                                (() => {
-                                                    const gradeTexts = user.grados.map(g => getGradoTexto(g));
-                                                    const chunks = [];
-                                                    for (let i = 0; i < gradeTexts.length; i += 2) {
-                                                        chunks.push(gradeTexts.slice(i, i + 2));
-                                                    }
-                                                    return chunks.map((chunk, index) => {
-                                                        const isLast = index === chunks.length - 1;
-                                                        const chunkStr = chunk.join(', ');
-                                                        return (
-                                                            <span key={index} className={styles.gradoFila}>
-                                                                {chunkStr}{!isLast ? ',' : ''}
-                                                            </span>
-                                                        );
-                                                    });
-                                                })()
-                                            ) : '-'}
+                                            {(() => {
+                                                const docenteGrados = Array.isArray(user.grados) ? user.grados.map(g => String(g)) : [];
+                                                const extraGradosConEstudiantes = Object.keys(porGrado).filter(
+                                                    gKey => (porGrado[gKey] || 0) > 0 && !docenteGrados.includes(String(gKey))
+                                                );
+                                                const todosLosGrados = Array.from(new Set([...docenteGrados, ...extraGradosConEstudiantes]))
+                                                    .sort((a, b) => Number(a) - Number(b));
+
+                                                if (todosLosGrados.length === 0) return '-';
+
+                                                const gradeTexts = todosLosGrados.map(g => {
+                                                    const texto = getGradoTexto(g);
+                                                    const cant = porGrado[String(g)] || 0;
+                                                    return `${texto} (${cant})`;
+                                                });
+                                                const chunks = [];
+                                                for (let i = 0; i < gradeTexts.length; i += 2) {
+                                                    chunks.push(gradeTexts.slice(i, i + 2));
+                                                }
+                                                return chunks.map((chunk, index) => {
+                                                    const isLast = index === chunks.length - 1;
+                                                    const chunkStr = chunk.join(', ');
+                                                    return (
+                                                        <span key={index} className={styles.gradoFila}>
+                                                            {chunkStr}{!isLast ? ',' : ''}
+                                                        </span>
+                                                    );
+                                                });
+                                            })()}
                                         </div>
+                                    </td>
+                                    <td>
+                                        <span className={styles.totalBadge}>
+                                            {user.totalEstudiantes !== undefined ? user.totalEstudiantes : 0}
+                                        </span>
                                     </td>
                                     <td>
                                         <span className={styles.gradoFila}>
@@ -195,10 +214,10 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true, onReclamarDocente }: 
                                         )}
                                     </td>
                                 </tr>
-                            ))
+                            )})
                         ) : (
                             <tr>
-                                <td colSpan={11} className={styles.emptyState}>
+                                <td colSpan={12} className={styles.emptyState}>
                                     No se encontraron docentes.
                                 </td>
                             </tr>
@@ -209,7 +228,9 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true, onReclamarDocente }: 
 
             <div className={styles.cardContainer}>
                 {filteredUsers.length > 0 ? (
-                    filteredUsers.map((user, index) => (
+                    filteredUsers.map((user, index) => {
+                        const porGrado = user.estudiantesPorGrado || {};
+                        return (
                         <div key={user.dni || index} className={styles.card}>
                             <div className={styles.cardHeader}>
                                 <div className={styles.cardMainInfo}>
@@ -264,15 +285,36 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true, onReclamarDocente }: 
                                     <span className={styles.cardLabel}>Gestión:</span>
                                     <span className={styles.cardValue}>{user.tipoGestion ? (user.tipoGestion === 'publico' ? 'Público' : 'Privado') : '-'}</span>
                                 </div>
+                                <div className={styles.cardDataRow}>
+                                    <span className={styles.cardLabel}>Total Estudiantes:</span>
+                                    <span className={styles.totalBadge}>
+                                        {`${user.totalEstudiantes !== undefined ? user.totalEstudiantes : 0} alumnos`}
+                                    </span>
+                                </div>
                                 <div className={styles.cardInfoGrid}>
                                     <div className={styles.cardDataGroup}>
                                         <span className={styles.cardLabel}>Grados</span>
                                         <div className={styles.chipsContainer}>
-                                            {Array.isArray(user.grados) && user.grados.length > 0 ? (
-                                                user.grados.map(g => (
-                                                    <span key={g} className={styles.tableChip}>{getGradoTexto(g)}</span>
-                                                ))
-                                            ) : '-'}
+                                            {(() => {
+                                                const docenteGrados = Array.isArray(user.grados) ? user.grados.map(g => String(g)) : [];
+                                                const extraGradosConEstudiantes = Object.keys(porGrado).filter(
+                                                    gKey => (porGrado[gKey] || 0) > 0 && !docenteGrados.includes(String(gKey))
+                                                );
+                                                const todosLosGrados = Array.from(new Set([...docenteGrados, ...extraGradosConEstudiantes]))
+                                                    .sort((a, b) => Number(a) - Number(b));
+
+                                                if (todosLosGrados.length === 0) return '-';
+
+                                                return todosLosGrados.map(g => {
+                                                    const texto = getGradoTexto(g);
+                                                    const cant = porGrado[String(g)] || 0;
+                                                    return (
+                                                        <span key={g} className={styles.tableChip}>
+                                                            {texto} ({cant})
+                                                        </span>
+                                                    );
+                                                });
+                                            })()}
                                         </div>
                                     </div>
                                     <div className={styles.cardDataGroup}>
@@ -288,7 +330,7 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true, onReclamarDocente }: 
                                 </div>
                             </div>
                         </div>
-                    ))
+                    )})
                 ) : (
                     <div className={styles.emptyState}>No se encontraron docentes.</div>
                 )}

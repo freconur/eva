@@ -8,16 +8,51 @@ export const useDirectores = () => {
   const db = getFirestore(app)
   const dispatch = useGlobalContextDispatch();
 
+  const fetchEstudiantesDataForDocente = async (docenteDni?: string) => {
+    if (!docenteDni) return { total: 0, porGrado: {} };
+    try {
+      const subColRef = collection(db, 'usuarios', String(docenteDni), 'estudiantes-docentes');
+      const snapshot = await getDocs(subColRef);
+      const porGrado: Record<string, number> = {};
+      let total = 0;
+      snapshot.forEach((doc) => {
+        total += 1;
+        const data = doc.data();
+        const gradoVal = String(data.grado ?? '').trim();
+        if (gradoVal) {
+          porGrado[gradoVal] = (porGrado[gradoVal] || 0) + 1;
+        }
+      });
+      return { total, porGrado };
+    } catch (err) {
+      console.error(`Error al cargar estudiantes para docente ${docenteDni}:`, err);
+      return { total: 0, porGrado: {} };
+    }
+  };
+
   const getDocentesByDniDirector = async (dniDirector: string) => {
     const pathRef = collection(db, "usuarios")
     const q = query(pathRef, where("dniDirector", "==", dniDirector))
 
-    onSnapshot(q, (querySnapshot) => {
-      const usuariosByRol: User[] = []
+    onSnapshot(q, async (querySnapshot) => {
+      const baseDocentes: User[] = []
       querySnapshot.forEach((doc) => {
-        usuariosByRol.push(doc.data())
+        baseDocentes.push(doc.data())
       })
-      dispatch({ type: AppAction.USUARIOS_BY_ROL, payload: usuariosByRol })
+
+      const docentesConEstudiantes: User[] = await Promise.all(
+        baseDocentes.map(async (user) => {
+          if (!user.dni) return { ...user, totalEstudiantes: 0, estudiantesPorGrado: {} };
+          const { total, porGrado } = await fetchEstudiantesDataForDocente(String(user.dni));
+          return {
+            ...user,
+            totalEstudiantes: total,
+            estudiantesPorGrado: porGrado
+          };
+        })
+      );
+
+      dispatch({ type: AppAction.USUARIOS_BY_ROL, payload: docentesConEstudiantes })
     })
   }
   const gettAllProfesores = async () => {
@@ -82,38 +117,67 @@ export const useDirectores = () => {
         .filter(Boolean)
     )
 
-    // Normalizar nombres y apellidos de los docentes del director
+    // Obtener lista de apellidos únicos de los docentes del director
+    const apellidosUnicos = Array.from(new Set(
+      docentesDirector
+        .map(d => (d.apellidos || '').trim())
+        .filter(Boolean)
+    ))
+
+    if (apellidosUnicos.length === 0) return []
+
+    // Map de coincidencias encontradas por id/dni único
+    const coincidentesMap = new Map<string, User>()
+    const pathRef = collection(db, "usuarios")
+
+    // Consultas indexadas en paralelo por cada apellido (en lugar de traer toda la base de datos)
+    const querySnapshots = await Promise.all(
+      apellidosUnicos.map(apellidos => {
+        const q = query(pathRef, where("apellidos", "==", apellidos))
+        return getDocs(q)
+      })
+    )
+
+    // Mapa de llaves objetivo (nombres + apellidos en minúsculas)
     const targetKeys = new Set(
       docentesDirector
         .filter(d => d.nombres && d.apellidos)
         .map(d => `${(d.nombres || '').trim().toLowerCase()}|${(d.apellidos || '').trim().toLowerCase()}`)
     )
 
-    if (targetKeys.size === 0) return []
+    querySnapshots.forEach(snapshot => {
+      snapshot.forEach(docSnap => {
+        const user = docSnap.data() as User
 
-    const pathRef = collection(db, "usuarios")
-    const querySnapshot = await getDocs(pathRef)
-    const coincidentesMap = new Map<string, User>()
-
-    querySnapshot.forEach((docSnap) => {
-      const user = docSnap.data() as User
-
-      // Descartar si el usuario ya existe en la primera tabla (por DNI)
-      if (user.dni && dnisAsignados.has(String(user.dni).trim())) {
-        return
-      }
-
-      if (user.nombres && user.apellidos) {
-        const key = `${user.nombres.trim().toLowerCase()}|${user.apellidos.trim().toLowerCase()}`
-        if (targetKeys.has(key)) {
-          // Guardar por clave única (docSnap.id o dni) para evitar duplicados en los resultados
-          const uniqueId = docSnap.id || user.dni || `${user.nombres}-${user.apellidos}`
-          coincidentesMap.set(uniqueId, user)
+        // Descartar si el usuario ya existe en la primera tabla por DNI
+        if (user.dni && dnisAsignados.has(String(user.dni).trim())) {
+          return
         }
-      }
+
+        if (user.nombres && user.apellidos) {
+          const key = `${user.nombres.trim().toLowerCase()}|${user.apellidos.trim().toLowerCase()}`
+          if (targetKeys.has(key)) {
+            const uniqueId = docSnap.id || user.dni || `${user.nombres}-${user.apellidos}`
+            coincidentesMap.set(uniqueId, user)
+          }
+        }
+      })
     })
 
-    return Array.from(coincidentesMap.values())
+    const resultDocentes = Array.from(coincidentesMap.values())
+    const docentesConEstudiantes: User[] = await Promise.all(
+      resultDocentes.map(async (user) => {
+        if (!user.dni) return { ...user, totalEstudiantes: 0, estudiantesPorGrado: {} }
+        const { total, porGrado } = await fetchEstudiantesDataForDocente(String(user.dni))
+        return {
+          ...user,
+          totalEstudiantes: total,
+          estudiantesPorGrado: porGrado
+        }
+      })
+    )
+
+    return docentesConEstudiantes
   }
 
   const reclamarDocente = async (dniDocente: string, nuevoDniDirector: string, dniDirectorAnterior?: string) => {
