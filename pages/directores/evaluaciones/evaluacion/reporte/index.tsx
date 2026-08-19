@@ -39,7 +39,7 @@ import GraficoTendencia from '@/components/reportes/graficoTendencia';
 import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafico-piechart';
 import ReporteEvaluacionPorPregunta from '@/pages/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/reporteEvaluacionPorPregunta';
 import Loader from '@/components/loader/loader';
-import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, query, where, doc, onSnapshot } from 'firebase/firestore';
 import accordionStyles from '@/components/reportes/Acordeon.module.css';
 ChartJS.register(
   CategoryScale,
@@ -87,6 +87,48 @@ const Reporte = () => {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Permisos globales de acciones para el Director
+  const [accionesDirector, setAccionesDirector] = useState({
+    exportarGrillaPdf: true,
+    exportarExcel: true,
+    generarPdfPreguntas: true,
+  });
+  const [isAuditing, setIsAuditing] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const audited = sessionStorage.getItem('audited_user');
+      const realAdmin = sessionStorage.getItem('real_admin_user');
+      setIsAuditing(Boolean(audited || realAdmin));
+    }
+  }, [currentUserData]);
+
+  useEffect(() => {
+    const db = getFirestore();
+    const brandDocRef = doc(db, 'configuracion', 'branding');
+    const unsubscribe = onSnapshot(brandDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.accionesDirector) {
+          setAccionesDirector({
+            exportarGrillaPdf: data.accionesDirector.exportarGrillaPdf !== false,
+            exportarExcel: data.accionesDirector.exportarExcel !== false,
+            generarPdfPreguntas: data.accionesDirector.generarPdfPreguntas !== false,
+          });
+        }
+      }
+    }, (err) => {
+      console.error("Error al escuchar permisos globales de accionesDirector:", err);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const allowExportGrillaPdf = isAuditing || accionesDirector.exportarGrillaPdf !== false;
+  const allowExportExcel = isAuditing || accionesDirector.exportarExcel !== false;
+  const allowGenerarPdfPreguntas = isAuditing || accionesDirector.generarPdfPreguntas !== false;
+
+  const hasAnyDirectorAction = allowExportGrillaPdf || allowExportExcel || allowGenerarPdfPreguntas;
 
   // Estados para el custom searchable selector de evaluación (Base)
   const [evaluacionesDb, setEvaluacionesDb] = useState<any[]>([]);
@@ -840,63 +882,73 @@ const Reporte = () => {
               </div>
 
               {/* Dropdown de exportación */}
-              <div className={styles.headerActions} style={{ marginBottom: 0 }}>
-                <div className={styles.exportButtonsContainer}>
-                  <div className={styles.customDropdown} ref={dropdownRef}>
-                    <button
-                      className={`${styles.dropdownTrigger} ${isOpen ? styles.dropdownActive : ''}`}
-                      onClick={() => setIsOpen(!isOpen)}
-                      disabled={loadingExport || loadingPDF || !estudiantesFiltrados || estudiantesFiltrados.length === 0}
-                    >
-                      <HiOutlineDownload className={styles.dropdownIcon} />
-                      <span>{loadingExport || loadingPDF ? 'Procesando...' : 'Exportar Reporte'}</span>
-                      <IoIosArrowDown className={`${styles.arrowIcon} ${isOpen ? styles.arrowRotate : ''}`} />
-                    </button>
+              {hasAnyDirectorAction && (
+                <div className={styles.headerActions} style={{ marginBottom: 0 }}>
+                  <div className={styles.exportButtonsContainer}>
+                    <div className={styles.customDropdown} ref={dropdownRef}>
+                      <button
+                        className={`${styles.dropdownTrigger} ${isOpen ? styles.dropdownActive : ''}`}
+                        onClick={() => setIsOpen(!isOpen)}
+                        disabled={loadingExport || loadingPDF || !estudiantesFiltrados || estudiantesFiltrados.length === 0}
+                      >
+                        <HiOutlineDownload className={styles.dropdownIcon} />
+                        <span>{loadingExport || loadingPDF ? 'Procesando...' : 'Exportar Reporte'}</span>
+                        <IoIosArrowDown className={`${styles.arrowIcon} ${isOpen ? styles.arrowRotate : ''}`} />
+                      </button>
 
-                    {isOpen && (
-                      <div className={styles.dropdownMenu}>
-                        <div
-                          className={styles.dropdownItem}
-                          onClick={() => handleExportOption('pdf-tabla')}
-                        >
-                          <RiFilePdfLine className={styles.itemIconPdf} />
-                          <div className={styles.itemContent}>
-                            <span className={styles.itemTitle}>Exportar Grilla PDF</span>
-                            <span className={styles.itemDescription}>Reporte tabular de resultados</span>
-                          </div>
+                      {isOpen && (
+                        <div className={styles.dropdownMenu}>
+                          {allowExportGrillaPdf && (
+                            <div
+                              className={styles.dropdownItem}
+                              onClick={() => handleExportOption('pdf-tabla')}
+                            >
+                              <RiFilePdfLine className={styles.itemIconPdf} />
+                              <div className={styles.itemContent}>
+                                <span className={styles.itemTitle}>Exportar Grilla PDF</span>
+                                <span className={styles.itemDescription}>Reporte tabular de resultados</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {allowExportExcel && (
+                            <div
+                              className={styles.dropdownItem}
+                              onClick={() => handleExportOption('excel')}
+                            >
+                              <RiFileExcel2Line className={styles.itemIconExcel} />
+                              <div className={styles.itemContent}>
+                                <span className={styles.itemTitle}>Exportar a Excel</span>
+                                <span className={styles.itemDescription}>Datos crudos para análisis</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {allowGenerarPdfPreguntas && (
+                            <div
+                              className={`${styles.dropdownItem} ${(!imagenesGeneradas || reporteCompletoConImagenes.length === 0) ? styles.itemDisabled : ''}`}
+                              onClick={() => {
+                                if (imagenesGeneradas && reporteCompletoConImagenes.length > 0) {
+                                  handleExportOption('pdf-preguntas');
+                                }
+                              }}
+                            >
+                              <RiFilePdfLine className={styles.itemIconQuestions} />
+                              <div className={styles.itemContent}>
+                                <span className={styles.itemTitle}>
+                                  {!imagenesGeneradas ? 'Preparando PDF Preguntas...' : 'Generar PDF Preguntas'}
+                                </span>
+                                <span className={styles.itemDescription}>Reporte gráfico detallado</span>
+                              </div>
+                              {!imagenesGeneradas && <RiLoader4Line className={styles.loaderIconSmall} />}
+                            </div>
+                          )}
                         </div>
-                        <div
-                          className={styles.dropdownItem}
-                          onClick={() => handleExportOption('excel')}
-                        >
-                          <RiFileExcel2Line className={styles.itemIconExcel} />
-                          <div className={styles.itemContent}>
-                            <span className={styles.itemTitle}>Exportar a Excel</span>
-                            <span className={styles.itemDescription}>Datos crudos para análisis</span>
-                          </div>
-                        </div>
-                        <div
-                          className={`${styles.dropdownItem} ${(!imagenesGeneradas || reporteCompletoConImagenes.length === 0) ? styles.itemDisabled : ''}`}
-                          onClick={() => {
-                            if (imagenesGeneradas && reporteCompletoConImagenes.length > 0) {
-                              handleExportOption('pdf-preguntas');
-                            }
-                          }}
-                        >
-                          <RiFilePdfLine className={styles.itemIconQuestions} />
-                          <div className={styles.itemContent}>
-                            <span className={styles.itemTitle}>
-                              {!imagenesGeneradas ? 'Preparando PDF Preguntas...' : 'Generar PDF Preguntas'}
-                            </span>
-                            <span className={styles.itemDescription}>Reporte gráfico detallado</span>
-                          </div>
-                          {!imagenesGeneradas && <RiLoader4Line className={styles.loaderIconSmall} />}
-                        </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
             <div className={styles.filtersContainer}>
               <select

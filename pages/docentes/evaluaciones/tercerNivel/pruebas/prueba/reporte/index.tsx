@@ -45,7 +45,7 @@ import { calculoNivel, calculoPreguntasCorrectas } from '@/features/utils/calcul
 import GraficoTendenciaColegio from '@/components/grafico-tendencia';
 import GraficoTendencia from '@/components/reportes/graficoTendencia';
 import accordionStyles from '@/components/reportes/Acordeon.module.css';
-import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, doc, onSnapshot } from 'firebase/firestore';
 import CorregirPuntajesModal from '@/modals/corregirPuntajes';
 import EvaluarEstudianteForm from '@/components/evaluar/EvaluarEstudianteForm';
 import ActualizarEvaluacionForm from '@/components/evaluar/ActualizarEvaluacionForm';
@@ -99,6 +99,48 @@ const Reportes = () => {
   } = useReporteDocente();
   const { getPreguntasRespuestas, getEvaluacion, obtenerEstudianteDeEvaluacion } = useAgregarEvaluaciones();
   const [idEstudiante, setIdEstudiante] = useState<string>('');
+
+  // Permisos globales de acciones para el Docente
+  const [accionesDocente, setAccionesDocente] = useState({
+    exportarGrillaPdf: true,
+    exportarExcel: true,
+    generarPdfPreguntas: true,
+  });
+  const [isAuditing, setIsAuditing] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const audited = sessionStorage.getItem('audited_user');
+      const realAdmin = sessionStorage.getItem('real_admin_user');
+      setIsAuditing(Boolean(audited || realAdmin));
+    }
+  }, [currentUserData]);
+
+  useEffect(() => {
+    const db = getFirestore();
+    const brandDocRef = doc(db, 'configuracion', 'branding');
+    const unsubscribe = onSnapshot(brandDocRef, (docSnap: any) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.accionesDocente) {
+          setAccionesDocente({
+            exportarGrillaPdf: data.accionesDocente.exportarGrillaPdf !== false,
+            exportarExcel: data.accionesDocente.exportarExcel !== false,
+            generarPdfPreguntas: data.accionesDocente.generarPdfPreguntas !== false,
+          });
+        }
+      }
+    }, (err: any) => {
+      console.error("Error al escuchar permisos globales de accionesDocente:", err);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const allowExportGrillaPdf = isAuditing || accionesDocente.exportarGrillaPdf !== false;
+  const allowExportExcel = isAuditing || accionesDocente.exportarExcel !== false;
+  const allowGenerarPdfPreguntas = isAuditing || accionesDocente.generarPdfPreguntas !== false;
+
+  const hasAnyDocenteAction = allowExportGrillaPdf || allowExportExcel || allowGenerarPdfPreguntas;
   const [yearSelected, setYearSelected] = useState<string>((route.query.year as string) || '');
   const [monthSelected, setMonthSelected] = useState<number>(() => {
     const mesQuery = route.query.mes;
@@ -654,21 +696,21 @@ const Reportes = () => {
           <div className={styles.content}>
             <div className={styles.headerActions}>
               <div className={styles.exportButtonsContainer}>
-                <div className={styles.customDropdown} ref={dropdownRef}>
-                  <button
-                    className={`${styles.dropdownTrigger} ${isOpen ? styles.dropdownActive : ''}`}
-                    onClick={() => setIsOpen(!isOpen)}
-                    disabled={loading || loadingPDF || !estudiantes || estudiantes.length === 0}
-                  >
-                    <HiOutlineDownload className={styles.dropdownIcon} />
-                    <span>{loading || loadingPDF ? 'Procesando...' : 'Exportar Reporte'}</span>
-                    <IoIosArrowDown className={`${styles.arrowIcon} ${isOpen ? styles.arrowRotate : ''}`} />
-                  </button>
+                {hasAnyDocenteAction && (
+                  <div className={styles.customDropdown} ref={dropdownRef}>
+                    <button
+                      className={`${styles.dropdownTrigger} ${isOpen ? styles.dropdownActive : ''}`}
+                      onClick={() => setIsOpen(!isOpen)}
+                      disabled={loading || loadingPDF || !estudiantes || estudiantes.length === 0}
+                    >
+                      <HiOutlineDownload className={styles.dropdownIcon} />
+                      <span>{loading || loadingPDF ? 'Procesando...' : 'Exportar Reporte'}</span>
+                      <IoIosArrowDown className={`${styles.arrowIcon} ${isOpen ? styles.arrowRotate : ''}`} />
+                    </button>
 
-                  {isOpen && (
-                    <div className={styles.dropdownMenu}>
-                      {showTable && (
-                        <>
+                    {isOpen && (
+                      <div className={styles.dropdownMenu}>
+                        {showTable && allowExportGrillaPdf && (
                           <div
                             className={styles.dropdownItem}
                             onClick={() => handleExportOption('pdf-tabla')}
@@ -679,6 +721,9 @@ const Reportes = () => {
                               <span className={styles.itemDescription}>Reporte tabular de resultados</span>
                             </div>
                           </div>
+                        )}
+
+                        {showTable && allowExportExcel && (
                           <div
                             className={styles.dropdownItem}
                             onClick={() => handleExportOption('excel')}
@@ -689,28 +734,31 @@ const Reportes = () => {
                               <span className={styles.itemDescription}>Datos crudos para análisis</span>
                             </div>
                           </div>
-                        </>
-                      )}
-                      <div
-                        className={`${styles.dropdownItem} ${(!imagenesGeneradas || reporteCompletoConImagenes.length === 0) ? styles.itemDisabled : ''}`}
-                        onClick={() => {
-                          if (imagenesGeneradas && reporteCompletoConImagenes.length > 0) {
-                            handleExportOption('pdf-preguntas');
-                          }
-                        }}
-                      >
-                        <RiFilePdfLine className={styles.itemIconQuestions} />
-                        <div className={styles.itemContent}>
-                          <span className={styles.itemTitle}>
-                            {!imagenesGeneradas ? 'Preparando PDF Preguntas...' : 'Generar PDF Preguntas'}
-                          </span>
-                          <span className={styles.itemDescription}>Reporte gráfico detallado</span>
-                        </div>
-                        {!imagenesGeneradas && <RiLoader4Line className={styles.loaderIconSmall} />}
+                        )}
+
+                        {allowGenerarPdfPreguntas && (
+                          <div
+                            className={`${styles.dropdownItem} ${(!imagenesGeneradas || reporteCompletoConImagenes.length === 0) ? styles.itemDisabled : ''}`}
+                            onClick={() => {
+                              if (imagenesGeneradas && reporteCompletoConImagenes.length > 0) {
+                                handleExportOption('pdf-preguntas');
+                              }
+                            }}
+                          >
+                            <RiFilePdfLine className={styles.itemIconQuestions} />
+                            <div className={styles.itemContent}>
+                              <span className={styles.itemTitle}>
+                                {!imagenesGeneradas ? 'Preparando PDF Preguntas...' : 'Generar PDF Preguntas'}
+                              </span>
+                              <span className={styles.itemDescription}>Reporte gráfico detallado</span>
+                            </div>
+                            {!imagenesGeneradas && <RiLoader4Line className={styles.loaderIconSmall} />}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
 
                 {evaluacion.tipoDeEvaluacion === '1' && (
                   <button

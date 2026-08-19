@@ -272,6 +272,10 @@ export type Evaluaciones = {
   metaSatisfactorio?: number;
   realtimeEnabled?: boolean;
   labelActuacion?: string;
+  accionesEspecialista?: {
+    exportarEstudiantes?: boolean;
+    exportarExcel?: boolean;
+  };
 };
 export type Evaluacion = {
   id?: string;

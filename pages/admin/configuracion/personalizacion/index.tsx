@@ -21,6 +21,8 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/firebase/firebase.config';
 import { toast } from 'react-toastify';
 
+import { useRouter } from 'next/router';
+
 const DEFAULT_COLORS = {
   colorPrincipal: '#163297',
   colorSecundario: '#0a47c4',
@@ -60,9 +62,35 @@ const PersonalizacionMarcaPage = () => {
   const [colorMateriaSociales, setColorMateriaSociales] = useState(DEFAULT_COLORS.colorMateriaSociales);
   const [colorHeaderEstandar, setColorHeaderEstandar] = useState(DEFAULT_COLORS.colorHeaderEstandar);
 
-  const [activeSection, setActiveSection] = useState<'general' | 'login' | 'sidebar' | 'tarjetas'>('general');
+  const router = useRouter();
+  const [activeSection, setActiveSection] = useState<'general' | 'login' | 'sidebar' | 'tarjetas' | 'acciones'>('general');
   const [previewNivel, setPreviewNivel] = useState<'primaria' | 'secundaria'>('primaria');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (router.isReady && router.query.section) {
+      const sec = String(router.query.section);
+      if (['general', 'login', 'sidebar', 'tarjetas', 'acciones'].includes(sec)) {
+        setActiveSection(sec as any);
+      }
+    }
+  }, [router.isReady, router.query.section]);
+
+  // Estados de permisos globales de acciones de reporte
+  const [accionesDirector, setAccionesDirector] = useState({
+    exportarGrillaPdf: true,
+    exportarExcel: true,
+    generarPdfPreguntas: true,
+  });
+  const [accionesEspecialista, setAccionesEspecialista] = useState({
+    exportarEstudiantes: true,
+    exportarExcel: true,
+  });
+  const [accionesDocente, setAccionesDocente] = useState({
+    exportarGrillaPdf: true,
+    exportarExcel: true,
+    generarPdfPreguntas: true,
+  });
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -89,6 +117,27 @@ const PersonalizacionMarcaPage = () => {
           if (data.colorMateriaDpcc) setColorMateriaDpcc(data.colorMateriaDpcc);
           if (data.colorMateriaSociales) setColorMateriaSociales(data.colorMateriaSociales);
           if (data.colorHeaderEstandar) setColorHeaderEstandar(data.colorHeaderEstandar);
+
+          if (data.accionesDirector) {
+            setAccionesDirector({
+              exportarGrillaPdf: data.accionesDirector.exportarGrillaPdf !== false,
+              exportarExcel: data.accionesDirector.exportarExcel !== false,
+              generarPdfPreguntas: data.accionesDirector.generarPdfPreguntas !== false,
+            });
+          }
+          if (data.accionesEspecialista) {
+            setAccionesEspecialista({
+              exportarEstudiantes: data.accionesEspecialista.exportarEstudiantes !== false,
+              exportarExcel: data.accionesEspecialista.exportarExcel !== false,
+            });
+          }
+          if (data.accionesDocente) {
+            setAccionesDocente({
+              exportarGrillaPdf: data.accionesDocente.exportarGrillaPdf !== false,
+              exportarExcel: data.accionesDocente.exportarExcel !== false,
+              generarPdfPreguntas: data.accionesDocente.generarPdfPreguntas !== false,
+            });
+          }
         }
       } catch (error) {
         console.error('Error al obtener la configuración de marca:', error);
@@ -120,9 +169,12 @@ const PersonalizacionMarcaPage = () => {
         colorMateriaDpcc,
         colorMateriaSociales,
         colorHeaderEstandar,
+        accionesDirector,
+        accionesEspecialista,
+        accionesDocente,
         ultimaActualizacion: new Date()
       }, { merge: true });
-      toast.success('¡Branding de marca guardado exitosamente!');
+      toast.success('¡Configuración guardada exitosamente!');
     } catch (error) {
       console.error('Error al guardar branding:', error);
       toast.error('Ocurrió un error al guardar los colores de la marca');
@@ -208,12 +260,14 @@ const PersonalizacionMarcaPage = () => {
                     {activeSection === 'login' && <RiLoginBoxLine />}
                     {activeSection === 'sidebar' && <RiSideBarLine />}
                     {activeSection === 'tarjetas' && <RiBookOpenLine />}
+                    {activeSection === 'acciones' && <RiShieldUserLine />}
                   </span>
                   <span>
                     {activeSection === 'general' && 'Tema General'}
                     {activeSection === 'login' && 'Página de Login'}
                     {activeSection === 'sidebar' && 'Barra Lateral (Sidebar)'}
                     {activeSection === 'tarjetas' && 'Tarjetas Cursos'}
+                    {activeSection === 'acciones' && 'Acciones de Reportes (Permisos)'}
                   </span>
                 </div>
                 <RiArrowDownSLine className={`text-slate-400 text-lg transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
@@ -290,6 +344,23 @@ const PersonalizacionMarcaPage = () => {
                         <RiBookOpenLine />
                       </span>
                       <span>Tarjetas Cursos</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSection('acciones');
+                        setDropdownOpen(false);
+                      }}
+                      className={`w-full px-4 py-3 flex items-center gap-2 text-sm text-left transition-colors ${
+                        activeSection === 'acciones' 
+                          ? 'bg-violet-50 text-violet-600 font-bold' 
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                    >
+                      <span className={activeSection === 'acciones' ? 'text-violet-600 text-lg' : 'text-slate-400 text-lg'}>
+                        <RiShieldUserLine />
+                      </span>
+                      <span>Acciones de Reportes (Permisos)</span>
                     </button>
                   </div>
                 </>
@@ -663,6 +734,140 @@ const PersonalizacionMarcaPage = () => {
                       className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-700 font-mono text-sm focus:outline-none focus:border-violet-500"
                     />
                   </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'acciones' && (
+              <div>
+                <h3 className="text-sm font-bold text-slate-700 mb-1">Permisos de Exportaciones en Reportes</h3>
+                <p className="text-xs text-slate-500 mb-5">
+                  Configura globalmente qué opciones de descarga e impresión pueden utilizar los roles de Director y Especialista en sus vistas de reportes.
+                </p>
+
+                {/* Acciones para el Director */}
+                <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <h4 className="text-xs font-extrabold text-violet-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <span>Acciones en Reporte de Director</span>
+                  </h4>
+                  
+                  <label className="flex items-center gap-3 py-2 cursor-pointer border-b border-slate-200/60 last:border-0">
+                    <input
+                      type="checkbox"
+                      checked={accionesDirector.exportarGrillaPdf}
+                      onChange={(e) => setAccionesDirector(prev => ({ ...prev, exportarGrillaPdf: e.target.checked }))}
+                      className="w-4 h-4 text-violet-600 rounded focus:ring-violet-500"
+                    />
+                    <div>
+                      <span className="block text-sm font-bold text-slate-700">Exportar Grilla PDF</span>
+                      <span className="block text-xs text-slate-500">Reporte tabular con grilla de resultados por estudiante</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 py-2 cursor-pointer border-b border-slate-200/60 last:border-0">
+                    <input
+                      type="checkbox"
+                      checked={accionesDirector.exportarExcel}
+                      onChange={(e) => setAccionesDirector(prev => ({ ...prev, exportarExcel: e.target.checked }))}
+                      className="w-4 h-4 text-violet-600 rounded focus:ring-violet-500"
+                    />
+                    <div>
+                      <span className="block text-sm font-bold text-slate-700">Exportar a Excel</span>
+                      <span className="block text-xs text-slate-500">Descarga de datos crudos filtrados para análisis</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 py-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={accionesDirector.generarPdfPreguntas}
+                      onChange={(e) => setAccionesDirector(prev => ({ ...prev, generarPdfPreguntas: e.target.checked }))}
+                      className="w-4 h-4 text-violet-600 rounded focus:ring-violet-500"
+                    />
+                    <div>
+                      <span className="block text-sm font-bold text-slate-700">Generar PDF Preguntas</span>
+                      <span className="block text-xs text-slate-500">Reporte gráfico detallado por cada pregunta del examen</span>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Acciones para el Especialista */}
+                <div className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <h4 className="text-xs font-extrabold text-blue-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <span>Acciones en Reporte de Especialista</span>
+                  </h4>
+
+                  <label className="flex items-center gap-3 py-2 cursor-pointer border-b border-slate-200/60 last:border-0">
+                    <input
+                      type="checkbox"
+                      checked={accionesEspecialista.exportarEstudiantes}
+                      onChange={(e) => setAccionesEspecialista(prev => ({ ...prev, exportarEstudiantes: e.target.checked }))}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <div>
+                      <span className="block text-sm font-bold text-slate-700">Exportar Estudiantes</span>
+                      <span className="block text-xs text-slate-500">Descarga del padrón detallado de estudiantes</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 py-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={accionesEspecialista.exportarExcel}
+                      onChange={(e) => setAccionesEspecialista(prev => ({ ...prev, exportarExcel: e.target.checked }))}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <div>
+                      <span className="block text-sm font-bold text-slate-700">Exportar Excel</span>
+                      <span className="block text-xs text-slate-500">Descarga del reporte consolidado general en Excel</span>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Acciones para el Docente */}
+                <div className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <h4 className="text-xs font-extrabold text-emerald-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <span>Acciones en Reporte de Docente</span>
+                  </h4>
+
+                  <label className="flex items-center gap-3 py-2 cursor-pointer border-b border-slate-200/60 last:border-0">
+                    <input
+                      type="checkbox"
+                      checked={accionesDocente.exportarGrillaPdf}
+                      onChange={(e) => setAccionesDocente(prev => ({ ...prev, exportarGrillaPdf: e.target.checked }))}
+                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                    />
+                    <div>
+                      <span className="block text-sm font-bold text-slate-700">Exportar Grilla PDF</span>
+                      <span className="block text-xs text-slate-500">Reporte tabular con grilla de resultados por estudiante</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 py-2 cursor-pointer border-b border-slate-200/60 last:border-0">
+                    <input
+                      type="checkbox"
+                      checked={accionesDocente.exportarExcel}
+                      onChange={(e) => setAccionesDocente(prev => ({ ...prev, exportarExcel: e.target.checked }))}
+                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                    />
+                    <div>
+                      <span className="block text-sm font-bold text-slate-700">Exportar a Excel</span>
+                      <span className="block text-xs text-slate-500">Descarga de datos crudos filtrados de la sección</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 py-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={accionesDocente.generarPdfPreguntas}
+                      onChange={(e) => setAccionesDocente(prev => ({ ...prev, generarPdfPreguntas: e.target.checked }))}
+                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                    />
+                    <div>
+                      <span className="block text-sm font-bold text-slate-700">Generar PDF Preguntas</span>
+                      <span className="block text-xs text-slate-500">Reporte gráfico detallado por cada pregunta del examen</span>
+                    </div>
+                  </label>
                 </div>
               </div>
             )}
