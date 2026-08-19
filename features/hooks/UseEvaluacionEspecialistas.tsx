@@ -804,7 +804,7 @@ const UseEvaluacionEspecialistas = () => {
     dispatch({ type: AppAction.DATA_DOCENTE, payload: {} });
   };
   // Función para calcular la calificación del especialista
-  const calcularCalificacionEspecialista = (data: PRDocentes[]): number => {
+  const calcularCalificacionEspecialista = (data: PRDocentes[], escala?: AlternativasDocente[]): number => {
     let calificacionTotal = 0;
 
     // Iterar sobre cada pregunta en el array data
@@ -812,11 +812,22 @@ const UseEvaluacionEspecialistas = () => {
       // Verificar si la pregunta tiene alternativas
       if (pregunta.alternativas && Array.isArray(pregunta.alternativas)) {
         // Buscar las alternativas que tengan selected: true
-        pregunta.alternativas.forEach((alternativa) => {
-          if (alternativa.selected === true && typeof alternativa.value === 'number') {
-            calificacionTotal += alternativa.value;
+        const selectedAlt = pregunta.alternativas.find((a) => a.selected === true);
+        if (selectedAlt) {
+          let val = selectedAlt.value;
+          if (escala && Array.isArray(escala) && escala.length > 0) {
+            const matchedScale = escala.find(
+              (s) => String(s.alternativa || '') === String(selectedAlt.alternativa || '') ||
+                     (s.descripcion && selectedAlt.descripcion && s.descripcion.trim().toLowerCase() === selectedAlt.descripcion.trim().toLowerCase())
+            );
+            if (matchedScale && typeof matchedScale.value === 'number') {
+              val = matchedScale.value;
+            }
           }
-        });
+          if (typeof val === 'number') {
+            calificacionTotal += val;
+          }
+        }
       }
     });
 
@@ -842,7 +853,7 @@ const UseEvaluacionEspecialistas = () => {
     if (!silent) dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
     try {
       // Calcular la calificación del especialista
-      const calificacion = calcularCalificacionEspecialista(data);
+      const calificacion = calcularCalificacionEspecialista(data, dataEvaluacionDocente?.escala);
       const path = sessionId
         ? doc(db, `/evaluaciones-especialista/${idEvaluacion}/evaluados`, sessionId)
         : doc(collection(db, `/evaluaciones-especialista/${idEvaluacion}/evaluados`));
@@ -1410,7 +1421,7 @@ const UseEvaluacionEspecialistas = () => {
     try {
       dispatch({ type: AppAction.LOADER_SALVAR_PREGUNTA, payload: true });
       setValueLoader(true);
-      const calificacion = calcularCalificacionEspecialista(data.resultadosSeguimientoRetroalimentacion || [])
+      const calificacion = calcularCalificacionEspecialista(data.resultadosSeguimientoRetroalimentacion || [], dataEvaluacionDocente?.escala);
       const path = `/evaluaciones-especialista/${idEvaluacion}/evaluados/`
 
       const dataToUpdate = JSON.parse(JSON.stringify({

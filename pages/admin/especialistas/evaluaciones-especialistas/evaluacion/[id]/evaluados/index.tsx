@@ -88,6 +88,17 @@ const EvaluadosPage = () => {
 		return isNaN(d.getTime()) ? 0 : d.getTime();
 	};
 
+	const getMonitoreoTimestamp = (evalu: User): number => {
+		const fecha = evalu.fechaMonitoreo || evalu.fechaCreacion;
+		if (!fecha) return 0;
+		if (typeof fecha === 'string' && fecha.length >= 10) {
+			const timeStr = evalu.horaInicio ? `T${evalu.horaInicio}:00` : 'T00:00:00';
+			const dateObj = new Date(`${fecha.substring(0, 10)}${timeStr}`);
+			if (!isNaN(dateObj.getTime())) return dateObj.getTime();
+		}
+		return getTimestamp(fecha);
+	};
+
 	const formatTime = (val: any): string => {
 		if (!val) return '';
 		const date = new Date(getTimestamp(val));
@@ -98,6 +109,26 @@ const EvaluadosPage = () => {
 	const getNivel = (calificacion: number) => {
 		if (!dataEvaluacionDocente?.niveles || dataEvaluacionDocente.niveles.length === 0) return null;
 		return dataEvaluacionDocente.niveles.find(n => calificacion >= (n.min || 0) && calificacion <= (n.max || 0));
+	};
+
+	const getDisplayCalificacion = (evalu: any): number => {
+		if (!evalu) return 0;
+		const activeScale = dataEvaluacionDocente?.escala || [];
+		if (!evalu.resultadosSeguimientoRetroalimentacion || activeScale.length === 0) {
+			return evalu.calificacion || 0;
+		}
+		let total = 0;
+		evalu.resultadosSeguimientoRetroalimentacion.forEach((resp: any) => {
+			const selectedAlt = resp.alternativas?.find((a: any) => a.selected);
+			if (selectedAlt) {
+				const matchedScale = activeScale.find(
+					(s: any) => String(s.alternativa || '') === String(selectedAlt.alternativa || '') ||
+					            (s.descripcion && selectedAlt.descripcion && s.descripcion.trim().toLowerCase() === selectedAlt.descripcion.trim().toLowerCase())
+				);
+				total += matchedScale?.value !== undefined ? matchedScale.value : (selectedAlt.value || 0);
+			}
+		});
+		return total > 0 ? total : (evalu.calificacion || 0);
 	};
 
 	// Función para limpiar nombres de fases que vienen como ID (ej. MARZO_1_1772413976244 -> MARZO 1)
@@ -148,11 +179,11 @@ const EvaluadosPage = () => {
 			groups[dni].evaluations.push(esp);
 		});
 
-		// Ordenar evaluaciones por fecha y hora descendente (la más reciente primero)
+		// Ordenar evaluaciones por fecha y hora de monitoreo descendente (la más reciente primero)
 		Object.values(groups).forEach(group => {
 			group.evaluations.sort((a, b) => {
-				const timeA = getTimestamp(a.fechaCreacion);
-				const timeB = getTimestamp(b.fechaCreacion);
+				const timeA = getMonitoreoTimestamp(a);
+				const timeB = getMonitoreoTimestamp(b);
 				return timeB - timeA;
 			});
 		});
@@ -173,16 +204,16 @@ const EvaluadosPage = () => {
 
 		if (sortOrder === 'score-desc') {
 			return [...filteredResult].sort((a, b) => {
-				const scoreA = a.evaluations[0]?.calificacion ?? -1;
-				const scoreB = b.evaluations[0]?.calificacion ?? -1;
+				const scoreA = a.evaluations[0] ? getDisplayCalificacion(a.evaluations[0]) : -1;
+				const scoreB = b.evaluations[0] ? getDisplayCalificacion(b.evaluations[0]) : -1;
 				return scoreB - scoreA;
 			});
 		}
 
 		if (sortOrder === 'score-asc') {
 			return [...filteredResult].sort((a, b) => {
-				const scoreA = a.evaluations[0]?.calificacion ?? Infinity;
-				const scoreB = b.evaluations[0]?.calificacion ?? Infinity;
+				const scoreA = a.evaluations[0] ? getDisplayCalificacion(a.evaluations[0]) : Infinity;
+				const scoreB = b.evaluations[0] ? getDisplayCalificacion(b.evaluations[0]) : Infinity;
 				return scoreA - scoreB;
 			});
 		}
@@ -202,22 +233,11 @@ const EvaluadosPage = () => {
 
 	const getTrend = (evaluations: User[]) => {
 		if (evaluations.length < 2) return null;
-		const current = evaluations[0].calificacion || 0;
-		const previous = evaluations[1].calificacion || 0;
+		const current = getDisplayCalificacion(evaluations[0]);
+		const previous = getDisplayCalificacion(evaluations[1]);
 		if (current > previous) return { icon: <MdTrendingUp className={styles.trendUp} />, label: 'Mejorando' };
 		if (current < previous) return { icon: <MdTrendingDown className={styles.trendDown} />, label: 'En descenso' };
 		return { icon: <MdTrendingFlat className={styles.trendNeutral} />, label: 'Estable' };
-	};
-
-	const getMonitoreoTimestamp = (evalu: User): number => {
-		const fecha = evalu.fechaMonitoreo || evalu.fechaCreacion;
-		if (!fecha) return 0;
-		if (typeof fecha === 'string' && fecha.length >= 10) {
-			const timeStr = evalu.horaInicio ? `T${evalu.horaInicio}:00` : 'T00:00:00';
-			const dateObj = new Date(`${fecha.substring(0, 10)}${timeStr}`);
-			if (!isNaN(dateObj.getTime())) return dateObj.getTime();
-		}
-		return getTimestamp(fecha);
 	};
 
 	const handleOpenEvolucion = async (esp: User, cutoffEval?: User) => {
@@ -841,18 +861,18 @@ const EvaluadosPage = () => {
 												<td style={{ textAlign: 'center' }}>
 													<div className={styles.scoreContainer}>
 														<span className={styles.calificacionBadge}>
-															{latestEval?.calificacion ?? '—'}
+															{latestEval ? getDisplayCalificacion(latestEval) : '—'}
 														</span>
-														{latestEval?.calificacion !== undefined && getNivel(latestEval.calificacion) && (
+														{latestEval && getNivel(getDisplayCalificacion(latestEval)) && (
 															<span
 																className={styles.levelBadgeMini}
 																style={{
-																	backgroundColor: `${getNivel(latestEval.calificacion)?.color}20`,
-																	color: getNivel(latestEval.calificacion)?.color,
-																	borderColor: `${getNivel(latestEval.calificacion)?.color}40`,
+																	backgroundColor: `${getNivel(getDisplayCalificacion(latestEval))?.color}20`,
+																	color: getNivel(getDisplayCalificacion(latestEval))?.color,
+																	borderColor: `${getNivel(getDisplayCalificacion(latestEval))?.color}40`,
 																}}
 															>
-																{getNivel(latestEval.calificacion)?.nivel}
+																{getNivel(getDisplayCalificacion(latestEval))?.nivel}
 															</span>
 														)}
 													</div>
@@ -884,59 +904,63 @@ const EvaluadosPage = () => {
 														<div className={styles.detailContent}>
 															<h4 className={styles.detailTitle}>Historial de Evaluaciones</h4>
 															<div className={styles.detailGrid}>
-																{group.evaluations.map((evalu, idx) => (
-																	<div key={evalu.id || idx} className={styles.evaluationItem}>
-																		<div className={styles.evalCardHeader}>
-																			<div className={styles.evalMainInfo}>
-																				<div className={styles.evalDateWrapper}>
-																					<span className={styles.evalDate}>{getLocalDateString(evalu.fechaMonitoreo || evalu.fechaCreacion)}</span>
-																					<span className={styles.evalTime}>{formatTime(evalu.fechaCreacion)}</span>
+																{group.evaluations.map((evalu, idx) => {
+																	const displayScore = getDisplayCalificacion(evalu);
+																	const nivelObj = getNivel(displayScore);
+																	return (
+																		<div key={evalu.id || idx} className={styles.evaluationItem}>
+																			<div className={styles.evalCardHeader}>
+																				<div className={styles.evalMainInfo}>
+																					<div className={styles.evalDateWrapper}>
+																						<span className={styles.evalDate}>{getLocalDateString(evalu.fechaMonitoreo || evalu.fechaCreacion)}</span>
+																						<span className={styles.evalTime}>{formatTime(evalu.fechaCreacion)}</span>
+																					</div>
+																					{((evalu as any).faseNombre || (evalu as any).idFase || (evalu as any).faseActualID) && (
+																						<span className={styles.evalFaseBadge}>Fase: {getCleanPhaseName((evalu as any).faseNombre, (evalu as any).idFase || (evalu as any).faseActualID)}</span>
+																					)}
 																				</div>
-																				{((evalu as any).faseNombre || (evalu as any).idFase || (evalu as any).faseActualID) && (
-																					<span className={styles.evalFaseBadge}>Fase: {getCleanPhaseName((evalu as any).faseNombre, (evalu as any).idFase || (evalu as any).faseActualID)}</span>
-																				)}
+																				<div className={styles.evalScoreGroup}>
+																					{nivelObj && (
+																						<span
+																							className={styles.evalLevelText}
+																							style={{ color: nivelObj.color }}
+																						>
+																							{nivelObj.nivel}
+																						</span>
+																					)}
+																					<span className={styles.evalScore}>{displayScore} pts</span>
+																				</div>
 																			</div>
-																			<div className={styles.evalScoreGroup}>
-																				{evalu.calificacion !== undefined && getNivel(evalu.calificacion) && (
-																					<span
-																						className={styles.evalLevelText}
-																						style={{ color: getNivel(evalu.calificacion)?.color }}
-																					>
-																						{getNivel(evalu.calificacion)?.nivel}
-																					</span>
-																				)}
-																				<span className={styles.evalScore}>{evalu.calificacion || 0} pts</span>
+																			<div className={styles.evalActions}>
+																				<button
+																					type="button"
+																					className={styles.stageEvolucionButton}
+																					onClick={(e) => {
+																						e.stopPropagation();
+																						handleOpenEvolucion(group.info, evalu);
+																					}}
+																					title="Ver evolución hasta esta etapa"
+																				>
+																					<MdHistory /> Evolución
+																				</button>
+																				<Link
+																					href={`/admin/especialistas/evaluaciones-especialistas/evaluacion/reporte-especialista-individual?idEvaluacion=${id}&sessionId=${evalu.id}`}
+																					className={styles.viewReportLink}
+																					onClick={(e) => e.stopPropagation()}
+																				>
+																					Ver Reporte
+																				</Link>
+																				<button
+																					className={styles.deleteButton}
+																					onClick={(e) => handleDeleteClick(e, evalu)}
+																					title="Eliminar evaluación"
+																				>
+																					<MdDelete />
+																				</button>
 																			</div>
 																		</div>
-																		<div className={styles.evalActions}>
-																			<button
-																				type="button"
-																				className={styles.stageEvolucionButton}
-																				onClick={(e) => {
-																					e.stopPropagation();
-																					handleOpenEvolucion(group.info, evalu);
-																				}}
-																				title="Ver evolución hasta esta etapa"
-																			>
-																				<MdHistory /> Evolución
-																			</button>
-																			<Link
-																				href={`/admin/especialistas/evaluaciones-especialistas/evaluacion/reporte-especialista-individual?idEvaluacion=${id}&sessionId=${evalu.id}`}
-																				className={styles.viewReportLink}
-																				onClick={(e) => e.stopPropagation()}
-																			>
-																				Ver Reporte
-																			</Link>
-																			<button
-																				className={styles.deleteButton}
-																				onClick={(e) => handleDeleteClick(e, evalu)}
-																				title="Eliminar evaluación"
-																			>
-																				<MdDelete />
-																			</button>
-																		</div>
-																	</div>
-																))}
+																	);
+																})}
 															</div>
 														</div>
 													</td>
@@ -1088,7 +1112,7 @@ const EvaluadosPage = () => {
 														<option value="latest">Última Evaluación ({getCleanPhaseName(latestEvaluation?.faseNombre, latestEvaluation?.idFase)})</option>
 														{historialSelected.map((evalu, idx) => (
 															<option key={evalu.id || idx} value={evalu.id}>
-																{getCleanPhaseName((evalu as any).faseNombre, (evalu as any).idFase || (evalu as any).faseActualID)} - {getLocalDateString(evalu.fechaMonitoreo || evalu.fechaCreacion)} ({evalu.calificacion || 0} pts)
+																{getCleanPhaseName((evalu as any).faseNombre, (evalu as any).idFase || (evalu as any).faseActualID)} - {getLocalDateString(evalu.fechaMonitoreo || evalu.fechaCreacion)} ({getDisplayCalificacion(evalu)} pts)
 															</option>
 														))}
 													</select>
@@ -1143,7 +1167,7 @@ const EvaluadosPage = () => {
 														<option value="latest">Última Evaluación ({getCleanPhaseName(latestEvaluation?.faseNombre, latestEvaluation?.idFase)})</option>
 														{historialSelected.map((evalu, idx) => (
 															<option key={evalu.id || idx} value={evalu.id}>
-																{getCleanPhaseName((evalu as any).faseNombre, (evalu as any).idFase || (evalu as any).faseActualID)} - {getLocalDateString(evalu.fechaMonitoreo || evalu.fechaCreacion)} ({evalu.calificacion || 0} pts)
+																{getCleanPhaseName((evalu as any).faseNombre, (evalu as any).idFase || (evalu as any).faseActualID)} - {getLocalDateString(evalu.fechaMonitoreo || evalu.fechaCreacion)} ({getDisplayCalificacion(evalu)} pts)
 															</option>
 														))}
 													</select>
