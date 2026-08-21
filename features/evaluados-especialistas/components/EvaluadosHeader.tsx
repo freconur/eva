@@ -1,0 +1,36 @@
+import React from 'react';
+import Link from 'next/link';
+import { MdArrowBack, MdPeople } from 'react-icons/md';
+import styles from '../styles.module.css';
+
+interface EvaluadosHeaderProps {
+	id: string | string[] | undefined;
+	dataEvaluacionDocente: any;
+	evaluadosCount: number;
+}
+
+export const EvaluadosHeader: React.FC<EvaluadosHeaderProps> = ({ id, dataEvaluacionDocente, evaluadosCount }) => {
+	return (
+		<div className={styles.header}>
+			<div className={styles.headerTop}>
+				<Link href={`/admin/especialistas/evaluaciones-especialistas/evaluacion/${id}`} className={styles.backButton}>
+					<MdArrowBack /> Volver
+				</Link>
+			</div>
+			<div className={styles.headerContent}>
+				<h1 className={styles.headerTitle}>
+					Especialistas Evaluados
+				</h1>
+				{dataEvaluacionDocente?.name && (
+					<p className={styles.headerSubtitle}>
+						{dataEvaluacionDocente.name}
+					</p>
+				)}
+				<div className={styles.headerBadge}>
+					<MdPeople />
+					<span>{evaluadosCount} registros</span>
+				</div>
+			</div>
+		</div>
+	);
+};
