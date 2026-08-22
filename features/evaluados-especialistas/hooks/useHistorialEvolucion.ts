@@ -2,6 +2,28 @@ import { useState, useMemo } from 'react';
 import { User } from '@/features/types/types';
 import { getMonitoreoTimestamp, getCleanPhaseName, getShortDateString, stackedColors } from '../components/utils';
 
+const formatQuestionLabel = (orden: number | string, text: string, maxLen = 45): string | string[] => {
+	const cleanText = text ? text.trim() : '';
+	const fullText = orden ? `${orden}. ${cleanText}` : cleanText;
+	if (fullText.length <= maxLen) return fullText;
+
+	const words = fullText.split(' ');
+	const lines: string[] = [];
+	let currentLine = '';
+
+	words.forEach(word => {
+		if ((currentLine + (currentLine ? ' ' : '') + word).length > maxLen) {
+			if (currentLine) lines.push(currentLine);
+			currentLine = word;
+		} else {
+			currentLine += (currentLine ? ' ' : '') + word;
+		}
+	});
+	if (currentLine) lines.push(currentLine);
+
+	return lines.length > 1 ? lines : fullText;
+};
+
 export const useHistorialEvolucion = (
 	id: string | string[] | undefined,
 	getHistorialEspecialista: (evalId: string, dni: string) => Promise<User[]>,
@@ -15,7 +37,7 @@ export const useHistorialEvolucion = (
 	const [selectedEspecialista, setSelectedEspecialista] = useState<User | null>(null);
 	const [historialSelected, setHistorialSelected] = useState<User[]>([]);
 	const [loadingHistorial, setLoadingHistorial] = useState(false);
-	const [activeTab, setActiveTab] = useState<'evolucion' | 'radar' | 'analisis' | 'distribucion'>('evolucion');
+	const [activeTab, setActiveTab] = useState<'evolucion' | 'radar' | 'analisis' | 'distribucion' | 'configuracion'>('evolucion');
 	const [selectedModalEvalId, setSelectedModalEvalId] = useState<string>('all');
 
 	const handleOpenEvolucion = async (especialista: User, evaluacionEspecifica?: User) => {
@@ -250,8 +272,21 @@ export const useHistorialEvolucion = (
 				return details;
 			});
 
-			const colorScheme = stackedColors[index % stackedColors.length];
 			const faseName = getCleanPhaseName((evalu as any).faseNombre, (evalu as any).idFase || (evalu as any).faseActualID);
+			const phaseKey = (evalu as any).idFase || (evalu as any).faseActualID || faseName || `${index}`;
+			const colorScheme = stackedColors[index % stackedColors.length];
+
+			const customPhaseColor = dataEvaluacionDocente?.configuracionColores?.coloresPorFase?.[phaseKey] ||
+			                         dataEvaluacionDocente?.configuracionColores?.coloresPorFase?.[faseName] ||
+			                         dataEvaluacionDocente?.configuracionColores?.coloresPorFase?.[`${index}`] ||
+			                         dataEvaluacionDocente?.configuracionColores?.reticularByFase?.[phaseKey] ||
+			                         dataEvaluacionDocente?.configuracionColores?.reticularByFase?.[faseName] ||
+			                         dataEvaluacionDocente?.configuracionColores?.reticularByFase?.[`${index}`] ||
+			                         dataEvaluacionDocente?.configuracionColores?.reticular?.color;
+
+			const borderColor = customPhaseColor || colorScheme.border;
+			const backgroundColor = customPhaseColor ? `${customPhaseColor}33` : `${colorScheme.bg}33`;
+
 			const dateStr = getShortDateString(evalu.fechaMonitoreo || evalu.fechaCreacion);
 			const labelText = dateStr ? `${faseName} (${dateStr})` : faseName;
 
@@ -259,12 +294,12 @@ export const useHistorialEvolucion = (
 				label: labelText,
 				data,
 				customDetails,
-				backgroundColor: `${colorScheme.bg}33`,
-				borderColor: colorScheme.border,
-				pointBackgroundColor: colorScheme.border,
+				backgroundColor,
+				borderColor,
+				pointBackgroundColor: borderColor,
 				pointBorderColor: '#fff',
 				pointHoverBackgroundColor: '#fff',
-				pointHoverBorderColor: colorScheme.border,
+				pointHoverBorderColor: borderColor,
 				borderWidth: 2,
 			};
 		});
@@ -299,7 +334,7 @@ export const useHistorialEvolucion = (
 					activePreguntasMap.set(idP, {
 						id: idP,
 						orden: (ans as any).orden || (ans as any).order || (masterPreg as any)?.orden || (masterPreg as any)?.order || 999,
-						pregunta: (masterPreg as any)?.pregunta || (masterPreg as any)?.texto || (ans as any).pregunta || (ans as any).texto || `Pregunta ${idP}`
+						pregunta: (masterPreg as any)?.criterio || (masterPreg as any)?.preguntaDocente || (ans as any)?.criterio || (ans as any)?.preguntaDocente || (masterPreg as any)?.pregunta || (masterPreg as any)?.texto || (ans as any)?.pregunta || (ans as any)?.texto || `Criterio ${idP}`
 					});
 				}
 			});
@@ -341,21 +376,38 @@ export const useHistorialEvolucion = (
 
 			criticalItems.sort((a, b) => a.avg - b.avg);
 			const topCritical = criticalItems.slice(0, 5);
+			topCritical.sort((a, b) => Number(a.preguntaObj.orden || 0) - Number(b.preguntaObj.orden || 0));
 
-			const labels = topCritical.map(item => `P${item.preguntaObj.orden}: ${item.preguntaObj.pregunta.substring(0, 45)}...`);
+			const labels = topCritical.map(item => formatQuestionLabel(item.preguntaObj.orden, item.preguntaObj.pregunta));
+
+			const customBrechas = dataEvaluacionDocente?.configuracionColores?.brechas;
+			const customBarColor = customBrechas?.barColor;
+			const customZeroColor = customBrechas?.zeroColor || '#ef4444';
+			const customWarningColor = customBrechas?.warningColor || '#f59e0b';
 
 			const datasets = selectedEvals.map((evalu, index) => {
 				const colorScheme = stackedColors[index % stackedColors.length];
 				const faseName = getCleanPhaseName((evalu as any).faseNombre, (evalu as any).idFase || (evalu as any).faseActualID);
+				const phaseKey = (evalu as any).idFase || (evalu as any).faseActualID || faseName || `${index}`;
 				const dateStr = getShortDateString(evalu.fechaMonitoreo || evalu.fechaCreacion);
 				const labelText = dateStr ? `${faseName} (${dateStr})` : faseName;
 				const data = topCritical.map(item => item.scores[index]);
 
+				const customPhaseColor = dataEvaluacionDocente?.configuracionColores?.coloresPorFase?.[phaseKey] ||
+				                         dataEvaluacionDocente?.configuracionColores?.coloresPorFase?.[faseName] ||
+				                         dataEvaluacionDocente?.configuracionColores?.coloresPorFase?.[`${index}`] ||
+				                         dataEvaluacionDocente?.configuracionColores?.brechasByFase?.[phaseKey] ||
+				                         dataEvaluacionDocente?.configuracionColores?.brechasByFase?.[faseName] ||
+				                         dataEvaluacionDocente?.configuracionColores?.brechasByFase?.[`${index}`] ||
+				                         dataEvaluacionDocente?.configuracionColores?.brechas?.barColor;
+
+				const barColor = customPhaseColor || colorScheme.bg;
+
 				return {
 					label: labelText,
 					data,
-					backgroundColor: colorScheme.bg,
-					borderColor: colorScheme.border,
+					backgroundColor: barColor,
+					borderColor: barColor,
 					borderWidth: 1,
 					borderRadius: 4,
 				};
@@ -392,10 +444,26 @@ export const useHistorialEvolucion = (
 
 			criticalItems.sort((a, b) => a.score - b.score);
 			const topCritical = criticalItems.slice(0, 5);
+			topCritical.sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0));
 
-			const labels = topCritical.map(item => `P${item.orden}: ${item.preguntaText.substring(0, 45)}...`);
+			const labels = topCritical.map(item => formatQuestionLabel(item.orden, item.preguntaText));
 			const dataPoints = topCritical.map(item => item.score);
-			const backgroundColors = topCritical.map(item => item.score === 0 ? '#ef4444' : '#f59e0b');
+
+			const targetFaseName = getCleanPhaseName((targetEval as any).faseNombre, (targetEval as any).idFase || (targetEval as any).faseActualID);
+			const targetPhaseKey = (targetEval as any).idFase || (targetEval as any).faseActualID || targetFaseName || '0';
+
+			const customBrechas = dataEvaluacionDocente?.configuracionColores?.brechas;
+			const customPhaseColor = dataEvaluacionDocente?.configuracionColores?.coloresPorFase?.[targetPhaseKey] ||
+			                         dataEvaluacionDocente?.configuracionColores?.coloresPorFase?.[targetFaseName] ||
+			                         dataEvaluacionDocente?.configuracionColores?.coloresPorFase?.['0'] ||
+			                         dataEvaluacionDocente?.configuracionColores?.brechasByFase?.[targetPhaseKey] ||
+			                         dataEvaluacionDocente?.configuracionColores?.brechasByFase?.[targetFaseName] ||
+			                         dataEvaluacionDocente?.configuracionColores?.brechasByFase?.['0'] ||
+			                         customBrechas?.barColor;
+
+			const customZeroColor = customBrechas?.zeroColor || '#ef4444';
+			const customWarningColor = customBrechas?.warningColor || '#f59e0b';
+			const backgroundColors = topCritical.map(item => item.score === 0 ? customZeroColor : (customPhaseColor || customWarningColor));
 
 			const faseName = getCleanPhaseName((targetEval as any).faseNombre, (targetEval as any).idFase || (targetEval as any).faseActualID);
 			const dateStr = getShortDateString(targetEval.fechaMonitoreo || targetEval.fechaCreacion);
@@ -465,9 +533,12 @@ export const useHistorialEvolucion = (
 
 		if (totalRespuestasEvaluadas === 0) return { pieData: null, stats: [], totalPreguntas: 0 };
 
+		const customDist = dataEvaluacionDocente?.configuracionColores?.distribucion || {};
+		const defaultColors = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'];
+
 		const pieLabels = niveles.map((n: any) => n.nivel);
 		const pieDataValues = niveles.map((n: any) => countsByNivel[n.nivel] || 0);
-		const pieColors = niveles.map((n: any) => n.color || '#3b82f6');
+		const pieColors = niveles.map((n: any, idx: number) => customDist[n.nivel] || n.color || defaultColors[idx % defaultColors.length]);
 
 		const pieData = {
 			labels: pieLabels,
@@ -481,10 +552,10 @@ export const useHistorialEvolucion = (
 			]
 		};
 
-		const stats = niveles.map((n: any) => ({
+		const stats = niveles.map((n: any, idx: number) => ({
 			label: n.nivel,
 			count: countsByNivel[n.nivel] || 0,
-			color: n.color
+			color: customDist[n.nivel] || n.color || defaultColors[idx % defaultColors.length]
 		}));
 
 		return { pieData, stats, totalPreguntas: totalRespuestasEvaluadas };

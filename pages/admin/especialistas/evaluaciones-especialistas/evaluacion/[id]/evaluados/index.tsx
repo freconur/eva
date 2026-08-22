@@ -60,7 +60,9 @@ const EvaluadosPage = () => {
 		getHistorialEspecialista,
 		getPreguntasRespuestasEspecialistas,
 		getDimensionesEspecialistas,
-		deleteEvaluadoSession
+		deleteEvaluadoSession,
+		saveConfiguracionColoresEspecialistas,
+		savePaletaGlobalColores
 	} = UseEvaluacionEspecialistas();
 
 	// Custom Hooks
@@ -129,6 +131,21 @@ const EvaluadosPage = () => {
 		}
 	};
 
+	const handleOpenColorConfig = () => {
+		if (evaluadosEspecialista && evaluadosEspecialista.length > 0) {
+			historialEvolucion.handleOpenEvolucion(evaluadosEspecialista[0]);
+		} else {
+			historialEvolucion.handleOpenEvolucion({
+				id: 'config_mode',
+				nombres: 'Configuración',
+				apellidos: 'Global',
+				dni: '00000000'
+			});
+		}
+		historialEvolucion.setActiveTab('configuracion');
+		historialEvolucion.setSelectedModalEvalId('all');
+	};
+
 	return (
 		<div className={styles.container}>
 			{/* Header */}
@@ -136,6 +153,7 @@ const EvaluadosPage = () => {
 				id={id}
 				dataEvaluacionDocente={dataEvaluacionDocente}
 				evaluadosCount={evaluadosEspecialista?.length ?? 0}
+				onOpenColorConfig={handleOpenColorConfig}
 			/>
 
 			{/* Main content */}
@@ -275,7 +293,11 @@ const EvaluadosPage = () => {
 				setSelectedModalEvalId={historialEvolucion.setSelectedModalEvalId}
 				latestEvaluation={historialEvolucion.latestEvaluation}
 				dataEvaluacionDocente={dataEvaluacionDocente}
+				evaluadosEspecialista={evaluadosEspecialista}
 				getDisplayCalificacion={evaluadosList.getDisplayCalificacion}
+				evalId={`${id}`}
+				saveConfiguracionColoresEspecialistas={saveConfiguracionColoresEspecialistas}
+				savePaletaGlobalColores={savePaletaGlobalColores}
 			/>
 		</div>
 	);

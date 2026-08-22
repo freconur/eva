@@ -21,6 +21,8 @@
 .headerTop {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .backButton {
@@ -2166,4 +2168,413 @@
     color: #ffffff !important;
     font-weight: 700;
     box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+}
+
+/* Color Configuration Tab Styles */
+.configContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 0.5rem 0.25rem;
+}
+
+.configSectionTitle {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.2rem;
+}
+
+.configSubtitle {
+    font-size: 0.88rem;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+}
+
+.configCard {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.cardHeaderTitle {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.cardHeaderSub {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.paletteControls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+}
+
+.colorInputWrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.35rem 0.75rem;
+}
+
+.colorPickerInput {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    background: none;
+    padding: 0;
+}
+
+.colorPickerInput::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.colorPickerInput::-webkit-color-swatch {
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 50%;
+}
+
+.colorPickerHex {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #334155;
+    font-family: monospace;
+}
+
+.btnAddColor {
+    background: #ffffff;
+    border: 1px solid #2563eb;
+    color: #2563eb;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btnAddColor:hover {
+    background: #eff6ff;
+}
+
+.paletteSwatches {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.swatchItem {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.swatchItem:hover {
+    transform: scale(1.15);
+}
+
+.colorSelectorRow {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.colorSelectorLabel {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.swatchSelectorGroup {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.swatchesMini {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.swatchMini {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.15s ease;
+}
+
+.swatchMini:hover {
+    transform: scale(1.2);
+}
+
+.swatchActive {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.configSaveBar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.btnSaveConfig {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.92rem;
+    padding: 0.65rem 1.3rem;
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    transition: all 0.2s ease;
+}
+
+.btnSaveConfig:hover {
+    background: #1d4ed8;
+}
+
+.btnSaveConfig:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.saveSuccessBadge {
+    display: inline-flex;
+    align-items: center;
+    color: #15803d;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.spinIcon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.colorSelectorRowCompact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.85rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    gap: 1rem;
+}
+
+.colorPickerPopoverWrapper {
+    position: relative;
+}
+
+.colorBadgeBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.colorBadgeBtn:hover {
+    border-color: #2563eb;
+    background: #f8fafc;
+}
+
+.colorBadgeDot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+}
+
+.colorBadgeHex {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #334155;
+    font-family: monospace;
+}
+
+.colorBadgeArrow {
+    font-size: 0.65rem;
+    color: #94a3b8;
+}
+
+.colorPopoverMenu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.85rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.popoverHeader {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.popoverSwatches {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+}
+
+.popoverCustomRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 0.5rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.swatchItemWrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.swatchDeleteBtn {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #ffffff;
+    border: 1.5px solid #ffffff;
+    font-size: 11px;
+    font-weight: bold;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    padding: 0;
+}
+
+.swatchItemWrapper:hover .swatchDeleteBtn {
+    opacity: 1;
+}
+
+.swatchDeleteBtn:hover {
+    transform: scale(1.2);
+    background: #dc2626;
+}
+
+.hexTextInput {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.85rem;
+    font-family: monospace;
+    font-weight: 700;
+    color: #1e293b;
+    width: 85px;
+    text-transform: uppercase;
+}
+
+.hexTextInput:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.hexErrorText {
+    font-size: 0.78rem;
+    color: #ef4444;
+    font-weight: 600;
+    margin-top: 0.25rem;
+}
+
+.colorConfigHeaderBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #ffffff;
+    color: #1e293b;
+    border: 1px solid #cbd5e1;
+    font-size: 0.88rem;
+    font-weight: 600;
+    padding: 0.45rem 0.95rem;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.colorConfigHeaderBtn:hover {
+    background: #f8fafc;
+    border-color: #2563eb;
+    color: #2563eb;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
 }

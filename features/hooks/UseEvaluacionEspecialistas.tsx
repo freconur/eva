@@ -523,6 +523,19 @@ const UseEvaluacionEspecialistas = () => {
       dispatch({ type: AppAction.EVALUACIONES_DOCENTES, payload: arrayEvaluaciones });
     });
   };
+
+  const savePaletaGlobalColores = async (palette: string[]) => {
+    const docRef = doc(db, 'configuraciones', 'paletaColoresEspecialistas');
+    await setDoc(docRef, { palette }, { merge: true });
+  };
+
+  const saveConfiguracionColoresEspecialistas = async (idEvaluacion: string, configuracionColores: any) => {
+    const docRef = doc(db, 'evaluaciones-especialista', idEvaluacion);
+    await setDoc(docRef, { configuracionColores }, { merge: true });
+    if (configuracionColores?.palette && Array.isArray(configuracionColores.palette)) {
+      await savePaletaGlobalColores(configuracionColores.palette);
+    }
+  };
   const getEvaluacionesEspecialistas = () => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     onSnapshot(collection(db, '/evaluaciones-especialista'), (querySnapshot) => {
@@ -1579,6 +1592,8 @@ const UseEvaluacionEspecialistas = () => {
     updateNombreFaseEvaluacion,
     deleteFaseEvaluacion,
     updateMonitorEvaluation: updateAllMonitorsInEvaluation,
+    saveConfiguracionColoresEspecialistas,
+    savePaletaGlobalColores,
   };
 };
 
