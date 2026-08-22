@@ -111,6 +111,7 @@ export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
 						type="button"
 						className={styles.colorBadgeBtn}
 						onClick={() => setOpenDropdownKey(isOpen ? null : keyId)}
+						data-tour="popover-badge"
 					>
 						<span className={styles.colorBadgeDot} style={{ backgroundColor: currentColor }} />
 						<span className={styles.colorBadgeHex}>{currentColor.toUpperCase()}</span>
@@ -552,7 +553,7 @@ export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
 									</p>
 
 									{/* Seccion 1: Gestor de Paleta */}
-									<div className={styles.configCard}>
+									<div className={styles.configCard} data-tour="palette-card">
 										<h4 className={styles.cardHeaderTitle}>Paleta de Colores Disponibles</h4>
 										<p className={styles.cardHeaderSub}>Agrega o elimina colores de tu paleta (formato HEX):</p>
 										
@@ -580,7 +581,7 @@ export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
 
 										{hexError && <span className={styles.hexErrorText}>{hexError}</span>}
 
-										<div className={styles.paletteSwatches}>
+										<div className={styles.paletteSwatches} data-tour="palette-swatches">
 											{palette.map((hex, idx) => (
 												<div key={idx} className={styles.swatchItemWrapper}>
 													<div className={styles.swatchItem} style={{ backgroundColor: hex }} title={hex} />
@@ -598,7 +599,7 @@ export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
 									</div>
 
 									{/* Seccion 2: Colores por Fase (Perfil Reticular & Brechas Críticas) */}
-									<div className={styles.configCard}>
+									<div className={styles.configCard} data-tour="phases-card">
 										<h4 className={styles.cardHeaderTitle}>1. Colores por Fase / Etapa (Perfil Reticular & Brechas Críticas)</h4>
 										<p className={styles.cardHeaderSub}>Asigna el color de cada fase; se aplicará de forma unificada en el perfil reticular y en brechas críticas:</p>
 
@@ -668,6 +669,7 @@ export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
 											className={styles.btnSaveConfig}
 											onClick={handleSaveConfig}
 											disabled={isSaving}
+											data-tour="save-btn"
 										>
 											{isSaving ? <RiLoader4Line className={styles.spinIcon} /> : <MdSave />}
 											{isSaving ? 'Guardando...' : 'Guardar Configuración'}

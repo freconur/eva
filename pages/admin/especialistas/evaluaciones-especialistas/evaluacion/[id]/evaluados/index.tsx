@@ -25,6 +25,7 @@ import { AnalyticsDashboard } from '@/features/evaluados-especialistas/component
 import { ModalDeleteConfirm } from '@/features/evaluados-especialistas/components/ModalDeleteConfirm';
 import { ModalRankingGeneral } from '@/features/evaluados-especialistas/components/ModalRankingGeneral';
 import { ModalEvolutionProgress } from '@/features/evaluados-especialistas/components/ModalEvolutionProgress';
+import { InteractiveSpotlightTour } from '@/features/evaluados-especialistas/components/InteractiveSpotlightTour';
 
 import { useEvaluadosList } from '@/features/evaluados-especialistas/hooks/useEvaluadosList';
 import { useRankingAnalytics } from '@/features/evaluados-especialistas/hooks/useRankingAnalytics';
@@ -46,6 +47,19 @@ ChartJS.register(
 const EvaluadosPage = () => {
 	const router = useRouter();
 	const { id } = router.query;
+	const [showOnboarding, setShowOnboarding] = useState(false);
+
+	useEffect(() => {
+		if (typeof window !== 'undefined') {
+			const hasSeen = localStorage.getItem('eva_onboarding_colors_seen');
+			if (!hasSeen) {
+				const timer = setTimeout(() => {
+					setShowOnboarding(true);
+				}, 500);
+				return () => clearTimeout(timer);
+			}
+		}
+	}, []);
 	const {
 		evaluadosEspecialista,
 		loaderPages,
@@ -154,6 +168,7 @@ const EvaluadosPage = () => {
 				dataEvaluacionDocente={dataEvaluacionDocente}
 				evaluadosCount={evaluadosEspecialista?.length ?? 0}
 				onOpenColorConfig={handleOpenColorConfig}
+				onOpenOnboarding={() => setShowOnboarding(true)}
 			/>
 
 			{/* Main content */}
@@ -298,6 +313,13 @@ const EvaluadosPage = () => {
 				evalId={`${id}`}
 				saveConfiguracionColoresEspecialistas={saveConfiguracionColoresEspecialistas}
 				savePaletaGlobalColores={savePaletaGlobalColores}
+			/>
+
+			{/* Interactive Spotlight Tour */}
+			<InteractiveSpotlightTour
+				isOpen={showOnboarding}
+				onClose={() => setShowOnboarding(false)}
+				onOpenColorConfig={handleOpenColorConfig}
 			/>
 		</div>
 	);
