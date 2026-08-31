@@ -102,24 +102,41 @@ export const useHistorialEvolucion = (
 	}, [historialSelected, dataEvaluacionDocente]);
 
 	const maxScaleValue = useMemo(() => {
+		let maxVal = 20;
 		if (dataEvaluacionDocente?.niveles && dataEvaluacionDocente.niveles.length > 0) {
-			const maxVal = Math.max(...dataEvaluacionDocente.niveles.map((n: any) => n.max || 0));
-			if (maxVal > 0) return maxVal;
+			const candidate = Math.max(...dataEvaluacionDocente.niveles.map((n: any) => n.max || 0));
+			if (candidate > 0) maxVal = candidate;
+		} else if (dataEvaluacionDocente?.escala && dataEvaluacionDocente.escala.length > 0) {
+			const candidate = Math.max(...dataEvaluacionDocente.escala.map((s: any) => s.value || 0));
+			if (candidate > 0) maxVal = candidate;
 		}
-		if (dataEvaluacionDocente?.escala && dataEvaluacionDocente.escala.length > 0) {
-			const maxVal = Math.max(...dataEvaluacionDocente.escala.map((s: any) => s.value || 0));
-			if (maxVal > 0) return maxVal;
+
+		// Considerar también la calificación más alta del historial por si supera la escala
+		if (historialSelected && historialSelected.length > 0) {
+			const highestScore = Math.max(...historialSelected.map((item) => getDisplayCalificacion(item) || 0));
+			if (highestScore > maxVal) maxVal = highestScore;
 		}
-		return 20;
-	}, [dataEvaluacionDocente]);
+
+		// Margen dinámico superior (+8% redondeado) para evitar que el punto toque el borde superior
+		const buffer = Math.max(2, Math.ceil(maxVal * 0.08));
+		return maxVal + buffer;
+	}, [dataEvaluacionDocente, historialSelected, getDisplayCalificacion]);
 
 	const chartOptions = {
 		responsive: true,
 		maintainAspectRatio: false,
+		layout: {
+			padding: {
+				top: 16,
+				right: 16,
+				bottom: 8,
+				left: 8,
+			},
+		},
 		scales: {
 			y: {
 				beginAtZero: true,
-				max: maxScaleValue,
+				suggestedMax: maxScaleValue,
 				title: {
 					display: true,
 					text: 'Puntaje de Evaluación',

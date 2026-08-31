@@ -37,6 +37,11 @@
     background: #fff;
 }
 
+.tableHeader th.tableHeaderActions {
+    text-align: center;
+    width: 120px;
+}
+
 .tableLink {
     color: #1e293b;
     /* Texto oscuro base */
@@ -82,21 +87,40 @@
     font-size: 0.85rem;
 }
 
-/* Formulario de búsqueda minimalista */
+/* Formulario de búsqueda minimalista y reactivo */
 .formulario {
     margin-bottom: 2rem;
 }
 
-.inputContainer {
+.searchBarContainer {
     display: flex;
-    gap: 1rem;
-    max-width: 500px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.inputContainer {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 440px;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 0.85rem;
+    color: #94a3b8;
+    font-size: 1.15rem;
+    pointer-events: none;
 }
 
 .input {
-    flex: 1;
-    padding: 0.625rem 1rem;
-    border: 1px solid #e2e8f0;
+    width: 100%;
+    padding: 0.65rem 2.2rem 0.65rem 2.4rem;
+    border: 1px solid #cbd5e1;
     border-radius: 0.5rem;
     font-size: 0.875rem;
     transition: all 0.2s ease;
@@ -107,7 +131,42 @@
 .input:focus {
     outline: none;
     border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.clearButton {
+    position: absolute;
+    right: 0.65rem;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    padding: 0.2rem;
+    border-radius: 9999px;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.clearButton:hover {
+    color: #334155;
+    background-color: #f1f5f9;
+}
+
+.resultsCounter {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.emptyCell {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: #64748b;
+    font-size: 0.925rem;
+    font-style: italic;
 }
 
 .button {
@@ -140,55 +199,61 @@
     }
 }
 
-/* Acciones minimalistas */
-/* Acciones minimalistas */
+.tableCellActions {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    width: 120px;
+    text-align: center;
+}
+
+/* Acciones */
 .actions {
     display: flex;
-    gap: 0.75rem;
-    justify-content: flex-start;
+    gap: 0.65rem;
+    justify-content: center;
     align-items: center;
 }
 
-.editButton,
-.deleteButton {
-    font-size: 1.5rem;
-    /* 24px */
-    padding: 0.5rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    background-color: #f1f5f9;
-    /* Fondo sutil por defecto */
-    display: flex;
+.actionButton {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid transparent;
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
 }
 
 .editButton {
-    color: #3b82f6;
-    /* Azul visible siempre */
+    color: #2563eb;
+    background-color: #eff6ff;
+    border-color: #bfdbfe;
 }
 
 .editButton:hover {
-    color: #2563eb;
+    color: #1d4ed8;
     background-color: #dbeafe;
-    /* Azul claro fondo */
+    border-color: #93c5fd;
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 4px 8px -1px rgba(37, 99, 235, 0.2);
 }
 
 .deleteButton {
     color: #ef4444;
-    /* Rojo visible siempre */
+    background-color: #fef2f2;
+    border-color: #fecaca;
 }
 
 .deleteButton:hover {
     color: #dc2626;
     background-color: #fee2e2;
-    /* Rojo claro fondo */
+    border-color: #fca5a5;
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1);
+    box-shadow: 0 4px 8px -1px rgba(239, 68, 68, 0.2);
 }
 
 /* Paginación simple */

@@ -24,6 +24,7 @@ interface AnalyticsDashboardProps {
 	selectedUgelSummary: any;
 	ugelEspecialistasList: any[];
 	getNivel: (score: number) => any;
+	onUpdateNivelColor?: (nivelIdx: number, newColor: string) => Promise<void>;
 }
 
 export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = (props) => {

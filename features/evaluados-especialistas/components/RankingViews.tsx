@@ -26,6 +26,7 @@ interface RankingViewsProps {
 	selectedUgelSummary: any;
 	ugelEspecialistasList: any[];
 	getNivel: (score: number) => any;
+	onUpdateNivelColor?: (nivelIdx: number, newColor: string) => Promise<void>;
 }
 
 export const RankingViews: React.FC<RankingViewsProps> = ({
@@ -50,15 +51,22 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 	selectedUgelSummary,
 	ugelEspecialistasList,
 	getNivel,
+	onUpdateNivelColor,
 }) => {
 	const [ugelChartType, setUgelChartType] = useState<'bar' | 'pieUgel' | 'pieNivel'>('bar');
 	const [isPhaseDropdownOpen, setIsPhaseDropdownOpen] = useState(false);
+	const [activeLegendColorIdx, setActiveLegendColorIdx] = useState<number | null>(null);
+	const [legendHexInput, setLegendHexInput] = useState<string>('');
 	const phaseDropdownRef = useRef<HTMLDivElement>(null);
+	const legendPopoverRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (phaseDropdownRef.current && !phaseDropdownRef.current.contains(event.target as Node)) {
 				setIsPhaseDropdownOpen(false);
+			}
+			if (legendPopoverRef.current && !legendPopoverRef.current.contains(event.target as Node)) {
+				setActiveLegendColorIdx(null);
 			}
 		};
 		document.addEventListener('mousedown', handleClickOutside);
@@ -146,16 +154,116 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 
 				{/* Niveles Legend */}
 				{dataEvaluacionDocente?.niveles && dataEvaluacionDocente.niveles.length > 0 && (
-					<div className={styles.toolbarLegendGroup}>
+					<div className={styles.toolbarLegendGroup} ref={legendPopoverRef}>
 						<span className={styles.toolbarLegendTitle}>Leyenda:</span>
-						{dataEvaluacionDocente.niveles.map((n: any, idx: number) => (
-							<div key={idx} className={styles.toolbarLegendItem}>
-								<span className={styles.toolbarLegendDot} style={{ backgroundColor: n.color || '#3b82f6' }}></span>
-								<span className={styles.toolbarLegendText}>
-									{n.nivel}
-								</span>
-							</div>
-						))}
+						{dataEvaluacionDocente.niveles.map((n: any, idx: number) => {
+							const currentColor = n.color || '#3b82f6';
+							const isEditing = activeLegendColorIdx === idx;
+
+							return (
+								<div
+									key={idx}
+									className={`${styles.toolbarLegendItem} ${onUpdateNivelColor ? styles.toolbarLegendItemEditable : ''} ${isEditing ? styles.toolbarLegendItemActive : ''}`}
+									onClick={() => {
+										if (!onUpdateNivelColor) return;
+										if (isEditing) {
+											setActiveLegendColorIdx(null);
+										} else {
+											setActiveLegendColorIdx(idx);
+											setLegendHexInput(currentColor.toUpperCase());
+										}
+									}}
+									title={onUpdateNivelColor ? `Clic para editar color HEX de "${n.nivel}"` : undefined}
+								>
+									<span className={styles.toolbarLegendColorWrapper}>
+										<span
+											className={styles.toolbarLegendDot}
+											style={{ backgroundColor: currentColor }}
+										/>
+									</span>
+									<span className={styles.toolbarLegendText}>
+										{n.nivel}
+									</span>
+
+									{/* Popover editor directo en HEX */}
+									{isEditing && onUpdateNivelColor && (
+										<div
+											className={styles.legendColorPopover}
+											onClick={(e) => e.stopPropagation()}
+										>
+											<div className={styles.legendColorPopoverHeader}>
+												<span>Editar Color ({n.nivel})</span>
+												<button
+													type="button"
+													className={styles.legendColorCloseBtn}
+													onClick={() => setActiveLegendColorIdx(null)}
+												>
+													✕
+												</button>
+											</div>
+
+											<div className={styles.legendColorInputRow}>
+												{/* Selector nativo sincronizado */}
+												<input
+													type="color"
+													value={currentColor.startsWith('#') && currentColor.length === 7 ? currentColor : '#3b82f6'}
+													onChange={(e) => {
+														const val = e.target.value.toUpperCase();
+														setLegendHexInput(val);
+														onUpdateNivelColor(idx, val);
+													}}
+													className={styles.legendColorSwatchInput}
+													title="Selector de color"
+												/>
+
+												{/* Input HEX directo */}
+												<input
+													type="text"
+													value={legendHexInput}
+													autoFocus
+													maxLength={7}
+													placeholder="#HEX"
+													onChange={(e) => {
+														let val = e.target.value;
+														if (!val.startsWith('#') && val.length > 0) {
+															val = '#' + val;
+														}
+														setLegendHexInput(val.toUpperCase());
+														if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+															onUpdateNivelColor(idx, val.toUpperCase());
+														}
+													}}
+													onKeyDown={(e) => {
+														if (e.key === 'Enter' || e.key === 'Escape') {
+															setActiveLegendColorIdx(null);
+														}
+													}}
+													className={styles.legendColorHexInput}
+												/>
+											</div>
+
+											{/* Paleta rápida de sugerencias */}
+											<div className={styles.legendColorPresets}>
+												{['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#64748B'].map((presetHex) => (
+													<button
+														key={presetHex}
+														type="button"
+														className={styles.legendColorPresetDot}
+														style={{ backgroundColor: presetHex }}
+														onClick={() => {
+															setLegendHexInput(presetHex);
+															onUpdateNivelColor(idx, presetHex);
+															setActiveLegendColorIdx(null);
+														}}
+														title={presetHex}
+													/>
+												))}
+											</div>
+										</div>
+									)}
+								</div>
+							);
+						})}
 					</div>
 				)}
 			</div>

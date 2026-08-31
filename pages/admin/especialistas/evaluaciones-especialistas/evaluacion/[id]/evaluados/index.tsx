@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { MdPeople, MdBarChart } from 'react-icons/md';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas';
+import useUsuario from '@/features/hooks/useUsuario';
 import { User } from '@/features/types/types';
 import {
 	Chart as ChartJS,
@@ -62,6 +63,7 @@ const EvaluadosPage = () => {
 	}, []);
 	const {
 		evaluadosEspecialista,
+		allEspecialistas,
 		loaderPages,
 		dataEvaluacionDocente,
 		getPreguntaRespuestaDocentes,
@@ -76,14 +78,44 @@ const EvaluadosPage = () => {
 		getDimensionesEspecialistas,
 		deleteEvaluadoSession,
 		saveConfiguracionColoresEspecialistas,
-		savePaletaGlobalColores
+		savePaletaGlobalColores,
+		updateNivelesEvaluacion
 	} = UseEvaluacionEspecialistas();
 
-	// Custom Hooks
-	const evaluadosList = useEvaluadosList(evaluadosEspecialista, dataEvaluacionDocente);
+	const { getAllEspecialistas } = useUsuario();
+
+	// Cargar y escuchar especialistas activos de la institución en tiempo real
+	useEffect(() => {
+		getAllEspecialistas();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	// Conjunto de DNIs de especialistas activos existentes en la base de datos
+	const activeDnisSet = useMemo(() => {
+		if (!allEspecialistas || allEspecialistas.length === 0) return null;
+		return new Set(
+			allEspecialistas
+				.map((esp) => (esp.dni ? String(esp.dni).trim() : ''))
+				.filter(Boolean)
+		);
+	}, [allEspecialistas]);
+
+	// Evaluaciones válidas: se descartan las huérfanas de especialistas eliminados
+	const evaluadosValidos = useMemo(() => {
+		if (!evaluadosEspecialista || evaluadosEspecialista.length === 0) return [];
+		if (!activeDnisSet) return evaluadosEspecialista;
+
+		return evaluadosEspecialista.filter((evalu) => {
+			const dni = String(evalu.especialistaDni || evalu.dni || '').trim();
+			return activeDnisSet.has(dni);
+		});
+	}, [evaluadosEspecialista, activeDnisSet]);
+
+	// Custom Hooks consumiendo las evaluaciones validadas
+	const evaluadosList = useEvaluadosList(evaluadosValidos, dataEvaluacionDocente);
 
 	const rankingAnalytics = useRankingAnalytics(
-		evaluadosEspecialista,
+		evaluadosValidos,
 		dataEvaluacionDocente,
 		evaluadosList.getNivel,
 		evaluadosList.getDisplayCalificacion
@@ -145,9 +177,24 @@ const EvaluadosPage = () => {
 		}
 	};
 
+	const handleUpdateNivelColor = async (nivelIdx: number, newColor: string) => {
+		if (!id || !dataEvaluacionDocente?.niveles) return;
+		const currentNiveles = [...dataEvaluacionDocente.niveles];
+		if (!currentNiveles[nivelIdx]) return;
+		currentNiveles[nivelIdx] = {
+			...currentNiveles[nivelIdx],
+			color: newColor
+		};
+		try {
+			await updateNivelesEvaluacion(`${id}`, currentNiveles);
+		} catch (error) {
+			console.error("Error al actualizar color de nivel:", error);
+		}
+	};
+
 	const handleOpenColorConfig = () => {
-		if (evaluadosEspecialista && evaluadosEspecialista.length > 0) {
-			historialEvolucion.handleOpenEvolucion(evaluadosEspecialista[0]);
+		if (evaluadosValidos && evaluadosValidos.length > 0) {
+			historialEvolucion.handleOpenEvolucion(evaluadosValidos[0]);
 		} else {
 			historialEvolucion.handleOpenEvolucion({
 				id: 'config_mode',
@@ -166,7 +213,7 @@ const EvaluadosPage = () => {
 			<EvaluadosHeader
 				id={id}
 				dataEvaluacionDocente={dataEvaluacionDocente}
-				evaluadosCount={evaluadosEspecialista?.length ?? 0}
+				evaluadosCount={evaluadosValidos.length}
 				onOpenColorConfig={handleOpenColorConfig}
 				onOpenOnboarding={() => setShowOnboarding(true)}
 			/>
@@ -245,6 +292,7 @@ const EvaluadosPage = () => {
 							selectedUgelSummary={rankingAnalytics.selectedUgelSummary}
 							ugelEspecialistasList={rankingAnalytics.ugelEspecialistasList}
 							getNivel={evaluadosList.getNivel}
+							onUpdateNivelColor={handleUpdateNivelColor}
 						/>
 					</div>
 				)}
@@ -288,6 +336,7 @@ const EvaluadosPage = () => {
 				selectedUgelSummary={rankingAnalytics.selectedUgelSummary}
 				ugelEspecialistasList={rankingAnalytics.ugelEspecialistasList}
 				getNivel={evaluadosList.getNivel}
+				onUpdateNivelColor={handleUpdateNivelColor}
 			/>
 
 			{/* Evolution Modal */}
@@ -308,7 +357,7 @@ const EvaluadosPage = () => {
 				setSelectedModalEvalId={historialEvolucion.setSelectedModalEvalId}
 				latestEvaluation={historialEvolucion.latestEvaluation}
 				dataEvaluacionDocente={dataEvaluacionDocente}
-				evaluadosEspecialista={evaluadosEspecialista}
+				evaluadosEspecialista={evaluadosValidos}
 				getDisplayCalificacion={evaluadosList.getDisplayCalificacion}
 				evalId={`${id}`}
 				saveConfiguracionColoresEspecialistas={saveConfiguracionColoresEspecialistas}

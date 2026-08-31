@@ -28,6 +28,7 @@ interface ModalRankingGeneralProps {
 	selectedUgelSummary: any;
 	ugelEspecialistasList: any[];
 	getNivel: (score: number) => any;
+	onUpdateNivelColor?: (nivelIdx: number, newColor: string) => Promise<void>;
 }
 
 export const ModalRankingGeneral: React.FC<ModalRankingGeneralProps> = ({

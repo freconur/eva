@@ -1,137 +1,103 @@
 import { User } from '@/features/types/types'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useMemo } from 'react'
 import styles from './tablasUsuarios.module.css'
 import Link from 'next/link'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { convertRolToPath, convertRolToTitle, regionTexto } from '@/fuctions/regiones'
-import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
 import UpdateDataDocente from '@/modals/updateDocente'
 import DeleteUsuario from '@/modals/deleteUsuario'
 import { MdEditSquare } from 'react-icons/md'
-import { RiDeleteBinLine, RiLoader4Line } from 'react-icons/ri'
+import { RiDeleteBinLine, RiSearchLine, RiCloseLine } from 'react-icons/ri'
 
 interface TablaUsuariosProps {
-	docentesDeDirectores: User[],
+	docentesDeDirectores: User[]
 	rol: number
 }
 
-const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores, rol }: TablaUsuariosProps) => {
-	const { currentUserData, resultadoBusquedaUsuario, lastVisible, warningDataDocente } = useGlobalContext()
-	const [dniUsuario, setDniUsuario] = useState<string>("")
-	const [error, setError] = useState<string>("")
+const normalizeText = (text: string = ''): string =>
+	text
+		.toLowerCase()
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.trim()
+
+const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores = [], rol }: TablaUsuariosProps) => {
+	const { currentUserData } = useGlobalContext()
+	const [searchQuery, setSearchQuery] = useState<string>('')
 	const [usuario, setUsuario] = useState<User>({})
-	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const [showUpdateDataDocente, setShowUpdateDataDocente] = useState(false)
 	const [showDeleteUsuario, setShowDeleteUsuario] = useState(false)
-	const [currentPage, setCurrentPage] = useState(0)
-	const itemsPerPage = 10
-	const { getDirectorFromEspecialistaCurricular, getNextUsuariosEspecialista, getPreviousUsuariosEspecialista,getEspecialistaToAdmin } = useEvaluacionCurricular()
 
-	// Calcular los índices para la paginación
-	const startIndex = currentPage * itemsPerPage
-	const endIndex = startIndex + itemsPerPage
-	const currentItems = docentesDeDirectores.slice(startIndex, endIndex)
-	const totalPages = Math.ceil(docentesDeDirectores.length / itemsPerPage)
-	
-	useEffect(() => {
-		if (Object.keys(resultadoBusquedaUsuario).length > 0 || warningDataDocente) {
-			setIsLoading(false)
+	// Filtrado reactivo en memoria por DNI, nombres y apellidos
+	const filteredUsuarios = useMemo(() => {
+		const query = normalizeText(searchQuery)
+		if (!query) {
+			return docentesDeDirectores
 		}
-	}, [resultadoBusquedaUsuario, warningDataDocente])
 
-	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault()
-		if (dniUsuario.length !== 8) {
-			setError("El DNI debe tener 8 dígitos")
-			return
-		} else {
-			setIsLoading(true)
-			getEspecialistaToAdmin(rol, dniUsuario)
-			console.log(dniUsuario)
-			setError("")
-		}
-	}
+		return docentesDeDirectores.filter((user) => {
+			const dni = (user.dni || '').trim()
+			const nombres = normalizeText(user.nombres)
+			const apellidos = normalizeText(user.apellidos)
+			const nombreCompleto = `${nombres} ${apellidos}`
 
-	const handleDniChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value
-		setDniUsuario(value)
-		if (value.length !== 8 && value.length > 0) {
-			setError("El DNI debe tener 8 dígitos")
-		} else {
-			setError("")
-		}
-	}
-
-	const handleNext = () => {
-		if (currentPage < totalPages - 1) {
-			setCurrentPage(prev => prev + 1)
-		}
-	}
-
-	const handlePrevious = () => {
-		if (currentPage > 0) {
-			setCurrentPage(prev => prev - 1)
-		}
-	}
+			return (
+				dni.includes(query) ||
+				nombres.includes(query) ||
+				apellidos.includes(query) ||
+				nombreCompleto.includes(query)
+			)
+		})
+	}, [docentesDeDirectores, searchQuery])
 
 	return (
 		<div className={styles.tableSection}>
-			{
-				showUpdateDataDocente &&
+			{showUpdateDataDocente && (
 				<UpdateDataDocente
 					dataDocente={usuario}
 					onClose={() => setShowUpdateDataDocente(false)}
 				/>
-			}
-			{
-				showDeleteUsuario &&
-				<DeleteUsuario handleShowModalDelete={() => setShowDeleteUsuario(false)} idUsuario={`${usuario.dni}`} />
-			}
+			)}
+			{showDeleteUsuario && (
+				<DeleteUsuario
+					handleShowModalDelete={() => setShowDeleteUsuario(false)}
+					idUsuario={`${usuario.dni}`}
+				/>
+			)}
+
 			<h2 className={styles.sectionTitle}>
 				<span className={styles.sectionTitleIndicator}></span>
 				{convertRolToTitle(rol)}
 			</h2>
 
-			<div>
-				<form className={styles.formulario} action="" onSubmit={handleSubmit}>
-					<div >
-						<div className={styles.formGroup}>
-							<label htmlFor="">Dni:</label>
-							<div className={styles.inputContainer}>
-								<input
-									className={`${styles.input} ${error ? styles.inputError : ''}`}
-									type="text"
-									placeholder='escribe el dni'
-									onChange={handleDniChange}
-									maxLength={8}
-								/>
-								<button type='submit' className={styles.button} disabled={isLoading}>
-									{isLoading ? <RiLoader4Line className={styles.buttonSpinner} /> : 'Buscar'}
-								</button>
-							</div>
-							{error && <span className={styles.errorMessage}>{error}</span>}
-						</div>
-					</div>
-				</form>
-
-				{Object.keys(resultadoBusquedaUsuario).length > 0 ? (
-					<Link href="" className={styles.resultadoBusqueda}>
-						<div className={styles.resultadoBusquedaHeader}>
-							<h3>Resultado de la búsqueda</h3>
-							<div className={styles.actions}>
-								<MdEditSquare onClick={() => { setUsuario(resultadoBusquedaUsuario); setShowUpdateDataDocente(!showUpdateDataDocente) }} className={styles.editButton} />
-								<RiDeleteBinLine onClick={() => { setShowDeleteUsuario(!showDeleteUsuario); setUsuario(resultadoBusquedaUsuario) }} className={styles.deleteButton} />
-							</div>
-						</div>
-						<p><strong>DNI:</strong> {resultadoBusquedaUsuario.dni}</p>
-						<p><strong>Nombres:</strong> {resultadoBusquedaUsuario.nombres?.toLocaleUpperCase()}</p>
-						<p><strong>Apellidos:</strong> {resultadoBusquedaUsuario.apellidos?.toLocaleUpperCase()}</p>
-						<p><strong>UGEL:</strong> {regionTexto(String(resultadoBusquedaUsuario.region))}</p>
-					</Link>
-				) : (
-					<p>{warningDataDocente}</p>
-				)}
+			<div className={styles.searchBarContainer}>
+				<div className={styles.inputContainer}>
+					<RiSearchLine className={styles.searchIcon} />
+					<input
+						className={styles.input}
+						type="text"
+						placeholder="Buscar por DNI, nombres o apellidos..."
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+					/>
+					{searchQuery && (
+						<button
+							type="button"
+							className={styles.clearButton}
+							onClick={() => setSearchQuery('')}
+							title="Limpiar búsqueda"
+							aria-label="Limpiar búsqueda"
+						>
+							<RiCloseLine />
+						</button>
+					)}
+				</div>
+				<span className={styles.resultsCounter}>
+					{filteredUsuarios.length} {filteredUsuarios.length === 1 ? 'especialista' : 'especialistas'}
+					{searchQuery.trim() ? ` encontrado(s) de ${docentesDeDirectores.length}` : ' en total'}
+				</span>
 			</div>
+
 			<table className={styles.table}>
 				<thead className={styles.tableHeader}>
 					<tr>
@@ -139,64 +105,83 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores, rol }: TablaUsu
 						<th>Dni</th>
 						<th>{convertRolToTitle(currentUserData.rol || 0)}</th>
 						<th>UGEL</th>
-						<th></th>
+						<th className={styles.tableHeaderActions}>Acciones</th>
 					</tr>
 				</thead>
 				<tbody className={styles.tableBody}>
-					{
-						currentItems?.map((director, index) => {
+					{filteredUsuarios.length === 0 ? (
+						<tr>
+							<td colSpan={5} className={styles.emptyCell}>
+								{searchQuery.trim()
+									? `No se encontraron especialistas que coincidan con "${searchQuery}"`
+									: 'No hay especialistas registrados'}
+							</td>
+						</tr>
+					) : (
+						filteredUsuarios.map((director, index) => {
 							return (
 								<tr key={director.dni || index} className={styles.tableRow}>
 									<td className={styles.tableCell}>
-										<Link href={`/${convertRolToPath(currentUserData.rol || 0)}/cobertura-curricular/curricular/evaluar-curricula?idDocente=${director.dni}`} className={styles.tableLink}>
-											{startIndex + index + 1}
+										<Link
+											href={`/${convertRolToPath(currentUserData.rol || 0)}/cobertura-curricular/curricular/evaluar-curricula?idDocente=${director.dni}`}
+											className={styles.tableLink}
+										>
+											{index + 1}
 										</Link>
 									</td>
 									<td className={styles.tableCell}>
-										<Link href={`/${convertRolToPath(currentUserData.rol || 0)}/cobertura-curricular/curricular/evaluar-curricula?idDocente=${director.dni}`} className={styles.tableLink}>
+										<Link
+											href={`/${convertRolToPath(currentUserData.rol || 0)}/cobertura-curricular/curricular/evaluar-curricula?idDocente=${director.dni}`}
+											className={styles.tableLink}
+										>
 											{director.dni}
 										</Link>
 									</td>
 									<td className={styles.tableCell}>
-										<Link href={`/${convertRolToPath(currentUserData.rol || 0)}/cobertura-curricular/curricular/evaluar-curricula?idDocente=${director.dni}`} className={styles.tableLink}>
+										<Link
+											href={`/${convertRolToPath(currentUserData.rol || 0)}/cobertura-curricular/curricular/evaluar-curricula?idDocente=${director.dni}`}
+											className={styles.tableLink}
+										>
 											{director.nombres?.toLocaleUpperCase()} {director.apellidos?.toLocaleUpperCase()}
 										</Link>
 									</td>
 									<td className={styles.tableCell}>
 										{regionTexto(String(director.region))}
 									</td>
-									<td >
+									<td className={styles.tableCellActions}>
 										<div className={styles.actions}>
-											<MdEditSquare onClick={() => { setUsuario(director); setShowUpdateDataDocente(!showUpdateDataDocente) }} className={styles.editButton} />
-											<RiDeleteBinLine onClick={() => { setShowDeleteUsuario(!showDeleteUsuario); setUsuario(director) }} className={styles.deleteButton} />
+											<button
+												type="button"
+												className={`${styles.actionButton} ${styles.editButton}`}
+												onClick={() => {
+													setUsuario(director)
+													setShowUpdateDataDocente(!showUpdateDataDocente)
+												}}
+												title="Editar datos del especialista"
+												aria-label="Editar especialista"
+											>
+												<MdEditSquare size={20} />
+											</button>
+											<button
+												type="button"
+												className={`${styles.actionButton} ${styles.deleteButton}`}
+												onClick={() => {
+													setShowDeleteUsuario(!showDeleteUsuario)
+													setUsuario(director)
+												}}
+												title="Eliminar especialista"
+												aria-label="Eliminar especialista"
+											>
+												<RiDeleteBinLine size={20} />
+											</button>
 										</div>
 									</td>
 								</tr>
 							)
 						})
-					}
+					)}
 				</tbody>
 			</table>
-
-			<div className={styles.paginationButtons}>
-				<button
-					onClick={handlePrevious}
-					className={styles.paginationButton}
-					disabled={currentPage === 0}
-				>
-					Anterior
-				</button>
-				<span className={styles.pageInfo}>
-					Página {currentPage + 1} de {totalPages}
-				</span>
-				<button
-					onClick={handleNext}
-					className={styles.paginationButton}
-					disabled={currentPage === totalPages - 1}
-				>
-					Siguiente
-				</button>
-			</div>
 		</div>
 	)
 }
