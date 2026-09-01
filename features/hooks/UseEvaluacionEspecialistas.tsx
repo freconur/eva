@@ -10,7 +10,8 @@ import {
   DimensionEspecialista,
   Evidencia,
   RetroalimentacionDinamica,
-  DataEvaluacion
+  DataEvaluacion,
+  NivelYPuntaje,
 } from '../types/types';
 import { db, storage } from '@/firebase/firebase.config';
 import {
@@ -186,6 +187,39 @@ const UseEvaluacionEspecialistas = () => {
     } catch (error) {
       console.error("Error updating dimension color:", error);
       throw error;
+    }
+  };
+
+  const updateDimensionNiveles = async (idEvaluacion: string, idDimension: string, niveles: NivelYPuntaje[]) => {
+    dispatch({ type: AppAction.LOADER_MODALES, payload: true });
+    try {
+      const pathRef = doc(db, `/evaluaciones-especialista/${idEvaluacion}/dominios`, idDimension);
+      await updateDoc(pathRef, { niveles });
+    } catch (error) {
+      console.error("Error updating dimension levels:", error);
+      throw error;
+    } finally {
+      dispatch({ type: AppAction.LOADER_MODALES, payload: false });
+    }
+  };
+
+  const updateAllDimensionesNiveles = async (
+    idEvaluacion: string,
+    dimensionesNiveles: { idDimension: string; niveles: NivelYPuntaje[] }[]
+  ) => {
+    dispatch({ type: AppAction.LOADER_MODALES, payload: true });
+    try {
+      await Promise.all(
+        dimensionesNiveles.map(({ idDimension, niveles }) => {
+          const pathRef = doc(db, `/evaluaciones-especialista/${idEvaluacion}/dominios`, idDimension);
+          return updateDoc(pathRef, { niveles });
+        })
+      );
+    } catch (error) {
+      console.error("Error updating all dimension levels:", error);
+      throw error;
+    } finally {
+      dispatch({ type: AppAction.LOADER_MODALES, payload: false });
     }
   };
 
@@ -1548,6 +1582,8 @@ const UseEvaluacionEspecialistas = () => {
     deleteDimensionEspecialista,
     updateDimensionEspecialista,
     updateDimensionColor,
+    updateDimensionNiveles,
+    updateAllDimensionesNiveles,
     createEvaluacionesEspecialistas,
     reporteEvaluacionEspecialistas,
     getEvaluacionesEspecialistas,

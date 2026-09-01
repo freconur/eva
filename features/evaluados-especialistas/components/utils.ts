@@ -155,14 +155,14 @@ export const formatTime = (val: any): string => {
 };
 
 export const getCleanPhaseName = (faseNombre?: string, idFase?: string) => {
-	if (faseNombre) return faseNombre;
+	if (faseNombre) return faseNombre.toUpperCase();
 	if (!idFase) return '—';
 
 	const parts = idFase.split('_');
 	if (parts.length > 1 && !isNaN(Number(parts[parts.length - 1]))) {
-		return parts.slice(0, -1).join(' ').replace(/_/g, ' ');
+		return parts.slice(0, -1).join(' ').replace(/_/g, ' ').toUpperCase();
 	}
-	return idFase.replace(/_/g, ' ');
+	return idFase.replace(/_/g, ' ').toUpperCase();
 };
 
 export const getLocalDateString = (val: any): string => {

@@ -37,6 +37,9 @@ import {
   RiAwardLine,
   RiGroupLine,
   RiGovernmentLine,
+  RiLayoutGridLine,
+  RiSlideshowLine,
+  RiGridFill,
 } from 'react-icons/ri';
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
 import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes';
@@ -55,6 +58,10 @@ import NoHayResultados from '@/components/no-hay-resultados';
 import Loader from '@/components/loader/loader';
 import GenericDropdown from '@/components/common/GenericDropdown';
 import { getCleanPhaseName, getMonitoreoTimestamp, getLocalDateString } from '@/features/evaluados-especialistas/components/utils';
+import {
+  ModoOrganizarEspecialistasModal,
+  DEFAULT_SECTIONS_ORDER,
+} from '@/features/evaluados-especialistas/components/ModoOrganizarEspecialistasModal';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -117,6 +124,80 @@ const getDomainColor = (dim: any, index: number): string => {
   return DEFAULT_DOMAIN_PALETTE[index % DEFAULT_DOMAIN_PALETTE.length];
 };
 
+const drawCanvasPillBadge = (
+  ctx: any,
+  x: number,
+  y: number,
+  scoreText: string,
+  isHorizontal: boolean,
+  iconColor: string = '#2563eb'
+) => {
+  ctx.save();
+  ctx.font = 'bold 10.5px Montserrat, sans-serif';
+  const scoreWidth = ctx.measureText(scoreText).width;
+
+  const iconWidth = 10;
+  const iconHeight = 9.5;
+  const gap = 4.5;
+  const paddingX = 7;
+  const badgeHeight = 18;
+  const badgeWidth = iconWidth + gap + scoreWidth + paddingX * 2;
+  const radius = 9;
+
+  let rectX = x;
+  let rectY = y - badgeHeight / 2;
+
+  if (!isHorizontal) {
+    rectX = x - badgeWidth / 2;
+    rectY = y - badgeHeight - 4;
+  }
+
+  // Fondo redondeado del badge
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(rectX, rectY, badgeWidth, badgeHeight, radius);
+  } else {
+    ctx.moveTo(rectX + radius, rectY);
+    ctx.lineTo(rectX + badgeWidth - radius, rectY);
+    ctx.quadraticCurveTo(rectX + badgeWidth, rectY, rectX + badgeWidth, rectY + radius);
+    ctx.lineTo(rectX + badgeWidth, rectY + badgeHeight - radius);
+    ctx.quadraticCurveTo(rectX + badgeWidth, rectY + badgeHeight, rectX + badgeWidth - radius, rectY + badgeHeight);
+    ctx.lineTo(rectX + radius, rectY + badgeHeight);
+    ctx.quadraticCurveTo(rectX, rectY + badgeHeight, rectX, rectY + badgeHeight - radius);
+    ctx.lineTo(rectX, rectY + radius);
+    ctx.quadraticCurveTo(rectX, rectY, rectX + radius, rectY);
+    ctx.closePath();
+  }
+  ctx.fillStyle = '#f8fafc';
+  ctx.fill();
+  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.stroke();
+
+  // 1. Dibujar mini ícono vectorial de barras (3 barras estilizadas: ▂▅▇)
+  const iconX = rectX + paddingX;
+  const iconBaseY = rectY + (badgeHeight + iconHeight) / 2;
+
+  ctx.fillStyle = iconColor;
+  // Barra 1 (4.5px)
+  ctx.fillRect(iconX, iconBaseY - 4.5, 2.2, 4.5);
+  // Barra 2 (7px)
+  ctx.fillRect(iconX + 3.6, iconBaseY - 7, 2.2, 7);
+  // Barra 3 (9.5px)
+  ctx.fillRect(iconX + 7.2, iconBaseY - 9.5, 2.2, 9.5);
+
+  // 2. Dibujar texto del puntaje
+  const textX = iconX + iconWidth + gap;
+  const textY = rectY + badgeHeight / 2 + 0.5;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  ctx.font = 'bold 10.5px Montserrat, sans-serif';
+  ctx.fillStyle = '#0f172a';
+  ctx.fillText(scoreText, textX, textY);
+
+  ctx.restore();
+};
+
 const barDataLabelPlugin = {
   id: 'barDataLabelPlugin',
   afterDatasetsDraw(chart: any) {
@@ -139,8 +220,9 @@ const barDataLabelPlugin = {
         if (meta.hidden) return;
 
         meta.data.forEach((element: any, index: number) => {
-          const rawVal = dataset.rawDomainScores ? dataset.rawDomainScores[index] : dataset.data[index];
-          const phaseName = dataset.phaseNames ? dataset.phaseNames[index] : '';
+          const rawVal = dataset.rawDomainScores ? dataset.rawDomainScores[index] : (dataset.rawScores ? dataset.rawScores[index] : dataset.data[index]);
+          const rawPhaseName = dataset.phaseNames ? dataset.phaseNames[index] : (dataset.label || '');
+          const phaseName = (rawPhaseName || '').toUpperCase();
 
           if (rawVal !== undefined && rawVal !== null && rawVal > 0) {
             const rect = element.getProps(['x', 'y', 'base', 'width', 'height'], true);
@@ -177,16 +259,10 @@ const barDataLabelPlugin = {
                   ctx.strokeText(fullPtsText, centerX, centerY + fontOffset);
                   ctx.fillText(fullPtsText, centerX, centerY + fontOffset);
                 }
-                // 2. Si el segmento tiene ancho medio (>= 28px) y cabe el texto de puntos completo:
-                else if (ptsWidth <= availWidth && segmentWidth >= 28) {
+                // 2. Si el segmento tiene ancho medio (>= 36px) y cabe el texto de puntos completo:
+                else if (ptsWidth <= availWidth && segmentWidth >= 36) {
                   ctx.strokeText(fullPtsText, centerX, centerY);
                   ctx.fillText(fullPtsText, centerX, centerY);
-                }
-                // 3. Si el segmento es angosto (>= 14px) y cabe solo el número:
-                else if (numWidth <= availWidth && segmentWidth >= 14) {
-                  ctx.font = 'bold 8.5px Montserrat, sans-serif';
-                  ctx.strokeText(numOnlyText, centerX, centerY);
-                  ctx.fillText(numOnlyText, centerX, centerY);
                 }
 
                 ctx.restore();
@@ -204,20 +280,34 @@ const barDataLabelPlugin = {
 
                 ctx.save();
                 ctx.fillStyle = '#ffffff';
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.75)';
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
                 ctx.lineWidth = 2.5;
                 ctx.textAlign = 'center';
 
-                ctx.font = 'bold 9px Montserrat, sans-serif';
+                ctx.font = 'bold 8.5px Montserrat, sans-serif';
                 const ptsWidth = ctx.measureText(fullPtsText).width;
                 const numWidth = ctx.measureText(numOnlyText).width;
                 const barWidth = rect.width || 30;
 
-                if (segmentHeight >= 22 && ptsWidth <= barWidth - 2) {
-                  ctx.strokeText(fullPtsText, centerX, centerY);
-                  ctx.fillText(fullPtsText, centerX, centerY);
-                } else if (numWidth <= barWidth - 2) {
-                  ctx.font = 'bold 8.5px Montserrat, sans-serif';
+                // 1. Si la altura del segmento permite 2 líneas (>= 24px) y hay nombre de fase:
+                if (phaseName && segmentHeight >= 24) {
+                  const fontOffset = 5.5;
+                  ctx.strokeText(phaseName, centerX, centerY - fontOffset);
+                  ctx.fillText(phaseName, centerX, centerY - fontOffset);
+
+                  const scoreText = (ptsWidth <= barWidth - 2) ? fullPtsText : numOnlyText;
+                  ctx.strokeText(scoreText, centerX, centerY + fontOffset);
+                  ctx.fillText(scoreText, centerX, centerY + fontOffset);
+                }
+                // 2. Si la altura permite 1 sola línea (>= 16px):
+                else if (segmentHeight >= 16) {
+                  const scoreText = (ptsWidth <= barWidth - 2) ? fullPtsText : numOnlyText;
+                  ctx.strokeText(scoreText, centerX, centerY);
+                  ctx.fillText(scoreText, centerX, centerY);
+                }
+                // 3. Segmento muy angosto:
+                else if (numWidth <= barWidth + 2) {
+                  ctx.font = 'bold 8px Montserrat, sans-serif';
                   ctx.strokeText(numOnlyText, centerX, centerY);
                   ctx.fillText(numOnlyText, centerX, centerY);
                 }
@@ -229,93 +319,106 @@ const barDataLabelPlugin = {
         });
       });
 
-      // En vista horizontal: dibujar al final exterior de la barra total el puntaje del último dominio
+      // En vista horizontal: dibujar al final exterior de la barra total el puntaje con cápsula destacada
       if (isHorizontal) {
         const lastMeta = chart.getDatasetMeta(datasets.length - 1);
         if (lastMeta && !lastMeta.hidden) {
           lastMeta.data.forEach((element: any, index: number) => {
             const item = customData[index];
             if (!item) return;
-            const latestDomainScore = item.latestDomainScore ?? item.avg ?? 0;
-            const domainScoreText = `${Number.isInteger(latestDomainScore) ? latestDomainScore : Number(latestDomainScore).toFixed(1)} pts`;
+            const latestDomainScore = item.latestScore ?? item.latestDomainScore ?? item.avg ?? 0;
+            const scoreText = `${Number.isInteger(latestDomainScore) ? latestDomainScore : Number(latestDomainScore).toFixed(1)} pts`;
+            const iconColor = item.nivelColor || item.color || '#2563eb';
 
-            ctx.shadowColor = 'transparent';
-            ctx.textAlign = 'left';
-            ctx.font = '600 11px Montserrat, sans-serif';
-            ctx.fillStyle = '#475569';
-            ctx.fillText(domainScoreText, element.x + 8, element.y);
+            drawCanvasPillBadge(ctx, element.x + 8, element.y, scoreText, true, iconColor);
+          });
+        }
+      } else {
+        // En vista vertical: dibujar en el tope exterior de la barra total el puntaje con cápsula destacada
+        const lastMeta = chart.getDatasetMeta(datasets.length - 1);
+        if (lastMeta && !lastMeta.hidden) {
+          lastMeta.data.forEach((element: any, index: number) => {
+            const item = customData[index];
+            if (!item) return;
+            const latestDomainScore = item.latestScore ?? item.latestDomainScore ?? item.avg ?? 0;
+            const scoreText = `${Number.isInteger(latestDomainScore) ? latestDomainScore : Number(latestDomainScore).toFixed(1)} pts`;
+            const iconColor = item.nivelColor || item.color || '#2563eb';
+
+            drawCanvasPillBadge(ctx, element.x, element.y, scoreText, false, iconColor);
           });
         }
       }
     } else {
-      // --- MODO SIMPLE (UGEL O ESPECIALISTA CON 1 SOLA FASE) ---
-      const dataset = datasets[0];
-      const meta = chart.getDatasetMeta(0);
-      if (meta && !meta.hidden) {
+      // --- MODO SIMPLE O AGRUPADO (!isStacked) ---
+      datasets.forEach((dataset: any, dsIndex: number) => {
+        const meta = chart.getDatasetMeta(dsIndex);
+        if (!meta || meta.hidden) return;
+
         meta.data.forEach((bar: any, index: number) => {
           const value = dataset.data[index];
-          if (value === undefined || value === null) return;
+          if (value === undefined || value === null || value <= 0) return;
 
           const item = customData[index];
-          const nivelNombre = item?.nivelNombre ? item.nivelNombre.trim() : '';
-          const nivelColor = item?.nivelColor || '#2563eb';
+          const evData = item?.evalsData?.[dsIndex];
+          const nivelNombre = (evData?.nivel?.nivel || item?.nivelNombre || '').toUpperCase();
+          const rawPhaseName = dataset.phaseNames?.[index] || dataset.label || '';
+          const phaseName = (rawPhaseName || '').toUpperCase();
 
-          // 1. Puntaje total alcanzado en la evaluación (ej. 36)
-          const evalScore = typeof item?.latestCalificacion === 'number'
-            ? item.latestCalificacion
-            : (typeof value === 'number' ? Number(value).toFixed(0) : value);
-
-          // Formato interior: Logrado(36) o Nivel(Puntaje)
-          const insideLabelText = nivelNombre ? `${nivelNombre}(${evalScore})` : `${evalScore}`;
-
-          // 2. Puntaje obtenido en este DOMINIO (ej. 12.0 pts o 12 pts)
           const domainVal = Number(value);
-          const domainScoreText = `${Number.isInteger(domainVal) ? domainVal : domainVal.toFixed(1)} pts`;
+          const formattedScore = Number.isInteger(domainVal) ? `${domainVal}` : domainVal.toFixed(1);
+          const domainScoreText = `${formattedScore} pts`;
+          const insideLabelText = phaseName ? `${phaseName}: ${domainScoreText}` : domainScoreText;
 
           if (isHorizontal) {
             const barWidth = Math.abs(bar.x - bar.base);
-            ctx.font = '700 11.5px Montserrat, sans-serif';
+            ctx.font = '700 10.5px Montserrat, sans-serif';
             const insideTextWidth = ctx.measureText(insideLabelText).width;
 
-            // Si la barra es lo suficientemente ancha:
-            if (barWidth > insideTextWidth + 18) {
+            // Si la barra es lo suficientemente ancha para el texto de fase y puntos:
+            if (barWidth > insideTextWidth + 20) {
               ctx.textAlign = 'right';
               ctx.fillStyle = '#ffffff';
               ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
               ctx.shadowBlur = 3;
               ctx.shadowOffsetX = 0;
               ctx.shadowOffsetY = 1;
-              ctx.fillText(insideLabelText, bar.x - 10, bar.y);
-
-              ctx.shadowColor = 'transparent';
-              ctx.textAlign = 'left';
-              ctx.font = '600 11px Montserrat, sans-serif';
-              ctx.fillStyle = '#475569';
-              ctx.fillText(domainScoreText, bar.x + 8, bar.y);
+              ctx.fillText(insideLabelText, bar.x - 8, bar.y);
             } else {
               ctx.shadowColor = 'transparent';
               ctx.textAlign = 'left';
-              ctx.font = '700 11px Montserrat, sans-serif';
-              ctx.fillStyle = nivelColor || '#334155';
-              ctx.fillText(`${insideLabelText} · ${domainScoreText}`, bar.x + 8, bar.y);
+              ctx.font = '600 10.5px Montserrat, sans-serif';
+              ctx.fillStyle = '#475569';
+              ctx.fillText(domainScoreText, bar.x + 6, bar.y);
             }
           } else {
-            // En vista vertical simple:
+            // En vista vertical simple / agrupada:
             const barHeight = Math.abs(bar.y - bar.base);
             const centerY = (bar.y + bar.base) / 2;
 
-            if (barHeight >= 18) {
+            if (barHeight >= 12) {
+              ctx.save();
               ctx.fillStyle = '#ffffff';
-              ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+              ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
               ctx.lineWidth = 2.5;
-              ctx.font = 'bold 9.5px Montserrat, sans-serif';
+              ctx.font = 'bold 8.5px Montserrat, sans-serif';
               ctx.textAlign = 'center';
-              ctx.strokeText(domainScoreText, bar.x, centerY);
-              ctx.fillText(domainScoreText, bar.x, centerY);
+
+              if (phaseName && barHeight >= 24) {
+                const fontOffset = 5.5;
+                ctx.strokeText(phaseName, bar.x, centerY - fontOffset);
+                ctx.fillText(phaseName, bar.x, centerY - fontOffset);
+
+                ctx.strokeText(domainScoreText, bar.x, centerY + fontOffset);
+                ctx.fillText(domainScoreText, bar.x, centerY + fontOffset);
+              } else if (barHeight >= 16) {
+                ctx.strokeText(domainScoreText, bar.x, centerY);
+                ctx.fillText(domainScoreText, bar.x, centerY);
+              }
+              ctx.restore();
             }
           }
         });
-      }
+      });
     }
 
     ctx.restore();
@@ -357,45 +460,167 @@ const Reportes = () => {
     genero: '',
     idFase: '',
   });
-  const [selectedDimensionModal, setSelectedDimensionModal] = useState<{ dim: any; type: 'especialista' | 'ugel' } | null>(null);
+  const [selectedDimensionModal, setSelectedDimensionModal] = useState<{
+    dim: any;
+    type: 'especialista' | 'ugel' | 'global_especialista' | 'global_ugel' | 'global_dominio';
+  } | null>(null);
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
   const [colorMode, setColorMode] = useState<'dominio' | 'nivel'>('nivel');
   const [modalOrientation, setModalOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
+  const [ugelViewMode, setUgelViewMode] = useState<'grid' | 'compact'>('compact');
+  const [currentUgelDimIndex, setCurrentUgelDimIndex] = useState<number>(0);
+  const [espViewMode, setEspViewMode] = useState<'grid' | 'compact'>('compact');
+  const [currentEspDimIndex, setCurrentEspDimIndex] = useState<number>(0);
+  const [globalUgelColor, setGlobalUgelColor] = useState<string>('#3b82f6');
+  const [globalEspColor, setGlobalEspColor] = useState<string>('#6366f1');
+  const [cardOrientations, setCardOrientations] = useState<Record<string, 'horizontal' | 'vertical'>>({});
+  const getCardOrientation = (key: string) => cardOrientations[key] || 'horizontal';
+  const setCardOrientation = (key: string, val: 'horizontal' | 'vertical') =>
+    setCardOrientations((prev) => ({ ...prev, [key]: val }));
 
-  const getNivelLogro = (calificacion: number) => {
-    const niveles = dataEvaluacionDocente?.niveles || [];
-    if (niveles.length === 0) return null;
-    const found = niveles.find((n: any) => calificacion >= (n.min ?? 0) && calificacion <= (n.max ?? 0));
-    if (found) return found;
-    if (calificacion < (niveles[0]?.min ?? 0)) return niveles[0];
+  const [isOrganizerModalOpen, setIsOrganizerModalOpen] = useState(false);
+  const [ordenSecciones, setOrdenSecciones] = useState<string[]>(DEFAULT_SECTIONS_ORDER);
+  const [seccionesVisibles, setSeccionesVisibles] = useState<string[]>(DEFAULT_SECTIONS_ORDER);
+
+  // Cargar configuración guardada de localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && evaluacionEspecialista?.id) {
+      try {
+        const savedOrder = localStorage.getItem(`eva_esp_report_order_${evaluacionEspecialista.id}`);
+        const savedVisible = localStorage.getItem(`eva_esp_report_visible_${evaluacionEspecialista.id}`);
+
+        if (savedOrder) {
+          const parsedOrder = JSON.parse(savedOrder);
+          if (Array.isArray(parsedOrder) && parsedOrder.length > 0) {
+            const missing = DEFAULT_SECTIONS_ORDER.filter((s) => !parsedOrder.includes(s));
+            setOrdenSecciones([...parsedOrder.filter((s) => DEFAULT_SECTIONS_ORDER.includes(s)), ...missing]);
+          }
+        }
+
+        if (savedVisible) {
+          const parsedVisible = JSON.parse(savedVisible);
+          if (Array.isArray(parsedVisible)) {
+            setSeccionesVisibles(parsedVisible);
+          }
+        }
+      } catch (err) {
+        console.error('Error cargando configuración de orden de secciones', err);
+      }
+    }
+  }, [evaluacionEspecialista?.id]);
+
+  const handleOrderChange = (newOrder: string[]) => {
+    setOrdenSecciones(newOrder);
+    if (typeof window !== 'undefined' && evaluacionEspecialista?.id) {
+      try {
+        localStorage.setItem(`eva_esp_report_order_${evaluacionEspecialista.id}`, JSON.stringify(newOrder));
+      } catch (err) {
+        console.error('Error guardando orden de secciones', err);
+      }
+    }
+  };
+
+  const handleVisibilityChange = (newVisible: string[]) => {
+    setSeccionesVisibles(newVisible);
+    if (typeof window !== 'undefined' && evaluacionEspecialista?.id) {
+      try {
+        localStorage.setItem(`eva_esp_report_visible_${evaluacionEspecialista.id}`, JSON.stringify(newVisible));
+      } catch (err) {
+        console.error('Error guardando visibilidad de secciones', err);
+      }
+    }
+  };
+
+  const getNivelLogro = (calificacion: number, nivelesEspecificos?: any[]) => {
+    const rawNiveles = (nivelesEspecificos && nivelesEspecificos.length > 0)
+      ? nivelesEspecificos
+      : (dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje || []);
+    if (!rawNiveles || rawNiveles.length === 0) return null;
+
+    // Asegurar orden ascendente por valor mínimo
+    const niveles = [...rawNiveles].sort((a: any, b: any) => (Number(a.min) || 0) - (Number(b.min) || 0));
+
+    // 1. Coincidencia directa dentro del rango
+    const exact = niveles.find((n: any) => calificacion >= (Number(n.min) || 0) && calificacion <= (Number(n.max) || 0));
+    if (exact) return exact;
+
+    // 2. Si es menor que el mínimo del primer nivel
+    if (calificacion <= (Number(niveles[0]?.max) || 0)) {
+      return niveles[0];
+    }
+
+    // 3. Evaluación continua por umbrales para saltos/huecos decimales (ej. 1.05 entre 1.0 y 1.1)
+    for (let i = 0; i < niveles.length; i++) {
+      const current = niveles[i];
+      const next = niveles[i + 1];
+      const curMax = Number(current.max) || 0;
+      const nextMin = next ? (Number(next.min) || 0) : Infinity;
+
+      // Si cae en el hueco entre current.max y next.min (ej. 1.05 entre 1.0 y 1.1)
+      if (calificacion > curMax && calificacion < nextMin) {
+        return next || current;
+      }
+
+      // Si está por debajo o igual al límite superior de este nivel
+      if (calificacion <= curMax) {
+        return current;
+      }
+    }
+
+    // Si supera el puntaje máximo configurado, retorna el nivel superior
     return niveles[niveles.length - 1];
   };
 
-  const getNivelLogroDominio = (puntajeDominio: number, maxDomainScore: number) => {
-    const niveles = dataEvaluacionDocente?.niveles || [];
+  const getNivelLogroDominio = (puntajeDominio: number, maxDomainScore: number, dimObj?: any) => {
+    if (dimObj?.niveles && dimObj.niveles.length > 0) {
+      return getNivelLogro(puntajeDominio, dimObj.niveles);
+    }
+
+    const niveles = dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje || [];
     if (niveles.length === 0) return null;
 
     const maxScaleNivel = Math.max(1, ...(niveles.map((n: any) => Number(n.max) || 0) || [20]));
     const puntajeEquivalente = maxDomainScore > 0 ? (puntajeDominio / maxDomainScore) * maxScaleNivel : puntajeDominio;
 
-    const found = niveles.find(
-      (n: any) => puntajeEquivalente >= (n.min ?? 0) && puntajeEquivalente <= (n.max ?? 0)
-    );
-    if (found) return found;
-    if (puntajeEquivalente < (niveles[0]?.min ?? 0)) return niveles[0];
-    return niveles[niveles.length - 1];
+    return getNivelLogro(puntajeEquivalente, niveles);
   };
 
-  const renderDomainLevelRanges = () => {
-    const niveles = dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje || [];
-    if (niveles.length === 0) return null;
+  const renderDomainLevelRanges = (dim?: any) => {
+    let niveles = dim?.niveles && dim.niveles.length > 0 ? dim.niveles : null;
+
+    if (!niveles) {
+      const globalNiveles = dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje || [];
+      if (globalNiveles.length === 0) return null;
+
+      if (dim?.id) {
+        const preguntasDim = getPreguntaRespuestaDocentes.filter((p) => p.dimensionId === dim.id);
+        const countQuestions = preguntasDim.length || 1;
+        const maxScaleVal = Math.max(1, ...(dataEvaluacionDocente.escala?.map((e) => Number(e.value) || 0) || [3]));
+        const maxDomainScore = countQuestions * maxScaleVal;
+        const maxGlobalScale = Math.max(1, ...(globalNiveles.map((n: any) => Number(n.max) || 0) || [maxDomainScore]));
+
+        niveles = globalNiveles.map((n: any) => {
+          const scaledMin = Number(((Number(n.min || 0) / maxGlobalScale) * maxDomainScore).toFixed(0));
+          const scaledMax = Number(((Number(n.max || 0) / maxGlobalScale) * maxDomainScore).toFixed(0));
+          return {
+            ...n,
+            min: scaledMin,
+            max: scaledMax,
+          };
+        });
+      } else {
+        niveles = globalNiveles;
+      }
+    }
+
+    if (!niveles || niveles.length === 0) return null;
 
     return (
       <div className={styles.domainCardLevelsFooter}>
         <div className={styles.domainLevelsFooterHeader}>
           <span className={styles.domainLevelsFooterTitle}>
             <RiAwardLine style={{ color: '#2563eb', fontSize: '0.95rem' }} />
-            Puntajes por Nivel de Logro:
+            {dim?.nombre ? `Puntajes de Nivel de Logro (${dim.nombre}):` : 'Puntajes por Nivel de Logro:'}
           </span>
         </div>
         <div className={styles.domainLevelsList}>
@@ -408,6 +633,163 @@ const Reportes = () => {
               <span className={styles.domainLevelChipName}>{n.nivel}</span>
             </div>
           ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderGlobalDomainLevelRanges = () => {
+    const globalNiveles = dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje || [];
+    if (!dimensionesEspecialistas || dimensionesEspecialistas.length === 0 || globalNiveles.length === 0) {
+      return null;
+    }
+
+    const scale = dataEvaluacionDocente.escala || [];
+    const maxScaleVal = Math.max(1, ...(scale.map((e) => Number(e.value) || 0) || [3]));
+    const maxGlobalScale = Math.max(1, ...(globalNiveles.map((n: any) => Number(n.max) || 0) || [20]));
+
+    // Calcular los rangos y datos para cada dimensión
+    const dimData = getDimensionData();
+    const domainRangesList = dimensionesEspecialistas.map((dim: any, idx: number) => {
+      let niveles = dim?.niveles && dim.niveles.length > 0 ? dim.niveles : null;
+      const preguntasDim = getPreguntaRespuestaDocentes.filter((p) => p.dimensionId === dim.id);
+      const countQuestions = preguntasDim.length || 1;
+      const maxDomainScore = countQuestions * maxScaleVal;
+
+      if (!niveles) {
+        niveles = globalNiveles.map((n: any) => {
+          const scaledMin = Number(((Number(n.min || 0) / maxGlobalScale) * maxDomainScore).toFixed(0));
+          const scaledMax = Number(((Number(n.max || 0) / maxGlobalScale) * maxDomainScore).toFixed(0));
+          return {
+            ...n,
+            min: scaledMin,
+            max: scaledMax,
+          };
+        });
+      }
+
+      const domainItemData = dimData.dimList?.[idx];
+      const avgScore = domainItemData?.latestDomainScore ?? 0;
+      const nivelAlcanzado = (dim.niveles && dim.niveles.length > 0)
+        ? getNivelLogro(avgScore, dim.niveles)
+        : getNivelLogroDominio(avgScore, maxDomainScore, dim);
+
+      return {
+        dim,
+        dimIndex: idx,
+        nombre: dim.nombre || `Dominio ${idx + 1}`,
+        maxDomainScore,
+        niveles,
+        avgScore,
+        nivelAlcanzado,
+      };
+    });
+
+    return (
+      <div className={styles.domainCardLevelsFooter} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        <div className={styles.domainLevelsFooterHeader}>
+          <span className={styles.domainLevelsFooterTitle}>
+            <RiAwardLine style={{ color: '#2563eb', fontSize: '1rem' }} />
+            Escalas de Nivel de Logro por cada Dominio:
+          </span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', width: '100%' }}>
+          {domainRangesList.map((dItem, dIdx) => {
+            const dColor = getDomainColor(dItem.dim, dItem.dimIndex);
+            return (
+              <div
+                key={dItem.dim.id || dIdx}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '0.5rem 1rem',
+                  padding: '0.55rem 0.85rem',
+                  background: '#f8fafc',
+                  borderRadius: '10px',
+                  border: `1.5px solid ${hexToRgba(dColor, 0.25)}`,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span
+                    style={{
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                      background: dColor,
+                      display: 'inline-block',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      color: '#0f172a',
+                      textTransform: 'uppercase',
+                      fontFamily: 'Montserrat, sans-serif',
+                    }}
+                  >
+                    {dItem.nombre}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      color: '#475569',
+                      fontWeight: 600,
+                      background: '#e2e8f0',
+                      padding: '1px 6px',
+                      borderRadius: '4px',
+                    }}
+                  >
+                    Máx. {dItem.maxDomainScore} pts
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.45rem' }}>
+                  {dItem.niveles.map((n: any, nIdx: number) => {
+                    const isCurrent = dItem.nivelAlcanzado?.nivel === n.nivel;
+                    return (
+                      <div
+                        key={nIdx}
+                        className={styles.domainLevelChip}
+                        style={{
+                          padding: '0.2rem 0.6rem',
+                          background: isCurrent ? hexToRgba(n.color || '#3b82f6', 0.14) : 'white',
+                          border: isCurrent
+                            ? `1.5px solid ${n.color || '#3b82f6'}`
+                            : '1px solid #cbd5e1',
+                        }}
+                      >
+                        <span className={styles.levelLegendDot} style={{ background: n.color || '#3b82f6' }} />
+                        <span
+                          className={styles.domainLevelChipRange}
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: isCurrent ? 700 : 500,
+                            color: isCurrent ? '#0f172a' : '#475569',
+                          }}
+                        >
+                          {n.min ?? 0} - {n.max ?? 0}
+                        </span>
+                        <span
+                          className={styles.domainLevelChipName}
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: isCurrent ? 800 : 600,
+                            color: isCurrent ? (n.color || '#1e293b') : '#64748b',
+                          }}
+                        >
+                          {n.nivel}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -638,6 +1020,31 @@ const Reportes = () => {
     return respuestasEncontradas > 0 ? sumaPuntos : null;
   };
 
+  const getEspecialistaTotalScore = (esp: any, scale: any[]): number | null => {
+    if (typeof esp.calificacion === 'number') {
+      return esp.calificacion;
+    }
+    const respuestas = (esp as any).resultadosSeguimientoRetroalimentacion || (esp as any).resultados || esp.resultados || [];
+    if (!respuestas || respuestas.length === 0) return null;
+    let sumaPuntos = 0;
+    let respuestasEncontradas = 0;
+    respuestas.forEach((resp: any) => {
+      if (resp && resp.alternativas) {
+        resp.alternativas.forEach((alt: any, altIndex: number) => {
+          if (alt.selected) {
+            let val = alt.value;
+            if (typeof val !== 'number' && scale[altIndex]) {
+              val = scale[altIndex]?.value;
+            }
+            sumaPuntos += Number(val) || 0;
+            respuestasEncontradas += 1;
+          }
+        });
+      }
+    });
+    return respuestasEncontradas > 0 ? sumaPuntos : null;
+  };
+
   const getDimensionPieData = () => {
     if (!dataEvaluacionDocente.escala || !dimensionesEspecialistas || dimensionesEspecialistas.length === 0) {
       return { labels: [], datasets: [] };
@@ -645,29 +1052,43 @@ const Reportes = () => {
 
     const scale = dataEvaluacionDocente.escala;
     const labels = dimensionesEspecialistas.map((d: any) => (d.nombre || '').toUpperCase());
+    const dataEspecialistas = dataFiltradaEspecialistaDirectorTabla || [];
+
+    // Agrupar especialistas únicos por DNI para obtener la última evaluación vigente de cada uno
+    const uniqueEspMap = new Map<string, any[]>();
+    dataEspecialistas.forEach((esp: any) => {
+      const dni = (esp.dni || esp.especialistaDni || esp.info?.dni || '').trim();
+      if (!dni) return;
+      if (!uniqueEspMap.has(dni)) {
+        uniqueEspMap.set(dni, []);
+      }
+      uniqueEspMap.get(dni)!.push(esp);
+    });
 
     const data = dimensionesEspecialistas.map((dim: any) => {
       const preguntasDim = getPreguntaRespuestaDocentes.filter((p) => p.dimensionId === dim.id);
       if (preguntasDim.length === 0) return 0;
 
-      // Suma de los promedios obtenidos en cada uno de los criterios del dominio
-      let sumaPuntosDominio = 0;
-
-      preguntasDim.forEach((pregunta) => {
-        const pId = pregunta.order?.toString() || pregunta.id;
-        const stat = dataEvaluaciones.find((s) => s.id === pId || s.id === pregunta.id);
-
-        if (stat && stat.total && stat.total > 0) {
-          const valA = (stat.a || 0) * (scale[0]?.value || 0);
-          const valB = (stat.b || 0) * (scale[1]?.value || 0);
-          const valC = (stat.c || 0) * (scale[2]?.value || 0);
-          const valD = (stat.d || 0) * (scale[3]?.value || 0);
-          const avgPregunta = (valA + valB + valC + valD) / stat.total;
-          sumaPuntosDominio += avgPregunta;
+      const latestDomainScores: number[] = [];
+      Array.from(uniqueEspMap.values()).forEach((evalsList) => {
+        const evalsSorted = evalsList.sort((a, b) => {
+          const timeA = getMonitoreoTimestamp(a);
+          const timeB = getMonitoreoTimestamp(b);
+          if (timeA !== timeB) return timeA - timeB;
+          return (Number(a.numeroEvaluacion) || 0) - (Number(b.numeroEvaluacion) || 0);
+        });
+        const latestEval = evalsSorted[evalsSorted.length - 1];
+        const sumEsp = getPuntajeSumPorDominioParaEspecialista(latestEval, dim.id, preguntasDim, scale);
+        if (sumEsp !== null) {
+          latestDomainScores.push(sumEsp);
         }
       });
 
-      return Number(sumaPuntosDominio.toFixed(2));
+      const avgScore = latestDomainScores.length > 0
+        ? latestDomainScores.reduce((acc, curr) => acc + curr, 0) / latestDomainScores.length
+        : 0;
+
+      return Number(avgScore.toFixed(2));
     });
 
     const backgroundColors = dimensionesEspecialistas.map((dim: any, i: number) =>
@@ -758,12 +1179,14 @@ const Reportes = () => {
         ? latestDomainScores.reduce((acc, curr) => acc + curr, 0) / latestDomainScores.length
         : 0;
 
-      const latestGlobalCalifAvg = latestCalifs.length > 0
-        ? latestCalifs.reduce((acc, curr) => acc + curr, 0) / latestCalifs.length
-        : latestGlobalDomainAvg;
+      const countQuestions = preguntasDim.length || 1;
+      const maxScaleVal = Math.max(1, ...(scale?.map((e: any) => Number(e.value) || 0) || [3]));
+      const maxDomainScore = countQuestions * maxScaleVal;
 
-      const roundedCalif = Number(latestGlobalCalifAvg.toFixed(0));
-      const nivelObj = getNivelLogro(roundedCalif);
+      const roundedDomainAvg = Number(latestGlobalDomainAvg.toFixed(2));
+      const nivelObj = (dim.niveles && dim.niveles.length > 0)
+        ? getNivelLogro(roundedDomainAvg, dim.niveles)
+        : getNivelLogroDominio(roundedDomainAvg, maxDomainScore, dim);
 
       // 2. Desglose histórico por fases
       const phaseMap = new Map<
@@ -827,15 +1250,17 @@ const Reportes = () => {
           const avgCalif = p.califs.length > 0
             ? p.califs.reduce((acc, curr) => acc + curr, 0) / p.califs.length
             : avgDomain;
-          const rCalif = Number(avgCalif.toFixed(0));
-          const nivel = getNivelLogro(rCalif);
+          const rCalif = Number(avgDomain.toFixed(2));
+          const nivel = (dim.niveles && dim.niveles.length > 0)
+            ? getNivelLogro(rCalif, dim.niveles)
+            : getNivelLogroDominio(rCalif, maxDomainScore, dim);
           const nivelColor = nivel?.color || getDomainColor(dim, dimIndex);
 
           evalsData.push({
             domainScore: Number(avgDomain.toFixed(2)),
             fase: p.faseName,
             dateStr: '',
-            calif: rCalif,
+            calif: Number(avgCalif.toFixed(0)),
             nivel,
             nivelColor,
           });
@@ -849,7 +1274,7 @@ const Reportes = () => {
         name: (dim.nombre || '').toUpperCase(),
         avg: Number(latestGlobalDomainAvg.toFixed(2)),
         latestDomainScore: Number(latestGlobalDomainAvg.toFixed(2)),
-        latestCalificacion: roundedCalif,
+        latestCalificacion: Number(roundedDomainAvg.toFixed(0)),
         latestFaseNombre,
         nivelNombre: nivelObj?.nivel || '',
         nivelColor: nivelObj?.color || getDomainColor(dim, dimIndex),
@@ -858,7 +1283,7 @@ const Reportes = () => {
       };
     });
 
-    const labels = dimList.map((d) => formatLabel(d.name, 24));
+    const labels = dimList.map((d) => formatLabel(d.name, 45));
     const maxEvalsCount = Math.max(...dimList.map((d) => d.evalsData.length), 1);
 
     const datasets = [];
@@ -895,16 +1320,16 @@ const Reportes = () => {
       });
 
       datasets.push({
-        label: `Fase N° ${i + 1}`,
+        label: `Fase ${i + 1}`,
         data,
         rawDomainScores,
         phaseNames,
         evalDates,
         levelNames,
         backgroundColor,
-        borderColor: '#ffffff',
+        borderColor,
         borderWidth: 1.5,
-        borderRadius: 2,
+        borderRadius: 4,
       });
     }
 
@@ -935,7 +1360,7 @@ const Reportes = () => {
     layout: {
       padding: {
         left: 10,
-        right: 80,
+        right: 120,
         top: 5,
         bottom: 5,
       },
@@ -1027,6 +1452,104 @@ const Reportes = () => {
     },
   });
 
+  const getDimensionVerticalBarOptions = (dimList?: any[]) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: {
+        top: 25,
+        bottom: 10,
+        left: 10,
+        right: 10,
+      },
+    },
+    categoryPercentage: 0.65,
+    barPercentage: 0.9,
+    plugins: {
+      customItemData: dimList || [],
+      legend: {
+        display: false,
+      },
+      title: {
+        display: true,
+        text: 'Rendimiento Global por Dominio (Suma de Criterios)',
+        font: {
+          family: 'Montserrat, sans-serif',
+          size: 13,
+          weight: 'bold' as const,
+        },
+        padding: {
+          bottom: 15,
+        },
+      },
+      tooltip: {
+        callbacks: {
+          title: (tooltipItems: any[]) => {
+            const item = tooltipItems[0];
+            if (!item) return '';
+            const label = item.label;
+            return Array.isArray(label) ? label.join(' ') : label;
+          },
+          label: (context: any) => {
+            const item = dimList ? dimList[context.dataIndex] : null;
+            const evalIndex = context.datasetIndex;
+            const evData = item?.evalsData?.[evalIndex];
+            if (!evData) return '';
+            const score = evData.domainScore;
+            const fase = evData.fase;
+            const nivel = evData.nivel?.nivel;
+            return ` ${fase}: ${score} pts promedio global en dimensión ${nivel ? `[${nivel}]` : ''}`;
+          },
+          afterBody: (context: any) => {
+            const item = dimList ? dimList[context[0].dataIndex] : null;
+            if (!item || !item.evalsData || item.evalsData.length <= 1) return '';
+            const lines = ['\nHistorial del Dominio por Fases:'];
+            item.evalsData.forEach((ev: any, idx: number) => {
+              const s = ev.domainScore;
+              const f = ev.fase;
+              const n = ev.nivel?.nivel || '—';
+              lines.push(`• Fase ${idx + 1} (${f}): ${s} pts prom global [${n}]`);
+            });
+            return lines;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        stacked: true,
+        grid: {
+          display: false,
+        },
+        ticks: {
+          autoSkip: false,
+          font: {
+            family: 'Montserrat, sans-serif',
+            size: 11,
+            weight: 'normal' as const,
+          },
+          color: '#1e293b',
+          padding: 8,
+        },
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        suggestedMax: maxGlobalDomainScore,
+        grid: {
+          color: '#f1f5f9',
+        },
+        ticks: {
+          font: {
+            family: 'Montserrat, sans-serif',
+            size: 11,
+          },
+          color: '#64748b',
+        },
+      },
+    },
+  });
+
   const getLevelsData = () => {
     const niveles = dataEvaluacionDocente.niveles || [];
     if (niveles.length === 0 || !dataFiltradaEspecialistaDirectorTabla) return { labels: [], datasets: [] };
@@ -1034,7 +1557,8 @@ const Reportes = () => {
     const counts = niveles.map(nivel => {
       return dataFiltradaEspecialistaDirectorTabla.filter(reporte => {
         const score = reporte.calificacion || 0;
-        return score >= (nivel.min || 0) && score <= (nivel.max || 0);
+        const matched = getNivelLogro(score, niveles);
+        return matched?.nivel === nivel.nivel;
       }).length;
     });
 
@@ -1304,10 +1828,14 @@ const Reportes = () => {
 
       if (latestDomainScores.length === 0) return;
 
+      const currentDim = dimensionesEspecialistas?.find((d) => d.id === dimensionId);
+      const dimNiveles = currentDim?.niveles;
       const latestUgelDomainAvg = latestDomainScores.reduce((acc, curr) => acc + curr, 0) / latestDomainScores.length;
       const latestUgelCalifAvg = latestCalifs.reduce((acc, curr) => acc + curr, 0) / latestCalifs.length;
-      const roundedCalif = Number(latestUgelCalifAvg.toFixed(0));
-      const nivelObj = getNivelLogro(roundedCalif);
+      const roundedDomainAvg = Number(latestUgelDomainAvg.toFixed(2));
+      const nivelObj = (dimNiveles && dimNiveles.length > 0)
+        ? getNivelLogro(roundedDomainAvg, dimNiveles)
+        : getNivelLogroDominio(roundedDomainAvg, maxDomainScore, currentDim);
 
       // Desglose histórico por fases de esta UGEL
       const pMap = ugelPhaseMap.get(ugelId) || new Map();
@@ -1331,15 +1859,17 @@ const Reportes = () => {
           const avgCalif = p.califs.length > 0
             ? p.califs.reduce((acc: number, curr: number) => acc + curr, 0) / p.califs.length
             : avgDomain;
-          const rCalif = Number(avgCalif.toFixed(0));
-          const nivel = getNivelLogro(rCalif);
+          const rCalif = Number(avgDomain.toFixed(2));
+          const nivel = (dimNiveles && dimNiveles.length > 0)
+            ? getNivelLogro(rCalif, dimNiveles)
+            : getNivelLogroDominio(rCalif, maxDomainScore, currentDim);
           const nivelColor = nivel?.color || (color || '#3b82f6');
 
           evalsData.push({
             domainScore: Number(avgDomain.toFixed(2)),
             fase: p.faseName,
             dateStr: '',
-            calif: rCalif,
+            calif: Number(avgCalif.toFixed(0)),
             nivel,
             nivelColor,
           });
@@ -1353,7 +1883,7 @@ const Reportes = () => {
         avg: Number(latestUgelDomainAvg.toFixed(2)),
         latestDomainScore: Number(latestUgelDomainAvg.toFixed(2)),
         ugelId,
-        latestCalificacion: roundedCalif,
+        latestCalificacion: Number(latestUgelCalifAvg.toFixed(0)),
         latestFaseNombre,
         nivelNombre: nivelObj?.nivel || '',
         nivelColor: nivelObj?.color || (color || '#3b82f6'),
@@ -1401,7 +1931,7 @@ const Reportes = () => {
       });
 
       datasets.push({
-        label: `Fase N° ${i + 1}`,
+        label: `FASE N° ${i + 1}`,
         data,
         rawDomainScores,
         phaseNames,
@@ -1430,7 +1960,7 @@ const Reportes = () => {
     layout: {
       padding: {
         left: 5,
-        right: 80,
+        right: 120,
         top: 5,
         bottom: 5,
       },
@@ -1478,7 +2008,7 @@ const Reportes = () => {
       x: {
         stacked: true,
         beginAtZero: true,
-        suggestedMax: maxScore || maxScaleValue,
+        suggestedMax: Math.ceil((maxScore || maxScaleValue) * 1.1),
         grid: {
           color: '#f1f5f9',
         },
@@ -1545,7 +2075,7 @@ const Reportes = () => {
       y: {
         stacked: true,
         beginAtZero: true,
-        suggestedMax: maxScore || maxScaleValue,
+        suggestedMax: Math.ceil((maxScore || maxScaleValue) * 1.1),
         title: {
           display: true,
           text: 'Puntaje en Dominio (promedio pts)',
@@ -1665,17 +2195,23 @@ const Reportes = () => {
         nivelColor: string;
       }[] = [];
 
+      const currentDim = dimensionesEspecialistas?.find((d) => d.id === dimensionId);
+      const dimNiveles = currentDim?.niveles;
+
       evalsSorted.forEach((ev: any) => {
         const sumEspecialista = getPuntajeSumPorDominioParaEspecialista(ev, dimensionId, preguntasDim, scale);
         if (sumEspecialista !== null) {
           const fase = getCleanPhaseName(ev.faseNombre, ev.idFase || ev.faseActualID);
           const dateStr = getLocalDateString(ev.fechaMonitoreo || ev.fechaCreacion);
           const calif = typeof ev.calificacion === 'number' ? ev.calificacion : sumEspecialista;
-          const nivel = getNivelLogro(calif);
+          const score = Number(sumEspecialista.toFixed(2));
+          const nivel = (dimNiveles && dimNiveles.length > 0)
+            ? getNivelLogro(score, dimNiveles)
+            : getNivelLogroDominio(score, maxDomainScore, currentDim);
           const nivelColor = nivel?.color || (color || '#10b981');
 
           evalsData.push({
-            domainScore: Number(sumEspecialista.toFixed(2)),
+            domainScore: score,
             fase,
             dateStr,
             calif,
@@ -1747,7 +2283,7 @@ const Reportes = () => {
       });
 
       datasets.push({
-        label: `Evaluación N° ${i + 1}`,
+        label: `EVALUACIÓN N° ${i + 1}`,
         data,
         rawDomainScores,
         phaseNames,
@@ -1776,7 +2312,7 @@ const Reportes = () => {
     layout: {
       padding: {
         left: 5,
-        right: 80,
+        right: 110,
         top: 5,
         bottom: 5,
       },
@@ -1826,7 +2362,7 @@ const Reportes = () => {
       x: {
         stacked: true,
         beginAtZero: true,
-        suggestedMax: maxScore || maxScaleValue,
+        suggestedMax: Math.ceil((maxScore || maxScaleValue) * 1.1),
         grid: {
           color: '#f1f5f9',
         },
@@ -1959,6 +2495,723 @@ const Reportes = () => {
     },
   });
 
+  const getGlobalUGELData = (color?: string) => {
+    const scale = dataEvaluacionDocente.escala || [];
+    const dataEspecialistas = dataFiltradaEspecialistaDirectorTabla || [];
+    const maxQuestionValue = Math.max(1, ...(scale.map((e) => Number(e.value) || 0) || [3]));
+    const totalQuestions = getPreguntaRespuestaDocentes.length || 1;
+    const maxGlobalScore = Math.max(1, totalQuestions * maxQuestionValue);
+
+    // 1. Agrupar especialistas por UGEL y por DNI para obtener la última evaluación de cada uno
+    const ugelEspMap = new Map<string, Map<string, any[]>>();
+    // 2. Agrupar todas las evaluaciones por UGEL y por fase histórica
+    const ugelPhaseMap = new Map<
+      string,
+      Map<
+        string,
+        {
+          faseKey: string;
+          faseName: string;
+          timestamp: number;
+          numEval: number;
+          scores: number[];
+        }
+      >
+    >();
+
+    dataEspecialistas.forEach((esp: any) => {
+      const regionVal = (esp as any).region || esp.info?.region;
+      const dni = (esp.dni || esp.especialistaDni || esp.info?.dni || '').trim();
+      if (!regionVal) return;
+      const ugelId = regionVal.toString();
+
+      if (!ugelEspMap.has(ugelId)) {
+        ugelEspMap.set(ugelId, new Map());
+      }
+      if (dni) {
+        const espGroup = ugelEspMap.get(ugelId)!;
+        if (!espGroup.has(dni)) {
+          espGroup.set(dni, []);
+        }
+        espGroup.get(dni)!.push(esp);
+      }
+
+      if (!ugelPhaseMap.has(ugelId)) {
+        ugelPhaseMap.set(ugelId, new Map());
+      }
+
+      const scoreEsp = getEspecialistaTotalScore(esp, scale);
+      if (scoreEsp !== null) {
+        const faseName = getCleanPhaseName(esp.faseNombre, esp.idFase || esp.faseActualID);
+        const timestamp = getMonitoreoTimestamp(esp);
+        const numEval = Number(esp.numeroEvaluacion) || 1;
+        const faseKey = (esp.idFase || esp.faseActualID || esp.faseNombre || `eval_${numEval}`).toString().trim();
+
+        const pMap = ugelPhaseMap.get(ugelId)!;
+        if (!pMap.has(faseKey)) {
+          pMap.set(faseKey, {
+            faseKey,
+            faseName,
+            timestamp,
+            numEval,
+            scores: [],
+          });
+        }
+        pMap.get(faseKey)!.scores.push(scoreEsp);
+      }
+    });
+
+    const ugelList: {
+      name: string;
+      avg: number;
+      latestScore: number;
+      latestDomainScore?: number;
+      ugelId: string;
+      latestFaseNombre?: string;
+      nivelNombre?: string;
+      nivelColor?: string;
+      evalsData: {
+        score: number;
+        fase: string;
+        dateStr: string;
+        nivel: any;
+        nivelColor: string;
+      }[];
+    }[] = [];
+
+    Array.from(ugelEspMap.entries()).forEach(([ugelId, espGroup]) => {
+      const ugelName = (regiones.find((r) => r.id.toString() === ugelId)?.region || ugelId).toUpperCase();
+
+      const latestScores: number[] = [];
+      Array.from(espGroup.values()).forEach((evalsList) => {
+        const evalsSorted = evalsList.sort((a, b) => {
+          const timeA = getMonitoreoTimestamp(a);
+          const timeB = getMonitoreoTimestamp(b);
+          if (timeA !== timeB) return timeA - timeB;
+          return (Number(a.numeroEvaluacion) || 0) - (Number(b.numeroEvaluacion) || 0);
+        });
+        const latestEval = evalsSorted[evalsSorted.length - 1];
+        const score = getEspecialistaTotalScore(latestEval, scale);
+        if (score !== null) {
+          latestScores.push(score);
+        }
+      });
+
+      if (latestScores.length === 0) return;
+
+      const latestUgelAvg = latestScores.reduce((acc, curr) => acc + curr, 0) / latestScores.length;
+      const roundedAvg = Number(latestUgelAvg.toFixed(2));
+      const nivelObj = getNivelLogro(roundedAvg);
+
+      const pMap = ugelPhaseMap.get(ugelId) || new Map();
+      const phasesSorted = Array.from(pMap.values()).sort((a, b) => {
+        if (a.timestamp !== b.timestamp) return a.timestamp - b.timestamp;
+        return a.numEval - b.numEval;
+      });
+
+      const evalsData = phasesSorted.map((p) => {
+        const avgFase = p.scores.reduce((acc: number, curr: number) => acc + curr, 0) / p.scores.length;
+        const roundedFase = Number(avgFase.toFixed(2));
+        const lvl = getNivelLogro(roundedFase);
+        return {
+          score: roundedFase,
+          fase: p.faseName,
+          dateStr: p.timestamp ? new Date(p.timestamp).toLocaleDateString('es-PE') : '',
+          nivel: lvl,
+          nivelColor: lvl?.color || color || '#3b82f6',
+        };
+      });
+
+      const latestFaseNombre = evalsData.length > 0 ? evalsData[evalsData.length - 1].fase : '';
+
+      ugelList.push({
+        name: ugelName,
+        avg: roundedAvg,
+        latestScore: roundedAvg,
+        latestDomainScore: roundedAvg,
+        ugelId,
+        latestFaseNombre,
+        nivelNombre: nivelObj?.nivel || '',
+        nivelColor: nivelObj?.color || color || '#3b82f6',
+        evalsData,
+      });
+    });
+
+    ugelList.sort((a, b) => b.latestScore - a.latestScore);
+
+    const maxEvalsCount = Math.max(...ugelList.map((u) => u.evalsData.length), 1);
+    const datasets: any[] = [];
+    const barColor = color || '#3b82f6';
+
+    for (let i = 0; i < maxEvalsCount; i++) {
+      const data = ugelList.map((u) => {
+        const evalsCount = u.evalsData.length;
+        if (i >= evalsCount) return 0;
+        const segmentShare = u.latestScore / evalsCount;
+        return Number(segmentShare.toFixed(2));
+      });
+
+      const rawScores = ugelList.map((u) => (i < u.evalsData.length ? u.evalsData[i].score : null));
+      const phaseNames = ugelList.map((u) => (i < u.evalsData.length ? u.evalsData[i].fase : ''));
+      const evalDates = ugelList.map((u) => (i < u.evalsData.length ? u.evalsData[i].dateStr : ''));
+      const levelNames = ugelList.map((u) => (i < u.evalsData.length ? (u.evalsData[i].nivel?.nivel || '') : ''));
+      const samplePhase = ugelList.find((u) => u.evalsData[i]?.fase)?.evalsData[i]?.fase;
+      const datasetLabel = (samplePhase || `FASE N° ${i + 1}`).toUpperCase();
+
+      const backgroundColor = ugelList.map((u) => {
+        if (i >= u.evalsData.length) return 'transparent';
+        const evData = u.evalsData[i];
+        if (colorMode === 'nivel' && evData.nivelColor) {
+          return hexToRgba(evData.nivelColor, 0.85);
+        }
+        return hexToRgba(barColor, 0.75);
+      });
+
+      datasets.push({
+        label: datasetLabel,
+        data,
+        rawScores,
+        rawDomainScores: rawScores,
+        phaseNames,
+        evalDates,
+        levelNames,
+        backgroundColor,
+        borderColor: '#ffffff',
+        borderWidth: 1.5,
+        borderRadius: 2,
+      });
+    }
+
+    return {
+      labels: ugelList.map((u) => u.name.toUpperCase()),
+      datasets,
+      ugelList,
+      maxGlobalScore,
+      totalQuestions,
+    };
+  };
+
+  const getGlobalEspecialistaData = (color?: string) => {
+    const scale = dataEvaluacionDocente.escala || [];
+    const dataEspecialistas = dataFiltradaEspecialistaDirectorTabla || [];
+    const maxQuestionValue = Math.max(1, ...(scale.map((e) => Number(e.value) || 0) || [3]));
+    const totalQuestions = getPreguntaRespuestaDocentes.length || 1;
+    const maxGlobalScore = Math.max(1, totalQuestions * maxQuestionValue);
+
+    const espMap = new Map<string, any[]>();
+    dataEspecialistas.forEach((esp: any) => {
+      const dni = (esp.dni || esp.especialistaDni || esp.info?.dni || '').trim();
+      if (!dni) return;
+      if (!espMap.has(dni)) {
+        espMap.set(dni, []);
+      }
+      espMap.get(dni)!.push(esp);
+    });
+
+    const espList: {
+      name: string;
+      dni: string;
+      avg: number;
+      latestScore: number;
+      latestDomainScore: number;
+      nivelNombre?: string;
+      nivelColor?: string;
+      evalsData: {
+        score: number;
+        fase: string;
+        dateStr: string;
+        nivel: any;
+        nivelColor: string;
+      }[];
+    }[] = [];
+
+    Array.from(espMap.entries()).forEach(([dni, evalsList]) => {
+      const evalsSorted = evalsList.sort((a, b) => {
+        const timeA = getMonitoreoTimestamp(a);
+        const timeB = getMonitoreoTimestamp(b);
+        if (timeA !== timeB) return timeA - timeB;
+        return (Number(a.numeroEvaluacion) || 0) - (Number(b.numeroEvaluacion) || 0);
+      });
+
+      const firstItem = evalsSorted[0];
+      const nombre = (firstItem.nombres || firstItem.info?.nombres || '').trim();
+      const apellido = (firstItem.apellidos || firstItem.info?.apellidos || '').trim();
+      const fullName = (
+        (apellido || nombre)
+          ? `${apellido} ${nombre}`.trim()
+          : (firstItem.especialistaNombre || firstItem.nombre || `DNI: ${dni}`)
+      ).toUpperCase();
+
+      const evalsData: {
+        score: number;
+        fase: string;
+        dateStr: string;
+        nivel: any;
+        nivelColor: string;
+      }[] = [];
+
+      evalsSorted.forEach((ev) => {
+        const score = getEspecialistaTotalScore(ev, scale);
+        if (score !== null) {
+          const roundedScore = Number(score.toFixed(2));
+          const lvl = getNivelLogro(roundedScore);
+          evalsData.push({
+            score: roundedScore,
+            fase: getCleanPhaseName(ev.faseNombre, ev.idFase || ev.faseActualID),
+            dateStr: getLocalDateString(ev.fechaMonitoreo || ev.fechaCreacion),
+            nivel: lvl,
+            nivelColor: lvl?.color || color || '#6366f1',
+          });
+        }
+      });
+
+      if (evalsData.length === 0) return;
+
+      const latestScore = evalsData[evalsData.length - 1].score;
+      const nivelObj = getNivelLogro(latestScore);
+
+      espList.push({
+        name: fullName,
+        dni,
+        avg: latestScore,
+        latestScore,
+        latestDomainScore: latestScore,
+        nivelNombre: (nivelObj?.nivel || '').toUpperCase(),
+        nivelColor: nivelObj?.color || color || '#6366f1',
+        evalsData,
+      });
+    });
+
+    espList.sort((a, b) => b.latestScore - a.latestScore);
+
+    const maxEvalsCount = Math.max(...espList.map((e) => e.evalsData.length), 1);
+    const datasets: any[] = [];
+    const barColor = color || '#6366f1';
+
+    for (let i = 0; i < maxEvalsCount; i++) {
+      const data = espList.map((e) => {
+        const evalsCount = e.evalsData.length;
+        if (i >= evalsCount) return 0;
+        const segmentShare = e.latestScore / evalsCount;
+        return Number(segmentShare.toFixed(2));
+      });
+
+      const rawScores = espList.map((e) => (i < e.evalsData.length ? e.evalsData[i].score : null));
+      const phaseNames = espList.map((e) => (i < e.evalsData.length ? e.evalsData[i].fase : ''));
+      const evalDates = espList.map((e) => (i < e.evalsData.length ? e.evalsData[i].dateStr : ''));
+      const levelNames = espList.map((e) => (i < e.evalsData.length ? (e.evalsData[i].nivel?.nivel || '') : ''));
+      const samplePhase = espList.find((e) => e.evalsData[i]?.fase)?.evalsData[i]?.fase;
+      const datasetLabel = (samplePhase || `FASE N° ${i + 1}`).toUpperCase();
+
+      const backgroundColor = espList.map((e) => {
+        if (i >= e.evalsData.length) return 'transparent';
+        const evData = e.evalsData[i];
+        if (colorMode === 'nivel' && evData.nivelColor) {
+          return hexToRgba(evData.nivelColor, 0.85);
+        }
+        return hexToRgba(barColor, 0.75);
+      });
+
+      datasets.push({
+        label: datasetLabel,
+        data,
+        rawScores,
+        rawDomainScores: rawScores,
+        phaseNames,
+        evalDates,
+        levelNames,
+        backgroundColor,
+        borderColor: '#ffffff',
+        borderWidth: 1.5,
+        borderRadius: 2,
+      });
+    }
+
+    return {
+      labels: espList.map((e) => e.name.toUpperCase()),
+      datasets,
+      espList,
+      maxGlobalScore,
+      totalQuestions,
+    };
+  };
+
+  const getGlobalUgelChartOptions = (maxScore?: number, ugelList?: any[]) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y' as const,
+    layout: {
+      padding: {
+        left: 5,
+        right: 120,
+        top: 5,
+        bottom: 5,
+      },
+    },
+    plugins: {
+      customItemData: ugelList || [],
+      legend: {
+        display: false,
+      },
+      title: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          title: (context: any) => {
+            const item = ugelList ? ugelList[context[0].dataIndex] : null;
+            return item ? `#${context[0].dataIndex + 1}. ${item.name}` : '';
+          },
+          label: (context: any) => {
+            const item = ugelList ? ugelList[context.dataIndex] : null;
+            const evalIndex = context.datasetIndex;
+            const evData = item?.evalsData?.[evalIndex];
+            if (!evData) return '';
+            const score = evData.score;
+            const fase = evData.fase;
+            const nivel = evData.nivel?.nivel;
+            return ` ${fase}: ${score} pts promedio general ${nivel ? `[${nivel}]` : ''}`;
+          },
+          afterBody: (context: any) => {
+            const item = ugelList ? ugelList[context[0].dataIndex] : null;
+            if (!item || !item.evalsData || item.evalsData.length <= 1) return '';
+            const lines = ['\nHistorial Global por Fases (UGEL):'];
+            item.evalsData.forEach((ev: any, idx: number) => {
+              const s = ev.score;
+              const f = ev.fase;
+              const n = ev.nivel?.nivel || '—';
+              lines.push(`• Fase ${idx + 1} (${f}): ${s} pts prom [${n}]`);
+            });
+            return lines;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        stacked: true,
+        beginAtZero: true,
+        suggestedMax: Math.ceil((maxScore || 36) * 1.1),
+        grid: {
+          color: '#f1f5f9',
+        },
+        ticks: {
+          font: {
+            family: 'Montserrat, sans-serif',
+            size: 11,
+          },
+          color: '#64748b',
+        },
+      },
+      y: {
+        stacked: true,
+        grid: {
+          display: false,
+        },
+        ticks: {
+          autoSkip: false,
+          callback: function (this: any, val: any, index: number) {
+            const label = this.getLabelForValue(index);
+            return typeof label === 'string' ? label.toUpperCase() : label;
+          },
+          font: {
+            family: 'Montserrat, sans-serif',
+            size: 11,
+            weight: 'normal' as const,
+          },
+          color: '#1e293b',
+          padding: 8,
+        },
+      },
+    },
+  });
+
+  const getGlobalUgelVerticalChartOptions = (maxScore?: number, ugelList?: any[]) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: {
+        top: 25,
+        bottom: 5,
+        left: 5,
+        right: 15,
+      },
+    },
+    scales: {
+      x: {
+        stacked: true,
+        grid: {
+          display: false,
+        },
+        ticks: {
+          autoSkip: false,
+          maxRotation: 45,
+          minRotation: 45,
+          font: {
+            family: 'Montserrat, sans-serif',
+            size: 10,
+            weight: 'normal' as const,
+          },
+          color: '#1e293b',
+        },
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        suggestedMax: maxScore || maxScaleValue,
+        title: {
+          display: true,
+          text: 'Puntaje Global (promedio pts)',
+          font: {
+            family: 'Montserrat, sans-serif',
+            size: 11,
+            weight: 'bold' as const,
+          },
+          color: '#475569',
+        },
+        grid: {
+          color: '#f1f5f9',
+        },
+        ticks: {
+          font: {
+            family: 'Montserrat, sans-serif',
+            size: 11,
+          },
+          color: '#64748b',
+        },
+      },
+    },
+    plugins: {
+      customItemData: ugelList || [],
+      legend: {
+        display: false,
+      },
+      title: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          title: (context: any) => {
+            const item = ugelList ? ugelList[context[0].dataIndex] : null;
+            return item ? item.name : '';
+          },
+          label: (context: any) => {
+            const item = ugelList ? ugelList[context.dataIndex] : null;
+            const evalIndex = context.datasetIndex;
+            const evData = item?.evalsData?.[evalIndex];
+            if (!evData) return '';
+            const score = evData.score;
+            const fase = evData.fase;
+            const nivel = evData.nivel?.nivel;
+            return ` ${fase}: ${score} pts promedio general ${nivel ? `[${nivel}]` : ''}`;
+          },
+          afterBody: (context: any) => {
+            const item = ugelList ? ugelList[context[0].dataIndex] : null;
+            if (!item || !item.evalsData || item.evalsData.length <= 1) return '';
+            const lines = ['\nHistorial Global por Fases (UGEL):'];
+            item.evalsData.forEach((ev: any, idx: number) => {
+              const s = ev.score;
+              const f = ev.fase;
+              const n = ev.nivel?.nivel || '—';
+              lines.push(`• Fase ${idx + 1} (${f}): ${s} pts prom [${n}]`);
+            });
+            return lines;
+          },
+        },
+      },
+    },
+  });
+
+  const getGlobalEspecialistaChartOptions = (maxScore?: number, espList?: any[]) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y' as const,
+    layout: {
+      padding: {
+        left: 5,
+        right: 120,
+        top: 5,
+        bottom: 5,
+      },
+    },
+    plugins: {
+      customItemData: espList || [],
+      legend: {
+        display: false,
+      },
+      title: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          title: (context: any) => {
+            const item = espList ? espList[context[0].dataIndex] : null;
+            return item ? `#${context[0].dataIndex + 1}. ${item.name}` : '';
+          },
+          label: (context: any) => {
+            const item = espList ? espList[context.dataIndex] : null;
+            const evalIndex = context.datasetIndex;
+            const evData = item?.evalsData?.[evalIndex];
+            if (!evData) return '';
+            const score = evData.score;
+            const fase = evData.fase;
+            const dateStr = evData.dateStr;
+            const nivel = evData.nivel?.nivel;
+            return ` ${context.dataset.label} (${fase} - ${dateStr}): ${score} pts total ${nivel ? `[${nivel}]` : ''}`;
+          },
+          afterBody: (context: any) => {
+            const item = espList ? espList[context[0].dataIndex] : null;
+            if (!item || !item.evalsData || item.evalsData.length <= 1) return '';
+            const lines = ['\nHistorial Global por Fases:'];
+            item.evalsData.forEach((ev: any, idx: number) => {
+              const s = ev.score;
+              const f = ev.fase;
+              const d = ev.dateStr;
+              const n = ev.nivel?.nivel || '—';
+              lines.push(`• Eval ${idx + 1} (${f} - ${d}): ${s} pts [${n}]`);
+            });
+            return lines;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        stacked: true,
+        beginAtZero: true,
+        suggestedMax: Math.ceil((maxScore || 36) * 1.1),
+        grid: {
+          color: '#f1f5f9',
+        },
+        ticks: {
+          font: {
+            family: 'Montserrat, sans-serif',
+            size: 11,
+          },
+          color: '#64748b',
+        },
+      },
+      y: {
+        stacked: true,
+        grid: {
+          display: false,
+        },
+        ticks: {
+          autoSkip: false,
+          callback: function (this: any, val: any, index: number) {
+            const label = this.getLabelForValue(index);
+            return typeof label === 'string' ? label.toUpperCase() : label;
+          },
+          font: {
+            family: 'Montserrat, sans-serif',
+            size: 11,
+            weight: 'normal' as const,
+          },
+          color: '#1e293b',
+          padding: 8,
+        },
+      },
+    },
+  });
+
+  const getGlobalEspecialistaVerticalChartOptions = (maxScore?: number, espList?: any[]) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: {
+        top: 25,
+        bottom: 5,
+        left: 5,
+        right: 15,
+      },
+    },
+    scales: {
+      x: {
+        stacked: true,
+        grid: {
+          display: false,
+        },
+        ticks: {
+          autoSkip: false,
+          maxRotation: 45,
+          minRotation: 45,
+          font: {
+            family: 'Montserrat, sans-serif',
+            size: 10,
+            weight: 'normal' as const,
+          },
+          color: '#1e293b',
+        },
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        suggestedMax: maxScore || maxScaleValue,
+        title: {
+          display: true,
+          text: 'Puntaje Global (pts)',
+          font: {
+            family: 'Montserrat, sans-serif',
+            size: 11,
+            weight: 'bold' as const,
+          },
+          color: '#475569',
+        },
+        grid: {
+          color: '#f1f5f9',
+        },
+        ticks: {
+          font: {
+            family: 'Montserrat, sans-serif',
+            size: 11,
+          },
+          color: '#64748b',
+        },
+      },
+    },
+    plugins: {
+      customItemData: espList || [],
+      legend: {
+        display: false,
+      },
+      title: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          title: (context: any) => {
+            const item = espList ? espList[context[0].dataIndex] : null;
+            return item ? item.name : '';
+          },
+          label: (context: any) => {
+            const item = espList ? espList[context.dataIndex] : null;
+            const evalIndex = context.datasetIndex;
+            const evData = item?.evalsData?.[evalIndex];
+            if (!evData) return '';
+            const score = evData.score;
+            const fase = evData.fase;
+            const dateStr = evData.dateStr;
+            const nivel = evData.nivel?.nivel;
+            return ` ${context.dataset.label} (${fase} - ${dateStr}): ${score} pts total ${nivel ? `[${nivel}]` : ''}`;
+          },
+          afterBody: (context: any) => {
+            const item = espList ? espList[context[0].dataIndex] : null;
+            if (!item || !item.evalsData || item.evalsData.length <= 1) return '';
+            const lines = ['\nHistorial Global por Fases:'];
+            item.evalsData.forEach((ev: any, idx: number) => {
+              const s = ev.score;
+              const f = ev.fase;
+              const d = ev.dateStr;
+              const n = ev.nivel?.nivel || '—';
+              lines.push(`• Eval ${idx + 1} (${f} - ${d}): ${s} pts [${n}]`);
+            });
+            return lines;
+          },
+        },
+      },
+    },
+  });
+
   useEffect(() => {
     reporteEvaluacionEspecialistas(`${route.query.idEvaluacion}`);
     getPreguntasRespuestasEspecialistas(`${route.query.idEvaluacion}`);
@@ -2065,6 +3318,21 @@ const Reportes = () => {
                     </>
                   )}
 
+                  <button
+                    type="button"
+                    onClick={() => setIsOrganizerModalOpen(true)}
+                    className={styles.btnOrganizer}
+                    title="Organizar y mostrar/ocultar gráficos del reporte"
+                  >
+                    <RiGridFill style={{ fontSize: '1.15rem', color: '#0284c7' }} />
+                    <span>Personalizar Gráficos</span>
+                    {DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length > 0 && (
+                      <span className={styles.hiddenCountBadge}>
+                        {DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length} oculto{DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </button>
+
                   {(filtros.region !== '' || filtros.genero !== '' || filtros.idFase !== '') && (
                     <button
                       onClick={handleLimpiarFiltros}
@@ -2079,621 +3347,1390 @@ const Reportes = () => {
                     <NoHayResultados />
                   ) : (
                     <>
-                      <div className={styles.globalChartsGrid}>
-                        <div className={styles.chartContainer}>
-                          <h3 className={styles.sectionTitle}>
-                            <span className={styles.sectionTitleIndicator}></span>
-                            <span>Consolidado Global de Resultados</span>
-                          </h3>
-                          <div className={styles.pieChartWrapper}>
-                            <Pie options={pieOptions} data={getPieData()} />
-                          </div>
-                          <div className={styles.statsGrid}>
-                            <div className={styles.statItem}>
-                              <span className={styles.statLabel}>Total Evaluados</span>
-                              <span className={styles.statValue}>{dataFiltradaEspecialistaDirectorTabla?.length || 0}</span>
-                            </div>
-                            {dataEvaluacionDocente.escala?.map((item, index) => {
-                              const values = [dataConsolidadoGlobal?.a, dataConsolidadoGlobal?.b, dataConsolidadoGlobal?.c, dataConsolidadoGlobal?.d];
-                              return (
-                                <div key={index} className={styles.statItem}>
-                                  <span className={styles.statLabel}>{item.descripcion}</span>
-                                  <span className={styles.statValue}>{values[index] || 0}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {dataEvaluacionDocente.niveles && dataEvaluacionDocente.niveles.length > 0 && (
-                          <div className={styles.chartContainer}>
-                            <h3 className={styles.sectionTitle}>
-                              <span className={styles.sectionTitleIndicator}></span>
-                              <span>Distribución por Niveles de Logro</span>
-                            </h3>
-                            <div className={styles.pieChartWrapper}>
-                              <Pie
-                                options={{
-                                  ...pieOptions,
-                                  plugins: { ...pieOptions.plugins, title: { ...pieOptions.plugins.title, text: 'Especialistas por Nivel de Logro' } }
-                                }}
-                                data={getLevelsData()}
-                              />
-                            </div>
-                            <div className={styles.statsGrid}>
-                              {dataEvaluacionDocente.niveles.map((nivel, index) => {
-                                const count = dataFiltradaEspecialistaDirectorTabla.filter(reporte => {
-                                  const score = reporte.calificacion || 0;
-                                  return score >= (nivel.min || 0) && score <= (nivel.max || 0);
-                                }).length;
-                                return (
-                                  <div key={index} className={styles.statItem}>
-                                    <span className={styles.statLabel} style={{ color: nivel.color }}>{nivel.nivel}</span>
-                                    <span className={styles.statValue}>{count}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {dimensionesEspecialistas && dimensionesEspecialistas.length > 0 && (
-                          <div className={styles.chartContainer}>
-                            <h3 className={styles.sectionTitle}>
-                              <span className={styles.sectionTitleIndicator} style={{ background: '#8b5cf6' }}></span>
-                              <span>Distribución Proporcional por Dominio</span>
-                            </h3>
-                            <div className={styles.pieChartWrapper} style={{ maxWidth: '380px', width: '100%' }}>
-                              <Pie
-                                options={{
-                                  responsive: true,
-                                  maintainAspectRatio: true,
-                                  plugins: {
-                                    title: {
-                                      display: true,
-                                      text: 'Promedio Comparativo por Dominio',
-                                      font: {
-                                        family: 'Montserrat, sans-serif',
-                                        size: 13,
-                                        weight: 'bold' as const,
-                                      },
-                                      padding: {
-                                        bottom: 12,
-                                      },
-                                    },
-                                    legend: {
-                                      display: false,
-                                    },
-                                    tooltip: {
-                                      callbacks: {
-                                        label: (context: any) => {
-                                          return ` Puntaje Promedio: ${context.parsed}`;
-                                        },
-                                      },
-                                    },
-                                  },
-                                }}
-                                data={getDimensionPieData()}
-                              />
-                            </div>
-                            <div className={styles.statsGrid}>
-                              {dimensionesEspecialistas.map((dim: any, index: number) => {
-                                const pieData = getDimensionPieData();
-                                const value = pieData.datasets[0]?.data[index] || 0;
-                                const color = getDomainColor(dim, index);
-                                return (
-                                  <div key={dim.id || index} className={styles.statItem}>
-                                    <span
-                                      className={styles.statLabel}
-                                      style={{
-                                        color,
-                                        fontWeight: 600,
-                                        textAlign: 'center',
-                                        textTransform: 'uppercase',
-                                        lineHeight: 1.3,
-                                        wordBreak: 'break-word',
-                                        whiteSpace: 'normal',
-                                      }}
-                                    >
-                                      {dim.nombre}
-                                    </span>
-                                    <span className={styles.statValue}>{value}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className={styles.chartContainer}>
-                          <h3 className={styles.sectionTitle}>
-                            <span className={styles.sectionTitleIndicator}></span>
-                            <span>Puntaje Promedio Global por Dominio</span>
-                          </h3>
-                          {(() => {
-                            const dimData = getDimensionData();
-                            return (
-                              <div
-                                className={styles.chartWrapper}
-                                style={{
-                                  minHeight: `${Math.max(340, (dimensionesEspecialistas?.length || 1) * 95)}px`,
-                                  width: '100%',
-                                  maxWidth: '100%',
-                                  position: 'relative',
-                                }}
-                              >
-                                <Bar
-                                  options={getDimensionBarOptions(dimData.dimList)}
-                                  data={{
-                                    labels: dimData.labels,
-                                    datasets: dimData.datasets,
-                                  }}
-                                  plugins={[barDataLabelPlugin]}
-                                />
-                              </div>
-                            );
-                          })()}
-                          {renderDomainLevelRanges()}
-                        </div>
-                      </div>
-
-                      {dimensionesEspecialistas && dimensionesEspecialistas.length > 0 && (
-                        <div className={styles.dimensionSectionWrapper}>
-                          <div className={styles.sectionHeader}>
-                            <h2 className={styles.analyticsTitle}>Rendimiento por UGEL según Dominio</h2>
-                            <p className={styles.analyticsSubtitle}>
-                              Comparativa y ranking del puntaje promedio por UGEL en cada una de las dimensiones evaluadas
-                            </p>
-                          </div>
-
-                          {colorMode === 'nivel' && dataEvaluacionDocente.niveles && dataEvaluacionDocente.niveles.length > 0 && (
-                            <div className={styles.levelsLegendBar}>
-                              <span className={styles.levelsLegendTitle}>
-                                <RiAwardLine style={{ color: '#2563eb', fontSize: '1.1rem' }} />
-                                Niveles de Logro:
-                              </span>
-                              {dataEvaluacionDocente.niveles.map((nivel: any, idx: number) => (
-                                <div key={idx} className={styles.levelLegendItem}>
-                                  <span className={styles.levelLegendDot} style={{ background: nivel.color || '#3b82f6' }} />
-                                  <span style={{ color: '#1e293b' }}>{nivel.nivel}</span>
-                                  <span style={{ color: '#64748b', fontSize: '0.72rem' }}>
-                                    ({nivel.min ?? 0} - {nivel.max ?? 0} pts)
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          <div className={styles.dimensionChartsGrid}>
-                            {dimensionesEspecialistas.map((dim: any, idx: number) => {
-                              const domainColor = getDomainColor(dim, idx);
-                              const ugelChartData = getUGELDataForDimension(dim.id, domainColor);
-                              const hasData = ugelChartData.labels.length > 0;
-
-                              return (
-                                <div key={dim.id || idx} className={styles.dimensionChartCard}>
-                                  <div
-                                    className={styles.dimensionChartHeader}
-                                    style={{
-                                      display: 'flex',
-                                      justifyContent: 'space-between',
-                                      alignItems: 'flex-start',
-                                      flexWrap: 'wrap',
-                                      gap: '0.5rem',
-                                    }}
-                                  >
-                                    <div>
-                                      <h3 className={styles.dimensionChartMainTitle}>
-                                        <span
-                                          className={styles.sectionTitleIndicator}
-                                          style={{
-                                            display: 'inline-block',
-                                            verticalAlign: 'middle',
-                                            marginRight: '8px',
-                                            background: domainColor,
-                                          }}
-                                        ></span>
-                                        Dimensión por UGEL
-                                      </h3>
-                                      <p className={styles.dimensionChartSubtitle}>
-                                        {dim.nombre || `DIMENSIÓN ${idx + 1}`}
-                                        {ugelChartData.totalItems > 0 && (
-                                          <span style={{ display: 'block', fontSize: '0.78rem', color: '#64748b', marginTop: '2px', fontWeight: 500 }}>
-                                            {ugelChartData.totalItems} criterios · Puntaje máx: {ugelChartData.maxDomainScore} pts
-                                          </span>
-                                        )}
-                                      </p>
-                                    </div>
-
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                      <div className={styles.colorPickerHeaderWrapper}>
-                                        <label
-                                          className={styles.colorPickerCircle}
-                                          style={{ background: domainColor }}
-                                          title={`Cambiar color para ${dim.nombre}`}
-                                        >
-                                          <input
-                                            type="color"
-                                            value={domainColor}
-                                            onChange={(e) => handleColorChange(dim.id, e.target.value)}
-                                            className={styles.hiddenColorInput}
-                                          />
-                                        </label>
-                                      </div>
-
-                                      {hasData && (
-                                        <button
-                                          onClick={() => setSelectedDimensionModal({ dim, type: 'ugel' })}
-                                          className={styles.btnVistaCompleta}
-                                          title="Abrir vista completa con todas las UGELs"
-                                        >
-                                          <RiFullscreenLine />
-                                          <span>Vista completa ({ugelChartData.labels.length})</span>
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {hasData ? (
-                                    <>
-                                      <div
-                                        className={styles.chartWrapper}
-                                        style={{
-                                          minHeight: `${Math.max(220, ugelChartData.labels.length * 36)}px`,
-                                          width: '100%',
-                                          maxWidth: '100%',
-                                          position: 'relative',
-                                        }}
-                                      >
-                                        <Bar
-                                          options={getUgelDimensionChartOptions(ugelChartData.maxDomainScore, ugelChartData.ugelList)}
-                                          data={{
-                                            labels: ugelChartData.labels,
-                                            datasets: ugelChartData.datasets,
-                                          }}
-                                          plugins={[barDataLabelPlugin]}
-                                        />
-                                      </div>
-                                      {renderDomainLevelRanges()}
-                                    </>
-                                  ) : (
-                                    <div className={styles.emptyDimensionChart}>
-                                      <p>No se encontraron registros evaluados para esta dimensión.</p>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
+                      {seccionesVisibles.length === 0 && (
+                        <div style={{ textAlign: 'center', padding: '3.5rem 1.5rem', background: '#f8fafc', borderRadius: '16px', border: '2px dashed #cbd5e1', marginBottom: '2rem' }}>
+                          <h4 style={{ color: '#1e293b', fontSize: '1.1rem', fontWeight: 700, margin: '0 0 0.5rem 0', fontFamily: 'Montserrat, sans-serif' }}>
+                            Todos los gráficos están ocultos
+                          </h4>
+                          <p style={{ color: '#64748b', fontSize: '0.88rem', margin: '0 0 1.25rem 0', fontFamily: 'Montserrat, sans-serif' }}>
+                            Usa el botón de personalizar para activar los gráficos que deseas visualizar.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setIsOrganizerModalOpen(true)}
+                            style={{
+                              padding: '0.65rem 1.35rem',
+                              background: '#2563eb',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '10px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              fontFamily: 'Montserrat, sans-serif',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                            }}
+                          >
+                            <RiGridFill />
+                            <span>Personalizar Gráficos</span>
+                          </button>
                         </div>
                       )}
 
-                      {dimensionesEspecialistas && dimensionesEspecialistas.length > 0 && (
-                        <div className={styles.dimensionSectionWrapper}>
-                          <div className={styles.sectionHeader}>
-                            <h2 className={styles.analyticsTitle}>Rendimiento por Especialista según Dominio</h2>
-                            <p className={styles.analyticsSubtitle}>
-                              Comparativa y ranking del puntaje total obtenido por cada especialista en las dimensiones evaluadas
-                            </p>
-                          </div>
+                      {ordenSecciones.map((secId) => {
+                        if (!seccionesVisibles.includes(secId)) return null;
 
-                          {colorMode === 'nivel' && dataEvaluacionDocente.niveles && dataEvaluacionDocente.niveles.length > 0 && (
-                            <div className={styles.levelsLegendBar}>
-                              <span className={styles.levelsLegendTitle}>
-                                <RiAwardLine style={{ color: '#2563eb', fontSize: '1.1rem' }} />
-                                Niveles de Logro:
-                              </span>
-                              {dataEvaluacionDocente.niveles.map((nivel: any, idx: number) => (
-                                <div key={idx} className={styles.levelLegendItem}>
-                                  <span className={styles.levelLegendDot} style={{ background: nivel.color || '#3b82f6' }} />
-                                  <span style={{ color: '#1e293b' }}>{nivel.nivel}</span>
-                                  <span style={{ color: '#64748b', fontSize: '0.72rem' }}>
-                                    ({nivel.min ?? 0} - {nivel.max ?? 0} pts)
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          <div className={styles.dimensionChartsGrid}>
-                            {dimensionesEspecialistas.map((dim: any, idx: number) => {
-                              const domainColor = getDomainColor(dim, idx);
-                              const espChartData = getEspecialistaDataForDimension(dim.id, domainColor);
-                              const hasData = espChartData.labels.length > 0;
-                              const isLongList = espChartData.labels.length > 10;
-                              const top10Labels = espChartData.labels.slice(0, 10);
-                              const top10Data = espChartData.datasets[0]?.data.slice(0, 10) || [];
-
-                              return (
-                                <div key={dim.id || idx} className={styles.dimensionChartCard}>
-                                  <div
-                                    className={styles.dimensionChartHeader}
-                                    style={{
-                                      display: 'flex',
-                                      justifyContent: 'space-between',
-                                      alignItems: 'flex-start',
-                                      flexWrap: 'wrap',
-                                      gap: '0.5rem',
-                                    }}
-                                  >
-                                    <div>
-                                      <h3 className={styles.dimensionChartMainTitle}>
-                                        <span
-                                          className={styles.sectionTitleIndicator}
-                                          style={{
-                                            display: 'inline-block',
-                                            verticalAlign: 'middle',
-                                            marginRight: '8px',
-                                            background: domainColor,
-                                          }}
-                                        ></span>
-                                        Dimensión por Especialista
-                                      </h3>
-                                      <p className={styles.dimensionChartSubtitle}>
-                                        {dim.nombre || `DIMENSIÓN ${idx + 1}`}
-                                        {espChartData.totalItems > 0 && (
-                                          <span style={{ display: 'block', fontSize: '0.78rem', color: '#64748b', marginTop: '2px', fontWeight: 500 }}>
-                                            {espChartData.totalItems} criterios · Puntaje máx: {espChartData.maxDomainScore} pts
-                                          </span>
-                                        )}
-                                      </p>
-                                    </div>
-
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                      <div className={styles.colorPickerHeaderWrapper}>
-                                        <label
-                                          className={styles.colorPickerCircle}
-                                          style={{ background: domainColor }}
-                                          title={`Cambiar color para ${dim.nombre}`}
-                                        >
-                                          <input
-                                            type="color"
-                                            value={domainColor}
-                                            onChange={(e) => handleColorChange(dim.id, e.target.value)}
-                                            className={styles.hiddenColorInput}
-                                          />
-                                        </label>
-                                      </div>
-
-                                      {hasData && (
-                                        <button
-                                          onClick={() => setSelectedDimensionModal({ dim, type: 'especialista' })}
-                                          className={styles.btnVistaCompleta}
-                                          title="Abrir vista completa con todos los especialistas"
-                                        >
-                                          <RiFullscreenLine />
-                                          <span>Vista completa ({espChartData.labels.length})</span>
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {hasData ? (
-                                    <>
-                                      <div
-                                        className={styles.chartWrapper}
-                                        style={{
-                                          minHeight: `${Math.max(220, top10Labels.length * 36)}px`,
-                                          width: '100%',
-                                          maxWidth: '100%',
-                                          position: 'relative',
-                                        }}
-                                      >
-                                        <Bar
-                                          options={getEspecialistaDimensionChartOptions(espChartData.maxDomainScore, espChartData.espList.slice(0, 10))}
-                                          data={{
-                                            labels: top10Labels,
-                                            datasets: espChartData.datasets.map((ds: any) => ({
-                                              ...ds,
-                                              data: ds.data.slice(0, 10),
-                                              rawDomainScores: ds.rawDomainScores?.slice(0, 10),
-                                              phaseNames: ds.phaseNames?.slice(0, 10),
-                                              evalDates: ds.evalDates?.slice(0, 10),
-                                              backgroundColor: Array.isArray(ds.backgroundColor) ? ds.backgroundColor.slice(0, 10) : ds.backgroundColor,
-                                              borderColor: Array.isArray(ds.borderColor) ? ds.borderColor.slice(0, 10) : ds.borderColor,
-                                            })),
-                                          }}
-                                          plugins={[barDataLabelPlugin]}
-                                        />
-                                      </div>
-
-                                      {renderDomainLevelRanges()}
-                                    </>
-                                  ) : (
-                                    <div className={styles.emptyDimensionChart}>
-                                      <p>No se encontraron especialistas evaluados para esta dimensión.</p>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className={styles.advancedAnalyticsSection}>
-                        <div className={styles.analyticsHeader}>
-                          <h2 className={styles.analyticsTitle}>Panel de Analítica Avanzada</h2>
-                          <p className={styles.analyticsSubtitle}>Interpretación estratégica y tendencias de desempeño</p>
-                        </div>
-
-                        <div className={styles.globalChartsGrid}>
-                          {false && (
-                            <div className={styles.chartContainer}>
-                              <h3 className={styles.sectionTitle}>
-                                <RiRadarLine style={{ color: '#3b82f6' }} />
-                                <span>Perfil Reticular de Competencias</span>
-                              </h3>
-                              <div className={styles.infoBox}>
-                                <div className={styles.infoTitle}>
-                                  <RiInformationLine /> ¿Qué mide este gráfico?
-                                </div>
-                                <p className={styles.infoContent}>
-                                  Muestra el equilibrio entre los diferentes <span className={styles.infoHighlight}>Dominios o Dimensiones</span>.
-                                  Un polígono regular indica un desempeño equilibrado, mientras que picos hacia afuera señalan fortalezas y hacia adentro áreas críticas.
-                                </p>
-                              </div>
-                              <div className={styles.radarChartWrapper}>
-                                <Radar
-                                  data={getRadarData()}
-                                  options={{
-                                    scales: {
-                                      r: {
-                                        beginAtZero: true,
-                                        max: (dataEvaluacionDocente.escala || []).at(-1)?.value || 4
-                                      }
-                                    }
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          {false && (
-                            <div className={styles.chartContainer}>
-                              <h3 className={styles.sectionTitle}>
-                                <RiPulseLine style={{ color: '#10b981' }} />
-                                <span>Tendencia de Mejora Temporal</span>
-                              </h3>
-                              <div className={styles.infoBox}>
-                                <div className={styles.infoTitle}>
-                                  <RiInformationLine /> ¿Cómo interpretarlo?
-                                </div>
-                                <p className={styles.infoContent}>
-                                  Rastrea el <span className={styles.infoHighlight}>crecimiento del promedio de calificación</span> a lo largo de los meses.
-                                  Una línea ascendente valida que el acompañamiento y monitoreo está teniendo un impacto positivo real.
-                                </p>
-                              </div>
-                              <div className={styles.chartWrapper}>
-                                <Line
-                                  data={getTrendData()}
-                                  options={{
-                                    scales: {
-                                      y: { beginAtZero: true }
-                                    }
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          {false && (
-                            <div className={`${styles.chartContainer} ${styles.fullWidthChart}`}>
-                              <h3 className={styles.sectionTitle}>
-                                <RiBarChartGroupedLine style={{ color: '#ef4444' }} />
-                                <span>Análisis de Brechas Críticas (Top 5 Criterios con Menor Puntaje)</span>
-                              </h3>
-                              <div className={styles.infoBox}>
-                                <div className={styles.infoTitle}>
-                                  <RiInformationLine /> Uso Estratégico
-                                </div>
-                                <p className={styles.infoContent}>
-                                  Identifica los <span className={styles.infoHighlight}>5 criterios específicos</span> donde el equipo de especialistas tiene mayor dificultad.
-                                  Estos puntos deben ser la prioridad inmediata para las próximas capacitaciones o sesiones de retroalimentación colectiva.
-                                </p>
-                              </div>
-                              <div style={{ height: '300px' }}>
-                                <Bar
-                                  data={getItemAnalysisData()}
-                                  options={{
-                                    indexAxis: 'y' as const,
-                                    maintainAspectRatio: false,
-                                    plugins: { legend: { display: false } }
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          {false && (
-                            <div className={`${styles.chartContainer} ${styles.fullWidthChart}`}>
-                              <h3 className={styles.sectionTitle}>
-                                <RiBarChartGroupedLine style={{ color: '#f59e0b' }} />
-                                <span>Mapa de Rendimiento por UGEL</span>
-                              </h3>
-                              <div className={styles.infoBox}>
-                                <div className={styles.infoTitle}>
-                                  <RiInformationLine /> Análisis Territorial
-                                </div>
-                                <p className={styles.infoContent}>
-                                  Compara el <span className={styles.infoHighlight}>desempeño promedio de los especialistas</span> agrupados por su respectiva UGEL.
-                                  Permite identificar qué regiones territoriales están liderando y cuáles requieren un fortalecimiento focalizado.
-                                </p>
-                              </div>
-                              <div className={styles.heatmapGrid}>
-                                {getUGELPerformanceData().map((ugel, idx) => {
-                                  const avgValue = Number(ugel.avg);
-                                  const maxScale = dataEvaluacionDocente.escala?.[dataEvaluacionDocente.escala.length - 1]?.value || 4;
-                                  const ratio = avgValue / maxScale;
-
-                                  // Dynamic color from Red to Green
-                                  const red = Math.round(239 * (1 - ratio) + 16 * ratio);
-                                  const green = Math.round(68 * (1 - ratio) + 185 * ratio);
-                                  const blue = Math.round(68 * (1 - ratio) + 129 * ratio);
-
-                                  return (
-                                    <div key={idx} className={styles.heatmapCell} style={{ borderBottom: `4px solid rgb(${red}, ${green}, ${blue})` }}>
-                                      <span className={styles.heatmapValue}>{ugel.avg}</span>
-                                      <span className={styles.heatmapLabel}>{ugel.name}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className={styles.perQuestionGrid}>
-                        {getPreguntaRespuestaDocentes.map((pregunta, index) => {
-                          const stats = dataEvaluaciones.find(s => s.id === pregunta.id || s.id === pregunta.order?.toString());
-                          if (!stats) return null;
-
+                        // 1. SECCIÓN RENDIMIENTO GLOBAL CONSOLIDADO (UGEL Y ESPECIALISTAS)
+                        if (secId === 'global_consolidado') {
                           return (
-                            <div key={index} className={styles.chartContainer}>
-                              <h3 className={styles.sectionTitle}>
-                                <span className={styles.sectionTitleIndicator}></span>
-                                <span>
-                                  {pregunta.subOrden || pregunta.order}.
-                                </span>
-                                <span>{pregunta.criterio}</span>
-                              </h3>
-                              <div className={styles.chartWrapper}>
-                                <Bar
-                                  options={{
-                                    ...options,
-                                    plugins: {
-                                      ...options.plugins,
-                                      title: {
-                                        display: true,
-                                        text: `Resultados: ${pregunta.criterio?.substring(0, 50)}...`,
-                                      }
-                                    }
-                                  }}
-                                  data={iterateData(
-                                    stats,
-                                    dataEvaluacionDocente.escala?.map(e => e.descripcion || '') || []
-                                  )}
-                                />
+                            <div key="global_consolidado" className={styles.dimensionSectionWrapper}>
+                              <div className={styles.sectionHeader}>
+                                <h2 className={styles.analyticsTitle}>Rendimiento Global Consolidado</h2>
+                                <p className={styles.analyticsSubtitle}>
+                                  Comparativa general y ranking del puntaje total de toda la evaluación y su evolución a través de las fases
+                                </p>
                               </div>
-                              <div className={styles.statsGrid}>
-                                {dataEvaluacionDocente.escala?.map((item, scaleIndex) => {
-                                  const values = [stats.a, stats.b, stats.c, stats.d];
+
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', width: '100%' }}>
+                                {/* Card 1: Rendimiento Global por UGEL */}
+                                {(() => {
+                                  const globalUgelData = getGlobalUGELData(globalUgelColor);
+                                  const hasData = globalUgelData.labels.length > 0;
+                                  const orient = getCardOrientation('global_ugel');
+
                                   return (
-                                    <div key={scaleIndex} className={styles.statItem}>
-                                      <span className={styles.statLabel}>{item.descripcion}</span>
-                                      <span className={styles.statValue}>{values[scaleIndex] || 0}</span>
+                                    <div className={`${styles.dimensionChartCard} ${styles.dimensionChartCardCompact}`} style={{ width: '100%' }}>
+                                      <div
+                                        className={styles.dimensionChartHeader}
+                                        style={{
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                          alignItems: 'flex-start',
+                                          flexWrap: 'wrap',
+                                          gap: '0.5rem',
+                                        }}
+                                      >
+                                        <div>
+                                          <h3 className={styles.dimensionChartMainTitle}>
+                                            <span
+                                              className={styles.sectionTitleIndicator}
+                                              style={{
+                                                display: 'inline-block',
+                                                verticalAlign: 'middle',
+                                                marginRight: '8px',
+                                                background: globalUgelColor,
+                                              }}
+                                            ></span>
+                                            Rendimiento Global por UGEL
+                                          </h3>
+                                          <p className={styles.dimensionChartSubtitle}>
+                                            EVALUACIÓN INTEGRAL (TODAS LAS DIMENSIONES)
+                                            <span style={{ display: 'block', fontSize: '0.78rem', color: '#64748b', marginTop: '2px', fontWeight: 500 }}>
+                                              {globalUgelData.totalQuestions} criterios evaluados · Puntaje máx: {globalUgelData.maxGlobalScore} pts
+                                            </span>
+                                          </p>
+                                        </div>
+
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                          <div className={styles.segmentedControl}>
+                                            <button
+                                              type="button"
+                                              className={`${styles.segmentedBtn} ${orient === 'horizontal' ? styles.segmentedBtnActive : ''}`}
+                                              onClick={() => setCardOrientation('global_ugel', 'horizontal')}
+                                              title="Vista Horizontal"
+                                              aria-label="Vista Horizontal"
+                                              style={{ padding: '0.35rem 0.6rem' }}
+                                            >
+                                              <RiBarChartHorizontalLine style={{ fontSize: '1.1rem' }} />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className={`${styles.segmentedBtn} ${orient === 'vertical' ? styles.segmentedBtnActive : ''}`}
+                                              onClick={() => setCardOrientation('global_ugel', 'vertical')}
+                                              title="Vista Vertical"
+                                              aria-label="Vista Vertical"
+                                              style={{ padding: '0.35rem 0.6rem' }}
+                                            >
+                                              <RiBarChart2Line style={{ fontSize: '1.1rem' }} />
+                                            </button>
+                                          </div>
+
+                                          <div className={styles.colorPickerHeaderWrapper}>
+                                            <label
+                                              className={styles.colorPickerCircle}
+                                              style={{ background: globalUgelColor }}
+                                              title="Cambiar color del gráfico"
+                                            >
+                                              <input
+                                                type="color"
+                                                value={globalUgelColor}
+                                                onChange={(e) => setGlobalUgelColor(e.target.value)}
+                                                className={styles.hiddenColorInput}
+                                              />
+                                            </label>
+                                          </div>
+
+                                          {hasData && (
+                                            <button
+                                              onClick={() => setSelectedDimensionModal({ dim: { nombre: 'Evaluación Global Consolidada' }, type: 'global_ugel' })}
+                                              className={styles.btnVistaCompleta}
+                                              title="Abrir vista completa con todas las UGELs"
+                                            >
+                                              <RiFullscreenLine />
+                                              <span>Vista completa ({globalUgelData.labels.length})</span>
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {hasData ? (
+                                        <>
+                                          {orient === 'horizontal' ? (
+                                            <div
+                                              className={styles.chartWrapper}
+                                              style={{
+                                                minHeight: `${Math.max(260, globalUgelData.labels.length * 40)}px`,
+                                                width: '100%',
+                                                maxWidth: '100%',
+                                                position: 'relative',
+                                              }}
+                                            >
+                                              <Bar
+                                                options={getGlobalUgelChartOptions(globalUgelData.maxGlobalScore, globalUgelData.ugelList)}
+                                                data={{
+                                                  labels: globalUgelData.labels,
+                                                  datasets: globalUgelData.datasets,
+                                                }}
+                                                plugins={[barDataLabelPlugin]}
+                                              />
+                                            </div>
+                                          ) : (
+                                            <div
+                                              style={{
+                                                minHeight: '380px',
+                                                width: '100%',
+                                                overflowX: globalUgelData.labels.length > 14 ? 'auto' : 'visible',
+                                                position: 'relative',
+                                              }}
+                                            >
+                                              <div
+                                                style={{
+                                                  minWidth: globalUgelData.labels.length > 14 ? `${globalUgelData.labels.length * 42}px` : '100%',
+                                                  height: '360px',
+                                                }}
+                                              >
+                                                <Bar
+                                                  options={getGlobalUgelVerticalChartOptions(globalUgelData.maxGlobalScore, globalUgelData.ugelList)}
+                                                  data={{
+                                                    labels: globalUgelData.labels,
+                                                    datasets: globalUgelData.datasets,
+                                                  }}
+                                                  plugins={[barDataLabelPlugin]}
+                                                />
+                                              </div>
+                                            </div>
+                                          )}
+                                          {renderDomainLevelRanges()}
+                                        </>
+                                      ) : (
+                                        <div className={styles.emptyDimensionChart}>
+                                          <p>No se encontraron registros evaluados para las UGELs.</p>
+                                        </div>
+                                      )}
                                     </div>
                                   );
-                                })}
-                              </div>
-                              <div className={styles.totalBadge}>
-                                Total: {stats.total} respuestas
+                                })()}
+
+                                {/* Card 2: Rendimiento Global por Especialista */}
+                                {(() => {
+                                  const globalEspData = getGlobalEspecialistaData(globalEspColor);
+                                  const hasData = globalEspData.labels.length > 0;
+                                  const top10Labels = globalEspData.labels.slice(0, 10);
+                                  const orient = getCardOrientation('global_esp');
+
+                                  return (
+                                    <div className={`${styles.dimensionChartCard} ${styles.dimensionChartCardCompact}`} style={{ width: '100%' }}>
+                                      <div
+                                        className={styles.dimensionChartHeader}
+                                        style={{
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                          alignItems: 'flex-start',
+                                          flexWrap: 'wrap',
+                                          gap: '0.5rem',
+                                        }}
+                                      >
+                                        <div>
+                                          <h3 className={styles.dimensionChartMainTitle}>
+                                            <span
+                                              className={styles.sectionTitleIndicator}
+                                              style={{
+                                                display: 'inline-block',
+                                                verticalAlign: 'middle',
+                                                marginRight: '8px',
+                                                background: globalEspColor,
+                                              }}
+                                            ></span>
+                                            Rendimiento Global por Especialista
+                                          </h3>
+                                          <p className={styles.dimensionChartSubtitle}>
+                                            TOP RANKING GENERAL (TODAS LAS DIMENSIONES)
+                                            <span style={{ display: 'block', fontSize: '0.78rem', color: '#64748b', marginTop: '2px', fontWeight: 500 }}>
+                                              {globalEspData.totalQuestions} criterios evaluados · Puntaje máx: {globalEspData.maxGlobalScore} pts
+                                            </span>
+                                          </p>
+                                        </div>
+
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                          <div className={styles.segmentedControl}>
+                                            <button
+                                              type="button"
+                                              className={`${styles.segmentedBtn} ${orient === 'horizontal' ? styles.segmentedBtnActive : ''}`}
+                                              onClick={() => setCardOrientation('global_esp', 'horizontal')}
+                                              title="Vista Horizontal"
+                                              aria-label="Vista Horizontal"
+                                              style={{ padding: '0.35rem 0.6rem' }}
+                                            >
+                                              <RiBarChartHorizontalLine style={{ fontSize: '1.1rem' }} />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className={`${styles.segmentedBtn} ${orient === 'vertical' ? styles.segmentedBtnActive : ''}`}
+                                              onClick={() => setCardOrientation('global_esp', 'vertical')}
+                                              title="Vista Vertical"
+                                              aria-label="Vista Vertical"
+                                              style={{ padding: '0.35rem 0.6rem' }}
+                                            >
+                                              <RiBarChart2Line style={{ fontSize: '1.1rem' }} />
+                                            </button>
+                                          </div>
+
+                                          <div className={styles.colorPickerHeaderWrapper}>
+                                            <label
+                                              className={styles.colorPickerCircle}
+                                              style={{ background: globalEspColor }}
+                                              title="Cambiar color del gráfico"
+                                            >
+                                              <input
+                                                type="color"
+                                                value={globalEspColor}
+                                                onChange={(e) => setGlobalEspColor(e.target.value)}
+                                                className={styles.hiddenColorInput}
+                                              />
+                                            </label>
+                                          </div>
+
+                                          {hasData && (
+                                            <button
+                                              onClick={() => setSelectedDimensionModal({ dim: { nombre: 'Evaluación Global Consolidada' }, type: 'global_especialista' })}
+                                              className={styles.btnVistaCompleta}
+                                              title="Abrir vista completa con todos los especialistas"
+                                            >
+                                              <RiFullscreenLine />
+                                              <span>Vista completa ({globalEspData.labels.length})</span>
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {hasData ? (
+                                        <>
+                                          {orient === 'horizontal' ? (
+                                            <div
+                                              className={styles.chartWrapper}
+                                              style={{
+                                                minHeight: `${Math.max(260, top10Labels.length * 40)}px`,
+                                                width: '100%',
+                                                maxWidth: '100%',
+                                                position: 'relative',
+                                              }}
+                                            >
+                                              <Bar
+                                                options={getGlobalEspecialistaChartOptions(globalEspData.maxGlobalScore, globalEspData.espList.slice(0, 10))}
+                                                data={{
+                                                  labels: top10Labels,
+                                                  datasets: globalEspData.datasets.map((ds: any) => ({
+                                                    ...ds,
+                                                    data: ds.data.slice(0, 10),
+                                                    rawScores: ds.rawScores?.slice(0, 10),
+                                                    phaseNames: ds.phaseNames?.slice(0, 10),
+                                                    evalDates: ds.evalDates?.slice(0, 10),
+                                                    backgroundColor: Array.isArray(ds.backgroundColor) ? ds.backgroundColor.slice(0, 10) : ds.backgroundColor,
+                                                    borderColor: Array.isArray(ds.borderColor) ? ds.borderColor.slice(0, 10) : ds.borderColor,
+                                                  })),
+                                                }}
+                                                plugins={[barDataLabelPlugin]}
+                                              />
+                                            </div>
+                                          ) : (
+                                            <div
+                                              style={{
+                                                minHeight: '380px',
+                                                width: '100%',
+                                                overflowX: top10Labels.length > 10 ? 'auto' : 'visible',
+                                                position: 'relative',
+                                              }}
+                                            >
+                                              <div
+                                                style={{
+                                                  minWidth: top10Labels.length > 10 ? `${top10Labels.length * 42}px` : '100%',
+                                                  height: '360px',
+                                                }}
+                                              >
+                                                <Bar
+                                                  options={getGlobalEspecialistaVerticalChartOptions(globalEspData.maxGlobalScore, globalEspData.espList.slice(0, 10))}
+                                                  data={{
+                                                    labels: top10Labels,
+                                                    datasets: globalEspData.datasets.map((ds: any) => ({
+                                                      ...ds,
+                                                      data: ds.data.slice(0, 10),
+                                                      rawScores: ds.rawScores?.slice(0, 10),
+                                                      phaseNames: ds.phaseNames?.slice(0, 10),
+                                                      evalDates: ds.evalDates?.slice(0, 10),
+                                                      backgroundColor: Array.isArray(ds.backgroundColor) ? ds.backgroundColor.slice(0, 10) : ds.backgroundColor,
+                                                      borderColor: Array.isArray(ds.borderColor) ? ds.borderColor.slice(0, 10) : ds.borderColor,
+                                                    })),
+                                                  }}
+                                                  plugins={[barDataLabelPlugin]}
+                                                />
+                                              </div>
+                                            </div>
+                                          )}
+                                          {renderDomainLevelRanges()}
+                                        </>
+                                      ) : (
+                                        <div className={styles.emptyDimensionChart}>
+                                          <p>No se encontraron especialistas evaluados.</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
                           );
-                        })}
-                      </div>
+                        }
+
+                        // 2. SECCIÓN CONSOLIDADO GLOBAL Y NIVELES (TORTA)
+                        if (secId === 'pie_charts') {
+                          return (
+                            <div key="pie_charts" className={styles.globalChartsGrid}>
+                              <div className={styles.chartContainer}>
+                                <h3 className={styles.sectionTitle}>
+                                  <span className={styles.sectionTitleIndicator}></span>
+                                  <span>Consolidado Global de Resultados</span>
+                                </h3>
+                                <div className={styles.pieChartWrapper}>
+                                  <Pie options={pieOptions} data={getPieData()} />
+                                </div>
+                                <div className={styles.statsGrid}>
+                                  <div className={styles.statItem}>
+                                    <span className={styles.statLabel}>Total Evaluados</span>
+                                    <span className={styles.statValue}>{dataFiltradaEspecialistaDirectorTabla?.length || 0}</span>
+                                  </div>
+                                  {dataEvaluacionDocente.escala?.map((item, index) => {
+                                    const values = [dataConsolidadoGlobal?.a, dataConsolidadoGlobal?.b, dataConsolidadoGlobal?.c, dataConsolidadoGlobal?.d];
+                                    return (
+                                      <div key={index} className={styles.statItem}>
+                                        <span className={styles.statLabel}>{item.descripcion}</span>
+                                        <span className={styles.statValue}>{values[index] || 0}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {dataEvaluacionDocente.niveles && dataEvaluacionDocente.niveles.length > 0 && (
+                                <div className={styles.chartContainer}>
+                                  <h3 className={styles.sectionTitle}>
+                                    <span className={styles.sectionTitleIndicator}></span>
+                                    <span>Distribución por Niveles de Logro</span>
+                                  </h3>
+                                  <div className={styles.pieChartWrapper}>
+                                    <Pie
+                                      options={{
+                                        ...pieOptions,
+                                        plugins: { ...pieOptions.plugins, title: { ...pieOptions.plugins.title, text: 'Especialistas por Nivel de Logro' } }
+                                      }}
+                                      data={getLevelsData()}
+                                    />
+                                  </div>
+                                  <div className={styles.statsGrid}>
+                                    {dataEvaluacionDocente.niveles.map((nivel, index) => {
+                                      const count = dataFiltradaEspecialistaDirectorTabla.filter(reporte => {
+                                        const score = reporte.calificacion || 0;
+                                        const matched = getNivelLogro(score, dataEvaluacionDocente.niveles);
+                                        return matched?.nivel === nivel.nivel;
+                                      }).length;
+                                      return (
+                                        <div key={index} className={styles.statItem}>
+                                          <span className={styles.statLabel} style={{ color: nivel.color }}>{nivel.nivel}</span>
+                                          <span className={styles.statValue}>{count}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {dimensionesEspecialistas && dimensionesEspecialistas.length > 0 && (
+                                <div className={styles.chartContainer}>
+                                  <h3 className={styles.sectionTitle}>
+                                    <span className={styles.sectionTitleIndicator} style={{ background: '#8b5cf6' }}></span>
+                                    <span>Distribución Proporcional por Dominio</span>
+                                  </h3>
+                                  <div className={styles.pieChartWrapper} style={{ maxWidth: '380px', width: '100%' }}>
+                                    <Pie
+                                      options={{
+                                        responsive: true,
+                                        maintainAspectRatio: true,
+                                        plugins: {
+                                          title: {
+                                            display: true,
+                                            text: 'Promedio Comparativo por Dominio',
+                                            font: {
+                                              family: 'Montserrat, sans-serif',
+                                              size: 13,
+                                              weight: 'bold' as const,
+                                            },
+                                            padding: {
+                                              bottom: 12,
+                                            },
+                                          },
+                                          legend: {
+                                            display: false,
+                                          },
+                                          tooltip: {
+                                            callbacks: {
+                                              label: (context: any) => {
+                                                const dim = dimensionesEspecialistas[context.dataIndex];
+                                                const score = context.parsed;
+                                                const preguntasDim = getPreguntaRespuestaDocentes.filter((p: any) => p.dimensionId === dim?.id);
+                                                const countQuestions = preguntasDim.length || 1;
+                                                const maxScaleVal = Math.max(1, ...(dataEvaluacionDocente.escala?.map((e: any) => Number(e.value) || 0) || [3]));
+                                                const maxDomainScore = countQuestions * maxScaleVal;
+                                                const nivelObj = (dim?.niveles && dim.niveles.length > 0)
+                                                  ? getNivelLogro(score, dim.niveles)
+                                                  : getNivelLogroDominio(score, maxDomainScore, dim);
+                                                const rangeText = (nivelObj && nivelObj.min !== undefined && nivelObj.max !== undefined)
+                                                  ? ` (${nivelObj.min} - ${nivelObj.max} pts)`
+                                                  : '';
+                                                return ` Puntaje Promedio: ${score} pts ${nivelObj?.nivel ? `[${nivelObj.nivel}${rangeText}]` : ''}`;
+                                              },
+                                            },
+                                          },
+                                        },
+                                      }}
+                                      data={getDimensionPieData()}
+                                    />
+                                  </div>
+                                  <div className={styles.statsGrid}>
+                                    {dimensionesEspecialistas.map((dim: any, index: number) => {
+                                      const pieData = getDimensionPieData();
+                                      const value = pieData.datasets[0]?.data[index] || 0;
+                                      const color = getDomainColor(dim, index);
+
+                                      const preguntasDim = getPreguntaRespuestaDocentes.filter((p) => p.dimensionId === dim.id);
+                                      const countQuestions = preguntasDim.length || 1;
+                                      const maxScaleVal = Math.max(1, ...(dataEvaluacionDocente.escala?.map((e: any) => Number(e.value) || 0) || [3]));
+                                      const maxDomainScore = countQuestions * maxScaleVal;
+                                      const nivelObj = (dim.niveles && dim.niveles.length > 0)
+                                        ? getNivelLogro(value, dim.niveles)
+                                        : getNivelLogroDominio(value, maxDomainScore, dim);
+
+                                      let domainLevels = (dim.niveles && dim.niveles.length > 0) ? dim.niveles : null;
+                                      if (!domainLevels) {
+                                        const globalNiveles = dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje || [];
+                                        const maxGlobalScale = Math.max(1, ...(globalNiveles.map((n: any) => Number(n.max) || 0) || [maxDomainScore]));
+                                        domainLevels = globalNiveles.map((n: any) => ({
+                                          ...n,
+                                          min: Number(((Number(n.min || 0) / maxGlobalScale) * maxDomainScore).toFixed(0)),
+                                          max: Number(((Number(n.max || 0) / maxGlobalScale) * maxDomainScore).toFixed(0)),
+                                        }));
+                                      }
+
+                                      const currentLevel = domainLevels?.find((lvl: any) => nivelObj?.nivel === lvl.nivel) || nivelObj;
+
+                                      return (
+                                        <div
+                                          key={dim.id || index}
+                                          className={styles.statItem}
+                                          style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                          }}
+                                        >
+                                          <span
+                                            className={styles.statLabel}
+                                            style={{
+                                              color,
+                                              fontWeight: 600,
+                                              textAlign: 'center',
+                                              textTransform: 'uppercase',
+                                              lineHeight: 1.3,
+                                              wordBreak: 'break-word',
+                                              whiteSpace: 'normal',
+                                            }}
+                                          >
+                                            {dim.nombre}
+                                          </span>
+                                          <span className={styles.statValue}>{value}</span>
+
+                                          {currentLevel && (
+                                            <div
+                                              style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '5px',
+                                                marginTop: '4px',
+                                                flexWrap: 'nowrap',
+                                              }}
+                                            >
+                                              <span
+                                                style={{
+                                                  fontSize: '0.72rem',
+                                                  color: currentLevel.color || '#1e293b',
+                                                  fontWeight: 700,
+                                                  background: hexToRgba(currentLevel.color || '#3b82f6', 0.14),
+                                                  padding: '2px 8px',
+                                                  borderRadius: '6px',
+                                                  border: `1px solid ${hexToRgba(currentLevel.color || '#3b82f6', 0.35)}`,
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  gap: '5px',
+                                                  whiteSpace: 'nowrap',
+                                                }}
+                                              >
+                                                <span
+                                                  style={{
+                                                    width: '6px',
+                                                    height: '6px',
+                                                    borderRadius: '50%',
+                                                    background: currentLevel.color || '#3b82f6',
+                                                    display: 'inline-block',
+                                                    flexShrink: 0,
+                                                  }}
+                                                />
+                                                {currentLevel.min !== undefined && currentLevel.max !== undefined
+                                                  ? `${currentLevel.min} - ${currentLevel.max} `
+                                                  : ''}
+                                                {currentLevel.nivel}
+                                              </span>
+
+                                              {domainLevels && domainLevels.length > 0 && (
+                                                <div className={styles.domainLevelTooltipWrapper}>
+                                                  <button
+                                                    type="button"
+                                                    className={styles.domainLevelInfoBtn}
+                                                    title="Ver escala completa de niveles"
+                                                    aria-label="Ver escala completa de niveles"
+                                                  >
+                                                    <RiInformationLine style={{ fontSize: '0.85rem' }} />
+                                                  </button>
+
+                                                  <div className={styles.domainLevelTooltipContent}>
+                                                    <div className={styles.domainLevelTooltipArrow} />
+                                                    <span className={styles.domainLevelTooltipTitle}>
+                                                      Escala: {dim.nombre}
+                                                    </span>
+                                                    <div className={styles.domainLevelTooltipList}>
+                                                      {domainLevels.map((lvl: any, lIdx: number) => {
+                                                        const isCurrent = nivelObj?.nivel === lvl.nivel;
+                                                        return (
+                                                          <div
+                                                            key={lIdx}
+                                                            className={`${styles.domainLevelTooltipItem} ${isCurrent ? styles.domainLevelTooltipItemActive : ''}`}
+                                                          >
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                              <span
+                                                                style={{
+                                                                  width: '7px',
+                                                                  height: '7px',
+                                                                  borderRadius: '50%',
+                                                                  background: lvl.color || '#3b82f6',
+                                                                  display: 'inline-block',
+                                                                  flexShrink: 0,
+                                                                }}
+                                                              />
+                                                              <span style={{ color: isCurrent ? '#ffffff' : '#cbd5e1' }}>
+                                                                {lvl.nivel}
+                                                              </span>
+                                                              {isCurrent && (
+                                                                <span style={{ fontSize: '0.65rem', color: '#38bdf8', fontWeight: 700 }}>
+                                                                  (Actual)
+                                                                </span>
+                                                              )}
+                                                            </div>
+                                                            <span style={{ color: isCurrent ? '#38bdf8' : '#94a3b8', fontWeight: 600 }}>
+                                                              {lvl.min ?? 0} - {lvl.max ?? 0} pts
+                                                            </span>
+                                                          </div>
+                                                        );
+                                                      })}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                              {/* Card: Puntaje Promedio Global por Dominio */}
+                              {(() => {
+                                const dimData = getDimensionData();
+                                const orient = getCardOrientation('global_dim_avg');
+
+                                return (
+                                  <div className={`${styles.chartContainer} ${styles.fullWidthChart}`}>
+                                    <div
+                                      className={styles.dimensionChartHeader}
+                                      style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'flex-start',
+                                        flexWrap: 'wrap',
+                                        gap: '0.5rem',
+                                        marginBottom: '1rem',
+                                      }}
+                                    >
+                                      <div>
+                                        <h3 className={styles.dimensionChartMainTitle}>
+                                          <span
+                                            className={styles.sectionTitleIndicator}
+                                            style={{
+                                              display: 'inline-block',
+                                              verticalAlign: 'middle',
+                                              marginRight: '8px',
+                                              background: '#8b5cf6',
+                                            }}
+                                          ></span>
+                                          Puntaje Promedio Global por Dominio
+                                        </h3>
+                                        <p className={styles.dimensionChartSubtitle}>
+                                          RENDIMIENTO GLOBAL CONSOLIDADO POR DOMINIO (SUMA DE CRITERIOS)
+                                        </p>
+                                      </div>
+
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <div className={styles.segmentedControl}>
+                                          <button
+                                            type="button"
+                                            className={`${styles.segmentedBtn} ${orient === 'horizontal' ? styles.segmentedBtnActive : ''}`}
+                                            onClick={() => setCardOrientation('global_dim_avg', 'horizontal')}
+                                            title="Vista Horizontal"
+                                            aria-label="Vista Horizontal"
+                                            style={{ padding: '0.35rem 0.6rem' }}
+                                          >
+                                            <RiBarChartHorizontalLine style={{ fontSize: '1.1rem' }} />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className={`${styles.segmentedBtn} ${orient === 'vertical' ? styles.segmentedBtnActive : ''}`}
+                                            onClick={() => setCardOrientation('global_dim_avg', 'vertical')}
+                                            title="Vista Vertical"
+                                            aria-label="Vista Vertical"
+                                            style={{ padding: '0.35rem 0.6rem' }}
+                                          >
+                                            <RiBarChart2Line style={{ fontSize: '1.1rem' }} />
+                                          </button>
+                                        </div>
+
+                                        {dimData.labels.length > 0 && (
+                                          <button
+                                            onClick={() => setSelectedDimensionModal({ dim: { nombre: 'Puntaje Promedio Global por Dominio' }, type: 'global_dominio' })}
+                                            className={styles.btnVistaCompleta}
+                                            title="Abrir vista completa de promedios por dominio"
+                                          >
+                                            <RiFullscreenLine />
+                                            <span>Vista completa ({dimData.labels.length})</span>
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {orient === 'horizontal' ? (
+                                      <div
+                                        className={styles.chartWrapper}
+                                        style={{
+                                          minHeight: `${Math.max(260, (dimensionesEspecialistas?.length || 1) * 85)}px`,
+                                          width: '100%',
+                                          maxWidth: '100%',
+                                          position: 'relative',
+                                        }}
+                                      >
+                                        <Bar
+                                          options={getDimensionBarOptions(dimData.dimList)}
+                                          data={{
+                                            labels: dimData.labels,
+                                            datasets: dimData.datasets,
+                                          }}
+                                          plugins={[barDataLabelPlugin]}
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div
+                                        style={{
+                                          minHeight: '360px',
+                                          width: '100%',
+                                          overflowX: dimData.labels.length > 6 ? 'auto' : 'visible',
+                                          position: 'relative',
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            minWidth: dimData.labels.length > 6 ? `${dimData.labels.length * 90}px` : '100%',
+                                            height: '350px',
+                                          }}
+                                        >
+                                          <Bar
+                                            options={getDimensionVerticalBarOptions(dimData.dimList)}
+                                            data={{
+                                              labels: dimData.labels,
+                                              datasets: dimData.datasets,
+                                            }}
+                                            plugins={[barDataLabelPlugin]}
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {renderGlobalDomainLevelRanges()}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          );
+                        }
+
+                        // 3. SECCIÓN RENDIMIENTO POR UGEL SEGÚN DOMINIO
+                        if (secId === 'dimensiones_ugel') {
+                          if (!dimensionesEspecialistas || dimensionesEspecialistas.length === 0) return null;
+                          return (
+                            <div key="dimensiones_ugel" className={styles.dimensionSectionWrapper}>
+                              <div className={styles.sectionHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                                <div>
+                                  <h2 className={styles.analyticsTitle}>Rendimiento por UGEL según Dominio</h2>
+                                  <p className={styles.analyticsSubtitle}>
+                                    Comparativa y ranking del puntaje promedio por UGEL en cada una de las dimensiones evaluadas
+                                  </p>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                  {/* Switch de modo de vista: Cuadrícula vs Compacto */}
+                                  <div className={styles.segmentedControl}>
+                                    <button
+                                      type="button"
+                                      className={`${styles.segmentedBtn} ${ugelViewMode === 'grid' ? styles.segmentedBtnActive : ''}`}
+                                      onClick={() => setUgelViewMode('grid')}
+                                      title="Ver todos los dominios simultáneamente en cuadrícula"
+                                    >
+                                      <RiLayoutGridLine style={{ fontSize: '1rem', color: ugelViewMode === 'grid' ? '#2563eb' : '#64748b' }} />
+                                      <span>Ver Todos</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={`${styles.segmentedBtn} ${ugelViewMode === 'compact' ? styles.segmentedBtnActive : ''}`}
+                                      onClick={() => setUgelViewMode('compact')}
+                                      title="Ver un dominio a la vez con controles de navegación"
+                                    >
+                                      <RiSlideshowLine style={{ fontSize: '1rem', color: ugelViewMode === 'compact' ? '#2563eb' : '#64748b' }} />
+                                      <span>Vista Compacta</span>
+                                    </button>
+                                  </div>
+
+                                  {/* Paginador carousel en modo compacto */}
+                                  {ugelViewMode === 'compact' && dimensionesEspecialistas.length > 0 && (
+                                    <div className={styles.carouselPaginationControl}>
+                                      <button
+                                        type="button"
+                                        onClick={() => setCurrentUgelDimIndex((prev) => Math.max(0, prev - 1))}
+                                        disabled={currentUgelDimIndex === 0}
+                                        className={styles.carouselNavBtn}
+                                        title="Dominio anterior"
+                                      >
+                                        <RiArrowLeftSLine />
+                                      </button>
+                                      <span className={styles.carouselPaginationText}>
+                                        Dominio <strong>{currentUgelDimIndex + 1}</strong> de <strong>{dimensionesEspecialistas.length}</strong>
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setCurrentUgelDimIndex((prev) => Math.min(dimensionesEspecialistas.length - 1, prev + 1))}
+                                        disabled={currentUgelDimIndex >= dimensionesEspecialistas.length - 1}
+                                        className={styles.carouselNavBtn}
+                                        title="Siguiente dominio"
+                                      >
+                                        <RiArrowRightSLine />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Tabs de dominios en modo compacto */}
+                              {ugelViewMode === 'compact' && dimensionesEspecialistas.length > 1 && (
+                                <div className={styles.domainSelectorTabs}>
+                                  {dimensionesEspecialistas.map((d: any, dIdx: number) => {
+                                    const isActive = dIdx === currentUgelDimIndex;
+                                    const dColor = getDomainColor(d, dIdx);
+                                    return (
+                                      <button
+                                        key={d.id || dIdx}
+                                        type="button"
+                                        onClick={() => setCurrentUgelDimIndex(dIdx)}
+                                        className={`${styles.domainTabBtn} ${isActive ? styles.domainTabBtnActive : ''}`}
+                                        style={{
+                                          borderColor: isActive ? dColor : undefined,
+                                          backgroundColor: isActive ? hexToRgba(dColor, 0.08) : undefined,
+                                          color: isActive ? dColor : undefined,
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            width: '8px',
+                                            height: '8px',
+                                            borderRadius: '50%',
+                                            background: dColor,
+                                          }}
+                                        />
+                                        <span>{d.nombre || `Dominio ${dIdx + 1}`}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {(() => {
+                                const renderUgelCard = (dim: any, idx: number, isCompact: boolean = false) => {
+                                  const domainColor = getDomainColor(dim, idx);
+                                  const ugelChartData = getUGELDataForDimension(dim.id, domainColor);
+                                  const hasData = ugelChartData.labels.length > 0;
+                                  const cardKey = `ugel_${dim.id || idx}`;
+                                  const orient = getCardOrientation(cardKey);
+
+                                  return (
+                                    <div
+                                      key={dim.id || idx}
+                                      className={`${styles.dimensionChartCard} ${isCompact ? styles.dimensionChartCardCompact : ''}`}
+                                    >
+                                      <div
+                                        className={styles.dimensionChartHeader}
+                                        style={{
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                          alignItems: 'flex-start',
+                                          flexWrap: 'wrap',
+                                          gap: '0.5rem',
+                                        }}
+                                      >
+                                        <div>
+                                          <h3 className={styles.dimensionChartMainTitle}>
+                                            <span
+                                              className={styles.sectionTitleIndicator}
+                                              style={{
+                                                display: 'inline-block',
+                                                verticalAlign: 'middle',
+                                                marginRight: '8px',
+                                                background: domainColor,
+                                              }}
+                                            ></span>
+                                            Dimensión por UGEL
+                                          </h3>
+                                          <p className={styles.dimensionChartSubtitle}>
+                                            {dim.nombre || `DIMENSIÓN ${idx + 1}`}
+                                            {ugelChartData.totalItems > 0 && (
+                                              <span style={{ display: 'block', fontSize: '0.78rem', color: '#64748b', marginTop: '2px', fontWeight: 500 }}>
+                                                {ugelChartData.totalItems} criterios · Puntaje máx: {ugelChartData.maxDomainScore} pts
+                                              </span>
+                                            )}
+                                          </p>
+                                        </div>
+
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                          <div className={styles.segmentedControl}>
+                                            <button
+                                              type="button"
+                                              className={`${styles.segmentedBtn} ${orient === 'horizontal' ? styles.segmentedBtnActive : ''}`}
+                                              onClick={() => setCardOrientation(cardKey, 'horizontal')}
+                                              title="Vista Horizontal"
+                                              aria-label="Vista Horizontal"
+                                              style={{ padding: '0.35rem 0.6rem' }}
+                                            >
+                                              <RiBarChartHorizontalLine style={{ fontSize: '1.1rem' }} />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className={`${styles.segmentedBtn} ${orient === 'vertical' ? styles.segmentedBtnActive : ''}`}
+                                              onClick={() => setCardOrientation(cardKey, 'vertical')}
+                                              title="Vista Vertical"
+                                              aria-label="Vista Vertical"
+                                              style={{ padding: '0.35rem 0.6rem' }}
+                                            >
+                                              <RiBarChart2Line style={{ fontSize: '1.1rem' }} />
+                                            </button>
+                                          </div>
+
+                                          <div className={styles.colorPickerHeaderWrapper}>
+                                            <label
+                                              className={styles.colorPickerCircle}
+                                              style={{ background: domainColor }}
+                                              title={`Cambiar color para ${dim.nombre}`}
+                                            >
+                                              <input
+                                                type="color"
+                                                value={domainColor}
+                                                onChange={(e) => handleColorChange(dim.id, e.target.value)}
+                                                className={styles.hiddenColorInput}
+                                              />
+                                            </label>
+                                          </div>
+
+                                          {hasData && (
+                                            <button
+                                              onClick={() => setSelectedDimensionModal({ dim, type: 'ugel' })}
+                                              className={styles.btnVistaCompleta}
+                                              title="Abrir vista completa con todas las UGELs"
+                                            >
+                                              <RiFullscreenLine />
+                                              <span>Vista completa ({ugelChartData.labels.length})</span>
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {hasData ? (
+                                        <>
+                                          {orient === 'horizontal' ? (
+                                            <div
+                                              className={styles.chartWrapper}
+                                              style={{
+                                                minHeight: `${Math.max(220, ugelChartData.labels.length * (isCompact ? 40 : 36))}px`,
+                                                width: '100%',
+                                                maxWidth: '100%',
+                                                position: 'relative',
+                                              }}
+                                            >
+                                              <Bar
+                                                options={getUgelDimensionChartOptions(ugelChartData.maxDomainScore, ugelChartData.ugelList)}
+                                                data={{
+                                                  labels: ugelChartData.labels,
+                                                  datasets: ugelChartData.datasets,
+                                                }}
+                                                plugins={[barDataLabelPlugin]}
+                                              />
+                                            </div>
+                                          ) : (
+                                            <div
+                                              style={{
+                                                minHeight: '360px',
+                                                width: '100%',
+                                                overflowX: ugelChartData.labels.length > 10 ? 'auto' : 'visible',
+                                                position: 'relative',
+                                              }}
+                                            >
+                                              <div
+                                                style={{
+                                                  minWidth: ugelChartData.labels.length > 10 ? `${ugelChartData.labels.length * 40}px` : '100%',
+                                                  height: '340px',
+                                                }}
+                                              >
+                                                <Bar
+                                                  options={getUgelDimensionVerticalChartOptions(ugelChartData.maxDomainScore, ugelChartData.ugelList)}
+                                                  data={{
+                                                    labels: ugelChartData.labels,
+                                                    datasets: ugelChartData.datasets,
+                                                  }}
+                                                  plugins={[barDataLabelPlugin]}
+                                                />
+                                              </div>
+                                            </div>
+                                          )}
+                                          {renderDomainLevelRanges(dim)}
+                                        </>
+                                      ) : (
+                                        <div className={styles.emptyDimensionChart}>
+                                          <p>No se encontraron registros evaluados para esta dimensión.</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                };
+
+                                if (ugelViewMode === 'compact') {
+                                  const currentDim = dimensionesEspecialistas[currentUgelDimIndex] || dimensionesEspecialistas[0];
+                                  return (
+                                    <div className={styles.compactDimensionWrapper}>
+                                      {currentDim && renderUgelCard(currentDim, currentUgelDimIndex, true)}
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <div className={styles.dimensionChartsGrid}>
+                                    {dimensionesEspecialistas.map((dim: any, idx: number) => renderUgelCard(dim, idx, false))}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          );
+                        }
+
+                        // 4. SECCIÓN RENDIMIENTO POR ESPECIALISTA SEGÚN DOMINIO
+                        if (secId === 'dimensiones_especialistas') {
+                          if (!dimensionesEspecialistas || dimensionesEspecialistas.length === 0) return null;
+                          return (
+                            <div key="dimensiones_especialistas" className={styles.dimensionSectionWrapper}>
+                              <div className={styles.sectionHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                                <div>
+                                  <h2 className={styles.analyticsTitle}>Rendimiento por Especialista según Dominio</h2>
+                                  <p className={styles.analyticsSubtitle}>
+                                    Comparativa y ranking del puntaje total obtenido por cada especialista en las dimensiones evaluadas
+                                  </p>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                  {/* Switch de modo de vista: Cuadrícula vs Compacto */}
+                                  <div className={styles.segmentedControl}>
+                                    <button
+                                      type="button"
+                                      className={`${styles.segmentedBtn} ${espViewMode === 'grid' ? styles.segmentedBtnActive : ''}`}
+                                      onClick={() => setEspViewMode('grid')}
+                                      title="Ver todos los dominios simultáneamente en cuadrícula"
+                                    >
+                                      <RiLayoutGridLine style={{ fontSize: '1rem', color: espViewMode === 'grid' ? '#2563eb' : '#64748b' }} />
+                                      <span>Ver Todos</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={`${styles.segmentedBtn} ${espViewMode === 'compact' ? styles.segmentedBtnActive : ''}`}
+                                      onClick={() => setEspViewMode('compact')}
+                                      title="Ver un dominio a la vez con controles de navegación"
+                                    >
+                                      <RiSlideshowLine style={{ fontSize: '1rem', color: espViewMode === 'compact' ? '#2563eb' : '#64748b' }} />
+                                      <span>Vista Compacta</span>
+                                    </button>
+                                  </div>
+
+                                  {/* Paginador carousel en modo compacto */}
+                                  {espViewMode === 'compact' && dimensionesEspecialistas.length > 0 && (
+                                    <div className={styles.carouselPaginationControl}>
+                                      <button
+                                        type="button"
+                                        onClick={() => setCurrentEspDimIndex((prev) => Math.max(0, prev - 1))}
+                                        disabled={currentEspDimIndex === 0}
+                                        className={styles.carouselNavBtn}
+                                        title="Dominio anterior"
+                                      >
+                                        <RiArrowLeftSLine />
+                                      </button>
+                                      <span className={styles.carouselPaginationText}>
+                                        Dominio <strong>{currentEspDimIndex + 1}</strong> de <strong>{dimensionesEspecialistas.length}</strong>
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setCurrentEspDimIndex((prev) => Math.min(dimensionesEspecialistas.length - 1, prev + 1))}
+                                        disabled={currentEspDimIndex >= dimensionesEspecialistas.length - 1}
+                                        className={styles.carouselNavBtn}
+                                        title="Siguiente dominio"
+                                      >
+                                        <RiArrowRightSLine />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Tabs de dominios en modo compacto */}
+                              {espViewMode === 'compact' && dimensionesEspecialistas.length > 1 && (
+                                <div className={styles.domainSelectorTabs}>
+                                  {dimensionesEspecialistas.map((d: any, dIdx: number) => {
+                                    const isActive = dIdx === currentEspDimIndex;
+                                    const dColor = getDomainColor(d, dIdx);
+                                    return (
+                                      <button
+                                        key={d.id || dIdx}
+                                        type="button"
+                                        onClick={() => setCurrentEspDimIndex(dIdx)}
+                                        className={`${styles.domainTabBtn} ${isActive ? styles.domainTabBtnActive : ''}`}
+                                        style={{
+                                          borderColor: isActive ? dColor : undefined,
+                                          backgroundColor: isActive ? hexToRgba(dColor, 0.08) : undefined,
+                                          color: isActive ? dColor : undefined,
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            width: '8px',
+                                            height: '8px',
+                                            borderRadius: '50%',
+                                            background: dColor,
+                                          }}
+                                        />
+                                        <span>{d.nombre || `Dominio ${dIdx + 1}`}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {(() => {
+                                const renderEspCard = (dim: any, idx: number, isCompact: boolean = false) => {
+                                  const domainColor = getDomainColor(dim, idx);
+                                  const espChartData = getEspecialistaDataForDimension(dim.id, domainColor);
+                                  const hasData = espChartData.labels.length > 0;
+                                  const top10Labels = espChartData.labels.slice(0, 10);
+                                  const cardKey = `esp_${dim.id || idx}`;
+                                  const orient = getCardOrientation(cardKey);
+
+                                  return (
+                                    <div
+                                      key={dim.id || idx}
+                                      className={`${styles.dimensionChartCard} ${isCompact ? styles.dimensionChartCardCompact : ''}`}
+                                    >
+                                      <div
+                                        className={styles.dimensionChartHeader}
+                                        style={{
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                          alignItems: 'flex-start',
+                                          flexWrap: 'wrap',
+                                          gap: '0.5rem',
+                                        }}
+                                      >
+                                        <div>
+                                          <h3 className={styles.dimensionChartMainTitle}>
+                                            <span
+                                              className={styles.sectionTitleIndicator}
+                                              style={{
+                                                display: 'inline-block',
+                                                verticalAlign: 'middle',
+                                                marginRight: '8px',
+                                                background: domainColor,
+                                              }}
+                                            ></span>
+                                            Dimensión por Especialista
+                                          </h3>
+                                          <p className={styles.dimensionChartSubtitle}>
+                                            {dim.nombre || `DIMENSIÓN ${idx + 1}`}
+                                            {espChartData.totalItems > 0 && (
+                                              <span style={{ display: 'block', fontSize: '0.78rem', color: '#64748b', marginTop: '2px', fontWeight: 500 }}>
+                                                {espChartData.totalItems} criterios · Puntaje máx: {espChartData.maxDomainScore} pts
+                                              </span>
+                                            )}
+                                          </p>
+                                        </div>
+
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                          <div className={styles.segmentedControl}>
+                                            <button
+                                              type="button"
+                                              className={`${styles.segmentedBtn} ${orient === 'horizontal' ? styles.segmentedBtnActive : ''}`}
+                                              onClick={() => setCardOrientation(cardKey, 'horizontal')}
+                                              title="Vista Horizontal"
+                                              aria-label="Vista Horizontal"
+                                              style={{ padding: '0.35rem 0.6rem' }}
+                                            >
+                                              <RiBarChartHorizontalLine style={{ fontSize: '1.1rem' }} />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className={`${styles.segmentedBtn} ${orient === 'vertical' ? styles.segmentedBtnActive : ''}`}
+                                              onClick={() => setCardOrientation(cardKey, 'vertical')}
+                                              title="Vista Vertical"
+                                              aria-label="Vista Vertical"
+                                              style={{ padding: '0.35rem 0.6rem' }}
+                                            >
+                                              <RiBarChart2Line style={{ fontSize: '1.1rem' }} />
+                                            </button>
+                                          </div>
+
+                                          <div className={styles.colorPickerHeaderWrapper}>
+                                            <label
+                                              className={styles.colorPickerCircle}
+                                              style={{ background: domainColor }}
+                                              title={`Cambiar color para ${dim.nombre}`}
+                                            >
+                                              <input
+                                                type="color"
+                                                value={domainColor}
+                                                onChange={(e) => handleColorChange(dim.id, e.target.value)}
+                                                className={styles.hiddenColorInput}
+                                              />
+                                            </label>
+                                          </div>
+
+                                          {hasData && (
+                                            <button
+                                              onClick={() => setSelectedDimensionModal({ dim, type: 'especialista' })}
+                                              className={styles.btnVistaCompleta}
+                                              title="Abrir vista completa con todos los especialistas"
+                                            >
+                                              <RiFullscreenLine />
+                                              <span>Vista completa ({espChartData.labels.length})</span>
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {hasData ? (
+                                        <>
+                                          {orient === 'horizontal' ? (
+                                            <div
+                                              className={styles.chartWrapper}
+                                              style={{
+                                                minHeight: `${Math.max(220, top10Labels.length * (isCompact ? 40 : 36))}px`,
+                                                width: '100%',
+                                                maxWidth: '100%',
+                                                position: 'relative',
+                                              }}
+                                            >
+                                              <Bar
+                                                options={getEspecialistaDimensionChartOptions(espChartData.maxDomainScore, espChartData.espList.slice(0, 10))}
+                                                data={{
+                                                  labels: top10Labels,
+                                                  datasets: espChartData.datasets.map((ds: any) => ({
+                                                    ...ds,
+                                                    data: ds.data.slice(0, 10),
+                                                    rawDomainScores: ds.rawDomainScores?.slice(0, 10),
+                                                    phaseNames: ds.phaseNames?.slice(0, 10),
+                                                    evalDates: ds.evalDates?.slice(0, 10),
+                                                    backgroundColor: Array.isArray(ds.backgroundColor) ? ds.backgroundColor.slice(0, 10) : ds.backgroundColor,
+                                                    borderColor: Array.isArray(ds.borderColor) ? ds.borderColor.slice(0, 10) : ds.borderColor,
+                                                  })),
+                                                }}
+                                                plugins={[barDataLabelPlugin]}
+                                              />
+                                            </div>
+                                          ) : (
+                                            <div
+                                              style={{
+                                                minHeight: '360px',
+                                                width: '100%',
+                                                overflowX: top10Labels.length > 10 ? 'auto' : 'visible',
+                                                position: 'relative',
+                                              }}
+                                            >
+                                              <div
+                                                style={{
+                                                  minWidth: top10Labels.length > 10 ? `${top10Labels.length * 40}px` : '100%',
+                                                  height: '340px',
+                                                }}
+                                              >
+                                                <Bar
+                                                  options={getEspecialistaDimensionVerticalChartOptions(espChartData.maxDomainScore, espChartData.espList.slice(0, 10))}
+                                                  data={{
+                                                    labels: top10Labels,
+                                                    datasets: espChartData.datasets.map((ds: any) => ({
+                                                      ...ds,
+                                                      data: ds.data.slice(0, 10),
+                                                      rawDomainScores: ds.rawDomainScores?.slice(0, 10),
+                                                      phaseNames: ds.phaseNames?.slice(0, 10),
+                                                      evalDates: ds.evalDates?.slice(0, 10),
+                                                      backgroundColor: Array.isArray(ds.backgroundColor) ? ds.backgroundColor.slice(0, 10) : ds.backgroundColor,
+                                                      borderColor: Array.isArray(ds.borderColor) ? ds.borderColor.slice(0, 10) : ds.borderColor,
+                                                    })),
+                                                  }}
+                                                  plugins={[barDataLabelPlugin]}
+                                                />
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {renderDomainLevelRanges(dim)}
+                                        </>
+                                      ) : (
+                                        <div className={styles.emptyDimensionChart}>
+                                          <p>No se encontraron especialistas evaluados para esta dimensión.</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                };
+
+                                if (espViewMode === 'compact') {
+                                  const currentDim = dimensionesEspecialistas[currentEspDimIndex] || dimensionesEspecialistas[0];
+                                  return (
+                                    <div className={styles.compactDimensionWrapper}>
+                                      {currentDim && renderEspCard(currentDim, currentEspDimIndex, true)}
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <div className={styles.dimensionChartsGrid}>
+                                    {dimensionesEspecialistas.map((dim: any, idx: number) => renderEspCard(dim, idx, false))}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          );
+                        }
+
+                        // 5. SECCIÓN RESULTADOS DETALLADOS POR CRITERIO
+                        if (secId === 'preguntas_criterios') {
+                          return (
+                            <div key="preguntas_criterios" className={styles.perQuestionGrid}>
+                              {getPreguntaRespuestaDocentes.map((pregunta, index) => {
+                                const stats = dataEvaluaciones.find(s => s.id === pregunta.id || s.id === pregunta.order?.toString());
+                                if (!stats) return null;
+
+                                return (
+                                  <div key={index} className={styles.chartContainer}>
+                                    <h3 className={styles.sectionTitle}>
+                                      <span className={styles.sectionTitleIndicator}></span>
+                                      <span>
+                                        {pregunta.subOrden || pregunta.order}.
+                                      </span>
+                                      <span>{pregunta.criterio}</span>
+                                    </h3>
+                                    <div className={styles.chartWrapper}>
+                                      <Bar
+                                        options={{
+                                          ...options,
+                                          plugins: {
+                                            ...options.plugins,
+                                            title: {
+                                              display: true,
+                                              text: `Resultados: ${pregunta.criterio?.substring(0, 50)}...`,
+                                            }
+                                          }
+                                        }}
+                                        data={iterateData(
+                                          stats,
+                                          dataEvaluacionDocente.escala?.map(e => e.descripcion || '') || []
+                                        )}
+                                      />
+                                    </div>
+                                    <div className={styles.statsGrid}>
+                                      {dataEvaluacionDocente.escala?.map((item, scaleIndex) => {
+                                        const values = [stats.a, stats.b, stats.c, stats.d];
+                                        return (
+                                          <div key={scaleIndex} className={styles.statItem}>
+                                            <span className={styles.statLabel}>{item.descripcion}</span>
+                                            <span className={styles.statValue}>{values[scaleIndex] || 0}</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                    <div className={styles.totalBadge}>
+                                      Total: {stats.total} respuestas
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        }
+
+                        return null;
+                      })}
                     </>
                   )
                 ) : (
@@ -2708,15 +4745,40 @@ const Reportes = () => {
       {selectedDimensionModal && typeof window !== 'undefined'
         ? (() => {
             const { dim, type } = selectedDimensionModal;
-            const currentModalColor = getDomainColor(dim, currentDimIndex);
-            const isUgel = type === 'ugel';
+            const isGlobalDominio = type === 'global_dominio';
+            const isGlobal = type === 'global_ugel' || type === 'global_especialista' || isGlobalDominio;
+            const isUgel = type === 'ugel' || type === 'global_ugel';
+            const currentModalColor = isGlobalDominio
+              ? '#8b5cf6'
+              : isGlobal
+              ? (type === 'global_ugel' ? globalUgelColor : globalEspColor)
+              : getDomainColor(dim, currentDimIndex);
 
-            const modalChartData = isUgel
-              ? getUGELDataForDimension(dim.id, currentModalColor)
-              : getEspecialistaDataForDimension(dim.id, currentModalColor);
+            let modalChartData: any;
+            if (isGlobalDominio) {
+              modalChartData = getDimensionData();
+            } else if (type === 'global_ugel') {
+              modalChartData = getGlobalUGELData(globalUgelColor);
+            } else if (type === 'global_especialista') {
+              modalChartData = getGlobalEspecialistaData(globalEspColor);
+            } else if (type === 'ugel') {
+              modalChartData = getUGELDataForDimension(dim?.id, currentModalColor);
+            } else {
+              modalChartData = getEspecialistaDataForDimension(dim?.id, currentModalColor);
+            }
 
-            const entityName = isUgel ? 'UGEL' : 'Especialista';
-            const entityPlural = isUgel ? 'UGELs' : 'Especialistas';
+            const entityName = isGlobalDominio ? 'Dominio' : (isUgel ? 'UGEL' : 'Especialista');
+            const entityPlural = isGlobalDominio ? 'Dominios' : (isUgel ? 'UGELs' : 'Especialistas');
+            const modalTitle = isGlobalDominio
+              ? 'Puntaje Promedio Global por Dominio — Vista Completa'
+              : isGlobal
+              ? `Rendimiento Global por ${entityName} — Vista Completa`
+              : `Dimensión por ${entityName} — Vista Completa`;
+            const maxScore = isGlobalDominio
+              ? maxGlobalDomainScore
+              : isGlobal
+              ? modalChartData.maxGlobalScore
+              : modalChartData.maxDomainScore;
 
             return createPortal(
               <div className={styles.fullScreenViewContainer}>
@@ -2727,15 +4789,19 @@ const Reportes = () => {
                         className={styles.sectionTitleIndicator}
                         style={{ background: currentModalColor, width: '4px', height: '24px' }}
                       ></span>
-                      Dimensión por {entityName} — Vista Completa
+                      {modalTitle}
                     </h1>
                     <p className={styles.fullScreenSubtitle}>
-                      {dim.nombre || 'Dimensión'}
-                      {modalChartData.totalItems > 0 && (
+                      {isGlobalDominio
+                        ? 'Rendimiento Global Consolidado por Dominio (Suma de Criterios)'
+                        : isGlobal
+                        ? 'Evaluación Integral Consolidada'
+                        : (dim.nombre || 'Dimensión')}
+                      {modalChartData.totalItems > 0 || modalChartData.totalQuestions > 0 ? (
                         <span style={{ display: 'inline-block', marginLeft: '8px', fontSize: '0.9rem', color: '#64748b', fontWeight: 500 }}>
-                          ({modalChartData.totalItems} criterios evaluados · Puntaje máx: {modalChartData.maxDomainScore} pts)
+                          ({isGlobal ? modalChartData.totalQuestions : modalChartData.totalItems} criterios evaluados · Puntaje máx: {maxScore} pts)
                         </span>
-                      )}
+                      ) : null}
                     </p>
                   </div>
                   <div className={styles.fullScreenActions}>
@@ -2767,7 +4833,7 @@ const Reportes = () => {
                         type="button"
                         className={`${styles.segmentedBtn} ${colorMode === 'dominio' ? styles.segmentedBtnActive : ''}`}
                         onClick={() => setColorMode('dominio')}
-                        title="Color por Dominio"
+                        title="Color por Dominio / Personalizado"
                         aria-label="Color por Dominio"
                         style={{ padding: '0.45rem 0.65rem' }}
                       >
@@ -2785,7 +4851,7 @@ const Reportes = () => {
                       </button>
                     </div>
 
-                    {totalDims > 1 && (
+                    {!isGlobal && totalDims > 1 && (
                       <div className={styles.navDimensionGroup}>
                         <button
                           onClick={handlePrevDimension}
@@ -2827,7 +4893,9 @@ const Reportes = () => {
                       title={`${modalChartData.labels.length} ${entityPlural} evaluados`}
                     >
                       <strong style={{ fontSize: '0.95rem' }}>{modalChartData.labels.length}</strong>
-                      {isUgel ? (
+                      {isGlobalDominio ? (
+                        <RiAwardLine style={{ fontSize: '1.15rem' }} />
+                      ) : isUgel ? (
                         <RiGovernmentLine style={{ fontSize: '1.15rem' }} />
                       ) : (
                         <RiGroupLine style={{ fontSize: '1.15rem' }} />
@@ -2877,9 +4945,15 @@ const Reportes = () => {
                           >
                             <Bar
                               options={
-                                isUgel
-                                  ? getUgelDimensionChartOptions(modalChartData.maxDomainScore, (modalChartData as any).ugelList)
-                                  : getEspecialistaDimensionChartOptions(modalChartData.maxDomainScore, (modalChartData as any).espList)
+                                isGlobalDominio
+                                  ? getDimensionBarOptions(modalChartData.dimList)
+                                  : type === 'global_ugel'
+                                  ? getGlobalUgelChartOptions(maxScore, modalChartData.ugelList)
+                                  : type === 'global_especialista'
+                                  ? getGlobalEspecialistaChartOptions(maxScore, modalChartData.espList)
+                                  : isUgel
+                                  ? getUgelDimensionChartOptions(maxScore, (modalChartData as any).ugelList)
+                                  : getEspecialistaDimensionChartOptions(maxScore, (modalChartData as any).espList)
                               }
                               data={{
                                 labels: modalChartData.labels,
@@ -2893,21 +4967,28 @@ const Reportes = () => {
                             style={{
                               minHeight: '520px',
                               width: '100%',
-                              overflowX: modalChartData.labels.length > 20 ? 'auto' : 'visible',
+                              overflowX: modalChartData.labels.length > 40 ? 'auto' : 'visible',
                               position: 'relative',
                             }}
                           >
                             <div
                               style={{
-                                minWidth: modalChartData.labels.length > 20 ? `${modalChartData.labels.length * 38}px` : '100%',
-                                height: '500px',
+                                width: '100%',
+                                minWidth: modalChartData.labels.length > 40 ? `${modalChartData.labels.length * 40}px` : '100%',
+                                height: '520px',
                               }}
                             >
                               <Bar
                                 options={
-                                  isUgel
-                                    ? getUgelDimensionVerticalChartOptions(modalChartData.maxDomainScore, (modalChartData as any).ugelList)
-                                    : getEspecialistaDimensionVerticalChartOptions(modalChartData.maxDomainScore, (modalChartData as any).espList)
+                                  isGlobalDominio
+                                    ? getDimensionVerticalBarOptions(modalChartData.dimList)
+                                    : type === 'global_ugel'
+                                    ? getGlobalUgelVerticalChartOptions(maxScore, modalChartData.ugelList)
+                                    : type === 'global_especialista'
+                                    ? getGlobalEspecialistaVerticalChartOptions(maxScore, modalChartData.espList)
+                                    : isUgel
+                                    ? getUgelDimensionVerticalChartOptions(maxScore, (modalChartData as any).ugelList)
+                                    : getEspecialistaDimensionVerticalChartOptions(maxScore, (modalChartData as any).espList)
                                 }
                                 data={{
                                   labels: modalChartData.labels,
@@ -2919,12 +5000,14 @@ const Reportes = () => {
                           </div>
                         )}
                         <div style={{ marginTop: '1.5rem' }}>
-                          {renderDomainLevelRanges()}
+                          {isGlobalDominio
+                            ? renderGlobalDomainLevelRanges()
+                            : renderDomainLevelRanges(isGlobal ? undefined : selectedDimensionModal?.dim)}
                         </div>
                       </>
                     ) : (
                       <div className={styles.emptyDimensionChart}>
-                        <p>No se encontraron registros evaluados para esta dimensión.</p>
+                        <p>No se encontraron registros evaluados.</p>
                       </div>
                     )}
                   </div>
@@ -3044,6 +5127,15 @@ const Reportes = () => {
             document.getElementById('portal-modal') || document.body
           )
         : null}
+
+      <ModoOrganizarEspecialistasModal
+        isOpen={isOrganizerModalOpen}
+        onClose={() => setIsOrganizerModalOpen(false)}
+        ordenSecciones={ordenSecciones}
+        onOrderChange={handleOrderChange}
+        seccionesVisibles={seccionesVisibles}
+        onVisibilityChange={handleVisibilityChange}
+      />
     </>
   );
 };

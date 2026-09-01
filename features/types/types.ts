@@ -800,4 +800,5 @@ export type DimensionEspecialista = {
   nombre?: string;
   order?: number;
   color?: string;
+  niveles?: NivelYPuntaje[];
 };

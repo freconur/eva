@@ -1,0 +1,414 @@
+.containerModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(15, 23, 42, 0.55);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(6px);
+}
+
+.containerSale {
+    background-color: #ffffff;
+    width: 780px;
+    max-width: 95vw;
+    padding: 2rem 2.25rem;
+    border-radius: 20px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-height: 90vh;
+    overflow: hidden;
+    animation: modalAppear 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.closeModalContainer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 0.85rem;
+}
+
+.titleGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.title {
+    font-size: 1.35rem;
+    color: #1e293b;
+    font-weight: 700;
+    margin: 0;
+}
+
+.close {
+    cursor: pointer;
+    background-color: #fee2e2;
+    color: #ef4444;
+    padding: 0.45rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.close:hover {
+    background-color: #fecaca;
+    transform: scale(1.02);
+}
+
+.description {
+    color: #64748b;
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+/* --- TABS DE DOMINIOS --- */
+.domainTabsScroll {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    scrollbar-width: thin;
+}
+
+.domainTabBtn {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    padding: 0.55rem 0.95rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all 0.2s ease;
+}
+
+.domainTabBtn:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-color: #94a3b8;
+}
+
+.domainTabBtnActive {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #1d4ed8;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15);
+}
+
+.domainTabBadge {
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 0.72rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 9999px;
+    font-weight: 700;
+}
+
+.domainTabBadgeActive {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.tabCheck {
+    color: #10b981;
+    font-size: 0.95rem;
+}
+
+/* --- RESUMEN DEL DOMINIO SELECCIONADO --- */
+.domainInfoCard {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.85rem 1.15rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.domainInfoLeft {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.domainInfoTitle {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+}
+
+.domainInfoMeta {
+    font-size: 0.78rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.domainInfoActions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btnSecondaryAction {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.2s ease;
+}
+
+.btnSecondaryAction:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+/* --- LISTA DE NIVELES --- */
+.optionsList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow-y: auto;
+    max-height: 38vh;
+    padding-right: 0.4rem;
+}
+
+.optionRow {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-end;
+    background: #f8fafc;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: border-color 0.2s ease;
+}
+
+.optionRow:hover {
+    border-color: #cbd5e1;
+}
+
+.levelInputGroup {
+    flex: 2.2;
+}
+
+.rangeInputGroup {
+    flex: 1;
+}
+
+.colorInputGroup {
+    width: 55px;
+}
+
+.label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.input {
+    width: 100%;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    outline: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #1e293b;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.colorInput {
+    height: 38px;
+    padding: 2px;
+    cursor: pointer;
+}
+
+.removeButton {
+    background: #fee2e2;
+    color: #ef4444;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.2s ease;
+}
+
+.removeButton:hover {
+    background: #fecaca;
+    transform: scale(1.05);
+}
+
+.emptyState {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1.5px dashed #cbd5e1;
+    color: #64748b;
+}
+
+.emptyStateTitle {
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 0.35rem;
+    font-size: 1rem;
+}
+
+/* --- FOOTER ACTIONS --- */
+.actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 2px solid #f1f5f9;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.addButton {
+    background-color: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    padding: 0.55rem 1rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+}
+
+.addButton:hover {
+    background-color: #e2e8f0;
+    color: #0f172a;
+}
+
+.submitActions {
+    display: flex;
+    gap: 0.65rem;
+}
+
+.submitButton {
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+
+.submitButton:hover {
+    background-color: #1d4ed8;
+    box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
+}
+
+.submitAllButton {
+    background-color: #059669;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.15rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(5, 150, 105, 0.2);
+}
+
+.submitAllButton:hover {
+    background-color: #047857;
+    box-shadow: 0 6px 15px rgba(5, 150, 105, 0.3);
+}
+
+.loaderContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    color: #3b82f6;
+}
+
+.loaderIcon {
+    font-size: 2.5rem;
+    animation: spin 1s linear infinite;
+}
+
+.loaderText {
+    margin-top: 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

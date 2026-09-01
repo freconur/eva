@@ -16,7 +16,9 @@ import ConfigurarEscalaEspecialistas from '@/modals/ConfigurarEscalaEspecialista
 import ConfigurarNivelesEspecialistas from '@/modals/ConfigurarNivelesEspecialistas';
 import ConfigurarFaseEspecialistas from '@/modals/ConfigurarFaseEspecialistas';
 import ConfigurarDescripcionEspecialistas from '@/modals/ConfigurarDescripcionEspecialistas';
+import ConfigurarNivelesPorDominio from '@/modals/ConfigurarNivelesPorDominio';
 import { DimensionEspecialista } from '@/features/types/types';
+import { RiAwardLine } from 'react-icons/ri';
 
 const EvaluacionDocente = () => {
   const [showAgregarPreguntas, setShowAgregarPreguntas] = useState<boolean>(false);
@@ -47,12 +49,19 @@ const EvaluacionDocente = () => {
   const [showUpdateDimension, setShowUpdateDimension] = useState<boolean>(false);
   const [showConfigurarEscala, setShowConfigurarEscala] = useState<boolean>(false);
   const [showConfigurarNiveles, setShowConfigurarNiveles] = useState<boolean>(false);
+  const [showConfigurarNivelesDominio, setShowConfigurarNivelesDominio] = useState<boolean>(false);
+  const [initialDimIdForModal, setInitialDimIdForModal] = useState<string | undefined>(undefined);
   const [dimensionToUpdate, setDimensionToUpdate] = useState<DimensionEspecialista>({});
   const [valueDni, setValueDni] = useState<string>('');
   const [dataUpdate, setDataUpdate] = useState<PRDocentes>({});
   const [showConfigDropdown, setShowConfigDropdown] = useState<boolean>(false);
   const [showConfigurarFase, setShowConfigurarFase] = useState<boolean>(false);
   const [showConfigurarDescripcion, setShowConfigurarDescripcion] = useState<boolean>(false);
+
+  const handleShowConfigurarNivelesDominio = (dimId?: string) => {
+    setInitialDimIdForModal(dimId);
+    setShowConfigurarNivelesDominio(!showConfigurarNivelesDominio);
+  };
 
   const handleShowModalPreguntas = () => {
     setShowAgregarPreguntas(!showAgregarPreguntas);
@@ -172,6 +181,16 @@ const EvaluacionDocente = () => {
           handleShowConfigurarDescripcion={handleShowConfigurarDescripcion}
         />
       )}
+      {showConfigurarNivelesDominio && (
+        <ConfigurarNivelesPorDominio
+          idEvaluacion={`${router.query.id}`}
+          dimensiones={dimensionesEspecialistas || []}
+          preguntas={getPreguntaRespuestaDocentes || []}
+          escala={dataEvaluacionDocente?.escala || []}
+          initialDimensionId={initialDimIdForModal}
+          handleShowModal={() => setShowConfigurarNivelesDominio(false)}
+        />
+      )}
 
       <div className={styles.header}>
         <div className={styles.headerContent}>
@@ -254,7 +273,16 @@ const EvaluacionDocente = () => {
                   }}
                   className={styles.dropdownItem}
                 >
-                  <MdSettings /> Configurar Niveles de Logro
+                  <MdSettings /> Configurar Niveles de Logro (Global)
+                </button>
+                <button
+                  onClick={() => {
+                    handleShowConfigurarNivelesDominio();
+                    setShowConfigDropdown(false);
+                  }}
+                  className={styles.dropdownItem}
+                >
+                  <RiAwardLine style={{ fontSize: '1.2rem', color: '#2563eb' }} /> Configurar Niveles por Dominio
                 </button>
                 <button
                   onClick={() => {
@@ -341,7 +369,7 @@ const EvaluacionDocente = () => {
                 <div key={dimension.id} className={styles.dimensionSection}>
                   <h2 className={styles.dimensionTitle}>
                     {dimension.nombre}
-                    <div className={styles.editButton} style={{ marginLeft: '1rem', display: 'inline-flex' }}>
+                    <div className={styles.editButton} style={{ marginLeft: '1rem', display: 'inline-flex' }} title="Editar nombre del dominio">
                       <MdEditSquare
                         onClick={() => {
                           setDimensionToUpdate(dimension);
@@ -349,8 +377,14 @@ const EvaluacionDocente = () => {
                         }}
                       />
                     </div>
+                    <div className={styles.editButton} style={{ marginLeft: '0.4rem', display: 'inline-flex' }} title="Configurar niveles de logro de este dominio">
+                      <RiAwardLine
+                        style={{ color: '#2563eb', cursor: 'pointer', fontSize: '1.25rem' }}
+                        onClick={() => handleShowConfigurarNivelesDominio(dimension.id)}
+                      />
+                    </div>
                     {preguntasDeDimension?.length === 0 && (
-                      <div className={styles.deleteButton} style={{ marginLeft: '0.5rem', display: 'inline-flex' }}>
+                      <div className={styles.deleteButton} style={{ marginLeft: '0.4rem', display: 'inline-flex' }} title="Eliminar dominio">
                         <MdDelete onClick={() => dimension.id && handleDeleteDimension(dimension.id)} />
                       </div>
                     )}
