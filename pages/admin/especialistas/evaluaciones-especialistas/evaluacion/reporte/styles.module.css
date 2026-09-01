@@ -961,3 +961,171 @@
 .doneColorsBtn:hover {
   background: #1d4ed8;
 }
+
+/* Selector de Modo de Color (Dominio vs Nivel de Logro) */
+.colorModeToggleWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: white;
+  padding: 0.4rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.colorModeLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+  font-family: 'Montserrat', sans-serif;
+  white-space: nowrap;
+}
+
+.segmentedControl {
+  display: flex;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 8px;
+  gap: 3px;
+}
+
+.segmentedBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.segmentedBtn:hover {
+  color: #1e293b;
+}
+
+.segmentedBtnActive {
+  background: white;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.segmentedBtnActive.segmentedBtnNivel {
+  color: #2563eb;
+}
+
+/* Barra de Leyenda de Niveles de Logro */
+.levelsLegendBar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.65rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 1.25rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.levelsLegendTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #334155;
+  font-family: 'Montserrat', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-right: 0.4rem;
+}
+
+.levelLegendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.levelLegendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Pie de tarjeta con puntajes y rangos por nivel de logro */
+.domainCardLevelsFooter {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.domainLevelsFooterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.domainLevelsFooterTitle {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #64748b;
+  font-family: 'Montserrat', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.domainLevelsList {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.domainLevelChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.55rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-family: 'Montserrat', sans-serif;
+  transition: all 0.15s ease;
+}
+
+.domainLevelChip:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.domainLevelChipName {
+  font-weight: 700;
+  color: #334155;
+}
+
+.domainLevelChipRange {
+  color: #64748b;
+  font-weight: 600;
+}
