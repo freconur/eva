@@ -1,7 +1,7 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { DataEstadisticas, PRDocentes } from '@/features/types/types';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import header from '@/assets/evaluacion-docente.jpg';
 import {
@@ -40,6 +40,8 @@ import {
   RiLayoutGridLine,
   RiSlideshowLine,
   RiGridFill,
+  RiEqualizerLine,
+  RiArrowDownSLine,
 } from 'react-icons/ri';
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
 import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes';
@@ -62,6 +64,8 @@ import {
   ModoOrganizarEspecialistasModal,
   DEFAULT_SECTIONS_ORDER,
 } from '@/features/evaluados-especialistas/components/ModoOrganizarEspecialistasModal';
+import ConfigurarNivelesEspecialistas from '@/modals/ConfigurarNivelesEspecialistas';
+import ConfigurarNivelesPorDominio from '@/modals/ConfigurarNivelesPorDominio';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -479,6 +483,22 @@ const Reportes = () => {
     setCardOrientations((prev) => ({ ...prev, [key]: val }));
 
   const [isOrganizerModalOpen, setIsOrganizerModalOpen] = useState(false);
+  const [isGlobalLevelsModalOpen, setIsGlobalLevelsModalOpen] = useState(false);
+  const [isDomainLevelsModalOpen, setIsDomainLevelsModalOpen] = useState(false);
+  const [isSettingsDropdownOpen, setIsSettingsDropdownOpen] = useState(false);
+  const settingsDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Click outside para cerrar el dropdown de ajustes
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsDropdownRef.current && !settingsDropdownRef.current.contains(event.target as Node)) {
+        setIsSettingsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const [ordenSecciones, setOrdenSecciones] = useState<string[]>(DEFAULT_SECTIONS_ORDER);
   const [seccionesVisibles, setSeccionesVisibles] = useState<string[]>(DEFAULT_SECTIONS_ORDER);
 
@@ -3306,32 +3326,112 @@ const Reportes = () => {
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => setIsColorModalOpen(true)}
-                        className={styles.btnColorConfig}
-                        title="Personalizar colores para cada dominio"
-                      >
-                        <RiPaletteLine style={{ fontSize: '1.2rem', color: '#6366f1' }} />
-                        <span>Colores de Dominios</span>
-                      </button>
                     </>
                   )}
 
-                  <button
-                    type="button"
-                    onClick={() => setIsOrganizerModalOpen(true)}
-                    className={styles.btnOrganizer}
-                    title="Organizar y mostrar/ocultar gráficos del reporte"
-                  >
-                    <RiGridFill style={{ fontSize: '1.15rem', color: '#0284c7' }} />
-                    <span>Personalizar Gráficos</span>
-                    {DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length > 0 && (
-                      <span className={styles.hiddenCountBadge}>
-                        {DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length} oculto{DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length > 1 ? 's' : ''}
-                      </span>
+                  <div className={styles.customDropdownContainer} ref={settingsDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsSettingsDropdownOpen(!isSettingsDropdownOpen)}
+                      className={`${styles.customDropdownTrigger} ${isSettingsDropdownOpen ? styles.customDropdownTriggerActive : ''}`}
+                      title="Opciones de personalización y configuración del reporte"
+                    >
+                      <RiEqualizerLine style={{ fontSize: '1.15rem', color: '#2563eb' }} />
+                      <span>Personalizar y Ajustes</span>
+                      {DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length > 0 && (
+                        <span className={styles.hiddenCountBadge}>
+                          {DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length}
+                        </span>
+                      )}
+                      <RiArrowDownSLine
+                        style={{
+                          fontSize: '1.15rem',
+                          color: '#64748b',
+                          transition: 'transform 0.2s ease',
+                          transform: isSettingsDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        }}
+                      />
+                    </button>
+
+                    {isSettingsDropdownOpen && (
+                      <div className={styles.customDropdownMenu}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsSettingsDropdownOpen(false);
+                            setIsOrganizerModalOpen(true);
+                          }}
+                          className={styles.customDropdownItem}
+                        >
+                          <div className={styles.customDropdownItemLeft}>
+                            <span className={styles.customDropdownItemIcon} style={{ color: '#0284c7' }}>
+                              <RiGridFill />
+                            </span>
+                            <span>Personalizar Gráficos</span>
+                          </div>
+                          {DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length > 0 && (
+                            <span className={styles.hiddenCountBadge}>
+                              {DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length} oculto{DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length > 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsSettingsDropdownOpen(false);
+                            setIsGlobalLevelsModalOpen(true);
+                          }}
+                          className={styles.customDropdownItem}
+                        >
+                          <div className={styles.customDropdownItemLeft}>
+                            <span className={styles.customDropdownItemIcon} style={{ color: '#10b981' }}>
+                              <RiAwardLine />
+                            </span>
+                            <span>Niveles Globales</span>
+                          </div>
+                        </button>
+
+                        {dimensionesEspecialistas && dimensionesEspecialistas.length > 0 && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsSettingsDropdownOpen(false);
+                                setIsDomainLevelsModalOpen(true);
+                              }}
+                              className={styles.customDropdownItem}
+                            >
+                              <div className={styles.customDropdownItemLeft}>
+                                <span className={styles.customDropdownItemIcon} style={{ color: '#8b5cf6' }}>
+                                  <RiAwardLine />
+                                </span>
+                                <span>Niveles por Dominio</span>
+                              </div>
+                            </button>
+
+                            <div className={styles.customDropdownDivider} />
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsSettingsDropdownOpen(false);
+                                setIsColorModalOpen(true);
+                              }}
+                              className={styles.customDropdownItem}
+                            >
+                              <div className={styles.customDropdownItemLeft}>
+                                <span className={styles.customDropdownItemIcon} style={{ color: '#6366f1' }}>
+                                  <RiPaletteLine />
+                                </span>
+                                <span>Colores de Dominios</span>
+                              </div>
+                            </button>
+                          </>
+                        )}
+                      </div>
                     )}
-                  </button>
+                  </div>
 
                   {(filtros.region !== '' || filtros.genero !== '' || filtros.idFase !== '') && (
                     <button
@@ -5136,6 +5236,24 @@ const Reportes = () => {
         seccionesVisibles={seccionesVisibles}
         onVisibilityChange={handleVisibilityChange}
       />
+
+      {isGlobalLevelsModalOpen && (
+        <ConfigurarNivelesEspecialistas
+          handleShowConfigurarNiveles={() => setIsGlobalLevelsModalOpen(false)}
+          idEvaluacion={`${route.query.idEvaluacion}`}
+          nivelesActuales={dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje || []}
+        />
+      )}
+
+      {isDomainLevelsModalOpen && (
+        <ConfigurarNivelesPorDominio
+          handleShowModal={() => setIsDomainLevelsModalOpen(false)}
+          idEvaluacion={`${route.query.idEvaluacion}`}
+          dimensiones={dimensionesEspecialistas || []}
+          preguntas={getPreguntaRespuestaDocentes || []}
+          escala={dataEvaluacionDocente?.escala || []}
+        />
+      )}
     </>
   );
 };

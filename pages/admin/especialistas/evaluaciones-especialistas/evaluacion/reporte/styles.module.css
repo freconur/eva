@@ -852,6 +852,108 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+.customDropdownContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.customDropdownTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.75rem 1.15rem;
+  background: white;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  height: 45px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.customDropdownTrigger:hover,
+.customDropdownTriggerActive {
+  background: #f8fafc;
+  color: #2563eb;
+  border-color: #93c5fd;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.1);
+}
+
+.customDropdownMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 250px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+  padding: 0.45rem;
+  z-index: 100;
+  animation: dropdownFadeIn 0.15s ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.customDropdownItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: none;
+  background: transparent;
+  color: #334155;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: left;
+  transition: all 0.15s ease;
+  gap: 0.75rem;
+}
+
+.customDropdownItem:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.customDropdownItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.customDropdownItemIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+}
+
+.customDropdownDivider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 0.25rem 0;
+}
+
 .btnOrganizer {
   display: inline-flex;
   align-items: center;

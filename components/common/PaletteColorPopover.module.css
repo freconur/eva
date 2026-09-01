@@ -1,0 +1,191 @@
+.wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.triggerBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+  transition: all 0.2s ease;
+  height: 38px;
+  min-width: 105px;
+  justify-content: space-between;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.triggerBtn:hover,
+.triggerBtnActive {
+  border-color: #3b82f6;
+  background: #f8fafc;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.colorPreviewDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid white;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.hexText {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #1e293b;
+  letter-spacing: 0.02em;
+}
+
+.chevron {
+  font-size: 0.75rem;
+  color: #64748b;
+  transition: transform 0.2s ease;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: auto;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.16), 0 6px 12px -4px rgba(0, 0, 0, 0.08);
+  padding: 0.85rem;
+  width: 220px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  animation: popoverFadeIn 0.15s ease-out;
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.popoverTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: 'Montserrat', sans-serif;
+  margin: 0;
+}
+
+.swatchesGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.swatchBtn {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  padding: 0;
+  outline: none;
+  position: relative;
+}
+
+.swatchBtn:hover {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 2px #3b82f6, 0 3px 6px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+}
+
+.swatchActive {
+  box-shadow: 0 0 0 2.5px #2563eb, 0 3px 6px rgba(37, 99, 235, 0.3) !important;
+  transform: scale(1.12);
+}
+
+.divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 0.1rem 0;
+}
+
+.customColorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.customLabel {
+  font-size: 0.76rem;
+  color: #475569;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.customInputs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nativeColorInput {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 25px;
+  height: 25px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.nativeColorInput::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.nativeColorInput::-webkit-color-swatch {
+  border: 1.5px solid #cbd5e1;
+  border-radius: 50%;
+}
+
+.customHexInput {
+  width: 70px;
+  padding: 0.25rem 0.35rem;
+  font-size: 0.78rem;
+  font-family: monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #1e293b;
+  outline: none;
+}
+
+.customHexInput:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}

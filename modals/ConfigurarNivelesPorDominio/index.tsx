@@ -2,9 +2,10 @@ import { createPortal } from 'react-dom';
 import styles from './configurarNivelesPorDominio.module.css';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { AlternativasDocente, DimensionEspecialista, NivelYPuntaje, PRDocentes } from '@/features/types/types';
-import { RiLoader4Line, RiDeleteBin6Line, RiAddLine, RiAwardLine, RiCheckLine, RiFileCopyLine, RiMagicLine } from 'react-icons/ri';
+import { RiLoader4Line, RiDeleteBin6Line, RiAddLine, RiAwardLine, RiCheckLine, RiFileCopyLine, RiMagicLine, RiPaletteLine } from 'react-icons/ri';
 import React, { useEffect, useState } from 'react';
 import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas';
+import PaletteColorPopover from '@/components/common/PaletteColorPopover';
 
 interface Props {
   handleShowModal: () => void;
@@ -137,13 +138,52 @@ const ConfigurarNivelesPorDominio = ({
     if (!selectedDimId || currentLevels.length === 0) return;
     if (
       window.confirm(
-        '¿Deseas aplicar estos mismos niveles y colores a todos los demás dominios de la evaluación?'
+        '¿Deseas aplicar estos niveles, nombres y colores a todos los demás dominios de la evaluación?'
       )
     ) {
       const newMap: { [dimId: string]: NivelYPuntaje[] } = {};
+      const curMaxScore = currentMaxScore || 1;
+
       dimensiones.forEach((dim) => {
         if (!dim.id) return;
-        newMap[dim.id] = JSON.parse(JSON.stringify(currentLevels));
+        const dimCritCount = preguntas.filter((p) => p.dimensionId === dim.id).length || 1;
+        const dimMaxScore = dimCritCount * maxQuestionValue;
+
+        if (dimMaxScore === curMaxScore) {
+          newMap[dim.id] = JSON.parse(JSON.stringify(currentLevels));
+        } else {
+          // Escalar proporcionalmente los rangos min/max adaptados al puntaje máximo de cada dominio, preservando nombres y colores exactos
+          newMap[dim.id] = currentLevels.map((lvl) => ({
+            ...lvl,
+            min: Math.round(((Number(lvl.min) || 0) / curMaxScore) * dimMaxScore),
+            max: Math.round(((Number(lvl.max) || 0) / curMaxScore) * dimMaxScore),
+            color: lvl.color || '#3B82F6',
+          }));
+        }
+      });
+      setDomainLevelsMap(newMap);
+    }
+  };
+
+  const handleCopyColorsToAllDomains = () => {
+    if (!selectedDimId || currentLevels.length === 0) return;
+    if (
+      window.confirm(
+        '¿Deseas replicar los colores de estos niveles a todos los demás dominios manteniendo sus rangos de puntaje actuales?'
+      )
+    ) {
+      const newMap = { ...domainLevelsMap };
+      dimensiones.forEach((dim) => {
+        if (!dim.id || dim.id === selectedDimId) return;
+        const existingLevels = newMap[dim.id] || [];
+        if (existingLevels.length > 0) {
+          newMap[dim.id] = existingLevels.map((lvl, idx) => ({
+            ...lvl,
+            color: currentLevels[idx]?.color || currentLevels[currentLevels.length - 1]?.color || lvl.color || '#3B82F6',
+          }));
+        } else {
+          newMap[dim.id] = JSON.parse(JSON.stringify(currentLevels));
+        }
       });
       setDomainLevelsMap(newMap);
     }
@@ -258,14 +298,24 @@ const ConfigurarNivelesPorDominio = ({
                           <RiMagicLine /> Sugerir rangos
                         </button>
                         {dimensiones.length > 1 && (
-                          <button
-                            type="button"
-                            className={styles.btnSecondaryAction}
-                            onClick={handleCopyToAllDomains}
-                            title="Copiar estos niveles a todos los demás dominios"
-                          >
-                            <RiFileCopyLine /> Copiar a todos
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              className={styles.btnSecondaryAction}
+                              onClick={handleCopyColorsToAllDomains}
+                              title="Copiar únicamente los colores de estos niveles a los demás dominios"
+                            >
+                              <RiPaletteLine /> Copiar colores
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.btnSecondaryAction}
+                              onClick={handleCopyToAllDomains}
+                              title="Copiar niveles, rangos y colores a todos los demás dominios"
+                            >
+                              <RiFileCopyLine /> Copiar todo
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -315,11 +365,9 @@ const ConfigurarNivelesPorDominio = ({
                           </div>
                           <div className={styles.colorInputGroup}>
                             <label className={styles.label}>Color</label>
-                            <input
-                              type="color"
-                              className={`${styles.input} ${styles.colorInput}`}
-                              value={nivel.color || '#3b82f6'}
-                              onChange={(e) => handleLevelChange(index, 'color', e.target.value)}
+                            <PaletteColorPopover
+                              color={nivel.color || '#3b82f6'}
+                              onChange={(newColor) => handleLevelChange(index, 'color', newColor)}
                             />
                           </div>
                           <button

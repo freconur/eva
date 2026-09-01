@@ -5,6 +5,7 @@ import { NivelYPuntaje } from "@/features/types/types";
 import { RiLoader4Line, RiDeleteBin6Line, RiAddLine } from "react-icons/ri";
 import { useEffect, useState } from "react";
 import UseEvaluacionEspecialistas from "@/features/hooks/UseEvaluacionEspecialistas";
+import PaletteColorPopover from "@/components/common/PaletteColorPopover";
 
 interface Props {
     handleShowConfigurarNiveles: () => void,
@@ -111,11 +112,9 @@ const ConfigurarNivelesEspecialistas = ({ handleShowConfigurarNiveles, idEvaluac
                                     </div>
                                     <div className={styles.colorInputGroup}>
                                         <label className={styles.label}>Color</label>
-                                        <input
-                                            type="color"
-                                            className={`${styles.input} ${styles.colorInput}`}
-                                            value={nivel.color}
-                                            onChange={(e) => handleLevelChange(index, 'color', e.target.value)}
+                                        <PaletteColorPopover
+                                            color={nivel.color || '#3B82F6'}
+                                            onChange={(newColor) => handleLevelChange(index, 'color', newColor)}
                                         />
                                     </div>
                                     <button
