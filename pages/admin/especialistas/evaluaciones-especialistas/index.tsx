@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import header from '@/assets/evaluacion-docente.jpg'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { MdDeleteForever, MdEditSquare, MdAddCircle, MdVisibility, MdVisibilityOff } from 'react-icons/md'
@@ -20,6 +20,13 @@ const EvaluacionesDesempeñoDocentes = () => {
   const [evaluacion, setEvaluacion] = useState<CrearEvaluacionDocente>({})
   const [showDelete, setShowDelete] = useState<boolean>(false)
   const [inputUpdate, setInputUpdate] = useState<boolean>(false)
+
+  const sortedEvaluaciones = useMemo(() => {
+    if (!evaluacionDesempeñoDocente) return [];
+    return [...evaluacionDesempeñoDocente].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })
+    );
+  }, [evaluacionDesempeñoDocente]);
 
   const handleShowInputUpdate = () => { setInputUpdate(!inputUpdate) }
   const handleShowModalDelete = () => { setShowDelete(!showDelete) }
@@ -68,7 +75,7 @@ const EvaluacionesDesempeñoDocentes = () => {
               </tr>
             </thead>
             <tbody className={styles.tableBody}>
-              {evaluacionDesempeñoDocente?.map((evaluacion, index) => (
+              {sortedEvaluaciones?.map((evaluacion, index) => (
                 <tr key={evaluacion.id || index} className={styles.tableRow}>
                   <td className={`${styles.tableCell} ${styles.tableCellNumber}`}>
                     {index + 1}

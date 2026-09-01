@@ -72,7 +72,7 @@ const GenericDropdown: React.FC<GenericDropdownProps> = ({
 
             {/* Dropdown Options List */}
             {isOpen && (
-                <div className="absolute left-0 mt-2 z-30 w-full min-w-[200px] origin-top-right rounded-xl border border-gray-100 bg-white p-1.5 shadow-xl ring-1 ring-black ring-opacity-5 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute left-0 mt-2 z-50 w-full min-w-[200px] origin-top-right rounded-xl border border-gray-100 bg-white p-1.5 shadow-xl ring-1 ring-black ring-opacity-5 animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="max-h-60 overflow-y-auto custom-scrollbar">
                         {/* Option for "All" / Reset */}
                         {allOptionsLabel && (

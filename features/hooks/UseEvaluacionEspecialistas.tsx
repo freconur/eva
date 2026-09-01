@@ -179,6 +179,16 @@ const UseEvaluacionEspecialistas = () => {
     }
   };
 
+  const updateDimensionColor = async (idEvaluacion: string, idDimension: string, color: string) => {
+    try {
+      const pathRef = doc(db, `/evaluaciones-especialista/${idEvaluacion}/dominios`, idDimension);
+      await updateDoc(pathRef, { color });
+    } catch (error) {
+      console.error("Error updating dimension color:", error);
+      throw error;
+    }
+  };
+
   const createEvaluacionesEspecialistas = async (data: CrearEvaluacionDocente) => {
     setValueLoader(true);
     try {
@@ -520,6 +530,7 @@ const UseEvaluacionEspecialistas = () => {
       querySnapshot.forEach((doc) => {
         arrayEvaluaciones.push({ ...doc.data(), id: doc.id });
       });
+      arrayEvaluaciones.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }));
       dispatch({ type: AppAction.EVALUACIONES_DOCENTES, payload: arrayEvaluaciones });
     });
   };
@@ -544,6 +555,7 @@ const UseEvaluacionEspecialistas = () => {
         console.log(doc.data());
         arrayEvaluaciones.push({ ...doc.data(), id: doc.id });
       });
+      arrayEvaluaciones.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }));
       dispatch({ type: AppAction.EVALUACIONES_DOCENTES, payload: arrayEvaluaciones });
       dispatch({ type: AppAction.LOADER_PAGES, payload: false });
     });
@@ -1535,6 +1547,7 @@ const UseEvaluacionEspecialistas = () => {
     getDimensionesEspecialistas,
     deleteDimensionEspecialista,
     updateDimensionEspecialista,
+    updateDimensionColor,
     createEvaluacionesEspecialistas,
     reporteEvaluacionEspecialistas,
     getEvaluacionesEspecialistas,

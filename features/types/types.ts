@@ -799,4 +799,5 @@ export type DimensionEspecialista = {
   id?: string;
   nombre?: string;
   order?: number;
+  color?: string;
 };
