@@ -1,0 +1,360 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 100005;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  background: linear-gradient(to right, #f8fafc, #ffffff);
+}
+
+.headerTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.headerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25);
+}
+
+.title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.subtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0.15rem 0 0 0;
+}
+
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.15s ease;
+}
+
+.closeBtn:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  font-size: 0.875rem;
+  color: #334155;
+  line-height: 1.5;
+}
+
+/* Tarjeta conceptual destacada */
+.conceptCard {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-left: 4px solid #16a34a;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.conceptHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: #166534;
+  font-size: 0.95rem;
+}
+
+.conceptText {
+  color: #1e3a24;
+  margin: 0;
+  font-size: 0.835rem;
+  line-height: 1.45;
+}
+
+/* Sección estándar */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sectionTitle {
+  font-size: 0.925rem;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+/* Tabla descriptiva de elementos */
+.elementosGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.elementoItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+}
+
+.elementoBadge {
+  min-width: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  padding: 3px 6px;
+  flex-shrink: 0;
+}
+
+.badgeMedal {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.badgePreg {
+  background: #ff8a65;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.badgeBar {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.badgeProm {
+  background: #e0e7ff;
+  color: #3730a3;
+  font-weight: 700;
+}
+
+.elementoDesc {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.elementoDesc strong {
+  font-size: 0.825rem;
+  color: #0f172a;
+}
+
+.elementoDesc span {
+  font-size: 0.775rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+/* Semáforo de Colores */
+.semaforoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.5rem;
+}
+
+.semaforoCard {
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-left: 4px solid transparent;
+}
+
+.semaforoCritico {
+  background: #fef2f2;
+  border-color: #fecaca;
+  border-left-color: #ef4444;
+}
+
+.semaforoAlto {
+  background: #fff7ed;
+  border-color: #ffedd5;
+  border-left-color: #ff8a65;
+}
+
+.semaforoMedio {
+  background: #fffbeb;
+  border-color: #fef3c7;
+  border-left-color: #f59e0b;
+}
+
+.semaforoBajo {
+  background: #f0fdf4;
+  border-color: #dcfce7;
+  border-left-color: #22c55e;
+}
+
+.semaforoHeader {
+  font-weight: 700;
+  font-size: 0.775rem;
+}
+
+.semaforoCritico .semaforoHeader { color: #dc2626; }
+.semaforoAlto .semaforoHeader { color: #ea580c; }
+.semaforoMedio .semaforoHeader { color: #b45309; }
+.semaforoBajo .semaforoHeader { color: #16a34a; }
+
+.semaforoRange {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.semaforoAccion {
+  font-size: 0.7rem;
+  color: #475569;
+  margin-top: 2px;
+}
+
+/* Caja de Decisiones y Recomendaciones */
+.decisionesBox {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.decisionesTitle {
+  font-weight: 700;
+  color: #1e40af;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.decisionesList {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #1e3a8a;
+}
+
+.decisionesList li strong {
+  color: #1e293b;
+}
+
+/* Footer del Modal */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #f1f5f9;
+  background-color: #f8fafc;
+}
+
+.btnCerrar {
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: #1e293b;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btnCerrar:hover {
+  background: #0f172a;
+}

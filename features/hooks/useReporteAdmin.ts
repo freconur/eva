@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { collection, query, where, getDocs, doc, getDoc, setDoc, documentId, deleteDoc, getCountFromServer, updateDoc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, limit, getDocs, doc, getDoc, setDoc, documentId, deleteDoc, getCountFromServer, updateDoc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { toast } from 'react-toastify';
 import { db, functions } from '@/firebase/firebase.config';
@@ -12,7 +12,7 @@ import { useExportExcel } from '@/features/hooks/useExportExcel';
 import { useCrearPuntajeProgresiva } from '@/features/hooks/useCrearPuntajeProgresiva';
 import { useReporteEspecialistas } from '@/features/hooks/useReporteEspecialistas';
 import { distritosPuno } from '@/fuctions/provinciasPuno';
-import { gradosDeColegio } from '@/fuctions/regiones';
+import { gradosDeColegio, regiones } from '@/fuctions/regiones';
 import { currentMonth } from '@/fuctions/dates';
 import { PreguntasRespuestas } from '@/features/types/types';
 import { exportDirectorDocenteDataToExcel } from '@/features/utils/excelExport';
@@ -74,6 +74,8 @@ export const useReporteAdmin = () => {
   const [questionColumns, setQuestionColumns] = useState(2);
   const [dataReportePreguntas, setDataReportePreguntas] = useState<any[]>([]);
   const [loadingReportePreguntas, setLoadingReportePreguntas] = useState(false);
+  const [dataMatrizUgel, setDataMatrizUgel] = useState<any[]>([]);
+  const [loadingMatrizUgel, setLoadingMatrizUgel] = useState(false);
 
   // Drill-down para docentes
   const [fullDocentesData, setFullDocentesData] = useState<any[] | null>(null);
@@ -142,6 +144,7 @@ export const useReporteAdmin = () => {
       setDataDirectoresBar([]);
       setDetalleDirectoresCargado(false);
       setDataReportePreguntas([]);
+      setDataMatrizUgel([]);
       setFullDocentesData(null);
       setSelectedRange(null);
       setSelectedDirectorStatus(null);
@@ -853,6 +856,304 @@ export const useReporteAdmin = () => {
     }
   };
 
+  const fetchMatrizUgelData = async () => {
+    const idEval = route.query.idEvaluacion;
+    if (!idEval || monthSelected === undefined || !yearSelected) return;
+
+    setLoadingMatrizUgel(true);
+    try {
+      const ordenadas = [...(preguntasRespuestas || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
+      const qParticipantes = collection(db, `evaluaciones/${idEval}/consolidados_realtime_directores`);
+      const partSnap = await getDocs(qParticipantes);
+
+      let directoresList: any[] = [];
+      if (!partSnap.empty) {
+        partSnap.forEach(docSnap => {
+          directoresList.push({ id: docSnap.id, ...docSnap.data() });
+        });
+      } else {
+        const consolidadoRef = doc(db, `evaluaciones/${idEval}/consolidados`, `directores_${yearSelected}_${monthSelected}`);
+        const consolidadoSnap = await getDoc(consolidadoRef);
+        if (consolidadoSnap.exists()) {
+          const { url } = consolidadoSnap.data();
+          if (url) {
+            const cacheBuster = `?t=${Date.now()}`;
+            const response = await fetch(url + cacheBuster);
+            const res = await response.json();
+            if (res.success && Array.isArray(res.data)) {
+              directoresList = res.data;
+            }
+          }
+        }
+      }
+
+      const regionStatsMap = new Map<number, any>();
+      try {
+        const regSnap = await getDocs(collection(db, `evaluaciones/${idEval}/consolidados_realtime_regiones_${yearSelected}_${monthSelected}`));
+        regSnap.forEach(d => {
+          const rId = Number(d.id);
+          if (!isNaN(rId)) {
+            regionStatsMap.set(rId, d.data());
+          }
+        });
+      } catch (e) {
+        // no crítico
+      }
+
+      // Resolver directores sin región definida en consolidados_realtime_directores
+      // buscando la región de sus estudiantes en estudiantes-evaluados
+      const directoresSinRegion = directoresList.filter(d => {
+        const r = d.region;
+        return r === undefined || r === null || r === '' || r === 'N/A' || isNaN(Number(r));
+      });
+
+      if (directoresSinRegion.length > 0) {
+        const studentsPath = `evaluaciones/${idEval}/estudiantes-evaluados/${yearSelected}/${monthSelected}`;
+        await Promise.all(
+          directoresSinRegion.map(async (d) => {
+            try {
+              const qDir = query(
+                collection(db, studentsPath),
+                where('dniDirector', '==', String(d.id || d.dniDirector)),
+                limit(1)
+              );
+              const sSnap = await getDocs(qDir);
+              if (!sSnap.empty) {
+                const sData = sSnap.docs[0].data();
+                if (sData && sData.region !== undefined && sData.region !== null && sData.region !== '') {
+                  d.region = Number(sData.region);
+                }
+              }
+            } catch (err) {
+              // Silencioso, no crítico
+            }
+          })
+        );
+      }
+
+      const nivelesConfig = evaluacion?.nivelYPuntaje || [];
+
+      const getQuestionStatsFromDirector = (d: any, qOrder: number, qId?: string) => {
+        const orderStr = String(qOrder);
+        const idStr = qId ? String(qId) : '';
+
+        const getVal = (key: string) => {
+          if (d[key] !== undefined) return Number(d[key]);
+          const parts = key.split('.');
+          if (parts.length === 3 && parts[0] === 'preguntas') {
+            const qKey = parts[1];
+            const subKey = parts[2];
+            if (d.preguntas && d.preguntas[qKey] && d.preguntas[qKey][subKey] !== undefined) {
+              return Number(d.preguntas[qKey][subKey]);
+            }
+          }
+          return 0;
+        };
+
+        const total = getVal(`preguntas.${orderStr}.total`) || (idStr ? getVal(`preguntas.${idStr}.total`) : 0);
+
+        const getAlt = (alt: string) => {
+          const uAlt = alt.toUpperCase();
+          const lAlt = alt.toLowerCase();
+          return (
+            getVal(`preguntas.${orderStr}.${uAlt}`) ||
+            getVal(`preguntas.${orderStr}.${lAlt}`) ||
+            (idStr ? (getVal(`preguntas.${idStr}.${uAlt}`) || getVal(`preguntas.${idStr}.${lAlt}`)) : 0)
+          );
+        };
+
+        return { total, getAlt };
+      };
+
+      const rows = regiones.map((reg, index) => {
+        const ugelId = reg.id;
+        const ugelNombre = reg.region;
+        const regSaved = regionStatsMap.get(ugelId);
+
+        const dirsDeUgel = directoresList.filter(d => {
+          const r = d.region !== undefined && d.region !== null && d.region !== '' ? Number(d.region) : null;
+          return r === ugelId;
+        });
+
+        let totalEstudiantesDirs = 0;
+        let sumaPuntajes = 0;
+
+        dirsDeUgel.forEach(d => {
+          const cant = Number(d.totalEstudiantes || 0);
+          totalEstudiantesDirs += cant;
+          const sumP = d.sumaPuntajes !== undefined
+            ? Number(d.sumaPuntajes)
+            : (d.promedioGlobal !== undefined ? Number(d.promedioGlobal) * cant : 0);
+          sumaPuntajes += sumP;
+        });
+
+        // La fuente autoritativa regional es regSaved (mismo consolidado que alimenta el Ranking)
+        const totalEstudiantes = (regSaved && regSaved.totalEstudiantes !== undefined && Number(regSaved.totalEstudiantes) > 0)
+          ? Number(regSaved.totalEstudiantes)
+          : totalEstudiantesDirs;
+
+        const puntajePromedio = totalEstudiantes > 0 ? Math.round((sumaPuntajes / totalEstudiantes) * 100) / 100 : 0;
+
+        let nivelCalculado = '-';
+        let nivelColor = '#94a3b8';
+
+        if (totalEstudiantes > 0 && nivelesConfig.length > 0) {
+          const ordenados = [...nivelesConfig].sort((a, b) => (a.min || 0) - (b.min || 0));
+          for (const n of ordenados) {
+            const min = n.min ?? 0;
+            const max = n.max ?? 1000;
+            if (puntajePromedio >= min && puntajePromedio <= max) {
+              nivelCalculado = n.nivel || 'Sin clasificar';
+              nivelColor = n.color || '#3b82f6';
+              break;
+            }
+          }
+        }
+
+        // Helper para normalizar nombres de niveles sin acentos ni mayúsculas
+        const cleanKey = (s: string) =>
+          (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+        // Desglose de estudiantes por cada nivel (Satisfactorio, Proceso, Inicio, etc.)
+        const ugelNivelesMap: Record<string, number> = {};
+        nivelesConfig.forEach(nc => {
+          ugelNivelesMap[cleanKey(nc.nivel || '')] = 0;
+        });
+
+        const parseDocNiveles = (docData: any) => {
+          const res: Record<string, number> = {};
+          if (!docData) return res;
+          if (docData.niveles && typeof docData.niveles === 'object') {
+            if (Array.isArray(docData.niveles)) {
+              docData.niveles.forEach((item: any) => {
+                if (item && item.nivel) {
+                  const k = cleanKey(String(item.nivel));
+                  res[k] = (res[k] || 0) + Number(item.cantidadDeEstudiantes || 0);
+                }
+              });
+            } else {
+              for (const [k, v] of Object.entries(docData.niveles)) {
+                res[cleanKey(k)] = typeof v === 'number' ? v : Number(v || 0);
+              }
+            }
+          }
+          for (const [k, v] of Object.entries(docData)) {
+            if (k.startsWith('niveles.')) {
+              const levelName = cleanKey(k.substring(8));
+              res[levelName] = (res[levelName] || 0) + (typeof v === 'number' ? v : Number(v || 0));
+            }
+          }
+          return res;
+        };
+
+        // Prioridad 1: Si regSaved tiene desglose de niveles, usarlo como fuente oficial
+        let sumNivelesReg = 0;
+        if (regSaved) {
+          const parsedReg = parseDocNiveles(regSaved);
+          sumNivelesReg = Object.values(parsedReg).reduce((a, b) => a + b, 0);
+          if (sumNivelesReg > 0) {
+            for (const [k, val] of Object.entries(parsedReg)) {
+              const match = nivelesConfig.find(nc => {
+                const name = cleanKey(nc.nivel || '');
+                return name === k || name.includes(k) || k.includes(name);
+              });
+              const targetKey = match ? cleanKey(match.nivel || '') : k;
+              ugelNivelesMap[targetKey] = val;
+            }
+          }
+        }
+
+        // Prioridad 2: Si regSaved no tenía niveles, acumular de los directores de la UGEL
+        if (sumNivelesReg === 0) {
+          dirsDeUgel.forEach(d => {
+            const parsed = parseDocNiveles(d);
+            for (const [k, val] of Object.entries(parsed)) {
+              const match = nivelesConfig.find(nc => {
+                const name = cleanKey(nc.nivel || '');
+                return name === k || name.includes(k) || k.includes(name);
+              });
+              const targetKey = match ? cleanKey(match.nivel || '') : k;
+              ugelNivelesMap[targetKey] = (ugelNivelesMap[targetKey] || 0) + val;
+            }
+          });
+        }
+
+        const nivelesArray = nivelesConfig.map(nc => {
+          const key = cleanKey(nc.nivel || '');
+          const cant = ugelNivelesMap[key] || 0;
+          const pct = totalEstudiantes > 0 ? Math.round((cant / totalEstudiantes) * 100) : 0;
+          return {
+            id: nc.id,
+            nivel: nc.nivel || 'Sin Nombre',
+            color: nc.color || '#94a3b8',
+            cantidadDeEstudiantes: cant,
+            porcentaje: pct,
+          };
+        });
+
+        const preguntasStats: Record<string, any> = {};
+        let sumaRespuestasCorrectas = 0;
+
+        ordenadas.forEach((pregunta, qIdx) => {
+          const qOrder = pregunta.order !== undefined ? Number(pregunta.order) : qIdx + 1;
+          const qId = pregunta.id;
+          const key = String(qOrder);
+          const respuestaCorrecta = (pregunta.respuesta || '').trim().toUpperCase();
+
+          let totalPregunta = 0;
+          let correctasPregunta = 0;
+
+          dirsDeUgel.forEach(d => {
+            const stats = getQuestionStatsFromDirector(d, qOrder, qId);
+            totalPregunta += stats.total;
+            if (respuestaCorrecta) {
+              correctasPregunta += stats.getAlt(respuestaCorrecta);
+            }
+          });
+
+          const pct = totalPregunta > 0 ? Math.round((correctasPregunta / totalPregunta) * 100) : 0;
+
+          preguntasStats[key] = {
+            order: qOrder,
+            id: qId,
+            total: totalPregunta,
+            correctas: correctasPregunta,
+            porcentaje: pct,
+          };
+
+          sumaRespuestasCorrectas += correctasPregunta;
+        });
+
+        const rcPromedio = totalEstudiantes > 0
+          ? Math.round((sumaRespuestasCorrectas / totalEstudiantes) * 10) / 10
+          : 0;
+
+        return {
+          index: index + 1,
+          id: ugelId,
+          nombre: `UGEL ${ugelNombre}`,
+          nombreCorto: ugelNombre,
+          totalEstudiantes,
+          sumaPuntajes,
+          puntajePromedio,
+          nivel: nivelCalculado,
+          nivelColor,
+          niveles: nivelesArray,
+          rcPromedio,
+          totalPreguntas: ordenadas.length,
+          preguntas: preguntasStats,
+        };
+      });
+
+      setDataMatrizUgel(rows);
+    } catch (err) {
+      console.error('❌ Error al cargar datos para matriz de UGEL:', err);
+      setDataMatrizUgel([]);
+    } finally {
+      setLoadingMatrizUgel(false);
+    }
+  };
+
   // --- CARGA INICIAL DE DATOS AL CAMBIAR PERIODO ---
   useEffect(() => {
     const idEval = route.query.idEvaluacion;
@@ -862,7 +1163,8 @@ export const useReporteAdmin = () => {
       await Promise.all([
         loadConsolidado(),
         fetchBarGraphicsData(),
-        fetchReportePreguntas()
+        fetchReportePreguntas(),
+        fetchMatrizUgelData()
       ]);
     };
 
@@ -1275,5 +1577,8 @@ export const useReporteAdmin = () => {
     loadConsolidado,
     fetchBarGraphicsData,
     fetchReportePreguntas,
+    dataMatrizUgel,
+    loadingMatrizUgel,
+    fetchMatrizUgelData,
   };
 };

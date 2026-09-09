@@ -1,0 +1,2002 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Visualizaciones de Dificultad + Decisiones</title>
+    <style>
+        /* ===== ESTILOS BASE ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; padding: 15px; }
+        .dashboard { max-width: 1500px; margin: 0 auto; }
+
+        /* HEADER */
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header h1 { color: #1a237e; font-size: 1.4em; display: flex; align-items: center; gap: 10px; }
+        .header h1 small { font-size: 0.5em; color: #5c6bc0; font-weight: normal; }
+
+        .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .filters label { font-weight: 600; color: #283593; font-size: 0.8em; }
+        .filters select {
+            padding: 6px 12px;
+            border: 2px solid #c5cae9;
+            border-radius: 8px;
+            font-size: 12px;
+            background: white;
+            cursor: pointer;
+            color: #1a237e;
+            font-weight: 600;
+        }
+        .filters select:focus { outline: none; border-color: #3f51b5; }
+
+        .nivel-badge {
+            display: inline-block;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.85em;
+        }
+        .nivel-badge.sat { background: #c8e6c9; color: #1b5e20; }
+        .nivel-badge.proc { background: #fff3e0; color: #e65100; }
+        .nivel-badge.ini { background: #ffcdd2; color: #b71c1c; }
+        .nivel-badge.prev { background: #e0e0e0; color: #424242; }
+
+        /* MÉTRICAS */
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .metric-card {
+            background: white;
+            border-radius: 10px;
+            padding: 10px 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border-top: 4px solid #3f51b5;
+        }
+        .metric-card .number { font-size: 1.4em; font-weight: bold; color: #1a237e; }
+        .metric-card .number.sat { color: #2e7d32; }
+        .metric-card .number.proc { color: #f9a825; }
+        .metric-card .number.ini { color: #e65100; }
+        .metric-card .number.prev { color: #757575; }
+        .metric-card .number.rojo { color: #e53935; }
+        .metric-card .number.verde { color: #2e7d32; }
+        .metric-card .number.azul { color: #3f51b5; }
+        .metric-card .label { color: #5c6bc0; font-size: 0.6em; }
+
+        /* TABLA COMPLETA */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            overflow-x: auto;
+            margin-bottom: 15px;
+        }
+        .table-container .header-table {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .table-container .header-table h2 { color: #1a237e; font-size: 1em; }
+        .table-container .header-table .info { font-size: 0.7em; color: #5c6bc0; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.7em;
+            min-width: 1200px;
+        }
+        thead th {
+            background: #e8eaf6;
+            padding: 5px 3px;
+            text-align: center;
+            font-weight: 700;
+            color: #1a237e;
+            font-size: 0.55em;
+            text-transform: uppercase;
+            border-bottom: 2px solid #c5cae9;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        thead th.ugel-header {
+            background: #1a237e;
+            color: white;
+            font-size: 0.6em;
+            padding: 6px 4px;
+            min-width: 60px;
+            position: sticky;
+            left: 0;
+            z-index: 20;
+        }
+        thead th.pregunta-header {
+            background: #3f51b5;
+            color: white;
+            font-size: 0.5em;
+            padding: 3px 2px;
+            min-width: 40px;
+        }
+        thead th.eval-header {
+            background: #bbdefb;
+            color: #0d47a1;
+            font-size: 0.45em;
+            padding: 2px 2px;
+        }
+        thead th.eval-header.p1 { background: #c8e6c9; color: #1b5e20; }
+        thead th.eval-header.p2 { background: #fff9c4; color: #f57f17; }
+
+        tbody td {
+            padding: 3px 2px;
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+            font-size: 0.7em;
+            transition: background 0.2s;
+        }
+        tbody tr:hover td { background: #f5f7ff; }
+        tbody td:first-child {
+            font-weight: 700;
+            color: #1a237e;
+            background: #f5f7ff;
+            font-size: 0.65em;
+            padding: 3px 4px;
+            min-width: 55px;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            text-align: left;
+        }
+
+        .pct-cell {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.8em;
+            min-width: 32px;
+        }
+        .pct-cell.sat { background: #c8e6c9; color: #1b5e20; }
+        .pct-cell.proc { background: #fff3e0; color: #e65100; }
+        .pct-cell.ini { background: #ffcdd2; color: #b71c1c; }
+        .pct-cell.prev { background: #e0e0e0; color: #424242; }
+
+        /* ===== SECCIÓN DE VISUALIZACIONES ===== */
+        .viz-container {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            margin-bottom: 15px;
+        }
+        .viz-container .viz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .viz-container .viz-header h2 { color: #1a237e; font-size: 1em; }
+        .viz-container .viz-header .subtitle { font-size: 0.7em; color: #5c6bc0; font-weight: normal; }
+
+        /* Pestañas */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #e8eaf6;
+            padding-bottom: 4px;
+        }
+        .tabs .tab {
+            padding: 6px 14px;
+            border-radius: 8px 8px 0 0;
+            font-size: 0.7em;
+            font-weight: 600;
+            color: #5c6bc0;
+            background: #f5f7ff;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            border-bottom: 3px solid transparent;
+        }
+        .tabs .tab:hover { background: #e8eaf6; color: #1a237e; }
+        .tabs .tab.active { background: white; color: #1a237e; border-bottom-color: #3f51b5; }
+
+        .tab-content { display: none; padding: 10px 0; }
+        .tab-content.active { display: block; }
+
+        /* Filtros de visualización */
+        .viz-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f5f7ff;
+            border-radius: 8px;
+        }
+        .viz-filters label { font-weight: 600; color: #283593; font-size: 0.7em; }
+        .viz-filters select {
+            padding: 4px 10px;
+            border: 2px solid #c5cae9;
+            border-radius: 6px;
+            font-size: 11px;
+            background: white;
+            cursor: pointer;
+            color: #1a237e;
+        }
+        .viz-filters .info-badge { font-size: 0.7em; color: #5c6bc0; margin-left: 5px; font-weight: 600; }
+
+        /* ===== GRÁFICO APILADO ===== */
+        .chart-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .chart-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chart-row .label {
+            min-width: 80px;
+            font-weight: 600;
+            color: #1a237e;
+            font-size: 0.65em;
+            text-align: right;
+        }
+        .chart-row .bar-group {
+            flex: 1;
+            display: flex;
+            height: 22px;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #f5f7ff;
+        }
+        .chart-row .bar-group .bar {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.5em;
+            font-weight: 700;
+            color: white;
+            transition: width 1s ease;
+            min-width: 8px;
+        }
+        .bar-sat { background: #2e7d32; }
+        .bar-proc { background: #f9a825; }
+        .bar-ini { background: #e65100; }
+        .bar-prev { background: #757575; }
+
+        .chart-row .value {
+            min-width: 55px;
+            font-weight: 600;
+            color: #1a237e;
+            font-size: 0.6em;
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .chart-row .value .v-sat { color: #2e7d32; }
+        .chart-row .value .v-proc { color: #f9a825; }
+        .chart-row .value .v-ini { color: #e65100; }
+        .chart-row .value .v-prev { color: #757575; }
+
+        /* ===== HEATMAP ===== */
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: 90px repeat(10, 1fr);
+            gap: 3px;
+            overflow-x: auto;
+            min-width: 700px;
+        }
+        .heatmap-header {
+            font-weight: 700;
+            color: #1a237e;
+            font-size: 0.6em;
+            text-align: center;
+            padding: 6px 4px;
+            background: #e8eaf6;
+            border-radius: 4px;
+        }
+        .heatmap-header.ugel { background: #1a237e; color: white; position: sticky; left: 0; z-index: 5; }
+        .heatmap-header.pregunta { background: #3f51b5; color: white; }
+
+        .heatmap-cell {
+            padding: 6px 4px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.65em;
+            font-weight: 700;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .heatmap-cell:hover { transform: scale(1.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 10; }
+        .heatmap-cell.ugel {
+            background: #f5f7ff;
+            color: #1a237e;
+            font-weight: 700;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            text-align: left;
+            padding-left: 8px;
+        }
+        .heatmap-cell.nivel-0 { background: #2e7d32; color: white; }
+        .heatmap-cell.nivel-1 { background: #66bb6a; color: white; }
+        .heatmap-cell.nivel-2 { background: #aed581; color: #333; }
+        .heatmap-cell.nivel-3 { background: #fff9c4; color: #333; }
+        .heatmap-cell.nivel-4 { background: #ffcc80; color: #333; }
+        .heatmap-cell.nivel-5 { background: #ff8a65; color: white; }
+        .heatmap-cell.nivel-6 { background: #e53935; color: white; }
+        .heatmap-cell .pct { font-size: 0.7em; }
+
+        /* ===== BURBUJAS ===== */
+        .bubble-grid {
+            display: grid;
+            grid-template-columns: 90px repeat(10, 1fr);
+            gap: 6px;
+            overflow-x: auto;
+            min-width: 700px;
+        }
+        .bubble-header {
+            font-weight: 700;
+            color: #1a237e;
+            font-size: 0.6em;
+            text-align: center;
+            padding: 6px 4px;
+            background: #e8eaf6;
+            border-radius: 4px;
+        }
+        .bubble-header.ugel { background: #1a237e; color: white; position: sticky; left: 0; z-index: 5; }
+        .bubble-header.pregunta { background: #3f51b5; color: white; }
+
+        .bubble-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 50%;
+            aspect-ratio: 1;
+            transition: all 0.3s;
+            cursor: pointer;
+            font-size: 0.55em;
+            font-weight: 700;
+            color: white;
+            margin: auto;
+            max-width: 60px;
+            max-height: 60px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .bubble-cell:hover { transform: scale(1.2); box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10; }
+        .bubble-cell.ugel {
+            border-radius: 4px;
+            background: #f5f7ff !important;
+            color: #1a237e !important;
+            font-weight: 700;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            text-align: left;
+            padding-left: 8px;
+            font-size: 0.65em;
+            aspect-ratio: auto;
+            max-width: none;
+            max-height: none;
+            text-shadow: none;
+        }
+        .bubble-size-1 { width: 30px; height: 30px; background: #2e7d32; font-size: 0.45em; }
+        .bubble-size-2 { width: 38px; height: 38px; background: #66bb6a; font-size: 0.5em; }
+        .bubble-size-3 { width: 46px; height: 46px; background: #aed581; font-size: 0.55em; }
+        .bubble-size-4 { width: 54px; height: 54px; background: #fff9c4; color: #333; font-size: 0.6em; }
+        .bubble-size-5 { width: 62px; height: 62px; background: #ffcc80; color: #333; font-size: 0.65em; }
+        .bubble-size-6 { width: 70px; height: 70px; background: #ff8a65; font-size: 0.7em; }
+        .bubble-size-7 { width: 78px; height: 78px; background: #e53935; font-size: 0.75em; }
+
+        /* ===== RANKING ===== */
+        .ranking-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-x: auto;
+            min-width: 700px;
+        }
+        .ranking-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .ranking-row .rank { min-width: 30px; font-weight: 700; color: #5c6bc0; font-size: 0.7em; text-align: center; }
+        .ranking-row .rank .medal { font-size: 1.1em; }
+        .ranking-row .ugel-name { min-width: 80px; font-weight: 700; color: #1a237e; font-size: 0.7em; }
+        .ranking-row .pregunta-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.6em;
+            font-weight: 700;
+            min-width: 30px;
+            text-align: center;
+        }
+        .pregunta-badge.muy-dificil { background: #e53935; color: white; }
+        .pregunta-badge.dificil { background: #ff8a65; color: white; }
+        .pregunta-badge.media { background: #f9a825; color: #333; }
+        .pregunta-badge.facil { background: #66bb6a; color: white; }
+
+        .ranking-row .pct-value { min-width: 40px; font-weight: 700; font-size: 0.7em; text-align: right; }
+        .ranking-row .pct-value.alto { color: #e53935; }
+        .ranking-row .pct-value.medio { color: #f9a825; }
+        .ranking-row .pct-value.bajo { color: #2e7d32; }
+
+        .ranking-row .bar-mini { flex: 1; height: 14px; background: #f0f0f0; border-radius: 7px; overflow: hidden; }
+        .ranking-row .bar-mini .fill { height: 100%; border-radius: 7px; transition: width 1s ease; }
+        .fill.alto { background: #e53935; }
+        .fill.medio-alto { background: #ff8a65; }
+        .fill.medio { background: #f9a825; }
+        .fill.bajo { background: #66bb6a; }
+
+        /* ===== RADAR ===== */
+        .radar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .radar-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            border-left: 4px solid #3f51b5;
+            transition: transform 0.3s;
+        }
+        .radar-card:hover { transform: translateY(-5px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .radar-card .radar-title { font-weight: 700; color: #1a237e; font-size: 0.85em; text-align: center; margin-bottom: 10px; }
+        .radar-card .radar-canvas-wrapper { position: relative; width: 100%; max-width: 280px; margin: 0 auto; }
+        .radar-card .radar-canvas-wrapper canvas { width: 100% !important; height: auto !important; }
+        .radar-card .radar-stats {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+            font-size: 0.6em;
+            color: #5c6bc0;
+        }
+        .radar-card .radar-stats .stat-item { display: flex; align-items: center; gap: 3px; }
+        .radar-card .radar-stats .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .radar-card .radar-stats .dot.dificil { background: #e53935; }
+        .radar-card .radar-stats .dot.media { background: #f9a825; }
+        .radar-card .radar-stats .dot.facil { background: #2e7d32; }
+
+        /* ===== LÍNEAS ===== */
+        .line-chart-wrapper { position: relative; width: 100%; height: 350px; }
+        .stats-line {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .stats-line .stat-card {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stats-line .stat-card .num { font-weight: 700; font-size: 1.1em; color: #1a237e; }
+        .stats-line .stat-card .label { font-size: 0.55em; color: #5c6bc0; }
+
+        /* ===== DECISIONES - TABLA ===== */
+        .decision-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75em;
+            min-width: 900px;
+        }
+        .decision-table thead th {
+            background: #1a237e;
+            color: white;
+            padding: 8px 6px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-size: 0.7em;
+        }
+        .decision-table tbody td {
+            padding: 6px 4px;
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.7em;
+        }
+        .decision-table tbody tr:hover td { background: #f5f7ff; }
+        .decision-table tbody td:first-child,
+        .decision-table tbody td:nth-child(2) {
+            font-weight: 700;
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background: #f5f7ff;
+        }
+        .decision-table tbody tr:nth-child(even) td { background: #fafafa; }
+        .decision-table tbody tr:nth-child(even) td:first-child,
+        .decision-table tbody tr:nth-child(even) td:nth-child(2) { background: #fafafa; }
+
+        .alerta-badge {
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.8em;
+        }
+        .alerta-badge.critico { background: #e53935; color: white; }
+        .alerta-badge.alto { background: #ff8a65; color: white; }
+        .alerta-badge.medio { background: #f9a825; color: #333; }
+        .alerta-badge.bajo { background: #66bb6a; color: white; }
+
+        .accion-text {
+            font-size: 0.7em;
+            color: #283593;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #e8eaf6;
+        }
+
+        /* ===== DECISIONES POR UGEL ===== */
+        .decision-ugel-container {
+            margin-top: 15px;
+        }
+
+        .decision-ugel-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border-left: 4px solid #3f51b5;
+            transition: all 0.3s;
+        }
+        .decision-ugel-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .decision-ugel-card .ugel-title {
+            font-weight: 700;
+            color: #1a237e;
+            font-size: 0.85em;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .decision-ugel-card .ugel-title .badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .decision-ugel-card .ugel-title .badges .mini-badge {
+            font-size: 0.6em;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .mini-badge.critico { background: #e53935; color: white; }
+        .mini-badge.alto { background: #ff8a65; color: white; }
+        .mini-badge.medio { background: #f9a825; color: #333; }
+        .mini-badge.bajo { background: #66bb6a; color: white; }
+
+        .decision-ugel-card .ugel-preguntas {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .decision-ugel-card .ugel-preguntas .preg-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.65em;
+            font-weight: 600;
+            background: white;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .decision-ugel-card .ugel-preguntas .preg-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .preg-item .pct {
+            font-weight: 700;
+        }
+        .preg-item .pct.critico { color: #e53935; }
+        .preg-item .pct.alto { color: #ff8a65; }
+        .preg-item .pct.medio { color: #f9a825; }
+        .preg-item .pct.bajo { color: #2e7d32; }
+
+        /* ===== LEYENDAS ===== */
+        .legend {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 8px 12px;
+            background: #f5f7ff;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #e8eaf6;
+        }
+        .legend-item { display: flex; align-items: center; gap: 4px; font-size: 0.65em; color: #283593; }
+        .legend-color { width: 14px; height: 14px; border-radius: 3px; }
+        .legend-color.sat { background: #2e7d32; }
+        .legend-color.proc { background: #f9a825; }
+        .legend-color.ini { background: #e65100; }
+        .legend-color.prev { background: #757575; }
+
+        .legend-bubble .bubble-sample { border-radius: 50%; width: 20px; height: 20px; }
+        .legend-bubble .bubble-sample.s1 { background: #2e7d32; width: 14px; height: 14px; }
+        .legend-bubble .bubble-sample.s2 { background: #66bb6a; width: 18px; height: 18px; }
+        .legend-bubble .bubble-sample.s3 { background: #aed581; width: 22px; height: 22px; }
+        .legend-bubble .bubble-sample.s4 { background: #fff9c4; width: 26px; height: 26px; }
+        .legend-bubble .bubble-sample.s5 { background: #ffcc80; width: 30px; height: 30px; }
+        .legend-bubble .bubble-sample.s6 { background: #ff8a65; width: 34px; height: 34px; }
+        .legend-bubble .bubble-sample.s7 { background: #e53935; width: 38px; height: 38px; }
+
+        .legend-line .color-line { width: 20px; height: 3px; border-radius: 2px; display: inline-block; }
+
+        /* ===== DECISIONES RESUMEN ===== */
+        .decision-resumen {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .view-toggle button {
+            padding: 4px 14px;
+            border-radius: 20px;
+            border: 2px solid #c5cae9;
+            background: white;
+            font-size: 0.7em;
+            font-weight: 600;
+            color: #5c6bc0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .view-toggle button:hover { border-color: #3f51b5; color: #1a237e; }
+        .view-toggle button.active { background: #3f51b5; color: white; border-color: #3f51b5; }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .header { flex-direction: column; align-items: stretch; }
+            .filters { flex-direction: column; }
+            .metrics { grid-template-columns: 1fr 1fr; }
+            .viz-filters { flex-direction: column; align-items: stretch; }
+            table { font-size: 0.55em; min-width: 800px; }
+            .chart-row .label { min-width: 50px; font-size: 0.55em; }
+            .chart-row .value { min-width: 40px; font-size: 0.5em; }
+            .heatmap-grid { font-size: 0.6em; }
+            .heatmap-cell { padding: 4px 2px; font-size: 0.55em; }
+            .bubble-grid { font-size: 0.6em; gap: 3px; }
+            .bubble-cell { max-width: 40px; max-height: 40px; font-size: 0.45em; }
+            .bubble-size-1 { width: 20px; height: 20px; }
+            .bubble-size-2 { width: 26px; height: 26px; }
+            .bubble-size-3 { width: 32px; height: 32px; }
+            .bubble-size-4 { width: 38px; height: 38px; }
+            .bubble-size-5 { width: 44px; height: 44px; }
+            .bubble-size-6 { width: 50px; height: 50px; }
+            .bubble-size-7 { width: 56px; height: 56px; }
+            .radar-grid { grid-template-columns: 1fr; }
+            .line-chart-wrapper { height: 300px; }
+            .ranking-row .ugel-name { min-width: 50px; font-size: 0.6em; }
+            .ranking-row .rank { min-width: 20px; font-size: 0.6em; }
+            .tabs .tab { font-size: 0.6em; padding: 4px 10px; }
+            .decision-table { font-size: 0.65em; min-width: 700px; }
+            .decision-resumen { grid-template-columns: 1fr 1fr; }
+            .decision-ugel-card .ugel-preguntas .preg-item { font-size: 0.55em; padding: 2px 6px; }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .anim-in { animation: fadeInUp 0.3s ease forwards; }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- ===== HEADER ===== -->
+        <div class="header">
+            <h1>📊 Visualizaciones de Dificultad <small>Di · P1 · P2</small></h1>
+            <div class="filters">
+                <div>
+                    <label>📍 UGEL:</label>
+                    <select id="ugelFilter">
+                        <option value="all">Todas</option>
+                        <option value="Azángaro">Azángaro</option>
+                        <option value="Carabaya">Carabaya</option>
+                        <option value="Chucuito">Chucuito</option>
+                        <option value="El Collao">El Collao</option>
+                        <option value="Huancané">Huancané</option>
+                        <option value="Lampa">Lampa</option>
+                        <option value="Melgar">Melgar</option>
+                        <option value="Moho">Moho</option>
+                        <option value="Puno">Puno</option>
+                        <option value="San Antonio de Putina">San Antonio de Putina</option>
+                        <option value="San Román">San Román</option>
+                        <option value="Sandia">Sandia</option>
+                        <option value="Yunguyo">Yunguyo</option>
+                        <option value="Macusani">Macusani</option>
+                    </select>
+                </div>
+                <div>
+                    <label>🎯 Nivel:</label>
+                    <select id="nivelFilter">
+                        <option value="sat">🟢 Satisfactorio</option>
+                        <option value="proc">🟡 En Proceso</option>
+                        <option value="ini">🟠 En Inicio</option>
+                        <option value="prev" selected>⚪ Previo al Inicio</option>
+                    </select>
+                </div>
+                <div>
+                    <label>📝 Evaluación:</label>
+                    <select id="evalFilter">
+                        <option value="all">Todas</option>
+                        <option value="Di">Diagnóstica (Di)</option>
+                        <option value="P1">Progresiva 1</option>
+                        <option value="P2">Progresiva 2</option>
+                    </select>
+                </div>
+                <span id="nivelBadge" class="nivel-badge prev">⚪ Previo al Inicio</span>
+            </div>
+        </div>
+
+        <!-- ===== MÉTRICAS ===== -->
+        <div class="metrics" id="metricsContainer">
+            <div class="metric-card"><div class="number" id="mTotal">0</div><div class="label">Total UGEL</div></div>
+            <div class="metric-card"><div class="number prev" id="mPromedio">0%</div><div class="label">Promedio del Nivel</div></div>
+            <div class="metric-card"><div class="number" id="mMejor">-</div><div class="label">Mejor UGEL</div></div>
+            <div class="metric-card"><div class="number" id="mPeor">-</div><div class="label">Peor UGEL</div></div>
+            <div class="metric-card"><div class="number" id="mRango">-</div><div class="label">Rango (Max-Min)</div></div>
+        </div>
+
+        <!-- ===== TABLA COMPLETA ===== -->
+        <div class="table-container">
+            <div class="header-table">
+                <h2>📋 <span id="tablaTitle">Previo al Inicio</span> - Porcentaje por UGEL y Pregunta</h2>
+                <span class="info" id="tablaInfo">Evaluación: Todas</span>
+            </div>
+            <div style="overflow-x:auto; max-height: 450px; overflow-y: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="ugel-header" rowspan="3" style="position:sticky; left:0; z-index:30;">UGEL</th>
+                            <th colspan="3" class="pregunta-header">P1</th>
+                            <th colspan="3" class="pregunta-header">P2</th>
+                            <th colspan="3" class="pregunta-header">P3</th>
+                            <th colspan="3" class="pregunta-header">P4</th>
+                            <th colspan="3" class="pregunta-header">P5</th>
+                            <th colspan="3" class="pregunta-header">P6</th>
+                            <th colspan="3" class="pregunta-header">P7</th>
+                            <th colspan="3" class="pregunta-header">P8</th>
+                            <th colspan="3" class="pregunta-header">P9</th>
+                            <th colspan="3" class="pregunta-header">P10</th>
+                        </tr>
+                        <tr>
+                            <th class="eval-header">Di</th>
+                            <th class="eval-header p1">P1</th>
+                            <th class="eval-header p2">P2</th>
+                            <th class="eval-header">Di</th><th class="eval-header p1">P1</th><th class="eval-header p2">P2</th>
+                            <th class="eval-header">Di</th><th class="eval-header p1">P1</th><th class="eval-header p2">P2</th>
+                            <th class="eval-header">Di</th><th class="eval-header p1">P1</th><th class="eval-header p2">P2</th>
+                            <th class="eval-header">Di</th><th class="eval-header p1">P1</th><th class="eval-header p2">P2</th>
+                            <th class="eval-header">Di</th><th class="eval-header p1">P1</th><th class="eval-header p2">P2</th>
+                            <th class="eval-header">Di</th><th class="eval-header p1">P1</th><th class="eval-header p2">P2</th>
+                            <th class="eval-header">Di</th><th class="eval-header p1">P1</th><th class="eval-header p2">P2</th>
+                            <th class="eval-header">Di</th><th class="eval-header p1">P1</th><th class="eval-header p2">P2</th>
+                            <th class="eval-header">Di</th><th class="eval-header p1">P1</th><th class="eval-header p2">P2</th>
+                        </tr>
+                        <tr>
+                            <th colspan="3" style="font-size:0.4em; background:#f5f7ff; color:#888;">% del nivel seleccionado</th>
+                            <th colspan="3" style="font-size:0.4em; background:#f5f7ff; color:#888;">% del nivel seleccionado</th>
+                            <th colspan="3" style="font-size:0.4em; background:#f5f7ff; color:#888;">% del nivel seleccionado</th>
+                            <th colspan="3" style="font-size:0.4em; background:#f5f7ff; color:#888;">% del nivel seleccionado</th>
+                            <th colspan="3" style="font-size:0.4em; background:#f5f7ff; color:#888;">% del nivel seleccionado</th>
+                            <th colspan="3" style="font-size:0.4em; background:#f5f7ff; color:#888;">% del nivel seleccionado</th>
+                            <th colspan="3" style="font-size:0.4em; background:#f5f7ff; color:#888;">% del nivel seleccionado</th>
+                            <th colspan="3" style="font-size:0.4em; background:#f5f7ff; color:#888;">% del nivel seleccionado</th>
+                            <th colspan="3" style="font-size:0.4em; background:#f5f7ff; color:#888;">% del nivel seleccionado</th>
+                            <th colspan="3" style="font-size:0.4em; background:#f5f7ff; color:#888;">% del nivel seleccionado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item"><div class="legend-color sat"></div>Satisfactorio (SAT)</div>
+                <div class="legend-item"><div class="legend-color proc"></div>En Proceso (PROC)</div>
+                <div class="legend-item"><div class="legend-color ini"></div>En Inicio (INI)</div>
+                <div class="legend-item"><div class="legend-color prev"></div>Previo al Inicio (PREV)</div>
+                <div class="legend-item" style="margin-left:10px; color:#1a237e; font-weight:600;">
+                    🔍 Selecciona un nivel para ver solo ese porcentaje
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== SECCIÓN DE VISUALIZACIONES ===== -->
+        <div class="viz-container">
+            <div class="viz-header">
+                <h2>📊 Visualizaciones de Dificultad por Pregunta <span class="subtitle">- % Previo al Inicio (mayor = más difícil)</span></h2>
+            </div>
+
+            <!-- Pestañas -->
+            <div class="tabs">
+                <button class="tab active" data-tab="tab-apilado">📊 Apilado</button>
+                <button class="tab" data-tab="tab-heatmap">🔥 Heatmap</button>
+                <button class="tab" data-tab="tab-burbujas">🫧 Burbujas</button>
+                <button class="tab" data-tab="tab-ranking">🏆 Ranking</button>
+                <button class="tab" data-tab="tab-radar">🕸️ Radar</button>
+                <button class="tab" data-tab="tab-lineas">📈 Líneas</button>
+                <button class="tab" data-tab="tab-decisiones">📋 Decisiones</button>
+            </div>
+
+            <!-- ===== TAB 1: APILADO ===== -->
+            <div class="tab-content active" id="tab-apilado">
+                <div class="viz-filters">
+                    <label>📝 Pregunta:</label>
+                    <select id="chartPreguntaFilter">
+                        <option value="all">Todas</option>
+                        <option value="1">Pregunta 1</option>
+                        <option value="2">Pregunta 2</option>
+                        <option value="3">Pregunta 3</option>
+                        <option value="4">Pregunta 4</option>
+                        <option value="5">Pregunta 5</option>
+                        <option value="6">Pregunta 6</option>
+                        <option value="7">Pregunta 7</option>
+                        <option value="8">Pregunta 8</option>
+                        <option value="9">Pregunta 9</option>
+                        <option value="10">Pregunta 10</option>
+                    </select>
+                    <label>📝 Evaluación:</label>
+                    <select id="chartEvalFilter">
+                        <option value="Di">Diagnóstica (Di)</option>
+                        <option value="P1" selected>Progresiva 1</option>
+                        <option value="P2">Progresiva 2</option>
+                    </select>
+                    <span class="info-badge" id="chartInfo">P1 · Progresiva 1</span>
+                </div>
+                <div class="chart-grid" id="chartGrid"></div>
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-color sat"></div>Satisfactorio</div>
+                    <div class="legend-item"><div class="legend-color proc"></div>En Proceso</div>
+                    <div class="legend-item"><div class="legend-color ini"></div>En Inicio</div>
+                    <div class="legend-item"><div class="legend-color prev"></div>Previo al Inicio</div>
+                    <div class="legend-item" style="margin-left:10px; color:#1a237e; font-weight:600;">📊 Cada barra muestra la distribución de los 4 niveles</div>
+                </div>
+            </div>
+
+            <!-- ===== TAB 2: HEATMAP ===== -->
+            <div class="tab-content" id="tab-heatmap">
+                <div class="viz-filters">
+                    <label>📝 Evaluación:</label>
+                    <select id="heatmapEvalFilter">
+                        <option value="Di">Diagnóstica (Di)</option>
+                        <option value="P1" selected>Progresiva 1</option>
+                        <option value="P2">Progresiva 2</option>
+                    </select>
+                    <span class="info-badge" id="heatmapInfo">Progresiva 1</span>
+                </div>
+                <div class="heatmap-grid" id="heatmapGrid"></div>
+                <div class="legend" style="margin-top:12px;">
+                    <span style="font-weight:700; color:#1a237e; font-size:0.7em;">Nivel de dificultad (% Previo al Inicio):</span>
+                    <div class="legend-item"><div class="legend-color" style="background:#2e7d32;"></div>0-15%</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#66bb6a;"></div>16-25%</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#aed581;"></div>26-35%</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#fff9c4;"></div>36-45%</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#ffcc80;"></div>46-55%</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#ff8a65;"></div>56-65%</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#e53935;"></div>66-100%</div>
+                    <div class="legend-item" style="margin-left:10px;">🔴 Mayor dificultad</div>
+                </div>
+            </div>
+
+            <!-- ===== TAB 3: BURBUJAS ===== -->
+            <div class="tab-content" id="tab-burbujas">
+                <div class="viz-filters">
+                    <label>📝 Evaluación:</label>
+                    <select id="bubbleEvalFilter">
+                        <option value="Di">Diagnóstica (Di)</option>
+                        <option value="P1" selected>Progresiva 1</option>
+                        <option value="P2">Progresiva 2</option>
+                    </select>
+                    <span class="info-badge" id="bubbleInfo">Progresiva 1</span>
+                </div>
+                <div class="bubble-grid" id="bubbleGrid"></div>
+                <div class="legend legend-bubble" style="margin-top:12px;">
+                    <span style="font-weight:700; color:#1a237e; font-size:0.7em;">Dificultad (% Previo al Inicio):</span>
+                    <div class="legend-item"><div class="bubble-sample s1"></div>0-15%</div>
+                    <div class="legend-item"><div class="bubble-sample s2"></div>16-25%</div>
+                    <div class="legend-item"><div class="bubble-sample s3"></div>26-35%</div>
+                    <div class="legend-item"><div class="bubble-sample s4"></div>36-45%</div>
+                    <div class="legend-item"><div class="bubble-sample s5"></div>46-55%</div>
+                    <div class="legend-item"><div class="bubble-sample s6"></div>56-65%</div>
+                    <div class="legend-item"><div class="bubble-sample s7"></div>66-100%</div>
+                    <div class="legend-item" style="margin-left:10px;">🔴 Mayor dificultad</div>
+                </div>
+            </div>
+
+            <!-- ===== TAB 4: RANKING ===== -->
+            <div class="tab-content" id="tab-ranking">
+                <div class="viz-filters">
+                    <label>📝 Evaluación:</label>
+                    <select id="rankingEvalFilter">
+                        <option value="Di">Diagnóstica (Di)</option>
+                        <option value="P1" selected>Progresiva 1</option>
+                        <option value="P2">Progresiva 2</option>
+                    </select>
+                    <span class="info-badge" id="rankingInfo">Progresiva 1</span>
+                </div>
+                <div class="ranking-grid" id="rankingGrid"></div>
+                <div class="legend" style="margin-top:12px;">
+                    <div class="legend-item"><div class="legend-color" style="background:#e53935;"></div>Muy Difícil (66-100%)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#ff8a65;"></div>Difícil (51-65%)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#f9a825;"></div>Media (36-50%)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#66bb6a;"></div>Fácil (0-35%)</div>
+                </div>
+            </div>
+
+            <!-- ===== TAB 5: RADAR ===== -->
+            <div class="tab-content" id="tab-radar">
+                <div class="viz-filters">
+                    <label>📝 Evaluación:</label>
+                    <select id="radarEvalFilter">
+                        <option value="Di">Diagnóstica (Di)</option>
+                        <option value="P1" selected>Progresiva 1</option>
+                        <option value="P2">Progresiva 2</option>
+                    </select>
+                    <span class="info-badge" id="radarInfo">Progresiva 1</span>
+                </div>
+                <div class="radar-grid" id="radarGrid"></div>
+                <div class="legend" style="margin-top:12px;">
+                    <div class="legend-item"><div class="legend-color" style="background:#3f51b5;"></div>UGEL 1</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#e65100;"></div>UGEL 2</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#2e7d32;"></div>UGEL 3</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#f9a825;"></div>UGEL 4</div>
+                    <div class="legend-item" style="margin-left:10px;">📌 Cada eje = una pregunta</div>
+                </div>
+            </div>
+
+            <!-- ===== TAB 6: LÍNEAS ===== -->
+            <div class="tab-content" id="tab-lineas">
+                <div class="viz-filters">
+                    <label>📝 Evaluación:</label>
+                    <select id="lineEvalFilter">
+                        <option value="Di">Diagnóstica (Di)</option>
+                        <option value="P1" selected>Progresiva 1</option>
+                        <option value="P2">Progresiva 2</option>
+                    </select>
+                    <span class="info-badge" id="lineInfo">Progresiva 1</span>
+                </div>
+                <div class="line-chart-wrapper">
+                    <canvas id="lineChart"></canvas>
+                </div>
+                <div class="stats-line" id="statsLine"></div>
+                <div class="legend legend-line" id="legendLine" style="margin-top:12px;"></div>
+            </div>
+
+            <!-- ===== TAB 7: DECISIONES ===== -->
+            <div class="tab-content" id="tab-decisiones">
+                <div class="viz-filters">
+                    <label>📝 Evaluación:</label>
+                    <select id="decisionEvalFilter">
+                        <option value="Di">Diagnóstica (Di)</option>
+                        <option value="P1" selected>Progresiva 1</option>
+                        <option value="P2">Progresiva 2</option>
+                    </select>
+                    <label>📍 UGEL:</label>
+                    <select id="decisionUgelFilter">
+                        <option value="all">Todas las UGEL</option>
+                        <option value="Azángaro">Azángaro</option>
+                        <option value="Carabaya">Carabaya</option>
+                        <option value="Chucuito">Chucuito</option>
+                        <option value="El Collao">El Collao</option>
+                        <option value="Huancané">Huancané</option>
+                        <option value="Lampa">Lampa</option>
+                        <option value="Melgar">Melgar</option>
+                        <option value="Moho">Moho</option>
+                        <option value="Puno">Puno</option>
+                        <option value="San Antonio de Putina">San Antonio de Putina</option>
+                        <option value="San Román">San Román</option>
+                        <option value="Sandia">Sandia</option>
+                        <option value="Yunguyo">Yunguyo</option>
+                        <option value="Macusani">Macusani</option>
+                    </select>
+                    <span class="info-badge" id="decisionInfo">Progresiva 1 · Todas las UGEL</span>
+                </div>
+
+                <!-- Selector de vista -->
+                <div class="view-toggle">
+                    <button class="active" data-view="general" onclick="toggleDecisionView('general')">📊 Vista General</button>
+                    <button data-view="porugel" onclick="toggleDecisionView('porugel')">📋 Por UGEL</button>
+                </div>
+
+                <!-- Resumen ejecutivo de decisiones -->
+                <div class="decision-resumen" id="decisionResumen">
+                    <!-- Generado por JS -->
+                </div>
+
+                <!-- VISTA GENERAL - Tabla de ranking crítico -->
+                <div id="decisionViewGeneral">
+                    <div style="overflow-x:auto; max-height:450px; overflow-y:auto;">
+                        <table class="decision-table">
+                            <thead>
+                                <tr>
+                                    <th style="position:sticky; left:0; z-index:15; min-width:40px;">#</th>
+                                    <th style="position:sticky; left:0; z-index:15; min-width:80px;">UGEL</th>
+                                    <th style="min-width:80px;">Pregunta Crítica</th>
+                                    <th style="min-width:80px;">% Previo al Inicio</th>
+                                    <th style="min-width:100px;">Estudiantes Estimados</th>
+                                    <th style="min-width:100px;">Nivel de Alerta</th>
+                                    <th style="min-width:180px;">Acción Recomendada</th>
+                                </tr>
+                            </thead>
+                            <tbody id="decisionBody">
+                                <!-- Generado por JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- VISTA POR UGEL - Ranking por UGEL específico -->
+                <div id="decisionViewPorUgel" style="display:none;">
+                    <div class="decision-ugel-container" id="decisionUgelContainer">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+
+                <div class="legend" style="margin-top:12px;">
+                    <div class="legend-item"><div class="legend-color" style="background:#e53935;"></div>Crítico (≥ 60%)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#ff8a65;"></div>Alto (50-59%)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#f9a825;"></div>Medio (40-49%)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#66bb6a;"></div>Bajo (&lt; 40%)</div>
+                    <div class="legend-item" style="margin-left:10px; color:#1a237e; font-weight:600;">🔴 Priorizar intervención en las primeras posiciones</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // ========================================================================
+        // DATOS COMPARTIDOS
+        // ========================================================================
+        const ugeles = [
+            "Azángaro", "Carabaya", "Chucuito", "El Collao", "Huancané",
+            "Lampa", "Melgar", "Moho", "Puno", "San Antonio de Putina",
+            "San Román", "Sandia", "Yunguyo", "Macusani"
+        ];
+
+        const nivelesInfo = {
+            'sat': { label: 'Satisfactorio', emoji: '🟢', clase: 'sat', color: '#2e7d32' },
+            'proc': { label: 'En Proceso', emoji: '🟡', clase: 'proc', color: '#f9a825' },
+            'ini': { label: 'En Inicio', emoji: '🟠', clase: 'ini', color: '#e65100' },
+            'prev': { label: 'Previo al Inicio', emoji: '⚪', clase: 'prev', color: '#757575' }
+        };
+
+        const coloresRadar = ['#3f51b5', '#e65100', '#2e7d32', '#f9a825', '#6a1b9a', '#00838f', '#bf360c', '#4a148c'];
+
+        // Generar datos simulados
+        function generarDatos() {
+            const datos = {};
+            ugeles.forEach(ugel => {
+                datos[ugel] = { preguntas: {} };
+                for (let p = 1; p <= 10; p++) {
+                    datos[ugel].preguntas[p] = { Di: {}, P1: {}, P2: {} };
+                    let sat = Math.floor(Math.random() * 25) + 5;
+                    let proc = Math.floor(Math.random() * 25) + 5;
+                    let ini = Math.floor(Math.random() * 25) + 5;
+                    let prev = 100 - sat - proc - ini;
+                    if (prev < 0) { prev = 0;
+                        sat = 100 - proc - ini; }
+                    datos[ugel].preguntas[p].Di = { sat, proc, ini, prev };
+                    sat = Math.min(sat + Math.floor(Math.random() * 12), 65);
+                    proc = Math.min(proc + Math.floor(Math.random() * 10), 75);
+                    ini = Math.max(ini - Math.floor(Math.random() * 10), 5);
+                    prev = Math.max(prev - Math.floor(Math.random() * 10), 0);
+                    let total = sat + proc + ini + prev;
+                    if (total > 100) { sat = Math.floor(sat / total * 100);
+                        proc = Math.floor(proc / total * 100);
+                        ini = Math.floor(ini / total * 100);
+                        prev = 100 - sat - proc - ini; }
+                    datos[ugel].preguntas[p].P1 = { sat, proc, ini, prev };
+                    sat = Math.min(sat + Math.floor(Math.random() * 12), 75);
+                    proc = Math.min(proc + Math.floor(Math.random() * 10), 80);
+                    ini = Math.max(ini - Math.floor(Math.random() * 10), 3);
+                    prev = Math.max(prev - Math.floor(Math.random() * 10), 0);
+                    total = sat + proc + ini + prev;
+                    if (total > 100) { sat = Math.floor(sat / total * 100);
+                        proc = Math.floor(proc / total * 100);
+                        ini = Math.floor(ini / total * 100);
+                        prev = 100 - sat - proc - ini; }
+                    datos[ugel].preguntas[p].P2 = { sat, proc, ini, prev };
+                }
+            });
+            return datos;
+        }
+
+        const data = generarDatos();
+
+        // ========================================================================
+        // FUNCIONES UTILES
+        // ========================================================================
+        function getNivelKey() { return document.getElementById('nivelFilter').value; }
+
+        function getUgelFilter() { return document.getElementById('ugelFilter').value; }
+
+        function getEvalFilter() { return document.getElementById('evalFilter').value; }
+
+        function getNivelInfo() { return nivelesInfo[getNivelKey()]; }
+
+        function getEvalLabel(evalKey) {
+            const map = { 'Di': 'Diagnóstica', 'P1': 'Progresiva 1', 'P2': 'Progresiva 2' };
+            return map[evalKey] || evalKey;
+        }
+
+        function getHeatClass(pct) {
+            if (pct <= 15) return 'nivel-0';
+            if (pct <= 25) return 'nivel-1';
+            if (pct <= 35) return 'nivel-2';
+            if (pct <= 45) return 'nivel-3';
+            if (pct <= 55) return 'nivel-4';
+            if (pct <= 65) return 'nivel-5';
+            return 'nivel-6';
+        }
+
+        function getBubbleClass(pct) {
+            if (pct <= 15) return 'bubble-size-1';
+            if (pct <= 25) return 'bubble-size-2';
+            if (pct <= 35) return 'bubble-size-3';
+            if (pct <= 45) return 'bubble-size-4';
+            if (pct <= 55) return 'bubble-size-5';
+            if (pct <= 65) return 'bubble-size-6';
+            return 'bubble-size-7';
+        }
+
+        function getRankingClass(pct) {
+            if (pct > 65) return 'muy-dificil';
+            if (pct > 50) return 'dificil';
+            if (pct > 35) return 'media';
+            return 'facil';
+        }
+
+        function getRankingColor(pct) {
+            if (pct > 65) return 'alto';
+            if (pct > 50) return 'medio-alto';
+            if (pct > 35) return 'medio';
+            return 'bajo';
+        }
+
+        function getAlertaInfo(pct) {
+            if (pct >= 60) {
+                return { label: 'Crítico', clase: 'critico', color: '#e53935', accion: 'Intervención inmediata: Taller de reforzamiento' };
+            } else if (pct >= 50) {
+                return { label: 'Alto', clase: 'alto', color: '#ff8a65', accion: 'Priorizar: Sesiones de práctica adicionales' };
+            } else if (pct >= 40) {
+                return { label: 'Medio', clase: 'medio', color: '#f9a825', accion: 'Monitoreo: Seguimiento personalizado' };
+            } else {
+                return { label: 'Bajo', clase: 'bajo', color: '#66bb6a', accion: 'Mantener: Estrategias actuales' };
+            }
+        }
+
+        // ========================================================================
+        // RENDERIZAR TABLA
+        // ========================================================================
+        function renderizarTabla() {
+            const nivelKey = getNivelKey();
+            const nivelInfo = getNivelInfo();
+            const ugelFilter = getUgelFilter();
+            const evalFilter = getEvalFilter();
+
+            const ugelesMostrar = ugelFilter === 'all' ? ugeles : [ugelFilter];
+            const totalUGEL = ugelesMostrar.length;
+
+            document.getElementById('nivelBadge').className = `nivel-badge ${nivelInfo.clase}`;
+            document.getElementById('nivelBadge').textContent = `${nivelInfo.emoji} ${nivelInfo.label}`;
+            document.getElementById('tablaTitle').textContent = nivelInfo.label;
+
+            const evalLabel = evalFilter === 'all' ? 'Todas' : getEvalLabel(evalFilter);
+            document.getElementById('tablaInfo').textContent = `Evaluación: ${evalLabel}`;
+
+            let totalPct = 0,
+                count = 0,
+                ugelProms = {};
+
+            ugelesMostrar.forEach(ugel => {
+                let sumPct = 0,
+                    countP = 0;
+                const evals = evalFilter === 'all' ? ['Di', 'P1', 'P2'] : [evalFilter];
+                for (let p = 1; p <= 10; p++) {
+                    const d = data[ugel].preguntas[p];
+                    if (d) {
+                        evals.forEach(evalKey => {
+                            if (d[evalKey]) { sumPct += d[evalKey][nivelKey];
+                                countP++; }
+                        });
+                    }
+                }
+                const prom = countP > 0 ? sumPct / countP : 0;
+                ugelProms[ugel] = prom;
+                totalPct += sumPct;
+                count += countP;
+            });
+
+            const promedio = count > 0 ? Math.round(totalPct / count) : 0;
+            const sorted = Object.entries(ugelProms).sort((a, b) => b[1] - a[1]);
+            const mejorUGEL = sorted.length > 0 ? sorted[0][0] : '-';
+            const peorUGEL = sorted.length > 0 ? sorted[sorted.length - 1][0] : '-';
+            const maxVal = sorted.length > 0 ? Math.round(sorted[0][1]) : 0;
+            const minVal = sorted.length > 0 ? Math.round(sorted[sorted.length - 1][1]) : 0;
+            const rango = maxVal - minVal;
+
+            document.getElementById('mTotal').textContent = totalUGEL;
+            document.getElementById('mPromedio').textContent = promedio + '%';
+            document.getElementById('mPromedio').className = `number ${nivelInfo.clase}`;
+            document.getElementById('mMejor').textContent = mejorUGEL;
+            document.getElementById('mPeor').textContent = peorUGEL;
+            document.getElementById('mRango').textContent = rango + '%';
+
+            const tbody = document.getElementById('tablaBody');
+            tbody.innerHTML = '';
+            const evals = evalFilter === 'all' ? ['Di', 'P1', 'P2'] : [evalFilter];
+            const sortedUGEL = sorted.map(s => s[0]);
+
+            sortedUGEL.forEach(ugel => {
+                const tr = document.createElement('tr');
+                let html = `<td style="position:sticky; left:0; background:white; z-index:5;">${ugel}</td>`;
+                for (let p = 1; p <= 10; p++) {
+                    const d = data[ugel].preguntas[p];
+                    if (!d) { evals.forEach(() => { html += `<td>-</td>`; }); continue; }
+                    evals.forEach(evalKey => {
+                        const pct = d[evalKey] ? d[evalKey][nivelKey] : 0;
+                        html += `<td><span class="pct-cell ${nivelInfo.clase}">${pct}%</span></td>`;
+                    });
+                }
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ========================================================================
+        // RENDERIZAR GRÁFICO APILADO
+        // ========================================================================
+        function renderizarGraficoApilado() {
+            const chartGrid = document.getElementById('chartGrid');
+            const preguntaFilter = parseInt(document.getElementById('chartPreguntaFilter').value) || 'all';
+            const evalFilter = document.getElementById('chartEvalFilter').value;
+            const ugelFilter = getUgelFilter();
+
+            const ugelesMostrar = ugelFilter === 'all' ? ugeles : [ugelFilter];
+            const preguntaLabel = preguntaFilter === 'all' ? 'Todas' : `P${preguntaFilter}`;
+            document.getElementById('chartInfo').textContent = `${preguntaLabel} · ${getEvalLabel(evalFilter)}`;
+
+            let chartData = [];
+
+            ugelesMostrar.forEach(ugel => {
+                let sat = 0,
+                    proc = 0,
+                    ini = 0,
+                    prev = 0,
+                    count = 0;
+                const preguntas = preguntaFilter === 'all' ? Object.keys(data[ugel].preguntas) : [preguntaFilter];
+                preguntas.forEach(p => {
+                    const d = data[ugel].preguntas[p];
+                    if (d && d[evalFilter]) {
+                        sat += d[evalFilter].sat || 0;
+                        proc += d[evalFilter].proc || 0;
+                        ini += d[evalFilter].ini || 0;
+                        prev += d[evalFilter].prev || 0;
+                        count++;
+                    }
+                });
+                if (count > 0) {
+                    chartData.push({
+                        ugel: ugel,
+                        sat: Math.round(sat / count),
+                        proc: Math.round(proc / count),
+                        ini: Math.round(ini / count),
+                        prev: Math.round(prev / count)
+                    });
+                }
+            });
+
+            chartData.sort((a, b) => b.sat - a.sat);
+            chartGrid.innerHTML = '';
+            const maxTotal = Math.max(...chartData.map(d => d.sat + d.proc + d.ini + d.prev), 1);
+
+            chartData.forEach((d, idx) => {
+                const row = document.createElement('div');
+                row.className = 'chart-row anim-in';
+                row.style.animationDelay = `${idx * 0.03}s`;
+                const pSat = (d.sat / maxTotal) * 100;
+                const pProc = (d.proc / maxTotal) * 100;
+                const pIni = (d.ini / maxTotal) * 100;
+                const pPrev = (d.prev / maxTotal) * 100;
+                row.innerHTML = `
+                    <div class="label">${d.ugel}</div>
+                    <div class="bar-group">
+                        <div class="bar bar-sat" style="width: ${pSat}%; min-width:${d.sat > 0 ? '8px' : '0'};">
+                            ${d.sat > 5 ? d.sat + '%' : ''}
+                        </div>
+                        <div class="bar bar-proc" style="width: ${pProc}%; min-width:${d.proc > 0 ? '8px' : '0'};">
+                            ${d.proc > 5 ? d.proc + '%' : ''}
+                        </div>
+                        <div class="bar bar-ini" style="width: ${pIni}%; min-width:${d.ini > 0 ? '8px' : '0'};">
+                            ${d.ini > 5 ? d.ini + '%' : ''}
+                        </div>
+                        <div class="bar bar-prev" style="width: ${pPrev}%; min-width:${d.prev > 0 ? '8px' : '0'};">
+                            ${d.prev > 5 ? d.prev + '%' : ''}
+                        </div>
+                    </div>
+                    <div class="value">
+                        <span class="v-sat">${d.sat}%</span>
+                        <span class="v-proc">${d.proc}%</span>
+                        <span class="v-ini">${d.ini}%</span>
+                        <span class="v-prev">${d.prev}%</span>
+                    </div>
+                `;
+                chartGrid.appendChild(row);
+            });
+        }
+
+        // ========================================================================
+        // RENDERIZAR HEATMAP
+        // ========================================================================
+        function renderHeatmap() {
+            const evalFilter = document.getElementById('heatmapEvalFilter').value;
+            const ugelFilter = getUgelFilter();
+            const ugelesMostrar = ugelFilter === 'all' ? ugeles : [ugelFilter];
+
+            document.getElementById('heatmapInfo').textContent = getEvalLabel(evalFilter);
+
+            const grid = document.getElementById('heatmapGrid');
+            let html = `<div class="heatmap-header ugel">UGEL</div>`;
+            for (let p = 1; p <= 10; p++) {
+                html += `<div class="heatmap-header pregunta">P${p}</div>`;
+            }
+
+            ugelesMostrar.forEach(ugel => {
+                html += `<div class="heatmap-cell ugel">${ugel}</div>`;
+                for (let p = 1; p <= 10; p++) {
+                    const d = data[ugel].preguntas[p];
+                    if (d && d[evalFilter]) {
+                        const pct = d[evalFilter].prev;
+                        const cls = getHeatClass(pct);
+                        html += `<div class="heatmap-cell ${cls}" title="${ugel} - P${p}: ${pct}% en Previo al Inicio">
+                            <span class="pct">${pct}%</span>
+                        </div>`;
+                    } else {
+                        html += `<div class="heatmap-cell" style="background:#eee; color:#ccc;">-</div>`;
+                    }
+                }
+            });
+            grid.innerHTML = html;
+        }
+
+        // ========================================================================
+        // RENDERIZAR BURBUJAS
+        // ========================================================================
+        function renderBubble() {
+            const evalFilter = document.getElementById('bubbleEvalFilter').value;
+            const ugelFilter = getUgelFilter();
+            const ugelesMostrar = ugelFilter === 'all' ? ugeles : [ugelFilter];
+
+            document.getElementById('bubbleInfo').textContent = getEvalLabel(evalFilter);
+
+            const grid = document.getElementById('bubbleGrid');
+            let html = `<div class="bubble-header ugel">UGEL</div>`;
+            for (let p = 1; p <= 10; p++) {
+                html += `<div class="bubble-header pregunta">P${p}</div>`;
+            }
+
+            ugelesMostrar.forEach(ugel => {
+                html += `<div class="bubble-cell ugel">${ugel}</div>`;
+                for (let p = 1; p <= 10; p++) {
+                    const d = data[ugel].preguntas[p];
+                    if (d && d[evalFilter]) {
+                        const pct = d[evalFilter].prev;
+                        const cls = getBubbleClass(pct);
+                        html += `<div class="bubble-cell ${cls}" title="${ugel} - P${p}: ${pct}% en Previo al Inicio">
+                            ${pct}%
+                        </div>`;
+                    } else {
+                        html += `<div class="bubble-cell" style="background:#eee; color:#ccc; border-radius:4px; width:30px; height:30px; font-size:0.5em;">-</div>`;
+                    }
+                }
+            });
+            grid.innerHTML = html;
+        }
+
+        // ========================================================================
+        // RENDERIZAR RANKING
+        // ========================================================================
+        function renderRanking() {
+            const evalFilter = document.getElementById('rankingEvalFilter').value;
+            const ugelFilter = getUgelFilter();
+            const ugelesMostrar = ugelFilter === 'all' ? ugeles : [ugelFilter];
+
+            document.getElementById('rankingInfo').textContent = getEvalLabel(evalFilter);
+
+            const grid = document.getElementById('rankingGrid');
+            grid.innerHTML = '';
+
+            const rankingData = [];
+            ugelesMostrar.forEach(ugel => {
+                let maxPct = 0,
+                    maxPregunta = 0,
+                    totalPct = 0,
+                    count = 0;
+                for (let p = 1; p <= 10; p++) {
+                    const d = data[ugel].preguntas[p];
+                    if (d && d[evalFilter]) {
+                        const pct = d[evalFilter].prev;
+                        totalPct += pct;
+                        count++;
+                        if (pct > maxPct) { maxPct = pct;
+                            maxPregunta = p; }
+                    }
+                }
+                const prom = count > 0 ? Math.round(totalPct / count) : 0;
+                rankingData.push({ ugel, maxPct: Math.round(maxPct), maxPregunta, prom });
+            });
+
+            rankingData.sort((a, b) => b.maxPct - a.maxPct);
+
+            rankingData.forEach((d, idx) => {
+                const row = document.createElement('div');
+                row.className = 'ranking-row anim-in';
+                row.style.animationDelay = `${idx * 0.03}s`;
+                const cls = getRankingClass(d.maxPct);
+                const colorCls = getRankingColor(d.maxPct);
+                const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
+                row.innerHTML = `
+                    <div class="rank"><span class="medal">${medal}</span></div>
+                    <div class="ugel-name">${d.ugel}</div>
+                    <div class="pregunta-badge ${cls}">P${d.maxPregunta}</div>
+                    <div class="bar-mini">
+                        <div class="fill ${colorCls}" style="width: ${d.maxPct}%;"></div>
+                    </div>
+                    <div class="pct-value ${colorCls}">${d.maxPct}%</div>
+                    <div style="font-size:0.6em; color:#5c6bc0; min-width:50px;">Prom: ${d.prom}%</div>
+                `;
+                grid.appendChild(row);
+            });
+        }
+
+        // ========================================================================
+        // RENDERIZAR RADAR
+        // ========================================================================
+        let radarCharts = {};
+
+        function renderRadar() {
+            const evalFilter = document.getElementById('radarEvalFilter').value;
+            const ugelFilter = getUgelFilter();
+            const ugelesMostrar = ugelFilter === 'all' ? ugeles.slice(0, 8) : [ugelFilter];
+
+            document.getElementById('radarInfo').textContent = getEvalLabel(evalFilter);
+
+            const grid = document.getElementById('radarGrid');
+            grid.innerHTML = '';
+
+            const grupos = [];
+            for (let i = 0; i < ugelesMostrar.length; i += 4) {
+                grupos.push(ugelesMostrar.slice(i, i + 4));
+            }
+
+            grupos.forEach((grupo, idx) => {
+                const card = document.createElement('div');
+                card.className = 'radar-card';
+
+                const labels = [];
+                for (let p = 1; p <= 10; p++) labels.push(`P${p}`);
+
+                const datasets = grupo.map((ugel, i) => {
+                    const dataPoints = [];
+                    for (let p = 1; p <= 10; p++) {
+                        const d = data[ugel].preguntas[p];
+                        if (d && d[evalFilter]) {
+                            dataPoints.push(d[evalFilter].prev);
+                        } else {
+                            dataPoints.push(0);
+                        }
+                    }
+                    return {
+                        label: ugel,
+                        data: dataPoints,
+                        backgroundColor: coloresRadar[i % coloresRadar.length] + '40',
+                        borderColor: coloresRadar[i % coloresRadar.length],
+                        borderWidth: 2,
+                        pointBackgroundColor: coloresRadar[i % coloresRadar.length],
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 1,
+                        pointRadius: 4
+                    };
+                });
+
+                const statsHTML = grupo.map((ugel, i) => {
+                    let total = 0,
+                        count = 0;
+                    for (let p = 1; p <= 10; p++) {
+                        const d = data[ugel].preguntas[p];
+                        if (d && d[evalFilter]) {
+                            total += d[evalFilter].prev;
+                            count++;
+                        }
+                    }
+                    const prom = count > 0 ? Math.round(total / count) : 0;
+                    const nivel = prom > 50 ? 'dificil' : prom > 30 ? 'media' : 'facil';
+                    return `<span class="stat-item">
+                        <span class="dot ${nivel}"></span>
+                        ${ugel}: ${prom}%
+                    </span>`;
+                }).join('');
+
+                card.innerHTML = `
+                    <div class="radar-title">📊 Grupo ${idx + 1}</div>
+                    <div class="radar-canvas-wrapper">
+                        <canvas id="radarChart${idx}"></canvas>
+                    </div>
+                    <div class="radar-stats">${statsHTML}</div>
+                `;
+                grid.appendChild(card);
+
+                setTimeout(() => {
+                    const ctx = document.getElementById(`radarChart${idx}`).getContext('2d');
+                    if (radarCharts[`radarChart${idx}`]) {
+                        radarCharts[`radarChart${idx}`].destroy();
+                    }
+                    radarCharts[`radarChart${idx}`] = new Chart(ctx, {
+                        type: 'radar',
+                        data: { labels: labels, datasets: datasets },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { font: { size: 9 }, boxWidth: 10, padding: 8 }
+                                }
+                            },
+                            scales: {
+                                r: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    ticks: { stepSize: 20, font: { size: 8 } },
+                                    pointLabels: { font: { size: 8 } }
+                                }
+                            }
+                        }
+                    });
+                }, 100);
+            });
+        }
+
+        // ========================================================================
+        // RENDERIZAR LÍNEAS
+        // ========================================================================
+        let lineChartInstance = null;
+
+        function renderLine() {
+            const evalFilter = document.getElementById('lineEvalFilter').value;
+            const ugelFilter = getUgelFilter();
+            const ugelesMostrar = ugelFilter === 'all' ? ugeles.slice(0, 6) : [ugelFilter];
+
+            document.getElementById('lineInfo').textContent = getEvalLabel(evalFilter);
+
+            const labels = [];
+            for (let p = 1; p <= 10; p++) labels.push(`P${p}`);
+
+            const datasets = ugelesMostrar.map((ugel, i) => {
+                const dataPoints = [];
+                for (let p = 1; p <= 10; p++) {
+                    const d = data[ugel].preguntas[p];
+                    if (d && d[evalFilter]) {
+                        dataPoints.push(d[evalFilter].prev);
+                    } else {
+                        dataPoints.push(0);
+                    }
+                }
+                return {
+                    label: ugel,
+                    data: dataPoints,
+                    borderColor: coloresRadar[i % coloresRadar.length],
+                    backgroundColor: coloresRadar[i % coloresRadar.length] + '20',
+                    borderWidth: 2.5,
+                    pointRadius: 4,
+                    pointBackgroundColor: coloresRadar[i % coloresRadar.length],
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 1,
+                    tension: 0.3,
+                    fill: true
+                };
+            });
+
+            const legendContainer = document.getElementById('legendLine');
+            legendContainer.innerHTML = datasets.map((ds, i) => `
+                <div class="legend-item">
+                    <span class="color-line" style="background:${coloresRadar[i % coloresRadar.length]};"></span>
+                    ${ds.label}
+                </div>
+            `).join('');
+
+            const statsContainer = document.getElementById('statsLine');
+            let statsHTML = '';
+            ugelesMostrar.forEach((ugel, i) => {
+                let total = 0,
+                    count = 0,
+                    max = 0,
+                    min = 100;
+                for (let p = 1; p <= 10; p++) {
+                    const d = data[ugel].preguntas[p];
+                    if (d && d[evalFilter]) {
+                        const val = d[evalFilter].prev;
+                        total += val;
+                        count++;
+                        max = Math.max(max, val);
+                        min = Math.min(min, val);
+                    }
+                }
+                const prom = count > 0 ? Math.round(total / count) : 0;
+                statsHTML += `
+                    <div class="stat-card" style="border-left: 3px solid ${coloresRadar[i % coloresRadar.length]};">
+                        <div class="num">${ugel}</div>
+                        <div class="label">Prom: ${prom}% | Max: ${max}% | Min: ${min}%</div>
+                    </div>
+                `;
+            });
+            statsContainer.innerHTML = statsHTML;
+
+            const ctx = document.getElementById('lineChart').getContext('2d');
+            if (lineChartInstance) { lineChartInstance.destroy(); }
+
+            lineChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { callback: function(value) { return value + '%'; } },
+                            title: { display: true, text: '% Previo al Inicio', font: { size: 10 } }
+                        },
+                        x: {
+                            title: { display: true, text: 'Preguntas', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ========================================================================
+        // VARIABLES DE VISTA
+        // ========================================================================
+        let currentDecisionView = 'general';
+
+        function toggleDecisionView(view) {
+            currentDecisionView = view;
+            document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.view-toggle button[data-view="${view}"]`).classList.add('active');
+
+            if (view === 'general') {
+                document.getElementById('decisionViewGeneral').style.display = 'block';
+                document.getElementById('decisionViewPorUgel').style.display = 'none';
+            } else {
+                document.getElementById('decisionViewGeneral').style.display = 'none';
+                document.getElementById('decisionViewPorUgel').style.display = 'block';
+                renderDecisionesPorUgel();
+            }
+        }
+
+        // ========================================================================
+        // RENDERIZAR DECISIONES - VISTA GENERAL
+        // ========================================================================
+        function renderDecisiones() {
+            const evalFilter = document.getElementById('decisionEvalFilter').value;
+            const ugelFilter = document.getElementById('decisionUgelFilter').value;
+            const ugelesMostrar = ugelFilter === 'all' ? ugeles : [ugelFilter];
+
+            document.getElementById('decisionInfo').textContent = 
+                `${getEvalLabel(evalFilter)} · ${ugelFilter === 'all' ? 'Todas las UGEL' : ugelFilter}`;
+
+            // Calcular datos por UGEL y pregunta
+            let rankingData = [];
+
+            ugelesMostrar.forEach(ugel => {
+                for (let p = 1; p <= 10; p++) {
+                    const d = data[ugel].preguntas[p];
+                    if (d && d[evalFilter]) {
+                        const prevPct = d[evalFilter].prev;
+                        const estudiantesTotales = 100;
+                        const estudiantesPrev = Math.round((prevPct / 100) * estudiantesTotales);
+                        rankingData.push({
+                            ugel: ugel,
+                            pregunta: p,
+                            prevPct: prevPct,
+                            estudiantes: estudiantesPrev,
+                            totalEstudiantes: estudiantesTotales
+                        });
+                    }
+                }
+            });
+
+            // Ordenar por % Previo al Inicio (mayor a menor)
+            rankingData.sort((a, b) => b.prevPct - a.prevPct);
+
+            // Resumen ejecutivo
+            const resumen = document.getElementById('decisionResumen');
+            const totalCritico = rankingData.filter(d => d.prevPct >= 60).length;
+            const totalAlto = rankingData.filter(d => d.prevPct >= 50 && d.prevPct < 60).length;
+            const totalMedio = rankingData.filter(d => d.prevPct >= 40 && d.prevPct < 50).length;
+            const totalBajo = rankingData.filter(d => d.prevPct < 40).length;
+            const avgPrev = rankingData.length > 0 ? Math.round(rankingData.reduce((s, d) => s + d.prevPct, 0) / rankingData.length) : 0;
+
+            resumen.innerHTML = `
+                <div class="metric-card" style="border-top-color:#e53935;">
+                    <div class="number rojo">${totalCritico}</div>
+                    <div class="label">🔴 Críticas (≥60%)</div>
+                </div>
+                <div class="metric-card" style="border-top-color:#ff8a65;">
+                    <div class="number" style="color:#ff8a65;">${totalAlto}</div>
+                    <div class="label">🟠 Altas (50-59%)</div>
+                </div>
+                <div class="metric-card" style="border-top-color:#f9a825;">
+                    <div class="number" style="color:#f9a825;">${totalMedio}</div>
+                    <div class="label">🟡 Medias (40-49%)</div>
+                </div>
+                <div class="metric-card" style="border-top-color:#66bb6a;">
+                    <div class="number verde">${totalBajo}</div>
+                    <div class="label">🟢 Bajas (&lt;40%)</div>
+                </div>
+                <div class="metric-card" style="border-top-color:#3f51b5;">
+                    <div class="number azul">${avgPrev}%</div>
+                    <div class="label">📊 Promedio General</div>
+                </div>
+            `;
+
+            // Tabla de ranking - Vista General
+            const tbody = document.getElementById('decisionBody');
+            tbody.innerHTML = '';
+
+            const topData = rankingData.slice(0, 50);
+
+            topData.forEach((d, idx) => {
+                const tr = document.createElement('tr');
+                const alerta = getAlertaInfo(d.prevPct);
+                const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
+
+                tr.innerHTML = `
+                    <td style="padding:6px 4px; text-align:center; font-weight:700; background:#f5f7ff; position:sticky; left:0; z-index:2;">${medal}</td>
+                    <td style="padding:6px 4px; text-align:center; font-weight:700; background:#f5f7ff; position:sticky; left:0; z-index:2;">${d.ugel}</td>
+                    <td style="padding:6px 4px; text-align:center; font-weight:600;">P${d.pregunta}</td>
+                    <td style="padding:6px 4px; text-align:center; font-weight:700; color:${alerta.color};">${d.prevPct}%</td>
+                    <td style="padding:6px 4px; text-align:center;">${d.estudiantes} / ${d.totalEstudiantes}</td>
+                    <td style="padding:6px 4px; text-align:center;">
+                        <span class="alerta-badge ${alerta.clase}">${alerta.label}</span>
+                    </td>
+                    <td style="padding:6px 4px; text-align:center;">
+                        <span class="accion-text">${alerta.accion}</span>
+                    </td>
+                `;
+
+                if (idx % 2 === 0) {
+                    tr.style.background = '#fafafa';
+                }
+
+                tbody.appendChild(tr);
+            });
+
+            if (topData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#5c6bc0;">No hay datos disponibles para los filtros seleccionados.</td></tr>`;
+            }
+
+            // Si la vista actual es 'porugel', actualizar también
+            if (currentDecisionView === 'porugel') {
+                renderDecisionesPorUgel();
+            }
+        }
+
+        // ========================================================================
+        // RENDERIZAR DECISIONES - VISTA POR UGEL
+        // ========================================================================
+        function renderDecisionesPorUgel() {
+            const evalFilter = document.getElementById('decisionEvalFilter').value;
+            const ugelFilter = document.getElementById('decisionUgelFilter').value;
+            const ugelesMostrar = ugelFilter === 'all' ? ugeles : [ugelFilter];
+
+            const container = document.getElementById('decisionUgelContainer');
+            container.innerHTML = '';
+
+            ugelesMostrar.forEach(ugel => {
+                let preguntasData = [];
+                for (let p = 1; p <= 10; p++) {
+                    const d = data[ugel].preguntas[p];
+                    if (d && d[evalFilter]) {
+                        const prevPct = d[evalFilter].prev;
+                        const estudiantesTotales = 100;
+                        const estudiantesPrev = Math.round((prevPct / 100) * estudiantesTotales);
+                        preguntasData.push({
+                            pregunta: p,
+                            prevPct: prevPct,
+                            estudiantes: estudiantesPrev,
+                            totalEstudiantes: estudiantesTotales
+                        });
+                    }
+                }
+
+                // Ordenar de mayor a menor dificultad
+                preguntasData.sort((a, b) => b.prevPct - a.prevPct);
+
+                // Calcular estadísticas para el badge
+                const criticas = preguntasData.filter(d => d.prevPct >= 60).length;
+                const altas = preguntasData.filter(d => d.prevPct >= 50 && d.prevPct < 60).length;
+                const medias = preguntasData.filter(d => d.prevPct >= 40 && d.prevPct < 50).length;
+                const bajas = preguntasData.filter(d => d.prevPct < 40).length;
+
+                // Crear tarjeta por UGEL
+                const card = document.createElement('div');
+                card.className = 'decision-ugel-card';
+                card.style.borderLeftColor = criticas > 0 ? '#e53935' : altas > 0 ? '#ff8a65' : medias > 0 ? '#f9a825' : '#66bb6a';
+
+                let badgesHTML = '';
+                if (criticas > 0) badgesHTML += `<span class="mini-badge critico">🔴 ${criticas}</span>`;
+                if (altas > 0) badgesHTML += `<span class="mini-badge alto">🟠 ${altas}</span>`;
+                if (medias > 0) badgesHTML += `<span class="mini-badge medio">🟡 ${medias}</span>`;
+                if (bajas > 0) badgesHTML += `<span class="mini-badge bajo">🟢 ${bajas}</span>`;
+
+                let preguntasHTML = preguntasData.map(d => {
+                    const alerta = getAlertaInfo(d.prevPct);
+                    return `<span class="preg-item" title="${alerta.accion}">
+                        P${d.pregunta}
+                        <span class="pct ${alerta.clase}">${d.prevPct}%</span>
+                        <span style="font-size:0.6em; color:#999;">(${d.estudiantes}/100)</span>
+                    </span>`;
+                }).join('');
+
+                card.innerHTML = `
+                    <div class="ugel-title">
+                        <span>📌 ${ugel}</span>
+                        <div class="badges">${badgesHTML}</div>
+                    </div>
+                    <div class="ugel-preguntas">
+                        ${preguntasHTML || '<span style="color:#999; font-size:0.7em;">No hay datos disponibles</span>'}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // ========================================================================
+        // PESTAÑAS
+        // ========================================================================
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab).classList.add('active');
+
+                const tabId = this.dataset.tab;
+                if (tabId === 'tab-heatmap') renderHeatmap();
+                if (tabId === 'tab-burbujas') renderBubble();
+                if (tabId === 'tab-ranking') renderRanking();
+                if (tabId === 'tab-radar') renderRadar();
+                if (tabId === 'tab-lineas') renderLine();
+                if (tabId === 'tab-decisiones') {
+                    renderDecisiones();
+                    // Restaurar vista por defecto
+                    if (currentDecisionView === 'porugel') {
+                        toggleDecisionView('porugel');
+                    } else {
+                        toggleDecisionView('general');
+                    }
+                }
+                if (tabId === 'tab-apilado') renderizarGraficoApilado();
+            });
+        });
+
+        // ========================================================================
+        // EVENTOS
+        // ========================================================================
+        document.getElementById('ugelFilter').addEventListener('change', function() {
+            renderizarTabla();
+            renderizarGraficoApilado();
+            renderHeatmap();
+            renderBubble();
+            renderRanking();
+            renderRadar();
+            renderLine();
+            renderDecisiones();
+        });
+
+        document.getElementById('nivelFilter').addEventListener('change', renderizarTabla);
+        document.getElementById('evalFilter').addEventListener('change', renderizarTabla);
+
+        document.getElementById('chartPreguntaFilter').addEventListener('change', renderizarGraficoApilado);
+        document.getElementById('chartEvalFilter').addEventListener('change', renderizarGraficoApilado);
+        document.getElementById('heatmapEvalFilter').addEventListener('change', renderHeatmap);
+        document.getElementById('bubbleEvalFilter').addEventListener('change', renderBubble);
+        document.getElementById('rankingEvalFilter').addEventListener('change', renderRanking);
+        document.getElementById('radarEvalFilter').addEventListener('change', renderRadar);
+        document.getElementById('lineEvalFilter').addEventListener('change', renderLine);
+        document.getElementById('decisionEvalFilter').addEventListener('change', function() {
+            renderDecisiones();
+            if (currentDecisionView === 'porugel') renderDecisionesPorUgel();
+        });
+        document.getElementById('decisionUgelFilter').addEventListener('change', function() {
+            renderDecisiones();
+            if (currentDecisionView === 'porugel') renderDecisionesPorUgel();
+        });
+
+        // ========================================================================
+        // INICIALIZAR
+        // ========================================================================
+        renderizarTabla();
+        renderizarGraficoApilado();
+        renderHeatmap();
+        renderBubble();
+        renderRanking();
+        renderRadar();
+        renderLine();
+        renderDecisiones();
+        toggleDecisionView('general');
+    </script>
+</body>
+</html>

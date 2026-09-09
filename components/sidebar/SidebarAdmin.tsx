@@ -71,7 +71,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
     } else if (p.includes('/admin/docentes') || p.includes('/directores/evaluaciones-docentes') || p.includes('/directores/cobertura-curricular') || (p.includes('/admin/conocimientos-pedagogicos') && p.includes('rol=3'))) {
       setPerfilesOpen(true);
       setOpenDropdown('docentes');
-    } else if (p.includes('/admin/evaluaciones')) {
+    } else if (p.includes('/admin/evaluaciones') || p.includes('/admin/matriz-resultados')) {
       setPerfilesOpen(true);
       setOpenDropdown('estudiantes');
     }
@@ -384,6 +384,14 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                         className={`${styles.submenuLink} ${router.pathname.includes('/admin/evaluaciones') ? styles.activeLink : ''}`}
                       >
                         Seguimiento de Aprendizaje
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        href="/admin/matriz-resultados"
+                        className={`${styles.submenuLink} ${router.pathname.includes('/admin/matriz-resultados') ? styles.activeLink : ''}`}
+                      >
+                        Matriz de Resultados
                       </Link>
                     </li>
                   </ul>

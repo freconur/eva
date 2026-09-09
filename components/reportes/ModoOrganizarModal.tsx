@@ -25,6 +25,7 @@ import {
   MdRefresh,
   MdOutlineDashboard,
   MdOutlineSegment,
+  MdTableChart,
 } from 'react-icons/md';
 import { SortableItemCompact } from './SortableItemCompact';
 import styles from './ModoOrganizarModal.module.css';

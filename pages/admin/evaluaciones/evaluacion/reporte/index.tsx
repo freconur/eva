@@ -270,6 +270,9 @@ const Reporte = () => {
         try {
           const parsed = JSON.parse(savedVisibility);
           if (Array.isArray(parsed)) {
+            if (!parsed.includes('matriz_ugel')) {
+              parsed.push('matriz_ugel');
+            }
             setElementosVisibles(parsed);
           }
         } catch (e) {
