@@ -129,25 +129,29 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
     coords: { x: number; y: number };
   } | null>(null);
 
-  const handleOpenQuestionDetail = (e: React.MouseEvent, order: number) => {
-    e.stopPropagation();
+  const openQuestionDetailAt = (
+    order: number,
+    coords: { x: number; y: number; width?: number; height?: number }
+  ) => {
     if (questionDetailPopover && questionDetailPopover.order === order) {
       setQuestionDetailPopover(null);
       return;
     }
 
-    const rect = e.currentTarget.getBoundingClientRect();
     const popoverWidth = Math.min(440, window.innerWidth - 32);
-    let left = rect.left + rect.width / 2 - popoverWidth / 2;
+    const originWidth = coords.width || 0;
+    const originHeight = coords.height || 0;
+
+    let left = coords.x + originWidth / 2 - popoverWidth / 2;
     if (left < 16) left = 16;
     if (left + popoverWidth > window.innerWidth - 16) {
       left = window.innerWidth - popoverWidth - 16;
     }
 
-    let top = rect.bottom + 8;
+    let top = coords.y + originHeight + 8;
     const estimatedHeight = 420;
-    if (top + estimatedHeight > window.innerHeight && rect.top - estimatedHeight > 16) {
-      top = rect.top - estimatedHeight;
+    if (top + estimatedHeight > window.innerHeight && coords.y - estimatedHeight > 16) {
+      top = coords.y - estimatedHeight - 8;
     }
     if (top < 16) top = 16;
 
@@ -155,6 +159,17 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
       order,
       initialEtapa: selectedEtapa,
       coords: { x: left, y: top },
+    });
+  };
+
+  const handleOpenQuestionDetail = (e: React.MouseEvent, order: number) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    openQuestionDetailAt(order, {
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height,
     });
   };
 
@@ -1423,7 +1438,17 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                       <div className={styles.rankingUgelName} title={d.ugel}>
                         {d.ugel}
                       </div>
-                      <div className={`${styles.preguntaBadge} ${alerta.badgeClase}`}>
+                      <div
+                        className={`${styles.preguntaBadge} ${alerta.badgeClase} ${
+                          questionDetailPopover?.order === d.maxPregunta ? styles.preguntaBadgeActive : ''
+                        }`}
+                        onClick={(e) => handleOpenQuestionDetail(e, d.maxPregunta)}
+                        title={`Pregunta P${
+                          d.maxPregunta < 10 ? `0${d.maxPregunta}` : d.maxPregunta
+                        }: Haz clic para ver ítem pedagógico`}
+                        role="button"
+                        tabIndex={0}
+                      >
                         P{d.maxPregunta < 10 ? `0${d.maxPregunta}` : d.maxPregunta}
                       </div>
                       <div className={styles.barMini}>
@@ -1570,6 +1595,65 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: (event: any, elements: any[], chart: any) => {
+                      const nativeEvt = (event?.native || event) as MouseEvent | undefined;
+                      if (!nativeEvt) return;
+
+                      let targetIndex: number | null = null;
+                      if (elements && elements.length > 0) {
+                        targetIndex = elements[0].index;
+                      } else if (chart?.scales?.x) {
+                        const xScale = chart.scales.x;
+                        const x = typeof event?.x === 'number' ? event.x : nativeEvt.offsetX;
+                        if (x >= xScale.left - 15 && x <= xScale.right + 15) {
+                          const val = xScale.getValueForPixel(x);
+                          if (typeof val === 'number') {
+                            targetIndex = Math.max(
+                              0,
+                              Math.min(sortedPreguntas.length - 1, Math.round(val))
+                            );
+                          }
+                        }
+                      }
+
+                      if (
+                        targetIndex !== null &&
+                        targetIndex >= 0 &&
+                        targetIndex < sortedPreguntas.length
+                      ) {
+                        const q = sortedPreguntas[targetIndex];
+                        const order = getOrderNum(q, targetIndex + 1);
+                        openQuestionDetailAt(order, {
+                          x: nativeEvt.clientX,
+                          y: nativeEvt.clientY,
+                          width: 0,
+                          height: 0,
+                        });
+                      }
+                    },
+                    onHover: (event: any, elements: any[], chart: any) => {
+                      const canvas = chart?.canvas;
+                      if (!canvas) return;
+                      if (elements && elements.length > 0) {
+                        canvas.style.cursor = 'pointer';
+                        return;
+                      }
+                      const nativeEvt = (event?.native || event) as MouseEvent | undefined;
+                      const xScale = chart?.scales?.x;
+                      if (xScale && nativeEvt) {
+                        const x = typeof event?.x === 'number' ? event.x : nativeEvt.offsetX;
+                        const y = typeof event?.y === 'number' ? event.y : nativeEvt.offsetY;
+                        if (
+                          x >= xScale.left - 15 &&
+                          x <= xScale.right + 15 &&
+                          y >= xScale.top - 20
+                        ) {
+                          canvas.style.cursor = 'pointer';
+                          return;
+                        }
+                      }
+                      canvas.style.cursor = 'default';
+                    },
                     interaction: {
                       mode: 'index' as const,
                       intersect: false,
@@ -1589,12 +1673,13 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                         callbacks: {
                           title: (items) => {
                             if (!items.length) return '';
-                            return `Pregunta: ${items[0].label}`;
+                            return `Pregunta: ${items[0].label} (Haz clic para ver detalle)`;
                           },
                           label: (context) =>
                             lineMetric === 'prev'
                               ? ` ${context.dataset.label}: ${context.parsed.y}% en Previo al Inicio`
                               : ` ${context.dataset.label}: ${context.parsed.y}% de aciertos`,
+                          footer: () => '👉 Haz clic para ver ítem pedagógico',
                         },
                       },
                     },
@@ -1620,7 +1705,14 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                         },
                       },
                       x: {
-                        title: { display: true, text: 'Preguntas Evaluadas' },
+                        title: {
+                          display: true,
+                          text: 'Preguntas Evaluadas (Haz clic en P01, P02... para ver detalle)',
+                        },
+                        ticks: {
+                          color: '#1e293b',
+                          font: { weight: 'bold', size: 11 },
+                        },
                       },
                     },
                   }}
