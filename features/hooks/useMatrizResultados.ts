@@ -85,7 +85,7 @@ const CONFIG_DOC_ID = 'matriz_resultados';
 // =========================================================================
 // Poner en false cuando se desee liberar EDI para todos los grados de primaria.
 // Cuando está en true, EDI solo se muestra para 1° y 2° de primaria; 3° a 6° quedan ocultos/pendientes.
-export const BLOQUEAR_EDI_3RO_A_6TO = true;
+export const BLOQUEAR_EDI_3RO_A_6TO = false;
 
 export const useMatrizResultados = () => {
   const router = useRouter();

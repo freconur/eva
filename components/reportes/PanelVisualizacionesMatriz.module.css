@@ -303,6 +303,18 @@
   color: #ffffff;
 }
 
+.interactiveHeader {
+  cursor: pointer !important;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.interactiveHeader:hover {
+  filter: brightness(1.22);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
 .heatmapCell {
   padding: 8px 4px;
   border-radius: 4px;
@@ -1261,6 +1273,48 @@
 
 .subTable tbody tr:hover td {
   background: #f8fafc;
+}
+
+.interactiveItemCell {
+  cursor: pointer !important;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.interactiveItemCell:hover {
+  background-color: #eff6ff !important;
+}
+
+.itemCellBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: #1e293b;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  transition: all 0.15s ease;
+}
+
+.interactiveItemCell:hover .itemCellBadge {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-color: #1d4ed8;
+  transform: scale(1.06);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+
+.interactiveTopItem {
+  cursor: pointer !important;
+  transition: all 0.15s ease;
+}
+
+.interactiveTopItem:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.12));
 }
 
 .progressCellWrapper {

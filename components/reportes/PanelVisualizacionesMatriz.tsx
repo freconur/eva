@@ -30,6 +30,7 @@ import GuiaHeatmapModal from '@/components/modals/GuiaHeatmapModal';
 import GuiaBurbujasModal from '@/components/modals/GuiaBurbujasModal';
 import GuiaDecisionesModal from '@/components/modals/GuiaDecisionesModal';
 import CustomFilterDropdown, { FilterOption } from './CustomFilterDropdown';
+import QuestionDetailPopover from './QuestionDetailPopover';
 
 ChartJS.register(
   PointElement,
@@ -120,6 +121,42 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
 
   // Estado del modal de guía e interpretación del panel de decisiones
   const [isDecisionesModalOpen, setIsDecisionesModalOpen] = useState<boolean>(false);
+
+  // Estado para el popover interactivo de detalles de pregunta (P01, P02...)
+  const [questionDetailPopover, setQuestionDetailPopover] = useState<{
+    order: number;
+    initialEtapa: 'edi' | 'ep1' | 'ep2';
+    coords: { x: number; y: number };
+  } | null>(null);
+
+  const handleOpenQuestionDetail = (e: React.MouseEvent, order: number) => {
+    e.stopPropagation();
+    if (questionDetailPopover && questionDetailPopover.order === order) {
+      setQuestionDetailPopover(null);
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const popoverWidth = Math.min(440, window.innerWidth - 32);
+    let left = rect.left + rect.width / 2 - popoverWidth / 2;
+    if (left < 16) left = 16;
+    if (left + popoverWidth > window.innerWidth - 16) {
+      left = window.innerWidth - popoverWidth - 16;
+    }
+
+    let top = rect.bottom + 8;
+    const estimatedHeight = 420;
+    if (top + estimatedHeight > window.innerHeight && rect.top - estimatedHeight > 16) {
+      top = rect.top - estimatedHeight;
+    }
+    if (top < 16) top = 16;
+
+    setQuestionDetailPopover({
+      order,
+      initialEtapa: selectedEtapa,
+      coords: { x: left, y: top },
+    });
+  };
 
   // UGELs expandidas en la sub-vista 'porugel' de Decisiones (Master-Detail)
   const [expandedUgelIds, setExpandedUgelIds] = useState<Record<string | number, boolean>>({});
@@ -1143,7 +1180,9 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                     return (
                       <div
                         key={order}
-                        className={`${styles.heatmapHeader} ${styles.heatmapHeaderPregunta}`}
+                        className={`${styles.heatmapHeader} ${styles.heatmapHeaderPregunta} ${styles.interactiveHeader}`}
+                        onClick={(e) => handleOpenQuestionDetail(e, order)}
+                        title={`Haz clic para ver la pregunta y actuación pedagógica de ${formatQuestionCode(order)}`}
                       >
                         {formatQuestionCode(order)}
                       </div>
@@ -1164,7 +1203,8 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                           <div
                             key={order}
                             className={`${styles.heatmapCell} ${heatCls}`}
-                            title={`${row.nombre} · P${order < 10 ? '0' : ''}${order}: ${stat.prevPct}% de no acierto (${stat.prevCount} de ${stat.total} estudiantes evaluados fallaron esta pregunta)`}
+                            onClick={(e) => handleOpenQuestionDetail(e, order)}
+                            title={`${row.nombre} · ${formatQuestionCode(order)}: ${stat.prevPct}% de no acierto (${stat.prevCount} de ${stat.total} estudiantes evaluados fallaron esta pregunta). Haz clic para ver detalles del ítem.`}
                           >
                             {stat.total > 0 ? `${stat.prevPct}%` : '-'}
                           </div>
@@ -1263,7 +1303,9 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                     return (
                       <div
                         key={order}
-                        className={`${styles.bubbleHeader} ${styles.bubbleHeaderPregunta}`}
+                        className={`${styles.bubbleHeader} ${styles.bubbleHeaderPregunta} ${styles.interactiveHeader}`}
+                        onClick={(e) => handleOpenQuestionDetail(e, order)}
+                        title={`Haz clic para ver la pregunta y actuación pedagógica de ${formatQuestionCode(order)}`}
                       >
                         {formatQuestionCode(order)}
                       </div>
@@ -1281,11 +1323,16 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                         const stat = getPreguntaStat(row, order, selectedEtapa);
                         const bubbleCls = getBubbleClass(stat.prevPct);
                         return (
-                          <div key={order} className={styles.bubbleCellWrapper}>
+                          <div
+                            key={order}
+                            className={styles.bubbleCellWrapper}
+                            onClick={(e) => handleOpenQuestionDetail(e, order)}
+                            style={{ cursor: 'pointer' }}
+                          >
                             {stat.total > 0 ? (
                               <div
                                 className={`${styles.bubbleCell} ${bubbleCls}`}
-                                title={`${row.nombre} · P${order < 10 ? '0' : ''}${order}: ${stat.prevPct}% en Previo al Inicio`}
+                                title={`${row.nombre} · ${formatQuestionCode(order)}: ${stat.prevPct}% en Previo al Inicio. Haz clic para ver detalles del ítem.`}
                               >
                                 {stat.prevPct}%
                               </div>
@@ -1888,7 +1935,11 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                                 </td>
                                 <td>
                                   {u.topPregunta ? (
-                                    <div className={styles.topItemCell}>
+                                    <div
+                                      className={`${styles.topItemCell} ${styles.interactiveTopItem}`}
+                                      onClick={(e) => handleOpenQuestionDetail(e, u.topPregunta.pregunta)}
+                                      title={`Haz clic para ver la pregunta y actuación de P${u.topPregunta.pregunta < 10 ? `0${u.topPregunta.pregunta}` : u.topPregunta.pregunta}`}
+                                    >
                                       <span
                                         className={styles.topItemChip}
                                         style={{
@@ -1965,8 +2016,14 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                                               const alerta = getAlertaInfo(p.prevPct);
                                               return (
                                                 <tr key={p.pregunta}>
-                                                  <td className="font-bold text-slate-800">
-                                                    P{p.pregunta < 10 ? `0${p.pregunta}` : p.pregunta}
+                                                  <td
+                                                     className={`font-bold text-slate-800 ${styles.interactiveItemCell}`}
+                                                     onClick={(e) => handleOpenQuestionDetail(e, p.pregunta)}
+                                                     title={`Haz clic para ver la pregunta y actuación de P${p.pregunta < 10 ? `0${p.pregunta}` : p.pregunta}`}
+                                                  >
+                                                    <span className={styles.itemCellBadge}>
+                                                      P{p.pregunta < 10 ? `0${p.pregunta}` : p.pregunta}
+                                                    </span>
                                                   </td>
                                                   <td>
                                                     <div className={styles.progressCellWrapper}>
@@ -2077,6 +2134,21 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
         isOpen={isDecisionesModalOpen}
         onClose={() => setIsDecisionesModalOpen(false)}
       />
+
+      {/* Popover interactivo de detalles de pregunta para Heatmap y Burbujas */}
+      {questionDetailPopover && (
+        <QuestionDetailPopover
+          order={questionDetailPopover.order}
+          initialEtapa={questionDetailPopover.initialEtapa}
+          coords={questionDetailPopover.coords}
+          onClose={() => setQuestionDetailPopover(null)}
+          evaluacionEdi={evaluacionEdi}
+          evaluacionEp1={evaluacionEp1}
+          evaluacionEp2={evaluacionEp2}
+          preguntas={preguntas}
+          gradoName={gradoName}
+        />
+      )}
     </div>
   );
 };

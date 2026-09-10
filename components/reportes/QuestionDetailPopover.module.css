@@ -1,0 +1,231 @@
+.questionPopover {
+  position: fixed;
+  z-index: 100000;
+  width: 440px;
+  max-width: calc(100vw - 32px);
+  background-color: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.2), 0 6px 14px -2px rgba(15, 23, 42, 0.1);
+  border: 1.5px solid #d1fae5;
+  overflow: hidden;
+  animation: popoverFadeIn 0.18s ease-out;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.questionPopoverDragging {
+  box-shadow: 0 24px 48px -6px rgba(15, 23, 42, 0.35), 0 12px 20px -4px rgba(15, 23, 42, 0.15) !important;
+  user-select: none !important;
+  transition: none !important;
+}
+
+.questionPopoverHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background-color: #f0fdf4;
+  border-bottom: 1.5px solid #bbf7d0;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.questionPopoverHeaderDragging {
+  cursor: grabbing !important;
+}
+
+.dragHandleIcon {
+  font-size: 1.25rem;
+  color: #86efac;
+  margin-right: -0.25rem;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.questionPopoverHeader:hover .dragHandleIcon {
+  color: #16a34a;
+}
+
+.questionPopoverTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  overflow: hidden;
+}
+
+.questionNumberBadge {
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  background-color: #16a34a;
+  color: #ffffff;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+
+.questionPopoverTitleWrapper {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.questionPopoverTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #14532d;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.questionPopoverSubtitle {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #15803d;
+}
+
+.popoverCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background-color: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 1.15rem;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.popoverCloseBtn:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Tabs de Etapa (EDI, EP1, EP2) */
+.questionEtapaTabs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.questionEtapaTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.questionEtapaTab:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.questionEtapaTabActiveEdi {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border-color: #94a3b8 !important;
+}
+
+.questionEtapaTabActiveEp1 {
+  background-color: #e2e8f0 !important;
+  color: #1e293b !important;
+  border-color: #64748b !important;
+}
+
+.questionEtapaTabActiveEp2 {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #0284c7 !important;
+}
+
+.questionEtapaTag {
+  font-size: 0.65rem;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+/* Cuerpo del Popover */
+.questionPopoverBody {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.questionSectionBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+}
+
+.questionSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sectionIcon {
+  font-size: 0.95rem;
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #334155;
+}
+
+.actuacionText {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.preguntaText {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #334155;
+  white-space: pre-wrap;
+}
+
+

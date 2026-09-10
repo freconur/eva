@@ -181,18 +181,24 @@
 }
 
 .groupRc {
-  background-color: #eff6ff !important;
-  color: #1e40af !important;
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-bottom: 1px solid #334155 !important;
+  border-right: 1px solid #334155 !important;
 }
 
 .groupPuntaje {
-  background-color: #faf5ff !important;
-  color: #6b21a8 !important;
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-bottom: 1px solid #334155 !important;
+  border-right: 1px solid #334155 !important;
 }
 
 .groupNivel {
-  background-color: #fefce8 !important;
-  color: #854d0e !important;
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-bottom: 1px solid #334155 !important;
+  border-right: 1px solid #334155 !important;
 }
 
 .colNivel {
@@ -201,8 +207,10 @@
 
 .groupQuestion {
   min-width: 110px;
-  background-color: #f0fdf4 !important;
-  color: #166534 !important;
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-bottom: 1px solid #334155 !important;
+  border-right: 1px solid #334155 !important;
 }
 
 /* Sub-cabeceras activas al hacer click */
@@ -406,15 +414,39 @@
 }
 
 .subEdi {
-  background-color: rgba(224, 231, 255, 0.4);
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border-right: 1px solid #e2e8f0 !important;
+  border-bottom: 2px solid #94a3b8 !important;
+}
+
+.subEdi:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
 }
 
 .subEp1 {
-  background-color: rgba(254, 243, 199, 0.4);
+  background-color: #e2e8f0 !important;
+  color: #1e293b !important;
+  border-right: 1px solid #cbd5e1 !important;
+  border-bottom: 2px solid #64748b !important;
+}
+
+.subEp1:hover {
+  background-color: #cbd5e1 !important;
+  color: #0f172a !important;
 }
 
 .subEp2 {
-  background-color: rgba(220, 252, 231, 0.4);
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-right: 1px solid #bae6fd !important;
+  border-bottom: 2px solid #0284c7 !important;
+}
+
+.subEp2:hover {
+  background-color: #bae6fd !important;
+  color: #0c4a6e !important;
 }
 
 /* Fila de Resumen Regional */
@@ -612,15 +644,15 @@
 }
 
 .groupQuestionInteractive:hover {
-  background-color: #dcfce7 !important;
-  color: #15803d !important;
-  box-shadow: inset 0 0 0 1.5px #86efac;
+  background-color: #334155 !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 0 0 1.5px #64748b;
 }
 
 .groupQuestionActive {
-  background-color: #bbf7d0 !important;
-  color: #14532d !important;
-  box-shadow: inset 0 0 0 2px #16a34a, 0 2px 8px rgba(22, 163, 74, 0.25) !important;
+  background-color: #0f172a !important;
+  color: #38bdf8 !important;
+  box-shadow: inset 0 0 0 2px #38bdf8, 0 2px 8px rgba(15, 23, 42, 0.4) !important;
 }
 
 .questionPopover {

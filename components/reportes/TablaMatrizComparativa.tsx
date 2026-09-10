@@ -22,6 +22,7 @@ import {
   UgelMatrizComparativaRow,
   NivelComparativoStat,
 } from '@/features/hooks/useMatrizResultados';
+import QuestionDetailPopover from './QuestionDetailPopover';
 
 export interface ColumnVisibilityConfig {
   showRc: boolean;
@@ -92,8 +93,6 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
     coords: { x: number; y: number };
   } | null>(null);
 
-  const questionPopoverRef = useRef<HTMLDivElement>(null);
-
   // Popover interactivo de Niveles de Logro (al hacer clic en celdas de Nivel)
   const [nivelPopover, setNivelPopover] = useState<{
     row: UgelMatrizComparativaRow;
@@ -163,9 +162,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         setActivePopover(null);
       }
-      if (questionPopoverRef.current && !questionPopoverRef.current.contains(e.target as Node)) {
-        setQuestionPopover(null);
-      }
+
       if (nivelPopoverRef.current && !nivelPopoverRef.current.contains(e.target as Node)) {
         setNivelPopover(null);
       }
@@ -345,23 +342,6 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
     });
   };
 
-  const currentQ = useMemo(() => {
-    if (!questionPopover) return null;
-    return (
-      preguntas.find(
-        (p, idx) => (p.order !== undefined ? Number(p.order) : idx + 1) === questionPopover.order
-      ) || null
-    );
-  }, [questionPopover, preguntas]);
-
-  const selectedStageQuestion = useMemo(() => {
-    if (!currentQ || !questionPopover) return null;
-    const etapa = questionPopover.selectedEtapa;
-    if (etapa === 'edi') return (currentQ as any)?.ediPregunta || currentQ;
-    if (etapa === 'ep1') return (currentQ as any)?.ep1Pregunta || currentQ;
-    if (etapa === 'ep2') return (currentQ as any)?.ep2Pregunta || currentQ;
-    return currentQ;
-  }, [currentQ, questionPopover]);
 
   const handleNivelCellClick = (
     e: React.MouseEvent,
@@ -1601,159 +1581,18 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
       )}
 
       {/* Popover interactivo para Pregunta y Actuación al hacer click en P01, P02... */}
-      {questionPopover && currentQ && (
-        <div
-          ref={questionPopoverRef}
-          className={styles.questionPopover}
-          style={{
-            top: questionPopover.coords.y,
-            left: questionPopover.coords.x,
-          }}
-        >
-          {/* Header */}
-          <div className={styles.questionPopoverHeader}>
-            <div className={styles.questionPopoverTitleGroup}>
-              <span className={styles.questionNumberBadge}>
-                P{questionPopover.order < 10 ? `0${questionPopover.order}` : questionPopover.order}
-              </span>
-              <div className={styles.questionPopoverTitleWrapper}>
-                <h4 className={styles.questionPopoverTitle}>
-                  Pregunta P{questionPopover.order < 10 ? `0${questionPopover.order}` : questionPopover.order}
-                </h4>
-                <span className={styles.questionPopoverSubtitle}>
-                  {gradoName ? gradoName : 'Ítem Pedagógico'}
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              className={styles.popoverCloseBtn}
-              onClick={() => setQuestionPopover(null)}
-              aria-label="Cerrar"
-            >
-              <MdClose />
-            </button>
-          </div>
-
-          {/* Selector de Etapa si hay evaluaciones asignadas */}
-          {(evaluacionEdi || evaluacionEp1 || evaluacionEp2) && (
-            <div className={styles.questionEtapaTabs}>
-              {evaluacionEdi && (
-                <button
-                  type="button"
-                  className={`${styles.questionEtapaTab} ${
-                    questionPopover.selectedEtapa === 'edi' ? styles.questionEtapaTabActiveEdi : ''
-                  }`}
-                  onClick={() =>
-                    setQuestionPopover((prev) => (prev ? { ...prev, selectedEtapa: 'edi' } : null))
-                  }
-                  title="Ver pregunta en evaluación EDI"
-                >
-                  <span>EDI</span>
-                  <span className={styles.questionEtapaTag}>Marzo</span>
-                </button>
-              )}
-              {evaluacionEp1 && (
-                <button
-                  type="button"
-                  className={`${styles.questionEtapaTab} ${
-                    questionPopover.selectedEtapa === 'ep1' ? styles.questionEtapaTabActiveEp1 : ''
-                  }`}
-                  onClick={() =>
-                    setQuestionPopover((prev) => (prev ? { ...prev, selectedEtapa: 'ep1' } : null))
-                  }
-                  title="Ver pregunta en evaluación EP1"
-                >
-                  <span>EP1</span>
-                  <span className={styles.questionEtapaTag}>Julio</span>
-                </button>
-              )}
-              {evaluacionEp2 && (
-                <button
-                  type="button"
-                  className={`${styles.questionEtapaTab} ${
-                    questionPopover.selectedEtapa === 'ep2' ? styles.questionEtapaTabActiveEp2 : ''
-                  }`}
-                  onClick={() =>
-                    setQuestionPopover((prev) => (prev ? { ...prev, selectedEtapa: 'ep2' } : null))
-                  }
-                  title="Ver pregunta en evaluación EP2"
-                >
-                  <span>EP2</span>
-                  <span className={styles.questionEtapaTag}>Noviembre</span>
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Body */}
-          <div className={styles.questionPopoverBody}>
-            {/* Actuación Pedagógica */}
-            <div className={styles.questionSectionBox}>
-              <div className={styles.questionSectionHeader}>
-                <span className={styles.sectionIcon}>🎯</span>
-                <span className={styles.sectionTitle}>Actuación:</span>
-              </div>
-              <p className={styles.actuacionText}>
-                {selectedStageQuestion?.preguntaDocente ||
-                  currentQ.preguntaDocente ||
-                  'Sin actuación pedagógica registrada para este ítem.'}
-              </p>
-            </div>
-
-            {/* Pregunta / Enunciado */}
-            <div className={styles.questionSectionBox}>
-              <div className={styles.questionSectionHeader}>
-                <span className={styles.sectionIcon}>📝</span>
-                <span className={styles.sectionTitle}>Pregunta:</span>
-              </div>
-              <p className={styles.preguntaText}>
-                {selectedStageQuestion?.pregunta ||
-                  currentQ.pregunta ||
-                  'Sin enunciado registrado para esta pregunta.'}
-              </p>
-            </div>
-
-            {/* Alternativas (si existen) */}
-            {selectedStageQuestion?.alternativas &&
-              selectedStageQuestion.alternativas.length > 0 && (
-                <div className={styles.alternativasSection}>
-                  <span className={styles.alternativasTitle}>Alternativas:</span>
-                  <div className={styles.alternativasList}>
-                    {selectedStageQuestion.alternativas.map((alt: any, aIdx: number) => {
-                      const isCorrect =
-                        selectedStageQuestion.respuesta &&
-                        String(alt.alternativa || '').trim().toUpperCase() ===
-                          String(selectedStageQuestion.respuesta).trim().toUpperCase();
-
-                      return (
-                        <div
-                          key={aIdx}
-                          className={`${styles.alternativaItem} ${
-                            isCorrect ? styles.alternativaItemCorrect : ''
-                          }`}
-                        >
-                          <span
-                            className={`${styles.altLetterBadge} ${
-                              isCorrect ? styles.altLetterBadgeCorrect : ''
-                            }`}
-                          >
-                            {alt.alternativa || String.fromCharCode(65 + aIdx)}
-                          </span>
-                          <span className={styles.altDesc}>
-                            {alt.descripcion || alt.texto || alt.alternativa}
-                          </span>
-                          {isCorrect && (
-                            <span className={styles.correctAnswerPill}>✓ Correcta</span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-          </div>
-        </div>
+      {questionPopover && (
+        <QuestionDetailPopover
+          order={questionPopover.order}
+          initialEtapa={questionPopover.selectedEtapa}
+          coords={questionPopover.coords}
+          onClose={() => setQuestionPopover(null)}
+          evaluacionEdi={evaluacionEdi}
+          evaluacionEp1={evaluacionEp1}
+          evaluacionEp2={evaluacionEp2}
+          preguntas={preguntas}
+          gradoName={gradoName}
+        />
       )}
 
       {/* Popover Interactivo de Niveles de Logro - MATRIZ COMPACTA */}
