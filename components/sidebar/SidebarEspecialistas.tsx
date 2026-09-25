@@ -6,7 +6,7 @@ import SidebarRegional from './SidebarRegional';
 import { useRolUsers } from '@/features/hooks/useRolUsers';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import styles from './sidebar.module.css'
-import { MdAccountBalance, MdAccountCircle } from 'react-icons/md';
+import { MdAccountBalance, MdAccountCircle, MdAttachMoney } from 'react-icons/md';
 import { FaUserGraduate, FaUserTie } from 'react-icons/fa';
 import { LuListTodo } from "react-icons/lu";
 import { IoIosArrowDown, IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
@@ -26,6 +26,12 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
   const { currentUserData, isSidebarCollapsed } = useGlobalContext()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
+
+  const isDevUser =
+    currentUserData?.dni === '47163626' ||
+    currentUserData?.id === '47163626' ||
+    (currentUserData as any)?.documento === '47163626' ||
+    (typeof currentUserData?.email === 'string' && currentUserData.email.includes('47163626'));
 
   // Close sidebar on route change (Mobile only logic)
   // Auto-open accordion strictly on page load or navigation
@@ -98,6 +104,17 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                 Mi cuenta
               </Link>
             </div>
+
+            {/* Matriz de Costos (temporalmente oculto)
+            {isDevUser && (
+              <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/matriz-costos') ? styles.activeLink : ''}`}>
+                <MdAttachMoney className={styles.dashboardIcon} />
+                <Link className={styles.dashboardLink} href="/admin/matriz-costos" aria-haspopup="true">
+                  Matriz de Costos
+                </Link>
+              </div>
+            )}
+            */}
 
             <div className={styles.menuContainer}>
               <ul className={styles.menuList}>

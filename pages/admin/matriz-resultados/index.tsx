@@ -13,12 +13,14 @@ import {
   MdExpandMore,
   MdCheck,
   MdCategory,
+  MdAutoAwesome,
 } from 'react-icons/md';
 import { RiLoader4Line } from 'react-icons/ri';
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin';
 import TablaMatrizComparativa from '@/components/reportes/TablaMatrizComparativa';
 import PanelVisualizacionesMatriz from '@/components/reportes/PanelVisualizacionesMatriz';
 import ConfigurarMatrizModal from '@/components/modals/ConfigurarMatrizModal';
+import DiagnosticoIAModal from '@/components/modals/DiagnosticoIAModal';
 import { useMatrizResultados } from '@/features/hooks/useMatrizResultados';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { getCategoriasParaGrado, categoriaTransform } from '@/fuctions/categorias';
@@ -167,6 +169,7 @@ const MatrizResultadosPage = () => {
 
   const { categorias: contextCategorias } = useGlobalContext();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState<boolean>(false);
+  const [isIaModalOpen, setIsIaModalOpen] = useState<boolean>(false);
   const [mainViewMode, setMainViewMode] = useState<'tabla' | 'graficos'>('tabla');
 
   const categoriasDisponibles = getCategoriasParaGrado(
@@ -237,15 +240,29 @@ const MatrizResultadosPage = () => {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsConfigModalOpen(true)}
-              className={styles.configBtn}
-              title="Configurar qué evaluación corresponde a cada etapa para este grado y categoría"
-            >
-              <MdSettings style={{ fontSize: '1.2rem' }} />
-              <span>Configurar Evaluaciones</span>
-            </button>
+            <div className={styles.headerActions}>
+              {/* Botón Diagnóstico Pedagógico IA (temporalmente oculto)
+              <button
+                type="button"
+                onClick={() => setIsIaModalOpen(true)}
+                className={styles.iaBtn}
+                title="Generar informe pedagógico y plan de acción curricular con Inteligencia Artificial"
+              >
+                <MdAutoAwesome style={{ fontSize: '1.2rem' }} />
+                <span>Diagnóstico Pedagógico IA</span>
+              </button>
+              */}
+
+              <button
+                type="button"
+                onClick={() => setIsConfigModalOpen(true)}
+                className={styles.configBtn}
+                title="Configurar qué evaluación corresponde a cada etapa para este grado y categoría"
+              >
+                <MdSettings style={{ fontSize: '1.2rem' }} />
+                <span>Configurar Evaluaciones</span>
+              </button>
+            </div>
           </div>
         </header>
 
@@ -374,6 +391,7 @@ const MatrizResultadosPage = () => {
             preguntas={preguntasUnificadas}
             onReload={reloadMatriz}
             gradoName={`${nombreGrado} - ${nombreCategoria.toUpperCase()}`}
+            yearSelected={yearSelected}
           />
         ) : (
           /* Vista: Visualizaciones y Toma de Decisiones (7 pestañas) */
@@ -399,6 +417,19 @@ const MatrizResultadosPage = () => {
         onSaveConfig={saveGradoConfig}
         initialGradoId={selectedGrado}
         initialCategoriaId={selectedCategoria}
+      />
+
+      {/* Modal de Diagnóstico Pedagógico e Informe Oficial con IA */}
+      <DiagnosticoIAModal
+        isOpen={isIaModalOpen}
+        onClose={() => setIsIaModalOpen(false)}
+        gradoName={`${nombreGrado} - ${nombreCategoria.toUpperCase()}`}
+        yearSelected={yearSelected}
+        evaluacionEdi={evaluacionEdi}
+        evaluacionEp1={evaluacionEp1}
+        evaluacionEp2={evaluacionEp2}
+        matrizRows={matrizRows}
+        preguntas={preguntasUnificadas}
       />
     </>
   );

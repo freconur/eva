@@ -133,7 +133,7 @@ const BarChartDocenteDetalle = ({ data = [], selectedRange, metaSatisfactorio = 
             labels: paginatedData.map(t => `${t.nombres} ${t.apellidos}`),
             datasets: datasets
         };
-    }, [paginatedData, getNivelColor]);
+    }, [paginatedData, data, getNivelColor]);
 
     const options = {
         indexAxis: 'y' as const,

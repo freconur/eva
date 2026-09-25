@@ -418,6 +418,13 @@
   border: 1px solid #7dd3fc;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .configBtn {
   display: inline-flex;
   align-items: center;
@@ -437,6 +444,28 @@
 .configBtn:hover {
   background-color: #4338ca;
   box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
+}
+
+.iaBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);
+  transition: all 0.15s ease;
+}
+
+.iaBtn:hover {
+  background: linear-gradient(135deg, #4338ca, #6d28d9);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.35);
 }
 
 /* Loader y Estados Vacíos */

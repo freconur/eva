@@ -4,6 +4,7 @@ import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth"
 import { getFirestore } from "firebase/firestore";
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 import { getStorage } from 'firebase/storage';
+import { Analytics, getAnalytics, isSupported } from 'firebase/analytics';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDli98HId_qZcJq0yez2nr4ueS12aeFQw0",
@@ -26,6 +27,29 @@ if (typeof window !== 'undefined') {
 }
 const storage = getStorage(app);
 
+let analytics: Analytics | null = null;
+
+export const initAnalytics = async (): Promise<Analytics | null> => {
+  if (typeof window !== 'undefined') {
+    if (analytics) return analytics;
+    try {
+      const supported = await isSupported();
+      if (supported) {
+        analytics = getAnalytics(app);
+        return analytics;
+      }
+    } catch (error) {
+      console.warn('Firebase Analytics no pudo inicializarse:', error);
+    }
+  }
+  return null;
+};
+
+// Auto-inicializar en el navegador
+if (typeof window !== 'undefined') {
+  initAnalytics().catch(console.error);
+}
+
 const isClient = typeof window !== 'undefined';
 const isLocalhost = isClient && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
@@ -38,4 +62,4 @@ if (isLocalhost) {
 // 570s = 9.5 min — margen sobre el máximo de 540s de GCP
 const FUNCTIONS_TIMEOUT = 570000;
 
-export { db, functions, auth, storage, FUNCTIONS_TIMEOUT };
+export { db, functions, auth, storage, analytics, FUNCTIONS_TIMEOUT };

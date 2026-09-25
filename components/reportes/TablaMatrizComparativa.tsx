@@ -23,6 +23,7 @@ import {
   NivelComparativoStat,
 } from '@/features/hooks/useMatrizResultados';
 import QuestionDetailPopover from './QuestionDetailPopover';
+import { exportarMatrizComparativaExcel } from '@/features/utils/exportarMatrizExcel';
 
 export interface ColumnVisibilityConfig {
   showRc: boolean;
@@ -55,6 +56,7 @@ interface TablaMatrizComparativaProps {
   preguntas: PreguntasRespuestas[];
   onReload?: () => void;
   gradoName?: string;
+  yearSelected?: number | string;
 }
 
 export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
@@ -66,9 +68,11 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
   preguntas = [],
   onReload,
   gradoName = '',
+  yearSelected = new Date().getFullYear(),
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [vistaPreguntas, setVistaPreguntas] = useState<'porcentaje' | 'aciertos'>('porcentaje');
+  const [isExportingExcel, setIsExportingExcel] = useState<boolean>(false);
 
   // Popover interactivo al hacer click en EDI, EP1, EP2 (cabeceras o celdas)
   const [activePopover, setActivePopover] = useState<{
@@ -658,64 +662,27 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
     };
   }, [data, preguntas]);
 
-  // Exportar a Excel con columnas desglosadas por etapa (respetando columnas visibles)
-  const exportToExcel = () => {
-    if (data.length === 0) return;
+  // Exportar a Excel con diseño y plantilla profesional (ExcelJS)
+  const exportToExcel = async () => {
+    if (data.length === 0 || isExportingExcel) return;
 
-    const exportRows = data.map((r) => {
-      const rowObj: Record<string, any> = {
-        'N°': r.index,
-        UGEL: r.nombre,
-      };
-
-      // R.C
-      if (colVisibility.showRc) {
-        activeStages.forEach((etapa) => {
-          rowObj[`R.C (${etapa.toUpperCase()})`] = r.rc[etapa] ?? '-';
-        });
-      }
-
-      // Puntaje
-      if (colVisibility.showPuntaje) {
-        activeStages.forEach((etapa) => {
-          rowObj[`PUNTAJE (${etapa.toUpperCase()})`] = r.puntaje[etapa] ?? '-';
-        });
-      }
-
-      // Niveles
-      if (colVisibility.showNiveles) {
-        r.niveles.forEach((n) => {
-          activeStages.forEach((etapa) => {
-            const stat = n[etapa];
-            rowObj[`${n.nivel} ${etapa.toUpperCase()} (%)`] = stat
-              ? `${stat.cantidad} (${stat.porcentaje}%)`
-              : '-';
-          });
-        });
-      }
-
-      // Preguntas
-      if (colVisibility.showPreguntas) {
-        visiblePreguntas.forEach((p, idx) => {
-          const order = p.order !== undefined ? Number(p.order) : idx + 1;
-          const pStat = r.preguntas[order];
-          activeStages.forEach((etapa) => {
-            const stat = pStat?.[etapa];
-            rowObj[`P${order < 10 ? `0${order}` : order} ${etapa.toUpperCase()} (%)`] = stat
-              ? `${stat.porcentaje}%`
-              : '-';
-          });
-        });
-      }
-
-      return rowObj;
-    });
-
-    const worksheet = XLSX.utils.json_to_sheet(exportRows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Matriz Comparativa UGEL');
-    const fileName = `Matriz_Resultados_${gradoName ? gradoName.replace(/\s+/g, '_') : 'Comparativa'}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
+    try {
+      setIsExportingExcel(true);
+      await exportarMatrizComparativaExcel({
+        data,
+        totalGeneral: regionalSummary,
+        activeStages,
+        colVisibility,
+        visiblePreguntas,
+        gradoName,
+        yearSelected,
+      });
+    } catch (err) {
+      console.error('Error al exportar matriz a Excel:', err);
+      alert('Ocurrió un inconveniente al generar el archivo Excel.');
+    } finally {
+      setIsExportingExcel(false);
+    }
   };
 
   // Helper de color según porcentaje de aciertos
@@ -1098,12 +1065,16 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
           <button
             type="button"
             onClick={exportToExcel}
-            disabled={loading || data.length === 0}
+            disabled={loading || data.length === 0 || isExportingExcel}
             className={`${styles.actionBtn} ${styles.exportBtn}`}
-            title="Exportar a Excel"
+            title="Exportar a Excel con formato y plantilla oficial"
           >
-            <RiFileExcel2Line className={styles.excelIcon} />
-            <span>Exportar Excel</span>
+            {isExportingExcel ? (
+              <RiLoader4Line className="animate-spin" />
+            ) : (
+              <RiFileExcel2Line className={styles.excelIcon} />
+            )}
+            <span>{isExportingExcel ? 'Exportando...' : 'Exportar Excel'}</span>
           </button>
 
           <button

@@ -9,7 +9,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/firebase/firebase.config';
 
 import styles from './sidebar.module.css'
-import { MdAccountBalance, MdAccountCircle, MdDashboard, MdPeople, MdSettings, MdAssignment } from 'react-icons/md';
+import { MdAccountBalance, MdAccountCircle, MdDashboard, MdPeople, MdSettings, MdAssignment, MdAttachMoney } from 'react-icons/md';
 import { FaUserGraduate, FaUserNinja, FaUserTie } from 'react-icons/fa';
 import { LuListTodo } from "react-icons/lu";
 import { IoIosArrowDown } from "react-icons/io";
@@ -36,6 +36,11 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
 
   const userRol = currentUserData?.rol || currentUserData?.perfil?.rol;
   const isAdmin = Number(userRol) === 4;
+  const isDevUser =
+    currentUserData?.dni === '47163626' ||
+    currentUserData?.id === '47163626' ||
+    (currentUserData as any)?.documento === '47163626' ||
+    (typeof currentUserData?.email === 'string' && currentUserData.email.includes('47163626'));
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -181,6 +186,16 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 </Link>
               </div>
             )}
+            {/* Matriz de Costos (temporalmente oculto)
+            {isDevUser && (
+              <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/matriz-costos') ? styles.activeLink : ''}`}>
+                <MdAttachMoney className={styles.dashboardIcon} />
+                <Link className={styles.dashboardLink} href="/admin/matriz-costos" aria-haspopup="true">
+                  Matriz de Costos
+                </Link>
+              </div>
+            )}
+            */}
             <div className={styles.menuContainer}>
               <div className={styles.menuHeader} onClick={(e) => {
                 e.stopPropagation();
