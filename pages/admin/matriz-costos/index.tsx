@@ -120,20 +120,23 @@ export default function MatrizCostosPage() {
     return features.filter((f) => !f.tituloCliente).length;
   }, [features]);
 
-  // Verificación de permiso estricto (DNI o ID 47163626)
+  // Verificación de permiso estricto (Rol 4 Administrador AND DNI 47163626)
   const isDevUser = useMemo(() => {
     if (!currentUserData || Object.keys(currentUserData).length === 0) return false;
+    const userRol = currentUserData?.rol || currentUserData?.perfil?.rol;
+    const isAdmin = Number(userRol) === 4;
     const dni = String(currentUserData?.dni || '').trim();
     const id = String(currentUserData?.id || '').trim();
     const docNum = String((currentUserData as any)?.documento || '').trim();
     const email = String(currentUserData?.email || '').trim();
 
-    return (
+    const isMatch =
       dni === '47163626' ||
       id === '47163626' ||
       docNum === '47163626' ||
-      email.includes('47163626')
-    );
+      email.includes('47163626');
+
+    return isAdmin && isMatch;
   }, [currentUserData]);
 
   // Cargar configuración desde Firestore
@@ -819,7 +822,7 @@ export default function MatrizCostosPage() {
         </div>
         <h2 className="text-xl font-bold text-slate-800 mb-2">Acceso Restringido</h2>
         <p className="text-sm text-slate-500 max-w-md mb-6">
-          Esta vista está reservada exclusivamente para el perfil del desarrollador principal (DNI: 47163626).
+          Esta vista está reservada exclusivamente para el administrador principal (DNI: 47163626 con rol 4).
         </p>
         <button
           onClick={() => router.push('/admin/evaluaciones')}

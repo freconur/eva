@@ -202,6 +202,210 @@ const drawCanvasPillBadge = (
   ctx.restore();
 };
 
+interface GlobalScoreInfoPopupProps {
+  type: 'ugel' | 'especialista' | 'dominio' | 'consolidado_general' | 'niveles_logro' | 'proporcional_dominio';
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  anchorRef: React.RefObject<HTMLDivElement>;
+}
+
+const GlobalScoreInfoPopup = ({
+  type = 'ugel',
+  isOpen,
+  onToggle,
+  onClose,
+  anchorRef,
+}: GlobalScoreInfoPopupProps) => {
+  const getPopupContent = () => {
+    switch (type) {
+      case 'ugel':
+        return {
+          title: '¿Cómo se calculan estos datos?',
+          items: [
+            {
+              color: '#10b981',
+              isSquare: true,
+              label: 'Segmentos dentro de la barra',
+              desc: 'Evolución histórica: Muestra el puntaje promedio obtenido por la UGEL en cada uno de los tramos o fases evaluadas (I Tramo, Tramo IV, V Tramo, etc.).',
+            },
+            {
+              color: '#3b82f6',
+              isSquare: false,
+              label: 'Cápsula exterior (ej. 19.5 pts)',
+              desc: 'Puntaje Consolidado Vigente de la UGEL. Se calcula promediando la última evaluación registrada de todos los especialistas de dicha UGEL y define el ranking.',
+            },
+            {
+              color: '#f59e0b',
+              isSquare: false,
+              label: 'Ícono de barras de color',
+              desc: 'El color del mini ícono dentro de la cápsula refleja el Nivel de Logro (ej. Destacado, Esperado, En Proceso) de acuerdo a la escala oficial.',
+            },
+          ],
+        };
+      case 'especialista':
+        return {
+          title: '¿Cómo se calculan estos datos?',
+          items: [
+            {
+              color: '#10b981',
+              isSquare: true,
+              label: 'Segmentos dentro de la barra',
+              desc: 'Evolución histórica: Muestra el puntaje total obtenido por el especialista en cada una de sus fases o evaluaciones registradas.',
+            },
+            {
+              color: '#6366f1',
+              isSquare: false,
+              label: 'Cápsula exterior (ej. 24 pts)',
+              desc: 'Puntaje Total Vigente del especialista correspondiente a su evaluación más reciente. Determina su ubicación en el ranking general.',
+            },
+            {
+              color: '#f59e0b',
+              isSquare: false,
+              label: 'Ícono de barras de color',
+              desc: 'El color del mini ícono dentro de la cápsula refleja el Nivel de Logro alcanzado en su evaluación vigente según la escala oficial.',
+            },
+          ],
+        };
+      case 'dominio':
+        return {
+          title: '¿Cómo se calcula este rendimiento?',
+          items: [
+            {
+              color: '#8b5cf6',
+              isSquare: true,
+              label: 'Segmentos dentro de la barra',
+              desc: 'Evolución histórica: Muestra el puntaje promedio obtenido en esta dimensión/dominio en cada una de las fases o tramos evaluados.',
+            },
+            {
+              color: '#3b82f6',
+              isSquare: false,
+              label: 'Cápsula exterior de puntaje',
+              desc: 'Puntaje Promedio Vigente del Dominio. Promedio obtenido en esta dimensión tomando la última evaluación de todos los especialistas evaluados.',
+            },
+            {
+              color: '#10b981',
+              isSquare: false,
+              label: 'Nivel de Logro por Dominio',
+              desc: 'Refleja la escala de logro (Destacado, Esperado, En Proceso, etc.) correspondiente al puntaje promedio obtenido en la dimensión.',
+            },
+          ],
+        };
+      case 'consolidado_general':
+        return {
+          title: 'Consolidado Global de Resultados',
+          items: [
+            {
+              color: '#3b82f6',
+              isSquare: false,
+              label: 'Distribución Global de Respuestas',
+              desc: 'Muestra la suma y porcentaje de todas las respuestas marcadas en la evaluación agrupadas por la escala configurada (ej. A, B, C, D o Destacado, Esperado, etc.).',
+            },
+            {
+              color: '#10b981',
+              isSquare: true,
+              label: 'Muestra Total',
+              desc: 'Total de especialistas evaluados y volumen global de respuestas calificadas en toda la evaluación.',
+            },
+          ],
+        };
+      case 'niveles_logro':
+        return {
+          title: 'Distribución por Niveles de Logro',
+          items: [
+            {
+              color: '#10b981',
+              isSquare: false,
+              label: 'Clasificación General',
+              desc: 'Agrupa a los especialistas según su puntaje total en el rango de nivel de logro alcanzado (ej. Destacado, Esperado, En Proceso).',
+            },
+            {
+              color: '#f59e0b',
+              isSquare: true,
+              label: 'Conteo de Especialistas',
+              desc: 'Indica la cantidad exacta de especialistas ubicados en cada nivel para conocer el balance general del rendimiento.',
+            },
+          ],
+        };
+      case 'proporcional_dominio':
+        return {
+          title: 'Distribución Proporcional por Dominio',
+          items: [
+            {
+              color: '#8b5cf6',
+              isSquare: false,
+              label: 'Peso de cada Dimensión',
+              desc: 'Compara la proporción y aporte porcentual de cada dimensión o dominio evaluado respecto al puntaje total general.',
+            },
+          ],
+        };
+    }
+  };
+
+  const content = getPopupContent();
+
+  return (
+    <div className={styles.infoPopupWrapper} ref={anchorRef}>
+      <button
+        type="button"
+        className={`${styles.infoPopupBtn} ${isOpen ? styles.infoPopupBtnActive : ''}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle();
+        }}
+        title="¿Cómo se calcula este rendimiento? Clic para ver el detalle"
+        aria-label="¿Cómo se calcula este rendimiento?"
+      >
+        <RiInformationLine />
+      </button>
+
+      {isOpen && (
+        <div
+          className={styles.infoPopupContent}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className={styles.infoPopupHeader}>
+            <span className={styles.infoPopupTitle}>
+              <RiInformationLine style={{ fontSize: '1rem', color: '#38bdf8' }} />
+              {content.title}
+            </span>
+            <button
+              type="button"
+              className={styles.infoPopupCloseBtn}
+              onClick={onClose}
+              title="Cerrar"
+              aria-label="Cerrar ventana informativa"
+            >
+              <RiCloseLine style={{ fontSize: '1.1rem' }} />
+            </button>
+          </div>
+
+          <div className={styles.infoPopupList}>
+            {content.items.map((item, idx) => (
+              <div key={idx} className={styles.infoPopupItem}>
+                <div className={styles.infoPopupItemHeader}>
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: item.isSquare ? 2 : '50%',
+                      background: item.color,
+                      display: 'inline-block',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span>{item.label}</span>
+                </div>
+                <p className={styles.infoPopupItemDesc}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const barDataLabelPlugin = {
   id: 'barDataLabelPlugin',
   afterDatasetsDraw(chart: any) {
@@ -488,11 +692,70 @@ const Reportes = () => {
   const [isSettingsDropdownOpen, setIsSettingsDropdownOpen] = useState(false);
   const settingsDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Click outside para cerrar el dropdown de ajustes
+  const [showGlobalUgelInfo, setShowGlobalUgelInfo] = useState(false);
+  const [showGlobalEspInfo, setShowGlobalEspInfo] = useState(false);
+  const [showGlobalDominioInfo, setShowGlobalDominioInfo] = useState(false);
+  const [showConsolidadoInfo, setShowConsolidadoInfo] = useState(false);
+  const [showLevelsInfo, setShowLevelsInfo] = useState(false);
+  const [showProporcionalInfo, setShowProporcionalInfo] = useState(false);
+  const [showModalGlobalInfo, setShowModalGlobalInfo] = useState(false);
+  const [hoveredDomainIndex, setHoveredDomainIndex] = useState<number | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const globalUgelInfoRef = useRef<HTMLDivElement>(null);
+  const globalEspInfoRef = useRef<HTMLDivElement>(null);
+  const globalDominioInfoRef = useRef<HTMLDivElement>(null);
+  const consolidadoInfoRef = useRef<HTMLDivElement>(null);
+  const levelsInfoRef = useRef<HTMLDivElement>(null);
+  const proporcionalInfoRef = useRef<HTMLDivElement>(null);
+  const modalGlobalInfoRef = useRef<HTMLDivElement>(null);
+
+  // Limpiar temporizador al desmontar
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Limpiar el estado de hover al cerrar el modal de pantalla completa
+  useEffect(() => {
+    if (!selectedDimensionModal) {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      setHoveredDomainIndex(null);
+    }
+  }, [selectedDimensionModal]);
+
+  // Click outside para cerrar el dropdown de ajustes y popups informativos
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (settingsDropdownRef.current && !settingsDropdownRef.current.contains(event.target as Node)) {
         setIsSettingsDropdownOpen(false);
+      }
+      if (globalUgelInfoRef.current && !globalUgelInfoRef.current.contains(event.target as Node)) {
+        setShowGlobalUgelInfo(false);
+      }
+      if (globalEspInfoRef.current && !globalEspInfoRef.current.contains(event.target as Node)) {
+        setShowGlobalEspInfo(false);
+      }
+      if (globalDominioInfoRef.current && !globalDominioInfoRef.current.contains(event.target as Node)) {
+        setShowGlobalDominioInfo(false);
+      }
+      if (consolidadoInfoRef.current && !consolidadoInfoRef.current.contains(event.target as Node)) {
+        setShowConsolidadoInfo(false);
+      }
+      if (levelsInfoRef.current && !levelsInfoRef.current.contains(event.target as Node)) {
+        setShowLevelsInfo(false);
+      }
+      if (proporcionalInfoRef.current && !proporcionalInfoRef.current.contains(event.target as Node)) {
+        setShowProporcionalInfo(false);
+      }
+      if (modalGlobalInfoRef.current && !modalGlobalInfoRef.current.contains(event.target as Node)) {
+        setShowModalGlobalInfo(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -705,33 +968,117 @@ const Reportes = () => {
       };
     });
 
+    const referenceNiveles = domainRangesList[0]?.niveles || globalNiveles || [];
+    const referenceMax = domainRangesList[0]?.maxDomainScore;
+
     return (
-      <div className={styles.domainCardLevelsFooter} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-        <div className={styles.domainLevelsFooterHeader}>
-          <span className={styles.domainLevelsFooterTitle}>
-            <RiAwardLine style={{ color: '#2563eb', fontSize: '1rem' }} />
-            Escalas de Nivel de Logro por cada Dominio:
-          </span>
+      <div
+        className={styles.domainCardLevelsFooter}
+        onMouseLeave={handleDomainRowMouseLeave}
+        style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
+      >
+        {/* Cabecera con Leyenda Global Única de Referencia */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.65rem 1rem',
+            paddingBottom: '0.5rem',
+            borderBottom: '1px solid #f1f5f9',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <RiAwardLine style={{ color: '#2563eb', fontSize: '1.05rem' }} />
+            <span
+              style={{
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                color: '#1e293b',
+                fontFamily: 'Montserrat, sans-serif',
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em',
+              }}
+            >
+              Escala de Referencia {referenceMax ? `(Máx. ${referenceMax} pts)` : ''}:
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' }}>
+            {referenceNiveles.map((n: any, nIdx: number) => (
+              <div
+                key={nIdx}
+                className={styles.domainLevelChip}
+                style={{
+                  padding: '0.18rem 0.55rem',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '6px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                }}
+              >
+                <span className={styles.levelLegendDot} style={{ background: n.color || '#3b82f6' }} />
+                <span
+                  style={{
+                    fontSize: '0.70rem',
+                    fontWeight: 600,
+                    color: '#64748b',
+                  }}
+                >
+                  {n.min ?? 0} - {n.max ?? 0}
+                </span>
+                <span
+                  style={{
+                    fontSize: '0.70rem',
+                    fontWeight: 700,
+                    color: n.color || '#1e293b',
+                  }}
+                >
+                  {n.nivel}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', width: '100%' }}>
+
+        {/* Lista Compacta de Dominios: solo muestra su puntaje y el badge del nivel alcanzado */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
           {domainRangesList.map((dItem, dIdx) => {
             const dColor = getDomainColor(dItem.dim, dItem.dimIndex);
+            const isHovered = hoveredDomainIndex === dIdx;
+            const currentLevel = dItem.nivelAlcanzado;
+            const levelColor = currentLevel?.color || '#3b82f6';
+            const formattedScore = Number.isInteger(dItem.avgScore)
+              ? dItem.avgScore
+              : Number(dItem.avgScore).toFixed(1);
+
             return (
               <div
                 key={dItem.dim.id || dIdx}
+                onMouseEnter={() => handleDomainRowMouseEnter(dIdx)}
+                onMouseLeave={handleDomainRowMouseLeave}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   flexWrap: 'wrap',
                   gap: '0.5rem 1rem',
-                  padding: '0.55rem 0.85rem',
-                  background: '#f8fafc',
-                  borderRadius: '10px',
-                  border: `1.5px solid ${hexToRgba(dColor, 0.25)}`,
+                  padding: '0.55rem 0.95rem',
+                  background: isHovered ? '#f8fafc' : '#ffffff',
+                  borderRadius: '9px',
+                  border: `1.5px solid ${isHovered ? dColor : '#e2e8f0'}`,
+                  boxShadow: 'none',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.2s ease, background-color 0.2s ease',
+                  position: 'relative',
+                  zIndex: isHovered ? 2 : 1,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {/* Lado izquierdo: Indicador de dominio + Nombre + Máx pts */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '9px', flexWrap: 'wrap' }}>
                   <span
                     style={{
                       width: '10px',
@@ -744,68 +1091,102 @@ const Reportes = () => {
                   />
                   <span
                     style={{
-                      fontSize: '0.8rem',
+                      fontSize: '0.80rem',
                       fontWeight: 700,
-                      color: '#0f172a',
+                      color: isHovered ? dColor : '#0f172a',
                       textTransform: 'uppercase',
                       fontFamily: 'Montserrat, sans-serif',
+                      letterSpacing: '0.01em',
+                      transition: 'color 0.2s ease',
                     }}
                   >
                     {dItem.nombre}
                   </span>
                   <span
                     style={{
-                      fontSize: '0.72rem',
-                      color: '#475569',
+                      fontSize: '0.68rem',
+                      color: '#64748b',
                       fontWeight: 600,
-                      background: '#e2e8f0',
+                      background: '#f1f5f9',
                       padding: '1px 6px',
                       borderRadius: '4px',
+                      border: '1px solid #e2e8f0',
                     }}
                   >
                     Máx. {dItem.maxDomainScore} pts
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.45rem' }}>
-                  {dItem.niveles.map((n: any, nIdx: number) => {
-                    const isCurrent = dItem.nivelAlcanzado?.nivel === n.nivel;
-                    return (
-                      <div
-                        key={nIdx}
-                        className={styles.domainLevelChip}
+                {/* Lado derecho: Puntaje Promedio obtenido + Badge del nivel alcanzado */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'baseline',
+                      gap: '4px',
+                      fontSize: '0.74rem',
+                      color: '#64748b',
+                      fontWeight: 600,
+                    }}
+                  >
+                    <span>Promedio:</span>
+                    <span
+                      style={{
+                        fontSize: '0.88rem',
+                        fontWeight: 800,
+                        color: isHovered ? dColor : '#0f172a',
+                        fontFamily: 'Montserrat, sans-serif',
+                        transition: 'color 0.2s ease',
+                      }}
+                    >
+                      {formattedScore} pts
+                    </span>
+                  </div>
+
+                  {currentLevel && (
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '6px',
+                        background: hexToRgba(levelColor, 0.12),
+                        border: `1.5px solid ${hexToRgba(levelColor, 0.45)}`,
+                      }}
+                    >
+                      <span
                         style={{
-                          padding: '0.2rem 0.6rem',
-                          background: isCurrent ? hexToRgba(n.color || '#3b82f6', 0.14) : 'white',
-                          border: isCurrent
-                            ? `1.5px solid ${n.color || '#3b82f6'}`
-                            : '1px solid #cbd5e1',
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          background: levelColor,
+                          display: 'inline-block',
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          color: levelColor,
                         }}
                       >
-                        <span className={styles.levelLegendDot} style={{ background: n.color || '#3b82f6' }} />
+                        {currentLevel.nivel}
+                      </span>
+                      {currentLevel.min !== undefined && currentLevel.max !== undefined && (
                         <span
-                          className={styles.domainLevelChipRange}
                           style={{
-                            fontSize: '0.75rem',
-                            fontWeight: isCurrent ? 700 : 500,
-                            color: isCurrent ? '#0f172a' : '#475569',
+                            fontSize: '0.68rem',
+                            fontWeight: 600,
+                            color: '#475569',
                           }}
                         >
-                          {n.min ?? 0} - {n.max ?? 0}
+                          ({currentLevel.min} - {currentLevel.max} pts)
                         </span>
-                        <span
-                          className={styles.domainLevelChipName}
-                          style={{
-                            fontSize: '0.75rem',
-                            fontWeight: isCurrent ? 800 : 600,
-                            color: isCurrent ? (n.color || '#1e293b') : '#64748b',
-                          }}
-                        >
-                          {n.nivel}
-                        </span>
-                      </div>
-                    );
-                  })}
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -1321,22 +1702,49 @@ const Reportes = () => {
       const evalDates = dimList.map((d) => d.evalsData[i]?.dateStr ?? '');
       const levelNames = dimList.map((d) => d.evalsData[i]?.nivel?.nivel ?? '');
 
-      const backgroundColor = dimList.map((d) => {
+      const backgroundColor = dimList.map((d, dIdx) => {
         const evData = d.evalsData[i];
         if (!evData) return 'transparent';
+        const baseColor = (colorMode === 'nivel' && evData.nivelColor)
+          ? evData.nivelColor
+          : getDomainColor(d.dim, d.dimIndex);
+
+        if (hoveredDomainIndex !== null) {
+          return hoveredDomainIndex === dIdx
+            ? (colorMode === 'nivel' && evData.nivelColor ? hexToRgba(evData.nivelColor, 0.95) : hexToRgba(baseColor, 0.95))
+            : hexToRgba(baseColor, 0.32);
+        }
+
         if (colorMode === 'nivel' && evData.nivelColor) {
           return hexToRgba(evData.nivelColor, 0.85);
         }
         return hexToRgba(getDomainColor(d.dim, d.dimIndex), 0.75);
       });
 
-      const borderColor = dimList.map((d) => {
+      const borderColor = dimList.map((d, dIdx) => {
         const evData = d.evalsData[i];
         if (!evData) return 'transparent';
+        const baseColor = (colorMode === 'nivel' && evData.nivelColor)
+          ? evData.nivelColor
+          : getDomainColor(d.dim, d.dimIndex);
+
+        if (hoveredDomainIndex !== null) {
+          return hoveredDomainIndex === dIdx
+            ? baseColor
+            : hexToRgba(baseColor, 0.45);
+        }
+
         if (colorMode === 'nivel' && evData.nivelColor) {
           return evData.nivelColor;
         }
         return getDomainColor(d.dim, d.dimIndex);
+      });
+
+      const borderWidth = dimList.map((_, dIdx) => {
+        if (hoveredDomainIndex !== null) {
+          return hoveredDomainIndex === dIdx ? 2 : 1;
+        }
+        return 1.5;
       });
 
       datasets.push({
@@ -1348,7 +1756,7 @@ const Reportes = () => {
         levelNames,
         backgroundColor,
         borderColor,
-        borderWidth: 1.5,
+        borderWidth,
         borderRadius: 4,
       });
     }
@@ -1373,9 +1781,58 @@ const Reportes = () => {
     })
   );
 
+  const handleDomainChartHover = (event: any, elements: any[]) => {
+    if (elements && elements.length > 0) {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      const dataIndex = elements[0].index;
+      setHoveredDomainIndex((prev) => (prev === dataIndex ? prev : dataIndex));
+    } else {
+      if (!hoverTimeoutRef.current) {
+        hoverTimeoutRef.current = setTimeout(() => {
+          setHoveredDomainIndex(null);
+          hoverTimeoutRef.current = null;
+        }, 80);
+      }
+    }
+  };
+
+  const handleDomainRowMouseEnter = (dIdx: number) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setHoveredDomainIndex((prev) => (prev === dIdx ? prev : dIdx));
+  };
+
+  const handleDomainRowMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredDomainIndex(null);
+      hoverTimeoutRef.current = null;
+    }, 80);
+  };
+
   const getDimensionBarOptions = (dimList?: any[]) => ({
     responsive: true,
     maintainAspectRatio: false,
+    animation: {
+      duration: 350,
+      easing: 'easeOutQuart' as const,
+    },
+    transitions: {
+      active: {
+        animation: {
+          duration: 300,
+          easing: 'easeOutQuart' as const,
+        },
+      },
+    },
+    onHover: handleDomainChartHover,
     indexAxis: 'y' as const,
     layout: {
       padding: {
@@ -1424,14 +1881,23 @@ const Reportes = () => {
           },
           afterBody: (context: any) => {
             const item = dimList ? dimList[context[0].dataIndex] : null;
-            if (!item || !item.evalsData || item.evalsData.length <= 1) return '';
-            const lines = ['\nHistorial del Dominio por Fases:'];
-            item.evalsData.forEach((ev: any, idx: number) => {
-              const s = ev.domainScore;
-              const f = ev.fase;
-              const n = ev.nivel?.nivel || '—';
-              lines.push(`• Fase ${idx + 1} (${f}): ${s} pts prom global [${n}]`);
-            });
+            if (!item) return '';
+            const lines: string[] = [];
+            const latestScore = item.latestDomainScore ?? item.latestScore;
+            if (latestScore !== undefined) {
+              const nivel = item.nivelNombre ? ` [${item.nivelNombre}]` : '';
+              lines.push(`\n⭐ Promedio Vigente del Dominio: ${latestScore} pts${nivel}`);
+              lines.push(`   (Promedio de la última evaluación de todos los especialistas)`);
+            }
+            if (item.evalsData && item.evalsData.length > 1) {
+              lines.push('\nHistorial del Dominio por Fases:');
+              item.evalsData.forEach((ev: any, idx: number) => {
+                const s = ev.domainScore;
+                const f = ev.fase;
+                const n = ev.nivel?.nivel || '—';
+                lines.push(`• Fase ${idx + 1} (${f}): ${s} pts prom global [${n}]`);
+              });
+            }
             return lines;
           },
         },
@@ -1475,6 +1941,19 @@ const Reportes = () => {
   const getDimensionVerticalBarOptions = (dimList?: any[]) => ({
     responsive: true,
     maintainAspectRatio: false,
+    animation: {
+      duration: 350,
+      easing: 'easeOutQuart' as const,
+    },
+    transitions: {
+      active: {
+        animation: {
+          duration: 300,
+          easing: 'easeOutQuart' as const,
+        },
+      },
+    },
+    onHover: handleDomainChartHover,
     layout: {
       padding: {
         top: 25,
@@ -1522,14 +2001,23 @@ const Reportes = () => {
           },
           afterBody: (context: any) => {
             const item = dimList ? dimList[context[0].dataIndex] : null;
-            if (!item || !item.evalsData || item.evalsData.length <= 1) return '';
-            const lines = ['\nHistorial del Dominio por Fases:'];
-            item.evalsData.forEach((ev: any, idx: number) => {
-              const s = ev.domainScore;
-              const f = ev.fase;
-              const n = ev.nivel?.nivel || '—';
-              lines.push(`• Fase ${idx + 1} (${f}): ${s} pts prom global [${n}]`);
-            });
+            if (!item) return '';
+            const lines: string[] = [];
+            const latestScore = item.latestDomainScore ?? item.latestScore;
+            if (latestScore !== undefined) {
+              const nivel = item.nivelNombre ? ` [${item.nivelNombre}]` : '';
+              lines.push(`\n⭐ Promedio Vigente del Dominio: ${latestScore} pts${nivel}`);
+              lines.push(`   (Promedio de la última evaluación de todos los especialistas)`);
+            }
+            if (item.evalsData && item.evalsData.length > 1) {
+              lines.push('\nHistorial del Dominio por Fases:');
+              item.evalsData.forEach((ev: any, idx: number) => {
+                const s = ev.domainScore;
+                const f = ev.fase;
+                const n = ev.nivel?.nivel || '—';
+                lines.push(`• Fase ${idx + 1} (${f}): ${s} pts prom global [${n}]`);
+              });
+            }
             return lines;
           },
         },
@@ -2894,14 +3382,22 @@ const Reportes = () => {
           },
           afterBody: (context: any) => {
             const item = ugelList ? ugelList[context[0].dataIndex] : null;
-            if (!item || !item.evalsData || item.evalsData.length <= 1) return '';
-            const lines = ['\nHistorial Global por Fases (UGEL):'];
-            item.evalsData.forEach((ev: any, idx: number) => {
-              const s = ev.score;
-              const f = ev.fase;
-              const n = ev.nivel?.nivel || '—';
-              lines.push(`• Fase ${idx + 1} (${f}): ${s} pts prom [${n}]`);
-            });
+            if (!item) return '';
+            const lines: string[] = [];
+            if (item.latestScore !== undefined) {
+              const nivel = item.nivelNombre ? ` [${item.nivelNombre}]` : '';
+              lines.push(`\n⭐ Puntaje Vigente UGEL: ${item.latestScore} pts${nivel}`);
+              lines.push(`   (Promedio de la última evaluación de sus especialistas)`);
+            }
+            if (item.evalsData && item.evalsData.length > 1) {
+              lines.push('\nHistorial Global por Fases (UGEL):');
+              item.evalsData.forEach((ev: any, idx: number) => {
+                const s = ev.score;
+                const f = ev.fase;
+                const n = ev.nivel?.nivel || '—';
+                lines.push(`• Fase ${idx + 1} (${f}): ${s} pts prom [${n}]`);
+              });
+            }
             return lines;
           },
         },
@@ -3027,14 +3523,22 @@ const Reportes = () => {
           },
           afterBody: (context: any) => {
             const item = ugelList ? ugelList[context[0].dataIndex] : null;
-            if (!item || !item.evalsData || item.evalsData.length <= 1) return '';
-            const lines = ['\nHistorial Global por Fases (UGEL):'];
-            item.evalsData.forEach((ev: any, idx: number) => {
-              const s = ev.score;
-              const f = ev.fase;
-              const n = ev.nivel?.nivel || '—';
-              lines.push(`• Fase ${idx + 1} (${f}): ${s} pts prom [${n}]`);
-            });
+            if (!item) return '';
+            const lines: string[] = [];
+            if (item.latestScore !== undefined) {
+              const nivel = item.nivelNombre ? ` [${item.nivelNombre}]` : '';
+              lines.push(`\n⭐ Puntaje Vigente UGEL: ${item.latestScore} pts${nivel}`);
+              lines.push(`   (Promedio de la última evaluación de sus especialistas)`);
+            }
+            if (item.evalsData && item.evalsData.length > 1) {
+              lines.push('\nHistorial Global por Fases (UGEL):');
+              item.evalsData.forEach((ev: any, idx: number) => {
+                const s = ev.score;
+                const f = ev.fase;
+                const n = ev.nivel?.nivel || '—';
+                lines.push(`• Fase ${idx + 1} (${f}): ${s} pts prom [${n}]`);
+              });
+            }
             return lines;
           },
         },
@@ -3081,15 +3585,23 @@ const Reportes = () => {
           },
           afterBody: (context: any) => {
             const item = espList ? espList[context[0].dataIndex] : null;
-            if (!item || !item.evalsData || item.evalsData.length <= 1) return '';
-            const lines = ['\nHistorial Global por Fases:'];
-            item.evalsData.forEach((ev: any, idx: number) => {
-              const s = ev.score;
-              const f = ev.fase;
-              const d = ev.dateStr;
-              const n = ev.nivel?.nivel || '—';
-              lines.push(`• Eval ${idx + 1} (${f} - ${d}): ${s} pts [${n}]`);
-            });
+            if (!item) return '';
+            const lines: string[] = [];
+            if (item.latestScore !== undefined) {
+              const nivel = item.nivelNombre ? ` [${item.nivelNombre}]` : '';
+              lines.push(`\n⭐ Puntaje Vigente Especialista: ${item.latestScore} pts${nivel}`);
+              lines.push(`   (Puntaje de su evaluación más reciente)`);
+            }
+            if (item.evalsData && item.evalsData.length > 1) {
+              lines.push('\nHistorial Global por Fases:');
+              item.evalsData.forEach((ev: any, idx: number) => {
+                const s = ev.score;
+                const f = ev.fase;
+                const d = ev.dateStr;
+                const n = ev.nivel?.nivel || '—';
+                lines.push(`• Eval ${idx + 1} (${f} - ${d}): ${s} pts [${n}]`);
+              });
+            }
             return lines;
           },
         },
@@ -3216,15 +3728,23 @@ const Reportes = () => {
           },
           afterBody: (context: any) => {
             const item = espList ? espList[context[0].dataIndex] : null;
-            if (!item || !item.evalsData || item.evalsData.length <= 1) return '';
-            const lines = ['\nHistorial Global por Fases:'];
-            item.evalsData.forEach((ev: any, idx: number) => {
-              const s = ev.score;
-              const f = ev.fase;
-              const d = ev.dateStr;
-              const n = ev.nivel?.nivel || '—';
-              lines.push(`• Eval ${idx + 1} (${f} - ${d}): ${s} pts [${n}]`);
-            });
+            if (!item) return '';
+            const lines: string[] = [];
+            if (item.latestScore !== undefined) {
+              const nivel = item.nivelNombre ? ` [${item.nivelNombre}]` : '';
+              lines.push(`\n⭐ Puntaje Vigente Especialista: ${item.latestScore} pts${nivel}`);
+              lines.push(`   (Puntaje de su evaluación más reciente)`);
+            }
+            if (item.evalsData && item.evalsData.length > 1) {
+              lines.push('\nHistorial Global por Fases:');
+              item.evalsData.forEach((ev: any, idx: number) => {
+                const s = ev.score;
+                const f = ev.fase;
+                const d = ev.dateStr;
+                const n = ev.nivel?.nivel || '—';
+                lines.push(`• Eval ${idx + 1} (${f} - ${d}): ${s} pts [${n}]`);
+              });
+            }
             return lines;
           },
         },
@@ -3512,17 +4032,26 @@ const Reportes = () => {
                                         }}
                                       >
                                         <div>
-                                          <h3 className={styles.dimensionChartMainTitle}>
-                                            <span
-                                              className={styles.sectionTitleIndicator}
-                                              style={{
-                                                display: 'inline-block',
-                                                verticalAlign: 'middle',
-                                                marginRight: '8px',
-                                                background: globalUgelColor,
-                                              }}
-                                            ></span>
-                                            Rendimiento Global por UGEL
+                                          <h3 className={styles.dimensionChartMainTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                            <span style={{ display: 'flex', alignItems: 'center' }}>
+                                              <span
+                                                className={styles.sectionTitleIndicator}
+                                                style={{
+                                                  display: 'inline-block',
+                                                  verticalAlign: 'middle',
+                                                  marginRight: '8px',
+                                                  background: globalUgelColor,
+                                                }}
+                                              ></span>
+                                              Rendimiento Global por UGEL
+                                            </span>
+                                            <GlobalScoreInfoPopup
+                                              type="ugel"
+                                              isOpen={showGlobalUgelInfo}
+                                              onToggle={() => setShowGlobalUgelInfo((prev) => !prev)}
+                                              onClose={() => setShowGlobalUgelInfo(false)}
+                                              anchorRef={globalUgelInfoRef}
+                                            />
                                           </h3>
                                           <p className={styles.dimensionChartSubtitle}>
                                             EVALUACIÓN INTEGRAL (TODAS LAS DIMENSIONES)
@@ -3662,17 +4191,26 @@ const Reportes = () => {
                                         }}
                                       >
                                         <div>
-                                          <h3 className={styles.dimensionChartMainTitle}>
-                                            <span
-                                              className={styles.sectionTitleIndicator}
-                                              style={{
-                                                display: 'inline-block',
-                                                verticalAlign: 'middle',
-                                                marginRight: '8px',
-                                                background: globalEspColor,
-                                              }}
-                                            ></span>
-                                            Rendimiento Global por Especialista
+                                          <h3 className={styles.dimensionChartMainTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                            <span style={{ display: 'flex', alignItems: 'center' }}>
+                                              <span
+                                                className={styles.sectionTitleIndicator}
+                                                style={{
+                                                  display: 'inline-block',
+                                                  verticalAlign: 'middle',
+                                                  marginRight: '8px',
+                                                  background: globalEspColor,
+                                                }}
+                                              ></span>
+                                              Rendimiento Global por Especialista
+                                            </span>
+                                            <GlobalScoreInfoPopup
+                                              type="especialista"
+                                              isOpen={showGlobalEspInfo}
+                                              onToggle={() => setShowGlobalEspInfo((prev) => !prev)}
+                                              onClose={() => setShowGlobalEspInfo(false)}
+                                              anchorRef={globalEspInfoRef}
+                                            />
                                           </h3>
                                           <p className={styles.dimensionChartSubtitle}>
                                             TOP RANKING GENERAL (TODAS LAS DIMENSIONES)
@@ -3817,9 +4355,18 @@ const Reportes = () => {
                           return (
                             <div key="pie_charts" className={styles.globalChartsGrid}>
                               <div className={styles.chartContainer}>
-                                <h3 className={styles.sectionTitle}>
-                                  <span className={styles.sectionTitleIndicator}></span>
-                                  <span>Consolidado Global de Resultados</span>
+                                <h3 className={styles.sectionTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center' }}>
+                                    <span className={styles.sectionTitleIndicator}></span>
+                                    <span>Consolidado Global de Resultados</span>
+                                  </span>
+                                  <GlobalScoreInfoPopup
+                                    type="consolidado_general"
+                                    isOpen={showConsolidadoInfo}
+                                    onToggle={() => setShowConsolidadoInfo((prev) => !prev)}
+                                    onClose={() => setShowConsolidadoInfo(false)}
+                                    anchorRef={consolidadoInfoRef}
+                                  />
                                 </h3>
                                 <div className={styles.pieChartWrapper}>
                                   <Pie options={pieOptions} data={getPieData()} />
@@ -3843,9 +4390,18 @@ const Reportes = () => {
 
                               {dataEvaluacionDocente.niveles && dataEvaluacionDocente.niveles.length > 0 && (
                                 <div className={styles.chartContainer}>
-                                  <h3 className={styles.sectionTitle}>
-                                    <span className={styles.sectionTitleIndicator}></span>
-                                    <span>Distribución por Niveles de Logro</span>
+                                  <h3 className={styles.sectionTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center' }}>
+                                      <span className={styles.sectionTitleIndicator}></span>
+                                      <span>Distribución por Niveles de Logro</span>
+                                    </span>
+                                    <GlobalScoreInfoPopup
+                                      type="niveles_logro"
+                                      isOpen={showLevelsInfo}
+                                      onToggle={() => setShowLevelsInfo((prev) => !prev)}
+                                      onClose={() => setShowLevelsInfo(false)}
+                                      anchorRef={levelsInfoRef}
+                                    />
                                   </h3>
                                   <div className={styles.pieChartWrapper}>
                                     <Pie
@@ -3876,11 +4432,20 @@ const Reportes = () => {
 
                               {dimensionesEspecialistas && dimensionesEspecialistas.length > 0 && (
                                 <div className={styles.chartContainer}>
-                                  <h3 className={styles.sectionTitle}>
-                                    <span className={styles.sectionTitleIndicator} style={{ background: '#8b5cf6' }}></span>
-                                    <span>Distribución Proporcional por Dominio</span>
+                                  <h3 className={styles.sectionTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center' }}>
+                                      <span className={styles.sectionTitleIndicator} style={{ background: '#8b5cf6' }}></span>
+                                      <span>Distribución Proporcional por Dominio</span>
+                                    </span>
+                                    <GlobalScoreInfoPopup
+                                      type="proporcional_dominio"
+                                      isOpen={showProporcionalInfo}
+                                      onToggle={() => setShowProporcionalInfo((prev) => !prev)}
+                                      onClose={() => setShowProporcionalInfo(false)}
+                                      anchorRef={proporcionalInfoRef}
+                                    />
                                   </h3>
-                                  <div className={styles.pieChartWrapper} style={{ maxWidth: '380px', width: '100%' }}>
+                                  <div className={styles.pieChartWrapper}>
                                     <Pie
                                       options={{
                                         responsive: true,
@@ -3984,30 +4549,30 @@ const Reportes = () => {
                                               style={{
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
-                                                gap: '5px',
-                                                marginTop: '4px',
+                                                gap: '3px',
+                                                marginTop: '3px',
                                                 flexWrap: 'nowrap',
                                               }}
                                             >
                                               <span
                                                 style={{
-                                                  fontSize: '0.72rem',
+                                                  fontSize: '0.58rem',
                                                   color: currentLevel.color || '#1e293b',
                                                   fontWeight: 700,
                                                   background: hexToRgba(currentLevel.color || '#3b82f6', 0.14),
-                                                  padding: '2px 8px',
-                                                  borderRadius: '6px',
+                                                  padding: '1px 5px',
+                                                  borderRadius: '4px',
                                                   border: `1px solid ${hexToRgba(currentLevel.color || '#3b82f6', 0.35)}`,
                                                   display: 'inline-flex',
                                                   alignItems: 'center',
-                                                  gap: '5px',
+                                                  gap: '3px',
                                                   whiteSpace: 'nowrap',
                                                 }}
                                               >
                                                 <span
                                                   style={{
-                                                    width: '6px',
-                                                    height: '6px',
+                                                    width: '4px',
+                                                    height: '4px',
                                                     borderRadius: '50%',
                                                     background: currentLevel.color || '#3b82f6',
                                                     display: 'inline-block',
@@ -4028,7 +4593,7 @@ const Reportes = () => {
                                                     title="Ver escala completa de niveles"
                                                     aria-label="Ver escala completa de niveles"
                                                   >
-                                                    <RiInformationLine style={{ fontSize: '0.85rem' }} />
+                                                    <RiInformationLine style={{ fontSize: '0.72rem' }} />
                                                   </button>
 
                                                   <div className={styles.domainLevelTooltipContent}>
@@ -4101,17 +4666,26 @@ const Reportes = () => {
                                       }}
                                     >
                                       <div>
-                                        <h3 className={styles.dimensionChartMainTitle}>
-                                          <span
-                                            className={styles.sectionTitleIndicator}
-                                            style={{
-                                              display: 'inline-block',
-                                              verticalAlign: 'middle',
-                                              marginRight: '8px',
-                                              background: '#8b5cf6',
-                                            }}
-                                          ></span>
-                                          Puntaje Promedio Global por Dominio
+                                        <h3 className={styles.dimensionChartMainTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                          <span style={{ display: 'flex', alignItems: 'center' }}>
+                                            <span
+                                              className={styles.sectionTitleIndicator}
+                                              style={{
+                                                display: 'inline-block',
+                                                verticalAlign: 'middle',
+                                                marginRight: '8px',
+                                                background: '#8b5cf6',
+                                              }}
+                                            ></span>
+                                            Puntaje Promedio Global por Dominio
+                                          </span>
+                                          <GlobalScoreInfoPopup
+                                            type="dominio"
+                                            isOpen={showGlobalDominioInfo}
+                                            onToggle={() => setShowGlobalDominioInfo((prev) => !prev)}
+                                            onClose={() => setShowGlobalDominioInfo(false)}
+                                            anchorRef={globalDominioInfoRef}
+                                          />
                                         </h3>
                                         <p className={styles.dimensionChartSubtitle}>
                                           RENDIMIENTO GLOBAL CONSOLIDADO POR DOMINIO (SUMA DE CRITERIOS)
@@ -4158,6 +4732,7 @@ const Reportes = () => {
                                     {orient === 'horizontal' ? (
                                       <div
                                         className={styles.chartWrapper}
+                                        onMouseLeave={handleDomainRowMouseLeave}
                                         style={{
                                           minHeight: `${Math.max(260, (dimensionesEspecialistas?.length || 1) * 85)}px`,
                                           width: '100%',
@@ -4176,6 +4751,7 @@ const Reportes = () => {
                                       </div>
                                     ) : (
                                       <div
+                                        onMouseLeave={handleDomainRowMouseLeave}
                                         style={{
                                           minHeight: '360px',
                                           width: '100%',
@@ -4884,12 +5460,23 @@ const Reportes = () => {
               <div className={styles.fullScreenViewContainer}>
                 <header className={styles.fullScreenHeader}>
                   <div className={styles.fullScreenTitleGroup}>
-                    <h1 className={styles.fullScreenTitle}>
-                      <span
-                        className={styles.sectionTitleIndicator}
-                        style={{ background: currentModalColor, width: '4px', height: '24px' }}
-                      ></span>
-                      {modalTitle}
+                    <h1 className={styles.fullScreenTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ display: 'flex', alignItems: 'center' }}>
+                        <span
+                          className={styles.sectionTitleIndicator}
+                          style={{ background: currentModalColor, width: '4px', height: '24px' }}
+                        ></span>
+                        {modalTitle}
+                      </span>
+                      {isGlobal && (
+                        <GlobalScoreInfoPopup
+                          type={isGlobalDominio ? 'dominio' : (type === 'global_ugel' ? 'ugel' : 'especialista')}
+                          isOpen={showModalGlobalInfo}
+                          onToggle={() => setShowModalGlobalInfo((prev) => !prev)}
+                          onClose={() => setShowModalGlobalInfo(false)}
+                          anchorRef={modalGlobalInfoRef}
+                        />
+                      )}
                     </h1>
                     <p className={styles.fullScreenSubtitle}>
                       {isGlobalDominio

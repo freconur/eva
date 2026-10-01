@@ -186,8 +186,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 </Link>
               </div>
             )}
-            {/* Matriz de Costos (temporalmente oculto)
-            {isDevUser && (
+            {isAdmin && isDevUser && (
               <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/matriz-costos') ? styles.activeLink : ''}`}>
                 <MdAttachMoney className={styles.dashboardIcon} />
                 <Link className={styles.dashboardLink} href="/admin/matriz-costos" aria-haspopup="true">
@@ -195,7 +194,6 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 </Link>
               </div>
             )}
-            */}
             <div className={styles.menuContainer}>
               <div className={styles.menuHeader} onClick={(e) => {
                 e.stopPropagation();
