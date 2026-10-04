@@ -23,7 +23,10 @@ const AsignarEvaluacionUgelModal: React.FC<AsignarEvaluacionUgelModalProps> = ({
 
     useEffect(() => {
         if (showModal) {
-            getEspecialistasUgel()
+            const unsubscribe = getEspecialistasUgel()
+            return () => {
+                if (typeof unsubscribe === 'function') unsubscribe()
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showModal])

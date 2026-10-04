@@ -74,7 +74,10 @@ const EspecialistaRegionales = () => {
   }
 
   useEffect(() => {
-    getEspecialistasRegionales()
+    const unsubscribe = getEspecialistasRegionales()
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   return (

@@ -775,20 +775,13 @@ export const useReporteEspecialistas = () => {
     }
 
     // Código original para evaluaciones no-realtime
-    const q = query(collection(db, 'usuarios'), where('rol', '==', 2));
-
-    const directores = await getDocs(q);
-    console.log('cantidad total de directores', directores.size);
-
     const pathRef = collection(db, `/evaluaciones/${idEvaluacion}/${yearSelected}-${month}`);
     const querySnapshot = await getDocs(pathRef);
-    console.log('tamanio de la coleccion', querySnapshot.size);
     const docentesDelDirector: User[] = [];
     querySnapshot.forEach((doc) => {
       docentesDelDirector.push(doc.data() as User);
     });
 
-    console.log('docentesDelDirector', docentesDelDirector);
     dispatch({ type: AppAction.ALL_EVALUACIONES_DIRECTOR_DOCENTE, payload: docentesDelDirector });
     return docentesDelDirector;
   };

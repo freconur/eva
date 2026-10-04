@@ -67,8 +67,16 @@ const { idEvaluacion } = router.query
         edad: currentUserData.conocimientoPedagogico?.edad || prev.edad,
       }));
     }
-    getEvaluacionEscalaLikert(`${idEvaluacion}`)
-    getPreguntasEvaluacionEscalaLikert(`${idEvaluacion}`)
+    let unsub1: (() => void) | undefined
+    let unsub2: (() => void) | undefined
+    if (idEvaluacion) {
+      unsub1 = getEvaluacionEscalaLikert(`${idEvaluacion}`)
+      unsub2 = getPreguntasEvaluacionEscalaLikert(`${idEvaluacion}`)
+    }
+    return () => {
+      if (typeof unsub1 === 'function') unsub1()
+      if (typeof unsub2 === 'function') unsub2()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni, router.query.idEvaluacion]);
 console.log('evaluacionEscalaLikert', evaluacionEscalaLikert)

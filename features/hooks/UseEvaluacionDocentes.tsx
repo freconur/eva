@@ -20,23 +20,26 @@ const UseEvaluacionDocentes = () => {
 
   const getDataEvaluacion = (idEvaluacion: string) => {
     dispatch({ type: AppAction.EVALUACIONES_DOCENTES, payload: [] })
-    const q = query(collection(db, "/evaluaciones-docentes"), orderBy("order", "asc"))
-    onSnapshot(doc(db, "/evaluaciones-docentes", idEvaluacion), (doc) => {
+    const unsubDoc = onSnapshot(doc(db, "/evaluaciones-docentes", idEvaluacion), (doc) => {
       if (doc.exists()) {
         dispatch({ type: AppAction.DATA_EVALUACION_DOCENTE, payload: doc.data() })
       }
     });
-    onSnapshot(collection(db, "/evaluaciones-docentes"), (querySnapshot) => {
+    const unsubCol = onSnapshot(collection(db, "/evaluaciones-docentes"), (querySnapshot) => {
       const arrayEvaluaciones: CrearEvaluacionDocente[] = [];
       querySnapshot.forEach((doc) => {
         arrayEvaluaciones.push({ ...doc.data(), id: doc.id });
       });
       dispatch({ type: AppAction.EVALUACIONES_DOCENTES, payload: arrayEvaluaciones })
     });
+    return () => {
+      unsubDoc();
+      unsubCol();
+    };
   }
   const getEvaluacionesDocentes = () => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
-    onSnapshot(collection(db, "/evaluaciones-docentes"), (querySnapshot) => {
+    const unsubscribe = onSnapshot(collection(db, "/evaluaciones-docentes"), (querySnapshot) => {
       const arrayEvaluaciones: CrearEvaluacionDocente[] = [];
       querySnapshot.forEach((doc) => {
         arrayEvaluaciones.push({ ...doc.data(), id: doc.id });
@@ -44,6 +47,7 @@ const UseEvaluacionDocentes = () => {
       dispatch({ type: AppAction.EVALUACIONES_DOCENTES, payload: arrayEvaluaciones })
       dispatch({ type: AppAction.LOADER_PAGES, payload: false })
     });
+    return unsubscribe;
   }
 
   const deleteEvaluacionDocentes = async (id: string) => {
@@ -73,12 +77,12 @@ const UseEvaluacionDocentes = () => {
       })
   }
 
-  const getPreguntasRespuestasDocentes = async (idEvaluacion: string) => {
+  const getPreguntasRespuestasDocentes = (idEvaluacion: string) => {
     dispatch({ type: AppAction.GET_PREGUNTA_RESPUESTA_DOCENTE, payload: [] })
     dispatch({ type: AppAction.LOADER_PAGES, payload: true })
     const path = `/evaluaciones-docentes/${idEvaluacion}/preguntasRespuestas`
     const q = query(collection(db, path), orderBy("order", "asc"))
-    onSnapshot(q, (querySnapshot) => {
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const arrayPreguntaRespuestaDocentes: PreviewPRDocentes[] = []
       querySnapshot.forEach((doc) => {
         arrayPreguntaRespuestaDocentes.push({ ...doc.data(), id: doc.id });
@@ -90,6 +94,7 @@ const UseEvaluacionDocentes = () => {
       dispatch({ type: AppAction.GET_PREGUNTA_RESPUESTA_DOCENTE, payload: preguntasConNoRespondio })
       dispatch({ type: AppAction.LOADER_PAGES, payload: false })
     });
+    return unsubscribe;
   }
 
   const updatePreResDocentes = async (data: PRDocentes, idEvaluacion: string) => {

@@ -338,21 +338,47 @@ export const useReporteAdmin = () => {
       }
 
       // Fallback: Consulta directa en Firestore si no existe el consolidado JSON
-      const q = query(collection(db, 'usuarios'), where('rol', '==', 2));
+      let targetNivel: number | null = null;
+      const rawNivel = (evaluacion as any)?.nivel;
+      const rawGrado = (evaluacion as any)?.grado;
+
+      if (typeof rawNivel === 'number' || (typeof rawNivel === 'string' && String(rawNivel).trim() !== '')) {
+        targetNivel = Number(rawNivel);
+      } else if (typeof rawGrado === 'number' || (typeof rawGrado === 'string' && String(rawGrado).trim() !== '')) {
+        const gradoObj = gradosDeColegio.find((g) => g.id === Number(rawGrado));
+        if (gradoObj && gradoObj.nivel !== undefined) {
+          targetNivel = gradoObj.nivel;
+        }
+      }
+
+      const qConstraints: any[] = [
+        collection(db, 'usuarios'),
+        where('rol', '==', 2)
+      ];
+
+      if (targetNivel !== null && !isNaN(targetNivel)) {
+        qConstraints.push(where('nivelDeInstitucion', 'array-contains', targetNivel));
+      }
+
+      const q = query(...(qConstraints as [any, ...any[]]));
       const directores = await getDocs(q);
-      console.log('cantidad total de directores', directores.size);
 
       const pathRef = collection(db, `/evaluaciones/${idEval}/${yearSelected}-${monthSelected}`);
       const querySnapshot = await getDocs(pathRef);
-      console.log('tamanio de la coleccion', querySnapshot.size);
       const docentesDelDirector: any[] = [];
       querySnapshot.forEach((doc) => {
         docentesDelDirector.push(doc.data() as any);
       });
 
       const directorDetails = new Map<string, any>();
+      directores.docs.forEach((d) => {
+        directorDetails.set(d.id, d.data());
+      });
+
       const missingProfileDirectors = docentesDelDirector.filter((d: any) => !d.nombres || !d.apellidos || !d.institucion);
-      const missingDirectorIds = missingProfileDirectors.map(d => d.dniDirector || d.dni);
+      const missingDirectorIds = missingProfileDirectors
+        .map(d => d.dniDirector || d.dni)
+        .filter((dni): dni is string => Boolean(dni) && !directorDetails.has(dni));
 
       if (missingDirectorIds.length > 0) {
         const batches = [];
@@ -361,8 +387,8 @@ export const useReporteAdmin = () => {
         }
 
         const promesasDirectores = batches.map(async (chunk) => {
-          const q = query(collection(db, 'usuarios'), where(documentId(), 'in', chunk));
-          const snapDocentes = await getDocs(q);
+          const qBatches = query(collection(db, 'usuarios'), where(documentId(), 'in', chunk));
+          const snapDocentes = await getDocs(qBatches);
           snapDocentes.forEach(d => {
             directorDetails.set(d.id, d.data());
           });
@@ -373,8 +399,8 @@ export const useReporteAdmin = () => {
 
       const nivelesConfig = evaluacion?.nivelYPuntaje || [];
 
-      const formattedDirectors = directores.docs.map((doc) => {
-        const uData = doc.data();
+      const formattedDirectors = directores.docs.map((doc: any) => {
+        const uData: any = doc.data() || {};
         const dni = doc.id;
         const directorEvaluado = docentesDelDirector.find(d => d.dniDirector === dni || d.dni === dni);
         const detail = directorDetails.get(dni) || {};

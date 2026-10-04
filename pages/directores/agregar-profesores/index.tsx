@@ -31,7 +31,10 @@ const AgregarDirectores = () => {
 
   useEffect(() => {
     if (currentUserData?.dni) {
-      getDocentesByDniDirector(`${currentUserData.dni}`)
+      const unsubscribe = getDocentesByDniDirector(`${currentUserData.dni}`);
+      return () => {
+        if (typeof unsubscribe === 'function') unsubscribe();
+      };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData?.dni])

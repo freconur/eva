@@ -433,13 +433,13 @@ const EvaluacionEscalaLikert = () => {
 
     setIsLoadingId(false)
     const ID = 'vyoPdwg4785DQ4FetrEl'
-    const unsubscribe = getTituloDeCabecera(ID)
-    getPreguntasEvaluacionEscalaLikert(id)
-    getEvaluacionEscalaLikert(id)
+    const unsubscribeTitulo = getTituloDeCabecera(ID)
+    const unsubscribePreguntas = getPreguntasEvaluacionEscalaLikert(id)
+    const unsubscribeEvaluacion = getEvaluacionEscalaLikert(id)
     return () => {
-      if (unsubscribe) {
-        unsubscribe()
-      }
+      if (typeof unsubscribeTitulo === 'function') unsubscribeTitulo()
+      if (typeof unsubscribePreguntas === 'function') unsubscribePreguntas()
+      if (typeof unsubscribeEvaluacion === 'function') unsubscribeEvaluacion()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]) // Agregamos id como dependencia para que se ejecute cuando esté disponible

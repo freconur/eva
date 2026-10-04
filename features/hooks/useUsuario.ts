@@ -59,15 +59,15 @@ const useUsuario = () => {
     return false;
   };
 
-  const getUsersDirectores = async () => {
-    console.log('currentUserData', currentUserData);
+  const getUsersDirectores = () => {
+    if (!currentUserData?.region) return () => {};
     const q = query(
       collection(db, 'usuarios'),
       where('rol', '==', 2),
       where('region', '==', Number(currentUserData.region)),
       orderBy('rol', 'asc')
     );
-    onSnapshot(q, (querysanpshot) => {
+    const unsubscribe = onSnapshot(q, (querysanpshot) => {
       const arryaDirectores: User[] = [];
       querysanpshot.forEach((doc) => {
         arryaDirectores.push(doc.data());
@@ -77,16 +77,7 @@ const useUsuario = () => {
         payload: arryaDirectores,
       });
     });
-    /* await getDocs(pathRef).then((res) => {
-      const arryaDirectores: User[] = [];
-      res.forEach((doc) => {
-        arryaDirectores.push(doc.data());
-      });
-      dispatch({
-        type: AppAction.USUARIOS_DIRECTORES,
-        payload: arryaDirectores,
-      });
-    }); */
+    return unsubscribe;
   };
   const getDirectorById = async (dni: string) => {
     dispatch({ type: AppAction.WARNING_USUARIO_NO_ENCONTRADO, payload: '' });
@@ -106,7 +97,6 @@ const useUsuario = () => {
     if (checkAuditReadOnly()) return;
     const pathRef = doc(db, 'usuarios', `${dniDirector}`);
     await updateDoc(pathRef, data).then((res) => {
-      getUsersDirectores();
       dispatch({ type: AppAction.DATA_DIRECTOR, payload: {} });
     });
   };
@@ -593,23 +583,23 @@ const useUsuario = () => {
     });
   };
 
-  const getAllEspecialistas = async () => {
+  const getAllEspecialistas = () => {
     const pathRef = collection(db, 'usuarios');
     const q = query(pathRef, where('rol', '==', 1));
-    onSnapshot(q, (querySnapshot) => {
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const arrayEspecialistas: User[] = [];
       querySnapshot.forEach((doc) => {
         arrayEspecialistas.push(doc.data());
       });
       dispatch({ type: AppAction.ALL_ESPECIALISTAS, payload: arrayEspecialistas });
     });
+    return unsubscribe;
   };
 
   const updateEspecialista = async (dniEspecialista: string, data: User) => {
     if (checkAuditReadOnly()) return;
     const pathRef = doc(db, 'usuarios', `${dniEspecialista}`);
     await updateDoc(pathRef, data);
-    getAllEspecialistas(); // Actualizamos la lista después de modificar
   };
 
   const updateTipoGestion = async (dni: string, tipoGestion: 'publico' | 'privado') => {

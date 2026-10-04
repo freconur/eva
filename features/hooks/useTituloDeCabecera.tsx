@@ -109,6 +109,7 @@ export const useTituloDeCabecera = () => {
 
     // Guardar la referencia del unsubscribe
     unsubscribeRef.current = unsubscribe;
+    return unsubscribe;
   };
 
   const addPuntajeEscalaLikert = async (id: string, puntaje: EscalaLikert[]) => {
@@ -197,15 +198,16 @@ export const useTituloDeCabecera = () => {
     await updateDoc(preguntaRef, { orden: nuevoOrden });
   };
 
-  const getEvaluacionEscalaLikert = async (id: string) => {
+  const getEvaluacionEscalaLikert = (id: string) => {
     const pathRef = doc(db, 'evaluaciones-escala-likert', id);
-    onSnapshot(pathRef, (docSnap) => {
+    const unsubscribe = onSnapshot(pathRef, (docSnap) => {
       if (docSnap.exists()) {
         /* dispatch({ type: AppAction.EVALUACION_ESCALA_LIKERT, payload: docSnap.data() }); */
         console.log('docSnap.data()', { ...docSnap.data(), id: docSnap.id })
         setEvaluacionEscalaLikert({ ...docSnap.data(), id: docSnap.id })
       }
     });
+    return unsubscribe;
   }
 
   const updateEvaluacionEscalaLikert = async (id: string, data: EvaluacionLikert) => {
@@ -391,15 +393,15 @@ export const useTituloDeCabecera = () => {
   }
 
 
-  const evaluacionEscalaLikertByUsuario = async (id: string, month: number = 9, year: number = currentYear) => {
+  const evaluacionEscalaLikertByUsuario = (id: string, month: number = 9, year: number = currentYear) => {
     const pathRef = doc(db, `/evaluaciones-escala-likert/${id}/${2025}-${month}/`, `${currentUserData.dni}`);//deberiamos de usar el valore de year que es dinamico ya veremos como lo resolvermos
     console.log(`/evaluaciones-escala-likert/${id}/${2025}-${month}/`, `${currentUserData.dni}`)
-    onSnapshot(pathRef, (docSnap) => {
+    const unsubscribe = onSnapshot(pathRef, (docSnap) => {
       if (docSnap.exists()) {
         setEscalaLikertByUsuario(docSnap.data() as EvaluacionesEscalaLikertUsario)
-        return escalaLikertByUsuario
       }
     });
+    return unsubscribe;
   }
 
   const exportarExcelEvaluacionEscalaLikert = async (id: string, month: number, year: number = currentYear) => {

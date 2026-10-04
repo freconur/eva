@@ -337,13 +337,13 @@ const handleCancelDelete = () => {
 
 useEffect(() => {
   const ID = 'vyoPdwg4785DQ4FetrEl'
-  const unsubscribe = getTituloDeCabecera(ID)
-  getPreguntasEvaluacionEscalaLikert('5j5WEYsHCUM9SDkXmlm1')
-  getEvaluacionEscalaLikert('5j5WEYsHCUM9SDkXmlm1')
+  const unsubscribeTitulo = getTituloDeCabecera(ID)
+  const unsubscribePreguntas = getPreguntasEvaluacionEscalaLikert('5j5WEYsHCUM9SDkXmlm1')
+  const unsubscribeEvaluacion = getEvaluacionEscalaLikert('5j5WEYsHCUM9SDkXmlm1')
   return () => {
-    if (unsubscribe) {
-      unsubscribe()
-    }
+    if (typeof unsubscribeTitulo === 'function') unsubscribeTitulo()
+    if (typeof unsubscribePreguntas === 'function') unsubscribePreguntas()
+    if (typeof unsubscribeEvaluacion === 'function') unsubscribeEvaluacion()
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []) // Removemos las dependencias que causan re-renders innecesarios

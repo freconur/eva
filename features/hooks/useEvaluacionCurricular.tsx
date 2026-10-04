@@ -28,15 +28,13 @@ const useEvaluacionCurricular = () => {
     });
   }
   const createEvaluacionCurricular = async (data: EvaluacionCurricular) => {
-    await getDocs(collection(db, "evaluacion-curricular"))
-      .then(async response => {
-        console.log('data', { ...data, order: response.size + 1 })
-        if (response.size === 0) {
-          await addDoc(collection(db, "evaluacion-curricular"), { ...data, order: 0 });
-        } else {
-          await addDoc(collection(db, "evaluacion-curricular"), { ...data, order: response.size + 1 });
-        }
-      })
+    const snap = await getCountFromServer(collection(db, "evaluacion-curricular"));
+    const count = snap.data().count;
+    if (count === 0) {
+      await addDoc(collection(db, "evaluacion-curricular"), { ...data, order: 0 });
+    } else {
+      await addDoc(collection(db, "evaluacion-curricular"), { ...data, order: count + 1 });
+    }
   }
 
   const addPreguntasAlternativasCurricular = async (data: EvaluacionCurricular) => {
@@ -956,12 +954,8 @@ const useEvaluacionCurricular = () => {
   const getDirectoresDeLaRegionEvaluadosCC = async (usuario: User, nivel: string, idCurricular: string) => {
     const pathRef = collection(db, `/evaluacion-curricular/${idCurricular}/${currentYear}-cobertura-curricular/${nivel}/${nivel}`)
     const q = query(pathRef, where('info.region', '==', usuario.region))
-    const q2 = query(collection(db, 'usuarios'), where('region', '==', 2), where('rol', '==', 2), limit(2))
 
     const directores = await getDocs(q)
-    /* const directores2 = await getDocs(q2) */
-    /* console.log('directores', directores.size)
-    console.log('directores2', directores2.docs[1].data()) */
     const arrayResultadosDirectore: ResultadosAcumuladosCC[] = []
     directores.forEach(doc => {
       arrayResultadosDirectore.push(doc.data())

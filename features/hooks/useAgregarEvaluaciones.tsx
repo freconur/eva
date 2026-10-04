@@ -580,6 +580,232 @@ export const useAgregarEvaluaciones = () => {
       dispatch({ type: AppAction.LOADER_PAGES, payload: false });
     }
   };
+
+  const duplicarEvaluacion = async ({
+    idOrigen,
+    nuevoNombre,
+    nuevoMes,
+    nuevoAño,
+    copiarNivelYPuntaje = true,
+    silentToast = false,
+    skipLoader = false,
+    skipSentinel = false,
+  }: {
+    idOrigen: string;
+    nuevoNombre: string;
+    nuevoMes: string;
+    nuevoAño: string;
+    copiarNivelYPuntaje?: boolean;
+    silentToast?: boolean;
+    skipLoader?: boolean;
+    skipSentinel?: boolean;
+  }): Promise<string | null> => {
+    if (checkAuditReadOnly()) return null;
+    if (!skipLoader) {
+      dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    }
+
+    try {
+      // 1. Obtener la evaluación origen
+      const docRefOrigen = doc(db, 'evaluaciones', idOrigen);
+      const docSnapOrigen = await getDoc(docRefOrigen);
+
+      if (!docSnapOrigen.exists()) {
+        toast.error('No se encontró la evaluación de origen.');
+        return null;
+      }
+
+      const dataOrigen = docSnapOrigen.data() as Evaluaciones;
+
+      // 2. Crear referencia para la nueva evaluación
+      const nuevaEvaluacionRef = doc(collection(db, 'evaluaciones'));
+      const nuevoId: string = nuevaEvaluacionRef.id;
+
+      // 3. Preparar datos de la nueva evaluación (nace inactiva para permitir edición libre)
+      const nuevaEvaluacionData: any = {
+        id: nuevoId,
+        idDocente: currentUserData.dni || dataOrigen.idDocente || '',
+        nombre: nuevoNombre.trim(),
+        grado: Number(dataOrigen.grado),
+        categoria: Number(dataOrigen.categoria),
+        rol: dataOrigen.rol || 4,
+        tipoDeEvaluacion: dataOrigen.tipoDeEvaluacion || '',
+        mesDelExamen: nuevoMes || dataOrigen.mesDelExamen || `${currentMonth}`,
+        añoDelExamen: nuevoAño || dataOrigen.añoDelExamen || `${currentYear}`,
+        active: false,
+        nivel: Number(dataOrigen.nivel || 0),
+        realtimeEnabled: true,
+      };
+
+      if (copiarNivelYPuntaje && dataOrigen.nivelYPuntaje) {
+        nuevaEvaluacionData.nivelYPuntaje = dataOrigen.nivelYPuntaje;
+      }
+      if (dataOrigen.metaSatisfactorio !== undefined) {
+        nuevaEvaluacionData.metaSatisfactorio = dataOrigen.metaSatisfactorio;
+      }
+      if (dataOrigen.labelActuacion) {
+        nuevaEvaluacionData.labelActuacion = dataOrigen.labelActuacion;
+      }
+      if (dataOrigen.usuariosConPermisos) {
+        nuevaEvaluacionData.usuariosConPermisos = dataOrigen.usuariosConPermisos;
+      }
+      if (dataOrigen.usuariosConPermisosUgel) {
+        nuevaEvaluacionData.usuariosConPermisosUgel = dataOrigen.usuariosConPermisosUgel;
+      }
+      if (dataOrigen.activarEvidencias !== undefined) {
+        nuevaEvaluacionData.activarEvidencias = dataOrigen.activarEvidencias;
+      }
+      if (dataOrigen.accionesEspecialista) {
+        nuevaEvaluacionData.accionesEspecialista = dataOrigen.accionesEspecialista;
+      }
+
+      // 4. Obtener las preguntas originales de la subcolección
+      const preguntasRef = collection(db, `/evaluaciones/${idOrigen}/preguntasRespuestas`);
+      const preguntasSnap = await getDocs(preguntasRef);
+
+      const preguntasOriginales: any[] = [];
+      preguntasSnap.forEach((docPreg) => {
+        preguntasOriginales.push({ ...docPreg.data(), id: docPreg.id });
+      });
+
+      // Ordenar por orden numérico o ID numérico
+      preguntasOriginales.sort((a, b) => {
+        const orderA = parseInt(a.order?.toString() || a.id?.toString() || '0');
+        const orderB = parseInt(b.order?.toString() || b.id?.toString() || '0');
+        return orderA - orderB;
+      });
+
+      const totalPreguntasCount = preguntasOriginales.length;
+
+      // 5. Escribir usando writeBatch en bloques seguros (< 500 operaciones)
+      const batchSize = 400;
+      let currentBatch = writeBatch(db);
+      currentBatch.set(nuevaEvaluacionRef, nuevaEvaluacionData);
+
+      const counterRef = doc(db, `/evaluaciones/${nuevoId}/metadata/counter`);
+      currentBatch.set(counterRef, { count: totalPreguntasCount });
+
+      let operationsInBatch = 2;
+
+      for (let i = 0; i < totalPreguntasCount; i++) {
+        const preg = preguntasOriginales[i];
+        const nuevoIndex = i + 1;
+        const nuevaPreguntaRef = doc(db, `/evaluaciones/${nuevoId}/preguntasRespuestas`, `${nuevoIndex}`);
+
+        // Limpiar la alternativa "no respondio" si viniese guardada, para no duplicarla
+        const alternativasLimpias = (preg.alternativas || [])
+          .filter((alt: any) => alt.descripcion?.trim().toLowerCase() !== 'no respondio')
+          .map((alt: any, altIdx: number) => ({
+            alternativa: alt.alternativa || String.fromCharCode(97 + altIdx),
+            descripcion: alt.descripcion || '',
+            selected: false,
+          }));
+
+        const nuevaPreguntaData: any = {
+          pregunta: preg.pregunta || '',
+          respuesta: preg.respuesta || '',
+          alternativas: alternativasLimpias,
+          preguntaDocente: preg.preguntaDocente || '',
+          puntaje: preg.puntaje !== undefined ? String(preg.puntaje) : '0',
+          order: nuevoIndex,
+          timestamp: serverTimestamp(),
+        };
+
+        currentBatch.set(nuevaPreguntaRef, nuevaPreguntaData);
+        operationsInBatch++;
+
+        if (operationsInBatch >= batchSize) {
+          await currentBatch.commit();
+          currentBatch = writeBatch(db);
+          operationsInBatch = 0;
+        }
+      }
+
+      if (operationsInBatch > 0) {
+        await currentBatch.commit();
+      }
+
+      // Actualizar centinelas para reactividad
+      if (!skipSentinel) {
+        await updateEvaluacionesSentinel();
+      }
+      await updatePreguntasSentinel(nuevoId);
+
+      if (!silentToast) {
+        toast.success('Evaluación duplicada exitosamente con todas sus preguntas');
+      }
+      return nuevoId;
+    } catch (error: any) {
+      console.error('Error al duplicar evaluación:', error);
+      toast.error(`Error al duplicar evaluación: ${error?.message || 'Error desconocido'}`);
+      return null;
+    } finally {
+      if (!skipLoader) {
+        dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      }
+    }
+  };
+
+  const duplicarEvaluacionesMasivas = async ({
+    evaluacionesConfig,
+    copiarNivelYPuntaje = true,
+    onProgress,
+  }: {
+    evaluacionesConfig: {
+      idOrigen: string;
+      nuevoNombre: string;
+      nuevoMes: string;
+      nuevoAño: string;
+    }[];
+    copiarNivelYPuntaje?: boolean;
+    onProgress?: (current: number, total: number) => void;
+  }): Promise<string[]> => {
+    if (checkAuditReadOnly()) return [];
+
+    const nuevosIds: string[] = [];
+    const total = evaluacionesConfig.length;
+    let anyDuplicated = false;
+
+    try {
+      for (let i = 0; i < total; i++) {
+        const item = evaluacionesConfig[i];
+
+        const nuevoId = await duplicarEvaluacion({
+          idOrigen: item.idOrigen,
+          nuevoNombre: item.nuevoNombre,
+          nuevoMes: item.nuevoMes,
+          nuevoAño: item.nuevoAño,
+          copiarNivelYPuntaje,
+          silentToast: true,
+          skipLoader: true,
+          skipSentinel: true,
+        });
+
+        if (nuevoId) {
+          nuevosIds.push(nuevoId);
+          anyDuplicated = true;
+        }
+
+        if (onProgress) {
+          onProgress(i + 1, total);
+        }
+      }
+
+      if (anyDuplicated) {
+        await updateEvaluacionesSentinel();
+      }
+
+      toast.success(`Se duplicaron ${nuevosIds.length} evaluaciones exitosamente con todas sus preguntas`);
+      return nuevosIds;
+    } catch (error: any) {
+      console.error('Error al duplicar evaluaciones masivas:', error);
+      toast.error(`Error durante la duplicación masiva: ${error?.message || 'Error desconocido'}`);
+      if (anyDuplicated) {
+        await updateEvaluacionesSentinel();
+      }
+      return nuevosIds;
+    }
+  };
   const getEvaluacion = (id: string) => {
     const docRef = doc(db, 'evaluaciones', `${id}`);
 
@@ -1143,6 +1369,8 @@ export const useAgregarEvaluaciones = () => {
     guardarPreguntasRespuestas,
     totalPreguntas,
     crearEvaluacion,
+    duplicarEvaluacion,
+    duplicarEvaluacionesMasivas,
     getEvaluaciones,
     getEvaluacionesOnce,
     getEvaluacion,

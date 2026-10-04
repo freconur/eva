@@ -141,7 +141,7 @@ const UseEvaluacionEspecialistas = () => {
   const getDimensionesEspecialistas = (idEvaluacion: string) => {
     const path = `/evaluaciones-especialista/${idEvaluacion}/dominios`;
     const q = query(collection(db, path), orderBy('order', 'asc'));
-    onSnapshot(q, (querySnapshot) => {
+    return onSnapshot(q, (querySnapshot) => {
       const arrayDimensiones: DimensionEspecialista[] = [];
       querySnapshot.forEach((doc) => {
         arrayDimensiones.push({ ...doc.data(), id: doc.id });
@@ -154,7 +154,7 @@ const UseEvaluacionEspecialistas = () => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     const path = `/evaluaciones-especialista/${idEvaluacion}/evaluados`;
     const q = query(collection(db, path));
-    onSnapshot(q, (querySnapshot) => {
+    return onSnapshot(q, (querySnapshot) => {
       const arrayEvaluados: User[] = [];
       querySnapshot.forEach((doc) => {
         arrayEvaluados.push({ ...doc.data() as User, id: doc.id });
@@ -554,12 +554,13 @@ const UseEvaluacionEspecialistas = () => {
 
 
   const getDataEvaluacion = (idEvaluacion: string) => {
-    onSnapshot(doc(db, '/evaluaciones-especialista', idEvaluacion), (doc) => {
+    if (!idEvaluacion) return () => {};
+    const unsubDoc = onSnapshot(doc(db, '/evaluaciones-especialista', idEvaluacion), (doc) => {
       if (doc.exists()) {
         dispatch({ type: AppAction.DATA_EVALUACION_DOCENTE, payload: doc.data() });
       }
     });
-    onSnapshot(collection(db, '/evaluaciones-especialista'), (querySnapshot) => {
+    const unsubCol = onSnapshot(collection(db, '/evaluaciones-especialista'), (querySnapshot) => {
       const arrayEvaluaciones: CrearEvaluacionDocente[] = [];
       querySnapshot.forEach((doc) => {
         arrayEvaluaciones.push({ ...doc.data(), id: doc.id });
@@ -567,6 +568,10 @@ const UseEvaluacionEspecialistas = () => {
       arrayEvaluaciones.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }));
       dispatch({ type: AppAction.EVALUACIONES_DOCENTES, payload: arrayEvaluaciones });
     });
+    return () => {
+      unsubDoc();
+      unsubCol();
+    };
   };
 
   const savePaletaGlobalColores = async (palette: string[]) => {
@@ -583,16 +588,16 @@ const UseEvaluacionEspecialistas = () => {
   };
   const getEvaluacionesEspecialistas = () => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
-    onSnapshot(collection(db, '/evaluaciones-especialista'), (querySnapshot) => {
+    const unsubscribe = onSnapshot(collection(db, '/evaluaciones-especialista'), (querySnapshot) => {
       const arrayEvaluaciones: CrearEvaluacionDocente[] = [];
       querySnapshot.forEach((doc) => {
-        console.log(doc.data());
         arrayEvaluaciones.push({ ...doc.data(), id: doc.id });
       });
       arrayEvaluaciones.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }));
       dispatch({ type: AppAction.EVALUACIONES_DOCENTES, payload: arrayEvaluaciones });
       dispatch({ type: AppAction.LOADER_PAGES, payload: false });
     });
+    return unsubscribe;
   };
 
   const deleteEvaluacionEspecilistas = async (id: string) => {
@@ -627,11 +632,11 @@ const UseEvaluacionEspecialistas = () => {
   };
 
 
-  const getPreguntasRespuestasEspecialistas = async (idEvaluacion: string) => {
+  const getPreguntasRespuestasEspecialistas = (idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     const path = `/evaluaciones-especialista/${idEvaluacion}/preguntasRespuestas`;
     const q = query(collection(db, path), orderBy('order', 'asc'));
-    onSnapshot(q, (querySnapshot) => {
+    return onSnapshot(q, (querySnapshot) => {
       const arrayPreguntaRespuestaDocentes: PRDocentes[] = [];
       querySnapshot.forEach((doc) => {
         arrayPreguntaRespuestaDocentes.push({ ...doc.data(), id: doc.id });
@@ -644,11 +649,11 @@ const UseEvaluacionEspecialistas = () => {
       dispatch({ type: AppAction.LOADER_PAGES, payload: false });
     });
   };
-  const getPREspecialistaDirector = async (idEvaluacion: string) => {
+  const getPREspecialistaDirector = (idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     const path = `/evaluaciones-director/${idEvaluacion}/preguntasRespuestas`;
     const q = query(collection(db, path), orderBy('order', 'asc'));
-    onSnapshot(q, (querySnapshot) => {
+    return onSnapshot(q, (querySnapshot) => {
       const arrayPreguntaRespuestaDocentes: PreviewPRDocentes[] = [];
       querySnapshot.forEach((doc) => {
         arrayPreguntaRespuestaDocentes.push({ ...doc.data(), id: doc.id });
@@ -1143,11 +1148,11 @@ const UseEvaluacionEspecialistas = () => {
     console.log('dataFiltrada', dataFiltrada);
     dispatch({ type: AppAction.DATA_FILTRADA_ESPECIALISTA_DIRECTOR_TABLA, payload: dataFiltrada });
   };
-  const getPreguntasRespuestasDesempeñoDirectivo = async (idEvaluacion: string) => {
+  const getPreguntasRespuestasDesempeñoDirectivo = (idEvaluacion: string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
     const path = `/evaluaciones-director/${idEvaluacion}/preguntasRespuestas`;
     const q = query(collection(db, path), orderBy('order', 'asc'));
-    onSnapshot(q, (querySnapshot) => {
+    return onSnapshot(q, (querySnapshot) => {
       const arrayPreguntaRespuestaDocentes: PreviewPRDocentes[] = [];
       querySnapshot.forEach((doc) => {
         arrayPreguntaRespuestaDocentes.push({ ...doc.data(), id: doc.id });
@@ -1400,11 +1405,12 @@ const UseEvaluacionEspecialistas = () => {
   };
 
   const getAllEvaluacionesEspecialistas = (idEvaluacion: string) => {
+    if (!idEvaluacion) return () => {};
     const path = `/evaluaciones-especialista/${idEvaluacion}/evaluados`;
     const refData = collection(db, path);
 
-    const docentesDelDirector: User[] = [];
-    onSnapshot(refData, (docenteSnapshot) => {
+    const unsubscribe = onSnapshot(refData, (docenteSnapshot) => {
+      const docentesDelDirector: User[] = [];
       docenteSnapshot.forEach((doc) => {
         docentesDelDirector.push(doc.data() as User);
       });
@@ -1412,6 +1418,7 @@ const UseEvaluacionEspecialistas = () => {
       // Verificar warning después de cargar los datos
       docentesDelDirector.length === 0 ? setWarning(true) : setWarning(false);
     });
+    return unsubscribe;
   };
   const reporteEvaluacionEspecialistas = async (idEvaluacion: string) => {
 
@@ -1451,29 +1458,28 @@ const UseEvaluacionEspecialistas = () => {
 
 
   const getDataSeguimientoRetroalimentacionEspecialista = (idEvaluacion: string, sessionId: string) => {
+    if (!idEvaluacion || !sessionId) return () => {};
     const path = `/evaluaciones-especialista/${idEvaluacion}/evaluados/`
 
-    onSnapshot(doc(db, path, sessionId), (doc) => {
+    const unsubscribe = onSnapshot(doc(db, path, sessionId), (doc) => {
       console.log("Current data: ", doc.data());
       if (doc.exists() && doc.data()) {
         setDataEspecialista(doc.data() as User);
       }
     });
+    return unsubscribe;
   }
 
-  const getHistorialEspecialista = (idEvaluacion: string, dni: string) => {
+  const getHistorialEspecialista = async (idEvaluacion: string, dni: string): Promise<User[]> => {
+    if (!idEvaluacion || !dni) return [];
     const path = `/evaluaciones-especialista/${idEvaluacion}/evaluados`;
     const q = query(collection(db, path), where('especialistaDni', '==', dni), orderBy('fechaCreacion', 'desc'));
-
-    return new Promise<User[]>((resolve) => {
-      onSnapshot(q, (querySnapshot) => {
-        const history: User[] = [];
-        querySnapshot.forEach((doc) => {
-          history.push({ ...doc.data() as User, id: doc.id });
-        });
-        resolve(history);
-      });
+    const querySnapshot = await getDocs(q);
+    const history: User[] = [];
+    querySnapshot.forEach((doc) => {
+      history.push({ ...(doc.data() as User), id: doc.id });
     });
+    return history;
   };
 
   const updateEvaluacionEspecialistaSeguimientoRetroalimentacion = async (idEvaluacion: string, especialista: string, data: User) => {

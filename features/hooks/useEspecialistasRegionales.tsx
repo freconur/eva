@@ -59,26 +59,30 @@ export const useEspecialistasRegionales = () => {
     const pathRef = collection(db, 'usuarios');
     const q = query(pathRef, where('rol', '==', 5));
 
-    onSnapshot(q, (querySnapshot) => {
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const especialistasRegionales: User[] = [];
       querySnapshot.forEach(doc => {
         especialistasRegionales.push(doc.data() as User);
       });
       setEspecialistasRegionales(especialistasRegionales);
     });
+
+    return unsubscribe;
   }
 
   const getEspecialistasUgel = () => {
     const pathRef = collection(db, 'usuarios');
     const q = query(pathRef, where('rol', '==', 1));
 
-    onSnapshot(q, (querySnapshot) => {
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const ugelUsers: User[] = [];
       querySnapshot.forEach(doc => {
         ugelUsers.push(doc.data() as User);
       });
       setEspecialistasUgel(ugelUsers);
     });
+
+    return unsubscribe;
   }
 
   const addPermisosEspecialistasEnEvaluacion = async (idEvaluacion: string, especialistas: string[]) => {

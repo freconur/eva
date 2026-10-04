@@ -4,7 +4,8 @@ import PrivateRoutesAdmin from '@/components/layouts/PrivateRoutesAdmin';
 import { 
   RiSettings4Line, 
   RiPaletteLine,
-  RiShieldUserLine
+  RiShieldUserLine,
+  RiRocketLine
 } from 'react-icons/ri';
 
 const ConfiguracionPage = () => {
@@ -17,12 +18,12 @@ const ConfiguracionPage = () => {
             Configuración del Sistema
           </h1>
           <p className="text-slate-500 mt-1 text-sm">
-            Gestiona la apariencia visual del portal, colores y permisos de acciones en reportes.
+            Gestiona la apariencia visual del portal, colores, permisos de acciones y actualizaciones de la plataforma.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl">
         {/* Card: Personalización de Marca */}
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group w-full flex flex-col justify-between">
           <div>
@@ -54,7 +55,24 @@ const ConfiguracionPage = () => {
             Configurar Permisos →
           </Link>
         </div>
+
+        {/* Card: Control de Actualizaciones */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group w-full flex flex-col justify-between">
+          <div>
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
+              <RiRocketLine className="text-2xl" />
+            </div>
+            <h2 className="text-lg font-bold text-slate-800 mb-1">Control de Actualizaciones</h2>
+            <p className="text-slate-500 text-sm mb-4">
+              Gestiona y notifica en tiempo real los nuevos despliegues a los usuarios conectados para que actualicen su navegador sin perder datos.
+            </p>
+          </div>
+          <Link href="/admin/configuracion/actualizaciones" className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
+            Gestionar Versiones →
+          </Link>
+        </div>
       </div>
+
     </div>
   );
 };

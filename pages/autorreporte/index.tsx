@@ -108,8 +108,12 @@ const { idEvaluacion } = router.query
       });
       
       // Ejecutar las peticiones solo cuando tengamos los datos básicos
-      getEvaluacionEscalaLikert(`${router.query.idEvaluacion}`)
-      getPreguntasEvaluacionEscalaLikert(`${router.query.idEvaluacion}`)
+      const unsub1 = getEvaluacionEscalaLikert(`${router.query.idEvaluacion}`)
+      const unsub2 = getPreguntasEvaluacionEscalaLikert(`${router.query.idEvaluacion}`)
+      return () => {
+        if (typeof unsub1 === 'function') unsub1()
+        if (typeof unsub2 === 'function') unsub2()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni, router.query.idEvaluacion]);
@@ -272,7 +276,12 @@ const { idEvaluacion } = router.query
     alert('Autoevaluación enviada correctamente');
   };
   useEffect(() => {
-    evaluacionEscalaLikertByUsuario(`${idEvaluacion}`)
+    if (idEvaluacion) {
+      const unsub = evaluacionEscalaLikertByUsuario(`${idEvaluacion}`)
+      return () => {
+        if (typeof unsub === 'function') unsub()
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[currentUserData.dni, idEvaluacion])
 

@@ -8,6 +8,7 @@ import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 import { logEvent } from 'firebase/analytics'
 import { initAnalytics } from '@/firebase/firebase.config'
+import UpdateNotificationBanner from '@/components/common/UpdateNotificationBanner'
 
 interface Props {
   children: JSX.Element | JSX.Element[]
@@ -51,6 +52,8 @@ export default function App({ Component, pageProps }: any) {
           <ToastContainer />
         </LayoutMenu>
       </Auth>
+      <UpdateNotificationBanner />
     </GlobalContextProvider>
   )
 }
+

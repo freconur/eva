@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import SidebarInfoUser from './SidebarInfoUser';
 import Link from 'next/link';
-import useUsuario from '@/features/hooks/useUsuario';
 import SidebarRegional from './SidebarRegional';
 import { useRolUsers } from '@/features/hooks/useRolUsers';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
@@ -10,10 +8,7 @@ import { MdAccountBalance, MdAccountCircle, MdAttachMoney } from 'react-icons/md
 import { FaUserGraduate, FaUserTie } from 'react-icons/fa';
 import { LuListTodo } from "react-icons/lu";
 import { IoIosArrowDown, IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
-import { FiLogOut } from 'react-icons/fi';
 import { useRouter } from 'next/router';
-
-import ModalConfirmarLogout from '@/modals/ModalConfirmarLogout';
 
 interface Props {
   showSidebar: boolean
@@ -21,11 +16,9 @@ interface Props {
 
 const SidebarEspecialistas = ({ showSidebar }: Props) => {
   const router = useRouter();
-  const { logout } = useUsuario()
   const { showSidebarValue, toggleSidebarCollapsed } = useRolUsers()
   const { currentUserData, isSidebarCollapsed } = useGlobalContext()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
 
   const isDevUser =
     currentUserData?.dni === '47163626' ||
@@ -67,10 +60,6 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
     setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
   };
 
-  const redirectLogin = () => {
-    router.push('/login');
-  }
-
   return (
     <>
       {/* Mobile Backdrop */}
@@ -94,7 +83,6 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
 
         <div className={styles.sidebarContent}>
           <SidebarRegional />
-          <SidebarInfoUser showSidebar={showSidebar} />
 
           {/* Wrapper to detect clicks when collapsed to auto-expand */}
           <div onClick={() => isSidebarCollapsed && toggleSidebarCollapsed(isSidebarCollapsed)}>
@@ -200,22 +188,7 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
             </div>
           </div>
         </div>
-
-        <div onClick={() => setShowLogoutModal(true)} className={styles.logoutButton}>
-          <FiLogOut className={styles.logoutIcon} />
-          <p>cerrar sesión</p>
-        </div>
       </div>
-
-      {showLogoutModal && (
-        <ModalConfirmarLogout
-          onClose={() => setShowLogoutModal(false)}
-          onConfirm={() => {
-            logout();
-            redirectLogin();
-          }}
-        />
-      )}
     </>
   )
 }

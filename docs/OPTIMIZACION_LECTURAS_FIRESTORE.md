@@ -8,11 +8,11 @@ Este documento contiene el diagnóstico técnico exhaustivo, la matriz de priori
 
 | Fase | Tipo de Problema | Impacto Estimado | Dificultad | Estado |
 | :--- | :--- | :--- | :--- | :---: |
-| **Fase 1** | Listeners huérfanos (`onSnapshot` sin `unsubscribe`) | 40% - 50% de lecturas en sesiones largas | Baja | ⏳ Pendiente |
+| **Fase 1** | Listeners huérfanos (`onSnapshot` sin `unsubscribe`) | 40% - 50% de lecturas en sesiones largas | Baja | ✅ Completada |
 | **Fase 2** | Consultas N+1 (bucles de consultas anidadas) | Miles de lecturas por cada consulta | Media | ⏳ Pendiente |
 | **Fase 3** | Doble listener en el mismo componente | 50% de lecturas en evaluación y reportes | Media | ⏳ Pendiente |
 | **Fase 4** | Falta de caché en tablas maestras (`grados`, `categorias`) | Cientos de lecturas por navegación | Baja | ⏳ Pendiente |
-| **Fase 5** | Lecturas de colecciones completas para `console.log` | Cientos de lecturas inmediatas | Muy Baja | ⏳ Pendiente |
+| **Fase 5** | Lecturas de colecciones completas para `console.log` | Cientos de lecturas inmediatas | Muy Baja | ✅ Completada |
 | **Fase 6** | Funciones inestables en Hooks (re-renders continuos) | Reducción de llamadas innecesarias | Media | ⏳ Pendiente |
 
 ---
@@ -22,42 +22,42 @@ Este documento contiene el diagnóstico técnico exhaustivo, la matriz de priori
 > **Problema:** Un `onSnapshot` que no retorna su función de limpieza (`unsubscribe`) se mantiene abierto en la memoria del navegador para siempre. Si el usuario navega entre vistas o guarda datos, se acumulan nuevos listeners leyendo los mismos documentos una y otra vez en segundo plano.
 
 ### Tareas:
-- [ ] **1.1 `useUsuario.ts` - `getUsersDirectores` (Líneas 62-79)**
+- [x] **1.1 `useUsuario.ts` - `getUsersDirectores` (Líneas 62-79)**
   - **Ubicación:** `features/hooks/useUsuario.ts`
   - **Problema:** Ejecuta `onSnapshot` sin retornar `unsubscribe`. En la línea 109 (`updateDirector`) vuelve a invocar `getUsersDirectores()`, duplicando el listener.
   - **Solución:** Retornar la función `unsubscribe` para que los componentes puedan limpiarlo en el `return () => unsubscribe()` de su `useEffect`, o almacenar la referencia en un `useRef` para cancelar el listener previo antes de crear uno nuevo.
 
-- [ ] **1.2 `useUsuario.ts` - `getAllEspecialistas` (Líneas 596-606)**
+- [x] **1.2 `useUsuario.ts` - `getAllEspecialistas` (Líneas 596-606)**
   - **Ubicación:** `features/hooks/useUsuario.ts`
   - **Problema:** Escucha toda la colección `usuarios` donde `rol == 1` sin función de limpieza. En la línea 612 se vuelve a ejecutar tras cada actualización.
   - **Solución:** Retornar el `unsubscribe` o guardar la suscripción activa.
 
-- [ ] **1.3 `useDirectores.tsx` - `getDocentesByDniDirector` (Líneas 33-57)**
+- [x] **1.3 `useDirectores.tsx` - `getDocentesByDniDirector` (Líneas 33-57)**
   - **Ubicación:** `features/hooks/useDirectores.tsx`
   - **Problema:** Abre un `onSnapshot` para los docentes del director sin función de cancelación.
   - **Solución:** Retornar `unsubscribe`.
 
-- [ ] **1.4 `UseEvaluacionEspecialistas.tsx` - `getDataEvaluacion` (Líneas 556-570)**
+- [x] **1.4 `UseEvaluacionEspecialistas.tsx` - `getDataEvaluacion` (Líneas 556-570)**
   - **Ubicación:** `features/hooks/UseEvaluacionEspecialistas.tsx`
   - **Problema:** Lanza dos `onSnapshot` simultáneos (uno al documento y otro a toda la colección `/evaluaciones-especialista`) sin retornar limpieza.
   - **Solución:** Si los datos solo se necesitan una vez al cargar la vista, cambiar a `getDoc` y `getDocs`, o retornar una función combinada de limpieza.
 
-- [ ] **1.5 `UseEvaluacionEspecialistas.tsx` - `getHistorialEspecialista` (Líneas 1464-1477)**
+- [x] **1.5 `UseEvaluacionEspecialistas.tsx` - `getHistorialEspecialista` (Líneas 1464-1477)**
   - **Ubicación:** `features/hooks/UseEvaluacionEspecialistas.tsx`
   - **Problema:** Envuelve `onSnapshot` en un `new Promise((resolve) => ...)`. La promesa resuelve la primera vez, pero el listener queda activo permanentemente consumiendo lecturas ante cada cambio.
   - **Solución:** Reemplazar el `onSnapshot` por un simple `getDocs(q)`.
 
-- [ ] **1.6 `useOptions.tsx` - `getCaracteristicaCurricular` (Líneas 15-29)**
+- [x] **1.6 `useOptions.tsx` - `getCaracteristicaCurricular` (Líneas 15-29)**
   - **Ubicación:** `features/hooks/useOptions.tsx`
   - **Problema:** No cancela la suscripción previa ni retorna el `unsubscribe`.
   - **Solución:** Guardar en `useRef` la función `unsubscribe` y limpiarla, además de retornarla.
 
-- [ ] **1.7 `useEspecialistasRegionales.tsx` - `getEspecialistasRegionales` y `getEspecialistasUgel` (Líneas 58-82)**
+- [x] **1.7 `useEspecialistasRegionales.tsx` - `getEspecialistasRegionales` y `getEspecialistasUgel` (Líneas 58-82)**
   - **Ubicación:** `features/hooks/useEspecialistasRegionales.tsx`
   - **Problema:** Ambos escuchan la colección `usuarios` sin retorno de `unsubscribe`.
   - **Solución:** Retornar las funciones de limpieza correspondientes.
 
-- [ ] **1.8 `useTituloDeCabecera.tsx` - `getEvaluacionEscalaLikert` (Línea 202)**
+- [x] **1.8 `useTituloDeCabecera.tsx` - `getEvaluacionEscalaLikert` (Línea 202)**
   - **Ubicación:** `features/hooks/useTituloDeCabecera.tsx`
   - **Problema:** `onSnapshot` sobre el documento sin retornar la función de cancelación.
   - **Solución:** Retornar `unsubscribe`.
@@ -146,20 +146,20 @@ Este documento contiene el diagnóstico técnico exhaustivo, la matriz de priori
 > **Problema:** Se descargan colecciones enteras de cientos de documentos solo para imprimir su tamaño en consola.
 
 ### Tareas:
-- [ ] **5.1 `useReporteAdmin.ts` (Líneas 341-343)**
+- [x] **5.1 `useReporteAdmin.ts` (Líneas 341-372)**
   - **Ubicación:** `features/hooks/useReporteAdmin.ts`
-  - **Código:**
-    ```tsx
-    const q = query(collection(db, 'usuarios'), where('rol', '==', 2));
-    const directores = await getDocs(q); // ⚠️ Descarga cientos de directores
-    console.log('cantidad total de directores', directores.size); // ⚠️ Solo para log
-    ```
-  - **Solución:** Eliminar la consulta o reemplazarla por `getCountFromServer(q)` si el dato es estrictamente necesario.
+  - **Problema:** Realizaba `const directores = await getDocs(q)` sobre todos los directores de la base de datos sin filtrar por nivel institucional solo para imprimir `directores.size`, y luego ejecutaba consultas redundantes en lotes de 30 contra `usuarios` para los directores participantes.
+  - **Solución:** Se añadió filtro por `targetNivel` (`nivelDeInstitucion: array-contains targetNivel`) para leer solo los directores del nivel de la evaluación, se eliminaron los `console.log` de tamaño y se pobló `directorDetails` directamente desde `directores.docs` sin consultas secundarias duplicadas.
 
-- [ ] **5.2 `useReporteEspecialistas.tsx` (Líneas 778-781)**
+- [x] **5.2 `useReporteEspecialistas.tsx` (Líneas 778-781)**
   - **Ubicación:** `features/hooks/useReporteEspecialistas.tsx`
-  - **Código idéntico al anterior:** Lee todos los directores sólo para loguear `.size`.
-  - **Solución:** Eliminar la consulta redundante.
+  - **Problema:** Consulta fantasma que descargaba todos los directores (`where('rol', '==', 2)`) únicamente para hacer `console.log('cantidad total de directores', directores.size)`, sin usar la variable en absoluto.
+  - **Solución:** Se eliminó la consulta fantasma y los `console.log` asociados.
+
+- [x] **5.3 Mejoras adicionales detectadas (`useEvaluacionCurricular.tsx`)**
+  - **Ubicación:** `features/hooks/useEvaluacionCurricular.tsx`
+  - **Problema:** En `createEvaluacionCurricular` se descargaban todos los documentos de `evaluacion-curricular` con `getDocs` únicamente para calcular `response.size + 1`. Además, en `getDirectoresDeLaRegionEvaluadosCC` existía una consulta `q2` no utilizada.
+  - **Solución:** Se reemplazó la lectura masiva por `getCountFromServer` (0 lecturas de documentos) y se eliminó la consulta `q2` muerta.
 
 ---
 

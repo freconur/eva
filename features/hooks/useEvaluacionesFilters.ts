@@ -9,6 +9,11 @@ import {
 import { arrayMove } from '@dnd-kit/sortable'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { getMonthName } from '@/fuctions/dates'
+import { categoriaTransform } from '@/fuctions/categorias'
+import {
+  matchesEvaluationSearch,
+  calculateEvaluationRelevance,
+} from '@/features/utils/searchEvaluaciones'
 
 // Helper para mostrar nivel
 export const getNivelGrado = (gradoNum: number) => {
@@ -19,15 +24,18 @@ export const getNivelGrado = (gradoNum: number) => {
 }
 
 export const useEvaluacionesFilters = () => {
-  const { evaluaciones, currentUserData, grados } = useGlobalContext()
+  const { evaluaciones, currentUserData, grados, categorias } = useGlobalContext()
   const router = useRouter()
 
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
   const [selectedGrado, setSelectedGrado] = useState<string>('1')
   const [selectedMonth, setSelectedMonth] = useState<string>('')
+  const [selectedCategoria, setSelectedCategoria] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState<string>('')
   const [showYearMenu, setShowYearMenu] = useState<boolean>(false)
   const [showGradoMenu, setShowGradoMenu] = useState<boolean>(false)
   const [showMonthMenu, setShowMonthMenu] = useState<boolean>(false)
+  const [showCategoriaMenu, setShowCategoriaMenu] = useState<boolean>(false)
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     id: true,
@@ -117,65 +125,208 @@ export const useEvaluacionesFilters = () => {
     localStorage.setItem('eva_visible_columns', JSON.stringify(updated))
   }
 
-  // --- MESES DISPONIBLES EN BASE AL AÑO ---
+  // --- MESES DISPONIBLES EN BASE AL AÑO, GRADO Y ACCESO (SOLO MESES CON EVALUACIONES) ---
   const availableMonths = useMemo(() => {
-    const uniqueMonthsSet = new Set<string>();
-    evaluaciones.forEach(eva => {
-      const yr = eva.añoDelExamen || new Date().getFullYear().toString();
-      if (yr === selectedYear && eva.mesDelExamen !== undefined && eva.mesDelExamen !== null) {
-        uniqueMonthsSet.add(eva.mesDelExamen.toString());
-      }
-    });
+    const monthsMap = new Map<number, number>()
 
-    const sortedMonthIds = Array.from(uniqueMonthsSet)
-      .map(Number)
-      .sort((a, b) => a - b);
+    evaluaciones.forEach(eva => {
+      const yr = eva.añoDelExamen || currentYear
+      if (yr !== selectedYear) return
+
+      if (!tieneAccesoAEvaluacion(eva)) return
+
+      if (selectedGrado !== 'all') {
+        if (Number(eva.grado) !== Number(selectedGrado)) return
+      } else {
+        const idsDeGradosPermitidos = gradosFiltrados.map(g => g.grado)
+        if (!idsDeGradosPermitidos.includes(eva.grado)) return
+      }
+
+      if (selectedCategoria !== 'all') {
+        if (Number(eva.categoria) !== Number(selectedCategoria)) return
+      }
+
+      if (
+        eva.mesDelExamen !== undefined &&
+        eva.mesDelExamen !== null &&
+        String(eva.mesDelExamen).trim() !== ''
+      ) {
+        const monthNum = Number(eva.mesDelExamen)
+        if (!isNaN(monthNum) && monthNum >= 0 && monthNum <= 11) {
+          monthsMap.set(monthNum, (monthsMap.get(monthNum) || 0) + 1)
+        }
+      }
+    })
+
+    const sortedMonthIds = Array.from(monthsMap.keys()).sort((a, b) => a - b)
 
     return sortedMonthIds.map(id => ({
       id: id.toString(),
-      name: getMonthName(id)
-    }));
-  }, [evaluaciones, selectedYear]);
+      name: getMonthName(id),
+      count: monthsMap.get(id) || 0,
+    }))
+  }, [evaluaciones, selectedYear, selectedGrado, selectedCategoria, gradosFiltrados, currentYear, currentUserData])
 
-  // --- SINCRONIZACIÓN DE FILTROS CON URL (QUERY PARAMS) ---
+  // --- CATEGORÍAS DISPONIBLES EN BASE A EVALUACIONES EXISTENTES ---
+  const availableCategories = useMemo(() => {
+    const catMap = new Map<number, number>()
+
+    evaluaciones.forEach(eva => {
+      const yr = eva.añoDelExamen || currentYear
+      if (yr !== selectedYear) return
+
+      if (!tieneAccesoAEvaluacion(eva)) return
+
+      if (selectedGrado !== 'all') {
+        if (Number(eva.grado) !== Number(selectedGrado)) return
+      } else {
+        const idsDeGradosPermitidos = gradosFiltrados.map(g => g.grado)
+        if (!idsDeGradosPermitidos.includes(eva.grado)) return
+      }
+
+      if (selectedMonth !== '') {
+        if (eva.mesDelExamen?.toString() !== selectedMonth) return
+      }
+
+      if (
+        eva.categoria !== undefined &&
+        eva.categoria !== null &&
+        String(eva.categoria).trim() !== ''
+      ) {
+        const catNum = Number(eva.categoria)
+        if (!isNaN(catNum)) {
+          catMap.set(catNum, (catMap.get(catNum) || 0) + 1)
+        }
+      }
+    })
+
+    const sortedCatIds = Array.from(catMap.keys()).sort((a, b) => a - b)
+
+    return sortedCatIds.map(id => {
+      const name = categoriaTransform(id, categorias)
+      return {
+        id: id.toString(),
+        name: name !== '-' ? name : `Categoría ${id}`,
+        count: catMap.get(id) || 0,
+      }
+    })
+  }, [evaluaciones, selectedYear, selectedGrado, selectedMonth, gradosFiltrados, currentYear, currentUserData, categorias])
+
+  // --- SINCRONIZACIÓN INICIAL CON URL (QUERY PARAMS) ---
+  const [isUrlInitialized, setIsUrlInitialized] = useState<boolean>(false)
+
   useEffect(() => {
-    if (!router.isReady) return;
+    if (!router.isReady || isUrlInitialized) return
 
-    const { year, grado, month } = router.query;
-    if (year) setSelectedYear(year as string);
+    const { year, grado, month, categoria, search } = router.query
+    if (year) setSelectedYear(year as string)
     
     if (grado) {
-      setSelectedGrado(grado as string);
+      setSelectedGrado(grado as string)
     } else {
-      setSelectedGrado('1');
+      setSelectedGrado('1')
     }
 
     if (month) {
-      setSelectedMonth(month as string);
-    } else if (availableMonths.length > 0) {
-      // Por defecto colocar el último mes disponible si no hay parámetro en la URL
-      const lastMonth = availableMonths[availableMonths.length - 1];
-      setSelectedMonth(lastMonth.id);
+      setSelectedMonth(month as string)
     } else {
-      setSelectedMonth('');
+      setSelectedMonth('')
     }
-  }, [router.isReady, router.query, availableMonths]);
 
-  const updateQueryParams = (newYear: string, newGrado: string, newMonth?: string) => {
-    const nextQuery: any = { ...router.query, year: newYear, grado: newGrado };
+    if (categoria) {
+      setSelectedCategoria(categoria as string)
+    } else {
+      setSelectedCategoria('all')
+    }
+
+    if (search && typeof search === 'string') {
+      setSearchQuery(search)
+    }
+
+    setIsUrlInitialized(true)
+  }, [router.isReady, router.query, isUrlInitialized])
+
+  // --- AJUSTE AUTOMÁTICO DE MES SI DEJA DE TENER EVALUACIONES DISPONIBLES ---
+  useEffect(() => {
+    if (selectedMonth === '' || evaluaciones.length === 0) return
+
+    const isMonthAvailable = availableMonths.some(m => m.id === selectedMonth)
+    if (!isMonthAvailable) {
+      setSelectedMonth('')
+      updateQueryParams(selectedYear, selectedGrado, '', selectedCategoria, searchQuery)
+    }
+  }, [availableMonths, selectedMonth, selectedYear, selectedGrado, selectedCategoria, searchQuery, evaluaciones.length])
+
+  // --- AJUSTE AUTOMÁTICO DE CATEGORÍA SI DEJA DE TENER EVALUACIONES DISPONIBLES ---
+  useEffect(() => {
+    if (selectedCategoria === 'all' || evaluaciones.length === 0) return
+
+    const isCatAvailable = availableCategories.some(c => c.id === selectedCategoria)
+    if (!isCatAvailable) {
+      setSelectedCategoria('all')
+      updateQueryParams(selectedYear, selectedGrado, selectedMonth, 'all', searchQuery)
+    }
+  }, [availableCategories, selectedCategoria, selectedYear, selectedGrado, selectedMonth, searchQuery, evaluaciones.length])
+
+  const updateQueryParams = (
+    newYear: string,
+    newGrado: string,
+    newMonth?: string,
+    newCategoria?: string,
+    newSearch?: string
+  ) => {
+    const nextQuery: any = { ...router.query, year: newYear, grado: newGrado }
     if (newMonth !== undefined) {
       if (newMonth === '') {
-        delete nextQuery.month;
+        delete nextQuery.month
       } else {
-        nextQuery.month = newMonth;
+        nextQuery.month = newMonth
       }
     }
+    if (newCategoria !== undefined) {
+      if (newCategoria === 'all' || newCategoria === '') {
+        delete nextQuery.categoria
+      } else {
+        nextQuery.categoria = newCategoria
+      }
+    }
+    const searchVal = newSearch !== undefined ? newSearch : searchQuery
+    if (searchVal && searchVal.trim() !== '') {
+      nextQuery.search = searchVal.trim()
+    } else {
+      delete nextQuery.search
+    }
 
-    router.push({
-      pathname: router.pathname,
-      query: nextQuery,
-    }, undefined, { shallow: true });
+    router.push(
+      {
+        pathname: router.pathname,
+        query: nextQuery,
+      },
+      undefined,
+      { shallow: true }
+    )
   }
+
+  // --- SINCRONIZACIÓN DE BÚSQUEDA CON URL (DEBOUNCED) ---
+  useEffect(() => {
+    if (!isUrlInitialized) return
+
+    const timer = setTimeout(() => {
+      const currentParam = (router.query.search as string) || ''
+      const trimmedQuery = searchQuery.trim()
+      if (currentParam !== trimmedQuery) {
+        updateQueryParams(
+          selectedYear,
+          selectedGrado,
+          selectedMonth,
+          selectedCategoria,
+          trimmedQuery
+        )
+      }
+    }, 350)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery, isUrlInitialized, selectedYear, selectedGrado, selectedMonth, selectedCategoria])
 
   // --- FILTRADO + ORDENAMIENTO LOCAL ---
   useEffect(() => {
@@ -194,10 +345,25 @@ export const useEvaluacionesFilters = () => {
         const idsDeGradosPermitidos = gradosFiltrados.map(g => g.grado)
         matchesGrado = idsDeGradosPermitidos.includes(eva.grado)
       }
-      return matchesYear && matchesMonth && matchesGrado
+
+      let matchesCategoria = true
+      if (selectedCategoria !== 'all') {
+        matchesCategoria = Number(eva.categoria) === Number(selectedCategoria)
+      }
+
+      const matchesSearch = matchesEvaluationSearch(eva, searchQuery)
+
+      return matchesYear && matchesMonth && matchesGrado && matchesCategoria && matchesSearch
     })
 
-    if (selectedGrado !== 'all') {
+    // Si hay búsqueda activa, ordenar por relevancia de búsqueda
+    if (searchQuery.trim()) {
+      filtered.sort((a, b) => {
+        const scoreA = calculateEvaluationRelevance(a, searchQuery)
+        const scoreB = calculateEvaluationRelevance(b, searchQuery)
+        return scoreB - scoreA
+      })
+    } else if (selectedGrado !== 'all') {
       const savedOrderStr = localStorage.getItem(`eva_order_${selectedYear}_${selectedGrado}`)
       if (savedOrderStr) {
         try {
@@ -219,7 +385,7 @@ export const useEvaluacionesFilters = () => {
     }
 
     setOrderedEvaluaciones(filtered)
-  }, [evaluaciones, selectedYear, selectedMonth, selectedGrado, gradosFiltrados, currentYear])
+  }, [evaluaciones, selectedYear, selectedMonth, selectedGrado, selectedCategoria, searchQuery, gradosFiltrados, currentYear])
 
   // --- DRAG & DROP ---
   const handleDragEnd = (event: DragEndEvent) => {
@@ -251,13 +417,20 @@ export const useEvaluacionesFilters = () => {
     setSelectedGrado,
     selectedMonth,
     setSelectedMonth,
+    selectedCategoria,
+    setSelectedCategoria,
+    searchQuery,
+    setSearchQuery,
     showYearMenu,
     setShowYearMenu,
     showGradoMenu,
     setShowGradoMenu,
     showMonthMenu,
     setShowMonthMenu,
+    showCategoriaMenu,
+    setShowCategoriaMenu,
     availableMonths,
+    availableCategories,
 
     // Column visibility
     visibleColumns,

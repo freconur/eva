@@ -29,7 +29,10 @@ const EvaluacionesDesempeñoDocentes = () => {
   }
 
   useEffect(() => {
-    getEvaluacionesDirectores()
+    const unsubscribe = getEvaluacionesDirectores()
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

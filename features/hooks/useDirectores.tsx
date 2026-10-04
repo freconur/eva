@@ -30,11 +30,12 @@ export const useDirectores = () => {
     }
   };
 
-  const getDocentesByDniDirector = async (dniDirector: string) => {
+  const getDocentesByDniDirector = (dniDirector: string) => {
+    if (!dniDirector) return () => {};
     const pathRef = collection(db, "usuarios")
     const q = query(pathRef, where("dniDirector", "==", dniDirector))
 
-    onSnapshot(q, async (querySnapshot) => {
+    const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       const baseDocentes: User[] = []
       querySnapshot.forEach((doc) => {
         baseDocentes.push(doc.data())
@@ -54,6 +55,8 @@ export const useDirectores = () => {
 
       dispatch({ type: AppAction.USUARIOS_BY_ROL, payload: docentesConEstudiantes })
     })
+
+    return unsubscribe;
   }
   const gettAllProfesores = async () => {
     const pathRef = collection(db, 'usuarios')

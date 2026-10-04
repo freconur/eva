@@ -23,7 +23,10 @@ const AsignarEvaluacionModal: React.FC<AsignarEvaluacionModalProps> = ({
   
   useEffect(() => {
     if (showModal) {
-      getEspecialistasRegionales()
+      const unsubscribe = getEspecialistasRegionales()
+      return () => {
+        if (typeof unsubscribe === 'function') unsubscribe()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showModal])

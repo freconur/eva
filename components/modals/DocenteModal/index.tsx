@@ -56,8 +56,12 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
     const [isError, setIsError] = useState<boolean>(false)
 
     useEffect(() => {
-        getCaracteristicaCurricular()
-    }, [getCaracteristicaCurricular])
+        const unsubscribe = getCaracteristicaCurricular()
+        return () => {
+            if (typeof unsubscribe === 'function') unsubscribe()
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     useEffect(() => {
         if (dataDocente) return; // Skip cleanup if editing (initial load)

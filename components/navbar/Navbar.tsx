@@ -5,6 +5,7 @@ import { HiOutlineMenu } from 'react-icons/hi';
 import styles from './navbar.module.css';
 import Breadcrumbs from './Breadcrumbs';
 import ActiveUsersBadge from '../common/ActiveUsersBadge';
+import NavbarUserMenu from './NavbarUserMenu';
 
 const Navbar = () => {
   const { showSidebarValue } = useRolUsers();
@@ -50,25 +51,18 @@ const Navbar = () => {
 
           {/* Breadcrumb Navigation */}
           <Breadcrumbs />
-        </div>
 
-        {/* Right Section: Active Users Badge (solo Administrador) & Institutional Level */}
-        <div className={styles.rightSection} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          {isAdminUser && <ActiveUsersBadge />}
-
-          {currentUserData?.nivelDeInstitucion && currentUserData.nivelDeInstitucion.length > 0 && (
-            <div className={styles.nivelBadge}>
-              <span className={styles.nivelLabel}>Nivel:</span>
-              <span className={styles.nivelValue}>
-                {currentUserData.nivelDeInstitucion.map((nivel: number) => {
-                  if (nivel === 0) return 'Inicial';
-                  if (nivel === 1) return 'Primaria';
-                  if (nivel === 2) return 'Secundaria';
-                  return nivel;
-                }).join(' y ')}
-              </span>
+          {/* Active Users Badge (solo Administrador) */}
+          {isAdminUser && (
+            <div className={styles.activeUsersWrapper}>
+              <ActiveUsersBadge />
             </div>
           )}
+        </div>
+
+        {/* Right Section: User Menu */}
+        <div className={styles.rightSection}>
+          <NavbarUserMenu />
         </div>
       </div>
     </div>

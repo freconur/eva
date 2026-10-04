@@ -1,6 +1,6 @@
 import React from 'react'
 import Link from 'next/link'
-import { MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff, MdDragIndicator, MdAnalytics } from 'react-icons/md'
+import { MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff, MdDragIndicator, MdAnalytics, MdContentCopy } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -12,6 +12,7 @@ import "dayjs/locale/es"
 import { getMonthName } from '@/fuctions/dates'
 import styles from '../../pages/admin/evaluaciones/evaluaciones.module.css'
 import ConsolidationAction from './ConsolidationAction'
+import { HighlightMatch } from './HighlightMatch'
 
 export interface SortableRowProps {
   eva: any
@@ -37,6 +38,10 @@ export interface SortableRowProps {
   visibleColumns: Record<string, boolean>
   selectedGrado: string
   handleOpenPuntuacionModal: (eva: any) => void
+  handleOpenDuplicateModal?: (eva: any) => void
+  isSelected?: boolean
+  onToggleSelect?: (id: string) => void
+  searchQuery?: string
 }
 
 const SortableRow = ({
@@ -63,6 +68,10 @@ const SortableRow = ({
   visibleColumns,
   selectedGrado,
   handleOpenPuntuacionModal,
+  handleOpenDuplicateModal,
+  isSelected,
+  onToggleSelect,
+  searchQuery,
 }: SortableRowProps) => {
   const {
     attributes,
@@ -83,22 +92,38 @@ const SortableRow = ({
     boxShadow: isDragging ? '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' : 'none',
   }
 
+  const isSearchActive = Boolean(searchQuery && searchQuery.trim())
+
   return (
     <tr
       ref={setNodeRef}
       style={style}
       className={styles.tableRow}
     >
+      {currentUserData?.perfil?.rol === 4 && (
+        <td className={styles.tableCell} style={{ textAlign: 'center', width: '38px', padding: '0 0.25rem' }}>
+          <input
+            type="checkbox"
+            checked={Boolean(isSelected)}
+            onChange={() => onToggleSelect && onToggleSelect(eva.id)}
+            style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#6366f1' }}
+            title={isSelected ? "Deseleccionar" : "Seleccionar para duplicar"}
+            data-tour="tour-checkbox-select"
+          />
+        </td>
+      )}
       {selectedGrado !== 'all' && (
         <td className={styles.tableCell} style={{ width: '40px', paddingRight: 0 }}>
-          <div
-            {...attributes}
-            {...listeners}
-            className={styles.dragHandle}
-            title="Arrastrar para reordenar"
-          >
-            <MdDragIndicator style={{ fontSize: '1.25rem' }} />
-          </div>
+          {!isSearchActive && (
+            <div
+              {...attributes}
+              {...listeners}
+              className={styles.dragHandle}
+              title="Arrastrar para reordenar"
+            >
+              <MdDragIndicator style={{ fontSize: '1.25rem' }} />
+            </div>
+          )}
         </td>
       )}
       {visibleColumns.id && (
@@ -134,10 +159,12 @@ const SortableRow = ({
         <td className={styles.tableCell}>
           {puedeAcceder ? (
             <Link href={`/admin/evaluaciones/evaluacion/${eva.id}`}>
-              {eva.nombre?.toUpperCase() || ''}
+              <HighlightMatch text={eva.nombre || ''} query={searchQuery} />
             </Link>
           ) : (
-            <span>{eva.nombre?.toUpperCase() || ''}</span>
+            <span>
+              <HighlightMatch text={eva.nombre || ''} query={searchQuery} />
+            </span>
           )}
         </td>
       )}
@@ -256,6 +283,12 @@ const SortableRow = ({
           {puedeAcceder && currentUserData?.perfil?.rol === 4 ? (
             <div className={styles.actionsContainer}>
               {!eva.realtimeEnabled && <ConsolidationAction eva={eva} />}
+              <MdContentCopy
+                onClick={() => handleOpenDuplicateModal && handleOpenDuplicateModal(eva)}
+                className={`${styles.actionIcon} ${styles.copyIcon}`}
+                title="Duplicar evaluación (copiar preguntas y respuestas)"
+                data-tour="tour-btn-duplicate-single"
+              />
               <MdEditSquare
                 onClick={() => {
                   setNameEva(`${eva.nombre}`)
@@ -263,6 +296,7 @@ const SortableRow = ({
                   setIdEva(`${eva.id}`)
                 }}
                 className={`${styles.actionIcon} ${styles.editIcon}`}
+                title="Editar evaluación"
               />
               <MdDeleteForever
                 onClick={() => {
@@ -270,6 +304,7 @@ const SortableRow = ({
                   setIdEva(`${eva.id}`)
                 }}
                 className={`${styles.actionIcon} ${styles.deleteIcon}`}
+                title="Eliminar evaluación"
               />
             </div>
           ) : null}

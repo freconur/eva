@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import SidebarInfoUser from './SidebarInfoUser';
 import Link from 'next/link';
-import useUsuario from '@/features/hooks/useUsuario';
 import SidebarRegional from './SidebarRegional';
 import { useRolUsers } from '@/features/hooks/useRolUsers';
 import SidebarRegion from './SidebarRegion';
@@ -14,11 +12,8 @@ import { FaUserGraduate, FaUserNinja, FaUserTie } from 'react-icons/fa';
 import { LuListTodo } from "react-icons/lu";
 import { IoIosArrowDown } from "react-icons/io";
 import { useRouter } from 'next/router';
-import { FiLogOut } from 'react-icons/fi';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
-
-import ModalConfirmarLogout from '@/modals/ModalConfirmarLogout';
 
 interface Props {
   showSidebar: boolean
@@ -26,13 +21,11 @@ interface Props {
 
 const SidebarAdmin = ({ showSidebar }: Props) => {
   const router = useRouter()
-  const { logout } = useUsuario()
   const { showSidebarValue, toggleSidebarCollapsed } = useRolUsers()
   const { currentUserData, isSidebarCollapsed } = useGlobalContext()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [perfilesOpen, setPerfilesOpen] = useState<boolean>(false);
   const [requestCount, setRequestCount] = useState<number>(0);
-  const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
 
   const userRol = currentUserData?.rol || currentUserData?.perfil?.rol;
   const isAdmin = Number(userRol) === 4;
@@ -111,10 +104,6 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
     }
   };
 
-  const redirectLogion = () => {
-    router.push('/login');
-  }
-
   return (
     <>
       <div
@@ -136,7 +125,6 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
         <div onClick={() => showSidebarValue(showSidebar)} className={styles.closeButton}>x</div>
         <div className={styles.sidebarContent}>
           <SidebarRegional />
-          <SidebarInfoUser showSidebar={showSidebar} />
 
           {/* Wrapper to detect clicks when collapsed to auto-expand */}
           <div onClick={() => isSidebarCollapsed && toggleSidebarCollapsed(isSidebarCollapsed)}>
@@ -413,21 +401,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
             </div>
           </div>
         </div>
-        <div onClick={() => setShowLogoutModal(true)} className={styles.logoutButton}>
-          <FiLogOut className={styles.logoutIcon} />
-          <p>cerrar sesión</p>
-        </div>
       </div>
-
-      {showLogoutModal && (
-        <ModalConfirmarLogout
-          onClose={() => setShowLogoutModal(false)}
-          onConfirm={() => {
-            logout();
-            redirectLogion();
-          }}
-        />
-      )}
     </>
   )
 }

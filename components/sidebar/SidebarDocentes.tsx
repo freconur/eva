@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import SidebarInfoUser from './SidebarInfoUser';
 import Link from 'next/link';
-import useUsuario from '@/features/hooks/useUsuario';
 import SidebarRegional from './SidebarRegional';
 import { useRolUsers } from '@/features/hooks/useRolUsers';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
@@ -12,9 +10,7 @@ import { MdAccountCircle, MdAttachMoney } from 'react-icons/md';
 import { FaUserGraduate, FaUsers } from 'react-icons/fa';
 import { LuListTodo } from "react-icons/lu";
 import { IoIosArrowForward, IoIosArrowBack } from 'react-icons/io';
-import { FiLogOut } from 'react-icons/fi';
 import { useRouter } from 'next/router';
-import ModalConfirmarLogout from '@/modals/ModalConfirmarLogout';
 
 interface Props {
   showSidebar: boolean
@@ -22,10 +18,8 @@ interface Props {
 
 const SidebarDocentes = ({ showSidebar }: Props) => {
   const router = useRouter();
-  const { logout } = useUsuario()
   const { showSidebarValue, toggleSidebarCollapsed } = useRolUsers()
   const { isSidebarCollapsed, currentUserData } = useGlobalContext()
-  const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
 
   const isDevUser =
     currentUserData?.dni === '47163626' ||
@@ -46,10 +40,6 @@ const SidebarDocentes = ({ showSidebar }: Props) => {
       router.events.off('routeChangeStart', handleRouteChange);
     };
   }, [showSidebar, router.events, showSidebarValue]);
-
-  const redirectLogin = () => {
-    router.push('/login');
-  }
 
   return (
     <>
@@ -73,7 +63,6 @@ const SidebarDocentes = ({ showSidebar }: Props) => {
 
         <div className={styles.sidebarContent}>
           <SidebarRegional />
-          <SidebarInfoUser showSidebar={showSidebar} />
 
           <div onClick={() => isSidebarCollapsed && toggleSidebarCollapsed(isSidebarCollapsed)}>
             <div className={styles.menuContainer}>
@@ -120,22 +109,7 @@ const SidebarDocentes = ({ showSidebar }: Props) => {
             </div>
           </div>
         </div>
-
-        <div onClick={() => setShowLogoutModal(true)} className={styles.logoutButton}>
-          <FiLogOut className={styles.logoutIcon} />
-          <p>cerrar sesión</p>
-        </div>
       </div>
-
-      {showLogoutModal && (
-        <ModalConfirmarLogout
-          onClose={() => setShowLogoutModal(false)}
-          onConfirm={() => {
-            logout();
-            redirectLogin();
-          }}
-        />
-      )}
     </>
   )
 }

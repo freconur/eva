@@ -292,8 +292,12 @@ const ReporteAutorreporte = () => {
   // Efecto para suscripciones (solo depende del ID)
   useEffect(() => {
     if (id) {
-      getEvaluacionEscalaLikert(`${id}`)
-      getPreguntasEvaluacionEscalaLikert(`${id}`)
+      const unsubEvaluacion = getEvaluacionEscalaLikert(`${id}`)
+      const unsubPreguntas = getPreguntasEvaluacionEscalaLikert(`${id}`)
+      return () => {
+        if (typeof unsubEvaluacion === 'function') unsubEvaluacion()
+        if (typeof unsubPreguntas === 'function') unsubPreguntas()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])

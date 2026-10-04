@@ -1,0 +1,644 @@
+/* ── Evaluaciones Sidebar + Detail Panel View ───────────── */
+
+.sidebarLayout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin-top: 0.75rem;
+  transition: grid-template-columns 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebarLayout.collapsed {
+  grid-template-columns: 56px minmax(0, 1fr);
+}
+
+/* ── Panel Izquierdo: Árbol de Niveles y Grados ────────── */
+.sidebarPanel {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  position: sticky;
+  top: 1.5rem;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  min-width: 0;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebarPanel.isCollapsed {
+  padding: 1rem 0.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 0 0.25rem 0.75rem 0.25rem;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 0.5rem;
+}
+
+.sidebarHeaderTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sidebarTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toggleTreeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.toggleTreeButton:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+  border-color: #cbd5e1;
+}
+
+.collapsedShortcuts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.quickNivelDot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.quickNivelDot:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: scale(1.08);
+}
+
+.sidebarTotalBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.treeGroup {
+  margin-bottom: 0.75rem;
+}
+
+.treeNivelButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.treeNivelButton:hover {
+  background: #f8fafc;
+  border-color: #f1f5f9;
+}
+
+.treeNivelIcon {
+  font-size: 1.1rem;
+  color: #64748b;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.treeNivelIconOpen {
+  transform: rotate(90deg);
+}
+
+.treeNivelTag {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tagInicial {
+  background-color: #f59e0b;
+  box-shadow: 0 0 0 2px #fef3c7;
+}
+
+.tagPrimaria {
+  background-color: #0284c7;
+  box-shadow: 0 0 0 2px #e0f2fe;
+}
+
+.tagSecundaria {
+  background-color: #7c3aed;
+  box-shadow: 0 0 0 2px #ede9fe;
+}
+
+.treeNivelLabel {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+  flex: 1;
+}
+
+.treeNivelCount {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.12rem 0.45rem;
+  border-radius: 9999px;
+}
+
+.treeGradosList {
+  padding-left: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.25rem;
+  animation: slideDown 0.18s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.treeGradoItem {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.825rem;
+  color: #475569;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+}
+
+.treeGradoItem:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.treeGradoItemActive {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+  border-color: #bfdbfe;
+  box-shadow: 0 1px 3px rgba(29, 78, 216, 0.08);
+}
+
+.treeGradoIcon {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.treeGradoItemActive .treeGradoIcon {
+  color: #2563eb;
+}
+
+.treeGradoName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.treeGradoCount {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  transition: all 0.15s ease;
+}
+
+.treeGradoItemActive .treeGradoCount {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* ── Panel Derecho: Detalle del Grado ──────────────────── */
+.detailPanel {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.expandFromHeaderBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.expandFromHeaderBtn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.detailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.detailHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.detailFolderIcon {
+  font-size: 1.75rem;
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.detailTitleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.detailTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.detailTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.detailNivelBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badgeInicial {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.badgePrimaria {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.badgeSecundaria {
+  background: #ede9fe;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
+
+.detailSubtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.detailHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.detailSearchInput {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  font-size: 0.825rem;
+  color: #0f172a;
+  transition: all 0.15s ease;
+  width: 220px;
+}
+
+.detailSearchInput:focus-within {
+  background: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+
+.detailSearchIcon {
+  font-size: 1rem;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.detailSearchField {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-size: 0.825rem;
+  color: #0f172a;
+}
+
+.createInGradoButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  min-width: 34px;
+  padding: 0 0.5rem;
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.createInGradoButton:hover,
+.createInGradoButton:focus-visible {
+  background: #0369a1;
+  box-shadow: 0 4px 8px rgba(2, 132, 199, 0.3);
+  padding: 0 0.85rem;
+  transform: translateY(-1px);
+}
+
+.createInGradoIcon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.createInGradoButton:hover .createInGradoIcon,
+.createInGradoButton:focus-visible .createInGradoIcon {
+  transform: scale(1.15);
+}
+
+.createInGradoText {
+  max-width: 0;
+  opacity: 0;
+  margin-left: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+              margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.createInGradoButton:hover .createInGradoText,
+.createInGradoButton:focus-visible .createInGradoText {
+  max-width: 140px;
+  opacity: 1;
+  margin-left: 0.4rem;
+}
+
+/* ── Contenedor de la Tabla de Evaluaciones ──────────────── */
+.tableWrapper {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Optimización compacta para que la tabla aproveche el ancho disponible */
+.tableWrapper table {
+  width: 100%;
+  min-width: 760px;
+}
+
+.tableWrapper th,
+.tableWrapper td {
+  padding: 0.75rem 0.85rem !important;
+}
+
+.tableWrapper th {
+  font-size: 0.725rem !important;
+  letter-spacing: 0.03em !important;
+  white-space: nowrap;
+}
+
+/* ── Estado Vacío ────────────────────────────────────────── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: #f8fafc;
+  border: 2px dashed #e2e8f0;
+  border-radius: 12px;
+  margin: 1.5rem 0;
+  flex: 1;
+}
+
+.emptyStateIcon {
+  font-size: 3rem;
+  color: #cbd5e1;
+  margin-bottom: 0.75rem;
+}
+
+.emptyStateTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #334155;
+  margin: 0 0 0.35rem 0;
+}
+
+.emptyStateText {
+  font-size: 0.85rem;
+  color: #64748b;
+  max-width: 420px;
+  line-height: 1.45;
+  margin: 0 0 1.25rem 0;
+}
+
+.emptyStateButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.1rem;
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 5px rgba(2, 132, 199, 0.25);
+}
+
+.emptyStateButton:hover {
+  background: #0369a1;
+}
+
+/* ── Responsive Design ──────────────────────────────────── */
+@media (max-width: 1200px) {
+  .sidebarLayout {
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .sidebarPanel {
+    padding: 1rem 0.75rem;
+  }
+
+  .detailPanel {
+    padding: 1.1rem;
+  }
+
+  .detailTitle {
+    font-size: 1.05rem;
+  }
+}
+
+@media (max-width: 960px) {
+  .sidebarLayout,
+  .sidebarLayout.collapsed {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .sidebarPanel {
+    position: static;
+    max-height: none;
+    width: 100%;
+  }
+
+  .sidebarPanel.isCollapsed {
+    display: none;
+  }
+
+  .toggleTreeButton {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .detailHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .detailHeaderRight {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .detailSearchInput {
+    flex: 1;
+    width: auto;
+  }
+}

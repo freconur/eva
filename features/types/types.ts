@@ -368,6 +368,7 @@ export type User = {
   fechaActualizacion?: any;
   rolDirector?: number;
   rol?: number;
+  foto?: string;
   region?: number;
   grado?: number[];
   caracteristicaCurricular?: string;

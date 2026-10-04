@@ -86,7 +86,10 @@ const EvaluadosPage = () => {
 
 	// Cargar y escuchar especialistas activos de la institución en tiempo real
 	useEffect(() => {
-		getAllEspecialistas();
+		const unsubscribe = getAllEspecialistas();
+		return () => {
+			if (typeof unsubscribe === 'function') unsubscribe();
+		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 

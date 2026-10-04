@@ -23,7 +23,10 @@ const AgregarDirectores = () => {
   useEffect(() => {
     getUserData()
     getRegiones()
-    getUsersDirectores()
+    const unsubscribe = getUsersDirectores()
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni])
   const handleAgregarDirector = handleSubmit(data => {
