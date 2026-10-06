@@ -20,6 +20,7 @@ interface CustomFilterDropdownProps {
   showSearch?: boolean;
   minWidth?: number | string;
   className?: string;
+  disabled?: boolean;
 }
 
 export const CustomFilterDropdown: React.FC<CustomFilterDropdownProps> = ({
@@ -32,6 +33,7 @@ export const CustomFilterDropdown: React.FC<CustomFilterDropdownProps> = ({
   showSearch = false,
   minWidth,
   className = '',
+  disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -107,11 +109,17 @@ export const CustomFilterDropdown: React.FC<CustomFilterDropdownProps> = ({
       <div className={styles.dropdownWrapper}>
         <button
           type="button"
-          className={`${styles.trigger} ${isOpen ? styles.triggerOpen : ''}`}
+          className={`${styles.trigger} ${isOpen ? styles.triggerOpen : ''} ${disabled ? styles.triggerDisabled : ''}`}
           style={minWidth ? { minWidth } : undefined}
-          onClick={() => setIsOpen((prev) => !prev)}
+          onClick={() => {
+            if (!disabled) {
+              setIsOpen((prev) => !prev);
+            }
+          }}
+          disabled={disabled}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
+          aria-disabled={disabled}
         >
           <div className={styles.triggerContent}>
             <span className={styles.triggerText}>

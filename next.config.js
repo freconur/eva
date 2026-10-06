@@ -16,6 +16,7 @@ const nextConfig = {
     ]
   },
   reactStrictMode: true,
+  distDir: process.env.BUILD_DIR || '.next',
   images: {
     remotePatterns: [
       {

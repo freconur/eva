@@ -44,6 +44,20 @@
   background: #fdfdff;
 }
 
+.triggerDisabled {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #64748b;
+  cursor: not-allowed;
+  opacity: 0.85;
+  box-shadow: none;
+}
+
+.triggerDisabled:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
 .triggerOpen {
   border-color: #4f46e5;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);

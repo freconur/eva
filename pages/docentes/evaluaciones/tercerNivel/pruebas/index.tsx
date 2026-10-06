@@ -11,14 +11,68 @@ import CustomFilterDropdown, { FilterOption } from '@/components/reportes/Custom
 import { currentYear, getMonthName } from '@/fuctions/dates'
 import styles from './pruebas.module.css'
 
+const MES_OCTUBRE = '9'
+
+// Helper para extraer el timestamp/fecha más reciente de una evaluación
+const getEvaluationTimestamp = (eva: any): number => {
+  // 1. Firestore Timestamp o Date
+  if (eva.timestamp) {
+    if (typeof eva.timestamp.toMillis === 'function') {
+      return eva.timestamp.toMillis()
+    }
+    if (typeof eva.timestamp.seconds === 'number') {
+      return eva.timestamp.seconds * 1000 + (eva.timestamp.nanoseconds ? eva.timestamp.nanoseconds / 1e6 : 0)
+    }
+    if (eva.timestamp instanceof Date) {
+      return eva.timestamp.getTime()
+    }
+    const parsed = new Date(eva.timestamp).getTime()
+    if (!isNaN(parsed) && parsed > 0) return parsed
+  }
+
+  // 2. Propiedades alternativas de fecha
+  const altDate = eva.fechaCreacion || eva.createdAt || eva.ultimaActualizacion
+  if (altDate) {
+    const parsed = new Date(altDate).getTime()
+    if (!isNaN(parsed) && parsed > 0) return parsed
+  }
+
+  // 3. Buscar fecha en el nombre de la prueba (ej: "01.10.2026", "15/10/2026")
+  if (typeof eva.nombre === 'string') {
+    const match = eva.nombre.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/)
+    if (match) {
+      const [, dia, mes, anio] = match
+      const parsed = new Date(Number(anio), Number(mes) - 1, Number(dia)).getTime()
+      if (!isNaN(parsed) && parsed > 0) return parsed
+    }
+  }
+
+  return 0
+}
+
+// Helper para verificar si la evaluación corresponde al mes de Octubre
+const isOctubreEvaluation = (eva: any): boolean => {
+  if (
+    eva.mesDelExamen !== undefined &&
+    eva.mesDelExamen !== null &&
+    String(eva.mesDelExamen).trim() === MES_OCTUBRE
+  ) {
+    return true
+  }
+  if (typeof eva.nombre === 'string' && /octubre/i.test(eva.nombre)) {
+    return true
+  }
+  return false
+}
+
 const Pruebas = () => {
   const { evaluacionesGradoYCategoria, loaderPages, categorias } = useGlobalContext()
   const { getEvaluacionesGradoYCategoria, getCategories } = useAgregarEvaluaciones()
   const route = useRouter()
 
-  // Filtros: Año (siempre inicia en el año actual) y Mes
+  // Filtros: Año (siempre inicia en el año actual) y Mes fijado por defecto en Octubre ('9')
   const [selectedYear, setSelectedYear] = useState<string>(String(currentYear))
-  const [selectedMonth, setSelectedMonth] = useState<string>('all')
+  const selectedMonth = MES_OCTUBRE
   
   useEffect(() => {
     getEvaluacionesGradoYCategoria(Number(route.query.grado), Number(route.query.categoria))
@@ -43,12 +97,21 @@ const Pruebas = () => {
     return Array.from(yearsSet).sort((a, b) => Number(b) - Number(a))
   }, [evaluacionesGradoYCategoria])
 
+  // Evaluaciones que corresponden al año seleccionado
+  const evaluacionesDelAño = useMemo(() => {
+    if (!Array.isArray(evaluacionesGradoYCategoria)) return []
+    if (selectedYear === 'all') return evaluacionesGradoYCategoria
+    return evaluacionesGradoYCategoria.filter(
+      (eva) => String(eva.añoDelExamen || currentYear) === selectedYear
+    )
+  }, [evaluacionesGradoYCategoria, selectedYear])
+
   // Opciones para el dropdown custom de Año
   const yearOptions: FilterOption[] = useMemo(() => {
     const opts: FilterOption[] = availableYears.map((yr) => {
       const count = Array.isArray(evaluacionesGradoYCategoria)
         ? evaluacionesGradoYCategoria.filter(
-            (eva) => String(eva.añoDelExamen || currentYear) === yr
+            (eva) => String(eva.añoDelExamen || currentYear) === yr && isOctubreEvaluation(eva)
           ).length
         : 0
 
@@ -63,105 +126,53 @@ const Pruebas = () => {
     opts.push({
       value: 'all',
       label: 'Todos los años',
-      badge: `${evaluacionesGradoYCategoria?.length || 0}`,
+      badge: `${
+        Array.isArray(evaluacionesGradoYCategoria)
+          ? evaluacionesGradoYCategoria.filter((eva) => isOctubreEvaluation(eva)).length
+          : 0
+      }`,
       badgeType: 'neutral',
     })
 
     return opts
   }, [availableYears, evaluacionesGradoYCategoria])
 
-  // Evaluaciones que corresponden al año seleccionado
-  const evaluacionesDelAño = useMemo(() => {
-    if (!Array.isArray(evaluacionesGradoYCategoria)) return []
-    if (selectedYear === 'all') return evaluacionesGradoYCategoria
-    return evaluacionesGradoYCategoria.filter(
-      (eva) => String(eva.añoDelExamen || currentYear) === selectedYear
-    )
-  }, [evaluacionesGradoYCategoria, selectedYear])
-
-  // Meses disponibles con evaluaciones en el año seleccionado (solo meses con evaluaciones)
-  const availableMonths = useMemo(() => {
-    const monthsMap = new Map<number, number>()
-
-    evaluacionesDelAño.forEach((eva) => {
-      if (
-        eva.mesDelExamen !== undefined &&
-        eva.mesDelExamen !== null &&
-        String(eva.mesDelExamen).trim() !== ''
-      ) {
-        const monthNum = Number(eva.mesDelExamen)
-        if (!isNaN(monthNum) && monthNum >= 0 && monthNum <= 11) {
-          monthsMap.set(monthNum, (monthsMap.get(monthNum) || 0) + 1)
-        }
-      }
-    })
-
-    return Array.from(monthsMap.keys())
-      .sort((a, b) => a - b)
-      .map((monthNum) => ({
-        id: String(monthNum),
-        name: getMonthName(monthNum),
-        count: monthsMap.get(monthNum) || 0,
-      }))
-  }, [evaluacionesDelAño])
-
-  // Opciones para el dropdown custom de Mes (meses de las evaluaciones)
+  // Opciones para el dropdown custom de Mes (solo Octubre, bloqueado para evitar confusiones)
   const monthOptions: FilterOption[] = useMemo(() => {
-    const opts: FilterOption[] = [
+    const countOctubre = evaluacionesDelAño.filter((eva) => isOctubreEvaluation(eva)).length
+    return [
       {
-        value: 'all',
-        label: 'Todos los meses',
-        badge: `${evaluacionesDelAño.length}`,
+        value: MES_OCTUBRE,
+        label: 'Octubre',
+        badge: `${countOctubre}`,
         badgeType: 'neutral',
       },
     ]
+  }, [evaluacionesDelAño])
 
-    availableMonths.forEach((m) => {
-      opts.push({
-        value: m.id,
-        label: m.name,
-        badge: `${m.count}`,
-        badgeType: 'neutral',
-      })
-    })
-
-    return opts
-  }, [availableMonths, evaluacionesDelAño.length])
-
-  // Si cambia el año y el mes seleccionado ya no existe en el nuevo año, restablecer a 'all'
-  useEffect(() => {
-    if (selectedMonth !== 'all') {
-      const exists = availableMonths.some((m) => m.id === selectedMonth)
-      if (!exists) {
-        setSelectedMonth('all')
-      }
-    }
-  }, [availableMonths, selectedMonth])
-
-  // Evaluaciones filtradas por año y mes
+  // Evaluaciones filtradas estrictamente para el mes de Octubre
   const evaluacionesFiltradas = useMemo(() => {
-    return evaluacionesDelAño.filter((eva) => {
-      if (selectedMonth !== 'all') {
-        if (
-          eva.mesDelExamen === undefined ||
-          eva.mesDelExamen === null ||
-          Number(eva.mesDelExamen) !== Number(selectedMonth)
-        ) {
-          return false
-        }
-      }
-      return true
-    })
-  }, [evaluacionesDelAño, selectedMonth])
+    return evaluacionesDelAño.filter((eva) => isOctubreEvaluation(eva))
+  }, [evaluacionesDelAño])
 
-  // Algoritmo para ordenar evaluaciones: activas primero, luego alfabéticamente
+  // Algoritmo para ordenar evaluaciones:
+  // 1. Mostrar activas primero (listas para evaluar)
+  // 2. Últimas evaluaciones del mes de octubre primero (timestamp / fecha más reciente)
+  // 3. Desempate alfabético
   const evaluacionesOrdenadas = useMemo(() => {
     return [...evaluacionesFiltradas].sort((a, b) => {
-      // Mostrar activas primero
+      // 1. Mostrar activas primero
       if (a.active && !b.active) return -1
       if (!a.active && b.active) return 1
 
-      // Normalización para ordenamiento alfabético
+      // 2. Las últimas evaluaciones primero (más recientes)
+      const timeA = getEvaluationTimestamp(a)
+      const timeB = getEvaluationTimestamp(b)
+      if (timeA !== timeB) {
+        return timeB - timeA
+      }
+
+      // 3. Normalización para ordenamiento alfabético
       const nombreA = a.nombre?.toLowerCase().trim() || ''
       const nombreB = b.nombre?.toLowerCase().trim() || ''
 
@@ -213,27 +224,26 @@ const Pruebas = () => {
               icon={<RiTimeLine />}
               value={selectedMonth}
               options={monthOptions}
-              onChange={(val) => setSelectedMonth(val)}
-              minWidth={170}
+              onChange={() => {}}
+              minWidth={160}
+              disabled={true}
             />
           </div>
 
           <div className={styles.filterSummary}>
             <span>
-              Mostrando <strong className={styles.filterSummaryCount}>{evaluacionesOrdenadas.length}</strong> de{' '}
-              {evaluacionesGradoYCategoria?.length || 0} evaluaciones
+              Mostrando <strong className={styles.filterSummaryCount}>{evaluacionesOrdenadas.length}</strong> evaluaciones de Octubre
             </span>
-            {(selectedYear !== String(currentYear) || selectedMonth !== 'all') && (
+            {selectedYear !== String(currentYear) && (
               <button
                 type="button"
                 onClick={() => {
                   setSelectedYear(String(currentYear))
-                  setSelectedMonth('all')
                 }}
                 className={styles.resetFilterBtn}
-                title="Restablecer filtros al año actual"
+                title="Restablecer año al actual"
               >
-                <RiRefreshLine /> Restablecer
+                <RiRefreshLine /> Restablecer Año
               </button>
             )}
           </div>
@@ -248,7 +258,7 @@ const Pruebas = () => {
                 eva.mesDelExamen !== null &&
                 String(eva.mesDelExamen).trim() !== ''
                   ? getMonthName(Number(eva.mesDelExamen))
-                  : null
+                  : 'Octubre'
 
               return (
                 <div key={`${eva.id}-${index}`} className={`${styles.card} ${!eva.active ? styles.cardInactive : ''}`}>
@@ -287,24 +297,23 @@ const Pruebas = () => {
         ) : (
           <div className={styles.emptyState}>
             <RiFilterLine className={styles.emptyStateIcon} />
-            <h3 className={styles.emptyStateTitle}>No se encontraron evaluaciones</h3>
+            <h3 className={styles.emptyStateTitle}>No se encontraron evaluaciones de Octubre</h3>
             <p className={styles.emptyStateText}>
-              {selectedYear !== 'all' && selectedMonth !== 'all'
-                ? `No existen evaluaciones registradas para el año ${selectedYear} en ${getMonthName(Number(selectedMonth))}.`
-                : selectedYear !== 'all'
-                ? `No existen evaluaciones registradas para el año ${selectedYear}.`
-                : 'No se encontraron evaluaciones con los filtros actuales.'}
+              {selectedYear !== 'all'
+                ? `No existen evaluaciones registradas para Octubre en el año ${selectedYear}.`
+                : 'No se encontraron evaluaciones registradas para el mes de Octubre.'}
             </p>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedYear('all')
-                setSelectedMonth('all')
-              }}
-              className={styles.resetBtn}
-            >
-              Ver todas las evaluaciones
-            </button>
+            {selectedYear !== String(currentYear) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedYear(String(currentYear))
+                }}
+                className={styles.resetBtn}
+              >
+                Ver evaluaciones de Octubre del año actual
+              </button>
+            )}
           </div>
         )}
       </div>
