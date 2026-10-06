@@ -6,7 +6,7 @@ import EvaluarEstudiante from '@/modals/evaluarEstudiante';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState, useRef } from 'react';
-import { RiLoader4Line, RiFileList3Line, RiUserStarLine, RiCheckDoubleLine, RiArrowUpLine } from 'react-icons/ri';
+import { RiLoader4Line, RiFileList3Line, RiUserStarLine, RiCheckDoubleLine, RiArrowUpLine, RiErrorWarningLine, RiLockLine } from 'react-icons/ri';
 import styles from './EvaluacionDocente.module.css';
 import QuestionNavigator from '@/components/QuestionNavigator/QuestionNavigator';
 
@@ -97,25 +97,71 @@ const Evaluacion = () => {
             <div className={styles.content}>
               <div className={styles.card}>
                 <div className={styles.header}>
-                  <h1 className={styles.title}>{evaluacion.nombre}</h1>
+                  <div>
+                    <h1 className={styles.title}>{evaluacion.nombre}</h1>
+                    <div style={{ marginTop: '0.25rem' }}>
+                      {evaluacion.active ? (
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#16a34a', backgroundColor: '#dcfce7', padding: '0.2rem 0.6rem', borderRadius: '9999px' }}>
+                          ● Evaluación Activa
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#92400e', backgroundColor: '#fef3c7', padding: '0.2rem 0.6rem', borderRadius: '9999px' }}>
+                          ● Evaluación Finalizada (Solo Lectura)
+                        </span>
+                      )}
+                    </div>
+                  </div>
                   <div className={styles.actions}>
-                    <Link
-                      className={styles.reportButton}
-                      style={{ backgroundColor: 'var(--primary-color)' }}
-                      href={`prueba/evaluar-estudiante?idExamen=${route.query.idExamen}`}
-                    >
-                      <RiUserStarLine size={18} />
-                      Evaluar Estudiante
-                    </Link>
+                    {evaluacion.active ? (
+                      <Link
+                        className={styles.reportButton}
+                        style={{ backgroundColor: 'var(--primary-color)' }}
+                        href={`prueba/evaluar-estudiante?idExamen=${route.query.idExamen}`}
+                      >
+                        <RiUserStarLine size={18} />
+                        Evaluar Estudiante
+                      </Link>
+                    ) : (
+                      <span
+                        className={styles.reportButton}
+                        style={{ backgroundColor: '#94a3b8', cursor: 'not-allowed', opacity: 0.8 }}
+                        title="La evaluación está cerrada para nuevos registros"
+                      >
+                        <RiLockLine size={18} />
+                        Cerrada para Evaluar
+                      </span>
+                    )}
                     <Link
                       href={`prueba/reporte?idExamen=${route.query.idExamen}`}
                       className={styles.reportButton}
+                      style={{ backgroundColor: !evaluacion.active ? 'var(--primary-color, #2563eb)' : undefined }}
                     >
                       <RiFileList3Line size={18} />
                       Reporte
                     </Link>
                   </div>
                 </div>
+
+                {!evaluacion.active && (
+                  <div style={{
+                    backgroundColor: '#fffbeb',
+                    border: '1px solid #fde68a',
+                    borderRadius: '12px',
+                    padding: '0.875rem 1.25rem',
+                    marginTop: '1rem',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    color: '#92400e',
+                    fontSize: '0.925rem'
+                  }}>
+                    <RiErrorWarningLine size={24} style={{ flexShrink: 0, color: '#d97706' }} />
+                    <div>
+                      <strong>Evaluación Finalizada:</strong> El período para registrar nuevos estudiantes ha concluido. Puedes ingresar a <strong>Reporte</strong> para consultar todas las calificaciones, estadísticas y gráficos de los estudiantes evaluados.
+                    </div>
+                  </div>
+                )}
 
                 <h2 className={styles.sectionTitle}>Preguntas y Respuestas</h2>
 

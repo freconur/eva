@@ -64,40 +64,72 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
     }, [])
 
     useEffect(() => {
-        if (dataDocente) return; // Skip cleanup if editing (initial load)
-
-        if (nivelesSeleccionados.length === 0) {
-            setValue("grados", []);
-            setValue("secciones", []);
-        } else {
-            // Limpiar grados que ya no corresponden a los niveles seleccionados
-            const filteredGrados = gradosSeleccionados.filter(gradoId => {
-                const gradoObj = gradosDeColegio.find(g => String(g.id) === gradoId);
-                if (!gradoObj) return false;
-                if (nivelesSeleccionados.includes("0") && gradoObj.nivel === 0) return true;
-                if (nivelesSeleccionados.includes("1") && gradoObj.nivel === 1) return true;
-                if (nivelesSeleccionados.includes("2") && gradoObj.nivel === 2) return true;
-                return false;
-            });
-            if (filteredGrados.length !== gradosSeleccionados.length) {
-                setValue("grados", filteredGrados);
+        register("nivelDeInstitucion", {
+            validate: (value) => (value && value.length > 0) || "Seleccione al menos uno"
+        });
+        register("grados", {
+            validate: (value) => {
+                if (nivelesSeleccionados.length > 0) {
+                    return (value && value.length > 0) || "Seleccione al menos uno";
+                }
+                return true;
             }
-        }
-    }, [nivelesSeleccionados, setValue, dataDocente, gradosSeleccionados]);
+        });
+        register("secciones");
+        register("asignaciones");
+    }, [register, nivelesSeleccionados]);
 
-    useEffect(() => {
-        if (dataDocente) return; // Skip cleanup if editing
-        if (gradosSeleccionados.length === 0) {
-            setValue("secciones", []);
-            setValue("asignaciones", []);
+    const handleNivelToggle = (nivelId: string, checked: boolean) => {
+        const nivelIdStr = String(nivelId);
+        let newNiveles: string[];
+        if (checked) {
+            newNiveles = [...nivelesSeleccionados, nivelIdStr];
         } else {
-            // Eliminar asignaciones de grados que ya no están seleccionados
-            const nuevasAsignaciones = asignaciones.filter(a => gradosSeleccionados.includes(a.gradoId));
-            if (nuevasAsignaciones.length !== asignaciones.length) {
-                setValue("asignaciones", nuevasAsignaciones);
-            }
+            newNiveles = nivelesSeleccionados.filter(n => n !== nivelIdStr);
         }
-    }, [gradosSeleccionados, setValue, dataDocente, asignaciones]);
+        setValue("nivelDeInstitucion", newNiveles, { shouldValidate: true, shouldDirty: true });
+
+        // Filtrar los grados que pertenezcan a los niveles actualmente seleccionados
+        const newGrados = gradosSeleccionados.filter(gradoId => {
+            const gradoObj = gradosDeColegio.find(g => String(g.id) === String(gradoId));
+            if (!gradoObj) return false;
+            return newNiveles.includes(String(gradoObj.nivel));
+        });
+
+        // Filtrar asignaciones y recalcular secciones planas
+        const newAsignaciones = asignaciones.filter(a => newGrados.includes(String(a.gradoId)));
+        const newSecciones = Array.from(new Set(newAsignaciones.flatMap(a => a.secciones)));
+
+        setValue("grados", newGrados, { shouldValidate: true, shouldDirty: true });
+        setValue("asignaciones", newAsignaciones, { shouldValidate: true, shouldDirty: true });
+        setValue("secciones", newSecciones, { shouldValidate: true, shouldDirty: true });
+    };
+
+    const handleGradoToggle = (gradoId: string, checked: boolean) => {
+        const gradoIdStr = String(gradoId);
+        let newGrados: string[];
+        let newAsignaciones = [...asignaciones];
+
+        if (checked) {
+            newGrados = [...gradosSeleccionados, gradoIdStr];
+            if (!newAsignaciones.some(a => String(a.gradoId) === gradoIdStr)) {
+                newAsignaciones.push({ gradoId: gradoIdStr, secciones: [] });
+            }
+        } else {
+            newGrados = gradosSeleccionados.filter(g => String(g) !== gradoIdStr);
+            // Quitar completamente de asignaciones
+            newAsignaciones = newAsignaciones.filter(a => String(a.gradoId) !== gradoIdStr);
+        }
+
+        // Actualizar también la lista plana de secciones con solo las secciones de los grados activos
+        const newSecciones = Array.from(new Set(
+            newAsignaciones.flatMap(a => a.secciones)
+        ));
+
+        setValue("grados", newGrados, { shouldValidate: true, shouldDirty: true });
+        setValue("asignaciones", newAsignaciones, { shouldValidate: true, shouldDirty: true });
+        setValue("secciones", newSecciones, { shouldValidate: true, shouldDirty: true });
+    };
 
     useEffect(() => {
         if (isEdit && dataDocente && caracteristicaCurricular.length > 0) {
@@ -122,7 +154,29 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
                     : (dataDocente.nivel ? [dataDocente.nivel] : []));
 
             const nivelesComoString = nivelArray.map(n => String(n));
+            const docenteGrados = Array.isArray(dataDocente.grados) ? dataDocente.grados.map(g => String(g)) : [];
 
+            // Sanitizar asignaciones para que solo contenga los grados válidos del docente
+            let initialAsignaciones: { gradoId: string; secciones: string[] }[] = [];
+            if (Array.isArray(dataDocente.asignaciones)) {
+                initialAsignaciones = dataDocente.asignaciones
+                    .filter(a => docenteGrados.includes(String(a.gradoId)))
+                    .map(a => ({
+                        gradoId: String(a.gradoId),
+                        secciones: Array.isArray(a.secciones) ? a.secciones.map(s => String(s)) : []
+                    }));
+            } else if (docenteGrados.length > 0) {
+                const initialFlatSecciones = Array.isArray(dataDocente.secciones) ? dataDocente.secciones.map(s => String(s)) : [];
+                initialAsignaciones = docenteGrados.map(g => ({
+                    gradoId: String(g),
+                    secciones: initialFlatSecciones
+                }));
+            }
+
+            // Calcular secciones planas limpias a partir de asignaciones (o fallback)
+            const initialSecciones = initialAsignaciones.length > 0
+                ? Array.from(new Set(initialAsignaciones.flatMap(a => a.secciones)))
+                : (Array.isArray(dataDocente.secciones) ? dataDocente.secciones.map(s => String(s)) : []);
 
             // Reset with explicit values
             reset({
@@ -134,17 +188,9 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
                 genero: dataDocente.genero || '',
                 caracteristicaCurricular: dataDocente.caracteristicaCurricular ? String(dataDocente.caracteristicaCurricular).trim() : '',
                 nivelDeInstitucion: nivelesComoString,
-                grados: Array.isArray(dataDocente.grados) ? dataDocente.grados.map(g => String(g)) : [],
-                secciones: Array.isArray(dataDocente.secciones) ? dataDocente.secciones.map(s => String(s)) : [],
-                asignaciones: Array.isArray(dataDocente.asignaciones)
-                    ? dataDocente.asignaciones.map(a => ({
-                        gradoId: String(a.gradoId),
-                        secciones: a.secciones.map(s => String(s))
-                    }))
-                    : (Array.isArray(dataDocente.grados) ? dataDocente.grados.map(g => ({
-                        gradoId: String(g),
-                        secciones: Array.isArray(dataDocente.secciones) ? dataDocente.secciones.map(s => String(s)) : []
-                    })) : [])
+                grados: docenteGrados,
+                secciones: initialSecciones,
+                asignaciones: initialAsignaciones
             })
         } else {
             const initialNiveles = (currentUserData.nivelDeInstitucion && currentUserData.nivelDeInstitucion.length === 1)
@@ -154,7 +200,8 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
             reset({
                 nivelDeInstitucion: initialNiveles,
                 grados: [],
-                secciones: []
+                secciones: [],
+                asignaciones: []
             })
         }
     }, [dataDocente, reset, isEdit, currentUserData.nivelDeInstitucion])
@@ -163,16 +210,28 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
         setStatusMessage(null)
         setIsError(false)
 
+        const selectedGradosStr = (data.grados || []).map(g => String(g));
+
+        // Filtrar asignaciones asegurando que pertenezcan ÚNICAMENTE a los grados seleccionados
+        const cleanAsignaciones = (data.asignaciones || [])
+            .filter(a => selectedGradosStr.includes(String(a.gradoId)))
+            .map(a => ({
+                gradoId: Number(a.gradoId),
+                secciones: (a.secciones || []).map(s => Number(s))
+            }));
+
+        // Secciones planas derivadas exclusivamente de las asignaciones activas
+        const cleanSecciones = Array.from(new Set(
+            cleanAsignaciones.flatMap(a => a.secciones)
+        ));
+
         const dataToSubmit: User = {
             ...data,
             area: currentUserData.area,
             distrito: currentUserData.distrito,
             grados: (data.grados || []).map(g => Number(g)),
-            secciones: (data.secciones || []).map(s => Number(s)),
-            asignaciones: (data.asignaciones || []).map(a => ({
-                gradoId: Number(a.gradoId),
-                secciones: a.secciones.map(s => Number(s))
-            })),
+            secciones: cleanSecciones,
+            asignaciones: cleanAsignaciones,
             nivel: (data.nivelDeInstitucion && data.nivelDeInstitucion.length > 0)
                 ? Number(data.nivelDeInstitucion[0])
                 : undefined,
@@ -431,7 +490,8 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
                                                 <input
                                                     type="checkbox"
                                                     value={String(nivel.id)}
-                                                    {...register("nivelDeInstitucion", { required: "Seleccione al menos uno" })}
+                                                    checked={nivelesSeleccionados.includes(String(nivel.id))}
+                                                    onChange={(e) => handleNivelToggle(String(nivel.id), e.target.checked)}
                                                     className={styles.chipInput}
                                                 />
                                                 <span className={styles.chipLabel}>{nivel.name.charAt(0).toUpperCase() + nivel.name.slice(1)}</span>
@@ -456,12 +516,8 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
                                                 <input
                                                     type="checkbox"
                                                     value={String(grado.id)}
-                                                    {...register("grados", {
-                                                        required: {
-                                                            value: nivelesSeleccionados.some(n => n === "0" || n === "1" || n === "2"),
-                                                            message: "Seleccione al menos uno"
-                                                        }
-                                                    })}
+                                                    checked={gradosSeleccionados.includes(String(grado.id))}
+                                                    onChange={(e) => handleGradoToggle(String(grado.id), e.target.checked)}
                                                     className={styles.chipInput}
                                                 />
                                                 <span className={styles.chipLabel}>{grado.name}</span>
@@ -478,7 +534,7 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
                                         const gradoObj = gradosDeColegio.find(g => String(g.id) === gradoId);
                                         if (!gradoObj) return null;
 
-                                        const asignacionActual = asignaciones.find(a => a.gradoId === gradoId);
+                                        const asignacionActual = asignaciones.find(a => String(a.gradoId) === String(gradoId));
                                         const seccionesParaEsteGrado = asignacionActual?.secciones || [];
 
                                         return (
@@ -496,26 +552,42 @@ const DocenteModal = ({ dataDocente, onClose }: Props) => {
                                                                     type="checkbox"
                                                                     checked={isChecked}
                                                                     onChange={(e) => {
-                                                                        const newSecciones = e.target.checked
-                                                                            ? [...seccionesParaEsteGrado, String(seccion.id)]
-                                                                            : seccionesParaEsteGrado.filter(id => id !== String(seccion.id));
+                                                                        const checked = e.target.checked;
+                                                                        const seccionIdStr = String(seccion.id);
+                                                                        const gradoIdStr = String(gradoId);
 
-                                                                        let nuevasAsignaciones;
-                                                                        if (asignacionActual) {
+                                                                        const newSecciones = checked
+                                                                            ? [...seccionesParaEsteGrado, seccionIdStr]
+                                                                            : seccionesParaEsteGrado.filter(id => id !== seccionIdStr);
+
+                                                                        let nuevasAsignaciones: { gradoId: string; secciones: string[] }[];
+                                                                        const exists = asignaciones.some(a => String(a.gradoId) === gradoIdStr);
+
+                                                                        if (exists) {
                                                                             nuevasAsignaciones = asignaciones.map(a =>
-                                                                                a.gradoId === gradoId ? { ...a, secciones: newSecciones } : a
+                                                                                String(a.gradoId) === gradoIdStr
+                                                                                    ? { ...a, secciones: newSecciones }
+                                                                                    : a
                                                                             );
                                                                         } else {
-                                                                            nuevasAsignaciones = [...asignaciones, { gradoId, secciones: newSecciones }];
+                                                                            nuevasAsignaciones = [
+                                                                                ...asignaciones,
+                                                                                { gradoId: gradoIdStr, secciones: newSecciones }
+                                                                            ];
                                                                         }
 
-                                                                        setValue("asignaciones", nuevasAsignaciones);
+                                                                        // Filtrar asignaciones asegurando que solo contengan los grados seleccionados
+                                                                        nuevasAsignaciones = nuevasAsignaciones.filter(a =>
+                                                                            gradosSeleccionados.includes(String(a.gradoId))
+                                                                        );
+
+                                                                        setValue("asignaciones", nuevasAsignaciones, { shouldValidate: true, shouldDirty: true });
 
                                                                         // Actualizar también el campo plano 'secciones' para compatibilidad
                                                                         const todasLasSeccionesPlanos = Array.from(new Set(
                                                                             nuevasAsignaciones.flatMap(a => a.secciones)
                                                                         ));
-                                                                        setValue("secciones", todasLasSeccionesPlanos);
+                                                                        setValue("secciones", todasLasSeccionesPlanos, { shouldValidate: true, shouldDirty: true });
                                                                     }}
                                                                     className={styles.chipInput}
                                                                 />

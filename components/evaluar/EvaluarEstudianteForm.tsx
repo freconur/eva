@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { PreguntasRespuestas, UserEstudiante } from '@/features/types/types';
-import { RiLoader4Line, RiArrowUpLine, RiPlayFill, RiPauseFill, RiUploadLine, RiCloseLine, RiCheckboxCircleLine, RiCheckLine, RiSearchLine } from 'react-icons/ri';
+import { RiLoader4Line, RiArrowUpLine, RiPlayFill, RiPauseFill, RiUploadLine, RiCloseLine, RiCheckboxCircleLine, RiCheckLine, RiSearchLine, RiErrorWarningLine, RiLockLine } from 'react-icons/ri';
 import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { gradosDeColegio, sectionByGrade, genero } from '@/fuctions/regiones';
 import { currentYear, getMonthName } from '@/fuctions/dates';
@@ -288,6 +288,11 @@ const EvaluarEstudianteForm = ({
    * Maneja el envío del formulario de evaluación
    */
   const handleSubmitform = handleSubmit(async (data) => {
+    if (evaluacion?.active === false) {
+      alert('Esta evaluación se encuentra finalizada. El período para registrar evaluaciones de estudiantes ha concluido.');
+      return;
+    }
+
     if (!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0) {
       alert('Por favor, selecciona un estudiante antes de guardar la evaluación.');
       return;
@@ -704,6 +709,26 @@ const EvaluarEstudianteForm = ({
                 )}
               </div>
 
+              {!evaluacion?.active && (
+                <div style={{
+                  backgroundColor: '#fffbeb',
+                  border: '1px solid #fde68a',
+                  borderRadius: '12px',
+                  padding: '0.875rem 1.25rem',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  color: '#92400e',
+                  fontSize: '0.925rem'
+                }}>
+                  <RiErrorWarningLine size={24} style={{ flexShrink: 0, color: '#d97706' }} />
+                  <div>
+                    <strong>Evaluación Finalizada:</strong> Esta evaluación se encuentra cerrada. No es posible registrar nuevas evaluaciones de estudiantes. Puedes consultar los resultados en el botón <strong>Ver Reporte</strong>.
+                  </div>
+                </div>
+              )}
+
               {/* Indicador de progreso */}
               <div className={styles.progressIndicator}>
                 <div className={styles.progressText}>
@@ -737,9 +762,11 @@ const EvaluarEstudianteForm = ({
 
                   <button
                     type="button"
+                    disabled={evaluacion?.active === false}
                     className={styles.importButton}
                     onClick={handleOpenModal}
-                    title="Importar datos de estudiantes"
+                    title={evaluacion?.active === false ? "Evaluación cerrada para nuevos registros" : "Importar datos de estudiantes"}
+                    style={evaluacion?.active === false ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
                   >
                     <RiUploadLine className={styles.importIcon} />
                     <span>Importar</span>
@@ -969,10 +996,13 @@ const EvaluarEstudianteForm = ({
                     </div>
 
                     <button
-                      disabled={!todasRespondidas || (!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0)}
+                      disabled={evaluacion?.active === false || !todasRespondidas || (!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0)}
                       className={styles.saveButton}
+                      style={evaluacion?.active === false ? { backgroundColor: '#94a3b8', cursor: 'not-allowed' } : undefined}
                     >
-                      {!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0
+                      {evaluacion?.active === false
+                        ? 'Evaluación Cerrada (No se puede guardar)'
+                        : !estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0
                         ? 'Selecciona un estudiante para continuar'
                         : !todasRespondidas
                           ? 'Complete todas las preguntas para guardar'

@@ -2,9 +2,9 @@
 
 .container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  padding: 3rem 2rem;
-  color: #1e293b;
+  background: #f8fafc;
+  padding: 1.5rem 1.5rem 3rem 1.5rem;
+  color: #0f172a;
   font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   position: relative;
   overflow-x: hidden;
@@ -471,5 +471,954 @@
     height: 52px;
     font-size: 1.5rem;
     border-radius: 14px;
+  }
+}
+
+/* ==========================================================================
+   TABS DE NAVEGACIÓN (ACCESO RÁPIDO VS EXPLORAR POR NIVELES)
+   ========================================================================== */
+
+.subtitle {
+  display: none;
+}
+
+.tabsWrapper {
+  max-width: 1280px;
+  margin: 0 auto 1.5rem auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.tabsContainer {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 0.3rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  gap: 0.25rem;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.tabButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 1.15rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.tabButton:hover:not(.tabButtonActive) {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.tabButtonActive {
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.tabIcon {
+  font-size: 1.15rem;
+  color: inherit;
+}
+
+.tabBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e2e8f0;
+  color: #475569;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.tabButtonActive .tabBadge {
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   SECCIÓN DE ACCESO RÁPIDO: MIS EVALUACIONES
+   ========================================================================== */
+
+.quickAccessSection {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.qaToolbar {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0.85rem 1.15rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Fila 1: Búsqueda + Selectores de Ámbito/Grado + Alternador de Vista */
+.qaTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.qaSearchInputContainer {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+}
+
+.qaSearchIcon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 1.15rem;
+  pointer-events: none;
+}
+
+.qaSearchInput {
+  width: 100%;
+  height: 36px;
+  padding: 0.4rem 2.2rem 0.4rem 2.45rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 0.84rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.qaSearchInput::placeholder {
+  color: #94a3b8;
+}
+
+.qaSearchInput:focus {
+  background: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.qaSearchClear {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+}
+
+.qaSearchClear:hover {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.qaTopActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.qaScopeSelect {
+  height: 36px;
+  padding: 0 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.qaScopeSelect:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+/* Fila 2: Filtros de Periodo (Año y Mes) + Estados */
+.qaBottomRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.qaPeriodGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.qaResetPeriodBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 32px;
+  padding: 0 0.65rem;
+  border-radius: 7px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qaResetPeriodBtn:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
+.qaPillsGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.qaFilterPill {
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.75rem;
+  border-radius: 7px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.qaFilterPill:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.qaFilterPillActive {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.qaFilterPillActive:hover {
+  background: #1e293b;
+  border-color: #1e293b;
+  color: #ffffff;
+}
+
+.qaFilterPillBadge {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.qaFilterPillActive .qaFilterPillBadge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   ALTERNADOR DE VISTAS (TABLA VS TARJETAS)
+   ========================================================================== */
+
+.viewToggleGroup {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 2px;
+  border: 1px solid #e2e8f0;
+}
+
+.viewToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.viewToggleBtnActive {
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* ==========================================================================
+   VISTA TABLA COMPACTA
+   ========================================================================== */
+
+.qaTableContainer {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.qaTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+  min-width: 820px;
+}
+
+.qaTableHead {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.qaTableHeadCell {
+  padding: 0.75rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.qaTableRow {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.15s ease;
+}
+
+.qaTableRow:hover {
+  background-color: #f8fafc;
+}
+
+.qaTableRowInactive {
+  background-color: #fcfcfd;
+}
+
+.qaTableRow:last-child {
+  border-bottom: none;
+}
+
+.qaTableCell {
+  padding: 0.85rem 1rem;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.qaTableCellGrade {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.qaTableGradeText {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.qaTableCellTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-width: 340px;
+}
+
+.qaTableTitleLink {
+  color: #0f172a;
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.35;
+  transition: color 0.15s ease;
+}
+
+.qaTableTitleLink:hover {
+  color: #2563eb;
+}
+
+.qaTableSubText {
+  font-size: 0.73rem;
+  color: #64748b;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.qaTableAreaBadge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 500;
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qaTablePeriodText {
+  font-size: 0.8rem;
+  color: #475569;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.qaTableActions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.qaTableBtnEvaluar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.15);
+  transition: all 0.15s ease;
+}
+
+.qaTableBtnEvaluar:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+}
+
+.qaTableBtnReporte {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.qaTableBtnReporte:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.qaTableBtnReporteFull {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #0284c7;
+  color: #ffffff;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(2, 132, 199, 0.15);
+  transition: all 0.15s ease;
+}
+
+.qaTableBtnReporteFull:hover {
+  background: #0369a1;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25);
+}
+
+.qaTableBadgeClosed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.73rem;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+}
+
+.qaTableBtnDetalle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: #64748b;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.15s ease;
+}
+
+.qaTableBtnDetalle:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+.qaTableFooter {
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.76rem;
+  color: #64748b;
+}
+
+/* ==========================================================================
+   ETIQUETAS Y ESTADOS COMPARTIDOS
+   ========================================================================== */
+
+.qaLevelTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  width: fit-content;
+}
+
+.qaLevelInicial {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.qaLevelPrimaria {
+  background: #fce7f3;
+  color: #be185d;
+}
+
+.qaLevelSecundaria {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.qaGradeTag {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.qaStatusActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.qaDotActive {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.qaStatusInactive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   VISTA TARJETAS (GRID)
+   ========================================================================== */
+
+.qaCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.25rem;
+}
+
+.qaCard {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 1.35rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.qaCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
+}
+
+.qaCardInactive {
+  background: #fcfcfd;
+  border-color: #e2e8f0;
+}
+
+.qaCardInactive:hover {
+  border-color: #cbd5e1;
+}
+
+.qaCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.qaBadgesRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.qaCardTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.35;
+  margin: 0 0 0.65rem 0;
+}
+
+.qaCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 1.25rem;
+}
+
+.qaMetaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.qaAreaTag {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.qaCardActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+
+.qaBtnEvaluar {
+  flex: 1;
+  min-width: 120px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 0.55rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.15);
+  transition: all 0.15s ease;
+}
+
+.qaBtnEvaluar:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(37, 99, 235, 0.25);
+}
+
+.qaBtnReporte {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 0.55rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.qaBtnReporte:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.qaBtnReporteFull {
+  flex: 1;
+  min-width: 140px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: #0284c7;
+  color: #ffffff;
+  padding: 0.55rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(2, 132, 199, 0.15);
+  transition: all 0.15s ease;
+}
+
+.qaBtnReporteFull:hover {
+  background: #0369a1;
+  transform: translateY(-1px);
+}
+
+.qaBtnClosedNotice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+}
+
+.qaBtnDetalle {
+  padding: 0.55rem;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.qaBtnDetalle:hover {
+  color: #0f172a;
+}
+
+/* ==========================================================================
+   ESTADO VACÍO (EMPTY STATE)
+   ========================================================================== */
+
+.qaEmptyState {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  border: 1px dashed #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.qaEmptyIcon {
+  font-size: 2.75rem;
+  color: #94a3b8;
+}
+
+.qaEmptyTitle {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.qaEmptyText {
+  color: #64748b;
+  font-size: 0.875rem;
+  max-width: 440px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.qaEmptyResetBtn {
+  margin-top: 0.5rem;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qaEmptyResetBtn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (MEDIA QUERIES)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .tabsWrapper {
+    margin-bottom: 1rem;
+  }
+  
+  .tabsContainer {
+    width: 100%;
+    display: flex;
+  }
+  
+  .tabButton {
+    flex: 1;
+    justify-content: center;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.82rem;
+  }
+  
+  .qaCardsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .qaTopRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+
+  .qaSearchInputContainer {
+    width: 100%;
+  }
+
+  .qaTopActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .qaScopeSelect {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .qaBottomRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+
+  .qaPeriodGroup {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .qaPillsGroup {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
   }
 }

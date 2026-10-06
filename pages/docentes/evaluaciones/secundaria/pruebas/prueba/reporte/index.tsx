@@ -690,6 +690,25 @@ const Reportes = () => {
       ) : (
         <div className={styles.container}>
           <div className={styles.content}>
+            {evaluacion && evaluacion.active === false && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                backgroundColor: '#fffbeb',
+                border: '1px solid #fde68a',
+                borderRadius: '8px',
+                padding: '0.75rem 1rem',
+                marginBottom: '1.25rem',
+                color: '#92400e',
+                fontSize: '0.875rem'
+              }}>
+                <RiErrorWarningLine style={{ fontSize: '1.25rem', color: '#f59e0b', flexShrink: 0 }} />
+                <div>
+                  <strong>Evaluación Finalizada (Solo Lectura):</strong> Este examen ha concluido. Puedes consultar estadísticas, revisar estudiantes y exportar reportes, pero la edición de respuestas y registro de nuevos estudiantes están deshabilitados.
+                </div>
+              </div>
+            )}
             <div className={styles.headerActions}>
               <div className={styles.exportButtonsContainer}>
                 {hasAnyDocenteAction && (
@@ -756,7 +775,7 @@ const Reportes = () => {
                   </div>
                 )}
 
-                {evaluacion.tipoDeEvaluacion === '1' && (
+                {evaluacion.tipoDeEvaluacion === '1' && evaluacion.active !== false && (
                   <button
                     onClick={handleShowCorregirPuntajesModal}
                     className={styles.corregirButton}
@@ -766,13 +785,15 @@ const Reportes = () => {
                   </button>
                 )}
 
-                <button
-                  onClick={() => setIsEvaluarDrawerOpen(true)}
-                  className={styles.evaluarButton}
-                >
-                  <span>📝</span>
-                  <span>Evaluar Estudiante</span>
-                </button>
+                {evaluacion.active !== false && (
+                  <button
+                    onClick={() => setIsEvaluarDrawerOpen(true)}
+                    className={styles.evaluarButton}
+                  >
+                    <span>📝</span>
+                    <span>Evaluar Estudiante</span>
+                  </button>
+                )}
               </div>
             </div>
             {showTable ? (
@@ -908,6 +929,8 @@ const Reportes = () => {
                     estudiantes={estudiantes}
                     preguntasRespuestas={preguntasRespuestas}
                     warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined}
+                    showDeleteButton={evaluacion?.active !== false}
+                    showEditButton={evaluacion?.active !== false}
                     onDeleteEstudiante={(dni) => {
                       handleShowModalDelete();
                       setIdEstudiante(dni);

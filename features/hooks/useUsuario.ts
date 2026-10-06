@@ -125,6 +125,7 @@ const useUsuario = () => {
       dispatch({
         type: AppAction.CURRENT_USER_DATA,
         payload: {
+          ...user.data(),
           id: user.id,
           nombres: user.data()?.nombres || '',
           apellidos: user.data()?.apellidos || '',
@@ -146,6 +147,9 @@ const useUsuario = () => {
           tipoGestion: user.data()?.tipoGestion || undefined,
           seguridad: user.data()?.seguridad || undefined,
           debeCambiarContrasena: user.data()?.debeCambiarContrasena || false,
+          asignaciones: user.data()?.asignaciones || [],
+          grados: user.data()?.grados || [],
+          secciones: user.data()?.secciones || [],
         },
       });
     } else {

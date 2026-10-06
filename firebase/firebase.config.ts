@@ -52,8 +52,9 @@ if (typeof window !== 'undefined') {
 
 const isClient = typeof window !== 'undefined';
 const isLocalhost = isClient && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const useFunctionsEmulator = process.env.NEXT_PUBLIC_USE_FUNCTIONS_EMULATOR === 'true';
 
-if (isLocalhost) {
+if (isLocalhost && useFunctionsEmulator) {
   connectFunctionsEmulator(functions, 'localhost', 5001);
   console.log('🔌 Conectado al emulador local de Cloud Functions en puerto 5001');
 }

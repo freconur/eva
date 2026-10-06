@@ -4,7 +4,7 @@ import { useReporteDocente } from '@/features/hooks/useReporteDocente';
 import { AppAction } from '@/features/actions/appAction';
 import { gradosDeColegio, genero, sectionByGrade } from '@/fuctions/regiones';
 import React, { useEffect, useState } from 'react';
-import { RiCloseLine, RiLoader4Line } from 'react-icons/ri';
+import { RiCloseLine, RiLoader4Line, RiErrorWarningLine } from 'react-icons/ri';
 import styles from './actualizarForm.module.css';
 
 interface ActualizarEvaluacionFormProps {
@@ -125,6 +125,10 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
 
   // Handler para guardar cambios
   const handleGuardarCambios = async () => {
+    if (evaluacion?.active === false) {
+      alert('Esta evaluación se encuentra finalizada y no permite modificaciones.');
+      return;
+    }
     setIsGuardando(true);
     
     try {
@@ -162,6 +166,26 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
           </button>
         )}
       </div>
+
+      {!evaluacion?.active && (
+        <div style={{
+          backgroundColor: '#fffbeb',
+          border: '1px solid #fde68a',
+          borderRadius: '12px',
+          padding: '0.875rem 1.25rem',
+          margin: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          color: '#92400e',
+          fontSize: '0.925rem'
+        }}>
+          <RiErrorWarningLine size={24} style={{ flexShrink: 0, color: '#d97706' }} />
+          <div>
+            <strong>Evaluación Finalizada:</strong> El período de evaluación ha concluido. Este formulario se encuentra en modo de solo lectura y no se pueden guardar cambios.
+          </div>
+        </div>
+      )}
 
       {/* Campos editables para datos del estudiante */}
       <div className={styles.studentDataSection}>
@@ -292,9 +316,15 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
         <button
           onClick={handleGuardarCambios}
           className={styles.saveButton}
-          disabled={isGuardando}
+          disabled={isGuardando || evaluacion?.active === false}
+          title={evaluacion?.active === false ? 'La evaluación ha finalizado y está en modo solo lectura' : undefined}
+          style={evaluacion?.active === false ? { opacity: 0.6, cursor: 'not-allowed', backgroundColor: '#9ca3af' } : undefined}
         >
-          {isGuardando ? 'Guardando...' : 'Guardar Cambios'}
+          {evaluacion?.active === false
+            ? 'Evaluación Finalizada (Solo Lectura)'
+            : isGuardando
+            ? 'Guardando...'
+            : 'Guardar Cambios'}
         </button>
       </div>
     </div>

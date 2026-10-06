@@ -6,7 +6,7 @@ import EvaluarEstudiante from '@/modals/evaluarEstudiante'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
-import { RiLoader4Line } from 'react-icons/ri'
+import { RiLoader4Line, RiErrorWarningLine, RiLockLine, RiFileList3Line, RiUserStarLine } from 'react-icons/ri'
 
 const Evaluacion = () => {
 
@@ -62,20 +62,48 @@ const Evaluacion = () => {
           :
           <div className='grid justify-center items-center relative mt-3'>
             <div className='w-[1024px] bg-white  p-20'>
-              <h1 className='text-2xl text-colorSexto font-semibold uppercase mb-10'>{evaluacion.nombre}</h1>
-              <div className='flex gap-3 justify-end'>
-                {/* <button onClick={handleshowModal} className='bg-green-500 p-3 rounded-md shadow text-white capitalize font-semibold'>agregar preguntas</button> */}
-
-                {/* <button onClick={handleShowModalEstudiante} className='border-iconColor border-[1px] p-3 rounded-md shadow text-iconColor hover:bg-iconColor hover:text-white duration-300 hover:duration-300 capitalize font-semibold'>
-                  evaluar estudiante
-                </button> */}
-                <Link className='border-iconColor border-[1px] p-3 rounded-md shadow text-iconColor hover:bg-iconColor hover:text-white duration-300 hover:duration-300 capitalize font-semibold' href={`prueba/evaluar-estudiante?idExamen=${route.query.idExamen}`}>
-                evaluar estudiante
-                </Link>
-                <div className='bg-colorTercero p-3 rounded-md shadow text-white capitalize font-semibold cursor-pointer hover:bg-colorCuarto hover:text-colorQuinto duration-300 hover:duration-300'>
-                  <Link href={`prueba/reporte?idExamen=${route.query.idExamen}`}>reporte</Link>
+              <div className='flex justify-between items-start mb-6'>
+                <div>
+                  <h1 className='text-2xl text-colorSexto font-semibold uppercase'>{evaluacion.nombre}</h1>
+                  <div className='mt-1'>
+                    {evaluacion.active ? (
+                      <span className='inline-block text-xs font-semibold text-green-700 bg-green-100 px-3 py-1 rounded-full'>
+                        ● Evaluación Activa
+                      </span>
+                    ) : (
+                      <span className='inline-block text-xs font-semibold text-amber-800 bg-amber-100 px-3 py-1 rounded-full'>
+                        ● Evaluación Finalizada (Solo Lectura)
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className='flex gap-3 justify-end items-center'>
+                  {evaluacion.active ? (
+                    <Link className='border-iconColor border-[1px] p-3 rounded-md shadow text-iconColor hover:bg-iconColor hover:text-white duration-300 hover:duration-300 capitalize font-semibold flex items-center gap-2' href={`prueba/evaluar-estudiante?idExamen=${route.query.idExamen}`}>
+                      <RiUserStarLine size={18} />
+                      evaluar estudiante
+                    </Link>
+                  ) : (
+                    <span className='bg-slate-300 p-3 rounded-md shadow text-slate-600 capitalize font-semibold flex items-center gap-2 cursor-not-allowed' title='La evaluación está cerrada para nuevos registros'>
+                      <RiLockLine size={18} />
+                      Cerrada para Evaluar
+                    </span>
+                  )}
+                  <Link href={`prueba/reporte?idExamen=${route.query.idExamen}`} className='bg-colorTercero p-3 rounded-md shadow text-white capitalize font-semibold cursor-pointer hover:bg-colorCuarto hover:text-colorQuinto duration-300 flex items-center gap-2'>
+                    <RiFileList3Line size={18} />
+                    reporte
+                  </Link>
                 </div>
               </div>
+
+              {!evaluacion.active && (
+                <div className='bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-center gap-3 text-amber-800 text-sm'>
+                  <RiErrorWarningLine size={24} className='flex-shrink-0 text-amber-600' />
+                  <div>
+                    <strong>Evaluación Finalizada:</strong> El período para registrar nuevos estudiantes ha concluido. Puedes ingresar a <strong>Reporte</strong> para consultar todas las calificaciones, estadísticas y gráficos de los estudiantes evaluados.
+                  </div>
+                </div>
+              )}
               <div className='flex gap-3 justify-end'>
                 {/* <button onClick={handleshowModal} className='bg-green-500 p-3 rounded-md shadow text-white capitalize font-semibold'>agregar preguntas</button> */}
                 {/* <Link href={`reporte?id=${currentUserData.dni}&idEvaluacion=${route.query.id}`} className='bg-colorTercero p-3 rounded-md duration-300 hover:bg-colorCuarto hover:text-colorSegundo text-white shadow-md capitalize font-semibold'>repote de evaluación</Link> */}

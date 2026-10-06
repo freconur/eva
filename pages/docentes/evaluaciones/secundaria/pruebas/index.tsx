@@ -19,22 +19,23 @@ const Pruebas = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.grado, route.query.categoria])
   
-  // Algoritmo super eficiente para ordenar evaluaciones alfabéticamente
+  // Algoritmo para ordenar evaluaciones: activas primero, luego alfabéticamente
   const evaluacionesOrdenadas = useMemo(() => {
     if (!evaluacionesGradoYCategoria) return []
     
-    // Filtro y ordenamiento en una sola pasada para máxima eficiencia
-    return evaluacionesGradoYCategoria
-      .filter(eva => eva.active) // Filtrar solo activas
+    return [...evaluacionesGradoYCategoria]
       .sort((a, b) => {
-        // Normalización para ordenamiento insensible a mayúsculas/minúsculas
+        // Mostrar activas primero
+        if (a.active && !b.active) return -1;
+        if (!a.active && b.active) return 1;
+
+        // Normalización para ordenamiento alfabético
         const nombreA = a.nombre?.toLowerCase().trim() || ''
         const nombreB = b.nombre?.toLowerCase().trim() || ''
         
-        // Ordenamiento alfabético usando localeCompare para caracteres especiales
         return nombreA.localeCompare(nombreB, 'es', { 
-          numeric: true, // Ordenamiento numérico natural (ej: "Evaluación 2" antes que "Evaluación 10")
-          sensitivity: 'base' // Ignorar acentos y mayúsculas
+          numeric: true,
+          sensitivity: 'base'
         })
       })
   }, [evaluacionesGradoYCategoria])
@@ -63,24 +64,26 @@ const Pruebas = () => {
       <div className={styles.content}>
         <div className={styles.cardsGrid}>
           {evaluacionesOrdenadas.map((eva, index) => (
-            <div key={`${eva.id}-${index}`} className={styles.card}>
+            <div key={`${eva.id}-${index}`} className={`${styles.card} ${!eva.active ? styles.cardInactive : ''}`}>
               <Link href={`pruebas/prueba?idExamen=${eva.id}`} className={styles.cardLink}>
                 <div className={styles.cardHeader}>
                   <div className={styles.iconContainer}>
                     <PiFilesFill className={styles.icon} />
                   </div>
-                  <div className={styles.cardBadge}>
-                    <span className={styles.badgeText}>Evaluación</span>
+                  <div className={`${styles.cardBadge} ${eva.active ? styles.badgeActive : styles.badgeInactive}`}>
+                    <span className={styles.badgeText}>{eva.active ? 'Activa' : 'Finalizada'}</span>
                   </div>
                 </div>
                 <div className={styles.cardBody}>
                   <h3 className={styles.cardTitle}>{eva.nombre}</h3>
-                  {/* <p className={styles.cardDescription}>
-                    Haz clic para comenzar esta evaluación
-                  </p> */}
+                  <p className={styles.cardStatusText}>
+                    {eva.active ? 'Disponible para evaluar estudiantes' : 'Evaluación cerrada • Consulta de reportes'}
+                  </p>
                 </div>
                 <div className={styles.cardFooter}>
-                  <span className={styles.startButton}>Comenzar →</span>
+                  <span className={eva.active ? styles.startButton : styles.reportButtonCard}>
+                    {eva.active ? 'Comenzar →' : 'Ver Reporte →'}
+                  </span>
                 </div>
               </Link>
             </div>
