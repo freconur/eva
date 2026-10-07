@@ -1,0 +1,390 @@
+/* ── Docentes Asistido Spotlight Tour Styles ─────────────────── */
+
+.tourOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: auto;
+  overflow: hidden;
+  animation: fadeInOverlay 0.25s ease-out;
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Fondo oscuro cuando el paso no apunta a ningún elemento (modo centrado) */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 10000;
+  animation: fadeInOverlay 0.25s ease-out;
+}
+
+/* ── Foco Spotlight alrededor del botón o elemento objetivo ── */
+.spotlightHole {
+  position: fixed;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.72),
+              0 0 25px rgba(2, 132, 199, 0.55);
+  border: 2.5px solid #0284c7;
+  pointer-events: none;
+  z-index: 10001;
+  transition: top 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              left 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease;
+  animation: pulseSpotlight 2s infinite ease-in-out;
+}
+
+@keyframes pulseSpotlight {
+  0%, 100% {
+    box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.72),
+                0 0 20px rgba(2, 132, 199, 0.45);
+    border-color: #0284c7;
+  }
+  50% {
+    box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.72),
+                0 0 35px rgba(2, 132, 199, 0.85);
+    border-color: #38bdf8;
+  }
+}
+
+/* ── Insignia flotante con flecha indicadora ── */
+.pointerBadge {
+  position: absolute;
+  top: -36px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  animation: bouncePointer 1.5s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 10002;
+}
+
+@keyframes bouncePointer {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-5px);
+  }
+}
+
+/* ── Tarjeta flotante con explicaciones ── */
+.tooltipCard {
+  position: fixed;
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 1.15rem 1.25rem;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.4),
+              0 0 0 1px rgba(226, 232, 240, 0.95);
+  z-index: 10003;
+  transition: top 0.25s ease-out, left 0.25s ease-out;
+  animation: cardAppear 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+@keyframes cardAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── Cabecera de la tarjeta ── */
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.iconCircle {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.headerTitleBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.stepCounterBadge {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stepTitle {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  transition: all 0.15s ease;
+  margin-top: -2px;
+}
+
+.closeButton:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* ── Instrucción de ubicación ── */
+.stepInstruction {
+  font-size: 0.85rem;
+  color: #334155;
+  line-height: 1.45;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* ── Caja: ¿Qué hace este botón? ── */
+.whatItDoesBox {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.45rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.whatItDoesLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #475569;
+  letter-spacing: 0.04em;
+}
+
+.whatItDoesText {
+  font-size: 0.8rem;
+  color: #0f172a;
+  line-height: 1.35;
+  margin: 0;
+}
+
+/* ── Caja: ¿Qué hay de nuevo? ── */
+.whatIsNewBox {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 0.45rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.whatIsNewLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #166534;
+  letter-spacing: 0.04em;
+}
+
+.whatIsNewText {
+  font-size: 0.8rem;
+  color: #14532d;
+  line-height: 1.35;
+  margin: 0;
+}
+
+/* ── Puntos de progreso ── */
+.dotsRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0.15rem 0;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dotActive {
+  width: 22px;
+  border-radius: 9999px;
+}
+
+/* ── Pie con botones de navegación ── */
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.skipButton {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.4rem 0.65rem;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.skipButton:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.navGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.prevButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.prevButton:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.nextButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #ffffff;
+  border: none;
+  font-size: 0.825rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.48rem 1.15rem;
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+}
+
+.nextButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.18);
+}
+
+.finishButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  font-size: 0.825rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.48rem 1.15rem;
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35);
+  transition: all 0.2s ease;
+}
+
+.finishButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(16, 185, 129, 0.45);
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .tooltipCard {
+    width: calc(100vw - 24px);
+    padding: 1.15rem 1.15rem;
+    border-radius: 16px;
+  }
+
+  .pointerBadge {
+    font-size: 0.68rem;
+    padding: 0.2rem 0.55rem;
+    top: -30px;
+  }
+}

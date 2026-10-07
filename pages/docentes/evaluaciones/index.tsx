@@ -3,7 +3,7 @@ import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import primaria from "../../../assets/primaria.png";
 import secundaria from "../../../assets/secundaria.png";
 import inicial from "../../../assets/inicial.png";
@@ -24,13 +24,22 @@ import {
   RiCheckLine,
   RiTableLine,
   RiGridLine,
+  RiCompass3Line,
 } from "react-icons/ri";
 import { FaGraduationCap, FaChalkboardTeacher, FaChild } from "react-icons/fa";
+import { MdAutoAwesome } from "react-icons/md";
 import styles from "./evaluaciones.module.css";
 import { categoriaTransform, getNivelFromGrado } from "@/fuctions/categorias";
 import { getGradoTexto } from "@/fuctions/regiones";
 import { getMonthName, currentYear } from "@/fuctions/dates";
 import CustomFilterDropdown, { FilterOption } from "@/components/reportes/CustomFilterDropdown";
+import DocentesExploracionNiveles from "@/components/evaluaciones/DocentesExploracionNiveles";
+import DocentesAsistidoOnboardingModal, {
+  ASISTIDO_ONBOARDING_STORAGE_KEY,
+} from "@/components/evaluaciones/DocentesAsistidoOnboardingModal";
+import DocentesAsistidoSpotlightTour, {
+  ASISTIDO_SPOTLIGHT_STORAGE_KEY,
+} from "@/components/evaluaciones/DocentesAsistidoSpotlightTour";
 import { Evaluaciones as EvaluacionesType } from "@/features/types/types";
 import { doc, getDoc, getFirestore } from "firebase/firestore";
 import { app } from "@/firebase/firebase.config";
@@ -94,10 +103,13 @@ const getNivelBadgeInfo = (eva: EvaluacionesType) => {
 };
 
 const Evaluaciones = () => {
-  const { getEvaluaciones } = useAgregarEvaluaciones();
-  const { evaluaciones, currentUserData, loaderPages } = useGlobalContext();
+  const { getEvaluaciones, getCategories } = useAgregarEvaluaciones();
+  const { evaluaciones, currentUserData, loaderPages, categorias } = useGlobalContext();
 
   const [activeTab, setActiveTab] = useState<'rapido' | 'niveles'>('niveles');
+  // Siempre iniciar por defecto en 'clasica' (Vista Clásica tradicional)
+  const [nivelesViewMode, setNivelesViewMode] = useState<'flujo' | 'clasica'>('clasica');
+  const previousModeRef = useRef<'flujo' | 'clasica'>('clasica');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'activas' | 'inactivas'>('all');
   const [selectedYear, setSelectedYear] = useState<string>(String(currentYear));
@@ -107,9 +119,38 @@ const Evaluaciones = () => {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [localGrados, setLocalGrados] = useState<number[]>([]);
   const [localAsignaciones, setLocalAsignaciones] = useState<any[]>([]);
+  const [showAsistidoOnboarding, setShowAsistidoOnboarding] = useState<boolean>(false);
+  const [showSpotlightTour, setShowSpotlightTour] = useState<boolean>(false);
+  const [hasSeenAsistidoOnboarding, setHasSeenAsistidoOnboarding] = useState<boolean>(true);
+  const [asistidoTourKey, setAsistidoTourKey] = useState<number>(0);
+
+  const handleSetNivelesViewMode = (mode: 'flujo' | 'clasica') => {
+    setNivelesViewMode(mode);
+  };
+
+  const handleOpenSpotlightTour = () => {
+    previousModeRef.current = nivelesViewMode;
+    setAsistidoTourKey((prev) => prev + 1);
+    setShowSpotlightTour(true);
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const seenOnboarding = localStorage.getItem(ASISTIDO_ONBOARDING_STORAGE_KEY);
+      const seenSpotlight = localStorage.getItem(ASISTIDO_SPOTLIGHT_STORAGE_KEY);
+      if (!seenOnboarding && !seenSpotlight) {
+        setHasSeenAsistidoOnboarding(false);
+        // Abrir el tour que señala los botones directamente
+        handleOpenSpotlightTour();
+      } else {
+        setHasSeenAsistidoOnboarding(true);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     getEvaluaciones();
+    getCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData.dni]);
 
@@ -492,7 +533,15 @@ const Evaluaciones = () => {
             type="button"
             role="tab"
             aria-selected={activeTab === 'niveles'}
-            onClick={() => setActiveTab('niveles')}
+            onClick={() => {
+              setActiveTab('niveles');
+              if (typeof window !== 'undefined') {
+                const seenOnboarding = localStorage.getItem(ASISTIDO_ONBOARDING_STORAGE_KEY);
+                if (!seenOnboarding) {
+                  setShowAsistidoOnboarding(true);
+                }
+              }
+            }}
             className={`${styles.tabButton} ${activeTab === 'niveles' ? styles.tabButtonActive : ''}`}
           >
             <RiBookOpenLine className={styles.tabIcon} />
@@ -974,86 +1023,182 @@ const Evaluaciones = () => {
           )}
         </section>
       ) : (
-        /* Navegación Tradicional por Niveles Educativos */
-        <div className={styles.gridContainer}>
-          {educationLevels
-            .filter((level) => {
-              // Si currentUserData tiene nivelDeInstitucion, filtrar por esos niveles
-              if (Array.isArray(currentUserData?.nivelDeInstitucion) && currentUserData.nivelDeInstitucion.length > 0) {
-                return currentUserData.nivelDeInstitucion.map(Number).includes(level.nivel);
-              }
-              // Fallback: nivel individual
-              if (currentUserData?.nivel !== undefined && currentUserData?.nivel !== null) {
-                return level.nivel === Number(currentUserData.nivel);
-              }
-              // Fallback: inferir niveles a partir de los grados asignados al docente
-              if (teacherNiveles.length > 0) {
-                return teacherNiveles.includes(level.nivel);
-              }
-              return true;
-            })
-            .map((level) => {
-              const IconComponent = level.icon;
-              return (
-                <div key={level.id} className={`${styles.educationLevel} ${styles[level.id]}`}>
-                  <div className={styles.levelHeader}>
-                    <div className={styles.levelInfo}>
-                      <div className={styles.levelIcon}>
-                        <IconComponent />
-                      </div>
-                      <div>
-                        <h2 className={styles.levelTitle}>{level.title}</h2>
-                        <p className={styles.levelDescription}>{level.description}</p>
-                      </div>
-                    </div>
-                    <div className={styles.levelImage}>
-                      <Image
-                        alt={`${level.title} illustration`}
-                        src={level.image}
-                        width={120}
-                        height={80}
-                        style={{ objectFit: 'contain' }}
-                      />
-                    </div>
-                  </div>
+        /* Explorar por Niveles Educativos (Modo Asistido o Vista Clásica) */
+        <div className={styles.nivelesSection}>
+          <div className={styles.nivelesHeaderRow}>
+            <div className={styles.nivelesHeaderInfo}>
+              <h2 className={styles.nivelesSectionTitle}>Niveles y Grados Educativos</h2>
+              <p className={styles.nivelesSectionSubtitle}>
+                {nivelesViewMode === 'flujo'
+                  ? 'Modo Asistido: navega en una sola pantalla: nivel → grado → área curricular para calificar evaluaciones activas.'
+                  : 'Vista Clásica: explora la estructura curricular general por niveles educativos tradicionales.'}
+              </p>
+            </div>
+            <div className={styles.nivelesHeaderActions}>
+              <button
+                type="button"
+                data-tour="tour-btn-como-funciona"
+                onClick={handleOpenSpotlightTour}
+                className={styles.onboardingHeaderButton}
+                title="Conoce cómo funciona el Modo Asistido y la Vista Clásica"
+              >
+                <MdAutoAwesome className={styles.onboardingHeaderIcon} />
+                <span>¿Cómo funciona?</span>
+                {!hasSeenAsistidoOnboarding && (
+                  <span className={styles.onboardingHeaderBadge}>Nuevo</span>
+                )}
+              </button>
 
-                  <div className={styles.levelsGrid}>
-                    {level.levels.map((subLevel) => (
-                      <Link
-                        key={subLevel.number}
-                        href={level.href}
-                        className={styles.levelCard}
-                      >
-                        <div className={styles.levelNumber}>
-                          {subLevel.number}
-                        </div>
+              <div className={styles.viewToggleGroup} role="group" aria-label="Modo de visualización de niveles">
+                <button
+                  type="button"
+                  data-tour="tour-btn-asistido"
+                  onClick={() => handleSetNivelesViewMode('flujo')}
+                  className={`${styles.viewToggleBtn} ${nivelesViewMode === 'flujo' ? styles.viewToggleBtnActive : ''}`}
+                  title="Modo Asistido (Navega paso a paso en la misma pantalla: nivel → grado → área → evaluaciones)"
+                >
+                  <RiCompass3Line />
+                  <span>Asistido</span>
+                </button>
+                <button
+                  type="button"
+                  data-tour="tour-btn-clasica"
+                  onClick={() => handleSetNivelesViewMode('clasica')}
+                  className={`${styles.viewToggleBtn} ${nivelesViewMode === 'clasica' ? styles.viewToggleBtnActive : ''}`}
+                  title="Vista Clásica (Tarjetas por nivel educativo de siempre)"
+                >
+                  <RiGridLine />
+                  <span>Vista Clásica</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
-                        <div className={styles.cardContent}>
-                          <h3 className={styles.cardTitle}>
-                            {subLevel.title}
-                          </h3>
-                          <p className={styles.cardDescription}>
-                            {subLevel.description}
-                          </p>
-
-                          <div className={styles.cardFooter}>
-                            <div className={styles.cardStatus}>
-                              <div className={styles.statusDot}></div>
-                              <span>Disponible</span>
-                            </div>
-                            <div className={styles.cardArrow}>
-                              <RiArrowRightLine />
-                            </div>
+          {nivelesViewMode === 'flujo' ? (
+            <div data-tour="tour-asistido-contenedor">
+              <DocentesExploracionNiveles
+                key={asistidoTourKey}
+                evaluaciones={studentEvaluaciones}
+                currentUserData={currentUserData}
+                teacherGrados={teacherGrados}
+                teacherNiveles={teacherNiveles}
+                categorias={categorias}
+              />
+            </div>
+          ) : (
+            /* Navegación Tradicional por Niveles Educativos */
+            <div className={styles.gridContainer}>
+              {educationLevels
+                .filter((level) => {
+                  // Si currentUserData tiene nivelDeInstitucion, filtrar por esos niveles
+                  if (Array.isArray(currentUserData?.nivelDeInstitucion) && currentUserData.nivelDeInstitucion.length > 0) {
+                    return currentUserData.nivelDeInstitucion.map(Number).includes(level.nivel);
+                  }
+                  // Fallback: nivel individual
+                  if (currentUserData?.nivel !== undefined && currentUserData?.nivel !== null) {
+                    return level.nivel === Number(currentUserData.nivel);
+                  }
+                  // Fallback: inferir niveles a partir de los grados asignados al docente
+                  if (teacherNiveles.length > 0) {
+                    return teacherNiveles.includes(level.nivel);
+                  }
+                  return true;
+                })
+                .map((level) => {
+                  const IconComponent = level.icon;
+                  return (
+                    <div key={level.id} className={`${styles.educationLevel} ${styles[level.id]}`}>
+                      <div className={styles.levelHeader}>
+                        <div className={styles.levelInfo}>
+                          <div className={styles.levelIcon}>
+                            <IconComponent />
+                          </div>
+                          <div>
+                            <h2 className={styles.levelTitle}>{level.title}</h2>
+                            <p className={styles.levelDescription}>{level.description}</p>
                           </div>
                         </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+                        <div className={styles.levelImage}>
+                          <Image
+                            alt={`${level.title} illustration`}
+                            src={level.image}
+                            width={120}
+                            height={80}
+                            style={{ objectFit: 'contain' }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className={styles.levelsGrid}>
+                        {level.levels.map((subLevel) => (
+                          <Link
+                            key={subLevel.number}
+                            href={level.href}
+                            className={styles.levelCard}
+                          >
+                            <div className={styles.levelNumber}>
+                              {subLevel.number}
+                            </div>
+
+                            <div className={styles.cardContent}>
+                              <h3 className={styles.cardTitle}>
+                                {subLevel.title}
+                              </h3>
+                              <p className={styles.cardDescription}>
+                                {subLevel.description}
+                              </p>
+
+                              <div className={styles.cardFooter}>
+                                <div className={styles.cardStatus}>
+                                  <div className={styles.statusDot}></div>
+                                  <span>Disponible</span>
+                                </div>
+                                <div className={styles.cardArrow}>
+                                  <RiArrowRightLine />
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
         </div>
       )}
+
+      {/* Modal interactivo de Onboarding para Modo Asistido y Vista Clásica */}
+      <DocentesAsistidoOnboardingModal
+        isOpen={showAsistidoOnboarding}
+        onClose={() => {
+          setShowAsistidoOnboarding(false);
+          setHasSeenAsistidoOnboarding(true);
+        }}
+        onSwitchToAsistido={() => {
+          handleSetNivelesViewMode('flujo');
+        }}
+        onSwitchToClasica={() => {
+          handleSetNivelesViewMode('clasica');
+        }}
+        onStartSpotlightTour={() => {
+          setShowAsistidoOnboarding(false);
+          handleOpenSpotlightTour();
+        }}
+      />
+
+      {/* Tour Guiado Spotlight que señala los botones reales en pantalla */}
+      <DocentesAsistidoSpotlightTour
+        isOpen={showSpotlightTour}
+        onClose={() => {
+          setShowSpotlightTour(false);
+          setHasSeenAsistidoOnboarding(true);
+          setNivelesViewMode(previousModeRef.current || 'clasica');
+        }}
+        nivelesViewMode={nivelesViewMode}
+        setNivelesViewMode={handleSetNivelesViewMode}
+      />
     </div>
   );
 };

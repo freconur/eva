@@ -1,0 +1,1063 @@
+/* ==========================================================================
+   EXPLORACIÓN PROGRESIVA POR NIVELES (SPA DRILLDOWN EN EL MISMO COMPONENTE)
+   ========================================================================== */
+
+.drilldownContainer {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-sizing: border-box;
+}
+
+/* ── Barra de Navegación / Breadcrumb Dinámico ────────── */
+.breadcrumbNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 0.75rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+  flex-wrap: wrap;
+}
+
+.breadcrumbLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.backButton:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #94a3b8;
+  transform: translateX(-2px);
+}
+
+.breadcrumbTrail {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+
+.crumbItem {
+  color: #64748b;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.crumbItem:hover {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.crumbSeparator {
+  color: #cbd5e1;
+  font-size: 0.8rem;
+}
+
+.crumbActive {
+  color: #0f172a;
+  font-weight: 700;
+  cursor: default;
+}
+
+.stepIndicator {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #0284c7;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+/* ── Encabezado de Sección por Paso ─────────────────────── */
+.stepHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.stepTitleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stepTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.stepIconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.stepTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.stepSubtitle {
+  font-size: 0.88rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.stepBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badgePrimaria {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.badgeSecundaria {
+  background: #ede9fe;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
+
+.badgeInicial {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+/* ==========================================================================
+   PASO 1: TARJETAS DE NIVELES EDUCATIVOS Y SUB-NIVELES
+   ========================================================================== */
+
+.levelsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+}
+
+.educationLevelCard {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  padding: 1.75rem 2rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02);
+  transition: all 0.2s ease;
+}
+
+.educationLevelCard:hover {
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.06);
+  border-color: #cbd5e1;
+}
+
+.levelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1.5rem;
+}
+
+.levelInfo {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.levelIconBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  color: #ffffff;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.levelIconPrimaria {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);
+}
+
+.levelIconSecundaria {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.25);
+}
+
+.levelIconInicial {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25);
+}
+
+.levelTitleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.levelName {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.levelDesc {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.subLevelsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1.15rem;
+}
+
+.subLevelCard {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.subLevelCard:hover {
+  background: #ffffff;
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -2px rgba(15, 23, 42, 0.06);
+}
+
+.subLevelTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.subLevelNumberBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.subLevelCard:hover .subLevelNumberBadge {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+}
+
+.activeCountBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.activeCountBadgeZero {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.subLevelTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.subLevelDescription {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.subLevelFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #2563eb;
+  font-size: 0.78rem;
+  font-weight: 600;
+  gap: 0.3rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.subLevelCard:hover .subLevelFooter {
+  color: #1d4ed8;
+}
+
+/* ==========================================================================
+   PASO 2: TARJETAS DE GRADOS ESCOLARES
+   ========================================================================== */
+
+.gradosGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.gradoCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.35rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  text-align: left;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.gradoCard:hover {
+  border-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -3px rgba(15, 23, 42, 0.08);
+}
+
+.gradoCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.gradoIconBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.gradoCard:hover .gradoIconBox {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.gradoAssignedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.gradoBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.gradoTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.gradoSubtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.gradoFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.gradoActionText {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.gradoCard:hover .gradoActionText {
+  color: #1d4ed8;
+}
+
+/* ==========================================================================
+   PASO 3: TARJETAS DE CATEGORÍAS / ÁREAS CURRICULARES
+   ========================================================================== */
+
+.categoriasGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.categoriaCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.35rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  text-align: left;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.categoriaCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -3px rgba(15, 23, 42, 0.08);
+}
+
+.categoriaHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.categoriaIconBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 1.45rem;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.categoriaBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.categoriaTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.categoriaDescription {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.categoriaFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.categoriaActionBtn {
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* ==========================================================================
+   PASO 4: EVALUACIONES ACTIVAS
+   ========================================================================== */
+
+.evaluacionesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.evaluacionesToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+}
+
+.evaluacionesCountInfo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.activeStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  display: inline-block;
+}
+
+.viewToggleGroup {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 2px;
+  border: 1px solid #e2e8f0;
+}
+
+.viewToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.viewToggleBtnActive {
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+/* Grid de Cards de Evaluaciones */
+.evaluacionesCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.evalCard {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.evalCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -3px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
+}
+
+.evalCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.evalIconBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.evalCardBadges {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.periodBadge {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #475569;
+  background: #f8fafc;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.statusActive {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.statusInactive {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.evalCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.evalCardTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.evalCardStatusText {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.evalCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.btnEvaluar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 0.45rem 0.95rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.15);
+  transition: all 0.15s ease;
+}
+
+.btnEvaluar:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+}
+
+.btnReporte {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #ffffff;
+  color: #0284c7;
+  border: 1.5px solid #bae6fd;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btnReporte:hover {
+  background: #f0f9ff;
+  border-color: #0284c7;
+  transform: translateY(-1px);
+}
+
+/* Tabla de Evaluaciones */
+.evaluacionesTableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.825rem;
+}
+
+.table th {
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table tr:hover td {
+  background: #fcfcfd;
+}
+
+.tableActionsCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+/* ── Estado Vacío ────────────────────────────────────────── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+  background: #ffffff;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 0.5rem;
+}
+
+.emptyStateIcon {
+  font-size: 2.75rem;
+  color: #94a3b8;
+  margin-bottom: 0.25rem;
+}
+
+.emptyStateTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.emptyStateText {
+  font-size: 0.85rem;
+  color: #64748b;
+  max-width: 440px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.emptyStateActionRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.emptyStateBtn {
+  padding: 0.5rem 1rem;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.emptyStateBtn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .levelHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .breadcrumbNav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .breadcrumbLeft {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .stepTitle {
+    font-size: 1.25rem;
+  }
+}
+
+/* ==========================================================================
+   ANIMACIONES DE TRANSICIÓN ENTRE PASOS Y ENTRADA DE ELEMENTOS
+   ========================================================================== */
+
+.stepContent {
+  width: 100%;
+  will-change: transform, opacity;
+}
+
+.slideForward {
+  animation: stepSlideForward 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.slideBackward {
+  animation: stepSlideBackward 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes stepSlideForward {
+  0% {
+    opacity: 0;
+    transform: translateX(18px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes stepSlideBackward {
+  0% {
+    opacity: 0;
+    transform: translateX(-18px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Stagger suave de tarjetas al aparecer */
+.subLevelsGrid > *,
+.gradosGrid > *,
+.categoriasGrid > *,
+.evaluacionesCardsGrid > * {
+  animation: cardFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.subLevelsGrid > *:nth-child(1),
+.gradosGrid > *:nth-child(1),
+.categoriasGrid > *:nth-child(1),
+.evaluacionesCardsGrid > *:nth-child(1) {
+  animation-delay: 0.02s;
+}
+
+.subLevelsGrid > *:nth-child(2),
+.gradosGrid > *:nth-child(2),
+.categoriasGrid > *:nth-child(2),
+.evaluacionesCardsGrid > *:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.subLevelsGrid > *:nth-child(3),
+.gradosGrid > *:nth-child(3),
+.categoriasGrid > *:nth-child(3),
+.evaluacionesCardsGrid > *:nth-child(3) {
+  animation-delay: 0.08s;
+}
+
+.subLevelsGrid > *:nth-child(4),
+.gradosGrid > *:nth-child(4),
+.categoriasGrid > *:nth-child(4),
+.evaluacionesCardsGrid > *:nth-child(4) {
+  animation-delay: 0.11s;
+}
+
+.subLevelsGrid > *:nth-child(5),
+.gradosGrid > *:nth-child(5),
+.categoriasGrid > *:nth-child(5),
+.evaluacionesCardsGrid > *:nth-child(5) {
+  animation-delay: 0.14s;
+}
+
+.subLevelsGrid > *:nth-child(6),
+.gradosGrid > *:nth-child(6),
+.categoriasGrid > *:nth-child(6),
+.evaluacionesCardsGrid > *:nth-child(6) {
+  animation-delay: 0.17s;
+}
+
+@keyframes cardFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepContent,
+  .slideForward,
+  .slideBackward,
+  .subLevelsGrid > *,
+  .gradosGrid > *,
+  .categoriasGrid > *,
+  .evaluacionesCardsGrid > * {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
