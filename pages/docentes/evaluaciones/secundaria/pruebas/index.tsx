@@ -62,31 +62,36 @@ const Pruebas = () => {
       <div className={styles.content}>
         {evaluacionesOrdenadas.length > 0 ? (
           <div className={styles.cardsGrid}>
-            {evaluacionesOrdenadas.map((eva, index) => (
-              <div key={`${eva.id}-${index}`} className={styles.card}>
-                <Link href={`pruebas/prueba?idExamen=${eva.id}`} className={styles.cardLink}>
-                  <div className={styles.cardHeader}>
-                    <div className={styles.iconContainer}>
-                      <PiFilesFill className={styles.icon} />
+            {evaluacionesOrdenadas.map((eva, index) => {
+              const isCerrada = eva.cerrada === true;
+              return (
+                <div key={`${eva.id}-${index}`} className={styles.card}>
+                  <Link href={`pruebas/prueba?idExamen=${eva.id}`} className={styles.cardLink}>
+                    <div className={styles.cardHeader}>
+                      <div className={styles.iconContainer}>
+                        <PiFilesFill className={styles.icon} />
+                      </div>
+                      <div className={`${styles.cardBadge} ${isCerrada ? styles.badgeCerrada : styles.badgeActive}`}>
+                        <span className={styles.badgeText}>{isCerrada ? 'Solo Lectura' : 'Activa'}</span>
+                      </div>
                     </div>
-                    <div className={`${styles.cardBadge} ${styles.badgeActive}`}>
-                      <span className={styles.badgeText}>Activa</span>
+                    <div className={styles.cardBody}>
+                      <h3 className={styles.cardTitle}>{eva.nombre}</h3>
+                      <p className={styles.cardStatusText}>
+                        {isCerrada
+                          ? 'Evaluación en modo solo lectura (registro finalizado)'
+                          : 'Disponible para evaluar estudiantes'}
+                      </p>
                     </div>
-                  </div>
-                  <div className={styles.cardBody}>
-                    <h3 className={styles.cardTitle}>{eva.nombre}</h3>
-                    <p className={styles.cardStatusText}>
-                      Disponible para evaluar estudiantes
-                    </p>
-                  </div>
-                  <div className={styles.cardFooter}>
-                    <span className={styles.startButton}>
-                      Comenzar →
-                    </span>
-                  </div>
-                </Link>
-              </div>
-            ))}
+                    <div className={styles.cardFooter}>
+                      <span className={styles.startButton}>
+                        {isCerrada ? 'Ver Resultados →' : 'Comenzar →'}
+                      </span>
+                    </div>
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className={styles.emptyState}>

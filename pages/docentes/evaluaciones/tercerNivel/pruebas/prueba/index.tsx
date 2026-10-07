@@ -100,7 +100,7 @@ const Evaluacion = () => {
                   <div>
                     <h1 className={styles.title}>{evaluacion.nombre}</h1>
                     <div style={{ marginTop: '0.25rem' }}>
-                      {evaluacion.active ? (
+                      {evaluacion.active && !evaluacion.cerrada ? (
                         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#16a34a', backgroundColor: '#dcfce7', padding: '0.2rem 0.6rem', borderRadius: '9999px' }}>
                           ● Evaluación Activa
                         </span>
@@ -112,7 +112,7 @@ const Evaluacion = () => {
                     </div>
                   </div>
                   <div className={styles.actions}>
-                    {evaluacion.active ? (
+                    {evaluacion.active && !evaluacion.cerrada ? (
                       <Link
                         className={styles.reportButton}
                         style={{ backgroundColor: 'var(--primary-color)' }}
@@ -134,7 +134,7 @@ const Evaluacion = () => {
                     <Link
                       href={`prueba/reporte?idExamen=${route.query.idExamen}`}
                       className={styles.reportButton}
-                      style={{ backgroundColor: !evaluacion.active ? 'var(--primary-color, #2563eb)' : undefined }}
+                      style={{ backgroundColor: (!evaluacion.active || evaluacion.cerrada) ? 'var(--primary-color, #2563eb)' : undefined }}
                     >
                       <RiFileList3Line size={18} />
                       Reporte
@@ -142,7 +142,7 @@ const Evaluacion = () => {
                   </div>
                 </div>
 
-                {!evaluacion.active && (
+                {(!evaluacion.active || evaluacion.cerrada) && (
                   <div style={{
                     backgroundColor: '#fffbeb',
                     border: '1px solid #fde68a',

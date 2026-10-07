@@ -66,7 +66,7 @@ const Evaluacion = () => {
                 <div>
                   <h1 className='text-2xl text-colorSexto font-semibold uppercase'>{evaluacion.nombre}</h1>
                   <div className='mt-1'>
-                    {evaluacion.active ? (
+                    {evaluacion.active && !evaluacion.cerrada ? (
                       <span className='inline-block text-xs font-semibold text-green-700 bg-green-100 px-3 py-1 rounded-full'>
                         ● Evaluación Activa
                       </span>
@@ -78,7 +78,7 @@ const Evaluacion = () => {
                   </div>
                 </div>
                 <div className='flex gap-3 justify-end items-center'>
-                  {evaluacion.active ? (
+                  {evaluacion.active && !evaluacion.cerrada ? (
                     <Link className='border-iconColor border-[1px] p-3 rounded-md shadow text-iconColor hover:bg-iconColor hover:text-white duration-300 hover:duration-300 capitalize font-semibold flex items-center gap-2' href={`prueba/evaluar-estudiante?idExamen=${route.query.idExamen}`}>
                       <RiUserStarLine size={18} />
                       evaluar estudiante
@@ -96,7 +96,7 @@ const Evaluacion = () => {
                 </div>
               </div>
 
-              {!evaluacion.active && (
+              {(!evaluacion.active || evaluacion.cerrada) && (
                 <div className='bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-center gap-3 text-amber-800 text-sm'>
                   <RiErrorWarningLine size={24} className='flex-shrink-0 text-amber-600' />
                   <div>

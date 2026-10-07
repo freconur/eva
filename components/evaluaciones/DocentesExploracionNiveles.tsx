@@ -15,6 +15,7 @@ import {
   RiTableLine,
   RiGridLine,
   RiCheckLine,
+  RiLockLine,
 } from 'react-icons/ri';
 import { FaGraduationCap, FaChalkboardTeacher, FaChild, FaStar } from 'react-icons/fa';
 import { MdSchool } from 'react-icons/md';
@@ -778,6 +779,8 @@ export const DocentesExploracionNiveles: React.FC<DocentesExploracionNivelesProp
                       ? getMonthName(Number(eva.mesDelExamen))
                       : '';
 
+                  const isCerrada = eva.cerrada === true;
+
                   return (
                     <article key={`${eva.id}-${index}`} className={styles.evalCard}>
                       <div className={styles.evalCardHeader}>
@@ -791,16 +794,24 @@ export const DocentesExploracionNiveles: React.FC<DocentesExploracionNivelesProp
                               {year}
                             </span>
                           )}
-                          <span className={`${styles.statusBadge} ${styles.statusActive}`}>
-                            Activa
-                          </span>
+                          {isCerrada ? (
+                            <span className={styles.statusBadge} style={{ color: '#d97706', backgroundColor: '#fef3c7', border: '1px solid #fde68a' }}>
+                              <RiLockLine style={{ marginRight: '3px' }} /> Solo Lectura
+                            </span>
+                          ) : (
+                            <span className={`${styles.statusBadge} ${styles.statusActive}`}>
+                              Activa
+                            </span>
+                          )}
                         </div>
                       </div>
 
                       <div className={styles.evalCardBody}>
                         <h3 className={styles.evalCardTitle}>{eva.nombre}</h3>
                         <p className={styles.evalCardStatusText}>
-                          Disponible para calificar estudiantes
+                          {isCerrada
+                            ? 'Evaluación en modo solo lectura (registro finalizado)'
+                            : 'Disponible para calificar estudiantes'}
                         </p>
                       </div>
 
@@ -814,14 +825,25 @@ export const DocentesExploracionNiveles: React.FC<DocentesExploracionNivelesProp
                           <span>Reporte</span>
                         </Link>
 
-                        <Link
-                          href={`${basePath}?idExamen=${eva.id}&grado=${eva.grado}&categoria=${eva.categoria}`}
-                          className={styles.btnEvaluar}
-                          title="Comenzar a calificar estudiantes"
-                        >
-                          <RiEditBoxLine />
-                          <span>Comenzar →</span>
-                        </Link>
+                        {!isCerrada ? (
+                          <Link
+                            href={`${basePath}?idExamen=${eva.id}&grado=${eva.grado}&categoria=${eva.categoria}`}
+                            className={styles.btnEvaluar}
+                            title="Comenzar a calificar estudiantes"
+                          >
+                            <RiEditBoxLine />
+                            <span>Comenzar →</span>
+                          </Link>
+                        ) : (
+                          <span
+                            className={styles.btnEvaluar}
+                            style={{ backgroundColor: '#94a3b8', cursor: 'not-allowed', opacity: 0.8 }}
+                            title="Evaluación cerrada para nuevos registros"
+                          >
+                            <RiLockLine />
+                            <span>Cerrada</span>
+                          </span>
+                        )}
                       </div>
                     </article>
                   );
@@ -847,6 +869,7 @@ export const DocentesExploracionNiveles: React.FC<DocentesExploracionNivelesProp
                         eva.mesDelExamen !== undefined && eva.mesDelExamen !== null
                           ? getMonthName(Number(eva.mesDelExamen))
                           : '';
+                      const isCerrada = eva.cerrada === true;
 
                       return (
                         <tr key={`${eva.id}-${index}`}>
@@ -860,9 +883,15 @@ export const DocentesExploracionNiveles: React.FC<DocentesExploracionNivelesProp
                             </span>
                           </td>
                           <td>
-                            <span className={`${styles.statusBadge} ${styles.statusActive}`}>
-                              Activa
-                            </span>
+                            {isCerrada ? (
+                              <span className={styles.statusBadge} style={{ color: '#d97706', backgroundColor: '#fef3c7', border: '1px solid #fde68a' }}>
+                                <RiLockLine style={{ marginRight: '3px' }} /> Solo Lectura
+                              </span>
+                            ) : (
+                              <span className={`${styles.statusBadge} ${styles.statusActive}`}>
+                                Activa
+                              </span>
+                            )}
                           </td>
                           <td>
                             <div className={styles.tableActionsCell}>
@@ -873,13 +902,24 @@ export const DocentesExploracionNiveles: React.FC<DocentesExploracionNivelesProp
                                 <RiFileChartLine />
                                 <span>Reporte</span>
                               </Link>
-                              <Link
-                                href={`${basePath}?idExamen=${eva.id}&grado=${eva.grado}&categoria=${eva.categoria}`}
-                                className={styles.btnEvaluar}
-                              >
-                                <RiEditBoxLine />
-                                <span>Evaluar</span>
-                              </Link>
+                              {!isCerrada ? (
+                                <Link
+                                  href={`${basePath}?idExamen=${eva.id}&grado=${eva.grado}&categoria=${eva.categoria}`}
+                                  className={styles.btnEvaluar}
+                                >
+                                  <RiEditBoxLine />
+                                  <span>Evaluar</span>
+                                </Link>
+                              ) : (
+                                <span
+                                  className={styles.btnEvaluar}
+                                  style={{ backgroundColor: '#94a3b8', cursor: 'not-allowed', opacity: 0.8 }}
+                                  title="Evaluación cerrada para nuevos registros"
+                                >
+                                  <RiLockLine />
+                                  <span>Cerrada</span>
+                                </span>
+                              )}
                             </div>
                           </td>
                         </tr>

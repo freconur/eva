@@ -770,6 +770,19 @@
   box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.08);
 }
 
+.cerradaIcon {
+  color: #d97706 !important;
+  background: rgba(217, 119, 6, 0.08) !important;
+  border: 1px solid rgba(217, 119, 6, 0.22) !important;
+}
+
+.cerradaIcon:hover {
+  background: rgba(217, 119, 6, 0.18) !important;
+  border-color: rgba(217, 119, 6, 0.35) !important;
+  color: #b45309 !important;
+  box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.12);
+}
+
 .inactiveIcon {
   color: #6b7280 !important;
   background: rgba(107, 114, 128, 0.06) !important;
@@ -781,6 +794,118 @@
   border-color: rgba(107, 114, 128, 0.25) !important;
   color: #4b5563 !important;
   box-shadow: 0 4px 6px -1px rgba(107, 114, 128, 0.08);
+}
+
+/* ── Menú flotante de selección de estado (Activa / Cerrada / Inactiva) ── */
+.estadoDropdownMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1050;
+  min-width: 275px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+  padding: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.estadoDropdownHeader {
+  padding: 0.35rem 0.65rem 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 0.2rem;
+}
+
+.estadoDropdownOption {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.estadoDropdownOption:hover {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.estadoOptionIconBox {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.estadoOptionTextBox {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.estadoOptionTitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.25;
+}
+
+.estadoOptionDesc {
+  font-size: 0.72rem;
+  color: #64748b;
+  line-height: 1.25;
+  margin-top: 0.1rem;
+}
+
+.estadoOptionActive {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.estadoOptionCerrada {
+  background: rgba(217, 119, 6, 0.05);
+  border-color: rgba(217, 119, 6, 0.25);
+}
+
+.estadoOptionInactiva {
+  background: rgba(107, 114, 128, 0.05);
+  border-color: rgba(107, 114, 128, 0.25);
+}
+
+.estadoCheckIcon {
+  font-size: 1.1rem;
+  color: #2563eb;
+  flex-shrink: 0;
 }
 
 .tableCell .reportLink {

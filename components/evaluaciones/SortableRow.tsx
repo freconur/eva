@@ -1,6 +1,16 @@
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { MdDeleteForever, MdEditSquare, MdVisibility, MdVisibilityOff, MdDragIndicator, MdAnalytics, MdContentCopy } from 'react-icons/md'
+import {
+  MdDeleteForever,
+  MdEditSquare,
+  MdVisibility,
+  MdVisibilityOff,
+  MdDragIndicator,
+  MdAnalytics,
+  MdContentCopy,
+  MdLock,
+  MdCheck,
+} from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -30,6 +40,7 @@ export interface SortableRowProps {
   handleEditMonth: (eva: any) => void
   handleCopyId: (id: string) => void
   toggleActiveStatus: (eva: any) => Promise<void>
+  onChangeEstado?: (eva: any, nuevoEstado: 'activa' | 'cerrada' | 'inactiva') => Promise<void>
   handleShowInputUpdate: () => void
   setNameEva: (name: string) => void
   setIdEva: (id: string) => void
@@ -60,6 +71,7 @@ const SortableRow = ({
   handleEditMonth,
   handleCopyId,
   toggleActiveStatus,
+  onChangeEstado,
   handleShowInputUpdate,
   setNameEva,
   setIdEva,
@@ -73,6 +85,29 @@ const SortableRow = ({
   onToggleSelect,
   searchQuery,
 }: SortableRowProps) => {
+  const [showEstadoMenu, setShowEstadoMenu] = useState(false)
+  const estadoMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showEstadoMenu) return
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (estadoMenuRef.current && !estadoMenuRef.current.contains(e.target as Node)) {
+        setShowEstadoMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [showEstadoMenu])
+
+  const handleSelectEstado = async (nuevoEstado: 'activa' | 'cerrada' | 'inactiva') => {
+    setShowEstadoMenu(false)
+    if (onChangeEstado) {
+      await onChangeEstado(eva, nuevoEstado)
+    } else {
+      await toggleActiveStatus(eva)
+    }
+  }
+
   const {
     attributes,
     listeners,
@@ -93,6 +128,9 @@ const SortableRow = ({
   }
 
   const isSearchActive = Boolean(searchQuery && searchQuery.trim())
+  const isActiva = Boolean(eva.active && !eva.cerrada)
+  const isCerrada = Boolean(eva.active && eva.cerrada)
+  const isInactiva = Boolean(!eva.active)
 
   return (
     <tr
@@ -245,21 +283,96 @@ const SortableRow = ({
         </td>
       )}
       {visibleColumns.estado && (
-        <td>
+        <td style={{ position: 'relative' }}>
           {!puedeAcceder ? (
             <span className={styles.inactiveIcon} style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🔒 Sin acceso</span>
-          ) : eva.active ? (
-            <MdVisibility
-              onClick={() => toggleActiveStatus(eva)}
-              className={`${styles.actionIcon} ${styles.activeIcon}`}
-              title="Evaluación activa - Click para desactivar"
-            />
           ) : (
-            <MdVisibilityOff
-              onClick={() => toggleActiveStatus(eva)}
-              className={`${styles.actionIcon} ${styles.inactiveIcon}`}
-              title="Evaluación inactiva - Click para activar"
-            />
+            <div ref={estadoMenuRef} style={{ display: 'inline-block', position: 'relative' }}>
+              {isActiva ? (
+                <button
+                  type="button"
+                  onClick={() => setShowEstadoMenu((prev) => !prev)}
+                  className={`${styles.actionIcon} ${styles.activeIcon}`}
+                  title="Evaluación Activa (Abierta para calificar) - Clic para cambiar estado"
+                  aria-label="Estado activa. Clic para cambiar estado."
+                >
+                  <MdVisibility />
+                </button>
+              ) : isCerrada ? (
+                <button
+                  type="button"
+                  onClick={() => setShowEstadoMenu((prev) => !prev)}
+                  className={`${styles.actionIcon} ${styles.cerradaIcon}`}
+                  title="Evaluación Cerrada (Solo lectura, visible para docentes) - Clic para cambiar estado"
+                  aria-label="Estado cerrada solo lectura. Clic para cambiar estado."
+                >
+                  <MdLock />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowEstadoMenu((prev) => !prev)}
+                  className={`${styles.actionIcon} ${styles.inactiveIcon}`}
+                  title="Evaluación Inactiva (Oculta para docentes) - Clic para cambiar estado"
+                  aria-label="Estado inactiva. Clic para cambiar estado."
+                >
+                  <MdVisibilityOff />
+                </button>
+              )}
+
+              {showEstadoMenu && (
+                <div className={styles.estadoDropdownMenu}>
+                  <div className={styles.estadoDropdownHeader}>
+                    <span>Estado para Docentes</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className={`${styles.estadoDropdownOption} ${isActiva ? styles.estadoOptionActive : ''}`}
+                    onClick={() => handleSelectEstado('activa')}
+                  >
+                    <div className={styles.estadoOptionIconBox} style={{ color: '#10b981', background: 'rgba(16, 185, 129, 0.1)' }}>
+                      <MdVisibility />
+                    </div>
+                    <div className={styles.estadoOptionTextBox}>
+                      <span className={styles.estadoOptionTitle}>Activa (Abierta)</span>
+                      <span className={styles.estadoOptionDesc}>Visible y permite calificar estudiantes</span>
+                    </div>
+                    {isActiva && <MdCheck className={styles.estadoCheckIcon} />}
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`${styles.estadoDropdownOption} ${isCerrada ? styles.estadoOptionCerrada : ''}`}
+                    onClick={() => handleSelectEstado('cerrada')}
+                  >
+                    <div className={styles.estadoOptionIconBox} style={{ color: '#d97706', background: 'rgba(217, 119, 6, 0.1)' }}>
+                      <MdLock />
+                    </div>
+                    <div className={styles.estadoOptionTextBox}>
+                      <span className={styles.estadoOptionTitle}>Cerrada (Solo lectura)</span>
+                      <span className={styles.estadoOptionDesc}>Visible pero bloqueada para ingresar datos</span>
+                    </div>
+                    {isCerrada && <MdCheck className={styles.estadoCheckIcon} />}
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`${styles.estadoDropdownOption} ${isInactiva ? styles.estadoOptionInactiva : ''}`}
+                    onClick={() => handleSelectEstado('inactiva')}
+                  >
+                    <div className={styles.estadoOptionIconBox} style={{ color: '#6b7280', background: 'rgba(107, 114, 128, 0.1)' }}>
+                      <MdVisibilityOff />
+                    </div>
+                    <div className={styles.estadoOptionTextBox}>
+                      <span className={styles.estadoOptionTitle}>Inactiva (Oculta)</span>
+                      <span className={styles.estadoOptionDesc}>Oculta completamente para los docentes</span>
+                    </div>
+                    {isInactiva && <MdCheck className={styles.estadoCheckIcon} />}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </td>
       )}

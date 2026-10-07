@@ -742,6 +742,9 @@ const Evaluaciones = () => {
                           ? getMonthName(Number(eva.mesDelExamen))
                           : null;
 
+                      const isCerrada = eva.cerrada === true;
+                      const isAbierta = isActive && !isCerrada;
+
                       return (
                         <tr
                           key={eva.id}
@@ -749,10 +752,28 @@ const Evaluaciones = () => {
                         >
                           {/* Estado */}
                           <td className={styles.qaTableCell}>
-                            {isActive ? (
+                            {isAbierta ? (
                               <span className={styles.qaStatusActive}>
                                 <span className={styles.qaDotActive} />
                                 Activa
+                              </span>
+                            ) : isCerrada ? (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                  color: '#d97706',
+                                  backgroundColor: '#fef3c7',
+                                  padding: '0.2rem 0.65rem',
+                                  borderRadius: '9999px',
+                                  border: '1px solid #fde68a',
+                                }}
+                              >
+                                <RiLockLine />
+                                Solo Lectura
                               </span>
                             ) : (
                               <span className={styles.qaStatusInactive}>
@@ -806,7 +827,7 @@ const Evaluaciones = () => {
                           {/* Acciones */}
                           <td className={styles.qaTableCell}>
                             <div className={styles.qaTableActions}>
-                              {isActive ? (
+                              {isAbierta ? (
                                 <>
                                   <Link
                                     href={`${basePath}/evaluar-estudiante?idExamen=${eva.id}&grado=${eva.grado}&categoria=${eva.categoria}`}
@@ -880,6 +901,9 @@ const Evaluaciones = () => {
                     ? getMonthName(Number(eva.mesDelExamen))
                     : null;
 
+                const isCerrada = eva.cerrada === true;
+                const isAbierta = isActive && !isCerrada;
+
                 return (
                   <article
                     key={eva.id}
@@ -895,10 +919,28 @@ const Evaluaciones = () => {
                           <span className={styles.qaGradeTag}>{gradoNombre}</span>
                         </div>
 
-                        {isActive ? (
+                        {isAbierta ? (
                           <span className={styles.qaStatusActive}>
                             <span className={styles.qaDotActive} />
                             Activa
+                          </span>
+                        ) : isCerrada ? (
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              color: '#d97706',
+                              backgroundColor: '#fef3c7',
+                              padding: '0.2rem 0.65rem',
+                              borderRadius: '9999px',
+                              border: '1px solid #fde68a',
+                            }}
+                          >
+                            <RiLockLine />
+                            Solo Lectura
                           </span>
                         ) : (
                           <span className={styles.qaStatusInactive}>
@@ -933,7 +975,7 @@ const Evaluaciones = () => {
 
                     {/* Acciones Directas */}
                     <div className={styles.qaCardActions}>
-                      {isActive ? (
+                      {isAbierta ? (
                         <>
                           <Link
                             href={`${basePath}/evaluar-estudiante?idExamen=${eva.id}&grado=${eva.grado}&categoria=${eva.categoria}`}

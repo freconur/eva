@@ -288,8 +288,8 @@ const EvaluarEstudianteForm = ({
    * Maneja el envío del formulario de evaluación
    */
   const handleSubmitform = handleSubmit(async (data) => {
-    if (evaluacion?.active === false) {
-      alert('Esta evaluación se encuentra finalizada. El período para registrar evaluaciones de estudiantes ha concluido.');
+    if (evaluacion?.active === false || evaluacion?.cerrada === true) {
+      alert('Esta evaluación se encuentra finalizada o en modo solo lectura. No es posible registrar calificaciones de estudiantes.');
       return;
     }
 
@@ -709,7 +709,7 @@ const EvaluarEstudianteForm = ({
                 )}
               </div>
 
-              {!evaluacion?.active && (
+              {(!evaluacion?.active || evaluacion?.cerrada === true) && (
                 <div style={{
                   backgroundColor: '#fffbeb',
                   border: '1px solid #fde68a',
@@ -724,7 +724,7 @@ const EvaluarEstudianteForm = ({
                 }}>
                   <RiErrorWarningLine size={24} style={{ flexShrink: 0, color: '#d97706' }} />
                   <div>
-                    <strong>Evaluación Finalizada:</strong> Esta evaluación se encuentra cerrada. No es posible registrar nuevas evaluaciones de estudiantes. Puedes consultar los resultados en el botón <strong>Ver Reporte</strong>.
+                    <strong>Evaluación en Modo Solo Lectura:</strong> Esta evaluación se encuentra cerrada. No es posible registrar nuevas calificaciones ni modificar datos. Puedes consultar los resultados en el botón <strong>Ver Reporte</strong>.
                   </div>
                 </div>
               )}
@@ -762,11 +762,11 @@ const EvaluarEstudianteForm = ({
 
                   <button
                     type="button"
-                    disabled={evaluacion?.active === false}
+                    disabled={evaluacion?.active === false || evaluacion?.cerrada === true}
                     className={styles.importButton}
                     onClick={handleOpenModal}
-                    title={evaluacion?.active === false ? "Evaluación cerrada para nuevos registros" : "Importar datos de estudiantes"}
-                    style={evaluacion?.active === false ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+                    title={evaluacion?.active === false || evaluacion?.cerrada === true ? "Evaluación cerrada para nuevos registros" : "Importar datos de estudiantes"}
+                    style={evaluacion?.active === false || evaluacion?.cerrada === true ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
                   >
                     <RiUploadLine className={styles.importIcon} />
                     <span>Importar</span>
@@ -996,11 +996,11 @@ const EvaluarEstudianteForm = ({
                     </div>
 
                     <button
-                      disabled={evaluacion?.active === false || !todasRespondidas || (!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0)}
+                      disabled={evaluacion?.active === false || evaluacion?.cerrada === true || !todasRespondidas || (!estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0)}
                       className={styles.saveButton}
-                      style={evaluacion?.active === false ? { backgroundColor: '#94a3b8', cursor: 'not-allowed' } : undefined}
+                      style={evaluacion?.active === false || evaluacion?.cerrada === true ? { backgroundColor: '#94a3b8', cursor: 'not-allowed' } : undefined}
                     >
-                      {evaluacion?.active === false
+                      {evaluacion?.active === false || evaluacion?.cerrada === true
                         ? 'Evaluación Cerrada (No se puede guardar)'
                         : !estudianteSeleccionado && estudiantesDeEvaluacion && estudiantesDeEvaluacion.length > 0
                         ? 'Selecciona un estudiante para continuar'

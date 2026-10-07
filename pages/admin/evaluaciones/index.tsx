@@ -193,17 +193,25 @@ const Evaluaciones = () => {
 
   const handleActivateEvaluacion = async () => {
     if (successData) {
-      const updatedEva = { ...successData.evaluacion, active: true }
+      const updatedEva = { ...successData.evaluacion, active: true, cerrada: false }
       await updateEvaluacion(updatedEva, successData.evaluacion.id)
       setShowSuccessAlert(false)
       setSuccessData(null)
+      toast.success(`Evaluación "${successData.evaluacion.nombre}" activada exitosamente`)
     }
   }
 
-  const toggleActiveStatus = async (eva: any) => {
-    // Si se quiere activar, validar que nivelYPuntaje exista y tenga datos
-    if (!eva.active) {
-      // Solo aplicar la validación de nivelYPuntaje si tipoDeEvaluacion es "1"
+  const handleChangeEstadoEvaluacion = async (eva: any, nuevoEstado: 'activa' | 'cerrada' | 'inactiva') => {
+    if (nuevoEstado === 'activa') {
+      // Si ya estaba activa pero en modo cerrada, solo desbloquearla sin re-validar
+      if (eva.active) {
+        const updatedEva = { ...eva, active: true, cerrada: false }
+        await updateEvaluacion(updatedEva, eva.id)
+        toast.success(`Evaluación "${eva.nombre}" abierta para calificar`)
+        return
+      }
+
+      // Si estaba inactiva (active: false), validar reglas de AGENTS.md
       if (eva.tipoDeEvaluacion === "1") {
         if (!eva.nivelYPuntaje || !Array.isArray(eva.nivelYPuntaje) || eva.nivelYPuntaje.length === 0) {
           setAlertMessage('No se puede activar la evaluación. Debe configurar primero los niveles y puntajes.')
@@ -211,7 +219,6 @@ const Evaluaciones = () => {
           return
         }
 
-        // Validar que existan preguntas y que todas tengan puntaje
         const { tienePuntajeValido: tienePuntaje, totalPreguntas: totalPreg, sumaTotalPuntajes } = await validacionSiEvaluacionTienePreguntasYPuntuacion(eva) as any;
 
         if (!tienePuntaje) {
@@ -220,8 +227,6 @@ const Evaluaciones = () => {
           return
         }
 
-        // VALIDACIÓN DE SUMA COMPLETA
-        // 1. Obtener el nivel "satisfactorio"
         const nivelSatisfactorio = eva.nivelYPuntaje.find((n: any) => n.nivel.toLowerCase() === 'satisfactorio');
 
         if (!nivelSatisfactorio) {
@@ -239,7 +244,6 @@ const Evaluaciones = () => {
           return;
         }
 
-        // Si pasa las validaciones, mostrar los datos y activar
         setSuccessData({
           nivelYPuntaje: eva.nivelYPuntaje,
           totalPreguntas: totalPreg,
@@ -248,10 +252,46 @@ const Evaluaciones = () => {
         setShowSuccessAlert(true)
         return
       }
+
+      const updatedEva = { ...eva, active: true, cerrada: false }
+      await updateEvaluacion(updatedEva, eva.id)
+      toast.success(`Evaluación "${eva.nombre}" activada exitosamente`)
+      return
     }
 
-    const updatedEva = { ...eva, active: !eva.active }
-    await updateEvaluacion(updatedEva, eva.id)
+    if (nuevoEstado === 'cerrada') {
+      // Modo Solo Lectura: visible para docentes pero no pueden calificar
+      if (!eva.active && eva.tipoDeEvaluacion === "1") {
+        if (!eva.nivelYPuntaje || !Array.isArray(eva.nivelYPuntaje) || eva.nivelYPuntaje.length === 0) {
+          setAlertMessage('No se puede pasar a solo lectura. Debe configurar primero los niveles y puntajes.')
+          setShowAlert(true)
+          return
+        }
+      }
+      const updatedEva = { ...eva, active: true, cerrada: true }
+      await updateEvaluacion(updatedEva, eva.id)
+      toast.info(`Evaluación "${eva.nombre}" establecida en modo Solo Lectura`)
+      return
+    }
+
+    if (nuevoEstado === 'inactiva') {
+      // Modo Oculto/Inactivo: oculta para los docentes
+      const updatedEva = { ...eva, active: false, cerrada: false }
+      await updateEvaluacion(updatedEva, eva.id)
+      toast.info(`Evaluación "${eva.nombre}" desactivada (oculta para docentes)`)
+      return
+    }
+  }
+
+  const toggleActiveStatus = async (eva: any) => {
+    // Ciclo: Inactiva -> Activa -> Cerrada -> Inactiva
+    if (!eva.active) {
+      await handleChangeEstadoEvaluacion(eva, 'activa')
+    } else if (!eva.cerrada) {
+      await handleChangeEstadoEvaluacion(eva, 'cerrada')
+    } else {
+      await handleChangeEstadoEvaluacion(eva, 'inactiva')
+    }
   }
 
   const handleEditMonth = (eva: any) => {
@@ -587,6 +627,7 @@ const Evaluaciones = () => {
                                   handleEditMonth={handleEditMonth}
                                   handleCopyId={handleCopyId}
                                   toggleActiveStatus={toggleActiveStatus}
+                                  onChangeEstado={handleChangeEstadoEvaluacion}
                                   handleShowInputUpdate={handleShowInputUpdate}
                                   setNameEva={setNameEva}
                                   setIdEva={setIdEva}
@@ -675,6 +716,7 @@ const Evaluaciones = () => {
                 handleEditMonth={handleEditMonth}
                 handleCopyId={handleCopyId}
                 toggleActiveStatus={toggleActiveStatus}
+                onChangeEstado={handleChangeEstadoEvaluacion}
                 handleShowInputUpdate={handleShowInputUpdate}
                 setNameEva={setNameEva}
                 setIdEva={setIdEva}

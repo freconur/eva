@@ -44,6 +44,7 @@ interface EvaluacionesSidebarViewProps {
   handleEditMonth: (eva: any) => void
   handleCopyId: (id: string) => void
   toggleActiveStatus: (eva: any) => Promise<void>
+  onChangeEstado?: (eva: any, nuevoEstado: 'activa' | 'cerrada' | 'inactiva') => Promise<void>
   handleShowInputUpdate: () => void
   setNameEva: (name: string) => void
   setIdEva: (id: string) => void
@@ -104,6 +105,7 @@ const EvaluacionesSidebarView: React.FC<EvaluacionesSidebarViewProps> = ({
   handleEditMonth,
   handleCopyId,
   toggleActiveStatus,
+  onChangeEstado,
   handleShowInputUpdate,
   setNameEva,
   setIdEva,
@@ -544,6 +546,7 @@ const EvaluacionesSidebarView: React.FC<EvaluacionesSidebarViewProps> = ({
                           handleEditMonth={handleEditMonth}
                           handleCopyId={handleCopyId}
                           toggleActiveStatus={toggleActiveStatus}
+                          onChangeEstado={onChangeEstado}
                           handleShowInputUpdate={handleShowInputUpdate}
                           setNameEva={setNameEva}
                           setIdEva={setIdEva}

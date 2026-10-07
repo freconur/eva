@@ -259,6 +259,7 @@ export type Evaluaciones = {
   categoria?: number;
   rol?: number;
   active?: boolean;
+  cerrada?: boolean;
   timestamp?: Date;
   mesDelExamen?: string;
   añoDelExamen?: string;
@@ -284,6 +285,7 @@ export type Evaluacion = {
   rol?: number;
   categoria?: number;
   active?: boolean;
+  cerrada?: boolean;
   timestamp?: Date;
   mesDelExamen?: string;
   tipoSDeEvaluacion?: TipoDeEvaluacion[];
