@@ -1,8 +1,5 @@
-import { useGlobalContext } from '@/features/context/GlolbalContext';
-import { useReporteDirectores } from '@/features/hooks/useReporteDirectores';
-import { useRegistros } from '@/features/hooks/useRegistros';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/router';
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,47 +8,68 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { RiLoader4Line } from 'react-icons/ri';
 import {
-  sectionByGrade,
-  ordernarAscDsc,
-  genero,
-  convertGrade,
-  converSeccion,
-  gradosDeColegio,
-  getGradoTexto,
-} from '@/fuctions/regiones';
-import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
-import { DataEstadisticas, PreguntasRespuestas, UserEstudiante } from '@/features/types/types';
-import { RiLoader4Line, RiSettings4Line, RiArrowDownSLine, RiSearchLine, RiCloseLine, RiErrorWarningLine, RiFileExcel2Line, RiFilePdfLine } from 'react-icons/ri';
-import { IoIosArrowDown } from 'react-icons/io';
-import { HiOutlineDownload } from 'react-icons/hi';
-import styles from './Reporte.module.css';
-import { currentMonth, getAllMonths, getMonthName } from '@/fuctions/dates';
-import { exportEstudiantesToExcel } from '@/features/utils/excelExport';
-import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
-import { useGlobalContextDispatch } from '@/features/context/GlolbalContext';
-import { AppAction } from '@/features/actions/appAction';
-import { generarPDFReporte } from '@/features/utils/pdfExportEstadisticasDocentes';
-import { useGenerarPDFReporte } from '@/features/hooks/useGenerarPDFReporte';
-import { TablaPreguntas } from '@/components/tabla-preguntas';
-import GraficoTendenciaColegio from '@/components/grafico-tendencia';
-import GraficoTendencia from '@/components/reportes/graficoTendencia';
-import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafico-piechart';
-import ReporteEvaluacionPorPregunta from '@/pages/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/reporteEvaluacionPorPregunta';
-import Loader from '@/components/loader/loader';
-import { getFirestore, collection, getDocs, query, where, doc, onSnapshot } from 'firebase/firestore';
-import accordionStyles from '@/components/reportes/Acordeon.module.css';
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  Title,
-  Tooltip,
-  Legend
-);
+  getFirestore,
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+  onSnapshot,
+} from 'firebase/firestore';
 
-// Guardias persistentes fuera del componente para sobrevivir a re-montajes accidentales
-let globalLastFetchParams = "";
-let globalLastFetchTrendParams = "";
+import { useGlobalContext, useGlobalContextDispatch } from '@/features/context/GlolbalContext';
+import { useReporteDirectores } from '@/features/hooks/useReporteDirectores';
+import { useRegistros } from '@/features/hooks/useRegistros';
+import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
+import { useGenerarPDFReporte } from '@/features/hooks/useGenerarPDFReporte';
+import { AppAction } from '@/features/actions/appAction';
+import { exportEstudiantesToExcel } from '@/features/utils/excelExport';
+import { currentMonth, getAllMonths, getMonthName } from '@/fuctions/dates';
+import { sectionByGrade, getGradoTexto } from '@/fuctions/regiones';
+import { PreguntasRespuestas, UserEstudiante } from '@/features/types/types';
+import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
+import Loader from '@/components/loader/loader';
+import { TablaPreguntas } from '@/components/tabla-preguntas';
+import ReporteEvaluacionPorPregunta from '@/pages/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/reporteEvaluacionPorPregunta';
+
+// Modales del sistema
+import GuiaBurbujasModal from '@/components/modals/GuiaBurbujasModal';
+import GuiaDecisionesModal from '@/components/modals/GuiaDecisionesModal';
+import {
+  BaremoDecisiones,
+  DEFAULT_BAREMO_DECISIONES,
+} from '@/components/modals/ConfigurarBaremoModal';
+import QuestionDetailPopover from '@/components/reportes/QuestionDetailPopover';
+
+// Módulos especializados del Director
+import { useMetricasDirector } from '@/components/reportes/director/useMetricasDirector';
+import DirectorTabsNav, { DirectorTabKey } from '@/components/reportes/director/DirectorTabsNav';
+import DirectorBrechasTab from '@/components/reportes/director/DirectorBrechasTab';
+import DirectorTendenciasTab from '@/components/reportes/director/DirectorTendenciasTab';
+import DirectorExportMenu from '@/components/reportes/director/DirectorExportMenu';
+import DirectorHeroBanner from '@/components/reportes/director/DirectorHeroBanner';
+import {
+  RiSparklingLine,
+  RiCalendarLine,
+  RiTimeLine,
+  RiArrowDownSLine,
+} from 'react-icons/ri';
+import DirectorFiltrosBar, {
+  ColumnasVisiblesState,
+  FiltrosState,
+} from '@/components/reportes/director/DirectorFiltrosBar';
+import tabsStyles from '@/components/reportes/director/DirectorTabsNav.module.css';
+
+import styles from './Reporte.module.css';
+
+ChartJS.register(CategoryScale, LinearScale, Title, Tooltip, Legend);
+
+// Guardias persistentes fuera del componente para evitar re-montajes accidentales
+let globalLastFetchParams = '';
+let globalLastFetchTrendParams = '';
 
 const Reporte = () => {
   const {
@@ -59,31 +77,92 @@ const Reporte = () => {
     reporteDirector,
     preguntasRespuestas,
     loaderReporteDirector,
-    allRespuestasEstudiantesDirector,
-    dataFiltradaDirectorTabla,
     evaluacion,
     estudiantesDeEvaluacion,
+    docentesDeDirectores,
   } = useGlobalContext();
 
   const dispatch = useGlobalContextDispatch();
   const route = useRouter();
-  const [filtros, setFiltros] = useState({
+
+  // Pestaña activa del Director
+  const [activeTab, setActiveTab] = useState<DirectorTabKey>('grilla');
+
+  // Modo de visualización superior: 'compacto' (tradicional) o 'ejecutivo' (con Hero Banner)
+  const [bannerMode, setBannerMode] = useState<'compacto' | 'ejecutivo'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('eva_director_banner_mode');
+        if (saved === 'ejecutivo' || saved === 'compacto') return saved;
+      } catch (e) {
+        console.error('Error al leer bannerMode:', e);
+      }
+    }
+    return 'compacto';
+  });
+
+  const handleToggleBannerMode = (mode: 'compacto' | 'ejecutivo') => {
+    setBannerMode(mode);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('eva_director_banner_mode', mode);
+      } catch (e) {
+        console.error('Error al guardar bannerMode:', e);
+      }
+    }
+  };
+
+  // Estados de modales interactivos
+  const [isBurbujasModalOpen, setIsBurbujasModalOpen] = useState<boolean>(false);
+  const [isDecisionesModalOpen, setIsDecisionesModalOpen] = useState<boolean>(false);
+  const [questionDetailPopover, setQuestionDetailPopover] = useState<{
+    order: number;
+    coords: { x: number; y: number };
+  } | null>(null);
+
+  // Baremo de alertas pedagógicas - Oficial y centralizado desde la Matriz de Resultados regional
+  const [baremo, setBaremo] = useState<BaremoDecisiones>(DEFAULT_BAREMO_DECISIONES);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchBaremoAdmin = async () => {
+      try {
+        const db = getFirestore();
+        const cfgRef = doc(db, 'configuraciones', 'matriz_resultados');
+        const snap = await getDoc(cfgRef);
+        if (snap.exists() && isMounted) {
+          const data = snap.data();
+          if (data?.baremoDecisiones) {
+            setBaremo({
+              critico: Number(data.baremoDecisiones.critico) || DEFAULT_BAREMO_DECISIONES.critico,
+              alto: Number(data.baremoDecisiones.alto) || DEFAULT_BAREMO_DECISIONES.alto,
+              medio: Number(data.baremoDecisiones.medio) || DEFAULT_BAREMO_DECISIONES.medio,
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Error al cargar baremo oficial del administrador:', e);
+      }
+    };
+    fetchBaremoAdmin();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Filtros de tabla
+  const [filtros, setFiltros] = useState<FiltrosState>({
     grado: (route.query.grado as string) || '',
     seccion: (route.query.seccion as string) || '',
     orden: (route.query.orden as string) || '',
     genero: (route.query.genero as string) || '',
     nivel: (route.query.nivel as string) || '',
   });
+
   const [loadingMonth, setLoadingMonth] = useState<boolean>(false);
   const [loadingExport, setLoadingExport] = useState<boolean>(false);
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [showConfig, setShowConfig] = useState<boolean>(false);
-  const [mostrarGraficos, setMostrarGraficos] = useState<boolean>(false);
-  const [mostrarReportePreguntas, setMostrarReportePreguntas] = useState<boolean>(false);
-  const configRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
   const [isMounted, setIsMounted] = useState<boolean>(false);
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -107,64 +186,36 @@ const Reporte = () => {
   useEffect(() => {
     const db = getFirestore();
     const brandDocRef = doc(db, 'configuracion', 'branding');
-    const unsubscribe = onSnapshot(brandDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.accionesDirector) {
-          setAccionesDirector({
-            exportarGrillaPdf: data.accionesDirector.exportarGrillaPdf !== false,
-            exportarExcel: data.accionesDirector.exportarExcel !== false,
-            generarPdfPreguntas: data.accionesDirector.generarPdfPreguntas !== false,
-          });
+    const unsubscribe = onSnapshot(
+      brandDocRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.accionesDirector) {
+            setAccionesDirector({
+              exportarGrillaPdf: data.accionesDirector.exportarGrillaPdf !== false,
+              exportarExcel: data.accionesDirector.exportarExcel !== false,
+              generarPdfPreguntas: data.accionesDirector.generarPdfPreguntas !== false,
+            });
+          }
         }
+      },
+      (err) => {
+        console.error('Error al escuchar permisos globales de accionesDirector:', err);
       }
-    }, (err) => {
-      console.error("Error al escuchar permisos globales de accionesDirector:", err);
-    });
+    );
     return () => unsubscribe();
   }, []);
 
   const allowExportGrillaPdf = isAuditing || accionesDirector.exportarGrillaPdf !== false;
   const allowExportExcel = isAuditing || accionesDirector.exportarExcel !== false;
   const allowGenerarPdfPreguntas = isAuditing || accionesDirector.generarPdfPreguntas !== false;
-
   const hasAnyDirectorAction = allowExportGrillaPdf || allowExportExcel || allowGenerarPdfPreguntas;
 
-  // Estados para el custom searchable selector de evaluación (Base)
+  // Base de datos de evaluaciones para comparativa
   const [evaluacionesDb, setEvaluacionesDb] = useState<any[]>([]);
   const [loadingEvaluaciones, setLoadingEvaluaciones] = useState<boolean>(false);
 
-  // Estados para la comparación de evaluaciones
-  const [evaluacionesAComparar, setEvaluacionesAComparar] = useState<string[]>([]);
-  const [isCompDropdownOpen, setIsCompDropdownOpen] = useState<boolean>(false);
-  const [searchCompQuery, setSearchCompQuery] = useState<string>('');
-  const compDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Click outside detector para cerrar el selector de comparativa
-  useEffect(() => {
-    const handleClickOutsideComp = (event: MouseEvent) => {
-      if (compDropdownRef.current && !compDropdownRef.current.contains(event.target as Node)) {
-        setIsCompDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutsideComp);
-    return () => document.removeEventListener('mousedown', handleClickOutsideComp);
-  }, []);
-
-  const evaluacionesCompFiltradas = useMemo(() => {
-    let list = evaluacionesDb.filter((ev) => ev.id !== evaluacion?.id);
-    if (searchCompQuery.trim()) {
-      const q = searchCompQuery.toLowerCase().trim();
-      list = list.filter((ev) => {
-        const nombreMatch = (ev.nombre || '').toLowerCase().includes(q);
-        const gradoTexto = getGradoTexto(ev.grado).toLowerCase();
-        return nombreMatch || gradoTexto.includes(q);
-      });
-    }
-    return list;
-  }, [evaluacionesDb, evaluacion?.id, searchCompQuery]);
-
-  // Cargar lista de todas las evaluaciones de estudiantes disponibles
   useEffect(() => {
     const loadEvaluaciones = async () => {
       try {
@@ -174,8 +225,11 @@ const Reporte = () => {
         const q = query(coll, where('tipoDeEvaluacion', '==', '1'));
         const snap = await getDocs(q);
         const list: any[] = [];
-        snap.forEach((doc) => {
-          list.push({ id: doc.id, ...doc.data() });
+        snap.forEach((d) => {
+          const data = d.data();
+          if (data.active) {
+            list.push({ id: d.id, ...data });
+          }
         });
         setEvaluacionesDb(list);
       } catch (error) {
@@ -187,42 +241,12 @@ const Reporte = () => {
     loadEvaluaciones();
   }, []);
 
-
-
-  // Cerrar el menú de configuración al hacer click fuera
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (configRef.current && !configRef.current.contains(event.target as Node)) {
-        setShowConfig(false);
-      }
-    };
-
-    if (showConfig) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showConfig]);
-
-  // Cerrar el dropdown de exportación al hacer click fuera
-  useEffect(() => {
-    const handleClickOutsideExport = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutsideExport);
-    return () => document.removeEventListener('mousedown', handleClickOutsideExport);
-  }, []);
-
-  const [columnasVisibles, setColumnasVisibles] = useState({
+  const [columnasVisibles, setColumnasVisibles] = useState<ColumnasVisiblesState>({
     showRC: true,
     showTP: true,
     showPuntaje: true,
     showNivel: true,
-    showDniDocente: false // Por defecto oculto para directores a menos que lo activen
+    showDniDocente: false,
   });
 
   const [yearSelected, setYearSelected] = useState<number>(() => {
@@ -239,20 +263,21 @@ const Reporte = () => {
     return currentMonth;
   });
 
-  const updateQuery = useCallback((params: Record<string, any>) => {
-    if (!route.isReady) return;
+  const updateQuery = useCallback(
+    (params: Record<string, any>) => {
+      if (!route.isReady) return;
+      const newQuery = { ...route.query, ...params };
+      Object.keys(newQuery).forEach((key) => {
+        if (newQuery[key] === '' || newQuery[key] === undefined || newQuery[key] === null) {
+          delete newQuery[key];
+        }
+      });
+      route.push({ pathname: route.pathname, query: newQuery }, undefined, { shallow: true });
+    },
+    [route]
+  );
 
-    const newQuery = { ...route.query, ...params };
-    Object.keys(newQuery).forEach(key => {
-      if (newQuery[key] === '' || newQuery[key] === undefined || newQuery[key] === null) {
-        delete newQuery[key];
-      }
-    });
-
-    route.push({ pathname: route.pathname, query: newQuery }, undefined, { shallow: true });
-  }, [route]);
-
-  // Sincronizar estados locales con la URL cuando esta cambie
+  // Sincronizar URL query con estados
   useEffect(() => {
     if (route.isReady) {
       setFiltros({
@@ -263,7 +288,7 @@ const Reporte = () => {
         nivel: (route.query.nivel as string) || '',
       });
       if (route.query.year) setYearSelected(Number(route.query.year));
-      
+
       if (evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null) {
         setMonthSelected(Number(evaluacion.mesDelExamen));
       } else if (route.query.mes) {
@@ -272,7 +297,6 @@ const Reporte = () => {
     }
   }, [route.query, route.isReady, evaluacion?.mesDelExamen]);
 
-  // Sincronizar mes con mesDelExamen de la evaluación
   useEffect(() => {
     if (evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null) {
       const examMonth = Number(evaluacion.mesDelExamen);
@@ -283,10 +307,19 @@ const Reporte = () => {
     }
   }, [evaluacion?.mesDelExamen, route.isReady, updateQuery]);
 
-  useEffect(() => {
-    console.log("EVA-LOG: >>> Componente Reporte MONTADO <<<");
-    return () => console.log("EVA-LOG: <<< Componente Reporte DESMONTADO <<<");
-  }, []);
+  const handleSelectEvaluacion = useCallback(
+    (evalId: string, mesDelExamen?: number) => {
+      const targetMonth =
+        mesDelExamen !== undefined && mesDelExamen !== null
+          ? Number(mesDelExamen)
+          : monthSelected;
+      updateQuery({
+        idEvaluacion: evalId,
+        mes: targetMonth,
+      });
+    },
+    [monthSelected, updateQuery]
+  );
 
   const yearsAvailable = useMemo(() => {
     const startYear = 2025;
@@ -298,91 +331,38 @@ const Reporte = () => {
     return years;
   }, []);
 
-
-  // Eliminar el bloque de aquí porque está antes de la inicialización de currentUserData
-
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFiltros(prev => ({ ...prev, [name]: value }));
+    setFiltros((prev) => ({ ...prev, [name]: value }));
     updateQuery({ [name]: value });
   };
 
-  const toggleColumna = (columna: keyof typeof columnasVisibles) => {
-    setColumnasVisibles(prev => ({
+  const toggleColumna = (columna: keyof ColumnasVisiblesState) => {
+    setColumnasVisibles((prev) => ({
       ...prev,
-      [columna]: !prev[columna]
+      [columna]: !prev[columna],
     }));
   };
 
-  // Eliminado de aquí para moverse después de la inicialización de currentUserData
-
-  const hasValidPuntaje = () => {
-    return estudiantes?.some(
-      (estudiante) =>
-        estudiante.puntaje !== undefined &&
-        estudiante.puntaje !== null &&
-        !isNaN(estudiante.puntaje)
-    );
-  };
-
-  // Verificar si existen valores válidos para nivel
-  const hasValidNivel = () => {
-    return estudiantes?.some(
-      (estudiante) =>
-        estudiante.nivel !== undefined &&
-        estudiante.nivel !== null &&
-        estudiante.nivel !== '' &&
-        estudiante.nivel !== 'sin clasificar'
-    );
-  };
+  // Hooks de datos del Director
   const {
-    reporteToTableDirector,
     reporteDirectorEstudiantes,
     getGrados,
     estudiantes,
-    setEstudiantes,
     getAllEvaluacionesDeEstudiantesPorMes,
     datosPorMes,
     promedioGlobal,
     mesesConDataDisponibles,
     promedioPorDocente,
-    warning,
-    setIsLoading,
     isLoading,
     filtrosParaReporteDirector,
-    obtenerCoberturaDirector
+    obtenerCoberturaDirector,
   } = useReporteDirectores();
 
-  // Ya no usamos useRef locales, sino las variables globales de arriba para diagnosticar re-montajes
-  const lastFetchParams = { current: globalLastFetchParams };
-  const lastFetchTrendParams = { current: globalLastFetchTrendParams };
-
-  // Función para actualizar los guardias globales
-  const setGlobalFetchParams = (val: string) => {
-    globalLastFetchParams = val;
-    lastFetchParams.current = val;
-  };
-
-  const setGlobalTrendParams = (val: string) => {
-    globalLastFetchTrendParams = val;
-    lastFetchTrendParams.current = val;
-  };
-
-  const availableSections = useMemo(() => {
-    const baseList = estudiantes;
-    if (!baseList || baseList.length === 0) return [];
-
-    // Extraer IDs de secciones únicas de los estudiantes cargados originalmente para el mes/año
-    const uniqueSectionIds = Array.from(new Set(baseList.map(e => String(e.seccion))));
-
-    // Filtrar la lista maestra de secciones para incluir solo las que tienen datos
-    return sectionByGrade.filter(seccion => uniqueSectionIds.includes(String(seccion.id)));
-  }, [estudiantes]);
-
-  // Mapeo de docentes para mostrar nombres en el gráfico
-  const { docentesDeDirectores } = useGlobalContext();
   const { getDocentesDeDirectores } = useRegistros();
+  const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
 
+  // Docentes mapeados por DNI
   useEffect(() => {
     if (currentUserData?.dni && currentUserData?.rol === 2) {
       getDocentesDeDirectores(currentUserData.dni);
@@ -392,7 +372,7 @@ const Reporte = () => {
 
   const docentesMap = useMemo(() => {
     const map = new Map<string, string>();
-    docentesDeDirectores?.forEach(docente => {
+    docentesDeDirectores?.forEach((docente) => {
       if (docente.dni) {
         map.set(String(docente.dni), `${docente.nombres} ${docente.apellidos}`);
       }
@@ -400,56 +380,13 @@ const Reporte = () => {
     return map;
   }, [docentesDeDirectores]);
 
-  // Cálculo de promedios y distribución por sección para el gráfico comparativo
-  const promedioPorSeccion = useMemo(() => {
-    if (availableSections.length === 0) return [];
-
-    return availableSections.map(seccionObj => {
-      const seccionId = String(seccionObj.id);
-      const estudiantesSeccion = estudiantes.filter(est => String(est.seccion) === seccionId);
-
-      const docentesUnicos = Array.from(new Set(
-        estudiantesSeccion
-          .map(est => est.dniDocente ? docentesMap.get(String(est.dniDocente)) : null)
-          .filter(Boolean)
-      ));
-      const docenteNombre = docentesUnicos.length > 0 ? docentesUnicos.join(", ") : undefined;
-
-      const totalPuntaje = estudiantesSeccion.reduce((acc, est) => acc + (est.puntaje || 0), 0);
-      const promedio = estudiantesSeccion.length > 0 ? totalPuntaje / estudiantesSeccion.length : 0;
-
-      // Contar niveles
-      const niveles = {
-        satisfactorio: 0,
-        proceso: 0,
-        inicio: 0,
-        previo: 0
-      };
-
-      estudiantesSeccion.forEach(est => {
-        const nivel = (est.nivel || '').toLowerCase();
-        if (nivel.includes('satisfactorio')) niveles.satisfactorio++;
-        else if (nivel.includes('proceso')) niveles.proceso++;
-        else if (nivel.includes('previo')) niveles.previo++;
-        else if (nivel.includes('inicio')) niveles.inicio++;
-      });
-
-      return {
-        seccion: seccionObj.name.toUpperCase(),
-        docenteNombre: docenteNombre,
-        promedio: Number(promedio.toFixed(2)),
-        cantidad: estudiantesSeccion.length,
-        distribucion: niveles
-      };
-    })
-      // Ordenar por el porcentaje de estudiantes en nivel Satisfactorio (de mayor a menor)
-      .sort((a, b) => {
-        const percA = a.cantidad > 0 ? (a.distribucion.satisfactorio / a.cantidad) : 0;
-        const percB = b.cantidad > 0 ? (b.distribucion.satisfactorio / b.cantidad) : 0;
-        return percB - percA;
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [estudiantes, availableSections]);
+  // Secciones con datos en la evaluación
+  const availableSections = useMemo(() => {
+    const baseList = estudiantes;
+    if (!baseList || baseList.length === 0) return [];
+    const uniqueSectionIds = Array.from(new Set(baseList.map((e) => String(e.seccion))));
+    return sectionByGrade.filter((seccion) => uniqueSectionIds.includes(String(seccion.id)));
+  }, [estudiantes]);
 
 
   // Auto-seleccionar grado de la evaluación para Directores
@@ -461,20 +398,21 @@ const Reporte = () => {
       setFiltros((prev: any) => ({ ...prev, grado: gradoId }));
       updateQuery({ grado: gradoId });
     }
-  }, [currentUserData?.rol, evaluacion, filtros.grado, updateQuery, setFiltros, route.isReady]);
+  }, [currentUserData?.rol, evaluacion, filtros.grado, updateQuery, route.isReady]);
 
-  // Bloque movido abajo para evitar errores de referencia
-  const nivelesLeyenda: any[] = ((evaluacion as any)?.niveles?.length > 0)
-    ? (evaluacion as any).niveles
-    : [
-      { nombre: 'satisfactorio', color: 'var(--satisfactorio)' },
-      { nombre: 'en proceso', color: 'var(--en-proceso)' },
-      { nombre: 'en inicio', color: 'var(--inicio)' },
-      { nombre: 'previo al inicio', color: 'var(--previo-al-inicio)' }
-    ];
+  const nivelesLeyenda: any[] =
+    (evaluacion as any)?.niveles?.length > 0
+      ? (evaluacion as any).niveles
+      : [
+          { nombre: 'satisfactorio', color: 'var(--satisfactorio)' },
+          { nombre: 'en proceso', color: 'var(--en-proceso)' },
+          { nombre: 'en inicio', color: 'var(--inicio)' },
+          { nombre: 'previo al inicio', color: 'var(--previo-al-inicio)' },
+        ];
 
   const handleLimpiarFiltros = () => {
-    const gradoDefault = currentUserData?.rol === 2 ? String(evaluacion?.grado || filtros.grado) : '';
+    const gradoDefault =
+      currentUserData?.rol === 2 ? String(evaluacion?.grado || filtros.grado) : '';
     setFiltros({
       grado: gradoDefault,
       seccion: '',
@@ -487,11 +425,233 @@ const Reporte = () => {
       seccion: '',
       orden: '',
       genero: '',
-      nivel: ''
+      nivel: '',
     });
   };
 
-  // --- Handlers de exportación ---
+  // Preguntas y estadísticas por ítem
+  const detectarNumeroOpciones = useMemo(() => {
+    if (!preguntasRespuestas || preguntasRespuestas.length === 0) return 4;
+    let maxOpciones = 3;
+    preguntasRespuestas.forEach((p) => {
+      const altsReales =
+        p.alternativas?.filter(
+          (alt) => alt.descripcion?.toLowerCase() !== 'no respondio'
+        ) || [];
+      if (altsReales.length > maxOpciones) {
+        maxOpciones = altsReales.length;
+      }
+    });
+    return maxOpciones;
+  }, [preguntasRespuestas]);
+
+  const preguntasMap = useMemo(() => {
+    const map = new Map<string, PreguntasRespuestas>();
+    preguntasRespuestas.forEach((pregunta) => {
+      if (pregunta.id) {
+        map.set(pregunta.id, pregunta);
+      }
+    });
+    return map;
+  }, [preguntasRespuestas]);
+
+  const preguntasOrdenadas = useMemo(() => {
+    return [...(preguntasRespuestas || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [preguntasRespuestas]);
+
+  const reporteDirectorOrdenado = useMemo(() => {
+    if (!reporteDirector || !preguntasOrdenadas.length) return reporteDirector;
+    const estadisticasMap = new Map<string, any>();
+    reporteDirector.forEach((stat) => {
+      if (stat.id) {
+        estadisticasMap.set(stat.id, stat);
+      }
+    });
+    return preguntasOrdenadas.map((pregunta) => {
+      const estadistica = estadisticasMap.get(pregunta.id || '');
+      if (estadistica) return estadistica;
+      return {
+        id: pregunta.id,
+        a: 0,
+        b: 0,
+        c: 0,
+        d: pregunta.alternativas?.some((alt) => alt.alternativa === 'd') ? 0 : undefined,
+        total: 0,
+      };
+    });
+  }, [reporteDirector, preguntasOrdenadas]);
+
+  const reporteCompleto = useMemo(() => {
+    if (!reporteDirectorOrdenado || !preguntasRespuestas.length) return [];
+    return reporteDirectorOrdenado.map((dat, index) => {
+      const pregunta = preguntasMap.get(dat.id || '');
+      return {
+        pregunta: pregunta?.pregunta || 'Pregunta no encontrada',
+        actuacion: pregunta?.preguntaDocente || 'Actuación no encontrada',
+        order: pregunta?.order || index + 1,
+        id: dat.id || '',
+        dataEstadistica: dat,
+        respuesta: pregunta?.respuesta || '',
+        index: index + 1,
+        graficoImagen: '',
+      };
+    });
+  }, [reporteDirectorOrdenado, preguntasMap, preguntasRespuestas.length]);
+
+  const {
+    imagenesGeneradas,
+    loadingPDF,
+    reporteCompletoConImagenes,
+    convertirGraficoAImagen,
+    handleGenerarPDF,
+    limpiarImagenes,
+  } = useGenerarPDFReporte({
+    reporteCompleto,
+    currentUserData,
+    titulo: 'Reporte de Evaluación - Directores',
+    tipoUsuario: 'Director',
+    monthSelected,
+  });
+
+  // Limpiar dataFiltrada al montar
+  useEffect(() => {
+    dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, payload: [] });
+  }, [dispatch]);
+
+  useEffect(() => {
+    getPreguntasRespuestas(`${route.query.idEvaluacion}`);
+    getEvaluacion(`${route.query.idEvaluacion}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUserData.dni, route.query.idEvaluacion]);
+
+  // Reconstrucción en memoria de respuestas
+  const estudiantesBase = useMemo(() => {
+    if (!estudiantes || !preguntasRespuestas) return [];
+    return estudiantes.map((est) => {
+      let respuestasReconstruidas: PreguntasRespuestas[] = [];
+      if (Array.isArray(est.respuestas)) {
+        respuestasReconstruidas = est.respuestas.map((r) => {
+          const globalP = preguntasRespuestas.find(
+            (p) => (r.id && p.id === r.id) || (r.order !== undefined && p.order === r.order)
+          );
+          return { ...r, respuesta: globalP?.respuesta || r.respuesta };
+        });
+      } else if (est.respuestas && typeof est.respuestas === 'object') {
+        respuestasReconstruidas = preguntasRespuestas.map((p) => {
+          const alternativaSeleccionada = (est.respuestas as any)[p.id || ''];
+          const alternativasReconstruidas =
+            p.alternativas?.map((alt) => ({
+              ...alt,
+              selected:
+                !!alt.alternativa &&
+                !!alternativaSeleccionada &&
+                alt.alternativa.toLowerCase() === alternativaSeleccionada.toLowerCase(),
+            })) || [];
+          return { ...p, alternativas: alternativasReconstruidas };
+        });
+      }
+      return { ...est, respuestas: respuestasReconstruidas } as UserEstudiante;
+    });
+  }, [estudiantes, preguntasRespuestas]);
+
+  const estudiantesFiltrados = useMemo(() => {
+    return filtrosParaReporteDirector(estudiantesBase, filtros);
+  }, [estudiantesBase, filtros, filtrosParaReporteDirector]);
+
+  useEffect(() => {
+    dispatch({
+      type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA,
+      payload: estudiantesFiltrados,
+    });
+  }, [estudiantesFiltrados, dispatch]);
+
+  // Hook de métricas de Rezago y Decisiones (Secciones x Preguntas)
+  const metricasDirector = useMetricasDirector({
+    estudiantes: estudiantesFiltrados,
+    preguntas: preguntasRespuestas,
+    availableSections,
+    docentesMap,
+    baremo,
+  });
+
+  // Carga de estudiantes con guardias
+  useEffect(() => {
+    const currentFetchKey = `${route.query.idEvaluacion}-${monthSelected}-${yearSelected}-${evaluacion.id}`;
+    if (currentUserData.dni && evaluacion.id && monthSelected !== undefined) {
+      if (globalLastFetchParams === currentFetchKey) return;
+      globalLastFetchParams = currentFetchKey;
+      reporteDirectorEstudiantes(
+        `${route.query.idEvaluacion}`,
+        monthSelected,
+        yearSelected,
+        currentUserData,
+        evaluacion
+      )
+        .then((res) => {
+          const alumnos = res?.estudiantes || [];
+          if (evaluacion.id) {
+            obtenerCoberturaDirector(evaluacion, alumnos);
+          }
+        })
+        .finally(() => {
+          setLoadingMonth(false);
+        });
+    }
+  }, [
+    route.query.idEvaluacion,
+    currentUserData,
+    yearSelected,
+    monthSelected,
+    evaluacion,
+    obtenerCoberturaDirector,
+    reporteDirectorEstudiantes,
+  ]);
+
+  useEffect(() => {
+    getGrados();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const trendKey = `${evaluacion.id}-${yearSelected}`;
+    if (evaluacion.id) {
+      if (globalLastFetchTrendParams === trendKey) return;
+      globalLastFetchTrendParams = trendKey;
+      getAllEvaluacionesDeEstudiantesPorMes(evaluacion, yearSelected);
+    }
+  }, [evaluacion, yearSelected, getAllEvaluacionesDeEstudiantesPorMes]);
+
+  const handleChangeMonth = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (val === '') return;
+    setLoadingMonth(true);
+    const newMonth = Number(val);
+    limpiarImagenes();
+    const gradoDefault =
+      currentUserData?.rol === 2 ? String(evaluacion?.grado || filtros.grado) : '';
+    setFiltros({
+      grado: gradoDefault,
+      seccion: '',
+      orden: '',
+      genero: '',
+      nivel: '',
+    });
+    try {
+      setMonthSelected(newMonth);
+      updateQuery({ mes: newMonth });
+    } catch (error) {
+      console.error('Error al cambiar mes:', error);
+      setLoadingMonth(false);
+    }
+  };
+
+  const handleChangeYear = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = Number(e.target.value);
+    setYearSelected(val);
+    updateQuery({ year: val });
+  };
+
+  // Handlers de exportación
   const handleExportToExcel = () => {
     setLoadingExport(true);
     try {
@@ -507,7 +667,6 @@ const Reporte = () => {
 
   const handleExportarGrillaPDF = async () => {
     const { exportarGrillaHeatmapPDF } = await import('@/features/utils/exportarGrillaHeatmapPDF');
-
     setLoadingExport(true);
     try {
       exportarGrillaHeatmapPDF({
@@ -515,8 +674,9 @@ const Reporte = () => {
         preguntasRespuestas,
         evaluacion,
         monthSelected,
-        nombreDocente: `${currentUserData.nombres || ''} ${currentUserData.apellidos || ''}`.trim() || 'Director',
-        tipoUsuario: 'Director'
+        nombreDocente:
+          `${currentUserData.nombres || ''} ${currentUserData.apellidos || ''}`.trim() || 'Director',
+        tipoUsuario: 'Director',
       });
     } catch (error) {
       console.error('Error al exportar grilla:', error);
@@ -525,296 +685,11 @@ const Reporte = () => {
     }
   };
 
-  const handleExportOption = (type: string) => {
-    if (type === 'excel') {
-      handleExportToExcel();
-    } else if (type === 'pdf-tabla') {
-      handleExportarGrillaPDF();
-    } else if (type === 'pdf-preguntas') {
-      handleGenerarPDF();
-    }
-    setIsOpen(false);
+  const handleExportOption = (type: 'excel' | 'pdf-tabla' | 'pdf-preguntas') => {
+    if (type === 'excel') handleExportToExcel();
+    else if (type === 'pdf-tabla') handleExportarGrillaPDF();
+    else if (type === 'pdf-preguntas') handleGenerarPDF();
   };
-
-  const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
-  // const route = useRouter(); // Ya definido arriba
-  // const [monthSelected, setMonthSelected] = useState(currentMonth); // Ya definido arriba
-
-  // Función para detectar si toda la evaluación tiene 3 o 4 opciones basándose en la configuración de preguntas
-  const detectarNumeroOpciones = useMemo(() => {
-    if (!preguntasRespuestas || preguntasRespuestas.length === 0) return 4; // Por defecto 4
-
-    let maxOpciones = 3;
-    preguntasRespuestas.forEach((p) => {
-      // Excluir la opción dinámica "no respondió" del conteo de alternativas reales
-      const altsReales = p.alternativas?.filter(
-        (alt) => alt.descripcion?.toLowerCase() !== 'no respondio'
-      ) || [];
-      if (altsReales.length > maxOpciones) {
-        maxOpciones = altsReales.length;
-      }
-    });
-
-    return maxOpciones;
-  }, [preguntasRespuestas]);
-  const preguntasMap = useMemo(() => {
-    const map = new Map<string, PreguntasRespuestas>();
-    preguntasRespuestas.forEach((pregunta) => {
-      if (pregunta.id) {
-        map.set(pregunta.id, pregunta);
-      }
-    });
-    return map;
-  }, [preguntasRespuestas]);
-  const preguntasOrdenadas = useMemo(() => {
-    return [...(preguntasRespuestas || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
-  }, [preguntasRespuestas]);
-
-  // Ordenar reporteDirector por el order de las preguntas correspondientes
-  const reporteDirectorOrdenado = useMemo(() => {
-    if (!reporteDirector || !preguntasOrdenadas.length) return reporteDirector;
-
-    // Crear un mapa de estadísticas por ID de pregunta
-    const estadisticasMap = new Map<string, any>();
-    reporteDirector.forEach((stat) => {
-      if (stat.id) {
-        estadisticasMap.set(stat.id, stat);
-      }
-    });
-
-    // Crear un array sincronizado basado en preguntasRespuestas
-    const reporteSincronizado = preguntasOrdenadas.map((pregunta) => {
-      const estadistica = estadisticasMap.get(pregunta.id || '');
-      if (estadistica) {
-        return estadistica;
-      } else {
-        // Si no hay estadísticas para esta pregunta, crear una estructura vacía
-        return {
-          id: pregunta.id,
-          a: 0,
-          b: 0,
-          c: 0,
-          d: pregunta.alternativas?.some((alt) => alt.alternativa === 'd') ? 0 : undefined,
-          total: 0,
-        };
-      }
-    });
-
-    return reporteSincronizado;
-  }, [reporteDirector, preguntasOrdenadas]);
-
-  // Crear array de objetos con toda la información necesaria para el reporte
-  const reporteCompleto = useMemo(() => {
-    if (!reporteDirectorOrdenado || !preguntasRespuestas.length) return [];
-
-    return reporteDirectorOrdenado.map((dat, index) => {
-      const pregunta = preguntasMap.get(dat.id || '');
-
-      return {
-        pregunta: pregunta?.pregunta || 'Pregunta no encontrada',
-        actuacion: pregunta?.preguntaDocente || 'Actuación no encontrada',
-        order: pregunta?.order || index + 1,
-        id: dat.id || '',
-        dataEstadistica: dat,
-        respuesta: pregunta?.respuesta || '',
-        index: index + 1,
-        graficoImagen: '', // Se llenará después de renderizar el gráfico
-      };
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reporteDirectorOrdenado, preguntasMap]);
-  const {
-    graficosImagenes,
-    imagenesGeneradas,
-    loadingPDF,
-    reporteCompletoConImagenes,
-    convertirGraficoAImagen,
-    handleGenerarPDF,
-    limpiarImagenes
-  } = useGenerarPDFReporte({
-    reporteCompleto,
-    currentUserData,
-    titulo: 'Reporte de Evaluación - Directores',
-    tipoUsuario: 'Director',
-    monthSelected
-  });
-  // Limpiar dataFiltradaDirectorTabla cuando el componente se monta
-  useEffect(() => {
-    dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, payload: [] });
-  }, [dispatch]);
-
-  useEffect(() => {
-    //me trae las preguntas y respuestas para los graficos
-    getPreguntasRespuestas(`${route.query.idEvaluacion}`);
-    getEvaluacion(`${route.query.idEvaluacion}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUserData.dni, route.query.idEvaluacion]);
-
-  // Reconstruir en memoria para compatibilidad del Director
-  const estudiantesBase = useMemo(() => {
-    if (!estudiantes || !preguntasRespuestas) return [];
-
-    return estudiantes.map(est => {
-      let respuestasReconstruidas: PreguntasRespuestas[] = [];
-
-      if (Array.isArray(est.respuestas)) {
-        respuestasReconstruidas = est.respuestas.map(r => {
-          const globalP = preguntasRespuestas.find(p =>
-            (r.id && p.id === r.id) || (r.order !== undefined && p.order === r.order)
-          );
-          return { ...r, respuesta: globalP?.respuesta || r.respuesta };
-        });
-      } else if (est.respuestas && typeof est.respuestas === 'object') {
-        respuestasReconstruidas = preguntasRespuestas.map(p => {
-          const alternativaSeleccionada = (est.respuestas as any)[p.id || ''];
-          const alternativasReconstruidas = p.alternativas?.map(alt => ({
-            ...alt,
-            selected: !!alt.alternativa && !!alternativaSeleccionada && alt.alternativa.toLowerCase() === alternativaSeleccionada.toLowerCase()
-          })) || [];
-
-          return {
-            ...p,
-            alternativas: alternativasReconstruidas
-          };
-        });
-      }
-
-      return { ...est, respuestas: respuestasReconstruidas } as UserEstudiante;
-    });
-  }, [estudiantes, preguntasRespuestas]);
-
-  // Memoizar el filtrado de estudiantes para evitar loops infinitos
-  const estudiantesFiltrados = useMemo(() => {
-    return filtrosParaReporteDirector(estudiantesBase, filtros);
-  }, [estudiantesBase, filtros, filtrosParaReporteDirector]);
-
-  // Sincronizar el estado global cuando cambian los estudiantes filtrados
-  useEffect(() => {
-    dispatch({
-      type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA,
-      payload: estudiantesFiltrados
-    });
-  }, [estudiantesFiltrados, dispatch]);
-
-  // Efecto principal para cargar los datos del reporte cuando cambian los filtros de tiempo o la evaluación
-  useEffect(() => {
-    const currentFetchKey = `${route.query.idEvaluacion}-${monthSelected}-${yearSelected}-${evaluacion.id}`;
-
-    if (currentUserData.dni && evaluacion.id && monthSelected !== undefined) {
-      // Si los parámetros de identidad/tiempo no han cambiado, no volver a leer de Firestore
-      if (lastFetchParams.current === currentFetchKey) {
-        console.log("EVA-LOG: Filtro aplicado en memoria (estudiantes)");
-        return;
-      }
-
-      console.log("EVA-LOG: Iniciando carga de estudiantes...", {
-        motivo: "Cambio de parámetros detectado",
-        keyAntigua: lastFetchParams.current,
-        keyNueva: currentFetchKey
-      });
-      setGlobalFetchParams(currentFetchKey);
-
-      reporteDirectorEstudiantes(
-        `${route.query.idEvaluacion}`,
-        monthSelected,
-        yearSelected,
-        currentUserData,
-        evaluacion
-      ).then((res) => {
-        console.log("DEBUG-REPORTE: Datos recibidos de reporteDirectorEstudiantes en reporte/index.tsx:", res);
-        const alumnos = res?.estudiantes || [];
-        if (evaluacion.id) {
-          obtenerCoberturaDirector(evaluacion, alumnos);
-        }
-      }).finally(() => {
-        setLoadingMonth(false);
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route.query.idEvaluacion, currentUserData.dni, yearSelected, monthSelected, evaluacion.id, obtenerCoberturaDirector, reporteDirectorEstudiantes]);
-  useEffect(() => {
-    getGrados();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  useEffect(() => {
-    const trendKey = `${evaluacion.id}-${yearSelected}`;
-    if (evaluacion.id) {
-      if (lastFetchTrendParams.current === trendKey) {
-        console.log("EVA-LOG: Filtro aplicado en memoria (tendencia)");
-        return;
-      }
-      console.log("EVA-LOG: Iniciando carga de tendencia anual (CF)...");
-      setGlobalTrendParams(trendKey);
-      getAllEvaluacionesDeEstudiantesPorMes(evaluacion, yearSelected);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [evaluacion.id, yearSelected, getAllEvaluacionesDeEstudiantesPorMes]);
-
-  // Asegurar que el mes seleccionado sea válido para el nuevo año (COMENTADO TEMPORALMENTE PARA EVITAR SALTOS)
-  /* useEffect(() => {
-    if (mesesConDataDisponibles.length > 0 && route.isReady) {
-      const mesEnUrl = route.query.mes ? Number(route.query.mes) : null;
-      if (!mesesConDataDisponibles.includes(monthSelected)) {
-        const nuevoMes = mesesConDataDisponibles[0];
-        console.log(`EVA-LOG: Bloqueado salto de mes automático de ${monthSelected} a ${nuevoMes}`);
-        // setMonthSelected(nuevoMes);
-      }
-    }
-  }, [mesesConDataDisponibles, monthSelected, route.query.mes, route.isReady]); */
-
-
-
-
-
-
-  const handleChangeMonth = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
-    if (val === "") return;
-
-    setLoadingMonth(true);
-    const newMonth = Number(val);
-
-    // Limpiar las imágenes de gráficos cuando cambie el mes
-    limpiarImagenes();
-    // Limpiar filtros cuando cambie el mes (preservando grado si es director)
-    const gradoDefault = currentUserData?.rol === 2 ? String(evaluacion?.grado || filtros.grado) : '';
-    setFiltros({
-      grado: gradoDefault,
-      seccion: '',
-      orden: '',
-      genero: '',
-      nivel: '',
-    });
-
-
-    try {
-      // Actualizar el mes seleccionado
-      setMonthSelected(newMonth);
-      updateQuery({ mes: newMonth });
-
-      // La función reporteDirectorEstudiantes se ejecutará automáticamente 
-      // por el useEffect que depende de monthSelected
-    } catch (error) {
-      console.error('Error al cambiar mes:', error);
-      setLoadingMonth(false);
-    }
-  };
-
-  const handleChangeYear = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = Number(e.target.value);
-    setYearSelected(val);
-    updateQuery({ year: val });
-  };
-
-  // Eliminado: el efecto de arriba ya maneja la carga de datos por mes/año de forma consolidada
-
-  // Crear un mapa optimizado de preguntas por ID para evitar búsquedas repetidas O(1) en lugar de O(n)
-
-
-  // Memorizar las preguntas ordenadas por la propiedad order
-
-
-  // Hook para generar PDF con imágenes
 
   return (
     <>
@@ -828,13 +703,32 @@ const Reporte = () => {
       ) : (
         <div className={styles.mainContainer}>
           <div className={styles.content}>
-            <div className={styles.selectContainer}>
-              <div className={styles.leftSelects}>
-                <div className={styles.selectWrapper}>
+            {/* Si está activo el modo Ejecutivo, se muestra el Banner Hero de Alto Impacto */}
+            {bannerMode === 'ejecutivo' && (
+              <DirectorHeroBanner
+                evaluacion={evaluacion}
+                estudiantesFiltrados={estudiantesFiltrados}
+                estudiantesDeEvaluacion={estudiantesDeEvaluacion}
+                preguntasRespuestas={preguntasRespuestas}
+                metricasDirector={metricasDirector}
+                monthSelected={monthSelected}
+                yearSelected={yearSelected}
+                colegio={currentUserData?.institucion}
+                onSwitchToCompact={() => handleToggleBannerMode('compacto')}
+              />
+            )}
+
+            {/* Barra Superior de Año, Mes, Selector de Vista y Menú de Exportación */}
+            <div className="flex flex-wrap items-center justify-between gap-3 w-full mb-6">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                {/* Selector de Año */}
+                <div className="relative inline-flex items-center h-[42px] rounded-xl bg-white border border-slate-200/90 hover:border-slate-300 shadow-2xs transition-colors focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+                  <RiCalendarLine className="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" />
                   <select
-                    className={styles.select}
+                    className="appearance-none bg-transparent pl-9 pr-8 h-full text-xs sm:text-sm font-semibold text-slate-700 outline-none cursor-pointer w-28 sm:w-32"
                     onChange={handleChangeYear}
                     value={yearSelected}
+                    aria-label="Seleccionar año de evaluación"
                   >
                     {yearsAvailable.map((year) => (
                       <option key={year} value={year}>
@@ -842,20 +736,39 @@ const Reporte = () => {
                       </option>
                     ))}
                   </select>
+                  <RiArrowDownSLine className="absolute right-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
 
-                <div className={styles.selectWrapper}>
+                {/* Selector de Mes */}
+                <div
+                  className={`relative inline-flex items-center h-[42px] rounded-xl border shadow-2xs transition-colors ${
+                    evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null
+                      ? 'bg-slate-50/80 border-slate-200/90 text-slate-600'
+                      : 'bg-white border-slate-200/90 hover:border-slate-300 text-slate-700 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100'
+                  }`}
+                  title={
+                    evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null
+                      ? 'Mes asignado a esta evaluación'
+                      : 'Seleccionar mes'
+                  }
+                >
+                  <RiTimeLine className="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" />
                   <select
-                    className={styles.select}
+                    className={`appearance-none bg-transparent pl-9 pr-8 h-full text-xs sm:text-sm font-semibold outline-none w-36 sm:w-44 ${
+                      evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null
+                        ? 'cursor-default text-slate-600'
+                        : 'cursor-pointer text-slate-700'
+                    }`}
                     onChange={handleChangeMonth}
                     value={monthSelected}
                     disabled={true}
-                    id=""
+                    aria-label="Mes de la evaluación"
                   >
-                    {evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null ? (
+                    {evaluacion?.mesDelExamen !== undefined &&
+                    evaluacion?.mesDelExamen !== null ? (
                       (() => {
                         const examMonthId = Number(evaluacion.mesDelExamen);
-                        const mes = getAllMonths.find(m => m.id === examMonthId);
+                        const mes = getAllMonths.find((m) => m.id === examMonthId);
                         return mes ? (
                           <option key={mes.id} value={mes.id}>
                             {mes.name}
@@ -865,495 +778,264 @@ const Reporte = () => {
                     ) : (
                       <>
                         <option value="">Mes</option>
-                        {getAllMonths.filter(mes => mesesConDataDisponibles.includes(mes.id)).map((mes) => (
-                          <option key={mes.id} value={mes.id}>
-                            {mes.name}
-                          </option>
-                        ))}
+                        {getAllMonths
+                          .filter((mes) => mesesConDataDisponibles.includes(mes.id))
+                          .map((mes) => (
+                            <option key={mes.id} value={mes.id}>
+                              {mes.name}
+                            </option>
+                          ))}
                       </>
                     )}
                   </select>
-                  {loadingMonth && (
-                    <div className={styles.monthLoader}>
-                      <RiLoader4Line className={styles.loaderIcon} />
+                  {loadingMonth ? (
+                    <div className="absolute right-2.5 flex items-center pointer-events-none">
+                      <RiLoader4Line className="w-4 h-4 text-slate-400 animate-spin" />
                     </div>
+                  ) : (
+                    <RiArrowDownSLine className="absolute right-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
                   )}
                 </div>
               </div>
 
-              {/* Dropdown de exportación */}
-              {hasAnyDirectorAction && (
-                <div className={styles.headerActions} style={{ marginBottom: 0 }}>
-                  <div className={styles.exportButtonsContainer}>
-                    <div className={styles.customDropdown} ref={dropdownRef}>
-                      <button
-                        className={`${styles.dropdownTrigger} ${isOpen ? styles.dropdownActive : ''}`}
-                        onClick={() => setIsOpen(!isOpen)}
-                        disabled={loadingExport || loadingPDF || !estudiantesFiltrados || estudiantesFiltrados.length === 0}
-                      >
-                        <HiOutlineDownload className={styles.dropdownIcon} />
-                        <span>{loadingExport || loadingPDF ? 'Procesando...' : 'Exportar Reporte'}</span>
-                        <IoIosArrowDown className={`${styles.arrowIcon} ${isOpen ? styles.arrowRotate : ''}`} />
-                      </button>
-
-                      {isOpen && (
-                        <div className={styles.dropdownMenu}>
-                          {allowExportGrillaPdf && (
-                            <div
-                              className={styles.dropdownItem}
-                              onClick={() => handleExportOption('pdf-tabla')}
-                            >
-                              <RiFilePdfLine className={styles.itemIconPdf} />
-                              <div className={styles.itemContent}>
-                                <span className={styles.itemTitle}>Exportar Grilla PDF</span>
-                                <span className={styles.itemDescription}>Reporte tabular de resultados</span>
-                              </div>
-                            </div>
-                          )}
-
-                          {allowExportExcel && (
-                            <div
-                              className={styles.dropdownItem}
-                              onClick={() => handleExportOption('excel')}
-                            >
-                              <RiFileExcel2Line className={styles.itemIconExcel} />
-                              <div className={styles.itemContent}>
-                                <span className={styles.itemTitle}>Exportar a Excel</span>
-                                <span className={styles.itemDescription}>Datos crudos para análisis</span>
-                              </div>
-                            </div>
-                          )}
-
-                          {allowGenerarPdfPreguntas && (
-                            <div
-                              className={`${styles.dropdownItem} ${(!imagenesGeneradas || reporteCompletoConImagenes.length === 0) ? styles.itemDisabled : ''}`}
-                              onClick={() => {
-                                if (imagenesGeneradas && reporteCompletoConImagenes.length > 0) {
-                                  handleExportOption('pdf-preguntas');
-                                }
-                              }}
-                            >
-                              <RiFilePdfLine className={styles.itemIconQuestions} />
-                              <div className={styles.itemContent}>
-                                <span className={styles.itemTitle}>
-                                  {!imagenesGeneradas ? 'Preparando PDF Preguntas...' : 'Generar PDF Preguntas'}
-                                </span>
-                                <span className={styles.itemDescription}>Reporte gráfico detallado</span>
-                              </div>
-                              {!imagenesGeneradas && <RiLoader4Line className={styles.loaderIconSmall} />}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className={styles.filtersContainer}>
-              <select
-                name="nivel"
-                className={styles.select}
-                onChange={handleChangeFiltros}
-                value={filtros.nivel}
-              >
-                <option value="">Nivel</option>
-                {evaluacion.nivelYPuntaje?.map((nivel) => (
-                  <option key={nivel.id} value={nivel.nivel}>
-                    {nivel.nivel}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                name="grado"
-                className={styles.select}
-                onChange={handleChangeFiltros}
-                value={filtros.grado}
-                disabled={currentUserData.rol === 2}
-              >
-                <option value="">Grado</option>
-                {gradosDeColegio.map((grado) => (
-                  <option key={grado.id} value={grado.id}>
-                    {grado.name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                name="seccion"
-                value={filtros.seccion}
-                onChange={handleChangeFiltros}
-                className={styles.select}
-              >
-                <option value="">Sección</option>
-                {availableSections.map((seccion) => (
-                  <option key={seccion.id} value={seccion.id}>
-                    {seccion.name.toUpperCase()}
-                  </option>
-                ))}
-              </select>
-              <select
-                name="genero"
-                value={filtros.genero}
-                onChange={handleChangeFiltros}
-                className={styles.select}
-              >
-                <option value="">Género</option>
-                {genero.map((gen) => (
-                  <option key={gen.id} value={gen.id}>
-                    {gen.name.toUpperCase()}
-                  </option>
-                ))}
-              </select>
-              <select className={styles.select} onChange={handleChangeFiltros} name="orden" id="">
-                <option value="">ordernar por</option>
-                {ordernarAscDsc.map((orden) => (
-                  <option key={orden.id} value={orden.name}>
-                    {orden.name}
-                  </option>
-                ))}
-              </select>
-
-              <div className={styles.configContainer} ref={configRef}>
-                <button
-                  className={styles.configButton}
-                  onClick={() => setShowConfig(!showConfig)}
-                  title="Configurar columnas"
+              {/* Acciones de la derecha: Selector de Vista (Compacto / Ejecutivo) y Menú de Exportación */}
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <div
+                  className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/90 shadow-2xs h-[42px]"
+                  role="group"
+                  aria-label="Modo de visualización"
                 >
-                  <RiSettings4Line />
-                  Columnas
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleBannerMode('compacto')}
+                    className={`h-full px-3 sm:px-3.5 text-xs font-semibold rounded-lg transition-all duration-150 inline-flex items-center justify-center ${
+                      bannerMode === 'compacto'
+                        ? 'bg-white text-slate-800 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                    title="Modo tradicional compacto"
+                    aria-pressed={bannerMode === 'compacto'}
+                  >
+                    Compacto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleBannerMode('ejecutivo')}
+                    className={`h-full flex items-center gap-1.5 px-3 sm:px-3.5 text-xs font-semibold rounded-lg transition-all duration-150 ${
+                      bannerMode === 'ejecutivo'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-500 hover:text-blue-700 hover:bg-blue-50/50'
+                    }`}
+                    title="Modo ejecutivo con banner y métricas clave"
+                    aria-pressed={bannerMode === 'ejecutivo'}
+                  >
+                    <RiSparklingLine className="w-3.5 h-3.5" />
+                    <span>Ejecutivo</span>
+                  </button>
+                </div>
 
-                {showConfig && (
-                  <div className={styles.configMenu}>
-                    <span className={styles.configTitle}>Visibilidad de Columnas</span>
-                    <div className={styles.configList}>
-                      <label className={styles.configItem}>
-                        <input
-                          type="checkbox"
-                          checked={columnasVisibles.showRC}
-                          onChange={() => toggleColumna('showRC')}
-                        />
-                        <span>Respuestas Correctas (RC)</span>
-                      </label>
-                      <label className={styles.configItem}>
-                        <input
-                          type="checkbox"
-                          checked={columnasVisibles.showTP}
-                          onChange={() => toggleColumna('showTP')}
-                        />
-                        <span>Total Preguntas (TP)</span>
-                      </label>
-                      <label className={styles.configItem}>
-                        <input
-                          type="checkbox"
-                          checked={columnasVisibles.showPuntaje}
-                          onChange={() => toggleColumna('showPuntaje')}
-                        />
-                        <span>Puntaje</span>
-                      </label>
-                      <label className={styles.configItem}>
-                        <input
-                          type="checkbox"
-                          checked={columnasVisibles.showNivel}
-                          onChange={() => toggleColumna('showNivel')}
-                        />
-                        <span>Nivel (Logro)</span>
-                      </label>
-                      <label className={styles.configItem}>
-                        <input
-                          type="checkbox"
-                          checked={columnasVisibles.showDniDocente}
-                          onChange={() => toggleColumna('showDniDocente')}
-                        />
-                        <span>DNI Docente</span>
-                      </label>
-                    </div>
-                  </div>
+                {/* Menú Modular de Exportación */}
+                {hasAnyDirectorAction && (
+                  <DirectorExportMenu
+                    loadingExport={loadingExport}
+                    loadingPDF={loadingPDF}
+                    disabled={!estudiantesFiltrados || estudiantesFiltrados.length === 0}
+                    allowExportGrillaPdf={allowExportGrillaPdf}
+                    allowExportExcel={allowExportExcel}
+                    allowGenerarPdfPreguntas={allowGenerarPdfPreguntas}
+                    imagenesGeneradas={imagenesGeneradas}
+                    hasPreguntasConImagenes={reporteCompletoConImagenes.length > 0}
+                    onExport={handleExportOption}
+                  />
                 )}
               </div>
-
-              <button className={styles.clearButton} onClick={handleLimpiarFiltros}>
-                Limpiar Filtros
-              </button>
             </div>
 
+            {/* Barra Ergonómica de Pestañas (Tabs) */}
+            <DirectorTabsNav
+              activeTab={activeTab}
+              onChangeTab={setActiveTab}
+              totalEstudiantes={estudiantesFiltrados.length}
+              totalCritico={metricasDirector.kpis.totalCritico}
+              totalPreguntas={preguntasRespuestas.length}
+            />
 
-            {isLoading || loadingMonth ? (
-              <div className={styles.loaderContainer}>
-                <Loader
-                  size="large"
-                  variant="spinner"
-                  text="Cargando datos..."
-                  color="#10b981"
-                />
-              </div>
-            ) : (
-              <>
-                {/* Leyenda de Niveles */}
-                <div className={styles.legendContainer}>
-                  <span className={styles.legendTitle}>LEYENDA DE NIVELES:</span>
-                  {(nivelesLeyenda as any[]).map((nivel: any, index: number) => (
-                    <div key={index} className={styles.legendItem}>
-                      <div
-                        className={styles.legendCircle}
-                        style={{ backgroundColor: nivel.color }}
-                      ></div>
-                      <span className={styles.legendLabel}>{nivel.nombre}</span>
-                    </div>
-                  ))}
+            {/* Contenedor Maestro Tipo Carpeta Integrada (Folder Card Body) */}
+            <div className="bg-white border-x-2 border-b-2 border-slate-200 rounded-b-3xl p-4 sm:p-6 shadow-xs -mt-[2px] min-h-[520px]">
+              {isLoading || loadingMonth ? (
+                <div className="flex flex-col items-center justify-center py-20 min-h-[380px]">
+                  <Loader
+                    size="large"
+                    variant="spinner"
+                    text="Cargando datos..."
+                    color="#10b981"
+                  />
                 </div>
-
-                <TablaPreguntas
-                  estudiantes={estudiantesFiltrados}
-                  preguntasRespuestas={preguntasRespuestas}
-                  warningEvaEstudianteSinRegistro={undefined}
-                  /* warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined} */
-
-                  linkToEdit={`/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`}
-                  customColumns={{
-                    showPuntaje: columnasVisibles.showPuntaje,
-                    showNivel: columnasVisibles.showNivel,
-                    showRC: columnasVisibles.showRC,
-                    showTP: columnasVisibles.showTP,
-                    showDniDocente: columnasVisibles.showDniDocente
-                  }}
-                  showEditButton={false}
-                  className={styles.tableWrapper}
-                />
-
-                {evaluacion.tipoDeEvaluacion === '1' ? (
-                  <>
-                    {/* Distribución Niveles y Cobertura de Evaluación */}
-                    <div className={styles.graficosContainer} style={{ marginTop: '2rem' }}>
-                      <GraficoTendenciaColegio
+              ) : (
+                <>
+                  {/* TAB 1: ESTUDIANTES Y GRILLA DE RESULTADOS */}
+                  {activeTab === 'grilla' && (
+                    <div key="grilla" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                      <DirectorFiltrosBar
+                        filtros={filtros}
+                        onFilterChange={handleChangeFiltros}
                         evaluacion={evaluacion}
-                        datosPorMes={datosPorMes}
-                        mesesConDataDisponibles={mesesConDataDisponibles}
-                        promedioGlobal={promedioGlobal}
-                        monthSelected={monthSelected}
-                        promedioPorSeccion={promedioPorSeccion}
-                        promedioPorDocente={promedioPorDocente}
-                        evaluados={estudiantes.length}
-                        pendientes={estudiantesDeEvaluacion.length}
-                        listaPendientes={estudiantesDeEvaluacion}
-                        dataGraficoTendenciaNiveles={[
-                          generarDataGraficoPiechart(estudiantesFiltrados, monthSelected, evaluacion),
-                        ]}
-                        soloPieYCobertura={true}
+                        availableSections={availableSections}
+                        isDirectorRol={currentUserData.rol === 2}
+                        columnasVisibles={columnasVisibles}
+                        onToggleColumna={toggleColumna}
+                        onLimpiarFiltros={handleLimpiarFiltros}
                       />
-                    </div>
 
-                    {/* Comparativa de Niveles por Docentes y Comparativa por Secciones */}
-                    <div className={styles.graficosContainer} style={{ marginTop: '2rem' }}>
-                      <GraficoTendenciaColegio
-                        evaluacion={evaluacion}
-                        datosPorMes={datosPorMes}
-                        mesesConDataDisponibles={mesesConDataDisponibles}
-                        promedioGlobal={promedioGlobal}
-                        monthSelected={monthSelected}
-                        promedioPorSeccion={promedioPorSeccion}
-                        promedioPorDocente={promedioPorDocente}
-                        evaluados={estudiantes.length}
-                        pendientes={estudiantesDeEvaluacion.length}
-                        listaPendientes={estudiantesDeEvaluacion}
-                        dataGraficoTendenciaNiveles={[
-                          generarDataGraficoPiechart(estudiantesFiltrados, monthSelected, evaluacion),
-                        ]}
-                        soloDocentesYSecciones={true}
-                      />
-                    </div>
-
-                    {/* Gráficos de Tendencia (Acordeón 1) */}
-                    <div className={accordionStyles.accordionContainer} style={{ overflow: mostrarGraficos ? 'visible' : 'hidden', marginTop: '2rem' }}>
-                      <div
-                        onClick={() => setMostrarGraficos(!mostrarGraficos)}
-                        className={mostrarGraficos ? accordionStyles.headerOpen : accordionStyles.header}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <div className={accordionStyles.titleGroup}>
-                          <span className={accordionStyles.icon}>📊</span>
-                          <h3 className={accordionStyles.title}>Gráficos de Tendencia</h3>
-                        </div>
-                        <div className={mostrarGraficos ? accordionStyles.chevronOpen : accordionStyles.chevron}>
-                          ▼
-                        </div>
-                      </div>
-
-                      <div className={`${accordionStyles.contentWrapper} ${mostrarGraficos ? accordionStyles.contentWrapperOpen : ''}`}>
-                        <div className={`${accordionStyles.contentInner} ${mostrarGraficos ? accordionStyles.innerVisible : ''}`}>
-                          {/* Custom Searchable Dropdown de Selección de Comparativa Múltiple */}
-                          <div className={styles.evalDropdownWrapper} ref={compDropdownRef} style={{ marginBottom: '1.5rem', width: '100%', maxWidth: '600px' }}>
-                            {loadingEvaluaciones ? (
-                              <div className={styles.evalDropdownTrigger} style={{ cursor: 'wait' }}>
-                                <span className={styles.triggerText}>Cargando evaluaciones...</span>
-                                <RiLoader4Line className={styles.loaderIcon} style={{ fontSize: '1rem', margin: 0 }} />
-                              </div>
-                            ) : (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => setIsCompDropdownOpen(!isCompDropdownOpen)}
-                                  className={styles.evalDropdownTrigger}
-                                >
-                                  <span className={styles.triggerText}>
-                                    {evaluacionesAComparar.length === 0
-                                      ? 'Comparar con otras evaluaciones...'
-                                      : `${evaluacionesAComparar.length} seleccionada(s) para comparar`}
-                                  </span>
-                                  <RiArrowDownSLine className={`${styles.chevronIcon} ${isCompDropdownOpen ? styles.chevronIconOpen : ''}`} />
-                                </button>
-
-                                {isCompDropdownOpen && (
-                                  <div className={styles.evalOptionsPanel}>
-                                    <div className={styles.evalSearchContainer}>
-                                      <div className={styles.evalSearchRelative}>
-                                        <input
-                                          type="text"
-                                          autoFocus
-                                          value={searchCompQuery}
-                                          onChange={(e) => setSearchCompQuery(e.target.value)}
-                                          placeholder="Buscar evaluación..."
-                                          className={styles.evalSearchInput}
-                                        />
-                                        <RiSearchLine className={styles.evalSearchIcon} />
-                                        {searchCompQuery && (
-                                          <button
-                                            type="button"
-                                            onClick={() => setSearchCompQuery('')}
-                                            className={styles.evalSearchClearButton}
-                                          >
-                                            <RiCloseLine />
-                                          </button>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    <div className={styles.evalOptionsList}>
-                                      {evaluacionesCompFiltradas.map((evalOption) => {
-                                        const isSelected = evaluacionesAComparar.includes(evalOption.id);
-                                        const gradoNombre = getGradoTexto(evalOption.grado);
-                                        return (
-                                          <button
-                                            key={evalOption.id}
-                                            type="button"
-                                            onClick={() => {
-                                              setEvaluacionesAComparar((prev) =>
-                                                prev.includes(evalOption.id)
-                                                  ? prev.filter((id) => id !== evalOption.id)
-                                                  : [...prev, evalOption.id]
-                                              );
-                                            }}
-                                            className={`${styles.evalOptionItem} ${
-                                              isSelected ? styles.evalOptionItemActive : ''
-                                            }`}
-                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}
-                                          >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
-                                              <input
-                                                type="checkbox"
-                                                checked={isSelected}
-                                                readOnly
-                                                style={{ cursor: 'pointer', flexShrink: 0 }}
-                                              />
-                                              <span style={{ fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                {evalOption.nombre || 'Sin nombre'}
-                                              </span>
-                                            </div>
-                                            <span
-                                              style={{
-                                                fontSize: '0.75rem',
-                                                padding: '2px 8px',
-                                                borderRadius: '6px',
-                                                backgroundColor: isSelected ? '#3b82f6' : '#e2e8f0',
-                                                color: isSelected ? '#ffffff' : '#475569',
-                                                fontWeight: 600,
-                                                whiteSpace: 'nowrap',
-                                                flexShrink: 0
-                                              }}
-                                            >
-                                              {gradoNombre}
-                                            </span>
-                                          </button>
-                                        );
-                                      })}
-                                      {evaluacionesCompFiltradas.length === 0 && (
-                                        <div className={styles.evalNoResults}>
-                                          <RiErrorWarningLine className={styles.evalNoResultsIcon} />
-                                          <span className={styles.evalNoResultsText}>No se encontraron evaluaciones para comparar.</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </div>
-
-                          <div className={styles.graficosContainer}>
-                            <GraficoTendencia
-                              idEvaluacion={route.query.idEvaluacion as string}
-                              evaluacionesAComparar={evaluacionesAComparar}
-                              dniDirector={currentUserData.dni}
-                              monthSelected={monthSelected}
-                              yearSelected={Number(yearSelected)}
-                              ocultarTabla={false}
+                      {/* Leyenda de Niveles */}
+                      <div className={styles.legendContainer}>
+                        <span className={styles.legendTitle}>LEYENDA DE NIVELES:</span>
+                        {(nivelesLeyenda as any[]).map((nivel: any, index: number) => (
+                          <div key={index} className={styles.legendItem}>
+                            <div
+                              className={styles.legendCircle}
+                              style={{ backgroundColor: nivel.color }}
                             />
+                            <span className={styles.legendLabel}>{nivel.nombre}</span>
                           </div>
-                        </div>
+                        ))}
                       </div>
-                    </div>
-                  </>
-                ) : null}
-                <div className={accordionStyles.accordionContainer} style={{ marginTop: '2rem' }}>
-                  <div
-                    onClick={() => setMostrarReportePreguntas(!mostrarReportePreguntas)}
-                    className={mostrarReportePreguntas ? accordionStyles.headerOpen : accordionStyles.header}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className={accordionStyles.titleGroup}>
-                      <span className={accordionStyles.icon}>📋</span>
-                      <h3 className={accordionStyles.title}>Reporte de Evaluación por Pregunta</h3>
-                    </div>
-                    <div className={mostrarReportePreguntas ? accordionStyles.chevronOpen : accordionStyles.chevron}>
-                      ▼
-                    </div>
-                  </div>
 
-                  <div className={`${accordionStyles.contentWrapper} ${mostrarReportePreguntas ? accordionStyles.contentWrapperOpen : ''}`}>
-                    <div className={`${accordionStyles.contentInner} ${mostrarReportePreguntas ? accordionStyles.innerVisible : ''}`}>
+                      <TablaPreguntas
+                        estudiantes={estudiantesFiltrados}
+                        preguntasRespuestas={preguntasRespuestas}
+                        warningEvaEstudianteSinRegistro={undefined}
+                        linkToEdit={`/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`}
+                        customColumns={{
+                          showPuntaje: columnasVisibles.showPuntaje,
+                          showNivel: columnasVisibles.showNivel,
+                          showRC: columnasVisibles.showRC,
+                          showTP: columnasVisibles.showTP,
+                          showDniDocente: columnasVisibles.showDniDocente,
+                        }}
+                        showEditButton={false}
+                        className={styles.tableWrapper}
+                      />
+                    </div>
+                  )}
+
+                  {/* TAB 2: BRECHAS DE APRENDIZAJE (BURBUJAS Y DECISIONES) */}
+                  {activeTab === 'brechas' && (
+                    <div key="brechas" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                      <DirectorBrechasTab
+                        metricas={metricasDirector}
+                        preguntas={preguntasRespuestas}
+                        evaluacion={evaluacion}
+                        evaluacionesDb={evaluacionesDb}
+                        initialGrado={filtros.grado || evaluacion?.grado}
+                        initialSeccion={filtros.seccion}
+                        onSelectEvaluacion={handleSelectEvaluacion}
+                        onOpenQuestionDetail={(order, coords) =>
+                          setQuestionDetailPopover({ order, coords })
+                        }
+                        onOpenGuiaBurbujas={() => setIsBurbujasModalOpen(true)}
+                        onOpenGuiaDecisiones={() => setIsDecisionesModalOpen(true)}
+                      />
+                    </div>
+                  )}
+
+                  {/* TAB 4: TENDENCIAS Y COBERTURA */}
+                  {activeTab === 'tendencia' && (
+                    <div key="tendencia" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                      <DirectorTendenciasTab
+                        evaluacion={evaluacion}
+                        datosPorMes={datosPorMes}
+                        mesesConDataDisponibles={mesesConDataDisponibles}
+                        promedioGlobal={promedioGlobal}
+                        monthSelected={monthSelected}
+                        yearSelected={yearSelected}
+                        estudiantes={estudiantes}
+                        availableSections={availableSections}
+                        docentesMap={docentesMap}
+                        promedioPorDocente={promedioPorDocente}
+                        evaluados={estudiantes.length}
+                        pendientes={estudiantesDeEvaluacion.length}
+                        listaPendientes={estudiantesDeEvaluacion}
+                        estudiantesFiltrados={estudiantesFiltrados}
+                        evaluacionesDb={evaluacionesDb}
+                        loadingEvaluaciones={loadingEvaluaciones}
+                        dniDirector={currentUserData.dni}
+                        routeEvaluacionId={route.query.idEvaluacion as string}
+                      />
+                    </div>
+                  )}
+
+                  {/* TAB 5: ANÁLISIS POR PREGUNTA */}
+                  {activeTab === 'preguntas' && (
+                    <div
+                      key="preguntas"
+                      className={tabsStyles.tabContentPanel}
+                      role="tabpanel"
+                      tabIndex={0}
+                    >
                       <ReporteEvaluacionPorPregunta
                         dataEstadisticasOrdenadas={reporteDirectorOrdenado}
                         preguntasMap={preguntasMap}
                         detectarNumeroOpciones={detectarNumeroOpciones}
                         warningEvaEstudianteSinRegistro={undefined}
-                        convertirGraficoAImagen={() => {}} // No-op para la vista interactiva
+                        convertirGraficoAImagen={() => {}}
                       />
                     </div>
-                  </div>
-                </div>
+                  )}
+                </>
+              )}
+            </div>
 
-                {/* Renderizado off-screen para asegurar que los gráficos se generen siempre para el PDF, incluso con el acordeón cerrado */}
-                <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '700px', height: 'auto', overflow: 'hidden', pointerEvents: 'none' }}>
-                  <ReporteEvaluacionPorPregunta
-                    dataEstadisticasOrdenadas={reporteDirectorOrdenado}
-                    preguntasMap={preguntasMap}
-                    detectarNumeroOpciones={detectarNumeroOpciones}
-                    warningEvaEstudianteSinRegistro={undefined}
-                    convertirGraficoAImagen={convertirGraficoAImagen}
-                    forceOneColumn={true}
-                  />
-                </div>
-              </>
-            )}
+            {/* Renderizado off-screen para asegurar que los gráficos se generen para el PDF */}
+            <div
+              style={{
+                position: 'absolute',
+                left: '-9999px',
+                top: '-9999px',
+                width: '700px',
+                height: 'auto',
+                overflow: 'hidden',
+                pointerEvents: 'none',
+              }}
+            >
+              <ReporteEvaluacionPorPregunta
+                dataEstadisticasOrdenadas={reporteDirectorOrdenado}
+                preguntasMap={preguntasMap}
+                detectarNumeroOpciones={detectarNumeroOpciones}
+                warningEvaEstudianteSinRegistro={undefined}
+                convertirGraficoAImagen={convertirGraficoAImagen}
+                forceOneColumn={true}
+              />
+            </div>
           </div>
-
         </div>
+      )}
+
+      {/* Modales Compartidos */}
+      <GuiaBurbujasModal
+        isOpen={isBurbujasModalOpen}
+        onClose={() => setIsBurbujasModalOpen(false)}
+      />
+
+      <GuiaDecisionesModal
+        isOpen={isDecisionesModalOpen}
+        onClose={() => setIsDecisionesModalOpen(false)}
+        baremo={baremo}
+      />
+
+      {questionDetailPopover && (
+        <QuestionDetailPopover
+          order={questionDetailPopover.order}
+          coords={questionDetailPopover.coords}
+          onClose={() => setQuestionDetailPopover(null)}
+          preguntas={preguntasRespuestas}
+          gradoName={`${getGradoTexto(evaluacion?.grado)} - ${evaluacion?.nombre || ''}`}
+        />
       )}
     </>
   );
 };
 
-export default Reporte;
 Reporte.Auth = PrivateRouteDirectores;
+
+export default Reporte;

@@ -7,8 +7,10 @@ import { getAllMonths, getMonthName } from '@/fuctions/dates'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import React, { useEffect, useMemo, useState } from 'react'
-import { RiLoader4Line } from 'react-icons/ri'
-import { MdVisibility } from 'react-icons/md'
+import { RiLoader4Line, RiFilter3Line, RiRestartLine } from 'react-icons/ri'
+import { MdAnalytics } from 'react-icons/md'
+import { getNivelGrado } from '@/features/hooks/useEvaluacionesFilters'
+import SegmentedFilterBar from '@/components/common/SegmentedFilterBar'
 
 const Evaluaciones = () => {
   const router = useRouter()
@@ -19,59 +21,13 @@ const Evaluaciones = () => {
   const currentYear = new Date().getFullYear()
 
   // Estados para filtros
-  const [selectedGrado, setSelectedGrado] = useState<string>('all')
+  const [selectedGrado, setSelectedGrado] = useState<string>('1')
   const [selectedYear, setSelectedYear] = useState<number>(currentYear)
   const [selectedMonth, setSelectedMonth] = useState<string>('all')
+  const [selectedEstado, setSelectedEstado] = useState<string>('activo')
   const [isUrlInitialized, setIsUrlInitialized] = useState<boolean>(false)
 
-  // 1. Leer los query parameters de la URL al cargar la página (URL -> State)
-  useEffect(() => {
-    if (!router.isReady || evaluaciones.length === 0 || isUrlInitialized) return
 
-    const { year, month, grade } = router.query
-
-    if (year) {
-      setSelectedYear(Number(year))
-    } else {
-      setSelectedYear(new Date().getFullYear()) // ONLY Year always starts at the current year
-    }
-
-    if (month) {
-      setSelectedMonth(String(month))
-    } else {
-      setSelectedMonth('all') // Default to "Todos los meses"
-    }
-
-    if (grade) {
-      setSelectedGrado(String(grade))
-    } else {
-      setSelectedGrado('all') // Default to "Todos los grados"
-    }
-
-    setIsUrlInitialized(true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router.isReady, evaluaciones, isUrlInitialized])
-
-  // 2. Sincronizar cambios de filtros hacia la URL (State -> URL)
-  useEffect(() => {
-    if (!isUrlInitialized) return
-
-    const query: Record<string, string> = {}
-
-    if (selectedYear) query.year = String(selectedYear)
-    if (selectedMonth) query.month = selectedMonth
-    if (selectedGrado) query.grade = selectedGrado
-
-    router.replace(
-      {
-        pathname: router.pathname,
-        query,
-      },
-      undefined,
-      { shallow: true }
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedYear, selectedMonth, selectedGrado, isUrlInitialized])
 
   useEffect(() => {
     const checkGlobalSentinelAndLoadList = async () => {
@@ -103,22 +59,113 @@ const Evaluaciones = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Extraer los años disponibles dinámicamente de las evaluaciones cargadas
+  // Evaluaciones accesibles para directores: solo activas o cerradas (active === true), excluyendo ocultas (active === false),
+  // y que pertenezcan al nivel de la institución educativa del director.
+  const evaluacionesVisiblesDirector = useMemo(() => {
+    const nivelDeInstitucion = currentUserData?.nivelDeInstitucion;
+    if (!Array.isArray(nivelDeInstitucion) || nivelDeInstitucion.length === 0) return [];
+
+    return (
+      evaluaciones?.filter((eva) => {
+        // Estado Oculto / Inactivo: no se muestra para el director
+        if (!eva.active) return false;
+
+        const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel;
+        // Filtro por nivel de institución (permisos)
+        return nivelDeInstitucion.includes(Number(nivelEva));
+      }) || []
+    );
+  }, [evaluaciones, currentUserData?.nivelDeInstitucion]);
+
+  // Helper para obtener el mes más reciente disponible para un año dado entre las evaluaciones visibles
+  const getLatestMonthForYear = (year: number) => {
+    const months = evaluacionesVisiblesDirector
+      .filter(
+        (eva) =>
+          Number(eva.añoDelExamen) === year &&
+          eva.mesDelExamen !== undefined &&
+          eva.mesDelExamen !== null &&
+          eva.mesDelExamen !== ''
+      )
+      .map((eva) => Number(eva.mesDelExamen));
+
+    if (months.length > 0) {
+      return String(Math.max(...months));
+    }
+    return 'all';
+  };
+
+  // 1. Leer los query parameters de la URL al cargar la página (URL -> State)
+  useEffect(() => {
+    if (!router.isReady || loaderPages || evaluaciones.length === 0 || isUrlInitialized) return;
+
+    const { year, month, grade, status } = router.query;
+
+    const initYear = year ? Number(year) : currentYear;
+    setSelectedYear(initYear);
+
+    // Si la URL ya trae un mes específico se respeta; sino, siempre inicia con el mes más reciente de las evaluaciones
+    if (month) {
+      setSelectedMonth(String(month));
+    } else {
+      const latestMonth = getLatestMonthForYear(initYear);
+      setSelectedMonth(latestMonth);
+    }
+
+    if (grade) {
+      setSelectedGrado(String(grade));
+    } else {
+      setSelectedGrado('1');
+    }
+
+    if (status && (status === 'activo' || status === 'cerrado' || status === 'all')) {
+      setSelectedEstado(String(status));
+    } else {
+      setSelectedEstado('activo');
+    }
+
+    setIsUrlInitialized(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady, loaderPages, evaluaciones, evaluacionesVisiblesDirector, isUrlInitialized]);
+
+  // 2. Sincronizar cambios de filtros hacia la URL (State -> URL)
+  useEffect(() => {
+    if (!isUrlInitialized) return;
+
+    const query: Record<string, string> = {};
+
+    if (selectedYear) query.year = String(selectedYear);
+    if (selectedMonth) query.month = selectedMonth;
+    if (selectedGrado) query.grade = selectedGrado;
+    if (selectedEstado) query.status = selectedEstado;
+
+    router.replace(
+      {
+        pathname: router.pathname,
+        query,
+      },
+      undefined,
+      { shallow: true }
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedYear, selectedMonth, selectedGrado, selectedEstado, isUrlInitialized]);
+
+  // Extraer los años disponibles dinámicamente de las evaluaciones visibles para el director
   const yearsAvailable = useMemo(() => {
     const yearsSet = new Set<number>()
     yearsSet.add(currentYear) // Siempre tener al menos el año actual
-    evaluaciones?.forEach(eva => {
+    evaluacionesVisiblesDirector.forEach(eva => {
       if (eva.añoDelExamen) {
         yearsSet.add(Number(eva.añoDelExamen))
       }
     })
     return Array.from(yearsSet).sort((a, b) => b - a) // De más reciente a más antiguo
-  }, [evaluaciones, currentYear])
+  }, [evaluacionesVisiblesDirector, currentYear])
 
-  // Extraer los meses disponibles dinámicamente de las evaluaciones cargadas para el año seleccionado
+  // Extraer los meses disponibles dinámicamente de las evaluaciones visibles para el año seleccionado
   const monthsAvailable = useMemo(() => {
     const monthsSet = new Set<number>()
-    evaluaciones?.forEach(eva => {
+    evaluacionesVisiblesDirector.forEach(eva => {
       if (
         Number(eva.añoDelExamen) === selectedYear &&
         eva.mesDelExamen !== undefined &&
@@ -132,7 +179,7 @@ const Evaluaciones = () => {
       id: m,
       name: getMonthName(m)
     }))
-  }, [evaluaciones, selectedYear])
+  }, [evaluacionesVisiblesDirector, selectedYear])
 
   // Sincronizar o ajustar el mes al cambiar de año si deja de ser válido
   useEffect(() => {
@@ -145,29 +192,21 @@ const Evaluaciones = () => {
     }
   }, [monthsAvailable, selectedMonth])
 
-  // 1. Base filtrada por año, mes y permisos (pero NO por el select de grado aún) - sin importar si active es true o false
+  // 1. Base filtrada por año y mes (ya filtrada por evaluaciones activas/cerradas y permisos)
   const evaluacionesBase = useMemo(() => {
-    return evaluaciones
-      ?.filter(eva => {
-        // Se muestran todas sin importar si active es true o false
-        const matchesYear = Number(eva.añoDelExamen) === selectedYear;
-        if (!matchesYear) return false;
+    return evaluacionesVisiblesDirector.filter(eva => {
+      const matchesYear = Number(eva.añoDelExamen) === selectedYear;
+      if (!matchesYear) return false;
 
-        // Filtro por Mes
-        if (selectedMonth !== 'all') {
-          const matchesMonth = String(eva.mesDelExamen) === selectedMonth;
-          if (!matchesMonth) return false;
-        }
+      // Filtro por Mes
+      if (selectedMonth !== 'all') {
+        const matchesMonth = String(eva.mesDelExamen) === selectedMonth;
+        if (!matchesMonth) return false;
+      }
 
-        const nivelDeInstitucion = currentUserData?.nivelDeInstitucion;
-        if (!Array.isArray(nivelDeInstitucion) || nivelDeInstitucion.length === 0) return false;
-
-        const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel;
-
-        // Filtro por nivel de institución (permisos)
-        return nivelDeInstitucion.includes(Number(nivelEva));
-      }) || []
-  }, [evaluaciones, currentUserData, selectedYear, selectedMonth])
+      return true;
+    })
+  }, [evaluacionesVisiblesDirector, selectedYear, selectedMonth])
 
   // 2. Extraer grados únicos disponibles en las evaluaciones actuales
   const gradosDisponibles = useMemo(() => {
@@ -187,186 +226,232 @@ const Evaluaciones = () => {
     }).sort((a, b) => a.grado - b.grado);
   }, [evaluacionesBase, grados])
 
-  // 3. Resultado final filtrado por el select de grado
+  // 3. Resultado final filtrado por el select de grado y estado
   const evaluacionesFiltradas = useMemo(() => {
     return evaluacionesBase.filter(eva => {
       // Filtro por Grado seleccionado
       if (selectedGrado !== 'all' && Number(eva.grado) !== Number(selectedGrado)) return false;
+
+      // Filtro por Estado (Activo / Cerrado)
+      if (selectedEstado === 'activo' && eva.cerrada) return false;
+      if (selectedEstado === 'cerrado' && !eva.cerrada) return false;
+
       return true;
     })
-  }, [evaluacionesBase, selectedGrado])
+  }, [evaluacionesBase, selectedGrado, selectedEstado])
+
+  const handleResetFilters = () => {
+    setSelectedYear(currentYear)
+    const latestMonth = getLatestMonthForYear(currentYear)
+    setSelectedMonth(latestMonth)
+    setSelectedGrado('1')
+    setSelectedEstado('activo')
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50/30 p-4 md:p-10">
-      <div className="max-w-6xl mx-auto space-y-10">
+    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
-                Evaluaciones
-              </h1>
-              <span className="px-3 py-1 bg-colorSegundo/10 text-colorSegundo text-sm font-bold rounded-full border border-colorSegundo/20">
-                {selectedYear}
-              </span>
-            </div>
-            <p className="text-slate-500 text-lg font-medium max-w-2xl leading-relaxed">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+              Evaluaciones
+            </h1>
+            <p className="text-slate-500 text-sm font-medium mt-1">
               Gestiona y supervisa las evaluaciones de tu institución educativa.
             </p>
           </div>
-
-          {/* Filters Section */}
-          <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
-            {/* Filtro de Año */}
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Año</label>
-              <div className="relative">
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="block w-full pl-3 pr-10 py-2.5 text-sm font-bold border-none focus:ring-2 focus:ring-colorSegundo/20 rounded-xl transition-all appearance-none bg-slate-50 hover:bg-slate-100 cursor-pointer text-slate-700 min-w-[120px]"
-                >
-                  {yearsAvailable.map((year) => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Filtro de Mes */}
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Mes</label>
-              <div className="relative">
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="block w-full pl-3 pr-10 py-2.5 text-sm font-bold border-none focus:ring-2 focus:ring-colorSegundo/20 rounded-xl transition-all appearance-none bg-slate-50 hover:bg-slate-100 cursor-pointer text-slate-700 min-w-[160px]"
-                >
-                  <option value="all">Todos los Meses</option>
-                  {monthsAvailable.map((m) => (
-                    <option key={m.id} value={String(m.id)}>{m.name}</option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Filtro de Grado */}
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Grado</label>
-              <div className="relative">
-                <select
-                  value={selectedGrado}
-                  onChange={(e) => setSelectedGrado(e.target.value)}
-                  className="block w-full pl-3 pr-10 py-2.5 text-sm font-bold border-none focus:ring-2 focus:ring-colorSegundo/20 rounded-xl transition-all appearance-none bg-slate-50 hover:bg-slate-100 cursor-pointer text-slate-700 min-w-[200px]"
-                >
-                  <option value="all">Todos los Grados</option>
-                  {gradosDisponibles.map((g) => (
-                    <option key={g.grado} value={g.grado}>{g.nombre}</option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
+          <span className="self-start sm:self-auto px-3 py-1 bg-colorSegundo/10 text-colorSegundo text-xs font-bold rounded-full border border-colorSegundo/20">
+            Año escolar {selectedYear}
+          </span>
         </div>
 
+        {/* Toolbar de Filtros Reutilizable y Responsive */}
+        <SegmentedFilterBar
+          title="Filtrar por"
+          filters={[
+            {
+              id: 'year',
+              label: 'Año',
+              value: selectedYear,
+              onChange: (year) => {
+                const newYear = Number(year);
+                setSelectedYear(newYear);
+                const latestMonth = getLatestMonthForYear(newYear);
+                setSelectedMonth(latestMonth);
+              },
+              options: yearsAvailable.map((year) => ({
+                value: year,
+                label: String(year),
+              })),
+              minWidth: 'md:min-w-[120px]',
+            },
+            {
+              id: 'month',
+              label: 'Mes',
+              value: selectedMonth,
+              onChange: (month) => setSelectedMonth(String(month)),
+              options: [
+                { value: 'all', label: 'Todos los Meses' },
+                ...monthsAvailable.map((m) => ({
+                  value: String(m.id),
+                  label: m.name,
+                })),
+              ],
+              minWidth: 'md:min-w-[170px]',
+            },
+            {
+              id: 'grade',
+              label: 'Grado',
+              value: selectedGrado,
+              onChange: (grade) => setSelectedGrado(String(grade)),
+              options: [
+                { value: 'all', label: 'Todos los Grados' },
+                ...gradosDisponibles.map((g) => ({
+                  value: String(g.grado),
+                  label: g.nombre,
+                })),
+              ],
+              minWidth: 'md:min-w-[170px]',
+            },
+            {
+              id: 'estado',
+              label: 'Estado',
+              value: selectedEstado,
+              onChange: (estado) => setSelectedEstado(String(estado)),
+              options: [
+                { value: 'all', label: 'Todos los Estados' },
+                { value: 'activo', label: 'Activo' },
+                { value: 'cerrado', label: 'Cerrado' },
+              ],
+              minWidth: 'md:min-w-[160px]',
+            },
+          ]}
+          onReset={handleResetFilters}
+          showReset={true}
+        />
+
+        {/* Tabla de Evaluaciones */}
         {loaderPages ? (
-          <div className="flex flex-col items-center justify-center py-32 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
-            <RiLoader4Line className="animate-spin text-6xl text-colorSegundo mb-6" />
-            <span className="text-slate-500 text-lg font-semibold tracking-wide animate-pulse">Cargando evaluaciones...</span>
+          <div className="flex flex-col items-center justify-center py-28 bg-white rounded-2xl border border-slate-200/90 shadow-xs">
+            <RiLoader4Line className="animate-spin text-5xl text-colorSegundo mb-4" />
+            <span className="text-slate-500 text-sm font-semibold tracking-wide animate-pulse">
+              Cargando evaluaciones...
+            </span>
           </div>
         ) : (
-          <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden transition-all duration-300">
+          <div className="bg-white rounded-2xl shadow-xs border border-slate-200/90 overflow-hidden transition-all duration-300">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100">
-                    <th className="py-6 px-8 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] w-20 text-center">#</th>
-                    <th className="py-6 px-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em]">Descripción de la Evaluación</th>
-                    <th className="py-6 px-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center">Grado</th>
-                    <th className="py-6 px-8 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] text-right">Acciones</th>
+                  <tr className="bg-white border-b border-slate-200/90">
+                    <th className="py-4 px-6 text-xs font-bold text-slate-800 uppercase tracking-wider text-left">
+                      Nombre de Evaluación
+                    </th>
+                    <th className="py-4 px-6 text-xs font-bold text-slate-800 uppercase tracking-wider text-left">
+                      Grado / Nivel
+                    </th>
+                    <th className="py-4 px-6 text-xs font-bold text-slate-800 uppercase tracking-wider text-left">
+                      Mes y Año
+                    </th>
+                    <th className="py-4 px-6 text-xs font-bold text-slate-800 uppercase tracking-wider text-center">
+                      Estado
+                    </th>
+                    <th className="py-4 px-6 text-xs font-bold text-slate-800 uppercase tracking-wider text-right">
+                      Reporte
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-100">
                   {evaluacionesFiltradas.length > 0 ? (
                     evaluacionesFiltradas.map((eva, index) => (
                       <tr
                         key={eva.id || index}
-                        className="group hover:bg-slate-50/50 transition-all duration-300"
+                        className="hover:bg-slate-50/70 transition-colors"
                       >
-                        <td className="py-6 px-8 text-sm text-slate-400 font-semibold text-center group-hover:text-slate-600">
-                          {String(index + 1).padStart(2, '0')}
-                        </td>
-                        <td className="py-6 px-4">
-                          <div className="flex flex-col gap-1.5">
-                            <div className="flex items-center gap-3">
-                              <Link
-                                href={`/directores/evaluaciones/evaluacion/${eva.id}`}
-                                className="inline-flex items-center gap-3 text-slate-700 font-bold hover:text-colorSegundo transition-all duration-300"
-                              >
-                                <span className="text-base tracking-tight">{eva.nombre}</span>
-                                <div className="w-6 h-6 rounded-full bg-colorSegundo/5 flex items-center justify-center opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                                  <span className="text-colorSegundo text-xs">→</span>
-                                </div>
-                              </Link>
-                              {eva.active ? (
-                                <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full border border-emerald-100 uppercase tracking-wider">
-                                  Activo
-                                </span>
-                              ) : (
-                                <span className="px-2.5 py-0.5 bg-rose-50 text-rose-600 text-[10px] font-bold rounded-full border border-rose-100 uppercase tracking-wider">
-                                  Inactivo
-                                </span>
-                              )}
-                            </div>
-                            {eva.mesDelExamen && (
-                              <span className="text-xs text-slate-400 font-medium ml-1">
-                                {getMonthName(Number(eva.mesDelExamen))} {eva.añoDelExamen}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-6 px-4 text-center">
-                          <span className="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-lg border border-slate-200 uppercase tracking-wider">
-                            {grados?.find(g => Number(g.grado) === Number(eva.grado))?.nombre || `${eva.grado}° Grado`}
-                          </span>
-                        </td>
-                        <td className="py-6 px-8 text-right">
+                        {/* Nombre de Evaluación */}
+                        <td className="py-4 px-6">
                           <Link
                             href={`/directores/evaluaciones/evaluacion/${eva.id}`}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 hover:bg-colorSegundo hover:text-white rounded-xl transition-all duration-200 font-semibold text-sm shadow-sm hover:shadow-md active:scale-95"
+                            className="inline-flex items-center gap-2 text-slate-800 font-semibold hover:text-colorSegundo transition-colors text-sm group"
                           >
-                            <MdVisibility size={18} />
-                            <span>Ver Detalles</span>
+                            <span>{eva.nombre}</span>
+                            <span className="text-slate-400 group-hover:text-colorSegundo group-hover:translate-x-1 transition-all text-xs">
+                              →
+                            </span>
+                          </Link>
+                        </td>
+
+                        {/* Grado / Nivel */}
+                        <td className="py-4 px-6 text-left">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-slate-800">
+                              {grados?.find((g) => Number(g.grado) === Number(eva.grado))?.nombre || `${eva.grado}° Grado`}
+                            </span>
+                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">
+                              {getNivelGrado(Number(eva.grado || 0))}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Mes y Año */}
+                        <td className="py-4 px-6 text-left">
+                          <span className="text-sm text-slate-600 font-normal">
+                            {eva.mesDelExamen !== undefined && eva.mesDelExamen !== null && eva.mesDelExamen !== ''
+                              ? `${getMonthName(Number(eva.mesDelExamen))} ${eva.añoDelExamen || currentYear}`
+                              : (eva.añoDelExamen || currentYear)}
+                          </span>
+                        </td>
+
+                        {/* Estado con Badge idéntico a la imagen de referencia */}
+                        <td className="py-4 px-6 text-center">
+                          {eva.cerrada ? (
+                            <span className="inline-flex items-center justify-center min-w-[95px] px-3 py-1 bg-purple-100/70 text-purple-700 text-xs font-bold rounded-lg tracking-wide">
+                              Cerrado
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center min-w-[95px] px-3 py-1 bg-teal-100/70 text-teal-700 text-xs font-bold rounded-lg tracking-wide">
+                              Activo
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Reporte */}
+                        <td className="py-4 px-6 text-right">
+                          <Link
+                            href={`/directores/evaluaciones/evaluacion/reporte?id=${currentUserData?.dni}&idEvaluacion=${eva.id}`}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/90 rounded-xl transition-all duration-150 font-semibold text-xs shadow-xs active:scale-95 hover:border-slate-300"
+                            title="Ver reporte y resultados"
+                          >
+                            <MdAnalytics size={16} className="text-colorSegundo" />
+                            <span>Ver Reporte</span>
                           </Link>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} className="py-32 text-center">
-                        <div className="flex flex-col items-center max-w-xs mx-auto space-y-5">
-                          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
-                            <RiLoader4Line size={32} />
+                      <td colSpan={5} className="py-24 text-center">
+                        <div className="flex flex-col items-center max-w-sm mx-auto space-y-4">
+                          <div className="w-14 h-14 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center">
+                            <RiFilter3Line size={26} />
                           </div>
                           <div className="space-y-1">
-                            <p className="text-slate-800 font-bold text-lg">No hay evaluaciones disponibles</p>
-                            <p className="text-slate-400 text-sm">Prueba ajustando el filtro de grado.</p>
+                            <h3 className="text-slate-800 font-bold text-base">
+                              No hay evaluaciones disponibles
+                            </h3>
+                            <p className="text-slate-500 text-xs">
+                              Prueba ajustando o restableciendo los filtros de búsqueda.
+                            </p>
                           </div>
+                          <button
+                            type="button"
+                            onClick={handleResetFilters}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                          >
+                            <RiRestartLine size={14} />
+                            <span>Restablecer Filtros</span>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -374,6 +459,16 @@ const Evaluaciones = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Footer con conteo de resultados */}
+            {evaluacionesFiltradas.length > 0 && (
+              <div className="px-6 py-3.5 bg-white border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+                <span>
+                  Mostrando <strong className="text-slate-800">{evaluacionesFiltradas.length}</strong> {evaluacionesFiltradas.length === 1 ? 'evaluación' : 'evaluaciones'}
+                </span>
+                <span>Año escolar {selectedYear}</span>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -1,0 +1,407 @@
+/* =========================================================================
+   BARRA DE PESTAÑAS (TABS) - DISEÑO EJECUTIVO Y PROFESIONAL EVA
+   Aplicando lineamientos de ui-ux-design: contraste WCAG AA, iconos
+   monocromáticos, microinteracciones y transiciones fluidas.
+   ========================================================================= */
+
+.tabsBar {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  flex-wrap: nowrap;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 0 8px;
+  margin-bottom: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  position: relative;
+  z-index: 10;
+}
+
+.tabsBar::-webkit-scrollbar {
+  display: none;
+}
+
+.tabBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  min-height: 44px;
+  border-radius: 12px 12px 0 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.1s ease;
+  margin-bottom: -2px; /* Se apoya exactamente sobre la línea inferior */
+  outline: none;
+}
+
+.tabBtn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+  border-bottom-color: transparent;
+}
+
+.tabBtn:hover .tabIcon {
+  color: #2563eb;
+}
+
+.tabBtn:active {
+  transform: scale(0.97);
+}
+
+.tabBtn:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+  border-radius: 12px 12px 0 0;
+}
+
+.tabBtnActive {
+  background: #ffffff !important;
+  color: #1d4ed8 !important;
+  font-weight: 700 !important;
+  border: 2px solid #2563eb !important;
+  border-bottom: 3px solid #ffffff !important;
+  margin-bottom: -2px !important;
+  z-index: 30 !important;
+  box-shadow: 0 -4px 12px rgba(37, 99, 235, 0.08);
+}
+
+/* Se elimina la línea inferior sellada para que la pestaña activa se funda abiertamente con el contenedor */
+.tabBtnActive::after {
+  display: none !important;
+}
+
+@keyframes tabIndicatorSlide {
+  0% {
+    transform: scaleX(0.2);
+    opacity: 0;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+.tabBtnActive .tabIcon {
+  color: #2563eb !important;
+  transform: scale(1.08);
+  animation: tabIconPop 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tabIconPop {
+  0% {
+    transform: scale(0.85);
+  }
+  100% {
+    transform: scale(1.08);
+  }
+}
+
+.tabIcon {
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  transition: color 0.15s ease-in-out, transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tabLabel {
+  display: inline-block;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+/* Badges de metadatos */
+.tabBadge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  line-height: 1.2;
+  transition: all 0.15s ease-in-out;
+}
+
+.tabBtnActive .tabBadge {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.tabBadgeAlert {
+  background-color: #fef2f2 !important;
+  color: #b91c1c !important;
+  border-color: #fecaca !important;
+  font-weight: 700;
+}
+
+/* =========================================================================
+   CONTENEDOR DE TRANSICIÓN SUAVE DEL CONTENIDO DE LA PESTAÑA
+   Evita que el contenido aparezca "en seco" al cambiar de pestaña.
+   ========================================================================= */
+.tabContentPanel {
+  animation: tabContentFadeInUp 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+  outline: none;
+  width: 100%;
+}
+
+@keyframes tabContentFadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Respeto estricto a accesibilidad y preferencias de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  .tabBtnActive::after {
+    animation: none !important;
+  }
+  .tabBtnActive .tabIcon {
+    animation: none !important;
+    transform: none !important;
+  }
+  .tabContentPanel {
+    animation: tabContentSimpleFade 0.12s ease forwards !important;
+    transform: none !important;
+  }
+  @keyframes tabContentSimpleFade {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+}
+
+/* =========================================================================
+   PESTAÑAS DE CATEGORÍA DE ÁREA POR NIVEL EDUCATIVO (PRIMARIA / SECUNDARIA)
+   ========================================================================= */
+.categoriaTabsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+  margin-bottom: 0.35rem;
+}
+
+.categoriaTabsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.categoriaTabsTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.categoriaTabsBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 1px 4px 1px;
+  width: 100%;
+}
+
+.categoriaTabsBar::-webkit-scrollbar {
+  display: none;
+}
+
+.categoriaTabBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  min-height: 42px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.categoriaTabBtn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.categoriaTabBtn:active {
+  transform: scale(0.97);
+}
+
+.categoriaTabBtn:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}
+
+.categoriaTabBtnActive {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 1px #3b82f6, 0 2px 4px rgba(37, 99, 235, 0.08) !important;
+  font-weight: 700 !important;
+}
+
+.categoriaTabIcon {
+  font-size: 1.15rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s ease, transform 0.2s ease;
+}
+
+.categoriaTabBtnActive .categoriaTabIcon {
+  color: #2563eb !important;
+  transform: scale(1.08);
+}
+
+.categoriaTabLabel {
+  letter-spacing: -0.01em;
+  font-size: 0.78rem;
+}
+
+.badgeConfigurado {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #059669;
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 6px;
+  padding: 1px 6px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.badgeNoConfigurado {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #64748b;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 1px 6px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.categoryCheckIcon {
+  font-size: 1.05rem;
+  color: #2563eb;
+  margin-left: 2px;
+  flex-shrink: 0;
+  animation: tabIconPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Estado Vacío de Área Curricular sin Asignación */
+.emptyCategoryContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  margin: 1rem 0;
+  animation: tabContentFadeInUp 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.emptyCategoryIconBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 9999px;
+  background-color: #eff6ff;
+  color: #2563eb;
+  margin-bottom: 1rem;
+}
+
+.emptyCategoryTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.4rem;
+}
+
+.emptyCategoryDesc {
+  font-size: 0.85rem;
+  color: #64748b;
+  max-width: 480px;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.emptyCategoryActionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1d4ed8;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.emptyCategoryActionBtn:hover {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.emptyCategoryActionBtn:active {
+  transform: scale(0.98);
+}
+

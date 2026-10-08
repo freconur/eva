@@ -73,6 +73,9 @@ const Reportes = () => {
     warningEvaEstudianteSinRegistro,
     estudiantesDeEvaluacion,
   } = useGlobalContext();
+
+  // Modo solo lectura si la evaluación está inactiva/finalizada (active === false) o cerrada (cerrada === true)
+  const isSoloLectura = Boolean(evaluacion && (!evaluacion.active || evaluacion.cerrada));
   const {
     estudiantesQueDieronExamen,
     filtroEstudiantes,
@@ -98,6 +101,7 @@ const Reportes = () => {
     exportarGrillaPdf: true,
     exportarExcel: true,
     generarPdfPreguntas: true,
+    actualizarRespuestas: false,
   });
   const [isAuditing, setIsAuditing] = useState(false);
 
@@ -120,6 +124,7 @@ const Reportes = () => {
             exportarGrillaPdf: data.accionesDocente.exportarGrillaPdf !== false,
             exportarExcel: data.accionesDocente.exportarExcel !== false,
             generarPdfPreguntas: data.accionesDocente.generarPdfPreguntas !== false,
+            actualizarRespuestas: Boolean(data.accionesDocente.actualizarRespuestas),
           });
         }
       }
@@ -132,6 +137,10 @@ const Reportes = () => {
   const allowExportGrillaPdf = isAuditing || accionesDocente.exportarGrillaPdf !== false;
   const allowExportExcel = isAuditing || accionesDocente.exportarExcel !== false;
   const allowGenerarPdfPreguntas = isAuditing || accionesDocente.generarPdfPreguntas !== false;
+
+  // La actualización de respuestas está supeditada EXCLUSIVAMENTE a la autorización del Administrador.
+  // NO se bypass-ea con isAuditing, para que el cliente pueda comprobar fielmente el bloqueo al auditar a un docente.
+  const allowActualizarRespuestas = Boolean(accionesDocente.actualizarRespuestas);
 
   const hasAnyDocenteAction = allowExportGrillaPdf || allowExportExcel || allowGenerarPdfPreguntas;
   const [yearSelected, setYearSelected] = useState<string>((route.query.year as string) || '');
@@ -624,22 +633,27 @@ const Reportes = () => {
       ) : (
         <div className={styles.container}>
           <div className={styles.content}>
-            {evaluacion && evaluacion.active === false && (
+            {evaluacion && isSoloLectura && (
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
-                backgroundColor: '#fffbeb',
-                border: '1px solid #fde68a',
+                backgroundColor: allowActualizarRespuestas ? '#eff6ff' : '#fffbeb',
+                border: `1px solid ${allowActualizarRespuestas ? '#bfdbfe' : '#fde68a'}`,
                 borderRadius: '8px',
                 padding: '0.75rem 1rem',
                 marginBottom: '1.25rem',
-                color: '#92400e',
+                color: allowActualizarRespuestas ? '#1e40af' : '#92400e',
                 fontSize: '0.875rem'
               }}>
-                <RiErrorWarningLine style={{ fontSize: '1.25rem', color: '#f59e0b', flexShrink: 0 }} />
+                <RiErrorWarningLine style={{ fontSize: '1.25rem', color: allowActualizarRespuestas ? '#3b82f6' : '#f59e0b', flexShrink: 0 }} />
                 <div>
-                  <strong>Evaluación Finalizada (Solo Lectura):</strong> Este examen ha concluido. Puedes consultar estadísticas, revisar estudiantes y exportar reportes, pero la edición de respuestas y registro de nuevos estudiantes están deshabilitados.
+                  <strong>Evaluación en Modo Solo Lectura:</strong> Este examen ha concluido o se encuentra cerrado.
+                  {allowActualizarRespuestas ? (
+                    <span> <strong>Aviso:</strong> La administración ha habilitado la actualización de respuestas; puedes hacer clic sobre los nombres de los estudiantes para actualizar sus evaluaciones.</span>
+                  ) : (
+                    <span> La edición de respuestas y registro de nuevos estudiantes están deshabilitados.</span>
+                  )}
                 </div>
               </div>
             )}
@@ -714,7 +728,7 @@ const Reportes = () => {
                   </div>
                 )}
 
-                {evaluacion.tipoDeEvaluacion === '1' && evaluacion.active !== false && (
+                {evaluacion.tipoDeEvaluacion === '1' && !isSoloLectura && (
                   <button
                     onClick={handleShowCorregirPuntajesModal}
                     className={styles.corregirButton}
@@ -858,13 +872,18 @@ const Reportes = () => {
                     estudiantes={estudiantes}
                     preguntasRespuestas={preguntasRespuestas}
                     warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined}
-                    showDeleteButton={evaluacion?.active !== false}
-                    showEditButton={evaluacion?.active !== false}
+                    showDeleteButton={!isSoloLectura}
+                    showEditButton={allowActualizarRespuestas}
                     onDeleteEstudiante={(dni) => {
+                      if (isSoloLectura) return;
                       handleShowModalDelete();
                       setIdEstudiante(dni);
                     }}
-                    linkToEdit={`/docentes/evaluaciones/inicial/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`}
+                    linkToEdit={
+                      allowActualizarRespuestas
+                        ? `/docentes/evaluaciones/inicial/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`
+                        : ''
+                    }
                     customColumns={{
                       showPuntaje: hasValidPuntaje(),
                       showNivel: hasValidNivel(),

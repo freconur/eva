@@ -13,6 +13,7 @@
   align-items: center;
   gap: 1rem;
   width: 100%;
+  margin-bottom: 1.5rem;
 }
 
 .leftSelects {
@@ -58,35 +59,39 @@
 .content {
   width: 100%;
   max-width: 100%;
-  background-color: white;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: stretch;
   box-sizing: border-box;
-  overflow: hidden;
-  padding: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .content {
+    padding: 1.25rem 1.75rem;
+  }
 }
 
 .mainContainer {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  justify-content: stretch;
-  align-items: start;
+  display: block;
   position: relative;
   z-index: 10;
   width: 100%;
   max-width: 100%;
-  padding: 1rem;
+  min-height: 100%;
+  background-color: #ffffff !important;
+  padding: 0;
+  margin: 0;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 .filtersContainer {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-  margin: 2rem 0;
+  margin: 0.5rem 0 1.25rem 0;
   /* background-color: white;
   padding: 1.5rem;
   border-radius: 1rem;

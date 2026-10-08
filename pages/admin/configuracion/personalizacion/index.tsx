@@ -90,6 +90,7 @@ const PersonalizacionMarcaPage = () => {
     exportarGrillaPdf: true,
     exportarExcel: true,
     generarPdfPreguntas: true,
+    actualizarRespuestas: false,
   });
 
   const [loading, setLoading] = useState(true);
@@ -136,6 +137,7 @@ const PersonalizacionMarcaPage = () => {
               exportarGrillaPdf: data.accionesDocente.exportarGrillaPdf !== false,
               exportarExcel: data.accionesDocente.exportarExcel !== false,
               generarPdfPreguntas: data.accionesDocente.generarPdfPreguntas !== false,
+              actualizarRespuestas: Boolean(data.accionesDocente.actualizarRespuestas),
             });
           }
         }
@@ -856,7 +858,7 @@ const PersonalizacionMarcaPage = () => {
                     </div>
                   </label>
 
-                  <label className="flex items-center gap-3 py-2 cursor-pointer">
+                  <label className="flex items-center gap-3 py-2 cursor-pointer border-b border-slate-200/60 last:border-0">
                     <input
                       type="checkbox"
                       checked={accionesDocente.generarPdfPreguntas}
@@ -866,6 +868,32 @@ const PersonalizacionMarcaPage = () => {
                     <div>
                       <span className="block text-sm font-bold text-slate-700">Generar PDF Preguntas</span>
                       <span className="block text-xs text-slate-500">Reporte gráfico detallado por cada pregunta del examen</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 py-2.5 px-3 cursor-pointer bg-amber-50/60 rounded-xl border border-amber-200/80 mt-2 hover:bg-amber-50 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(accionesDocente.actualizarRespuestas)}
+                      onChange={(e) => setAccionesDocente(prev => ({ ...prev, actualizarRespuestas: e.target.checked }))}
+                      className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500 mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="block text-sm font-bold text-slate-800">Actualizar Respuestas de Estudiantes</span>
+                        {accionesDocente.actualizarRespuestas ? (
+                          <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded-full border border-emerald-300">
+                            HABILITADO
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 text-[10px] font-bold text-slate-500 bg-slate-100 rounded-full border border-slate-200">
+                            BLOQUEADO
+                          </span>
+                        )}
+                      </div>
+                      <span className="block text-xs text-slate-600 mt-0.5 leading-relaxed">
+                        Permite a los docentes hacer clic sobre el nombre del estudiante para rectificar y guardar respuestas (funciona incluso en evaluaciones cerradas). Si está apagado, la edición queda 100% bloqueada.
+                      </span>
                     </div>
                   </label>
                 </div>

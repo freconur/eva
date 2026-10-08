@@ -113,6 +113,13 @@ const Evaluacion = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.id])
+  // Si la evaluación está en estado oculto (active === false), no permitir acceso al director y redirigir
+  useEffect(() => {
+    if (evaluacion?.id && evaluacion.active === false) {
+      route.replace('/directores/evaluaciones')
+    }
+  }, [evaluacion?.id, evaluacion?.active, route])
+
   // console.log('preguntasRespuestas', preguntasRespuestas)
   console.log('evaluacion', evaluacion)
 

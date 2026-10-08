@@ -21,6 +21,7 @@ import {
   MdUnfoldLess,
   MdFullscreen,
   MdFullscreenExit,
+  MdTune,
 } from 'react-icons/md';
 import styles from './PanelVisualizacionesMatriz.module.css';
 import { Evaluaciones, PreguntasRespuestas } from '@/features/types/types';
@@ -29,6 +30,11 @@ import GuiaRankingModal from '@/components/modals/GuiaRankingModal';
 import GuiaHeatmapModal from '@/components/modals/GuiaHeatmapModal';
 import GuiaBurbujasModal from '@/components/modals/GuiaBurbujasModal';
 import GuiaDecisionesModal from '@/components/modals/GuiaDecisionesModal';
+import {
+  ConfigurarBaremoModal,
+  BaremoDecisiones,
+  DEFAULT_BAREMO_DECISIONES,
+} from '@/components/modals/ConfigurarBaremoModal';
 import CustomFilterDropdown, { FilterOption } from './CustomFilterDropdown';
 import QuestionDetailPopover from './QuestionDetailPopover';
 
@@ -51,6 +57,8 @@ interface PanelVisualizacionesMatrizProps {
   preguntas: PreguntasRespuestas[];
   gradoName?: string;
   onReload?: () => void;
+  baremo?: BaremoDecisiones;
+  onSaveBaremo?: (newBaremo: BaremoDecisiones) => Promise<void>;
 }
 
 type TabKey =
@@ -89,7 +97,12 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
   preguntas = [],
   gradoName = '',
   onReload,
+  baremo,
+  onSaveBaremo,
 }) => {
+  // Baremo activo (usar el configurado o el predeterminado: 60, 50, 40)
+  const activeBaremo = useMemo(() => baremo || DEFAULT_BAREMO_DECISIONES, [baremo]);
+
   // Pestaña activa
   const [activeTab, setActiveTab] = useState<TabKey>('decisiones');
 
@@ -121,6 +134,9 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
 
   // Estado del modal de guía e interpretación del panel de decisiones
   const [isDecisionesModalOpen, setIsDecisionesModalOpen] = useState<boolean>(false);
+
+  // Estado del modal para configurar el baremo de alertas de decisiones
+  const [isConfigBaremoModalOpen, setIsConfigBaremoModalOpen] = useState<boolean>(false);
 
   // Estado para el popover interactivo de detalles de pregunta (P01, P02...)
   const [questionDetailPopover, setQuestionDetailPopover] = useState<{
@@ -306,7 +322,7 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
 
   // Helper para clasificar el nivel de alerta según % Previo al Inicio (Dificultad)
   const getAlertaInfo = (pct: number) => {
-    if (pct >= 60) {
+    if (pct >= activeBaremo.critico) {
       return {
         label: 'Crítico',
         clase: styles.alertaCritico,
@@ -315,7 +331,7 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
         badgeClase: styles.muyDificil,
         accion: 'Intervención inmediata: Taller de reforzamiento',
       };
-    } else if (pct >= 50) {
+    } else if (pct >= activeBaremo.alto) {
       return {
         label: 'Alto',
         clase: styles.alertaAlto,
@@ -324,7 +340,7 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
         badgeClase: styles.dificil,
         accion: 'Priorizar: Sesiones de práctica adicionales',
       };
-    } else if (pct >= 40) {
+    } else if (pct >= activeBaremo.medio) {
       return {
         label: 'Medio',
         clase: styles.alertaMedio,
@@ -543,10 +559,10 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
 
     list.sort((a, b) => b.prevPct - a.prevPct);
 
-    const totalCritico = list.filter((d) => d.prevPct >= 60).length;
-    const totalAlto = list.filter((d) => d.prevPct >= 50 && d.prevPct < 60).length;
-    const totalMedio = list.filter((d) => d.prevPct >= 40 && d.prevPct < 50).length;
-    const totalBajo = list.filter((d) => d.prevPct < 40).length;
+    const totalCritico = list.filter((d) => d.prevPct >= activeBaremo.critico).length;
+    const totalAlto = list.filter((d) => d.prevPct >= activeBaremo.alto && d.prevPct < activeBaremo.critico).length;
+    const totalMedio = list.filter((d) => d.prevPct >= activeBaremo.medio && d.prevPct < activeBaremo.alto).length;
+    const totalBajo = list.filter((d) => d.prevPct < activeBaremo.medio).length;
     const avgPrev =
       list.length > 0
         ? Math.round(list.reduce((acc, d) => acc + d.prevPct, 0) / list.length)
@@ -560,7 +576,7 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
       totalBajo,
       avgPrev,
     };
-  }, [filteredUgeles, sortedPreguntas, selectedEtapa]);
+  }, [filteredUgeles, sortedPreguntas, selectedEtapa, activeBaremo]);
 
   // Decisiones agrupadas por UGEL (para vista 'porugel' - Tabla Ejecutiva Master-Detail)
   const decisionPorUgelData = useMemo(() => {
@@ -579,10 +595,10 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
         .filter((item) => item.totalEstudiantes > 0)
         .sort((a, b) => b.prevPct - a.prevPct);
 
-      const criticas = preguntasUgel.filter((d) => d.prevPct >= 60).length;
-      const altas = preguntasUgel.filter((d) => d.prevPct >= 50 && d.prevPct < 60).length;
-      const medias = preguntasUgel.filter((d) => d.prevPct >= 40 && d.prevPct < 50).length;
-      const bajas = preguntasUgel.filter((d) => d.prevPct < 40).length;
+      const criticas = preguntasUgel.filter((d) => d.prevPct >= activeBaremo.critico).length;
+      const altas = preguntasUgel.filter((d) => d.prevPct >= activeBaremo.alto && d.prevPct < activeBaremo.critico).length;
+      const medias = preguntasUgel.filter((d) => d.prevPct >= activeBaremo.medio && d.prevPct < activeBaremo.alto).length;
+      const bajas = preguntasUgel.filter((d) => d.prevPct < activeBaremo.medio).length;
 
       const borderLeftColor =
         criticas > 0
@@ -670,7 +686,7 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
       const bMax = b.topPregunta?.prevPct || 0;
       return bMax - aMax;
     });
-  }, [filteredUgeles, sortedPreguntas, selectedEtapa]);
+  }, [filteredUgeles, sortedPreguntas, selectedEtapa, activeBaremo]);
 
   // Verificar si todas las UGELs están expandidas
   const allUgelsAreExpanded = useMemo(() => {
@@ -1841,15 +1857,26 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                     Priorización automática de focos críticos por UGEL y recomendaciones de intervención inmediata
                   </p>
                 </div>
-                <button
-                  type="button"
-                  className={styles.infoHelpBtn}
-                  onClick={() => setIsDecisionesModalOpen(true)}
-                  title="¿En qué consiste este panel de decisiones? Haz clic para ver la guía metodológica y de interpretación"
-                >
-                  <MdHelpOutline className={styles.infoHelpIcon} />
-                  <span>¿Cómo interpretar este panel?</span>
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className={styles.infoHelpBtn}
+                    onClick={() => setIsConfigBaremoModalOpen(true)}
+                    title="Modificar los umbrales de porcentaje del baremo de alertas"
+                  >
+                    <MdTune className={styles.infoHelpIcon} />
+                    <span>Configurar Baremo</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.infoHelpBtn}
+                    onClick={() => setIsDecisionesModalOpen(true)}
+                    title="¿En qué consiste este panel de decisiones? Haz clic para ver la guía metodológica y de interpretación"
+                  >
+                    <MdHelpOutline className={styles.infoHelpIcon} />
+                    <span>¿Cómo interpretar este panel?</span>
+                  </button>
+                </div>
               </div>
 
               {/* Barra Compacta Unificada de Resumen de Alertas (Un Solo Contenedor) */}
@@ -1859,7 +1886,7 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                   <span className={`${styles.kpiBadge} ${styles.kpiBadgeCritico}`}>
                     {decisionData.totalCritico}
                   </span>
-                  <span className={styles.kpiLabel}>Críticas (≥60%)</span>
+                  <span className={styles.kpiLabel}>Críticas (≥{activeBaremo.critico}%)</span>
                 </div>
 
                 <div className={styles.kpiDivider} />
@@ -1869,7 +1896,7 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                   <span className={`${styles.kpiBadge} ${styles.kpiBadgeAlto}`}>
                     {decisionData.totalAlto}
                   </span>
-                  <span className={styles.kpiLabel}>Altas (50-59%)</span>
+                  <span className={styles.kpiLabel}>Altas ({activeBaremo.alto}-{activeBaremo.critico - 1}%)</span>
                 </div>
 
                 <div className={styles.kpiDivider} />
@@ -1879,7 +1906,7 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                   <span className={`${styles.kpiBadge} ${styles.kpiBadgeMedio}`}>
                     {decisionData.totalMedio}
                   </span>
-                  <span className={styles.kpiLabel}>Medias (40-49%)</span>
+                  <span className={styles.kpiLabel}>Medias ({activeBaremo.medio}-{activeBaremo.alto - 1}%)</span>
                 </div>
 
                 <div className={styles.kpiDivider} />
@@ -1889,7 +1916,7 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                   <span className={`${styles.kpiBadge} ${styles.kpiBadgeBajo}`}>
                     {decisionData.totalBajo}
                   </span>
-                  <span className={styles.kpiLabel}>Bajas (&lt;40%)</span>
+                  <span className={styles.kpiLabel}>Bajas (&lt;{activeBaremo.medio}%)</span>
                 </div>
 
                 <div className={styles.kpiDivider} />
@@ -2170,23 +2197,32 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
               <div className={styles.legend}>
                 <div className={styles.legendItem}>
                   <div className={styles.legendColor} style={{ background: '#e53935' }} />
-                  Crítico (≥ 60%)
+                  Crítico (≥ {activeBaremo.critico}%)
                 </div>
                 <div className={styles.legendItem}>
                   <div className={styles.legendColor} style={{ background: '#ff8a65' }} />
-                  Alto (50-59%)
+                  Alto ({activeBaremo.alto}-{activeBaremo.critico - 1}%)
                 </div>
                 <div className={styles.legendItem}>
                   <div className={styles.legendColor} style={{ background: '#f9a825' }} />
-                  Medio (40-49%)
+                  Medio ({activeBaremo.medio}-{activeBaremo.alto - 1}%)
                 </div>
                 <div className={styles.legendItem}>
                   <div className={styles.legendColor} style={{ background: '#66bb6a' }} />
-                  Bajo (&lt; 40%)
+                  Bajo (&lt; {activeBaremo.medio}%)
                 </div>
                 <span className={styles.legendNotice}>
                   🔴 Priorizar intervención pedagógica en las primeras posiciones del ranking
                 </span>
+                <button
+                  type="button"
+                  className={styles.legendLinkBtn}
+                  onClick={() => setIsConfigBaremoModalOpen(true)}
+                  title="Configurar los umbrales de porcentaje de este baremo"
+                >
+                  <MdTune />
+                  <span>Ajustar baremo</span>
+                </button>
                 <button
                   type="button"
                   className={styles.legendLinkBtn}
@@ -2225,6 +2261,19 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
       <GuiaDecisionesModal
         isOpen={isDecisionesModalOpen}
         onClose={() => setIsDecisionesModalOpen(false)}
+        baremo={activeBaremo}
+      />
+
+      {/* Modal de Configuración del Baremo de Alertas y Decisiones */}
+      <ConfigurarBaremoModal
+        isOpen={isConfigBaremoModalOpen}
+        onClose={() => setIsConfigBaremoModalOpen(false)}
+        baremo={activeBaremo}
+        onSave={async (newBaremo) => {
+          if (onSaveBaremo) {
+            await onSaveBaremo(newBaremo);
+          }
+        }}
       />
 
       {/* Popover interactivo de detalles de pregunta para Heatmap y Burbujas */}

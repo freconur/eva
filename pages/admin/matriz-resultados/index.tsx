@@ -164,6 +164,8 @@ const MatrizResultadosPage = () => {
     evaluacionEp2,
     preguntasUnificadas,
     saveGradoConfig,
+    baremoDecisiones,
+    saveBaremoDecisiones,
     reloadMatriz,
   } = useMatrizResultados();
 
@@ -404,6 +406,8 @@ const MatrizResultadosPage = () => {
             preguntas={preguntasUnificadas}
             gradoName={`${nombreGrado} - ${nombreCategoria.toUpperCase()}`}
             onReload={reloadMatriz}
+            baremo={baremoDecisiones}
+            onSaveBaremo={saveBaremoDecisiones}
           />
         )}
       </div>

@@ -18,6 +18,10 @@ import { getCategoriasParaGrado } from '@/fuctions/categorias';
 import { regiones } from '@/fuctions/regiones';
 import { currentMonth, currentYear } from '@/fuctions/dates';
 import { GradoConfigAssignment } from '@/components/modals/ConfigurarMatrizModal';
+import {
+  BaremoDecisiones,
+  DEFAULT_BAREMO_DECISIONES,
+} from '@/components/modals/ConfigurarBaremoModal';
 
 export interface NivelComparativoStat {
   id?: string;
@@ -98,6 +102,9 @@ export const useMatrizResultados = () => {
   // Configuración persistente por grado y categoría: { [`${gradoId}_${categoriaId}`]: { ediId, ep1Id, ep2Id } }
   const [configGrados, setConfigGrados] = useState<Record<string, GradoConfigAssignment>>({});
   const [loadingConfig, setLoadingConfig] = useState<boolean>(true);
+
+  // Baremo de alertas y priorización para el módulo de decisiones pedagógicas
+  const [baremoDecisiones, setBaremoDecisiones] = useState<BaremoDecisiones>(DEFAULT_BAREMO_DECISIONES);
 
   // Configuración efectiva: enmascara EDI para 3° a 6° de primaria si BLOQUEAR_EDI_3RO_A_6TO está activo
   const effectiveConfigGrados = useMemo(() => {
@@ -186,6 +193,13 @@ export const useMatrizResultados = () => {
         const snap = await getDoc(cfgRef);
         if (snap.exists()) {
           const data = snap.data();
+          if (data && data.baremoDecisiones) {
+            setBaremoDecisiones({
+              critico: Number(data.baremoDecisiones.critico) || DEFAULT_BAREMO_DECISIONES.critico,
+              alto: Number(data.baremoDecisiones.alto) || DEFAULT_BAREMO_DECISIONES.alto,
+              medio: Number(data.baremoDecisiones.medio) || DEFAULT_BAREMO_DECISIONES.medio,
+            });
+          }
           if (data && data.grados) {
             setConfigGrados(data.grados);
 
@@ -322,6 +336,23 @@ export const useMatrizResultados = () => {
       setConfigGrados(updatedGrados);
     } catch (err) {
       console.error('Error al guardar configuración de grado y categoría:', err);
+      throw err;
+    }
+  };
+
+  // Guardar configuración del baremo de alertas y decisiones en Firestore
+  const saveBaremoDecisiones = async (newBaremo: BaremoDecisiones) => {
+    try {
+      const cfgRef = doc(db, CONFIG_DOC_PATH, CONFIG_DOC_ID);
+      const cleanBaremo: BaremoDecisiones = {
+        critico: Number(newBaremo.critico),
+        alto: Number(newBaremo.alto),
+        medio: Number(newBaremo.medio),
+      };
+      await setDoc(cfgRef, { baremoDecisiones: cleanBaremo }, { merge: true });
+      setBaremoDecisiones(cleanBaremo);
+    } catch (err) {
+      console.error('Error al guardar baremo de decisiones en Firestore:', err);
       throw err;
     }
   };
@@ -871,6 +902,8 @@ export const useMatrizResultados = () => {
     evaluacionEp2,
     preguntasUnificadas,
     saveGradoConfig,
+    baremoDecisiones,
+    saveBaremoDecisiones,
     reloadMatriz: computeComparativeMatrix,
   };
 };

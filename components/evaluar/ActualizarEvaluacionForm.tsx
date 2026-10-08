@@ -3,6 +3,7 @@ import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import { useReporteDocente } from '@/features/hooks/useReporteDocente';
 import { AppAction } from '@/features/actions/appAction';
 import { gradosDeColegio, genero, sectionByGrade } from '@/fuctions/regiones';
+import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { RiCloseLine, RiLoader4Line, RiErrorWarningLine } from 'react-icons/ri';
 import styles from './actualizarForm.module.css';
@@ -26,6 +27,33 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
   const { getPreguntasRespuestas, getEvaluacion } = useAgregarEvaluaciones();
   const { evaluacionEstudiante, preguntasRespuestas, currentUserData, evaluacion } = useGlobalContext();
   const dispatch = useGlobalContextDispatch();
+  
+  // Permiso maestro del Administrador para actualizar respuestas
+  const [permitirActualizar, setPermitirActualizar] = useState(false);
+  const [isCheckingPermisos, setIsCheckingPermisos] = useState(true);
+
+  useEffect(() => {
+    const db = getFirestore();
+    const brandDocRef = doc(db, 'configuracion', 'branding');
+    const unsubscribe = onSnapshot(brandDocRef, (docSnap: any) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setPermitirActualizar(Boolean(data?.accionesDocente?.actualizarRespuestas));
+      } else {
+        setPermitirActualizar(false);
+      }
+      setIsCheckingPermisos(false);
+    }, (err: any) => {
+      console.error("Error al escuchar permisos de accionesDocente:", err);
+      setPermitirActualizar(false);
+      setIsCheckingPermisos(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // La edición está permitida SI Y SOLO SI el Administrador tiene activo el switch maestro
+  // (Incluso si la evaluación está cerrada o inactiva)
+  const isReadOnly = !permitirActualizar;
   
   // Estado local para manejar las respuestas editables
   const [respuestasEditables, setRespuestasEditables] = useState<any[]>([]);
@@ -86,6 +114,7 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
 
   // Handler para cambiar la selección de alternativas
   const handleAlternativaChange = (preguntaIndex: number, alternativaSeleccionada: string) => {
+    if (isReadOnly) return;
     const nuevasRespuestas = [...respuestasEditables];
     if (nuevasRespuestas[preguntaIndex].alternativas) {
       nuevasRespuestas[preguntaIndex].alternativas = nuevasRespuestas[preguntaIndex].alternativas.map((alt: any) => ({
@@ -107,6 +136,7 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
 
   // Handler para cambiar los datos del estudiante
   const handleDatosEstudianteChange = (campo: string, valor: string) => {
+    if (isReadOnly) return;
     // Actualizar estado local
     setDatosEstudiante(prev => ({
       ...prev,
@@ -125,8 +155,8 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
 
   // Handler para guardar cambios
   const handleGuardarCambios = async () => {
-    if (evaluacion?.active === false) {
-      alert('Esta evaluación se encuentra finalizada y no permite modificaciones.');
+    if (isReadOnly) {
+      alert('La actualización de respuestas se encuentra deshabilitada por la administración.');
       return;
     }
     setIsGuardando(true);
@@ -167,7 +197,8 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
         )}
       </div>
 
-      {!evaluacion?.active && (
+      {/* Banner cuando la edición está deshabilitada por el admin */}
+      {!permitirActualizar && !isCheckingPermisos && (
         <div style={{
           backgroundColor: '#fffbeb',
           border: '1px solid #fde68a',
@@ -182,7 +213,28 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
         }}>
           <RiErrorWarningLine size={24} style={{ flexShrink: 0, color: '#d97706' }} />
           <div>
-            <strong>Evaluación Finalizada:</strong> El período de evaluación ha concluido. Este formulario se encuentra en modo de solo lectura y no se pueden guardar cambios.
+            <strong>Edición Deshabilitada:</strong> La actualización de respuestas de los estudiantes se encuentra deshabilitada por la administración. No se pueden realizar ni guardar cambios.
+          </div>
+        </div>
+      )}
+
+      {/* Banner informativo si la evaluación está cerrada/inactiva pero el admin habilitó la rectificación */}
+      {permitirActualizar && (!evaluacion?.active || evaluacion?.cerrada) && (
+        <div style={{
+          backgroundColor: '#eff6ff',
+          border: '1px solid #bfdbfe',
+          borderRadius: '12px',
+          padding: '0.875rem 1.25rem',
+          margin: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          color: '#1e40af',
+          fontSize: '0.925rem'
+        }}>
+          <RiErrorWarningLine size={24} style={{ flexShrink: 0, color: '#3b82f6' }} />
+          <div>
+            <strong>Rectificación Autorizada:</strong> Aunque esta evaluación se encuentra cerrada o finalizada, la administración ha habilitado temporalmente la actualización de respuestas. Puedes realizar y guardar cambios.
           </div>
         </div>
       )}
@@ -200,6 +252,7 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
               onChange={(e) => handleDatosEstudianteChange('nombresApellidos', e.target.value)}
               className={styles.input}
               placeholder="Ingrese el nombre completo del estudiante"
+              disabled={isReadOnly}
             />
           </div>
           
@@ -282,15 +335,17 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
                     <div 
                       key={altIndex} 
                       className={`${styles.alternativeItem} ${alternativa.selected ? styles.selected : ''}`}
-                      onClick={() => handleAlternativaChange(index, alternativa.alternativa)}
+                      onClick={() => !isReadOnly && handleAlternativaChange(index, alternativa.alternativa)}
+                      style={isReadOnly ? { cursor: 'not-allowed', opacity: 0.85 } : undefined}
                     >
                       <input
                         type="radio"
                         name={`pregunta-${index}`}
                         value={alternativa.alternativa}
                         checked={alternativa.selected || false}
-                        onChange={() => handleAlternativaChange(index, alternativa.alternativa)}
+                        onChange={() => !isReadOnly && handleAlternativaChange(index, alternativa.alternativa)}
                         className={styles.radioInput}
+                        disabled={isReadOnly}
                       />
                       <div className={styles.alternativeContent}>
                         <span className={styles.alternativeLabel}>
@@ -316,12 +371,12 @@ const ActualizarEvaluacionForm: React.FC<ActualizarEvaluacionFormProps> = ({
         <button
           onClick={handleGuardarCambios}
           className={styles.saveButton}
-          disabled={isGuardando || evaluacion?.active === false}
-          title={evaluacion?.active === false ? 'La evaluación ha finalizado y está en modo solo lectura' : undefined}
-          style={evaluacion?.active === false ? { opacity: 0.6, cursor: 'not-allowed', backgroundColor: '#9ca3af' } : undefined}
+          disabled={isGuardando || isReadOnly}
+          title={isReadOnly ? 'La actualización de respuestas está deshabilitada por la administración' : undefined}
+          style={isReadOnly ? { opacity: 0.6, cursor: 'not-allowed', backgroundColor: '#9ca3af' } : undefined}
         >
-          {evaluacion?.active === false
-            ? 'Evaluación Finalizada (Solo Lectura)'
+          {isReadOnly
+            ? 'Edición Deshabilitada por Administración'
             : isGuardando
             ? 'Guardando...'
             : 'Guardar Cambios'}

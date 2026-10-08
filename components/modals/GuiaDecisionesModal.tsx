@@ -8,17 +8,24 @@ import {
   MdViewList,
   MdGridView,
 } from 'react-icons/md';
+import {
+  BaremoDecisiones,
+  DEFAULT_BAREMO_DECISIONES,
+} from './ConfigurarBaremoModal';
 import styles from './GuiaDecisionesModal.module.css';
 
 interface GuiaDecisionesModalProps {
   isOpen: boolean;
   onClose: () => void;
+  baremo?: BaremoDecisiones;
 }
 
 export const GuiaDecisionesModal: React.FC<GuiaDecisionesModalProps> = ({
   isOpen,
   onClose,
+  baremo,
 }) => {
+  const activeBaremo = baremo || DEFAULT_BAREMO_DECISIONES;
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -118,10 +125,10 @@ export const GuiaDecisionesModal: React.FC<GuiaDecisionesModalProps> = ({
               <div className={styles.alertaCard} style={{ borderTopColor: '#e53935' }}>
                 <div className={styles.alertaHeader}>
                   <span className={`${styles.alertaTag} ${styles.alertaCritico}`}>🔴 Crítico</span>
-                  <span className={styles.alertaRange}>≥ 60%</span>
+                  <span className={styles.alertaRange}>≥ {activeBaremo.critico}%</span>
                 </div>
                 <p className={styles.alertaDesc}>
-                  <strong>Emergencia educativa:</strong> Más de 6 de cada 10 estudiantes se encuentran en el nivel «Previo al Inicio» en este ítem.
+                  <strong>Emergencia educativa:</strong> Al menos el {activeBaremo.critico}% de los estudiantes se encuentran en el nivel «Previo al Inicio» en este ítem.
                 </p>
                 <div className={styles.alertaAccion}>
                   <strong>Acción:</strong> Intervención inmediata · Taller de reforzamiento presencial focalizado.
@@ -132,10 +139,10 @@ export const GuiaDecisionesModal: React.FC<GuiaDecisionesModalProps> = ({
               <div className={styles.alertaCard} style={{ borderTopColor: '#ff8a65' }}>
                 <div className={styles.alertaHeader}>
                   <span className={`${styles.alertaTag} ${styles.alertaAlto}`}>🟠 Alto</span>
-                  <span className={styles.alertaRange}>50% – 59%</span>
+                  <span className={styles.alertaRange}>{activeBaremo.alto}% – {activeBaremo.critico - 1}%</span>
                 </div>
                 <p className={styles.alertaDesc}>
-                  <strong>Dificultad severa:</strong> Al menos la mitad de los evaluados no logra resolver la capacidad evaluada.
+                  <strong>Dificultad severa:</strong> Una proporción alta de los evaluados no logra resolver la capacidad evaluada.
                 </p>
                 <div className={styles.alertaAccion}>
                   <strong>Acción:</strong> Priorizar · Sesiones de práctica adicionales y dosificación curricular.
@@ -146,10 +153,10 @@ export const GuiaDecisionesModal: React.FC<GuiaDecisionesModalProps> = ({
               <div className={styles.alertaCard} style={{ borderTopColor: '#f9a825' }}>
                 <div className={styles.alertaHeader}>
                   <span className={`${styles.alertaTag} ${styles.alertaMedio}`}>🟡 Medio</span>
-                  <span className={styles.alertaRange}>40% – 49%</span>
+                  <span className={styles.alertaRange}>{activeBaremo.medio}% – {activeBaremo.alto - 1}%</span>
                 </div>
                 <p className={styles.alertaDesc}>
-                  <strong>Alerta preventiva:</strong> Más de un tercio de estudiantes muestra debilidades en el aprendizaje.
+                  <strong>Alerta preventiva:</strong> Estudiantes muestran debilidades en el aprendizaje que requieren atención continua.
                 </p>
                 <div className={styles.alertaAccion}>
                   <strong>Acción:</strong> Monitoreo · Seguimiento personalizado y retroalimentación en aula.
@@ -160,7 +167,7 @@ export const GuiaDecisionesModal: React.FC<GuiaDecisionesModalProps> = ({
               <div className={styles.alertaCard} style={{ borderTopColor: '#66bb6a' }}>
                 <div className={styles.alertaHeader}>
                   <span className={`${styles.alertaTag} ${styles.alertaBajo}`}>🟢 Bajo</span>
-                  <span className={styles.alertaRange}>&lt; 40%</span>
+                  <span className={styles.alertaRange}>&lt; {activeBaremo.medio}%</span>
                 </div>
                 <p className={styles.alertaDesc}>
                   <strong>Nivel controlado:</strong> Rezago mínimo o moderado dentro de los parámetros esperados.
