@@ -17,6 +17,7 @@ import ModalConfigurarSeguridad from '@/modals/ModalConfigurarSeguridad'
 import ModalConfigurarDistrito from '@/modals/ModalConfigurarDistrito'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase/firebase.config'
+import { RiArrowGoBackLine } from 'react-icons/ri'
 
 const getContrastColor = (hexcolor: string): string => {
   if (!hexcolor) return '#ffffff';
@@ -280,17 +281,6 @@ const LayoutMenu = ({ children }: Props) => {
         siderbarSegunPerfil()
       }
       <div className={styles.contentWrapper}>
-        {isAuditing && (
-          <div className={styles.auditBanner}>
-            <div className={styles.auditInfo}>
-              <span className={styles.auditBadge}>Modo Auditoría</span>
-              <span>Visualizando la plataforma como: <strong>{auditedUserName}</strong> (DNI: {currentUserData.dni} - Rol: {currentUserData.perfil?.nombre})</span>
-            </div>
-            <button onClick={handleExitAudit} className={styles.exitAuditBtn}>
-              Regresar a mi Administrador
-            </button>
-          </div>
-        )}
         {currentUserData.perfil?.rol && router.pathname !== '/login' && router.pathname !== '/admin/pruebas' && (
           <Navbar />
         )}
@@ -298,6 +288,33 @@ const LayoutMenu = ({ children }: Props) => {
           {children}
         </main>
       </div>
+
+      {isAuditing && (
+        <aside className={styles.auditPill} role="status" aria-live="polite">
+          <div className={styles.auditInfo}>
+            <div className={styles.auditBadge}>
+              <span className={styles.pulsingDot}></span>
+              <span>Modo Auditoría</span>
+            </div>
+            <div className={styles.auditText}>
+              <span className={styles.auditLabel}>Visualizando como:</span>
+              <strong className={styles.auditName}>{auditedUserName}</strong>
+              <span className={styles.auditMeta}>
+                (DNI: {currentUserData.dni} • Rol: {currentUserData.perfil?.nombre})
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={handleExitAudit}
+            className={styles.exitAuditBtn}
+            title="Regresar a la cuenta de Administrador"
+            aria-label="Regresar a mi Administrador"
+          >
+            <RiArrowGoBackLine className={styles.exitAuditIcon} />
+            <span>Regresar a mi Administrador</span>
+          </button>
+        </aside>
+      )}
 
       {/* Modal obligatorio para directores con información incompleta */}
       {!isAuditing &&

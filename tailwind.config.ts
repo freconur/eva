@@ -174,6 +174,15 @@ const config: Config = {
         'gridMyProducts': '80% 20%',
         'gridCardStat': '70% 30%',
         'gridFeature': '33% 33% 33%'
+      },
+      keyframes: {
+        dropdownPopoverIn: {
+          '0%': { opacity: '0', transform: 'translateY(-8px) scale(0.97)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+      },
+      animation: {
+        dropdown: 'dropdownPopoverIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards',
       }
     },
   },

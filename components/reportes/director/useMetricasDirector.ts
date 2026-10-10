@@ -92,20 +92,80 @@ export const formatQuestionCode = (order: number) => {
   return `P${order < 10 ? '0' : ''}${order}`;
 };
 
-export const useMetricasDirector = ({
+/**
+ * Retorna la abreviación de grado escolar (ej. 6 -> "6to", 1 -> "1ro", 2 -> "2do", etc.)
+ */
+export const formatGradoAbbr = (grado: number | string | undefined | null): string => {
+  if (grado === undefined || grado === null || grado === '') return '';
+  const g = Number(grado);
+  if (g === 12) return '5 años';
+  if (g === 1 || g === 7) return '1ro';
+  if (g === 2 || g === 8) return '2do';
+  if (g === 3 || g === 9) return '3ro';
+  if (g === 4 || g === 10) return '4to';
+  if (g === 5 || g === 11) return '5to';
+  if (g === 6) return '6to';
+  return `${g}°`;
+};
+
+/**
+ * Formatea una sección para mostrar grado y sección (ej. "6to-B", "6to-A")
+ * Convierte números de sección (1 -> A, 2 -> B, 3 -> C) o respeta letras ya existentes.
+ */
+export const formatSeccionDisplay = (
+  seccionRaw: string | number | undefined | null,
+  grado?: number | string | null
+): string => {
+  if (seccionRaw === undefined || seccionRaw === null || seccionRaw === '') {
+    const gradoAbbr = formatGradoAbbr(grado);
+    return gradoAbbr ? `${gradoAbbr}-Única` : 'Sección Única';
+  }
+
+  const str = String(seccionRaw).trim();
+  if (str.includes('-')) {
+    return str;
+  }
+
+  // Limpiar prefijo "Sección " o "Seccion " si ya existiera
+  const cleanStr = str.replace(/^(secci[oó]n\s*)/i, '').trim();
+  if (cleanStr.includes('-')) {
+    return cleanStr;
+  }
+
+  let seccionLetter = cleanStr.toUpperCase();
+  const num = Number(cleanStr);
+
+  // Si es un número del 1 al 26 (como 1 -> A, 2 -> B, 3 -> C)
+  if (!isNaN(num) && num >= 1 && num <= 26) {
+    seccionLetter = String.fromCharCode(64 + num);
+  }
+
+  const gradoAbbr = formatGradoAbbr(grado);
+
+  if (gradoAbbr && seccionLetter) {
+    return `${gradoAbbr}-${seccionLetter}`;
+  }
+
+  if (seccionLetter) {
+    return `Sección ${seccionLetter}`;
+  }
+
+  return str;
+};
+
+export const calculateMetricasDirector = ({
   estudiantes = [],
   preguntas = [],
   availableSections = [],
   docentesMap = new Map(),
   baremo = DEFAULT_BAREMO_DECISIONES,
 }: UseMetricasDirectorProps): DirectorMetricasResumen => {
-  const activeBaremo = useMemo(() => baremo || DEFAULT_BAREMO_DECISIONES, [baremo]);
+  const activeBaremo = baremo || DEFAULT_BAREMO_DECISIONES;
 
-  return useMemo(() => {
-    // 1. Ordenar preguntas por 'order'
-    const sortedPreguntas = [...preguntas].sort(
-      (a, b) => Number(a.order || 0) - Number(b.order || 0)
-    );
+  // 1. Ordenar preguntas por 'order'
+  const sortedPreguntas = [...preguntas].sort(
+    (a, b) => Number(a.order || 0) - Number(b.order || 0)
+  );
 
     // Mapa para acceso rápido a la respuesta correcta de cada pregunta
     const correctMap = new Map<number, string>();
@@ -230,7 +290,14 @@ export const useMetricasDirector = ({
 
       return {
         id: seccionIdStr,
-        nombre: `Sección ${sec.name.toUpperCase()}`,
+        nombre: (() => {
+          const rawName = sec.name.trim();
+          const isCustom =
+            rawName.toUpperCase().startsWith('SECCI') ||
+            rawName.includes('-') ||
+            /^\d+[°a-z]*-/i.test(rawName);
+          return isCustom ? rawName : `Sección ${rawName.toUpperCase()}`;
+        })(),
         docenteNombre,
         totalEstudiantes: estudiantesSeccion.length,
         preguntas: preguntasMetricas,
@@ -356,5 +423,24 @@ export const useMetricasDirector = ({
       kpis,
       activeBaremo,
     };
-  }, [estudiantes, preguntas, availableSections, docentesMap, activeBaremo]);
+};
+
+export const useMetricasDirector = ({
+  estudiantes = [],
+  preguntas = [],
+  availableSections = [],
+  docentesMap = new Map(),
+  baremo = DEFAULT_BAREMO_DECISIONES,
+}: UseMetricasDirectorProps): DirectorMetricasResumen => {
+  return useMemo(
+    () =>
+      calculateMetricasDirector({
+        estudiantes,
+        preguntas,
+        availableSections,
+        docentesMap,
+        baremo,
+      }),
+    [estudiantes, preguntas, availableSections, docentesMap, baremo]
+  );
 };

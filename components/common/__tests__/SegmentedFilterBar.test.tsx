@@ -134,4 +134,39 @@ describe('SegmentedFilterBar Component', () => {
     fireEvent.mouseDown(screen.getByTestId('outside'));
     expect(yearButton).toHaveAttribute('aria-expanded', 'false');
   });
+
+  it('permite buscar opciones en memoria cuando showSearch es true', () => {
+    const searchFilter: FilterItem<any> = {
+      id: 'ie',
+      label: 'Institución',
+      value: 'all',
+      onChange: jest.fn(),
+      showSearch: true,
+      options: [
+        { value: 'all', label: 'Todas las instituciones' },
+        { value: '1', label: 'IE Simón Bolívar' },
+        { value: '2', label: 'IE José Carlos Mariátegui' },
+      ],
+    };
+
+    render(
+      <SegmentedFilterBar
+        title="Filtrar por"
+        filters={[searchFilter]}
+      />
+    );
+
+    const trigger = screen.getByRole('button', { name: /Todas las instituciones/i });
+    fireEvent.click(trigger);
+
+    // Debe mostrar el input de búsqueda
+    const searchInput = screen.getByPlaceholderText(/Buscar institución.../i);
+    expect(searchInput).toBeInTheDocument();
+
+    // Filtra por "Mariátegui"
+    fireEvent.change(searchInput, { target: { value: 'Mariátegui' } });
+
+    expect(screen.getByText('IE José Carlos Mariátegui')).toBeInTheDocument();
+    expect(screen.queryByText('IE Simón Bolívar')).not.toBeInTheDocument();
+  });
 });

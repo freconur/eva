@@ -1,198 +1,385 @@
-import PrivateRouteAdmins from '@/components/layouts/PrivateRoutes'
-import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
-import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista'
-import { useGlobalContext } from '@/features/context/GlolbalContext'
-import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
-// import { Evaluaciones } from '@/features/types/types'
-import DeleteEvaluacion from '@/modals/deleteEvaluacion'
-import UpdateEvaluacion from '@/modals/updateEvaluacion'
+import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import React, { useEffect, useState } from 'react'
-import { MdDeleteForever, MdEditSquare } from 'react-icons/md'
-import { RiLoader4Line, RiSettings3Line, RiBarChart2Line, RiArrowRightSLine } from 'react-icons/ri'
-import { getGradoTexto, nivelInstitucion } from '@/fuctions/regiones'
+import { useRouter } from 'next/router'
+import { getFirestore, doc, getDoc } from 'firebase/firestore'
+import { RiSettings3Line } from 'react-icons/ri'
+import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista'
+import { useGlobalContext, useGlobalContextDispatch } from '@/features/context/GlolbalContext'
+import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
+import { AppAction } from '@/features/actions/appAction'
+import { getMonthName } from '@/fuctions/dates'
+import { getGradoTexto } from '@/fuctions/regiones'
+import SegmentedFilterBar from '@/components/common/SegmentedFilterBar'
+import EvaluacionesHeroBanner from '@/components/evaluaciones/EvaluacionesHeroBanner'
+import EvaluacionesTable from '@/components/evaluaciones/EvaluacionesTable'
+import useEvaluacionesBannerConfig from '@/components/evaluaciones/useEvaluacionesBannerConfig'
 
 const Evaluaciones = () => {
-  const { getEvaluaciones, getEvaluacion } = useAgregarEvaluaciones()
-  const { evaluaciones, currentUserData, loaderPages, evaluacion } = useGlobalContext()
-  const [showDelete, setShowDelete] = useState<boolean>(false)
-  const [inputUpdate, setInputUpdate] = useState<boolean>(false)
-  const [idEva, setIdEva] = useState<string>("")
-  const [nameEva, setNameEva] = useState<string>("")
-  const [selectedGrado, setSelectedGrado] = useState<string>("all")
-  const handleShowInputUpdate = () => { setInputUpdate(!inputUpdate) }
-  const handleShowModalDelete = () => { setShowDelete(!showDelete) }
-  const [dataEvaluacion, setDataEvaluacion] = useState(evaluacion)
-  useEffect(() => {
-    getEvaluaciones()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUserData?.dni])
-
+  const router = useRouter()
+  const { getEvaluaciones, getEvaluacionesOnce } = useAgregarEvaluaciones()
+  const dispatch = useGlobalContextDispatch()
+  const db = getFirestore()
+  const { evaluaciones, currentUserData, loaderPages, grados } = useGlobalContext()
   const currentYear = new Date().getFullYear()
 
-  const filteredEvaluaciones = evaluaciones?.filter((eva) => {
-    const isActive = eva.active === true;
-    const nivelDeInstitucion = currentUserData?.nivelDeInstitucion;
-    if (!Array.isArray(nivelDeInstitucion) || nivelDeInstitucion.length === 0) return false;
+  // Estados para filtros
+  const [selectedGrado, setSelectedGrado] = useState<string>('all')
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear)
+  const [selectedMonth, setSelectedMonth] = useState<string>('all')
+  const [selectedEstado, setSelectedEstado] = useState<string>('activo')
+  const [isUrlInitialized, setIsUrlInitialized] = useState<boolean>(false)
 
-    const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel;
-    const isCorrectLevel = nivelDeInstitucion.includes(Number(nivelEva));
-    const isCurrentYear = Number(eva.añoDelExamen) === currentYear;
+  // Configuración de vista del Hero Banner (Compacta vs Grande, persistente en Firestore)
+  const bannerConfig = useEvaluacionesBannerConfig({ routeKey: 'especialistas' })
 
-    return isActive && isCorrectLevel && isCurrentYear;
-  }) || [];
+  useEffect(() => {
+    const checkGlobalSentinelAndLoadList = async () => {
+      try {
+        const sentinelRef = doc(db, 'options', 'evaluaciones_sentinel')
+        const sentinelSnap = await getDoc(sentinelRef)
 
-  const gradeOptions = Array.from(new Set(filteredEvaluaciones.map(eva => {
-    const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel;
-    return `${eva.grado || ''}-${nivelEva}`;
-  }))).filter(option => option.split("-")[0] !== "").map(option => {
-    const [grado, nivel] = option.split("-");
-    const gradoLabel = getGradoTexto(grado);
-    const nivelLabel = nivelInstitucion.find(n => n.id === Number(nivel))?.name || "";
+        const latestSentinel = String(
+          sentinelSnap.data()?.lastUpdate?.seconds ||
+            sentinelSnap.data()?.lastUpdate ||
+            ''
+        )
 
+        const cachedList = localStorage.getItem('evaluaciones_list_cache')
+        const cachedSentinel = localStorage.getItem('evaluaciones_list_sentinel')
+
+        if (cachedList && cachedSentinel === latestSentinel) {
+          dispatch({ type: AppAction.EVALUACIONES, payload: JSON.parse(cachedList) })
+        } else {
+          const freshList = await getEvaluacionesOnce()
+          if (freshList && freshList.length > 0) {
+            localStorage.setItem('evaluaciones_list_cache', JSON.stringify(freshList))
+            localStorage.setItem('evaluaciones_list_sentinel', latestSentinel)
+          }
+        }
+      } catch (error) {
+        console.error('Error al cargar evaluaciones con centinela en especialistas:', error)
+        getEvaluaciones()
+      }
+    }
+
+    checkGlobalSentinelAndLoadList()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Evaluaciones accesibles para especialistas: solo activas (active === true), excluyendo ocultas (active === false),
+  // y que pertenezcan al nivel de la institución educativa o jurisdicción del especialista.
+  const evaluacionesVisiblesEspecialista = useMemo(() => {
+    const nivelDeInstitucion = currentUserData?.nivelDeInstitucion
+    if (!Array.isArray(nivelDeInstitucion) || nivelDeInstitucion.length === 0) return []
+
+    return (
+      evaluaciones?.filter((eva) => {
+        if (!eva.active) return false
+
+        const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel
+        return nivelDeInstitucion.includes(Number(nivelEva))
+      }) || []
+    )
+  }, [evaluaciones, currentUserData?.nivelDeInstitucion])
+
+  // Helper para obtener el mes más reciente disponible para un año dado entre las evaluaciones visibles
+  const getLatestMonthForYear = (year: number) => {
+    const months = evaluacionesVisiblesEspecialista
+      .filter(
+        (eva) =>
+          Number(eva.añoDelExamen) === year &&
+          eva.mesDelExamen !== undefined &&
+          eva.mesDelExamen !== null &&
+          eva.mesDelExamen !== ''
+      )
+      .map((eva) => Number(eva.mesDelExamen))
+
+    if (months.length > 0) {
+      return String(Math.max(...months))
+    }
+    return 'all'
+  }
+
+  // 1. Leer query params de la URL
+  useEffect(() => {
+    if (!router.isReady || loaderPages || evaluaciones.length === 0 || isUrlInitialized) return
+
+    const { year, month, grade, status } = router.query
+
+    const initYear = year ? Number(year) : currentYear
+    setSelectedYear(initYear)
+
+    if (month) {
+      setSelectedMonth(String(month))
+    } else {
+      const latestMonth = getLatestMonthForYear(initYear)
+      setSelectedMonth(latestMonth)
+    }
+
+    if (grade) {
+      setSelectedGrado(String(grade))
+    } else {
+      setSelectedGrado('all')
+    }
+
+    if (status && (status === 'activo' || status === 'cerrado' || status === 'all')) {
+      setSelectedEstado(String(status))
+    } else {
+      setSelectedEstado('activo')
+    }
+
+    setIsUrlInitialized(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady, loaderPages, evaluaciones, evaluacionesVisiblesEspecialista, isUrlInitialized])
+
+  // 2. Sincronizar cambios de filtros hacia la URL
+  useEffect(() => {
+    if (!isUrlInitialized) return
+
+    const query: Record<string, string> = {}
+
+    if (selectedYear) query.year = String(selectedYear)
+    if (selectedMonth) query.month = selectedMonth
+    if (selectedGrado) query.grade = selectedGrado
+    if (selectedEstado) query.status = selectedEstado
+
+    router.replace(
+      {
+        pathname: router.pathname,
+        query,
+      },
+      undefined,
+      { shallow: true }
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedYear, selectedMonth, selectedGrado, selectedEstado, isUrlInitialized])
+
+  // Extraer los años disponibles dinámicamente
+  const yearsAvailable = useMemo(() => {
+    const yearsSet = new Set<number>()
+    yearsSet.add(currentYear)
+    evaluacionesVisiblesEspecialista.forEach((eva) => {
+      if (eva.añoDelExamen) {
+        yearsSet.add(Number(eva.añoDelExamen))
+      }
+    })
+    return Array.from(yearsSet).sort((a, b) => b - a)
+  }, [evaluacionesVisiblesEspecialista, currentYear])
+
+  // Extraer los meses disponibles dinámicamente para el año seleccionado
+  const monthsAvailable = useMemo(() => {
+    const monthsSet = new Set<number>()
+    evaluacionesVisiblesEspecialista.forEach((eva) => {
+      if (
+        Number(eva.añoDelExamen) === selectedYear &&
+        eva.mesDelExamen !== undefined &&
+        eva.mesDelExamen !== null &&
+        eva.mesDelExamen !== ''
+      ) {
+        monthsSet.add(Number(eva.mesDelExamen))
+      }
+    })
+    return Array.from(monthsSet).sort((a, b) => a - b).map((m) => ({
+      id: m,
+      name: getMonthName(m),
+    }))
+  }, [evaluacionesVisiblesEspecialista, selectedYear])
+
+  // Ajustar mes si deja de ser válido al cambiar de año
+  useEffect(() => {
+    if (selectedMonth === 'all') return
+    const isSelectedMonthValid = monthsAvailable.some((m) => String(m.id) === selectedMonth)
+    if (!isSelectedMonthValid) {
+      setSelectedMonth('all')
+    }
+  }, [monthsAvailable, selectedMonth])
+
+  // Base filtrada por año y mes
+  const evaluacionesBase = useMemo(() => {
+    return evaluacionesVisiblesEspecialista.filter((eva) => {
+      const matchesYear = Number(eva.añoDelExamen) === selectedYear
+      if (!matchesYear) return false
+
+      if (selectedMonth !== 'all') {
+        const matchesMonth = String(eva.mesDelExamen) === selectedMonth
+        if (!matchesMonth) return false
+      }
+
+      return true
+    })
+  }, [evaluacionesVisiblesEspecialista, selectedYear, selectedMonth])
+
+  // Grados disponibles
+  const gradosDisponibles = useMemo(() => {
+    const gradesSet = new Set<number>()
+    evaluacionesBase.forEach((eva) => {
+      if (eva.grado !== undefined) gradesSet.add(Number(eva.grado))
+    })
+
+    return Array.from(gradesSet)
+      .map((g) => {
+        const gradoObj = grados?.find((gr) => Number(gr.grado) === g)
+        return {
+          grado: g,
+          nombre: gradoObj?.nombre || getGradoTexto(g) || `${g}° Grado`,
+        }
+      })
+      .sort((a, b) => a.grado - b.grado)
+  }, [evaluacionesBase, grados])
+
+  // Evaluaciones filtradas por grado y estado
+  const evaluacionesFiltradas = useMemo(() => {
+    return evaluacionesBase.filter((eva) => {
+      if (selectedGrado !== 'all' && Number(eva.grado) !== Number(selectedGrado)) return false
+
+      if (selectedEstado === 'activo' && eva.cerrada) return false
+      if (selectedEstado === 'cerrado' && !eva.cerrada) return false
+
+      return true
+    })
+  }, [evaluacionesBase, selectedGrado, selectedEstado])
+
+  const metricasBanner = useMemo(() => {
+    const total = evaluacionesBase.length
+    const activas = evaluacionesBase.filter((eva) => !eva.cerrada).length
+    const cerradas = evaluacionesBase.filter((eva) => eva.cerrada).length
+    const totalGrados = gradosDisponibles.length
     return {
-      value: option,
-      label: `${gradoLabel}, nivel ${nivelLabel.toLowerCase()}`
-    };
-  }).sort((a, b) => Number(a.value.split("-")[0]) - Number(b.value.split("-")[0]));
+      total,
+      activas,
+      cerradas,
+      totalGrados,
+    }
+  }, [evaluacionesBase, gradosDisponibles])
 
-  const finalEvaluaciones = selectedGrado === "all"
-    ? filteredEvaluaciones
-    : filteredEvaluaciones.filter(eva => {
-      const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel;
-      return `${eva.grado || ''}-${nivelEva}` === selectedGrado;
-    });
+  const handleResetFilters = () => {
+    setSelectedYear(currentYear)
+    const latestMonth = getLatestMonthForYear(currentYear)
+    setSelectedMonth(latestMonth)
+    setSelectedGrado('all')
+    setSelectedEstado('activo')
+  }
 
   return (
-    <>
-      {showDelete && <DeleteEvaluacion handleShowModalDelete={handleShowModalDelete} idEva={idEva} />}
-      {inputUpdate && nameEva.length > 0 && <UpdateEvaluacion evaluacion={evaluacion} nameEva={nameEva} handleShowInputUpdate={handleShowInputUpdate} idEva={idEva} />}
+    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Hero Banner Ejecutivo Institucional Modular */}
+        <EvaluacionesHeroBanner
+          title="GESTIÓN DE EVALUACIONES"
+          subtitle="Monitoreo pedagógico y seguimiento de logros de aprendizaje para especialistas"
+          colegio={currentUserData?.institucion || currentUserData?.ugel || 'Especialistas UGEL'}
+          badgeTema="Especialistas"
+          selectedYear={selectedYear}
+          selectedMonth={selectedMonth}
+          totalEvaluaciones={metricasBanner.total}
+          totalActivas={metricasBanner.activas}
+          totalCerradas={metricasBanner.cerradas}
+          totalGrados={metricasBanner.totalGrados}
+          variant={bannerConfig.variant}
+          backgroundImage={bannerConfig.backgroundImage}
+          backgroundImageOpacity={bannerConfig.backgroundImageOpacity}
+          customTitle={bannerConfig.customTitle}
+          customSubtitle={bannerConfig.customSubtitle}
+          isAuditing={bannerConfig.isAuditing}
+          isSavingVariant={bannerConfig.isSaving}
+          isSavingTexts={bannerConfig.isSavingTexts}
+          isUploadingImage={bannerConfig.isUploadingImage}
+          onVariantChange={bannerConfig.setBannerVariant}
+          onUploadBackgroundImage={bannerConfig.uploadBannerImage}
+          onRemoveBackgroundImage={bannerConfig.removeBannerImage}
+          onUpdateTexts={bannerConfig.updateBannerTexts}
+          onResetTexts={bannerConfig.resetBannerTexts}
+          actions={
+            <Link
+              href="/admin/evaluaciones"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md transition-all duration-200 group shadow-2xs hover:shadow-xs"
+              title="Panel de administración de evaluaciones"
+            >
+              <RiSettings3Line className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform duration-500" />
+              <span>Gestionar</span>
+            </Link>
+          }
+        />
 
-      <div className="min-h-screen bg-slate-50/30 p-4 md:p-10">
-        <div className="max-w-6xl mx-auto space-y-10">
-          {/* Header Section */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
-                  Evaluaciones
-                </h1>
-                <span className="px-3 py-1 bg-colorSegundo/10 text-colorSegundo text-sm font-bold rounded-full border border-colorSegundo/20">
-                  {currentYear}
-                </span>
-              </div>
-              <p className="text-slate-500 text-lg font-medium max-w-2xl leading-relaxed">
-                Panel central de gestión de evaluaciones vigentes para el presente año académico.
-              </p>
-            </div>
+        {/* Toolbar de Filtros Reutilizable y Responsive */}
+        <SegmentedFilterBar
+          title="Filtrar por"
+          filters={[
+            {
+              id: 'year',
+              label: 'Año',
+              value: selectedYear,
+              onChange: (year) => {
+                const newYear = Number(year)
+                setSelectedYear(newYear)
+                const latestMonth = getLatestMonthForYear(newYear)
+                setSelectedMonth(latestMonth)
+              },
+              options: yearsAvailable.map((year) => ({
+                value: year,
+                label: String(year),
+              })),
+              minWidth: 'md:min-w-[120px]',
+            },
+            {
+              id: 'month',
+              label: 'Mes',
+              value: selectedMonth,
+              onChange: (month) => setSelectedMonth(String(month)),
+              options: [
+                { value: 'all', label: 'Todos los Meses' },
+                ...monthsAvailable.map((m) => ({
+                  value: String(m.id),
+                  label: m.name,
+                })),
+              ],
+              minWidth: 'md:min-w-[170px]',
+            },
+            {
+              id: 'grade',
+              label: 'Grado',
+              value: selectedGrado,
+              onChange: (grade) => setSelectedGrado(String(grade)),
+              options: [
+                { value: 'all', label: 'Todos los Grados' },
+                ...gradosDisponibles.map((g) => ({
+                  value: String(g.grado),
+                  label: g.nombre,
+                })),
+              ],
+              minWidth: 'md:min-w-[170px]',
+            },
+            {
+              id: 'estado',
+              label: 'Estado',
+              value: selectedEstado,
+              onChange: (estado) => setSelectedEstado(String(estado)),
+              options: [
+                { value: 'all', label: 'Todos los Estados' },
+                { value: 'activo', label: 'Activo' },
+                { value: 'cerrado', label: 'Cerrado' },
+              ],
+              minWidth: 'md:min-w-[160px]',
+            },
+          ]}
+          onReset={handleResetFilters}
+          showReset={true}
+        />
 
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              {gradeOptions.length > 0 && (
-                <div className="relative w-full sm:w-64">
-                  <select
-                    value={selectedGrado}
-                    onChange={(e) => setSelectedGrado(e.target.value)}
-                    className="w-full pl-4 pr-10 py-3 bg-white text-slate-700 font-semibold text-sm rounded-xl shadow-lg shadow-slate-200/50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-colorSegundo/20 focus:border-colorSegundo/30 appearance-none transition-all duration-300"
-                  >
-                    <option value="all">Todos los grados</option>
-                    {gradeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                      <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                    </svg>
-                  </div>
-                </div>
-              )}
-
-              <Link
-                href="/admin/evaluaciones"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-white text-slate-600 font-bold text-sm rounded-xl shadow-lg shadow-slate-200/50 border border-slate-100 hover:border-colorSegundo/30 hover:text-colorSegundo hover:shadow-xl hover:translate-y-[-2px] transition-all duration-300 group"
-              >
-                <RiSettings3Line className="text-lg group-hover:rotate-90 transition-transform duration-500" />
-                <span>Gestionar</span>
-              </Link>
-            </div>
-          </div>
-
-          {loaderPages ? (
-            <div className="flex flex-col items-center justify-center py-32 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
-              <RiLoader4Line className="animate-spin text-6xl text-colorSegundo mb-6" />
-              <span className="text-slate-500 text-lg font-semibold tracking-wide animate-pulse">Sincronizando registros...</span>
-            </div>
-          ) : (
-            <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden transition-all duration-300">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-100">
-                      <th className="py-6 px-8 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] w-20 text-center">#</th>
-                      <th className="py-6 px-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em]">Descripción de la Evaluación</th>
-                      <th className="py-6 px-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em]">Grado</th>
-                      <th className="py-6 px-8 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center">Reporte</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {finalEvaluaciones.length > 0 ? (
-                      finalEvaluaciones.map((eva, index) => (
-                        <tr
-                          key={eva.id || index}
-                          className="group hover:bg-slate-50/50 transition-all duration-300"
-                        >
-                          <td className="py-6 px-8 text-sm text-slate-400 font-semibold text-center group-hover:text-slate-600">
-                            {String(index + 1).padStart(2, '0')}
-                          </td>
-                          <td className="py-6 px-4">
-                            <div
-                              className="inline-flex items-center gap-3 text-slate-700 font-bold"
-                            >
-                              <span className="text-base tracking-tight">{eva.nombre}</span>
-                            </div>
-                          </td>
-                          <td className="py-6 px-4">
-                            <span className="text-sm text-slate-600 font-bold bg-slate-100 px-3 py-1 rounded-lg">
-                              {getGradoTexto(eva.grado)}
-                            </span>
-                          </td>
-                          <td className="py-6 px-8 text-center">
-                            <Link
-                              href={`/admin/evaluaciones/evaluacion/reporte?id=${currentUserData?.dni}&idEvaluacion=${eva.id}`}
-                              className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-colorSegundo/5 text-colorSegundo font-bold text-sm rounded-xl hover:bg-colorSegundo hover:text-white hover:shadow-lg hover:shadow-colorSegundo/20 active:scale-95 transition-all duration-300 group/btn"
-                            >
-                              <RiBarChart2Line className="text-lg" />
-                              <span>Ver Reporte</span>
-                              <RiArrowRightSLine className="text-lg group-hover/btn:translate-x-1 transition-transform duration-300" />
-                            </Link>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={4} className="py-32 text-center">
-                          <div className="flex flex-col items-center max-w-xs mx-auto space-y-5">
-                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
-                              <RiLoader4Line size={32} />
-                            </div>
-                            <div className="space-y-1">
-                              <p className="text-slate-800 font-bold text-lg">Sin evaluaciones</p>
-                              <p className="text-slate-400 text-sm">No se encontraron registros activos para este periodo.</p>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Tabla Modular de Evaluaciones */}
+        <EvaluacionesTable
+          evaluaciones={evaluacionesFiltradas}
+          isLoading={loaderPages}
+          currentYear={currentYear}
+          selectedYear={selectedYear}
+          grados={grados}
+          onResetFilters={handleResetFilters}
+          getReporteHref={(eva) =>
+            `/admin/evaluaciones/evaluacion/reporte?id=${currentUserData?.dni}&idEvaluacion=${eva.id}`
+          }
+        />
       </div>
-    </>
+    </div>
   )
 }
 

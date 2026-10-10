@@ -12,6 +12,7 @@ interface DirectorExportMenuProps {
   imagenesGeneradas: boolean;
   hasPreguntasConImagenes: boolean;
   onExport: (type: 'excel' | 'pdf-tabla' | 'pdf-preguntas') => void;
+  variant?: 'light' | 'glass';
 }
 
 export const DirectorExportMenu: React.FC<DirectorExportMenuProps> = ({
@@ -24,6 +25,7 @@ export const DirectorExportMenu: React.FC<DirectorExportMenuProps> = ({
   imagenesGeneradas,
   hasPreguntasConImagenes,
   onExport,
+  variant = 'light',
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -54,6 +56,7 @@ export const DirectorExportMenu: React.FC<DirectorExportMenuProps> = ({
   };
 
   const isProcessing = loadingExport || loadingPDF;
+  const isGlass = variant === 'glass';
 
   return (
     <div className="relative inline-block" ref={dropdownRef}>
@@ -63,27 +66,41 @@ export const DirectorExportMenu: React.FC<DirectorExportMenuProps> = ({
         disabled={disabled || isProcessing}
         aria-haspopup="true"
         aria-expanded={isOpen}
-        className={`h-[42px] px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 inline-flex items-center justify-between gap-2.5 shadow-2xs border outline-none select-none ${
-          isOpen
-            ? 'bg-blue-50/70 border-blue-500 text-blue-900 ring-2 ring-blue-100'
-            : 'bg-white hover:bg-slate-50 border-slate-200/90 hover:border-slate-300 text-slate-700 hover:text-slate-900'
-        } ${
-          disabled || isProcessing
-            ? 'opacity-60 cursor-not-allowed bg-slate-50'
-            : 'cursor-pointer active:scale-[0.99]'
-        }`}
+        className={
+          isGlass
+            ? `h-9 sm:h-[38px] px-3 sm:px-3.5 rounded-xl text-xs font-semibold transition-all duration-150 inline-flex items-center justify-between gap-2 shadow-2xs border outline-none select-none backdrop-blur-md focus-visible:ring-2 focus-visible:ring-white/40 ${
+                isOpen
+                  ? 'bg-white/25 border-white/40 text-white ring-2 ring-white/20'
+                  : 'bg-white/10 hover:bg-white/20 active:bg-white/25 border-white/20 text-white'
+              } ${
+                disabled || isProcessing
+                  ? 'opacity-60 cursor-not-allowed bg-white/5 border-white/10 text-white/70'
+                  : 'cursor-pointer active:scale-[0.99]'
+              }`
+            : `h-[42px] px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 inline-flex items-center justify-between gap-2.5 shadow-2xs border outline-none select-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                isOpen
+                  ? 'bg-blue-50/70 border-blue-500 text-blue-900 ring-2 ring-blue-100'
+                  : 'bg-white hover:bg-slate-50 border-slate-200/90 hover:border-slate-300 text-slate-700 hover:text-slate-900'
+              } ${
+                disabled || isProcessing
+                  ? 'opacity-60 cursor-not-allowed bg-slate-50'
+                  : 'cursor-pointer active:scale-[0.99]'
+              }`
+        }
       >
         <HiOutlineDownload
-          className={`w-4 h-4 text-blue-600 shrink-0 transition-transform ${
-            isProcessing ? 'animate-bounce' : ''
-          }`}
+          className={`shrink-0 transition-transform ${
+            isGlass ? 'w-3.5 h-3.5 text-blue-200' : 'w-4 h-4 text-blue-600'
+          } ${isProcessing ? 'animate-bounce' : ''}`}
         />
         <span className="whitespace-nowrap">
           {isProcessing ? 'Procesando...' : 'Exportar Reporte'}
         </span>
         <RiArrowDownSLine
-          className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-blue-600' : ''
+          className={`shrink-0 transition-transform duration-200 ${
+            isGlass
+              ? `w-3.5 h-3.5 ${isOpen ? 'rotate-180 text-white' : 'text-blue-200/80'}`
+              : `w-4 h-4 ${isOpen ? 'rotate-180 text-blue-600' : 'text-slate-400'}`
           }`}
         />
       </button>

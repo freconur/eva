@@ -3,19 +3,19 @@
   display: grid;
   grid-template-columns: 1fr;
   min-height: 100vh;
-  transition: grid-template-columns 0.4s ease;
+  transition: grid-template-columns 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @media (min-width: 1024px) {
   .container.withSidebar {
-    /* En desktop el sidebar ocupa 300px fijos estructurales */
-    grid-template-columns: 300px minmax(0, 1fr);
+    /* En desktop el sidebar ocupa 280px fijos estructurales */
+    grid-template-columns: 280px minmax(0, 1fr);
     gap: 0;
   }
 
   .container.withSidebar.collapsedSidebar {
-    /* En desktop cuando esta colapsado ocupa 88px */
-    grid-template-columns: 88px minmax(0, 1fr);
+    /* En desktop cuando esta colapsado ocupa 80px */
+    grid-template-columns: 80px minmax(0, 1fr);
   }
 }
 
@@ -65,59 +65,179 @@
   margin: auto;
 }
 
-.auditBanner {
-  background: linear-gradient(135deg, #b45309 0%, #78350f 100%);
-  /* Warm warning-like dark amber gradient */
-  color: #ffffff;
-  padding: 0.75rem 1.5rem;
-  display: flex;
-  justify-content: space-between;
+/* --- PÍLDORA FLOTANTE INFERIOR: MODO AUDITORÍA (OPCIÓN 1) --- */
+.auditPill {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3), 0 0 20px rgba(245, 158, 11, 0.2);
+  border-radius: 9999px;
+  padding: 0.4rem 0.5rem 0.4rem 1rem;
+  display: inline-flex;
   align-items: center;
   gap: 1rem;
-  font-size: 0.875rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  z-index: 1000;
-  position: sticky;
-  top: 0;
-  border-bottom: 2px solid #f59e0b;
+  max-width: calc(100vw - 2rem);
+  animation: auditPillSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+@keyframes auditPillSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 .auditInfo {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-width: 0;
 }
 
 .auditBadge {
-  background-color: #f59e0b;
-  color: #78350f;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
   font-size: 0.6875rem;
   font-weight: 800;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
+  padding: 0.25rem 0.55rem;
+  border-radius: 9999px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pulsingDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #f59e0b;
+  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8);
+  animation: auditDotPulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  flex-shrink: 0;
+}
+
+@keyframes auditDotPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
+}
+
+.auditText {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #e2e8f0;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auditLabel {
+  color: #94a3b8;
+}
+
+.auditName {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.auditMeta {
+  color: #94a3b8;
+  font-size: 0.75rem;
 }
 
 .exitAuditBtn {
-  background-color: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #0f172a;
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 0.375rem 0.75rem;
-  border-radius: 8px;
+  padding: 0.45rem 0.95rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
 }
 
 .exitAuditBtn:hover {
-  background-color: rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
   transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4);
+  color: #020617;
 }
 
 .exitAuditBtn:active {
   transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.exitAuditIcon {
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .auditPill {
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+    width: auto;
+    max-width: none;
+    border-radius: 1rem;
+    padding: 0.75rem 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+  @keyframes auditPillSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .auditInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  .auditText {
+    flex-wrap: wrap;
+    white-space: normal;
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+  .exitAuditBtn {
+    justify-content: center;
+    width: 100%;
+    padding: 0.5rem;
+  }
 }
 
 /* --- ESTILOS DEL CONTENIDO PRINCIPAL Y CONTRASTE DINÁMICO --- */

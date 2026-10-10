@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import {
   Chart as ChartJS,
@@ -49,13 +49,33 @@ import { useMetricasDirector } from '@/components/reportes/director/useMetricasD
 import DirectorTabsNav, { DirectorTabKey } from '@/components/reportes/director/DirectorTabsNav';
 import DirectorBrechasTab from '@/components/reportes/director/DirectorBrechasTab';
 import DirectorTendenciasTab from '@/components/reportes/director/DirectorTendenciasTab';
+import DirectorComparativaTab from '@/components/reportes/director/DirectorComparativaTab';
 import DirectorExportMenu from '@/components/reportes/director/DirectorExportMenu';
 import DirectorHeroBanner from '@/components/reportes/director/DirectorHeroBanner';
+import DirectorLayoutModeSwitch, {
+  DirectorLayoutMode,
+} from '@/components/reportes/director/DirectorLayoutModeSwitch';
+import { isEvaluacionEnMatriz } from '@/components/reportes/director/useEvaluacionesMatriz';
+import {
+  useDirectorTabsConfig,
+  DEFAULT_DIRECTOR_TAB_ORDER,
+  DEFAULT_DIRECTOR_TAB_LABELS,
+} from '@/components/reportes/director/useDirectorTabsConfig';
+import {
+  MdTableChart,
+  MdTrackChanges,
+  MdTrendingUp,
+  MdShowChart,
+  MdAssignment,
+  MdKeyboardArrowUp,
+} from 'react-icons/md';
 import {
   RiSparklingLine,
   RiCalendarLine,
   RiTimeLine,
   RiArrowDownSLine,
+  RiGraduationCapLine,
+  RiBuilding4Line,
 } from 'react-icons/ri';
 import DirectorFiltrosBar, {
   ColumnasVisiblesState,
@@ -112,6 +132,65 @@ const Reporte = () => {
     }
   };
 
+  // Modo de diseño del reporte: 'tabs' (pestañas independientes) o 'cascade' (cascada vertical continua)
+  const [layoutMode, setLayoutMode] = useState<DirectorLayoutMode>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('eva_director_report_layout');
+        if (saved === 'tabs' || saved === 'cascade') return saved;
+      } catch (e) {
+        console.error('Error al leer layoutMode:', e);
+      }
+    }
+    return 'tabs';
+  });
+
+  const handleToggleLayoutMode = (mode: DirectorLayoutMode) => {
+    setLayoutMode(mode);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('eva_director_report_layout', mode);
+      } catch (e) {
+        console.error('Error al guardar layoutMode:', e);
+      }
+    }
+    if (mode === 'cascade' && activeTab) {
+      setTimeout(() => {
+        const elem = document.getElementById(`section-${activeTab}`);
+        if (elem) {
+          elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 150);
+    }
+  };
+
+  // Configuración de títulos y orden de pestañas sincronizados con Firestore
+  const { tabLabels, tabOrder } = useDirectorTabsConfig();
+
+  // Control de scroll programático para evitar bucle con IntersectionObserver
+  const isProgrammaticScroll = useRef(false);
+  const programmaticScrollTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handleTabChange = useCallback(
+    (key: DirectorTabKey) => {
+      setActiveTab(key);
+      if (layoutMode === 'cascade') {
+        isProgrammaticScroll.current = true;
+        if (programmaticScrollTimer.current) {
+          clearTimeout(programmaticScrollTimer.current);
+        }
+        const elem = document.getElementById(`section-${key}`);
+        if (elem) {
+          elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        programmaticScrollTimer.current = setTimeout(() => {
+          isProgrammaticScroll.current = false;
+        }, 850);
+      }
+    },
+    [layoutMode]
+  );
+
   // Estados de modales interactivos
   const [isBurbujasModalOpen, setIsBurbujasModalOpen] = useState<boolean>(false);
   const [isDecisionesModalOpen, setIsDecisionesModalOpen] = useState<boolean>(false);
@@ -122,6 +201,8 @@ const Reporte = () => {
 
   // Baremo de alertas pedagógicas - Oficial y centralizado desde la Matriz de Resultados regional
   const [baremo, setBaremo] = useState<BaremoDecisiones>(DEFAULT_BAREMO_DECISIONES);
+  const [matrizConfigGrados, setMatrizConfigGrados] = useState<Record<string, any>>({});
+  const [isConfigLoaded, setIsConfigLoaded] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -139,9 +220,16 @@ const Reporte = () => {
               medio: Number(data.baremoDecisiones.medio) || DEFAULT_BAREMO_DECISIONES.medio,
             });
           }
+          if (data?.grados) {
+            setMatrizConfigGrados(data.grados);
+          }
         }
       } catch (e) {
         console.error('Error al cargar baremo oficial del administrador:', e);
+      } finally {
+        if (isMounted) {
+          setIsConfigLoaded(true);
+        }
       }
     };
     fetchBaremoAdmin();
@@ -149,6 +237,24 @@ const Reporte = () => {
       isMounted = false;
     };
   }, []);
+
+  // Determinar si la evaluación actual forma parte de la configuración EDI, EP1, EP2
+  const isEtapaConfigurada = useMemo(() => {
+    if (!evaluacion?.id || !matrizConfigGrados) return false;
+    return isEvaluacionEnMatriz(evaluacion.id, matrizConfigGrados);
+  }, [evaluacion?.id, matrizConfigGrados]);
+
+  // Si Brechas de Aprendizaje no está habilitada para esta evaluación, redireccionar a Grilla
+  useEffect(() => {
+    if (isConfigLoaded && !isEtapaConfigurada && activeTab === 'brechas') {
+      setActiveTab('grilla');
+    }
+  }, [isConfigLoaded, isEtapaConfigurada, activeTab]);
+
+  // Pestañas visibles según si Brechas está habilitada
+  const visibleTabOrder = useMemo(() => {
+    return tabOrder.filter((id) => (id === 'brechas' ? isEtapaConfigurada : true));
+  }, [tabOrder, isEtapaConfigurada]);
 
   // Filtros de tabla
   const [filtros, setFiltros] = useState<FiltrosState>({
@@ -211,6 +317,7 @@ const Reporte = () => {
   const allowExportExcel = isAuditing || accionesDirector.exportarExcel !== false;
   const allowGenerarPdfPreguntas = isAuditing || accionesDirector.generarPdfPreguntas !== false;
   const hasAnyDirectorAction = allowExportGrillaPdf || allowExportExcel || allowGenerarPdfPreguntas;
+  const canEditTabNames = Boolean(isAuditing || currentUserData?.rol === 4 || currentUserData?.perfil?.rol === 4);
 
   // Base de datos de evaluaciones para comparativa
   const [evaluacionesDb, setEvaluacionesDb] = useState<any[]>([]);
@@ -308,17 +415,47 @@ const Reporte = () => {
   }, [evaluacion?.mesDelExamen, route.isReady, updateQuery]);
 
   const handleSelectEvaluacion = useCallback(
-    (evalId: string, mesDelExamen?: number) => {
+    (evalId: string, mesDelExamen?: number, newGrado?: number | string) => {
       const targetMonth =
         mesDelExamen !== undefined && mesDelExamen !== null
           ? Number(mesDelExamen)
           : monthSelected;
-      updateQuery({
+
+      const queryParams: Record<string, any> = {
         idEvaluacion: evalId,
         mes: targetMonth,
-      });
+      };
+
+      let targetGrado = newGrado !== undefined && newGrado !== '' ? String(newGrado) : undefined;
+      if (!targetGrado) {
+        const found = evaluacionesDb.find((e) => e.id === evalId);
+        if (found?.grado !== undefined && found?.grado !== null) {
+          targetGrado = String(found.grado);
+        }
+      }
+
+      if (targetGrado) {
+        queryParams.grado = targetGrado;
+        if (targetGrado !== filtros.grado) {
+          queryParams.seccion = '';
+          setFiltros((prev) => ({ ...prev, grado: targetGrado!, seccion: '' }));
+        } else {
+          setFiltros((prev) => ({ ...prev, grado: targetGrado! }));
+        }
+      }
+
+      updateQuery(queryParams);
     },
-    [monthSelected, updateQuery]
+    [monthSelected, evaluacionesDb, filtros.grado, updateQuery]
+  );
+
+  const handleSelectGrado = useCallback(
+    (newGrado: number | string) => {
+      const gradoStr = String(newGrado);
+      setFiltros((prev) => ({ ...prev, grado: gradoStr, seccion: '' }));
+      updateQuery({ grado: gradoStr, seccion: '' });
+    },
+    [updateQuery]
   );
 
   const yearsAvailable = useMemo(() => {
@@ -333,6 +470,11 @@ const Reporte = () => {
 
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
+    setFiltros((prev) => ({ ...prev, [name]: value }));
+    updateQuery({ [name]: value });
+  };
+
+  const handleSingleFilterChange = (name: keyof FiltrosState, value: string) => {
     setFiltros((prev) => ({ ...prev, [name]: value }));
     updateQuery({ [name]: value });
   };
@@ -357,6 +499,7 @@ const Reporte = () => {
     isLoading,
     filtrosParaReporteDirector,
     obtenerCoberturaDirector,
+    totalEstudiantesMatriculados,
   } = useReporteDirectores();
 
   const { getDocentesDeDirectores } = useRegistros();
@@ -691,6 +834,366 @@ const Reporte = () => {
     else if (type === 'pdf-preguntas') handleGenerarPDF();
   };
 
+  // Sincronizar activeTab cuando el usuario hace scroll en modo cascada (Scroll Spy robusto)
+  useEffect(() => {
+    if (layoutMode !== 'cascade' || isLoading || loadingMonth) return;
+
+    let rafId: number | null = null;
+
+    const updateActiveTab = () => {
+      if (isProgrammaticScroll.current) return;
+
+      const navEl = document.getElementById('director-tabs-nav-container');
+      const stickyBottom = navEl ? Math.max(navEl.getBoundingClientRect().bottom, 60) : 70;
+      // Umbral de activación: la sección se considera activa cuando su encabezado alcanza
+      // la zona de lectura debajo de las pestañas fijas (+55px de tolerancia).
+      const activationOffset = stickyBottom + 55;
+
+      // Detectar si el scroll llegó al final del contenedor con scroll real (requiere desplazamiento previo)
+      const contentWrapper = navEl?.closest<HTMLElement>('[class*="contentWrapper"]');
+      if (contentWrapper && contentWrapper.scrollTop > 200) {
+        const isWrapperBottom =
+          contentWrapper.scrollHeight - contentWrapper.scrollTop - contentWrapper.clientHeight <= 40;
+        if (isWrapperBottom && visibleTabOrder.length > 0) {
+          const lastKey = visibleTabOrder[visibleTabOrder.length - 1];
+          setActiveTab((prev) => (prev !== lastKey ? lastKey : prev));
+          return;
+        }
+      } else if (typeof window !== 'undefined' && window.scrollY > 200) {
+        const scrollEl = document.scrollingElement || document.documentElement;
+        const totalHeight = Math.max(document.body?.scrollHeight || 0, scrollEl?.scrollHeight || 0);
+        if (totalHeight > window.innerHeight + 200) {
+          const isWindowBottom = window.innerHeight + window.scrollY >= totalHeight - 40;
+          if (isWindowBottom && visibleTabOrder.length > 0) {
+            const lastKey = visibleTabOrder[visibleTabOrder.length - 1];
+            setActiveTab((prev) => (prev !== lastKey ? lastKey : prev));
+            return;
+          }
+        }
+      }
+
+      // Encontrar la sección activa en el orden visible
+      let activeSectionKey = visibleTabOrder[0];
+
+      for (const tabId of visibleTabOrder) {
+        const el = document.getElementById(`section-${tabId}`);
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= activationOffset) {
+          activeSectionKey = tabId;
+        }
+      }
+
+      if (activeSectionKey) {
+        setActiveTab((prev) => (prev !== activeSectionKey ? activeSectionKey : prev));
+      }
+    };
+
+    const onScroll = () => {
+      if (isProgrammaticScroll.current) return;
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        updateActiveTab();
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+
+    // Verificación inicial al montar o alternar a modo cascada
+    const initialTimer = setTimeout(updateActiveTab, 150);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll, { capture: true });
+      window.removeEventListener('resize', onScroll);
+      clearTimeout(initialTimer);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, [layoutMode, visibleTabOrder, isLoading, loadingMonth]);
+
+  useEffect(() => {
+    return () => {
+      if (programmaticScrollTimer.current) {
+        clearTimeout(programmaticScrollTimer.current);
+      }
+    };
+  }, []);
+
+  // Helper de renderizado: TAB 1 (Grilla y Estudiantes)
+  const renderGrillaContent = () => (
+    <>
+      <DirectorFiltrosBar
+        filtros={filtros}
+        onFilterChange={handleChangeFiltros}
+        onSingleFilterChange={handleSingleFilterChange}
+        evaluacion={evaluacion}
+        availableSections={availableSections}
+        isDirectorRol={currentUserData.rol === 2}
+        columnasVisibles={columnasVisibles}
+        onToggleColumna={toggleColumna}
+        onLimpiarFiltros={handleLimpiarFiltros}
+      />
+
+      {/* Leyenda de Niveles */}
+      <div className={styles.legendContainer}>
+        <span className={styles.legendTitle}>LEYENDA DE NIVELES:</span>
+        {(nivelesLeyenda as any[]).map((nivel: any, index: number) => (
+          <div key={index} className={styles.legendItem}>
+            <div
+              className={styles.legendCircle}
+              style={{ backgroundColor: nivel.color }}
+            />
+            <span className={styles.legendLabel}>{nivel.nombre}</span>
+          </div>
+        ))}
+      </div>
+
+      <TablaPreguntas
+        estudiantes={estudiantesFiltrados}
+        preguntasRespuestas={preguntasRespuestas}
+        warningEvaEstudianteSinRegistro={undefined}
+        linkToEdit={`/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`}
+        customColumns={{
+          showPuntaje: columnasVisibles.showPuntaje,
+          showNivel: columnasVisibles.showNivel,
+          showRC: columnasVisibles.showRC,
+          showTP: columnasVisibles.showTP,
+          showDniDocente: columnasVisibles.showDniDocente,
+        }}
+        showEditButton={false}
+        className={styles.tableWrapper}
+      />
+    </>
+  );
+
+  // Helper de renderizado: TAB 2 (Brechas de Aprendizaje)
+  const renderBrechasContent = () => (
+    <DirectorBrechasTab
+      metricas={metricasDirector}
+      preguntas={preguntasRespuestas}
+      evaluacion={evaluacion}
+      evaluacionesDb={evaluacionesDb}
+      initialGrado={filtros.grado || evaluacion?.grado}
+      initialSeccion={filtros.seccion}
+      isLoadingData={isLoading || loadingMonth}
+      availableSections={availableSections}
+      docentesMap={docentesMap}
+      dniDirector={currentUserData?.dni}
+      yearSelected={yearSelected}
+      baremo={baremo}
+      onOpenQuestionDetail={(order, coords) =>
+        setQuestionDetailPopover({ order, coords })
+      }
+      onOpenGuiaBurbujas={() => setIsBurbujasModalOpen(true)}
+      onOpenGuiaDecisiones={() => setIsDecisionesModalOpen(true)}
+      isAuditing={canEditTabNames}
+    />
+  );
+
+  // Helper de renderizado: TAB 3 (Tendencias y Cobertura)
+  const renderTendenciaContent = () => (
+    <DirectorTendenciasTab
+      evaluacion={evaluacion}
+      datosPorMes={datosPorMes}
+      mesesConDataDisponibles={mesesConDataDisponibles}
+      promedioGlobal={promedioGlobal}
+      monthSelected={monthSelected}
+      yearSelected={yearSelected}
+      estudiantes={estudiantes}
+      availableSections={availableSections}
+      docentesMap={docentesMap}
+      promedioPorDocente={promedioPorDocente}
+      evaluados={estudiantes.length}
+      pendientes={estudiantesDeEvaluacion.length}
+      listaPendientes={estudiantesDeEvaluacion}
+      estudiantesFiltrados={estudiantesFiltrados}
+      evaluacionesDb={evaluacionesDb}
+      loadingEvaluaciones={loadingEvaluaciones}
+      dniDirector={currentUserData.dni}
+      routeEvaluacionId={route.query.idEvaluacion as string}
+      initialGrado={filtros.grado || evaluacion?.grado}
+      initialSeccion={filtros.seccion}
+      isLoadingData={isLoading || loadingMonth}
+      onSelectEvaluacion={handleSelectEvaluacion}
+      onSelectGrado={handleSelectGrado}
+      isAuditing={canEditTabNames}
+    />
+  );
+
+  // Helper de renderizado: TAB 4 (Comparativa Histórica)
+  const renderComparativaContent = () => (
+    <DirectorComparativaTab
+      evaluacion={evaluacion}
+      evaluacionesDb={evaluacionesDb}
+      loadingEvaluaciones={loadingEvaluaciones}
+      dniDirector={currentUserData.dni}
+      routeEvaluacionId={route.query.idEvaluacion as string}
+      monthSelected={monthSelected}
+      yearSelected={yearSelected}
+    />
+  );
+
+  // Helper de renderizado: TAB 5 (Análisis por Ítem / Preguntas)
+  const renderPreguntasContent = () => (
+    <ReporteEvaluacionPorPregunta
+      dataEstadisticasOrdenadas={reporteDirectorOrdenado}
+      preguntasMap={preguntasMap}
+      detectarNumeroOpciones={detectarNumeroOpciones}
+      warningEvaEstudianteSinRegistro={undefined}
+      convertirGraficoAImagen={() => {}}
+    />
+  );
+
+  // Metadatos de diseño por sección para el modo Cascada
+  const getSectionMeta = (tabId: DirectorTabKey) => {
+    switch (tabId) {
+      case 'grilla':
+        return {
+          icon: MdTableChart,
+          iconColor: 'text-blue-600',
+          iconBg: 'bg-blue-50 border-blue-200/80',
+          description: 'Matriz integral de resultados por estudiante, puntajes, niveles y respuestas clave.',
+          badge: (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
+              {estudiantesFiltrados.length} estudiantes
+            </span>
+          ),
+        };
+      case 'brechas':
+        return {
+          icon: MdTrackChanges,
+          iconColor: 'text-amber-600',
+          iconBg: 'bg-amber-50 border-amber-200/80',
+          description: 'Diagnóstico de rezago pedagógico, dispersión de competencias y matriz de decisiones.',
+          badge:
+            metricasDirector.kpis.totalCritico > 0 ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/60">
+                {metricasDirector.kpis.totalCritico} críticas
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                Sin alertas
+              </span>
+            ),
+        };
+      case 'tendencia':
+        return {
+          icon: MdTrendingUp,
+          iconColor: 'text-emerald-600',
+          iconBg: 'bg-emerald-50 border-emerald-200/80',
+          description: 'Evolución histórica mensual, cobertura de participación y promedios comparativos.',
+          badge: (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+              {estudiantes.length} evaluados
+            </span>
+          ),
+        };
+      case 'comparativa':
+        return {
+          icon: MdShowChart,
+          iconColor: 'text-indigo-600',
+          iconBg: 'bg-indigo-50 border-indigo-200/80',
+          description: 'Análisis comparativo de tendencias con otras evaluaciones estandarizadas de la institución.',
+          badge: (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+              {evaluacionesDb.length} evaluaciones
+            </span>
+          ),
+        };
+      case 'preguntas':
+        return {
+          icon: MdAssignment,
+          iconColor: 'text-purple-600',
+          iconBg: 'bg-purple-50 border-purple-200/80',
+          description: 'Desglose psicométrico por ítem pedagógico, tasa de aciertos y distribución de alternativas.',
+          badge: (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200/60">
+              {preguntasRespuestas.length} ítems
+            </span>
+          ),
+        };
+    }
+  };
+
+  // Renderizado continuo vertical en Modo Cascada
+  const renderCascadeView = () => {
+    if (isLoading || loadingMonth) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 min-h-[380px] bg-white rounded-2xl border border-slate-200/90 shadow-2xs">
+          <Loader
+            size="large"
+            variant="spinner"
+            text="Cargando datos del reporte..."
+            color="#10b981"
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6 sm:space-y-8 pb-12">
+        {visibleTabOrder.map((tabId) => {
+          const meta = getSectionMeta(tabId);
+          const Icon = meta.icon;
+
+          return (
+            <section
+              key={tabId}
+              id={`section-${tabId}`}
+              className="scroll-mt-24 sm:scroll-mt-28 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow duration-200 p-4 sm:p-6"
+              aria-label={tabLabels[tabId] || DEFAULT_DIRECTOR_TAB_LABELS[tabId]}
+            >
+              {/* Cabecera accesible de la Sección en Cascada */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-slate-100">
+                <div className="flex items-start sm:items-center gap-3 min-w-0">
+                  <div
+                    className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${meta.iconBg}`}
+                  >
+                    <Icon className={`w-5 h-5 ${meta.iconColor}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h2 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight leading-snug">
+                        {tabLabels[tabId] || DEFAULT_DIRECTOR_TAB_LABELS[tabId]}
+                      </h2>
+                      {meta.badge}
+                    </div>
+                    <p className="text-xs text-slate-500 leading-tight mt-0.5">
+                      {meta.description}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="self-end sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50/80 active:bg-blue-100/60 rounded-xl transition-all duration-150 cursor-pointer border border-slate-200/80 hover:border-blue-200/80 shrink-0 shadow-2xs"
+                  title="Volver a la parte superior del reporte"
+                  aria-label="Volver arriba"
+                >
+                  <MdKeyboardArrowUp className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+                  <span>Subir</span>
+                </button>
+              </div>
+
+              {/* Contenido Modular de la Sección */}
+              <div>
+                {tabId === 'grilla' && renderGrillaContent()}
+                {tabId === 'brechas' && renderBrechasContent()}
+                {tabId === 'tendencia' && renderTendenciaContent()}
+                {tabId === 'comparativa' && renderComparativaContent()}
+                {tabId === 'preguntas' && renderPreguntasContent()}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <>
       {loaderReporteDirector || !isMounted ? (
@@ -704,6 +1207,7 @@ const Reporte = () => {
         <div className={styles.mainContainer}>
           <div className={styles.content}>
             {/* Si está activo el modo Ejecutivo, se muestra el Banner Hero de Alto Impacto */}
+            {/* Si está activo el modo Ejecutivo, se muestra el Banner Hero de Alto Impacto con métricas y acciones integradas */}
             {bannerMode === 'ejecutivo' && (
               <DirectorHeroBanner
                 evaluacion={evaluacion}
@@ -714,277 +1218,181 @@ const Reporte = () => {
                 monthSelected={monthSelected}
                 yearSelected={yearSelected}
                 colegio={currentUserData?.institucion}
+                totalEstudiantesMatriculados={totalEstudiantesMatriculados}
+                estudiantes={estudiantes}
+                filtros={filtros}
+                layoutMode={layoutMode}
+                onChangeLayoutMode={handleToggleLayoutMode}
                 onSwitchToCompact={() => handleToggleBannerMode('compacto')}
+                hasAnyDirectorAction={hasAnyDirectorAction}
+                loadingExport={loadingExport}
+                loadingPDF={loadingPDF}
+                allowExportGrillaPdf={allowExportGrillaPdf}
+                allowExportExcel={allowExportExcel}
+                allowGenerarPdfPreguntas={allowGenerarPdfPreguntas}
+                imagenesGeneradas={imagenesGeneradas}
+                hasPreguntasConImagenes={reporteCompletoConImagenes.length > 0}
+                onExport={handleExportOption}
               />
             )}
 
-            {/* Barra Superior de Año, Mes, Selector de Vista y Menú de Exportación */}
-            <div className="flex flex-wrap items-center justify-between gap-3 w-full mb-6">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                {/* Selector de Año */}
-                <div className="relative inline-flex items-center h-[42px] rounded-xl bg-white border border-slate-200/90 hover:border-slate-300 shadow-2xs transition-colors focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
-                  <RiCalendarLine className="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" />
-                  <select
-                    className="appearance-none bg-transparent pl-9 pr-8 h-full text-xs sm:text-sm font-semibold text-slate-700 outline-none cursor-pointer w-28 sm:w-32"
-                    onChange={handleChangeYear}
-                    value={yearSelected}
-                    aria-label="Seleccionar año de evaluación"
-                  >
-                    {yearsAvailable.map((year) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                  <RiArrowDownSLine className="absolute right-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+            {/* Si está activo el modo Compacto, se muestra una barra de control ligera sin selectores redundantes de fecha */}
+            {bannerMode === 'compacto' && (
+              <div className="flex flex-wrap items-center justify-between gap-3 w-full mb-4 sm:mb-6">
+                {/* Contexto Minimalista en modo compacto */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {evaluacion?.grado && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200/90 text-slate-700 shadow-2xs">
+                      <RiGraduationCapLine className="w-4 h-4 text-blue-600" />
+                      <span>{getGradoTexto(evaluacion.grado)}</span>
+                    </span>
+                  )}
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200/90 text-slate-700 shadow-2xs">
+                    <RiCalendarLine className="w-4 h-4 text-teal-600" />
+                    <span>{getMonthName(monthSelected)} {yearSelected}</span>
+                  </span>
+                  {currentUserData?.institucion && (
+                    <span
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200/90 text-slate-700 shadow-2xs max-w-[220px] truncate"
+                      title={currentUserData.institucion}
+                    >
+                      <RiBuilding4Line className="w-4 h-4 text-purple-600 shrink-0" />
+                      <span className="truncate">{currentUserData.institucion}</span>
+                    </span>
+                  )}
                 </div>
 
-                {/* Selector de Mes */}
-                <div
-                  className={`relative inline-flex items-center h-[42px] rounded-xl border shadow-2xs transition-colors ${
-                    evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null
-                      ? 'bg-slate-50/80 border-slate-200/90 text-slate-600'
-                      : 'bg-white border-slate-200/90 hover:border-slate-300 text-slate-700 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100'
-                  }`}
-                  title={
-                    evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null
-                      ? 'Mes asignado a esta evaluación'
-                      : 'Seleccionar mes'
-                  }
-                >
-                  <RiTimeLine className="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" />
-                  <select
-                    className={`appearance-none bg-transparent pl-9 pr-8 h-full text-xs sm:text-sm font-semibold outline-none w-36 sm:w-44 ${
-                      evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null
-                        ? 'cursor-default text-slate-600'
-                        : 'cursor-pointer text-slate-700'
-                    }`}
-                    onChange={handleChangeMonth}
-                    value={monthSelected}
-                    disabled={true}
-                    aria-label="Mes de la evaluación"
+                {/* Acciones en modo compacto: Conmutador de vista y Menú de Exportación */}
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  {/* Conmutador de modo de diseño Pestañas / Cascada */}
+                  <DirectorLayoutModeSwitch
+                    mode={layoutMode}
+                    onChange={handleToggleLayoutMode}
+                    variant="light"
+                  />
+
+                  <div
+                    className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/90 shadow-2xs h-[42px]"
+                    role="group"
+                    aria-label="Modo de visualización"
                   >
-                    {evaluacion?.mesDelExamen !== undefined &&
-                    evaluacion?.mesDelExamen !== null ? (
-                      (() => {
-                        const examMonthId = Number(evaluacion.mesDelExamen);
-                        const mes = getAllMonths.find((m) => m.id === examMonthId);
-                        return mes ? (
-                          <option key={mes.id} value={mes.id}>
-                            {mes.name}
-                          </option>
-                        ) : null;
-                      })()
-                    ) : (
-                      <>
-                        <option value="">Mes</option>
-                        {getAllMonths
-                          .filter((mes) => mesesConDataDisponibles.includes(mes.id))
-                          .map((mes) => (
-                            <option key={mes.id} value={mes.id}>
-                              {mes.name}
-                            </option>
-                          ))}
-                      </>
-                    )}
-                  </select>
-                  {loadingMonth ? (
-                    <div className="absolute right-2.5 flex items-center pointer-events-none">
-                      <RiLoader4Line className="w-4 h-4 text-slate-400 animate-spin" />
-                    </div>
-                  ) : (
-                    <RiArrowDownSLine className="absolute right-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <button
+                      type="button"
+                      onClick={() => handleToggleBannerMode('compacto')}
+                      className="h-full px-3 sm:px-3.5 text-xs font-semibold rounded-lg bg-white text-slate-800 shadow-xs"
+                      title="Modo tradicional compacto"
+                      aria-pressed={true}
+                    >
+                      Compacto
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleBannerMode('ejecutivo')}
+                      className="h-full flex items-center gap-1.5 px-3 sm:px-3.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-blue-700 hover:bg-blue-50/50 transition-all duration-150"
+                      title="Modo ejecutivo con banner y métricas clave"
+                      aria-pressed={false}
+                    >
+                      <RiSparklingLine className="w-3.5 h-3.5" />
+                      <span>Ejecutivo</span>
+                    </button>
+                  </div>
+
+                  {hasAnyDirectorAction && (
+                    <DirectorExportMenu
+                      loadingExport={loadingExport}
+                      loadingPDF={loadingPDF}
+                      disabled={!estudiantesFiltrados || estudiantesFiltrados.length === 0}
+                      allowExportGrillaPdf={allowExportGrillaPdf}
+                      allowExportExcel={allowExportExcel}
+                      allowGenerarPdfPreguntas={allowGenerarPdfPreguntas}
+                      imagenesGeneradas={imagenesGeneradas}
+                      hasPreguntasConImagenes={reporteCompletoConImagenes.length > 0}
+                      onExport={handleExportOption}
+                    />
                   )}
                 </div>
               </div>
+            )}
 
-              {/* Acciones de la derecha: Selector de Vista (Compacto / Ejecutivo) y Menú de Exportación */}
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <div
-                  className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/90 shadow-2xs h-[42px]"
-                  role="group"
-                  aria-label="Modo de visualización"
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleToggleBannerMode('compacto')}
-                    className={`h-full px-3 sm:px-3.5 text-xs font-semibold rounded-lg transition-all duration-150 inline-flex items-center justify-center ${
-                      bannerMode === 'compacto'
-                        ? 'bg-white text-slate-800 shadow-xs'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                    title="Modo tradicional compacto"
-                    aria-pressed={bannerMode === 'compacto'}
-                  >
-                    Compacto
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleBannerMode('ejecutivo')}
-                    className={`h-full flex items-center gap-1.5 px-3 sm:px-3.5 text-xs font-semibold rounded-lg transition-all duration-150 ${
-                      bannerMode === 'ejecutivo'
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'text-slate-500 hover:text-blue-700 hover:bg-blue-50/50'
-                    }`}
-                    title="Modo ejecutivo con banner y métricas clave"
-                    aria-pressed={bannerMode === 'ejecutivo'}
-                  >
-                    <RiSparklingLine className="w-3.5 h-3.5" />
-                    <span>Ejecutivo</span>
-                  </button>
-                </div>
+            {/* Barra Ergonómica de Pestañas (Tabs) / Salto Rápido en Cascada */}
+            <div
+              id="director-tabs-nav-container"
+              className={`transition-all duration-200 ${
+                layoutMode === 'cascade'
+                  ? 'sticky top-0 z-[300] bg-white/95 backdrop-blur-md pt-2 pb-1.5 mb-6 border-b border-slate-200/80 shadow-2xs'
+                  : ''
+              }`}
+            >
+              <DirectorTabsNav
+                activeTab={activeTab}
+                onChangeTab={handleTabChange}
+                totalEstudiantes={estudiantesFiltrados.length}
+                totalCritico={metricasDirector.kpis.totalCritico}
+                totalPreguntas={preguntasRespuestas.length}
+                isAuditing={canEditTabNames}
+                hideBrechas={isConfigLoaded && !isEtapaConfigurada}
+              />
+            </div>
 
-                {/* Menú Modular de Exportación */}
-                {hasAnyDirectorAction && (
-                  <DirectorExportMenu
-                    loadingExport={loadingExport}
-                    loadingPDF={loadingPDF}
-                    disabled={!estudiantesFiltrados || estudiantesFiltrados.length === 0}
-                    allowExportGrillaPdf={allowExportGrillaPdf}
-                    allowExportExcel={allowExportExcel}
-                    allowGenerarPdfPreguntas={allowGenerarPdfPreguntas}
-                    imagenesGeneradas={imagenesGeneradas}
-                    hasPreguntasConImagenes={reporteCompletoConImagenes.length > 0}
-                    onExport={handleExportOption}
-                  />
+            {/* Contenedor del Reporte: Pestañas (Folder Card) o Cascada Vertical Continua */}
+            {layoutMode === 'tabs' ? (
+              <div className="bg-white border-x-2 border-b-2 border-blue-600 rounded-b-3xl p-4 sm:p-6 shadow-xs -mt-[2px] min-h-[520px]">
+                {(isLoading || loadingMonth) && activeTab !== 'brechas' ? (
+                  <div className="flex flex-col items-center justify-center py-20 min-h-[380px]">
+                    <Loader
+                      size="large"
+                      variant="spinner"
+                      text="Cargando datos..."
+                      color="#10b981"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    {/* TAB 1: ESTUDIANTES Y GRILLA DE RESULTADOS */}
+                    {activeTab === 'grilla' && (
+                      <div key="grilla" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                        {renderGrillaContent()}
+                      </div>
+                    )}
+
+                    {/* TAB 2: BRECHAS DE APRENDIZAJE (BURBUJAS Y DECISIONES) */}
+                    {activeTab === 'brechas' && isEtapaConfigurada && (
+                      <div key="brechas" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                        {renderBrechasContent()}
+                      </div>
+                    )}
+
+                    {/* TAB 3: TENDENCIAS Y COBERTURA */}
+                    {activeTab === 'tendencia' && (
+                      <div key="tendencia" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                        {renderTendenciaContent()}
+                      </div>
+                    )}
+
+                    {/* TAB 4: COMPARATIVA HISTÓRICA DE TENDENCIA */}
+                    {activeTab === 'comparativa' && (
+                      <div key="comparativa" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                        {renderComparativaContent()}
+                      </div>
+                    )}
+
+                    {/* TAB 5: ANÁLISIS POR PREGUNTA */}
+                    {activeTab === 'preguntas' && (
+                      <div
+                        key="preguntas"
+                        className={tabsStyles.tabContentPanel}
+                        role="tabpanel"
+                        tabIndex={0}
+                      >
+                        {renderPreguntasContent()}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-            </div>
-
-            {/* Barra Ergonómica de Pestañas (Tabs) */}
-            <DirectorTabsNav
-              activeTab={activeTab}
-              onChangeTab={setActiveTab}
-              totalEstudiantes={estudiantesFiltrados.length}
-              totalCritico={metricasDirector.kpis.totalCritico}
-              totalPreguntas={preguntasRespuestas.length}
-            />
-
-            {/* Contenedor Maestro Tipo Carpeta Integrada (Folder Card Body) */}
-            <div className="bg-white border-x-2 border-b-2 border-slate-200 rounded-b-3xl p-4 sm:p-6 shadow-xs -mt-[2px] min-h-[520px]">
-              {isLoading || loadingMonth ? (
-                <div className="flex flex-col items-center justify-center py-20 min-h-[380px]">
-                  <Loader
-                    size="large"
-                    variant="spinner"
-                    text="Cargando datos..."
-                    color="#10b981"
-                  />
-                </div>
-              ) : (
-                <>
-                  {/* TAB 1: ESTUDIANTES Y GRILLA DE RESULTADOS */}
-                  {activeTab === 'grilla' && (
-                    <div key="grilla" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
-                      <DirectorFiltrosBar
-                        filtros={filtros}
-                        onFilterChange={handleChangeFiltros}
-                        evaluacion={evaluacion}
-                        availableSections={availableSections}
-                        isDirectorRol={currentUserData.rol === 2}
-                        columnasVisibles={columnasVisibles}
-                        onToggleColumna={toggleColumna}
-                        onLimpiarFiltros={handleLimpiarFiltros}
-                      />
-
-                      {/* Leyenda de Niveles */}
-                      <div className={styles.legendContainer}>
-                        <span className={styles.legendTitle}>LEYENDA DE NIVELES:</span>
-                        {(nivelesLeyenda as any[]).map((nivel: any, index: number) => (
-                          <div key={index} className={styles.legendItem}>
-                            <div
-                              className={styles.legendCircle}
-                              style={{ backgroundColor: nivel.color }}
-                            />
-                            <span className={styles.legendLabel}>{nivel.nombre}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <TablaPreguntas
-                        estudiantes={estudiantesFiltrados}
-                        preguntasRespuestas={preguntasRespuestas}
-                        warningEvaEstudianteSinRegistro={undefined}
-                        linkToEdit={`/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${route.query.idExamen}&mes=${monthSelected}`}
-                        customColumns={{
-                          showPuntaje: columnasVisibles.showPuntaje,
-                          showNivel: columnasVisibles.showNivel,
-                          showRC: columnasVisibles.showRC,
-                          showTP: columnasVisibles.showTP,
-                          showDniDocente: columnasVisibles.showDniDocente,
-                        }}
-                        showEditButton={false}
-                        className={styles.tableWrapper}
-                      />
-                    </div>
-                  )}
-
-                  {/* TAB 2: BRECHAS DE APRENDIZAJE (BURBUJAS Y DECISIONES) */}
-                  {activeTab === 'brechas' && (
-                    <div key="brechas" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
-                      <DirectorBrechasTab
-                        metricas={metricasDirector}
-                        preguntas={preguntasRespuestas}
-                        evaluacion={evaluacion}
-                        evaluacionesDb={evaluacionesDb}
-                        initialGrado={filtros.grado || evaluacion?.grado}
-                        initialSeccion={filtros.seccion}
-                        onSelectEvaluacion={handleSelectEvaluacion}
-                        onOpenQuestionDetail={(order, coords) =>
-                          setQuestionDetailPopover({ order, coords })
-                        }
-                        onOpenGuiaBurbujas={() => setIsBurbujasModalOpen(true)}
-                        onOpenGuiaDecisiones={() => setIsDecisionesModalOpen(true)}
-                      />
-                    </div>
-                  )}
-
-                  {/* TAB 4: TENDENCIAS Y COBERTURA */}
-                  {activeTab === 'tendencia' && (
-                    <div key="tendencia" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
-                      <DirectorTendenciasTab
-                        evaluacion={evaluacion}
-                        datosPorMes={datosPorMes}
-                        mesesConDataDisponibles={mesesConDataDisponibles}
-                        promedioGlobal={promedioGlobal}
-                        monthSelected={monthSelected}
-                        yearSelected={yearSelected}
-                        estudiantes={estudiantes}
-                        availableSections={availableSections}
-                        docentesMap={docentesMap}
-                        promedioPorDocente={promedioPorDocente}
-                        evaluados={estudiantes.length}
-                        pendientes={estudiantesDeEvaluacion.length}
-                        listaPendientes={estudiantesDeEvaluacion}
-                        estudiantesFiltrados={estudiantesFiltrados}
-                        evaluacionesDb={evaluacionesDb}
-                        loadingEvaluaciones={loadingEvaluaciones}
-                        dniDirector={currentUserData.dni}
-                        routeEvaluacionId={route.query.idEvaluacion as string}
-                      />
-                    </div>
-                  )}
-
-                  {/* TAB 5: ANÁLISIS POR PREGUNTA */}
-                  {activeTab === 'preguntas' && (
-                    <div
-                      key="preguntas"
-                      className={tabsStyles.tabContentPanel}
-                      role="tabpanel"
-                      tabIndex={0}
-                    >
-                      <ReporteEvaluacionPorPregunta
-                        dataEstadisticasOrdenadas={reporteDirectorOrdenado}
-                        preguntasMap={preguntasMap}
-                        detectarNumeroOpciones={detectarNumeroOpciones}
-                        warningEvaEstudianteSinRegistro={undefined}
-                        convertirGraficoAImagen={() => {}}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+            ) : (
+              renderCascadeView()
+            )}
 
             {/* Renderizado off-screen para asegurar que los gráficos se generen para el PDF */}
             <div

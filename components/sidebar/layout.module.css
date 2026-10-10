@@ -4,21 +4,27 @@
 
 .logoContainer {
   position: relative;
-  display: grid;
+  display: flex;
   justify-content: center;
-  z-index: 900;
   align-items: center;
-  /* background-color: white; */
-  width: 99px;
-  height: 99px;
-  margin:auto;
+  z-index: 900;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto;
   border-radius: 9999px;
-  /* border: 5px solid #facc15;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); */
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.logoContainerCollapsed {
+  width: 48px;
+  height: 48px;
+  margin: 2px auto;
 }
 
 .logoContainer img {
-  filter: drop-shadow(0 0 10px rgba(250, 250, 250, 0.4));
+  filter: drop-shadow(0 0 8px rgba(250, 250, 250, 0.4));
+  object-fit: contain;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .loader {

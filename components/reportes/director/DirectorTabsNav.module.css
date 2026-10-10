@@ -9,8 +9,8 @@
   align-items: flex-end;
   gap: 6px;
   flex-wrap: nowrap;
-  border-bottom: 2px solid #e2e8f0;
-  padding: 0 8px;
+  border-bottom: 2px solid #2563eb;
+  padding: 8px 8px 0 8px;
   margin-bottom: 0;
   overflow-x: auto;
   scrollbar-width: none;
@@ -74,7 +74,7 @@
   color: #1d4ed8 !important;
   font-weight: 700 !important;
   border: 2px solid #2563eb !important;
-  border-bottom: 3px solid #ffffff !important;
+  border-bottom: 2px solid #2563eb !important;
   margin-bottom: -2px !important;
   z-index: 30 !important;
   box-shadow: 0 -4px 12px rgba(37, 99, 235, 0.08);
@@ -225,11 +225,15 @@
 
 .categoriaTabsBar {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-end;
+  gap: 6px;
+  border-bottom: 2px solid #10b981;
+  padding: 6px 0 0 0;
+  margin-bottom: 0;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 2px 1px 4px 1px;
+  position: relative;
+  z-index: 10;
   width: 100%;
 }
 
@@ -242,26 +246,33 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
+  padding: 10px 18px;
   min-height: 42px;
-  border-radius: 10px;
-  font-size: 0.8rem;
+  border-radius: 12px 12px 0 0;
+  font-size: 0.82rem;
   font-weight: 600;
   color: #475569;
-  background: #ffffff;
+  background: #f8fafc;
   border: 1px solid #e2e8f0;
+  border-bottom: 2px solid transparent;
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: -2px;
   outline: none;
+  z-index: 1;
 }
 
 .categoriaTabBtn:hover {
-  background: #f8fafc;
+  background: #f1f5f9;
   color: #0f172a;
   border-color: #cbd5e1;
+  border-bottom-color: transparent;
+}
+
+.categoriaTabBtn:hover .categoriaTabIcon {
+  color: #059669;
 }
 
 .categoriaTabBtn:active {
@@ -269,16 +280,20 @@
 }
 
 .categoriaTabBtn:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 1px;
+  outline: 2px solid #10b981;
+  outline-offset: -2px;
+  border-radius: 12px 12px 0 0;
 }
 
 .categoriaTabBtnActive {
-  background: #eff6ff !important;
-  color: #1d4ed8 !important;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 1px #3b82f6, 0 2px 4px rgba(37, 99, 235, 0.08) !important;
+  background: #ffffff !important;
+  color: #064e3b !important;
   font-weight: 700 !important;
+  border: 2px solid #10b981 !important;
+  border-bottom: 3px solid #ffffff !important;
+  margin-bottom: -2px !important;
+  z-index: 20 !important;
+  box-shadow: 0 -4px 12px rgba(16, 185, 129, 0.08);
 }
 
 .categoriaTabIcon {
@@ -292,7 +307,7 @@
 }
 
 .categoriaTabBtnActive .categoriaTabIcon {
-  color: #2563eb !important;
+  color: #10b981 !important;
   transform: scale(1.08);
 }
 

@@ -2,24 +2,50 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 import { Evaluaciones } from '@/features/types/types';
 import { FilterOption } from '@/components/reportes/CustomFilterDropdown';
+import {
+  BaremoDecisiones,
+  DEFAULT_BAREMO_DECISIONES,
+} from '@/components/modals/ConfigurarBaremoModal';
 import { toast } from 'react-toastify';
 
 export type EtapaKey = 'edi' | 'ep1' | 'ep2';
 
+/**
+ * Determina si una evaluación está configurada en algún slot longitudinal (EDI, EP1, EP2)
+ * en el mapa de asignaciones de grados y categorías de la matriz.
+ */
+export const isEvaluacionEnMatriz = (
+  evaluacionId?: string,
+  matrizConfigGrados?: Record<string, any>
+): boolean => {
+  if (!evaluacionId || !matrizConfigGrados) return false;
+  return Object.values(matrizConfigGrados).some((asgn: any) => {
+    return Boolean(
+      asgn &&
+        (asgn.ediId === evaluacionId ||
+          asgn.ep1Id === evaluacionId ||
+          asgn.ep2Id === evaluacionId)
+    );
+  });
+};
+
 interface UseEvaluacionesMatrizProps {
+  grado?: number | string;
   evaluacion?: Evaluaciones;
   evaluacionesDb?: Evaluaciones[];
   selectedCategoriaId?: number;
-  onSelectEvaluacion?: (idEvaluacion: string, mesDelExamen?: number) => void;
+  onSelectEvaluacion?: (idEvaluacion: string, mesDelExamen?: number, grado?: number | string) => void;
 }
 
 export const useEvaluacionesMatriz = ({
+  grado,
   evaluacion,
   evaluacionesDb = [],
   selectedCategoriaId,
   onSelectEvaluacion,
 }: UseEvaluacionesMatrizProps) => {
   const [matrizConfigGrados, setMatrizConfigGrados] = useState<Record<string, any>>({});
+  const [baremoDecisiones, setBaremoDecisiones] = useState<BaremoDecisiones>(DEFAULT_BAREMO_DECISIONES);
   const [loadingConfig, setLoadingConfig] = useState<boolean>(true);
   const [fetchedEvaluationsMap, setFetchedEvaluationsMap] = useState<Record<string, Evaluaciones>>({});
 
@@ -36,6 +62,13 @@ export const useEvaluacionesMatriz = ({
           const data = snap.data();
           if (data?.grados) {
             setMatrizConfigGrados(data.grados);
+          }
+          if (data?.baremoDecisiones) {
+            setBaremoDecisiones({
+              critico: Number(data.baremoDecisiones.critico) || DEFAULT_BAREMO_DECISIONES.critico,
+              alto: Number(data.baremoDecisiones.alto) || DEFAULT_BAREMO_DECISIONES.alto,
+              medio: Number(data.baremoDecisiones.medio) || DEFAULT_BAREMO_DECISIONES.medio,
+            });
           }
         }
       } catch (error) {
@@ -61,17 +94,23 @@ export const useEvaluacionesMatriz = ({
     return 1;
   }, [selectedCategoriaId, evaluacion?.categoria]);
 
+  // Grado efectivo: prioriza el grado explícito o el de la evaluación actual
+  const effectiveGrado = useMemo(() => {
+    if (grado !== undefined && grado !== '') return Number(grado);
+    if (evaluacion?.grado !== undefined && evaluacion?.grado !== null) return Number(evaluacion.grado);
+    return 2;
+  }, [grado, evaluacion?.grado]);
+
   // 2. Obtener la asignación para el grado y categoría efectiva
   const gradoAssignment = useMemo(() => {
-    if (!evaluacion?.grado) return null;
-    const g = evaluacion.grado;
+    const g = effectiveGrado;
     const c = effectiveCategoriaId;
     return (
       matrizConfigGrados[`${g}_${c}`] ||
       matrizConfigGrados[`${g}`] ||
       null
     );
-  }, [evaluacion?.grado, effectiveCategoriaId, matrizConfigGrados]);
+  }, [effectiveGrado, effectiveCategoriaId, matrizConfigGrados]);
 
   const ediId: string | undefined = gradoAssignment?.ediId;
   const ep1Id: string | undefined = gradoAssignment?.ep1Id;
@@ -203,17 +242,16 @@ export const useEvaluacionesMatriz = ({
           target.mesDelExamen !== undefined && target.mesDelExamen !== null
             ? Number(target.mesDelExamen)
             : undefined;
-        onSelectEvaluacion(target.id, monthNum);
+        onSelectEvaluacion(target.id, monthNum, target.grado ?? effectiveGrado);
       }
     },
-    [evalEdi, evalEp1, evalEp2, evaluacion?.id, onSelectEvaluacion]
+    [evalEdi, evalEp1, evalEp2, evaluacion?.id, effectiveGrado, onSelectEvaluacion]
   );
 
   // 8. Handler para cambiar de categoría de área curricular
   const handleSelectCategoria = useCallback(
     (catId: number): boolean => {
-      if (!evaluacion?.grado) return false;
-      const g = evaluacion.grado;
+      const g = effectiveGrado;
       const assignment = matrizConfigGrados[`${g}_${catId}`];
       let targetId: string | undefined = undefined;
 
@@ -241,14 +279,18 @@ export const useEvaluacionesMatriz = ({
           targetEval?.mesDelExamen !== undefined && targetEval?.mesDelExamen !== null
             ? Number(targetEval.mesDelExamen)
             : undefined;
-        onSelectEvaluacion(targetId, targetMonth);
+        onSelectEvaluacion(targetId, targetMonth, targetEval?.grado || g);
         return true;
       }
 
       return false;
     },
-    [evaluacion?.grado, matrizConfigGrados, selectedEtapa, evaluacionesDb, onSelectEvaluacion, findEval]
+    [effectiveGrado, matrizConfigGrados, selectedEtapa, evaluacionesDb, onSelectEvaluacion, findEval]
   );
+
+  const isEvaluacionConfigurada = useMemo(() => {
+    return isEvaluacionEnMatriz(evaluacion?.id, matrizConfigGrados);
+  }, [evaluacion?.id, matrizConfigGrados]);
 
   return {
     selectedEtapa,
@@ -257,7 +299,9 @@ export const useEvaluacionesMatriz = ({
     evalEp1,
     evalEp2,
     matrizConfigGrados,
+    baremoDecisiones,
     loadingConfig,
+    isEvaluacionConfigurada,
     handleSelectEtapa,
     handleSelectCategoria,
     findEval,

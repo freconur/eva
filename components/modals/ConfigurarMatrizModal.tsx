@@ -290,7 +290,7 @@ export const ConfigurarMatrizModal: React.FC<ConfigurarMatrizModalProps> = ({
             <div className={styles.slotHeader}>
               <span className={`${styles.slotBadge} ${styles.badgeEp1}`}>EP1</span>
               <div className={styles.slotTitleGroup}>
-                <span className={styles.slotTitle}>Evaluación de Proceso 1</span>
+                <span className={styles.slotTitle}>Evaluación Progresiva 1</span>
                 <span className={styles.slotSubtitle}>Primer hito de avance pedagógico (opcional)</span>
               </div>
             </div>
@@ -308,7 +308,7 @@ export const ConfigurarMatrizModal: React.FC<ConfigurarMatrizModalProps> = ({
             <div className={styles.slotHeader}>
               <span className={`${styles.slotBadge} ${styles.badgeEp2}`}>EP2</span>
               <div className={styles.slotTitleGroup}>
-                <span className={styles.slotTitle}>Evaluación de Proceso 2</span>
+                <span className={styles.slotTitle}>Evaluación Progresiva 2</span>
                 <span className={styles.slotSubtitle}>Segundo hito de avance (opcional / puede dejarse pendiente)</span>
               </div>
             </div>

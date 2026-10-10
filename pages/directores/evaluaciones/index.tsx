@@ -5,12 +5,11 @@ import { AppAction } from '@/features/actions/appAction'
 import { getFirestore, doc, getDoc } from 'firebase/firestore'
 import { getAllMonths, getMonthName } from '@/fuctions/dates'
 import { useRouter } from 'next/router'
-import Link from 'next/link'
 import React, { useEffect, useMemo, useState } from 'react'
-import { RiLoader4Line, RiFilter3Line, RiRestartLine } from 'react-icons/ri'
-import { MdAnalytics } from 'react-icons/md'
-import { getNivelGrado } from '@/features/hooks/useEvaluacionesFilters'
 import SegmentedFilterBar from '@/components/common/SegmentedFilterBar'
+import EvaluacionesHeroBanner from '@/components/evaluaciones/EvaluacionesHeroBanner'
+import EvaluacionesTable from '@/components/evaluaciones/EvaluacionesTable'
+import useEvaluacionesBannerConfig from '@/components/evaluaciones/useEvaluacionesBannerConfig'
 
 const Evaluaciones = () => {
   const router = useRouter()
@@ -26,6 +25,9 @@ const Evaluaciones = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>('all')
   const [selectedEstado, setSelectedEstado] = useState<string>('activo')
   const [isUrlInitialized, setIsUrlInitialized] = useState<boolean>(false)
+
+  // Configuración de vista del Hero Banner (Compacta vs Grande, persistente en Firestore)
+  const bannerConfig = useEvaluacionesBannerConfig({ routeKey: 'directores' })
 
 
 
@@ -240,6 +242,19 @@ const Evaluaciones = () => {
     })
   }, [evaluacionesBase, selectedGrado, selectedEstado])
 
+  const metricasBanner = useMemo(() => {
+    const total = evaluacionesBase.length;
+    const activas = evaluacionesBase.filter(eva => !eva.cerrada).length;
+    const cerradas = evaluacionesBase.filter(eva => eva.cerrada).length;
+    const totalGrados = gradosDisponibles.length;
+    return {
+      total,
+      activas,
+      cerradas,
+      totalGrados,
+    };
+  }, [evaluacionesBase, gradosDisponibles]);
+
   const handleResetFilters = () => {
     setSelectedYear(currentYear)
     const latestMonth = getLatestMonthForYear(currentYear)
@@ -251,20 +266,30 @@ const Evaluaciones = () => {
   return (
     <div className="min-h-screen bg-slate-50/50 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-              Evaluaciones
-            </h1>
-            <p className="text-slate-500 text-sm font-medium mt-1">
-              Gestiona y supervisa las evaluaciones de tu institución educativa.
-            </p>
-          </div>
-          <span className="self-start sm:self-auto px-3 py-1 bg-colorSegundo/10 text-colorSegundo text-xs font-bold rounded-full border border-colorSegundo/20">
-            Año escolar {selectedYear}
-          </span>
-        </div>
+        {/* Hero Banner Ejecutivo Institucional Modular */}
+        <EvaluacionesHeroBanner
+          colegio={currentUserData?.institucion}
+          selectedYear={selectedYear}
+          selectedMonth={selectedMonth}
+          totalEvaluaciones={metricasBanner.total}
+          totalActivas={metricasBanner.activas}
+          totalCerradas={metricasBanner.cerradas}
+          totalGrados={metricasBanner.totalGrados}
+          variant={bannerConfig.variant}
+          backgroundImage={bannerConfig.backgroundImage}
+          backgroundImageOpacity={bannerConfig.backgroundImageOpacity}
+          customTitle={bannerConfig.customTitle}
+          customSubtitle={bannerConfig.customSubtitle}
+          isAuditing={bannerConfig.isAuditing}
+          isSavingVariant={bannerConfig.isSaving}
+          isSavingTexts={bannerConfig.isSavingTexts}
+          isUploadingImage={bannerConfig.isUploadingImage}
+          onVariantChange={bannerConfig.setBannerVariant}
+          onUploadBackgroundImage={bannerConfig.uploadBannerImage}
+          onRemoveBackgroundImage={bannerConfig.removeBannerImage}
+          onUpdateTexts={bannerConfig.updateBannerTexts}
+          onResetTexts={bannerConfig.resetBannerTexts}
+        />
 
         {/* Toolbar de Filtros Reutilizable y Responsive */}
         <SegmentedFilterBar
@@ -331,146 +356,19 @@ const Evaluaciones = () => {
           showReset={true}
         />
 
-        {/* Tabla de Evaluaciones */}
-        {loaderPages ? (
-          <div className="flex flex-col items-center justify-center py-28 bg-white rounded-2xl border border-slate-200/90 shadow-xs">
-            <RiLoader4Line className="animate-spin text-5xl text-colorSegundo mb-4" />
-            <span className="text-slate-500 text-sm font-semibold tracking-wide animate-pulse">
-              Cargando evaluaciones...
-            </span>
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl shadow-xs border border-slate-200/90 overflow-hidden transition-all duration-300">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-white border-b border-slate-200/90">
-                    <th className="py-4 px-6 text-xs font-bold text-slate-800 uppercase tracking-wider text-left">
-                      Nombre de Evaluación
-                    </th>
-                    <th className="py-4 px-6 text-xs font-bold text-slate-800 uppercase tracking-wider text-left">
-                      Grado / Nivel
-                    </th>
-                    <th className="py-4 px-6 text-xs font-bold text-slate-800 uppercase tracking-wider text-left">
-                      Mes y Año
-                    </th>
-                    <th className="py-4 px-6 text-xs font-bold text-slate-800 uppercase tracking-wider text-center">
-                      Estado
-                    </th>
-                    <th className="py-4 px-6 text-xs font-bold text-slate-800 uppercase tracking-wider text-right">
-                      Reporte
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {evaluacionesFiltradas.length > 0 ? (
-                    evaluacionesFiltradas.map((eva, index) => (
-                      <tr
-                        key={eva.id || index}
-                        className="hover:bg-slate-50/70 transition-colors"
-                      >
-                        {/* Nombre de Evaluación */}
-                        <td className="py-4 px-6">
-                          <Link
-                            href={`/directores/evaluaciones/evaluacion/${eva.id}`}
-                            className="inline-flex items-center gap-2 text-slate-800 font-semibold hover:text-colorSegundo transition-colors text-sm group"
-                          >
-                            <span>{eva.nombre}</span>
-                            <span className="text-slate-400 group-hover:text-colorSegundo group-hover:translate-x-1 transition-all text-xs">
-                              →
-                            </span>
-                          </Link>
-                        </td>
-
-                        {/* Grado / Nivel */}
-                        <td className="py-4 px-6 text-left">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-slate-800">
-                              {grados?.find((g) => Number(g.grado) === Number(eva.grado))?.nombre || `${eva.grado}° Grado`}
-                            </span>
-                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">
-                              {getNivelGrado(Number(eva.grado || 0))}
-                            </span>
-                          </div>
-                        </td>
-
-                        {/* Mes y Año */}
-                        <td className="py-4 px-6 text-left">
-                          <span className="text-sm text-slate-600 font-normal">
-                            {eva.mesDelExamen !== undefined && eva.mesDelExamen !== null && eva.mesDelExamen !== ''
-                              ? `${getMonthName(Number(eva.mesDelExamen))} ${eva.añoDelExamen || currentYear}`
-                              : (eva.añoDelExamen || currentYear)}
-                          </span>
-                        </td>
-
-                        {/* Estado con Badge idéntico a la imagen de referencia */}
-                        <td className="py-4 px-6 text-center">
-                          {eva.cerrada ? (
-                            <span className="inline-flex items-center justify-center min-w-[95px] px-3 py-1 bg-purple-100/70 text-purple-700 text-xs font-bold rounded-lg tracking-wide">
-                              Cerrado
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center justify-center min-w-[95px] px-3 py-1 bg-teal-100/70 text-teal-700 text-xs font-bold rounded-lg tracking-wide">
-                              Activo
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Reporte */}
-                        <td className="py-4 px-6 text-right">
-                          <Link
-                            href={`/directores/evaluaciones/evaluacion/reporte?id=${currentUserData?.dni}&idEvaluacion=${eva.id}`}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/90 rounded-xl transition-all duration-150 font-semibold text-xs shadow-xs active:scale-95 hover:border-slate-300"
-                            title="Ver reporte y resultados"
-                          >
-                            <MdAnalytics size={16} className="text-colorSegundo" />
-                            <span>Ver Reporte</span>
-                          </Link>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="py-24 text-center">
-                        <div className="flex flex-col items-center max-w-sm mx-auto space-y-4">
-                          <div className="w-14 h-14 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center">
-                            <RiFilter3Line size={26} />
-                          </div>
-                          <div className="space-y-1">
-                            <h3 className="text-slate-800 font-bold text-base">
-                              No hay evaluaciones disponibles
-                            </h3>
-                            <p className="text-slate-500 text-xs">
-                              Prueba ajustando o restableciendo los filtros de búsqueda.
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={handleResetFilters}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-                          >
-                            <RiRestartLine size={14} />
-                            <span>Restablecer Filtros</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Footer con conteo de resultados */}
-            {evaluacionesFiltradas.length > 0 && (
-              <div className="px-6 py-3.5 bg-white border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
-                <span>
-                  Mostrando <strong className="text-slate-800">{evaluacionesFiltradas.length}</strong> {evaluacionesFiltradas.length === 1 ? 'evaluación' : 'evaluaciones'}
-                </span>
-                <span>Año escolar {selectedYear}</span>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Tabla Modular de Evaluaciones */}
+        <EvaluacionesTable
+          evaluaciones={evaluacionesFiltradas}
+          isLoading={loaderPages}
+          currentYear={currentYear}
+          selectedYear={selectedYear}
+          grados={grados}
+          onResetFilters={handleResetFilters}
+          getEvaluacionHref={(eva) => `/directores/evaluaciones/evaluacion/${eva.id}`}
+          getReporteHref={(eva) =>
+            `/directores/evaluaciones/evaluacion/reporte?id=${currentUserData?.dni}&idEvaluacion=${eva.id}`
+          }
+        />
       </div>
     </div>
   )

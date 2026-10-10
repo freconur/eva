@@ -1,5 +1,6 @@
 /* ─────────────────────────────────────────────────────────
-   SIDEBAR – Modern Glassmorphism & High Contrast
+   SIDEBAR – Modern Structural SaaS Navigation
+   (Tree Submenus & Collapsed Floating Popovers/Tooltips)
 ───────────────────────────────────────────────────────── */
 
 /* ── Container (Premium Deep Blue & Structural) ───────────────── */
@@ -8,19 +9,64 @@
   top: 0;
   bottom: 0;
   left: 0;
-  width: 300px;
+  width: 280px;
   border-radius: 0;
-  /* Deep Navy Premium Gradient */
-  background: linear-gradient(160deg, var(--color-sidebar-bg, #141d2b) 0%, color-mix(in srgb, var(--color-sidebar-bg, #141d2b) 75%, #000000) 100%);
+  background: linear-gradient(175deg, 
+    var(--color-sidebar-bg, #141d2b) 0%, 
+    color-mix(in srgb, var(--color-sidebar-bg, #141d2b) 88%, #000000) 45%,
+    color-mix(in srgb, var(--color-sidebar-bg, #141d2b) 65%, #000000) 100%
+  );
   border-right: 1px solid color-mix(in srgb, var(--color-sidebar-bg, #141d2b) 120%, #2d4260);
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
   padding: 0;
   z-index: 2000;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* ── Resplandor Ambiental y Focos de Profundidad (Ambient Glow) ─ */
+.sidebar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    /* Foco cenital suave en la cabecera (luminosidad natural y contenida) */
+    radial-gradient(ellipse 120% 240px at 50% -40px, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 50%, transparent 80%),
+    /* Halo lateral suave derecho (tono frío armonioso, sin tintes cálidos ni manchas) */
+    radial-gradient(circle 240px at 100% 16%, rgba(191, 219, 254, 0.08) 0%, transparent 70%),
+    /* Profundidad tenue en la base */
+    radial-gradient(circle 300px at 0% 90%, rgba(147, 197, 253, 0.06) 0%, transparent 75%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Textura de Ruido / Grano Analógico Fotográfico ───────── */
+.sidebar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  min-height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 2;
 }
 
 /* Visibility states */
@@ -40,122 +86,69 @@
 @media (min-width: 1024px) {
   .sidebar {
     position: sticky;
-    /* Keep it fixed in viewport but part of grid flow */
     transform: none !important;
     opacity: 1 !important;
     pointer-events: auto !important;
     height: 100vh;
+    width: 280px;
   }
 
   .sidebar.collapsed {
-    width: 88px;
+    width: 80px;
+    overflow: visible !important;
   }
 }
 
 /* ── Collapse Toggle Button ───────────────────────────── */
 .collapseToggleBtn {
   display: none;
-  /* Hide on mobile by default */
 }
 
 @media (min-width: 1024px) {
   .collapseToggleBtn {
     display: flex;
     position: absolute;
-    top: 16px;
-    right: 16px;
-    /* Fully inside the sidebar */
-    width: 36px;
-    height: 36px;
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
     background: rgba(255, 255, 255, 0.05);
-    /* Glassmorphism background */
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    /* Modern slightly rounded square */
+    border-radius: 8px;
     align-items: center;
     justify-content: center;
     color: #e2e8f0;
-    /* Clear slate default */
     cursor: pointer;
     z-index: 2001;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
 
   .collapseToggleBtn svg {
-    font-size: 1.3rem;
-    transition: transform 0.3s ease;
+    font-size: 0.95rem;
+    transition: transform 0.25s ease;
   }
 
   .collapseToggleBtn:hover {
     background: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 15%, transparent);
-    /* Light yellow wash */
     color: var(--color-sidebar-accent, #f5c518);
     border-color: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 40%, transparent);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 25%, transparent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 25%, transparent);
   }
 
   .collapseToggleBtn:active {
-    transform: translateY(0) scale(0.95);
+    transform: translateY(0) scale(0.96);
   }
 
-  /* When sidebar is collapsed, horizontally center it in the 88px space */
   .collapsed .collapseToggleBtn {
     right: 50%;
     transform: translateX(50%);
     background: rgba(255, 255, 255, 0.08);
-    border-color: #2d4260;
+    border-color: rgba(255, 255, 255, 0.15);
   }
-}
-
-/* ── Collapsed State Elements ─────────────────────────── */
-.collapsed .dashboardLink,
-.collapsed .link,
-.collapsed .menuListCollapsible,
-.collapsed .submenu,
-.collapsed .perfilesArrowIcon,
-.collapsed .arrowIcon,
-.collapsed .logoutButton p {
-  display: none !important;
-  /* Force hide text and arrows */
-}
-
-.collapsed .dashboardMenuItem,
-.collapsed .menuHeader,
-.collapsed .logoutButton {
-  justify-content: center;
-  padding: 12px;
-  margin: 8px auto;
-  /* Auto margin for horizontal centering */
-  width: 50px;
-  /* Fixed width to make it a perfect square/circle for icon */
-  border-radius: 12px;
-}
-
-.collapsed .dashboardMenuItem:hover,
-.collapsed .menuHeader:hover,
-.collapsed .dashboardMenuItem.activeLink {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(245, 197, 24, 0.25);
-}
-
-.collapsed .dashboardIcon,
-.collapsed .icon,
-.collapsed .logoutIcon {
-  font-size: 1.5rem;
-  /* Make icons slightly larger when collapsed */
-  margin: 0;
-}
-
-.collapsed .menuListCollapsible.show,
-.collapsed .submenu.show {
-  max-height: 0;
-  opacity: 0;
-  margin: 0;
-  pointer-events: none;
 }
 
 /* ── Mobile Backdrop (Click outside) ──────────────────────── */
@@ -171,10 +164,9 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
     z-index: 1900;
-    /* Just below sidebar's 2000 */
     opacity: 1;
     transition: opacity 0.3s ease;
   }
@@ -185,17 +177,16 @@
   }
 }
 
-/* ── Close button (Floating pill style) ────────────────── */
+/* ── Close button (Floating circle on mobile) ────────────────── */
 .closeButton {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 14px;
+  right: 14px;
   width: 28px;
   height: 28px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #e2e8f0;
-  /* Slate 200 */
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -219,15 +210,23 @@
   transform: rotate(90deg);
 }
 
+/* ── Content container ────────────────────────────────────── */
 .sidebarContent {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 50px 0 20px 0;
+  padding: 42px 0 20px 0;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
   position: relative;
   z-index: 10;
+}
+
+@media (min-width: 1024px) {
+  .collapsed .sidebarContent {
+    overflow: visible !important;
+    padding-top: 48px;
+  }
 }
 
 .sidebarContent::-webkit-scrollbar {
@@ -243,154 +242,186 @@
   border-radius: 99px;
 }
 
-/* ── Common styling for top-level links ─────────────────── */
+/* ── Section Headers (e.g. MAIN / SETTINGS / PERFILES) ─────── */
+.sectionHeader {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.38);
+  padding: 14px 20px 5px 20px;
+  user-select: none;
+  transition: all 0.25s ease;
+}
+
+.collapsed .sectionHeader {
+  font-size: 0.5625rem;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+  padding: 10px 0 3px 0;
+}
+
+/* ── Top-level single item (dashboardMenuItem) ─────────────── */
 .dashboardMenuItem {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 20px;
-  margin: 4px 16px;
+  padding: 10px 16px;
+  margin: 3px 12px;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   background: transparent;
   border: 1px solid transparent;
-  position: relative;
-  overflow: hidden;
 }
 
 .dashboardMenuItem:hover {
-  background: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 5%, transparent);
-  border-color: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 35%, transparent);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 12%, transparent);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .dashboardMenuItem.activeLink {
-  background: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 8%, transparent);
-  border-color: var(--color-sidebar-accent, #f5c518);
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 20%, transparent);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 40%, transparent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .dashboardMenuItem.activeLink .dashboardIcon {
   color: var(--color-sidebar-accent, #f5c518);
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .dashboardMenuItem.activeLink .dashboardLink {
   color: #ffffff;
   font-weight: 600;
-  text-shadow: 0 0 10px color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 30%, transparent);
 }
 
 .dashboardIcon {
-  font-size: 1.35rem;
+  font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.55);
-  /* Muted white from modal */
-  transition: color 0.25s ease, transform 0.25s ease;
+  transition: color 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
   z-index: 1;
 }
 
 .dashboardMenuItem:hover .dashboardIcon {
   color: var(--color-sidebar-accent, #f5c518);
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .dashboardLink {
   color: #f1f5f9;
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   letter-spacing: 0.01em;
   flex: 1;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
   z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dashboardMenuItem:hover .dashboardLink {
   color: #ffffff;
   font-weight: 600;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
-/* ── Menus (Collapsibles) ────────────────────────────────── */
+/* ── Tooltip for single item when collapsed ────────────────── */
+.tooltip {
+  display: none;
+}
+
+/* ── Menu Containers and Dropdown Items ────────────────────── */
 .menuContainer {
-  margin-top: 16px;
+  margin-top: 4px;
+}
+
+.menuList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .menuItem {
-  margin: 2px 0;
+  position: relative;
+  margin: 3px 0;
 }
 
 .menuHeader {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 20px;
-  margin: 4px 16px;
+  padding: 10px 16px;
+  margin: 3px 12px;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
   background: transparent;
   border: 1px solid transparent;
   position: relative;
-  overflow: hidden;
 }
 
 .menuHeader:hover {
-  background: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 5%, transparent);
-  border-color: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 35%, transparent);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 12%, transparent);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
-.menuHeader:active {
-  transform: translateY(0) scale(0.98);
+.itemOpen > .menuHeader {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .icon {
-  font-size: 1.35rem;
+  font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.55);
-  transition: color 0.3s ease, transform 0.3s ease;
+  transition: color 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
   z-index: 1;
 }
 
-.menuHeader:hover .icon {
+.menuHeader:hover .icon,
+.itemOpen > .menuHeader .icon {
   color: var(--color-sidebar-accent, #f5c518);
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .link {
   color: #f1f5f9;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   letter-spacing: 0.01em;
   flex: 1;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
   z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.menuHeader:hover .link {
+.menuHeader:hover .link,
+.itemOpen > .menuHeader .link {
   color: #ffffff;
   font-weight: 600;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
-/* ── Arrow icon & rotation ──────────────────────────────── */
-.perfilesArrowIcon,
-.arrowIcon {
-  font-size: 1.1rem;
+/* ── Arrow icons & rotation ─────────────────────────────────── */
+.arrowIcon,
+.perfilesArrowIcon {
+  font-size: 0.85rem;
   color: #cbd5e1;
-  /* Slate 300 - clearly visible */
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    color 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
   margin-left: auto;
+  flex-shrink: 0;
 }
 
-.menuHeader:hover .perfilesArrowIcon,
-.menuHeader:hover .arrowIcon {
+.menuHeader:hover .arrowIcon,
+.menuHeader:hover .perfilesArrowIcon {
   color: #ffffff;
 }
 
@@ -399,133 +430,290 @@
   color: var(--color-sidebar-accent, #f5c518) !important;
 }
 
-/* ── Submenus Grid/List ─────────────────────────────────── */
-.menuList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.menuListCollapsible,
+/* ── Tree-Line Submenu (Expanded State) ─────────────────────── */
 .submenu {
+  position: relative;
+  list-style: none;
+  margin: 3px 12px 6px 32px;
+  padding: 0 0 0 14px;
   max-height: 0;
   opacity: 0;
   overflow: hidden;
-  transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-    margin 0.3s ease;
-  padding: 0;
+  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.25s ease,
+              margin 0.25s ease;
 }
 
-.menuListCollapsible.show,
 .submenu.show {
   max-height: 800px;
   opacity: 1;
-  margin-bottom: 8px;
 }
 
-.menuListCollapsible .menuItem {
-  margin: 2px 16px 2px 28px;
-}
-
-.menuListCollapsible .menuHeader {
-  margin: 0;
-  padding: 10px 16px;
-  border-radius: 10px;
-}
-
-.menuListCollapsible .link {
-  font-size: 0.9rem;
-  color: #e2e8f0;
-  /* Slightly dimmer than top level, but still bright */
-}
-
-/* Innermost links list */
-.submenu {
-  margin: 4px 16px 4px 34px;
-}
-
-.submenu.show {
-  margin-bottom: 8px;
-}
-
-.submenuLink {
-  position: relative;
-  display: block;
-  padding: 8px 12px 8px 26px;
-  color: rgba(255, 255, 255, 0.65);
-  text-decoration: none;
-  font-size: 0.88rem;
-  font-weight: 400;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  margin-bottom: 4px;
-}
-
-.submenuLink::before {
+/* The vertical tree guide line */
+.submenu::before {
   content: "";
   position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  left: 2px;
+  top: 0;
+  bottom: 14px; /* stops at the branch connecting the last item */
+  width: 1.5px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 1px;
+}
+
+.submenu li {
+  position: relative;
+  margin: 2px 0;
+}
+
+/* Curved branch connector leading into the child item */
+.submenu li::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: -6px;
+  width: 12px;
+  height: 22px;
+  border-left: 1.5px solid rgba(255, 255, 255, 0.16);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.16);
+  border-bottom-left-radius: 7px;
+  pointer-events: none;
+}
+
+/* Link inside tree submenu */
+.submenuLink {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.83rem;
+  font-weight: 400;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .submenuLink:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.06);
-  transform: translateX(4px);
-  padding-left: 30px;
-}
-
-.submenuLink:hover::before {
-  background: var(--color-sidebar-accent, #f5c518);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 80%, transparent);
-  height: 12px;
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(2px);
 }
 
 .submenuLink.activeLink {
   color: #ffffff;
-  background: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 10%, transparent);
-  transform: translateX(4px);
-  padding-left: 30px;
+  background: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 18%, rgba(255, 255, 255, 0.1));
   font-weight: 600;
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-.submenuLink.activeLink::before {
-  background: var(--color-sidebar-accent, #f5c518);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 80%, transparent);
-  height: 12px;
-  border-radius: 4px;
+.flyoutHeader {
+  display: none; /* hidden when expanded */
 }
 
-/* ── Logout Button (Redesigned Premium Action) ───────────── */
+/* ── Collapsed State Rules (Desktop >= 1024px) ─────────────── */
+@media (min-width: 1024px) {
+  /* Center items horizontally into circular/square cards */
+  .collapsed .dashboardMenuItem,
+  .collapsed .menuHeader {
+    justify-content: center;
+    padding: 0;
+    margin: 4px auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .collapsed .dashboardMenuItem:hover,
+  .collapsed .menuHeader:hover,
+  .collapsed .dashboardMenuItem.activeLink,
+  .collapsed .itemOpen > .menuHeader {
+    background: rgba(255, 255, 255, 0.1);
+    transform: none;
+    box-shadow: none;
+  }
+
+  .collapsed .dashboardIcon,
+  .collapsed .icon {
+    font-size: 1.15rem;
+    margin: 0;
+  }
+
+  /* Force hide inline texts and arrows */
+  .collapsed .dashboardLink,
+  .collapsed .link,
+  .collapsed .arrowIcon,
+  .collapsed .perfilesArrowIcon,
+  .collapsed .logoutButton p {
+    display: none !important;
+  }
+
+  /* ── Tooltip for Single Item ── */
+  .collapsed .dashboardMenuItem .tooltip {
+    display: block;
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%) translateX(-6px);
+    background: #141d2b;
+    color: #ffffff;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 9999;
+  }
+
+  /* Triangular arrow pointing left to icon */
+  .collapsed .dashboardMenuItem .tooltip::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: -5px;
+    transform: translateY(-50%);
+    border-width: 5px 5px 5px 0;
+    border-style: solid;
+    border-color: transparent #141d2b transparent transparent;
+  }
+
+  .collapsed .dashboardMenuItem:hover .tooltip {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+
+  /* ── Floating Flyout Submenu Popover for Dropdown Items ── */
+  .collapsed .menuItem {
+    position: relative;
+  }
+
+  /* Safe interactive hover corridor extending towards the flyout and covering diagonal movement */
+  .collapsed .menuItem::after {
+    content: "";
+    position: absolute;
+    top: -12px;
+    bottom: -260px;
+    right: -24px;
+    width: 36px;
+    z-index: 9998;
+    pointer-events: auto;
+  }
+
+  .collapsed .submenu {
+    display: block;
+    position: absolute;
+    left: calc(100% + 8px);
+    top: -4px;
+    min-width: 210px;
+    max-width: 290px;
+    background: linear-gradient(160deg, #182232 0%, #0f172a 100%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 20px 40px -4px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-4px);
+    pointer-events: none;
+    /* Margen de gracia (delay) al salir del cursor: 200ms para evitar que desaparezca en movimiento */
+    transition: opacity 0.15s cubic-bezier(0.16, 1, 0.3, 1) 0.2s,
+                transform 0.15s cubic-bezier(0.16, 1, 0.3, 1) 0.2s,
+                visibility 0.15s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+    max-height: 80vh;
+    overflow-y: auto;
+    margin: 0;
+  }
+
+  /* Hide tree branch lines when collapsed into the flyout card */
+  .collapsed .submenu::before,
+  .collapsed .submenu li::before {
+    display: none !important;
+  }
+
+  /* Seamless invisible hover bridge from icon to flyout */
+  .collapsed .submenu::after {
+    content: "";
+    position: absolute;
+    left: -32px;
+    top: -16px;
+    bottom: -16px;
+    width: 40px;
+    pointer-events: auto;
+  }
+
+  /* Show flyout on hover OR when clicked/open (stays open until dismissed) */
+  .collapsed .itemOpen > .submenu,
+  .collapsed .itemOpen .submenu,
+  .collapsed .menuItem:hover .submenu {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateX(0) !important;
+    pointer-events: auto !important;
+    /* Apertura inmediata al pasar el mouse */
+    transition: opacity 0.12s cubic-bezier(0.16, 1, 0.3, 1) 0s,
+                transform 0.12s cubic-bezier(0.16, 1, 0.3, 1) 0s,
+                visibility 0.12s cubic-bezier(0.16, 1, 0.3, 1) 0s;
+  }
+
+  /* Highlight parent icon button when open or hovered */
+  .collapsed .itemOpen > .menuHeader,
+  .collapsed .menuItem:hover > .menuHeader {
+    background: rgba(255, 255, 255, 0.16) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
+
+  /* Flyout Header Title */
+  .collapsed .flyoutHeader {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.45);
+    padding: 4px 10px 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 4px;
+  }
+
+  .collapsed .submenuLink {
+    padding: 8px 12px;
+    font-size: 0.82rem;
+  }
+}
+
+/* ── Logout Button (Redesigned Action) ──────────────────────── */
 .logoutButton {
-  margin: 16px;
-  padding: 12px 20px;
+  margin: 14px 12px;
+  padding: 10px 16px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
   cursor: pointer;
-  background: rgba(30, 46, 66, 0.4); /* Glassy navy matching inputs */
+  background: rgba(30, 46, 66, 0.4);
   border: 1px solid #2d4260;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
   color: rgba(255, 255, 255, 0.65);
 }
 
 .logoutButton:hover {
-  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); /* Premium gradient red */
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
   border-color: #ef4444;
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35); /* Glowing shadow */
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
   color: #ffffff;
-  transform: translateY(-2px); /* Card-style lift */
+  transform: translateY(-1px);
 }
 
 .logoutButton:active {
@@ -543,17 +731,28 @@
 }
 
 .logoutIcon {
-  font-size: 1.25rem;
+  font-size: 1.05rem;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s ease;
   color: rgba(255, 255, 255, 0.65);
 }
 
 .logoutButton:hover .logoutIcon {
   color: #ffffff;
-  transform: translateX(5px) rotate(-10deg) scale(1.15); /* High-tech exit motion */
+  transform: translateX(4px) rotate(-10deg) scale(1.1);
 }
 
-/* ── Support Request Badges ── */
+@media (min-width: 1024px) {
+  .collapsed .logoutButton {
+    justify-content: center;
+    padding: 0;
+    margin: 8px auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+}
+
+/* ── Support Request Badges ─────────────────────────────────── */
 .badge {
   background-color: #ef4444;
   color: #ffffff;

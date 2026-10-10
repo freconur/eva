@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import {
   MdMenuBook,
   MdCalculate,
@@ -7,12 +7,15 @@ import {
   MdGroups,
   MdCheck,
   MdAssignmentLate,
-  MdLayers,
+  MdEdit,
+  MdClose,
 } from 'react-icons/md';
+import { RiLoader4Line } from 'react-icons/ri';
 import { Evaluaciones } from '@/features/types/types';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
-import { getCategoriasParaGrado, getNivelFromGrado } from '@/fuctions/categorias';
+import { getCategoriasParaGrado } from '@/fuctions/categorias';
 import { getGradoTexto } from '@/fuctions/regiones';
+import { useDirectorTabsConfig } from './useDirectorTabsConfig';
 import tabsStyles from './DirectorTabsNav.module.css';
 
 export interface DirectorCategoriaTabsProps {
@@ -22,6 +25,8 @@ export interface DirectorCategoriaTabsProps {
   matrizConfigGrados: Record<string, any>;
   evaluacionesDb?: Evaluaciones[];
   disabled?: boolean;
+  isAuditing?: boolean;
+  onlyCategoriaId?: number;
 }
 
 /**
@@ -43,21 +48,21 @@ export const formatCategoriaLabel = (rawName?: string): string => {
 const getCategoriaIcon = (catId: number, label: string) => {
   const clean = label.toUpperCase();
   if (catId === 1 || clean.includes('LEE') || clean.includes('COMUNICACI')) {
-    return <MdMenuBook className={tabsStyles.categoriaTabIcon} />;
+    return <MdMenuBook className="w-4 h-4 shrink-0" />;
   }
   if (catId === 2 || clean.includes('PROBLEMA') || clean.includes('MATEM')) {
-    return <MdCalculate className={tabsStyles.categoriaTabIcon} />;
+    return <MdCalculate className="w-4 h-4 shrink-0" />;
   }
   if (catId === 8 || clean.includes('PERSONAL') || clean.includes('SOCIAL')) {
-    return <MdPublic className={tabsStyles.categoriaTabIcon} />;
+    return <MdPublic className="w-4 h-4 shrink-0" />;
   }
   if (catId === 9 || catId === 5 || clean.includes('CIENCIA')) {
-    return <MdScience className={tabsStyles.categoriaTabIcon} />;
+    return <MdScience className="w-4 h-4 shrink-0" />;
   }
   if (catId === 6 || clean.includes('DPCC')) {
-    return <MdGroups className={tabsStyles.categoriaTabIcon} />;
+    return <MdGroups className="w-4 h-4 shrink-0" />;
   }
-  return <MdMenuBook className={tabsStyles.categoriaTabIcon} />;
+  return <MdMenuBook className="w-4 h-4 shrink-0" />;
 };
 
 export const DirectorCategoriaTabs: React.FC<DirectorCategoriaTabsProps> = ({
@@ -67,86 +72,221 @@ export const DirectorCategoriaTabs: React.FC<DirectorCategoriaTabsProps> = ({
   matrizConfigGrados,
   evaluacionesDb = [],
   disabled = false,
+  isAuditing: propIsAuditing,
+  onlyCategoriaId,
 }) => {
   const { categorias: contextCategorias } = useGlobalContext();
-
   const currentGrado = Number(grado) || 2;
-  const nivelEducativo = getNivelFromGrado(currentGrado);
 
-  // Categorías curriculares correspondientes al grado y nivel (Primaria vs Secundaria vs Inicial)
-  const categorias = useMemo(() => {
+  const {
+    categoriaLabels,
+    saveCategoriaLabel,
+    isSaving: hookIsSaving,
+    isAuditing: hookIsAuditing,
+  } = useDirectorTabsConfig();
+
+  // Permiso para editar nombres: en modo auditoría o con rol administrador
+  const canEdit = propIsAuditing !== undefined ? propIsAuditing : hookIsAuditing;
+
+  // Estados locales para edición interactiva inline de nombres de categoría
+  const [editingCatId, setEditingCatId] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState<string>('');
+  const [isLocalSaving, setIsLocalSaving] = useState<boolean>(false);
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingCatId !== null && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingCatId]);
+
+  const handleStartEdit = (e: React.MouseEvent, catId: number, currentLabel: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setEditingCatId(catId);
+    setEditingText(currentLabel);
+  };
+
+  const handleCancelEdit = (e?: React.MouseEvent | React.KeyboardEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    setEditingCatId(null);
+    setEditingText('');
+  };
+
+  const handleSaveEdit = async (e: React.MouseEvent | React.KeyboardEvent, catId: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!editingText.trim() || isLocalSaving) return;
+
+    setIsLocalSaving(true);
+    const success = await saveCategoriaLabel(catId, editingText);
+    setIsLocalSaving(false);
+
+    if (success) {
+      setEditingCatId(null);
+      setEditingText('');
+    }
+  };
+
+  // 1. Todas las categorías curriculares teóricas para este grado y nivel
+  const todasLasCategorias = useMemo(() => {
     return getCategoriasParaGrado(currentGrado, contextCategorias, evaluacionesDb);
   }, [currentGrado, contextCategorias, evaluacionesDb]);
 
-  const nivelLabel = nivelEducativo === 2 ? 'Secundaria' : nivelEducativo === 0 ? 'Inicial' : 'Primaria';
+  // 2. Filtrar para mostrar ÚNICAMENTE las materias que sí tienen evaluaciones configuradas
+  const categoriasConfiguradas = useMemo(() => {
+    const list = todasLasCategorias.filter((cat) => {
+      const catId = Number(cat.id);
+      const assignment = matrizConfigGrados[`${currentGrado}_${catId}`];
+      return !!(
+        assignment &&
+        (assignment.ediId || assignment.ep1Id || assignment.ep2Id)
+      );
+    });
+
+    // Si se especifica mostrar únicamente el área de la evaluación activa (ej. solo RADALECTOR o solo RADAMATE)
+    if (onlyCategoriaId !== undefined && onlyCategoriaId !== null) {
+      const filtered = list.filter((cat) => Number(cat.id) === Number(onlyCategoriaId));
+      if (filtered.length > 0) {
+        return filtered;
+      }
+      const matching = todasLasCategorias.filter((cat) => Number(cat.id) === Number(onlyCategoriaId));
+      if (matching.length > 0) {
+        return matching;
+      }
+    }
+
+    // Fallback de resiliencia: si aún no hay configuraciones registradas, mostrar al menos la categoría activa
+    if (list.length === 0) {
+      const activeCat =
+        todasLasCategorias.find((c) => Number(c.id) === selectedCategoriaId) ||
+        todasLasCategorias[0];
+      return activeCat ? [activeCat] : todasLasCategorias;
+    }
+
+    return list;
+  }, [todasLasCategorias, matrizConfigGrados, currentGrado, selectedCategoriaId, onlyCategoriaId]);
 
   return (
-    <div className="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-3 sm:p-3.5 shadow-2xs mb-3">
-      <div className="flex items-center justify-between gap-2 px-1 mb-2.5">
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 uppercase tracking-wider">
-          <MdLayers className="w-3.5 h-3.5 text-blue-600" />
-          <span>Áreas Curriculares · {getGradoTexto(currentGrado)} ({nivelLabel})</span>
-        </span>
-        <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
-          Selecciona una materia para analizar sus brechas y decisiones
-        </span>
-      </div>
+    <div
+      className={tabsStyles.categoriaTabsBar}
+      role="tablist"
+      aria-label="Pestañas de materias curriculares configuradas"
+    >
+      {categoriasConfiguradas.map((cat) => {
+        const catId = Number(cat.id);
+        const isSelected = Number(selectedCategoriaId) === catId;
+        const customLabel = categoriaLabels[String(catId)];
+        const label = customLabel ? customLabel.toUpperCase() : formatCategoriaLabel(cat.categoria);
+        const icon = getCategoriaIcon(catId, label);
+        const isEditingThisCat = editingCatId === catId;
 
-      <div
-        className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none w-full"
-        role="tablist"
-        aria-label="Píldoras de áreas curriculares por nivel"
-      >
-        {categorias.map((cat) => {
-          const catId = Number(cat.id);
-          const isSelected = Number(selectedCategoriaId) === catId;
-          const label = formatCategoriaLabel(cat.categoria);
-          const icon = getCategoriaIcon(catId, label);
+        return (
+          <button
+            key={catId}
+            type="button"
+            role="tab"
+            aria-selected={isSelected}
+            disabled={disabled}
+            onClick={() => {
+              if (!isEditingThisCat) {
+                onSelectCategoria(catId);
+              }
+            }}
+            className={`${tabsStyles.categoriaTabBtn} ${
+              isSelected ? tabsStyles.categoriaTabBtnActive : ''
+            } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title={`Área: ${label} (Configurado)`}
+          >
+            <span className={tabsStyles.categoriaTabIcon}>
+              {icon}
+            </span>
 
-          // Verificar si el área tiene al menos una evaluación asignada en matriz_resultados
-          const assignment = matrizConfigGrados[`${currentGrado}_${catId}`];
-          const hasConfig = !!(
-            assignment &&
-            (assignment.ediId || assignment.ep1Id || assignment.ep2Id)
-          );
-
-          return (
-            <button
-              key={catId}
-              type="button"
-              role="tab"
-              aria-selected={isSelected}
-              disabled={disabled}
-              className={`group relative inline-flex items-center gap-2.5 px-3.5 sm:px-4 h-[42px] rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 whitespace-nowrap cursor-pointer select-none outline-none border shadow-2xs ${
-                isSelected
-                  ? 'bg-blue-50/90 border-blue-500 text-blue-900 ring-2 ring-blue-100 font-bold'
-                  : 'bg-white hover:bg-slate-50 border-slate-200/90 hover:border-slate-300 text-slate-700 hover:text-slate-900'
-              } ${disabled ? 'opacity-50 cursor-not-allowed' : 'active:scale-[0.98]'}`}
-              onClick={() => onSelectCategoria(catId)}
-              title={`Área: ${label}${hasConfig ? ' (Configurado)' : ' (Sin evaluaciones)'}`}
-            >
-              <span
-                className={`text-base transition-colors shrink-0 ${
-                  isSelected ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
-                }`}
+            {isEditingThisCat ? (
+              <div
+                className="inline-flex items-center gap-1.5 z-40"
+                onClick={(e) => e.stopPropagation()}
               >
-                {icon}
+                <input
+                  ref={editInputRef}
+                  type="text"
+                  value={editingText}
+                  disabled={isLocalSaving}
+                  onChange={(e) => setEditingText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSaveEdit(e, catId);
+                    } else if (e.key === 'Escape') {
+                      handleCancelEdit(e);
+                    }
+                  }}
+                  className="px-2 py-0.5 text-xs font-bold uppercase text-slate-900 bg-white border border-emerald-500 rounded-md shadow-xs outline-none focus:ring-2 focus:ring-emerald-500 min-w-[100px] max-w-[190px]"
+                  placeholder="Nombre de área..."
+                />
+                <button
+                  type="button"
+                  disabled={isLocalSaving || !editingText.trim()}
+                  onClick={(e) => handleSaveEdit(e, catId)}
+                  className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
+                  title="Guardar nombre de área (Enter)"
+                  aria-label="Guardar nombre de área"
+                >
+                  {isLocalSaving ? (
+                    <RiLoader4Line className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <MdCheck className="w-3.5 h-3.5" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  disabled={isLocalSaving}
+                  onClick={(e) => handleCancelEdit(e)}
+                  className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-slate-200 hover:bg-slate-300 text-slate-700 transition-colors cursor-pointer"
+                  title="Cancelar edición (Escape)"
+                  aria-label="Cancelar edición"
+                >
+                  <MdClose className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <span className="inline-flex items-center gap-1">
+                <span className="tracking-tight">{label}</span>
+                {canEdit && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => handleStartEdit(e, catId, label)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        handleStartEdit(e as any, catId, label);
+                      }
+                    }}
+                    className="inline-flex items-center justify-center w-5 h-5 ml-0.5 rounded-md text-slate-400 hover:text-emerald-600 hover:bg-emerald-50/80 transition-all cursor-pointer opacity-70 hover:opacity-100"
+                    title={`Editar nombre de área "${label}"`}
+                    aria-label={`Editar nombre de área "${label}"`}
+                  >
+                    <MdEdit className="w-3.5 h-3.5" />
+                  </span>
+                )}
               </span>
-              <span className="tracking-tight">{label}</span>
+            )}
 
-              {hasConfig && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-bold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 shrink-0">
-                  ✓ Configurado
-                </span>
-              )}
+            {!isEditingThisCat && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-bold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/90 shrink-0">
+                ✓ Configurado
+              </span>
+            )}
 
-              {isSelected && (
-                <MdCheck className="w-4 h-4 text-blue-600 shrink-0 animate-in zoom-in-75 duration-150" />
-              )}
-            </button>
-          );
-        })}
-      </div>
+            {!isEditingThisCat && isSelected && (
+              <MdCheck className="w-4 h-4 text-emerald-600 shrink-0 animate-in zoom-in-75 duration-150" />
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 };

@@ -81,14 +81,26 @@ export const CustomFilterDropdown: React.FC<CustomFilterDropdownProps> = ({
     }
   }, [isOpen, showSearch]);
 
-  // Búsqueda insensible a tildes y mayúsculas
+  // Búsqueda inteligente multi-palabra, insensible a tildes, mayúsculas y signos
   const normalizeText = (text: string) =>
-    text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    text
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9\s]/g, ' ')
+      .toLowerCase()
+      .trim();
 
   const filteredOptions = useMemo(() => {
     if (!searchTerm.trim()) return options;
-    const term = normalizeText(searchTerm.trim());
-    return options.filter((opt) => normalizeText(opt.label).includes(term));
+    const terms = normalizeText(searchTerm).split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return options;
+
+    return options.filter((opt) => {
+      const normLabel = normalizeText(opt.label);
+      const normBadge = opt.badge ? normalizeText(opt.badge) : '';
+      const combined = `${normLabel} ${normBadge}`;
+      return terms.every((t) => combined.includes(t));
+    });
   }, [options, searchTerm]);
 
   const handleSelect = (val: string) => {

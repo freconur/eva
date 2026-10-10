@@ -34,6 +34,10 @@ import TablaParticipacionDirectores from '@/components/reportes/TablaParticipaci
 
 // Hook
 import { useReporteAdmin } from '@/features/hooks/useReporteAdmin';
+import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { MdBarChart, MdBubbleChart } from 'react-icons/md';
+import { isEvaluacionEnMatriz } from '@/components/reportes/director/useEvaluacionesMatriz';
+import UgelBrechasTab from '@/components/reportes/director/UgelBrechasTab';
 
 ChartJS.register(
   CategoryScale,
@@ -149,6 +153,7 @@ const Reporte = () => {
     preguntasRespuestas,
     loaderReporteDirector,
     evaluacion,
+    evaluaciones: evaluacionesDb = [],
     dataGraficoTendenciaNiveles,
     dataGraficoUgelStacked,
     loaderDataGraficoUgelStacked,
@@ -246,6 +251,35 @@ const Reporte = () => {
   const [elementosVisibles, setElementosVisibles] = useState<string[]>(defaultVisibility);
   const [mounted, setMounted] = useState(false);
   const [isOrganizerOpen, setIsOrganizerOpen] = useState(false);
+  const [matrizConfigGrados, setMatrizConfigGrados] = useState<Record<string, any>>({});
+  const [activeTab, setActiveTab] = useState<'general' | 'brechas'>('general');
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchConfig = async () => {
+      try {
+        const db = getFirestore();
+        const cfgRef = doc(db, 'configuraciones', 'matriz_resultados');
+        const snap = await getDoc(cfgRef);
+        if (snap.exists() && isMounted) {
+          const data = snap.data();
+          if (data?.grados) {
+            setMatrizConfigGrados(data.grados);
+          }
+        }
+      } catch (err) {
+        console.error('Error al cargar configuraciones/matriz_resultados:', err);
+      }
+    };
+    fetchConfig();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const isEvaluacionConfigurada = useMemo(() => {
+    return isEvaluacionEnMatriz(evaluacion?.id, matrizConfigGrados);
+  }, [evaluacion?.id, matrizConfigGrados]);
 
   useEffect(() => {
     setMounted(true);
@@ -525,11 +559,63 @@ const Reporte = () => {
             onOpenOrganizer={() => setIsOrganizerOpen(true)}
           />
 
-          <div className={styles.chartsGrid}>
-            {(mounted ? ordenGraficos : defaultLayout)
-              .filter((id) => elementosVisibles.includes(id))
-              .map((idGrafico) => renderChart(idGrafico))}
-          </div>
+          {/* Selector de Pestañas (Reporte General vs. Brechas de Aprendizaje) si la evaluación está en matriz EDI/EP1/EP2 */}
+          {isEvaluacionConfigurada && (
+            <div className="flex items-center gap-2 my-4 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/90 max-w-fit shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setActiveTab('general')}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  activeTab === 'general'
+                    ? 'bg-white text-blue-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                }`}
+              >
+                <MdBarChart className="w-4 h-4 text-blue-600" />
+                <span>Panel General y Gráficos</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('brechas')}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  activeTab === 'brechas'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                }`}
+              >
+                <MdBubbleChart className="w-4 h-4" />
+                <span>Brechas de Aprendizaje</span>
+                <span
+                  className={`px-1.5 py-0.5 text-[10px] font-extrabold rounded-md uppercase tracking-wider ${
+                    activeTab === 'brechas'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-blue-100 text-blue-700'
+                  }`}
+                >
+                  Regional UGEL
+                </span>
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'brechas' && isEvaluacionConfigurada ? (
+            <div className="mt-4 mb-8">
+              <UgelBrechasTab
+                evaluacion={evaluacion}
+                evaluacionesDb={evaluacionesDb}
+                preguntasRespuestas={preguntasRespuestas}
+                currentUserData={currentUserData}
+                yearSelected={yearSelected}
+                monthSelected={monthSelected}
+              />
+            </div>
+          ) : (
+            <>
+              <div className={styles.chartsGrid}>
+                {(mounted ? ordenGraficos : defaultLayout)
+                  .filter((id) => elementosVisibles.includes(id))
+                  .map((idGrafico) => renderChart(idGrafico))}
+              </div>
 
           {/* Detalle de Docentes y Directores (Drill-Down en posición de gráficos) */}
           <div ref={drillDownRef}>
@@ -619,6 +705,8 @@ const Reporte = () => {
                 directoresStats={directoresStats}
               />
             )
+          )}
+            </>
           )}
         </main>
 

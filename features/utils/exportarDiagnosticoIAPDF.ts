@@ -188,9 +188,9 @@ export const exportarDiagnosticoIAPDF = ({
   const ep1Est = resumenGeneral.totalEstudiantes.ep1 !== undefined ? `${resumenGeneral.totalEstudiantes.ep1} est.` : 'Sin datos';
   const ep2Est = resumenGeneral.totalEstudiantes.ep2 !== undefined ? `${resumenGeneral.totalEstudiantes.ep2} est.` : 'Sin datos';
 
-  doc.text(`• EDI (Marzo - Inicio): ${ediEst}`, cardRightX + 4, currentY + 10.5);
-  doc.text(`• EP1 (Julio - Proceso 1): ${ep1Est}`, cardRightX + 4, currentY + 15);
-  doc.text(`• EP2 (Noviembre - Proceso 2): ${ep2Est}`, cardRightX + 4, currentY + 19.5);
+  doc.text(`• EDI (Marzo - Diagnóstica): ${ediEst}`, cardRightX + 4, currentY + 10.5);
+  doc.text(`• EP1 (Julio - Progresiva 1): ${ep1Est}`, cardRightX + 4, currentY + 15);
+  doc.text(`• EP2 (Noviembre - Progresiva 2): ${ep2Est}`, cardRightX + 4, currentY + 19.5);
 
   currentY += cardHeight + 4;
 

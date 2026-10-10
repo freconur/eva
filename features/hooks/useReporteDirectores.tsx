@@ -34,6 +34,7 @@ export const useReporteDirectores = () => {
   const [promedioPorDocente, setPromedioPorDocente] = useState<any[]>([]);
   const [warning, setWarning] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [totalEstudiantesMatriculados, setTotalEstudiantesMatriculados] = useState<number>(0);
 
 
   const loadingGraficos = useCallback((value: boolean) => {
@@ -247,6 +248,7 @@ export const useReporteDirectores = () => {
       const snapshotProfesores = await getDocs(qProfesores);
 
       if (snapshotProfesores.empty) {
+        setTotalEstudiantesMatriculados(0);
         dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
         return;
       }
@@ -268,6 +270,7 @@ export const useReporteDirectores = () => {
       });
 
       const todosLosEstudiantesDelGrado = Array.from(uniqueEstudiantesMap.values());
+      setTotalEstudiantesMatriculados(todosLosEstudiantesDelGrado.length);
 
       const baseEvaluados = alumnosEvaluados || estudiantes;
       const evaluadosDnis = new Set(baseEvaluados.map(e => String(e.dni)));
@@ -283,6 +286,7 @@ export const useReporteDirectores = () => {
 
     } catch (error) {
       console.error('Error al obtener cobertura director:', error);
+      setTotalEstudiantesMatriculados(0);
       dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
     }
   }, [currentUserData.dni, db, dispatch, estudiantes]);
@@ -335,6 +339,7 @@ export const useReporteDirectores = () => {
     reporteRegionales,
     resetReporteRegional,
     reporteRegionalGlobal,
-    resetReporteGlobal
+    resetReporteGlobal,
+    totalEstudiantesMatriculados,
   };
 };
