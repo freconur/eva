@@ -14,7 +14,7 @@ import { useHighQualityChartOptions } from '@/features/hooks/useHighQualityChart
 import { useColorsFromCSS } from '@/features/hooks/useColorsFromCSS';
 import { regiones } from '@/fuctions/regiones';
 import { NivelYPuntaje } from '@/features/types/types';
-import { RiFullscreenLine, RiCloseLine, RiSearchLine } from 'react-icons/ri';
+import { RiFullscreenLine, RiCloseLine, RiSearchLine, RiUserStarLine, RiInformationLine, RiArrowRightLine } from 'react-icons/ri';
 import { createPortal } from 'react-dom';
 
 ChartJS.register(
@@ -48,19 +48,34 @@ interface TeacherData {
 interface BarChartDocentesProps {
     data: TeacherData[];
     nivelYPuntaje?: NivelYPuntaje[];
+    canChangeRegion?: boolean;
+    initialRegion?: string;
 }
 
-const BarChartDocentes = ({ data = [], nivelYPuntaje = [] }: BarChartDocentesProps) => {
+const BarChartDocentes = ({
+    data = [],
+    nivelYPuntaje = [],
+    canChangeRegion = true,
+    initialRegion = ''
+}: BarChartDocentesProps) => {
     const { getNivelColor } = useColorsFromCSS();
     const [currentPage, setCurrentPage] = React.useState(0);
     const [sortBy, setSortBy] = React.useState<'promedio' | 'evaluados' | 'satisfactorios' | 'impacto'>('promedio');
     const [itemsPerPage, setItemsPerPage] = React.useState(10);
-    const [selectedRegion, setSelectedRegion] = React.useState<string>('');
+    const [selectedRegion, setSelectedRegion] = React.useState<string>(() => {
+        return !canChangeRegion && initialRegion ? String(initialRegion) : '';
+    });
     const [minStudents, setMinStudents] = React.useState<number | string>(1);
     const [selectedLevel, setSelectedLevel] = React.useState<string>('');
     const [searchTerm, setSearchTerm] = React.useState('');
     const [isExpanded, setIsExpanded] = React.useState(false);
     const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        if (!canChangeRegion && initialRegion) {
+            setSelectedRegion(String(initialRegion));
+        }
+    }, [canChangeRegion, initialRegion]);
 
     React.useEffect(() => {
         setMounted(true);
@@ -74,12 +89,22 @@ const BarChartDocentes = ({ data = [], nivelYPuntaje = [] }: BarChartDocentesPro
     }, [isExpanded]);
 
     React.useEffect(() => {
-        if (!isExpanded) {
+        if (isExpanded) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
             setItemsPerPage(10);
             setCurrentPage(0);
             setSearchTerm('');
+            setSelectedRegion(!canChangeRegion && initialRegion ? String(initialRegion) : '');
+            setMinStudents(1);
+            setSelectedLevel('');
+            setSortBy('promedio');
         }
-    }, [isExpanded]);
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isExpanded, canChangeRegion, initialRegion]);
 
     // Algoritmo de Impacto: Logaritmo de volumen * Promedio
     const getImpactScore = (teacher: TeacherData) => {
@@ -176,12 +201,12 @@ const BarChartDocentes = ({ data = [], nivelYPuntaje = [] }: BarChartDocentesPro
                 datasets: [{
                     label: isImpactMode ? 'Puntaje de Impacto' : 'Promedio Global',
                     data: paginatedData.map(d => isImpactMode ? getImpactScore(d) : d.promedioGlobal),
-                    backgroundColor: isImpactMode ? 'rgba(132, 204, 22, 0.8)' : 'rgba(52, 211, 153, 0.8)',
-                    borderColor: isImpactMode ? 'rgb(132, 204, 22)' : 'rgb(52, 211, 153)',
-                    borderWidth: 1,
-                    borderRadius: 6,
-                    barPercentage: 0.75,
-                    categoryPercentage: 0.8,
+                    backgroundColor: isImpactMode ? 'rgba(14, 165, 233, 0.88)' : 'rgba(16, 185, 129, 0.88)',
+                    borderColor: isImpactMode ? 'rgb(2, 132, 199)' : 'rgb(5, 150, 105)',
+                    borderWidth: 1.5,
+                    borderRadius: 8,
+                    barPercentage: 0.76,
+                    categoryPercentage: 0.84,
                 }]
             };
         }
@@ -206,10 +231,10 @@ const BarChartDocentes = ({ data = [], nivelYPuntaje = [] }: BarChartDocentesPro
                 }),
                 backgroundColor: colorData.bg,
                 borderColor: colorData.border,
-                borderWidth: 1,
-                borderRadius: 6,
-                barPercentage: 0.75,
-                categoryPercentage: 0.8,
+                borderWidth: 1.5,
+                borderRadius: 8,
+                barPercentage: 0.76,
+                categoryPercentage: 0.84,
             };
         });
 
@@ -237,13 +262,29 @@ const BarChartDocentes = ({ data = [], nivelYPuntaje = [] }: BarChartDocentesPro
             },
             plugins: {
                 ...options.plugins,
+                title: {
+                    ...options.plugins?.title,
+                    display: false, // Desactivado en canvas; se muestra en el Header HTML semántico
+                },
                 legend: {
                     ...options.plugins?.legend,
                     display: !isPromedioMode,
+                    position: 'bottom' as const,
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'rectRounded' as const,
+                        padding: 16,
+                        font: { size: 12, weight: '600' as const, family: "'Inter', sans-serif" },
+                        color: '#475569',
+                    }
                 },
                 tooltip: {
                     ...options.plugins?.tooltip,
-                    backgroundColor: 'rgba(15, 23, 42, 0.98)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.96)',
+                    padding: 12,
+                    cornerRadius: 10,
+                    titleFont: { size: 13, weight: '700' as const },
+                    bodyFont: { size: 12, weight: '500' as const },
                     callbacks: {
                         title: (context: any) => {
                             const index = context[0].dataIndex;
@@ -285,17 +326,29 @@ const BarChartDocentes = ({ data = [], nivelYPuntaje = [] }: BarChartDocentesPro
                 x: {
                     stacked: !(isPromedioMode || isImpactMode),
                     beginAtZero: true,
+                    grid: {
+                        color: 'rgba(241, 245, 249, 0.85)',
+                    },
                     title: {
                         display: true,
                         text: isImpactMode ? 'Índice de Impacto' : (isPromedioMode ? 'Puntaje Promedio' : 'Cantidad de Estudiantes'),
-                        font: { size: 12, weight: '700' as const }
+                        font: { size: 12, weight: '700' as const, family: "'Inter', sans-serif" },
+                        color: '#64748b'
+                    },
+                    ticks: {
+                        font: { size: 11, weight: '600' as const },
+                        color: '#64748b'
                     }
                 },
                 y: {
                     type: 'category',
                     stacked: !(isPromedioMode || isImpactMode),
+                    grid: {
+                        display: false,
+                    },
                     ticks: {
-                        font: { size: 11, weight: '600' as const },
+                        font: { size: 11, weight: '700' as const },
+                        color: '#334155'
                     }
                 },
             },
@@ -308,8 +361,7 @@ const BarChartDocentes = ({ data = [], nivelYPuntaje = [] }: BarChartDocentesPro
         afterDatasetsDraw(chart: any) {
             const { ctx } = chart;
             ctx.save();
-            ctx.font = '600 11px "Inter", sans-serif';
-            ctx.fillStyle = '#0f172a';
+            ctx.font = '600 11.5px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
 
@@ -342,32 +394,47 @@ const BarChartDocentes = ({ data = [], nivelYPuntaje = [] }: BarChartDocentesPro
                         while (remainingText.length > 0) {
                             const matchIndex = cleanTerm ? remainingTextLower.indexOf(cleanTerm) : -1;
                             if (matchIndex === -1) {
+                                // Texto con alto contraste y sombra suave para legibilidad perfecta
+                                ctx.shadowColor = 'rgba(15, 23, 42, 0.45)';
+                                ctx.shadowBlur = 2;
+                                ctx.shadowOffsetX = 0;
+                                ctx.shadowOffsetY = 1;
+                                ctx.fillStyle = '#ffffff';
                                 ctx.fillText(remainingText, currentX, centerY);
                                 break;
                             }
 
-                            // Draw before part
+                            // Texto previo al match
                             const before = remainingText.substring(0, matchIndex);
                             if (before) {
+                                ctx.shadowColor = 'rgba(15, 23, 42, 0.45)';
+                                ctx.shadowBlur = 2;
+                                ctx.shadowOffsetX = 0;
+                                ctx.shadowOffsetY = 1;
+                                ctx.fillStyle = '#ffffff';
                                 ctx.fillText(before, currentX, centerY);
                                 currentX += ctx.measureText(before).width;
                             }
 
-                            // Draw match part with highlight
+                            // Match con resaltado amarillo y texto oscuro
                             const match = remainingText.substring(matchIndex, matchIndex + cleanTerm.length);
                             const matchWidth = ctx.measureText(match).width;
 
                             ctx.save();
-                            ctx.fillStyle = 'rgba(254, 240, 138, 0.95)'; // yellow highlight background
+                            ctx.shadowColor = 'transparent';
+                            ctx.fillStyle = 'rgba(254, 240, 138, 0.95)';
                             const rectHeight = 16;
                             ctx.fillRect(currentX, centerY - rectHeight / 2, matchWidth, rectHeight);
                             ctx.restore();
 
-                            // Draw match text
+                            ctx.save();
+                            ctx.shadowColor = 'transparent';
+                            ctx.fillStyle = '#0f172a';
                             ctx.fillText(match, currentX, centerY);
+                            ctx.restore();
+
                             currentX += matchWidth;
 
-                            // Slice
                             remainingText = remainingText.substring(matchIndex + cleanTerm.length);
                             remainingTextLower = remainingTextLower.substring(matchIndex + cleanTerm.length);
                         }
@@ -388,102 +455,57 @@ const BarChartDocentes = ({ data = [], nivelYPuntaje = [] }: BarChartDocentesPro
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <div className={styles.titleWrapper} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <div>
-                        <p className={styles.subtitle}>{data.length} líderes educativos en este ranking</p>
+                <div className={styles.titleWrapper}>
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600">
+                                <RiUserStarLine className="w-4 h-4" />
+                            </span>
+                            <h3 className={styles.title}>
+                                Desempeño por Docente (Distribución de Niveles)
+                            </h3>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                {data.length.toLocaleString()} líderes educativos
+                            </span>
+                            <span className="text-xs text-slate-400">•</span>
+                            <span className="text-xs text-slate-500 font-medium">
+                                Ranking Top 10
+                            </span>
+                        </div>
                     </div>
+
                     <button 
+                        type="button"
                         onClick={() => setIsExpanded(true)} 
                         className={styles.fullscreenButton}
-                        title="Ver en pantalla completa"
+                        title="Ver ranking completo y filtros avanzados"
+                        aria-label="Abrir vista completa del ranking"
                     >
-                        <RiFullscreenLine /> Vista Completa
+                        <RiFullscreenLine style={{ fontSize: '1.25rem' }} />
                     </button>
                 </div>
-
-                <div className={styles.controlsRow}>
-                    <div className={styles.filtersRow}>
-                        <div className={styles.filterGroup}>
-                            <span>Ugel:</span>
-                            <select
-                                className={`${styles.rowsPerPageSelect} ${styles.regionSelect}`}
-                                value={selectedRegion}
-                                onChange={(e) => {
-                                    setSelectedRegion(e.target.value);
-                                    setCurrentPage(0);
-                                }}
-                            >
-                                <option value="">Todas las Ugel</option>
-                                {regiones.map((reg) => (
-                                    <option key={reg.id} value={reg.id}>
-                                        {reg.region}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-
-                        <div className={styles.filterGroup}>
-                            <span>Estudiantes:</span>
-                            <input
-                                type="number"
-                                min="0"
-                                className={styles.rowsPerPageSelect}
-                                value={minStudents}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    setMinStudents(val === "" ? "" : Number(val));
-                                    setCurrentPage(0);
-                                }}
-                                style={{ width: '60px', padding: '4px 8px' }}
-                            />
-                        </div>
-
-                    </div>
-
-                    {totalPages > 1 && (
-                        <div className={styles.paginationRow}>
-                            <div className={styles.filterGroup}>
-                                <span>Ver:</span>
-                                <select
-                                    className={styles.rowsPerPageSelect}
-                                    value={itemsPerPage}
-                                    onChange={(e) => {
-                                        setItemsPerPage(Number(e.target.value));
-                                        setCurrentPage(0);
-                                    }}
-                                >
-                                    <option value={10}>10</option>
-                                    <option value={25}>25</option>
-                                    <option value={50}>50</option>
-                                </select>
-                            </div>
-                            <div className={styles.navButtons}>
-                                <button onClick={handlePrev} disabled={currentPage === 0} className={styles.pageButton}>←</button>
-                                <span className={styles.pageInfo}>{currentPage + 1} / {totalPages}</span>
-                                <button onClick={handleNext} disabled={currentPage === totalPages - 1} className={styles.pageButton}>→</button>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className={styles.sortContainer}>
-                        <div className={styles.sortButtons}>
-                            <button onClick={() => { setSortBy('promedio'); setCurrentPage(0); }} className={`${styles.sortButton} ${sortBy === 'promedio' ? styles.sortButtonActive : ''}`}>⭐ Promedio</button>
-                            <button onClick={() => { setSortBy('evaluados'); setCurrentPage(0); }} className={`${styles.sortButton} ${sortBy === 'evaluados' ? styles.sortButtonActive : ''}`}>👥 Evaluados</button>
-                            <button onClick={() => { setSortBy('satisfactorios'); setCurrentPage(0); }} className={`${styles.sortButton} ${sortBy === 'satisfactorios' ? styles.sortButtonActive : ''}`}>🏆 Satisfactorios</button>
-                            <div className={styles.impactWrapper}>
-                                <button onClick={() => { setSortBy('impacto'); setCurrentPage(0); }} className={`${styles.sortButton} ${sortBy === 'impacto' ? styles.sortButtonActive : ''}`}>🚀 Impacto</button>
-                                <div className={styles.infoTooltip}>
-                                    <b>Modo Impacto</b>
-                                    Métrica estratégica que equilibra el rendimiento académico con el volumen de estudiantes.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
+
             <div className={styles.chartWrapper} style={{ height: '450px' }}>
                 <Bar data={chartData} options={customOptions as any} plugins={[drawLabelsInsideBarsPlugin]} key={`chart-docente-${sortBy}-${currentPage}-${itemsPerPage}-${selectedRegion}-${selectedLevel}-${minStudents}-${searchTerm}`} />
+            </div>
+
+            {/* Footer informativo de la tarjeta normal */}
+            <div className={styles.normalCardFooter}>
+                <div className={styles.normalCardHint}>
+                    <RiInformationLine className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Mostrando Top 10 por promedio. Usa <strong>Vista Completa</strong> para filtrar por UGEL, cantidad de estudiantes o buscar.</span>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setIsExpanded(true)}
+                    className={styles.normalCardCta}
+                >
+                    <span>Filtros y lista completa</span>
+                    <RiArrowRightLine className="w-3.5 h-3.5" />
+                </button>
             </div>
 
             {isExpanded && mounted && typeof window !== 'undefined' && createPortal(
@@ -521,17 +543,23 @@ const BarChartDocentes = ({ data = [], nivelYPuntaje = [] }: BarChartDocentesPro
                                             <select
                                                 className={`${styles.drawerRowsPerPageSelect} ${styles.drawerRowsPerPageSelectDocentes} ${styles.drawerRegionSelect}`}
                                                 value={selectedRegion}
+                                                disabled={!canChangeRegion}
                                                 onChange={(e) => {
+                                                    if (!canChangeRegion) return;
                                                     setSelectedRegion(e.target.value);
                                                     setCurrentPage(0);
                                                 }}
+                                                style={!canChangeRegion ? { cursor: 'not-allowed', opacity: 0.85 } : undefined}
+                                                aria-label="Filtrar por UGEL"
                                             >
-                                                <option value="">Todas las Ugel</option>
-                                                {regiones.map((reg) => (
-                                                    <option key={reg.id} value={reg.id}>
-                                                        {reg.region}
-                                                    </option>
-                                                ))}
+                                                {canChangeRegion && <option value="">Todas las Ugel</option>}
+                                                {regiones
+                                                    .filter(reg => canChangeRegion ? true : String(reg.id) === String(selectedRegion || initialRegion))
+                                                    .map((reg) => (
+                                                        <option key={reg.id} value={reg.id}>
+                                                            {reg.region}
+                                                        </option>
+                                                    ))}
                                             </select>
                                         </div>
 

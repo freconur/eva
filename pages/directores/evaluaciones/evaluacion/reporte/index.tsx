@@ -52,6 +52,7 @@ import DirectorTendenciasTab from '@/components/reportes/director/DirectorTenden
 import DirectorComparativaTab from '@/components/reportes/director/DirectorComparativaTab';
 import DirectorExportMenu from '@/components/reportes/director/DirectorExportMenu';
 import DirectorHeroBanner from '@/components/reportes/director/DirectorHeroBanner';
+import useReportesBannerConfig from '@/components/reportes/director/useReportesBannerConfig';
 import DirectorLayoutModeSwitch, {
   DirectorLayoutMode,
 } from '@/components/reportes/director/DirectorLayoutModeSwitch';
@@ -131,6 +132,9 @@ const Reporte = () => {
       }
     }
   };
+
+  // Configuración global por rol del Hero Banner (Variante Grande vs Compacta e Imagen de Fondo en Firestore)
+  const bannerConfig = useReportesBannerConfig({ routeKey: 'directores' });
 
   // Modo de diseño del reporte: 'tabs' (pestañas independientes) o 'cascade' (cascada vertical continua)
   const [layoutMode, setLayoutMode] = useState<DirectorLayoutMode>(() => {
@@ -1233,6 +1237,14 @@ const Reporte = () => {
                 imagenesGeneradas={imagenesGeneradas}
                 hasPreguntasConImagenes={reporteCompletoConImagenes.length > 0}
                 onExport={handleExportOption}
+                variant={bannerConfig.variant}
+                onVariantChange={bannerConfig.setBannerVariant}
+                isSavingVariant={bannerConfig.isSavingVariant}
+                backgroundImage={bannerConfig.backgroundImage}
+                backgroundImageOpacity={bannerConfig.backgroundImageOpacity}
+                onUploadBackgroundImage={bannerConfig.uploadBannerImage}
+                onRemoveBackgroundImage={bannerConfig.removeBannerImage}
+                isUploadingImage={bannerConfig.isUploadingImage}
               />
             )}
 
@@ -1423,6 +1435,7 @@ const Reporte = () => {
       <GuiaBurbujasModal
         isOpen={isBurbujasModalOpen}
         onClose={() => setIsBurbujasModalOpen(false)}
+        baremo={baremo}
       />
 
       <GuiaDecisionesModal

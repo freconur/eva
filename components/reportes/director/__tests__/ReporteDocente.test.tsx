@@ -3,6 +3,16 @@ jest.mock('firebase/auth', () => ({
   onAuthStateChanged: jest.fn(),
   signInWithEmailAndPassword: jest.fn(),
   signOut: jest.fn(),
+  setPersistence: jest.fn(() => Promise.resolve()),
+  browserLocalPersistence: {},
+}));
+
+jest.mock('firebase/storage', () => ({
+  getStorage: jest.fn(() => ({})),
+  ref: jest.fn(),
+  uploadBytes: jest.fn(() => Promise.resolve()),
+  getDownloadURL: jest.fn(() => Promise.resolve('https://mock-image.png')),
+  deleteObject: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock('@/features/hooks/useUsuario', () => () => ({
@@ -218,6 +228,9 @@ jest.mock('@/components/tabla-preguntas', () => ({
   TablaPreguntas: (props: any) => (
     <div data-testid="mock-tabla-preguntas">
       <span>Tabla de Estudiantes ({props.estudiantes?.length})</span>
+      <div data-testid="estudiantes-ordenados">
+        {props.estudiantes?.map((e: any) => `${e.nombres}:${e.puntaje}`).join(',')}
+      </div>
     </div>
   ),
 }));
@@ -337,5 +350,37 @@ describe('Reportes Page (Docentes)', () => {
     expect(screen.getByRole('tab', { name: /Tendencias y Cobertura/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Comparativa/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Análisis por Ítem/i })).toBeInTheDocument();
+  });
+
+  it('ordena estudiantes por puntaje correctamente con el dropdown de Ordenar', async () => {
+    render(<Reportes />);
+
+    expect(screen.getByTestId('mock-tabla-preguntas')).toBeInTheDocument();
+
+    // Abrir dropdown de Ordenar
+    const btnOrdenar = screen.getByRole('button', { name: /Ordenar: Ordenar por/i });
+    fireEvent.click(btnOrdenar);
+
+    // Seleccionar "Menor puntaje" (ascendente)
+    const optMenor = screen.getByRole('option', { name: /Menor puntaje/i });
+    fireEvent.click(optMenor);
+
+    // Maria (puntaje menor 12) debe aparecer antes que Juan (18)
+    await waitFor(() => {
+      const texto = screen.getByTestId('estudiantes-ordenados').textContent;
+      expect(texto?.indexOf('Maria')).toBeLessThan(texto?.indexOf('Juan') ?? -1);
+    });
+
+    // Cambiar a "Mayor puntaje" (descendente)
+    const btnMayor = screen.getByRole('button', { name: /Ordenar: Menor puntaje/i });
+    fireEvent.click(btnMayor);
+    const optMayor = screen.getByRole('option', { name: /Mayor puntaje/i });
+    fireEvent.click(optMayor);
+
+    // Juan (puntaje mayor 18) debe aparecer antes que Maria (12)
+    await waitFor(() => {
+      const texto = screen.getByTestId('estudiantes-ordenados').textContent;
+      expect(texto?.indexOf('Juan')).toBeLessThan(texto?.indexOf('Maria') ?? -1);
+    });
   });
 });

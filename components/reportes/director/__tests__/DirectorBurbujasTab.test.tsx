@@ -1,8 +1,9 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import DirectorBurbujasTab from '../DirectorBurbujasTab';
+import { render, screen, fireEvent } from '@testing-library/react';
+import DirectorBurbujasTab, { getBubbleClass } from '../DirectorBurbujasTab';
 import { DirectorMetricasResumen } from '../types';
 import { formatGradoAbbr, formatSeccionDisplay } from '../useMetricasDirector';
+import { DEFAULT_BAREMO_DECISIONES } from '@/components/modals/ConfigurarBaremoModal';
 
 describe('DirectorBurbujasTab Component', () => {
   const mockMetricas: DirectorMetricasResumen = {
@@ -107,6 +108,17 @@ describe('DirectorBurbujasTab Component', () => {
     expect(screen.getByText('CONSOLIDADO UGEL PUNO')).toBeInTheDocument();
     expect(screen.getByText('P01')).toBeInTheDocument();
     expect(screen.getAllByText('67%').length).toBeGreaterThan(0);
+  });
+
+  it('permite alternar entre vista de Círculos y vista de Píldoras Heatmap', () => {
+    render(<DirectorBurbujasTab {...defaultProps} isUgelView={true} />);
+    const pildorasBtn = screen.getByRole('button', { name: /píldoras/i });
+    expect(pildorasBtn).toBeInTheDocument();
+
+    fireEvent.click(pildorasBtn);
+
+    const circulosBtn = screen.getByRole('button', { name: /círculos/i });
+    expect(circulosBtn).toBeInTheDocument();
   });
 
   it('renderiza secciones y fila benchmark regional cuando se pasa benchmarkRow (drill-down IE)', () => {
@@ -376,5 +388,53 @@ describe('DirectorBurbujasTab Component', () => {
       expect(formatSeccionDisplay('Sección 2', 6)).toBe('6to-B');
     });
   });
+
+  describe('Integración con Baremo en Matriz de Burbujas', () => {
+    it('clasifica burbujas según los umbrales del baremo por defecto (60, 50, 40)', () => {
+      const baremo = DEFAULT_BAREMO_DECISIONES; // { critico: 60, alto: 50, medio: 40 }
+      // Zona Bajo (<40%)
+      expect(getBubbleClass(10, baremo)).toContain('bubbleSize1');
+      expect(getBubbleClass(25, baremo)).toContain('bubbleSize2');
+      expect(getBubbleClass(35, baremo)).toContain('bubbleSize3');
+      // Zona Medio (40%-49%)
+      expect(getBubbleClass(40, baremo)).toContain('bubbleSize4');
+      expect(getBubbleClass(48, baremo)).toContain('bubbleSize4');
+      // Zona Alto (50%-59%)
+      expect(getBubbleClass(50, baremo)).toContain('bubbleSize5');
+      expect(getBubbleClass(58, baremo)).toContain('bubbleSize5');
+      // Zona Crítico (>=60%)
+      expect(getBubbleClass(60, baremo)).toContain('bubbleSize6');
+      expect(getBubbleClass(75, baremo)).toContain('bubbleSize7');
+    });
+
+    it('recalibra las clases de burbujas dinámicamente con un baremo personalizado', () => {
+      const customBaremo = { critico: 70, alto: 55, medio: 30 };
+      // Rezago 32%: en baremo custom (medio=30, alto=55) es Medio (bubbleSize4), no Bajo
+      expect(getBubbleClass(32, customBaremo)).toContain('bubbleSize4');
+      // Rezago 60%: en baremo custom (critico=70, alto=55) es Alto (bubbleSize5), no Crítico
+      expect(getBubbleClass(60, customBaremo)).toContain('bubbleSize5');
+      // Rezago 72%: en baremo custom (critico=70) es Crítico (bubbleSize6)
+      expect(getBubbleClass(72, customBaremo)).toContain('bubbleSize6');
+    });
+
+    it('renderiza la leyenda con los umbrales dinámicos del baremo activo', () => {
+      render(
+        <DirectorBurbujasTab
+          {...defaultProps}
+          metricas={{
+            ...mockMetricas,
+            activeBaremo: { critico: 65, alto: 45, medio: 25 },
+          }}
+        />
+      );
+
+      expect(screen.getByText('Baremo (Rezago):')).toBeInTheDocument();
+      expect(screen.getByText('Bajo (<25%)')).toBeInTheDocument();
+      expect(screen.getByText('Medio (25–44%)')).toBeInTheDocument();
+      expect(screen.getByText('Alto (45–64%)')).toBeInTheDocument();
+      expect(screen.getByText('Crítico (≥65%)')).toBeInTheDocument();
+    });
+  });
 });
+
 

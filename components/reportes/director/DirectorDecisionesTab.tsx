@@ -690,56 +690,101 @@ export const DirectorDecisionesTab: React.FC<DirectorDecisionesTabProps> = ({
                               </span>
                             </div>
 
-                            <div className={styles.detailGrid}>
-                              {Object.values(sec.preguntas).map((qStat) => {
-                                const qAlerta = getAlertaInfo(qStat.prevPct, activeBaremo);
-                                const qActuacion = getActuacionDocente(qStat.order);
-                                const code = formatQuestionCode(qStat.order);
+                            {Object.keys(sec.preguntas).length === 0 ? (
+                              <div className="py-6 text-center text-xs text-slate-500">
+                                No se encontraron preguntas registradas para esta sección.
+                              </div>
+                            ) : (
+                              <div className={styles.detailTableWrapper}>
+                                <table className={styles.detailTable}>
+                                  <thead>
+                                    <tr>
+                                      <th style={{ width: '80px' }}>Ítem</th>
+                                      <th style={{ minWidth: '220px', textAlign: 'center' }}>% en Previo al Inicio (Rezago)</th>
+                                      <th style={{ minWidth: '180px', textAlign: 'center' }}>Estudiantes Afectados</th>
+                                      <th style={{ width: '130px', textAlign: 'center' }}>Nivel de Alerta</th>
+                                      <th style={{ minWidth: '260px' }}>Acción Recomendada</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {Object.values(sec.preguntas)
+                                      .sort((a, b) => {
+                                        if (b.prevPct !== a.prevPct) {
+                                          return b.prevPct - a.prevPct;
+                                        }
+                                        if (b.falladas !== a.falladas) {
+                                          return b.falladas - a.falladas;
+                                        }
+                                        return a.order - b.order;
+                                      })
+                                      .map((qStat) => {
+                                        const qAlerta = getAlertaInfo(qStat.prevPct, activeBaremo);
+                                        const qActuacion = getActuacionDocente(qStat.order);
+                                        const code = formatQuestionCode(qStat.order);
 
-                                return (
-                                  <div key={qStat.order} className={styles.detailCard}>
-                                    <div className={styles.detailCardHeader}>
-                                      <span
-                                        className={styles.detailCardTitle}
-                                        onClick={(e) => {
-                                          const rect = e.currentTarget.getBoundingClientRect();
-                                          onOpenQuestionDetail(qStat.order, {
-                                            x: Math.round(rect.left + rect.width / 2),
-                                            y: Math.round(rect.bottom + 8),
-                                          });
-                                        }}
-                                      >
-                                        {code}
-                                      </span>
-                                      <span
-                                        className={styles.detailCardPct}
-                                        style={{ color: qAlerta.color }}
-                                      >
-                                        {qStat.prevPct}% rezago
-                                      </span>
-                                    </div>
-
-                                    <div className={styles.detailProgressBar}>
-                                      <div
-                                        className={styles.detailProgressFill}
-                                        style={{
-                                          width: `${qStat.prevPct}%`,
-                                          backgroundColor: qAlerta.color,
-                                        }}
-                                      />
-                                    </div>
-
-                                    <div className={styles.detailCardAction}>
-                                      {qActuacion ? (
-                                        <span>{qActuacion}</span>
-                                      ) : (
-                                        <span>{qAlerta.accion}</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
+                                        return (
+                                          <tr key={qStat.order}>
+                                            <td>
+                                              <button
+                                                type="button"
+                                                className={styles.detailItemBadge}
+                                                onClick={(e) => {
+                                                  const rect = e.currentTarget.getBoundingClientRect();
+                                                  onOpenQuestionDetail(qStat.order, {
+                                                    x: Math.round(rect.left + rect.width / 2),
+                                                    y: Math.round(rect.bottom + 8),
+                                                  });
+                                                }}
+                                                title={qActuacion ? `${code}: ${qActuacion}` : `Ver detalle del ítem ${code}`}
+                                              >
+                                                {code}
+                                              </button>
+                                            </td>
+                                            <td style={{ textAlign: 'center' }}>
+                                              <div className={styles.detailProgressCell}>
+                                                <div className={styles.detailProgressTrack}>
+                                                  <div
+                                                    className={styles.detailProgressFillBar}
+                                                    style={{
+                                                      width: `${Math.min(100, Math.max(0, qStat.prevPct))}%`,
+                                                      backgroundColor: qAlerta.color,
+                                                    }}
+                                                  />
+                                                </div>
+                                                <span
+                                                  className={styles.detailPctText}
+                                                  style={{ color: qAlerta.color }}
+                                                >
+                                                  {qStat.prevPct}%
+                                                </span>
+                                              </div>
+                                            </td>
+                                            <td className={styles.detailAfectadosText} style={{ textAlign: 'center' }}>
+                                              {qStat.falladas} de {qStat.totalEstudiantes}
+                                            </td>
+                                            <td style={{ textAlign: 'center' }}>
+                                              <span
+                                                className={styles.detailAlertaPill}
+                                                style={{ backgroundColor: qAlerta.color }}
+                                              >
+                                                {qAlerta.label}
+                                              </span>
+                                            </td>
+                                            <td>
+                                              <span
+                                                className={styles.detailAccionChip}
+                                                title={qActuacion || undefined}
+                                              >
+                                                {qAlerta.accion}
+                                              </span>
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>

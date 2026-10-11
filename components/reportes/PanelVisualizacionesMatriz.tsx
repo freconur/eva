@@ -372,15 +372,19 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
     return styles.nivel6;
   };
 
-  // Helper tamaño Burbuja
+  // Helper tamaño Burbuja calibrado con el Baremo
   const getBubbleClass = (pct: number) => {
-    if (pct <= 15) return styles.bubbleSize1;
-    if (pct <= 25) return styles.bubbleSize2;
-    if (pct <= 35) return styles.bubbleSize3;
-    if (pct <= 45) return styles.bubbleSize4;
-    if (pct <= 55) return styles.bubbleSize5;
-    if (pct <= 65) return styles.bubbleSize6;
-    return styles.bubbleSize7;
+    const criticoExtreme = activeBaremo.critico + Math.max(5, Math.round((100 - activeBaremo.critico) / 4));
+    if (pct >= criticoExtreme) return styles.bubbleSize7;
+    if (pct >= activeBaremo.critico) return styles.bubbleSize6;
+    if (pct >= activeBaremo.alto) return styles.bubbleSize5;
+    if (pct >= activeBaremo.medio) return styles.bubbleSize4;
+
+    const step1 = Math.round(activeBaremo.medio * 0.38);
+    const step2 = Math.round(activeBaremo.medio * 0.72);
+    if (pct <= step1) return styles.bubbleSize1;
+    if (pct <= step2) return styles.bubbleSize2;
+    return styles.bubbleSize3;
   };
 
   // Extraer estadística de una pregunta y UGEL específica
@@ -1378,32 +1382,39 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
                 </div>
               </div>
 
-              {/* Leyenda Burbujas */}
+              {/* Leyenda Burbujas calibrada con el Baremo */}
               <div className={styles.legend}>
-                <span className="font-semibold text-indigo-900">Tamaño y Color de Burbuja:</span>
+                <span className="font-semibold text-indigo-900">Baremo (Rezago):</span>
                 <div className={styles.legendItem}>
                   <div
                     className={styles.legendColor}
-                    style={{ background: '#2e7d32', width: 10, height: 10, borderRadius: '50%' }}
+                    style={{ background: '#2e7d32', width: 11, height: 11, borderRadius: '50%' }}
                   />
-                  ≤15%
+                  Bajo (&lt;{activeBaremo.medio}%)
                 </div>
                 <div className={styles.legendItem}>
                   <div
                     className={styles.legendColor}
-                    style={{ background: '#ffcc80', width: 14, height: 14, borderRadius: '50%' }}
+                    style={{ background: '#f9a825', width: 13, height: 13, borderRadius: '50%' }}
                   />
-                  46-55%
+                  Medio ({activeBaremo.medio}–{activeBaremo.alto - 1}%)
                 </div>
                 <div className={styles.legendItem}>
                   <div
                     className={styles.legendColor}
-                    style={{ background: '#e53935', width: 18, height: 18, borderRadius: '50%' }}
+                    style={{ background: '#ff8a65', width: 15, height: 15, borderRadius: '50%' }}
                   />
-                  &gt;65%
+                  Alto ({activeBaremo.alto}–{activeBaremo.critico - 1}%)
+                </div>
+                <div className={styles.legendItem}>
+                  <div
+                    className={styles.legendColor}
+                    style={{ background: '#e53935', width: 17, height: 17, borderRadius: '50%' }}
+                  />
+                  Crítico (≥{activeBaremo.critico}%)
                 </div>
                 <span className={styles.legendNotice}>
-                  🫧 Círculos más grandes representan mayor rezago de estudiantes en esa pregunta
+                  🫧 Diámetro y color calibrados con el baremo: mayor tamaño representa mayor rezago pedagógico
                 </span>
                 <button
                   type="button"
@@ -2255,6 +2266,7 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
       <GuiaBurbujasModal
         isOpen={isBurbujasModalOpen}
         onClose={() => setIsBurbujasModalOpen(false)}
+        baremo={activeBaremo}
       />
 
       {/* Modal interactivo de Guía e Interpretación del Panel de Decisiones */}

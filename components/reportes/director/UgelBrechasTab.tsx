@@ -362,21 +362,22 @@ export const UgelBrechasTab: React.FC<UgelBrechasTabProps> = ({
 }) => {
   const { categorias: contextCategorias } = useGlobalContext();
 
-  const isEspecialistaUgel = currentUserData?.rol === 1;
+  const userRegion = currentUserData?.region ?? (currentUserData as any)?.perfil?.region;
+  const isEspecialistaUgel = Number(currentUserData?.rol ?? (currentUserData as any)?.perfil?.rol) === 1;
 
   // 1. UGEL seleccionada: Si es especialista, fijada estrictamente a su región; si es admin, seleccionable
   const [selectedUgelId, setSelectedUgelId] = useState<number>(() => {
-    if (currentUserData?.region !== undefined && currentUserData?.region !== null) {
-      return Number(currentUserData.region);
+    if (userRegion !== undefined && userRegion !== null) {
+      return Number(userRegion);
     }
     return 1; // Default Puno
   });
 
   useEffect(() => {
-    if (isEspecialistaUgel && currentUserData?.region) {
-      setSelectedUgelId(Number(currentUserData.region));
+    if (isEspecialistaUgel && userRegion) {
+      setSelectedUgelId(Number(userRegion));
     }
-  }, [isEspecialistaUgel, currentUserData?.region]);
+  }, [isEspecialistaUgel, userRegion]);
 
   const currentUgelName = useMemo(() => {
     return regionTexto(selectedUgelId) || `UGEL ${selectedUgelId}`;
@@ -1324,6 +1325,7 @@ export const UgelBrechasTab: React.FC<UgelBrechasTabProps> = ({
                     isUgelView={true}
                     benchmarkRow={selectedInstitucion !== 'all' ? metricasUgel.totalIe : null}
                     headerLabel={selectedInstitucion !== 'all' ? selectedSchoolInfo?.name : undefined}
+                    baremo={baremo}
                   />
                 </div>
               )
@@ -1345,6 +1347,7 @@ export const UgelBrechasTab: React.FC<UgelBrechasTabProps> = ({
       <GuiaBurbujasModal
         isOpen={isBurbujasModalOpen}
         onClose={() => setIsBurbujasModalOpen(false)}
+        baremo={baremo}
       />
 
       <GuiaDecisionesModal

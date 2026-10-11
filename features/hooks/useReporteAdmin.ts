@@ -101,11 +101,31 @@ export const useReporteAdmin = () => {
   const drillDownRef = useRef<HTMLDivElement>(null);
   const directorsDetailRef = useRef<HTMLDivElement>(null);
 
+  // --- ROLES Y PERMISOS: ADMINISTRADOR VS ESPECIALISTA UGEL ---
+  const [isAuditing, setIsAuditing] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const audited = sessionStorage.getItem('audited_user');
+      const realAdmin = sessionStorage.getItem('real_admin_user');
+      setIsAuditing(Boolean(audited || realAdmin));
+    }
+  }, [currentUserData]);
+
+  const isAdmin = Boolean(
+    isAuditing ||
+    currentUserData?.rol === 4 ||
+    (currentUserData as any)?.perfil?.rol === 4
+  );
+
+  const userRegion = currentUserData?.region ?? (currentUserData as any)?.perfil?.region;
+  const isEspecialistaUgel = !isAdmin && Number(currentUserData?.rol ?? (currentUserData as any)?.perfil?.rol) === 1 && Boolean(userRegion);
+
   // --- SINCRONIZACIÓN DE REGION DE ESPECIALISTA UGEL ---
   useEffect(() => {
-    if (currentUserData?.rol === 1 && currentUserData.region) {
+    if (isEspecialistaUgel && userRegion) {
+      const regionStr = String(userRegion);
       setFiltros(prev => {
-        const regionStr = String(currentUserData.region);
         if (prev.region !== regionStr) {
           return {
             ...prev,
@@ -114,8 +134,9 @@ export const useReporteAdmin = () => {
         }
         return prev;
       });
+      setSelectedRegionDirector(prev => (prev !== regionStr ? regionStr : prev));
     }
-  }, [currentUserData]);
+  }, [currentUserData, isEspecialistaUgel, userRegion]);
 
   // --- SINCRONIZACIÓN DE DISTRITOS SEGÚN LA REGION ---
   useEffect(() => {
@@ -128,7 +149,7 @@ export const useReporteAdmin = () => {
   }, [filtros.region]);
 
   const handleChangeFiltros = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (e.target.name === 'region' && currentUserData?.rol === 1) {
+    if (e.target.name === 'region' && !isAdmin) {
       return; // Bloquear cambio de región para especialista UGEL
     }
     setFiltros(prev => ({
@@ -1185,11 +1206,13 @@ export const useReporteAdmin = () => {
     const idEval = route.query.idEvaluacion;
     if (!idEval || monthSelected === undefined || !yearSelected) return;
 
+    // Resetear dataReportePreguntas al cambiar período para permitir carga bajo demanda (lazy loading)
+    setDataReportePreguntas([]);
+
     const loadAllConsolidados = async () => {
       await Promise.all([
         loadConsolidado(),
         fetchBarGraphicsData(),
-        fetchReportePreguntas(),
         fetchMatrizUgelData()
       ]);
     };
@@ -1214,12 +1237,15 @@ export const useReporteAdmin = () => {
 
   const handleRestablecerFiltros = () => {
     const defaultFiltros = {
-      region: currentUserData?.rol === 1 ? String(currentUserData.region) : '',
+      region: isEspecialistaUgel && userRegion ? String(userRegion) : '',
       distrito: '',
       genero: '',
       area: '',
     };
     setFiltros(defaultFiltros);
+    if (isEspecialistaUgel && userRegion) {
+      setSelectedRegionDirector(String(userRegion));
+    }
     const isRealtime = (evaluacion as any)?.realtimeEnabled === true;
     if (isRealtime) {
       fetchReportePreguntas(defaultFiltros);
@@ -1342,9 +1368,25 @@ export const useReporteAdmin = () => {
     }
   };
 
-  // --- MEMOS CALCULADOS ---
+  // --- MEMOS CALCULADOS (FILTRADOS POR UGEL PARA ESPECIALISTAS) ---
+  const effectiveDirectoresData = useMemo(() => {
+    if (!dataDirectoresBar || !Array.isArray(dataDirectoresBar)) return [];
+    if (isEspecialistaUgel && userRegion) {
+      return dataDirectoresBar.filter(d => String(d.region) === String(userRegion));
+    }
+    return dataDirectoresBar;
+  }, [dataDirectoresBar, isEspecialistaUgel, userRegion]);
+
+  const effectiveDocentesData = useMemo(() => {
+    if (!fullDocentesData || !Array.isArray(fullDocentesData)) return null;
+    if (isEspecialistaUgel && userRegion) {
+      return fullDocentesData.filter(d => String(d.region) === String(userRegion));
+    }
+    return fullDocentesData;
+  }, [fullDocentesData, isEspecialistaUgel, userRegion]);
+
   const filteredDocentesByRange = useMemo(() => {
-    if (!fullDocentesData || !selectedRange) return [];
+    if (!effectiveDocentesData || !selectedRange) return [];
 
     const match = selectedRange.match(/(\d+)-(\d+)%/);
     if (!match) return [];
@@ -1352,7 +1394,7 @@ export const useReporteAdmin = () => {
     const min = parseFloat(match[1]);
     const max = parseFloat(match[2]);
 
-    return fullDocentesData.filter((doc: any) => {
+    return effectiveDocentesData.filter((doc: any) => {
       const satNivel = doc.niveles?.find((n: any) => n.nivel?.toLowerCase().includes('satisfactorio'));
       const satCount = satNivel ? satNivel.cantidadDeEstudiantes : 0;
       const totalEst = doc.totalEstudiantes || 0;
@@ -1360,10 +1402,10 @@ export const useReporteAdmin = () => {
 
       return percentage >= min && percentage <= max;
     });
-  }, [fullDocentesData, selectedRange]);
+  }, [effectiveDocentesData, selectedRange]);
 
   const computedDocentesBuckets = useMemo(() => {
-    if (!fullDocentesData || fullDocentesData.length === 0) return [];
+    if (!effectiveDocentesData || effectiveDocentesData.length === 0) return [];
     
     const ranges = [
       { label: '0-20%', min: 0, max: 20, color: '#ef4444' },
@@ -1375,7 +1417,7 @@ export const useReporteAdmin = () => {
 
     const counts = ranges.map(r => ({ rango: r.label, cantidad: 0, color: r.color }));
 
-    fullDocentesData.forEach(doc => {
+    effectiveDocentesData.forEach(doc => {
       const satNivel = doc.niveles?.find((n: any) => n.nivel?.toLowerCase().includes('satisfactorio'));
       const satCount = satNivel ? satNivel.cantidadDeEstudiantes : 0;
       const totalEst = doc.totalEstudiantes || 0;
@@ -1388,22 +1430,23 @@ export const useReporteAdmin = () => {
     });
 
     return counts;
-  }, [fullDocentesData]);
+  }, [effectiveDocentesData]);
 
   const filteredDirectoresByStatus = useMemo(() => {
-    if (!dataDirectoresBar) return [];
+    if (!effectiveDirectoresData) return [];
     
-    let filtered = dataDirectoresBar;
+    let filtered = effectiveDirectoresData;
     
+    const effectiveRegion = isEspecialistaUgel && userRegion ? String(userRegion) : selectedRegionDirector;
+    if (effectiveRegion !== 'all') {
+      filtered = filtered.filter(d => String(d.region) === String(effectiveRegion));
+    }
+
     if (selectedDirectorStatus && selectedDirectorStatus !== 'all') {
-      filtered = dataDirectoresBar.filter(d => {
+      filtered = filtered.filter(d => {
         const isParticipante = !!d.participo || (d.totalEstudiantes > 0);
         return selectedDirectorStatus === 'participo' ? isParticipante : !isParticipante;
       });
-    }
-
-    if (selectedRegionDirector !== 'all') {
-      filtered = filtered.filter(d => String(d.region) === selectedRegionDirector);
     }
 
     if (selectedNivelDirector !== 'all') {
@@ -1424,14 +1467,15 @@ export const useReporteAdmin = () => {
       d.apellidos?.toLowerCase().includes(term) ||
       d.institucion?.toLowerCase().includes(term)
     );
-  }, [dataDirectoresBar, selectedDirectorStatus, searchTermDirector, selectedRegionDirector, selectedNivelDirector]);
+  }, [effectiveDirectoresData, selectedDirectorStatus, searchTermDirector, selectedRegionDirector, selectedNivelDirector, isEspecialistaUgel, userRegion]);
 
   const directoresStats = useMemo(() => {
-    if (!dataDirectoresBar) return { participo: 0, no_participo: 0, total: 0 };
+    if (!effectiveDirectoresData) return { participo: 0, no_participo: 0, total: 0 };
     
-    const baseList = selectedRegionDirector === 'all' 
-      ? dataDirectoresBar 
-      : dataDirectoresBar.filter(d => String(d.region) === selectedRegionDirector);
+    const effectiveRegion = isEspecialistaUgel && userRegion ? String(userRegion) : selectedRegionDirector;
+    const baseList = effectiveRegion === 'all' 
+      ? effectiveDirectoresData 
+      : effectiveDirectoresData.filter(d => String(d.region) === String(effectiveRegion));
 
     const participoCount = baseList.filter(d => !!d.participo || (d.totalEstudiantes > 0)).length;
     
@@ -1440,21 +1484,28 @@ export const useReporteAdmin = () => {
       no_participo: baseList.length - participoCount,
       total: baseList.length
     };
-  }, [dataDirectoresBar, selectedRegionDirector]);
+  }, [effectiveDirectoresData, selectedRegionDirector, isEspecialistaUgel, userRegion]);
+
+  const totalEstudiantesPieChart = useMemo(() => {
+    const effectiveRegion = (!isAdmin && userRegion) ? String(userRegion) : filtros.region;
+    let sourceData = dataGraficoTendenciaNiveles;
+    if (effectiveRegion) {
+      sourceData = dataGraficoPieChart || [];
+    } else if (Array.isArray(dataGraficoPieChart) && dataGraficoPieChart.length > 0) {
+      sourceData = dataGraficoPieChart;
+    }
+
+    if (!sourceData || !Array.isArray(sourceData)) return 0;
+
+    const datosMes = sourceData.find((item: any) => item.mes === monthSelected);
+    if (!datosMes || !datosMes.niveles) return 0;
+
+    return datosMes.niveles.reduce((acc: number, n: any) => acc + (Number(n.cantidadDeEstudiantes) || 0), 0);
+  }, [filtros.region, dataGraficoPieChart, dataGraficoTendenciaNiveles, monthSelected, isAdmin, userRegion]);
 
   const hasPieChartData = useMemo(() => {
-    const sourceData = (Array.isArray(dataGraficoPieChart) && dataGraficoPieChart.length > 0) 
-      ? dataGraficoPieChart 
-      : dataGraficoTendenciaNiveles;
-
-    if (!sourceData || !Array.isArray(sourceData)) return false;
-    
-    const datosMes = sourceData.find((item: any) => item.mes === monthSelected);
-    if (!datosMes || !datosMes.niveles) return false;
-
-    const total = datosMes.niveles.reduce((acc: number, n: any) => acc + (n.cantidadDeEstudiantes || 0), 0);
-    return total > 0;
-  }, [dataGraficoPieChart, dataGraficoTendenciaNiveles, monthSelected]);
+    return totalEstudiantesPieChart > 0;
+  }, [totalEstudiantesPieChart]);
 
   // --- EXPORTAR EXCEL ---
   const handleExportEstudiantesToExcel = async () => {
@@ -1536,6 +1587,14 @@ export const useReporteAdmin = () => {
     }
   };
 
+  const handleSetSelectedRegionDirector = (region: string) => {
+    if (!isAdmin && userRegion) {
+      setSelectedRegionDirector(String(userRegion));
+      return;
+    }
+    setSelectedRegionDirector(region);
+  };
+
   return {
     filtros,
     setFiltros,
@@ -1547,7 +1606,7 @@ export const useReporteAdmin = () => {
     fetchRealtimeDirectoresDetalle,
     rangoMes,
     setRangoMes,
-    dataDirectoresBar,
+    dataDirectoresBar: effectiveDirectoresData,
     loadingDirectoresBar,
     chartColumns,
     setChartColumns,
@@ -1555,7 +1614,7 @@ export const useReporteAdmin = () => {
     setQuestionColumns,
     dataReportePreguntas,
     loadingReportePreguntas,
-    fullDocentesData,
+    fullDocentesData: effectiveDocentesData,
     selectedRange,
     setSelectedRange,
     selectedDirectorStatus,
@@ -1563,7 +1622,10 @@ export const useReporteAdmin = () => {
     searchTermDirector,
     setSearchTermDirector,
     selectedRegionDirector,
-    setSelectedRegionDirector,
+    setSelectedRegionDirector: handleSetSelectedRegionDirector,
+    isAdmin,
+    isEspecialistaUgel,
+    userRegion,
     selectedNivelDirector,
     setSelectedNivelDirector,
     pageSizeDirector,
@@ -1594,6 +1656,7 @@ export const useReporteAdmin = () => {
     filteredDirectoresByStatus,
     directoresStats,
     hasPieChartData,
+    totalEstudiantesPieChart,
     drillDownRef,
     directorsDetailRef,
     loadingCrearEstudiantes,

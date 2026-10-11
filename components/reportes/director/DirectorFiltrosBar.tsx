@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { RiSettings4Line, RiArrowDownSLine } from 'react-icons/ri';
-import { gradosDeColegio, genero } from '@/fuctions/regiones';
+import { gradosDeColegio, genero, convertGrade } from '@/fuctions/regiones';
 import { Evaluaciones } from '@/features/types/types';
 import SegmentedFilterBar, {
   FilterItem,
@@ -78,14 +78,42 @@ export const DirectorFiltrosBar: React.FC<DirectorFiltrosBarProps> = ({
       })),
     ];
 
-    // 2. Grado
-    const gradoOptions = [
-      { value: '', label: 'Todos los grados' },
-      ...gradosDeColegio.map((g) => ({
-        value: String(g.id),
-        label: g.name,
-      })),
-    ];
+    // 2. Grado: Si la evaluación tiene grado asignado, restringir exclusivamente a ese grado
+    const gradoEvaluacion = evaluacion?.grado;
+    const tieneGradoEvaluacion =
+      gradoEvaluacion !== undefined &&
+      gradoEvaluacion !== null &&
+      String(gradoEvaluacion).trim() !== '';
+
+    let gradoOptions;
+    if (tieneGradoEvaluacion) {
+      const gItem = gradosDeColegio.find(
+        (g) => Number(g.id) === Number(gradoEvaluacion)
+      );
+      const gLabel =
+        gItem?.name ||
+        convertGrade(String(gradoEvaluacion)) ||
+        `Grado ${gradoEvaluacion}`;
+
+      gradoOptions = [
+        {
+          value: String(gradoEvaluacion),
+          label: gLabel,
+        },
+      ];
+    } else {
+      gradoOptions = [
+        { value: '', label: 'Todos los grados' },
+        ...gradosDeColegio.map((g) => ({
+          value: String(g.id),
+          label: g.name,
+        })),
+      ];
+    }
+
+    const effectiveGrado = tieneGradoEvaluacion
+      ? String(gradoEvaluacion)
+      : filtros.grado;
 
     // 3. Sección
     const seccionOptions = [
@@ -138,7 +166,7 @@ export const DirectorFiltrosBar: React.FC<DirectorFiltrosBarProps> = ({
       {
         id: 'grado',
         label: 'Grado',
-        value: filtros.grado,
+        value: effectiveGrado,
         disabled: isDirectorRol,
         onChange: (val: string) => handleFilterChange('grado', val),
         options: gradoOptions,
@@ -176,6 +204,7 @@ export const DirectorFiltrosBar: React.FC<DirectorFiltrosBarProps> = ({
     filtros.genero,
     filtros.orden,
     evaluacion?.nivelYPuntaje,
+    evaluacion?.grado,
     isDirectorRol,
     availableSections,
   ]);

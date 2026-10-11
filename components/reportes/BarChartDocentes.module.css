@@ -17,27 +17,33 @@
 }
 
 .header {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .titleWrapper {
-    border-left: 4px solid #84cc16;
-    padding-left: 16px;
+    border-left: 4px solid #10b981;
+    padding-left: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    width: 100%;
 }
 
 .title {
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: 1.15rem;
+    font-weight: 700;
     color: #0f172a;
-    margin: 0 0 4px 0;
-    letter-spacing: -0.5px;
+    margin: 0;
+    letter-spacing: -0.02em;
 }
 
 .subtitle {
-    font-size: 0.875rem;
+    font-size: 0.825rem;
     color: #64748b;
     margin: 0;
 }
@@ -289,31 +295,85 @@
     border: 2px dashed #e2e8f0;
 }
 
-/* Fullscreen expand button */
+/* Fullscreen expand button (solo icono accesible) */
 .fullscreenButton {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #84cc16 0%, #4d7c0f 100%);
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
   color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(132, 204, 22, 0.25);
-  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .fullscreenButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(132, 204, 22, 0.35);
-  background: linear-gradient(135deg, #a3e635 0%, #3f6212 100%);
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.32);
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
 }
 
 .fullscreenButton:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
+}
+
+.fullscreenButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4);
+}
+
+/* Pie de tarjeta en vista normal */
+.normalCardFooter {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.normalCardHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.775rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.normalCardCta {
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: #059669;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.normalCardCta:hover {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.normalCardCta:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
 }
 
 /* Slide-over Drawer styles */

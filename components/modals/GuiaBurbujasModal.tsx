@@ -9,17 +9,28 @@ import {
   MdLightbulb,
   MdCheckCircle,
 } from 'react-icons/md';
+import {
+  BaremoDecisiones,
+  DEFAULT_BAREMO_DECISIONES,
+} from './ConfigurarBaremoModal';
 import styles from './GuiaBurbujasModal.module.css';
 
 interface GuiaBurbujasModalProps {
   isOpen: boolean;
   onClose: () => void;
+  baremo?: BaremoDecisiones;
 }
 
 export const GuiaBurbujasModal: React.FC<GuiaBurbujasModalProps> = ({
   isOpen,
   onClose,
+  baremo,
 }) => {
+  const activeBaremo = baremo || DEFAULT_BAREMO_DECISIONES;
+  const step1 = Math.round(activeBaremo.medio * 0.38);
+  const step2 = Math.round(activeBaremo.medio * 0.72);
+  const criticoExtreme = activeBaremo.critico + Math.max(5, Math.round((100 - activeBaremo.critico) / 4));
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -79,7 +90,7 @@ export const GuiaBurbujasModal: React.FC<GuiaBurbujasModalProps> = ({
                 Interpretación del Gráfico de Burbujas
               </h2>
               <p className={styles.subtitle}>
-                Guía metodológica, doble codificación visual (tamaño y color) y patrones de lectura
+                Guía metodológica, calibración con el Baremo Oficial (Bajo &lt;{activeBaremo.medio}%, Medio {activeBaremo.medio}–{activeBaremo.alto - 1}%, Alto {activeBaremo.alto}–{activeBaremo.critico - 1}%, Crítico ≥{activeBaremo.critico}%) y patrones de lectura
               </p>
             </div>
           </div>
@@ -140,7 +151,7 @@ export const GuiaBurbujasModal: React.FC<GuiaBurbujasModalProps> = ({
           {/* Escala de 7 Niveles Visuales */}
           <section className={styles.section}>
             <h3 className={styles.sectionTitle}>
-              🫧 Escala Visual de Burbujas (7 Niveles Progresivos)
+              🫧 Escala Visual de Burbujas Calibrada con el Baremo (7 Niveles Progresivos)
             </h3>
             <div className={styles.bubbleScaleGrid}>
               {/* Nivel 1 */}
@@ -148,15 +159,15 @@ export const GuiaBurbujasModal: React.FC<GuiaBurbujasModalProps> = ({
                 <div className={styles.bubblePreviewWrapper}>
                   <div
                     className={styles.bubbleSample}
-                    style={{ width: 26, height: 26, background: '#2e7d32', fontSize: '0.6rem' }}
+                    style={{ width: 26, height: 26, background: '#059669', fontSize: '0.6rem' }}
                   >
-                    12%
+                    {Math.min(12, step1)}%
                   </div>
                 </div>
                 <div className={styles.bubbleLabelGroup}>
                   <span className={styles.bubbleCardHeader}>Dominio Alto</span>
-                  <span className={styles.bubbleCardRange}>≤ 15%</span>
-                  <span className={styles.bubbleCardSize}>26 px</span>
+                  <span className={styles.bubbleCardRange}>≤ {step1}%</span>
+                  <span className={styles.bubbleCardSize}>26 px · Zona Bajo</span>
                   <span className={styles.bubbleCardDesc}>Rezago mínimo. La gran mayoría resolvió el ítem.</span>
                 </div>
               </div>
@@ -166,15 +177,15 @@ export const GuiaBurbujasModal: React.FC<GuiaBurbujasModalProps> = ({
                 <div className={styles.bubblePreviewWrapper}>
                   <div
                     className={styles.bubbleSample}
-                    style={{ width: 32, height: 32, background: '#66bb6a', fontSize: '0.62rem' }}
+                    style={{ width: 29, height: 29, background: '#10b981', fontSize: '0.62rem' }}
                   >
-                    21%
+                    {Math.round((step1 + step2) / 2)}%
                   </div>
                 </div>
                 <div className={styles.bubbleLabelGroup}>
                   <span className={styles.bubbleCardHeader}>Buen Dominio</span>
-                  <span className={styles.bubbleCardRange}>16% – 25%</span>
-                  <span className={styles.bubbleCardSize}>32 px</span>
+                  <span className={styles.bubbleCardRange}>{step1 + 1}% – {step2}%</span>
+                  <span className={styles.bubbleCardSize}>29 px · Zona Bajo</span>
                   <span className={styles.bubbleCardDesc}>Nivel de rezago bajo y dentro de lo esperado.</span>
                 </div>
               </div>
@@ -184,16 +195,16 @@ export const GuiaBurbujasModal: React.FC<GuiaBurbujasModalProps> = ({
                 <div className={styles.bubblePreviewWrapper}>
                   <div
                     className={styles.bubbleSample}
-                    style={{ width: 38, height: 38, background: '#aed581', color: '#1e293b', textShadow: 'none', fontSize: '0.65rem' }}
+                    style={{ width: 33, height: 33, background: '#84cc16', color: '#ffffff', fontSize: '0.65rem' }}
                   >
-                    30%
+                    {Math.max(step2 + 1, activeBaremo.medio - 5)}%
                   </div>
                 </div>
                 <div className={styles.bubbleLabelGroup}>
                   <span className={styles.bubbleCardHeader}>Regular</span>
-                  <span className={styles.bubbleCardRange}>26% – 35%</span>
-                  <span className={styles.bubbleCardSize}>38 px</span>
-                  <span className={styles.bubbleCardDesc}>Dificultad moderada. Requiere observación.</span>
+                  <span className={styles.bubbleCardRange}>{step2 + 1}% – {activeBaremo.medio - 1}%</span>
+                  <span className={styles.bubbleCardSize}>33 px · Zona Bajo</span>
+                  <span className={styles.bubbleCardDesc}>Dificultad leve. Próximo al umbral de alerta media.</span>
                 </div>
               </div>
 
@@ -203,23 +214,21 @@ export const GuiaBurbujasModal: React.FC<GuiaBurbujasModalProps> = ({
                   <div
                     className={styles.bubbleSample}
                     style={{
-                      width: 44,
-                      height: 44,
-                      background: '#fff9c4',
-                      border: '1px solid #eab308',
-                      color: '#1e293b',
-                      textShadow: 'none',
+                      width: 37,
+                      height: 37,
+                      background: '#f59e0b',
+                      color: '#ffffff',
                       fontSize: '0.68rem',
                     }}
                   >
-                    42%
+                    {activeBaremo.medio}%
                   </div>
                 </div>
                 <div className={styles.bubbleLabelGroup}>
                   <span className={styles.bubbleCardHeader}>Alerta Media</span>
-                  <span className={styles.bubbleCardRange}>36% – 45%</span>
-                  <span className={styles.bubbleCardSize}>44 px</span>
-                  <span className={styles.bubbleCardDesc}>Rezago preventivo en más de un tercio de alumnos.</span>
+                  <span className={styles.bubbleCardRange}>{activeBaremo.medio}% – {activeBaremo.alto - 1}%</span>
+                  <span className={styles.bubbleCardSize}>37 px · Zona Medio</span>
+                  <span className={styles.bubbleCardDesc}>Rezago preventivo. Requiere monitoreo y observación.</span>
                 </div>
               </div>
 
@@ -228,16 +237,16 @@ export const GuiaBurbujasModal: React.FC<GuiaBurbujasModalProps> = ({
                 <div className={styles.bubblePreviewWrapper}>
                   <div
                     className={styles.bubbleSample}
-                    style={{ width: 50, height: 50, background: '#ffcc80', color: '#1e293b', textShadow: 'none', fontSize: '0.72rem' }}
+                    style={{ width: 41, height: 41, background: '#f97316', color: '#ffffff', fontSize: '0.72rem' }}
                   >
-                    51%
+                    {activeBaremo.alto}%
                   </div>
                 </div>
                 <div className={styles.bubbleLabelGroup}>
                   <span className={styles.bubbleCardHeader}>Dificultad Alta</span>
-                  <span className={styles.bubbleCardRange}>46% – 55%</span>
-                  <span className={styles.bubbleCardSize}>50 px</span>
-                  <span className={styles.bubbleCardDesc}>Cerca de la mitad no logra resolver la capacidad.</span>
+                  <span className={styles.bubbleCardRange}>{activeBaremo.alto}% – {activeBaremo.critico - 1}%</span>
+                  <span className={styles.bubbleCardSize}>41 px · Zona Alto</span>
+                  <span className={styles.bubbleCardDesc}>Proporción alta en rezago. Priorizar práctica adicional.</span>
                 </div>
               </div>
 
@@ -246,16 +255,16 @@ export const GuiaBurbujasModal: React.FC<GuiaBurbujasModalProps> = ({
                 <div className={styles.bubblePreviewWrapper}>
                   <div
                     className={styles.bubbleSample}
-                    style={{ width: 56, height: 56, background: '#ff8a65', fontSize: '0.74rem' }}
+                    style={{ width: 45, height: 45, background: '#f43f5e', fontSize: '0.74rem' }}
                   >
-                    60%
+                    {activeBaremo.critico}%
                   </div>
                 </div>
                 <div className={styles.bubbleLabelGroup}>
                   <span className={styles.bubbleCardHeader}>Severa</span>
-                  <span className={styles.bubbleCardRange}>56% – 65%</span>
-                  <span className={styles.bubbleCardSize}>56 px</span>
-                  <span className={styles.bubbleCardDesc}>Más de la mitad en rezago. Refuerzo prioritario.</span>
+                  <span className={styles.bubbleCardRange}>{activeBaremo.critico}% – {criticoExtreme - 1}%</span>
+                  <span className={styles.bubbleCardSize}>45 px · Zona Crítico</span>
+                  <span className={styles.bubbleCardDesc}>Emergencia pedagógica. Refuerzo e intervención prioritaria.</span>
                 </div>
               </div>
 
@@ -264,16 +273,16 @@ export const GuiaBurbujasModal: React.FC<GuiaBurbujasModalProps> = ({
                 <div className={styles.bubblePreviewWrapper}>
                   <div
                     className={styles.bubbleSample}
-                    style={{ width: 62, height: 62, background: '#e53935', fontSize: '0.76rem' }}
+                    style={{ width: 48, height: 48, background: '#e11d48', fontSize: '0.76rem' }}
                   >
-                    72%
+                    {criticoExtreme}%
                   </div>
                 </div>
                 <div className={styles.bubbleLabelGroup}>
-                  <span className={styles.bubbleCardHeader}>Crítica</span>
-                  <span className={styles.bubbleCardRange}>&gt; 65%</span>
-                  <span className={styles.bubbleCardSize}>62 px</span>
-                  <span className={styles.bubbleCardDesc}>Alerta máxima. Rezago crítico masivo en el ítem.</span>
+                  <span className={styles.bubbleCardHeader}>Crítica Extrema</span>
+                  <span className={styles.bubbleCardRange}>≥ {criticoExtreme}%</span>
+                  <span className={styles.bubbleCardSize}>48 px · Zona Crítico</span>
+                  <span className={styles.bubbleCardDesc}>Alerta máxima. Rezago crítico masivo en la capacidad.</span>
                 </div>
               </div>
             </div>

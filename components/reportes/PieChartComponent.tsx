@@ -43,6 +43,7 @@ interface PieChartComponentProps {
     region: string;
   };
   onFilterChange?: (name: string, value: string) => void;
+  canChangeRegion?: boolean;
 }
 
 const PieChartComponent = ({
@@ -50,7 +51,8 @@ const PieChartComponent = ({
   dataGraficoTendenciaNiveles = [],
   yearSelected = 2025,
   filtros = { region: '' },
-  onFilterChange
+  onFilterChange,
+  canChangeRegion = true
 }: PieChartComponentProps) => {
   const { region: filtroRegion } = filtros;
 
@@ -82,6 +84,7 @@ const PieChartComponent = ({
   }, [datosParaGrafico])
 
   const handleChangeRegion = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!canChangeRegion) return;
     if (onFilterChange) onFilterChange('region', e.target.value);
   }
 
@@ -120,19 +123,23 @@ const PieChartComponent = ({
       <div className={styles.filtersContainer}>
         <div className={styles.filterWrapper}>
           <label className={styles.label}>
-            Filtrar por Ugel
+            {canChangeRegion ? 'Filtrar por Ugel' : 'Ugel (Asignada)'}
           </label>
           <select
             value={filtroRegion}
+            disabled={!canChangeRegion}
             onChange={handleChangeRegion}
             className={styles.select}
+            style={!canChangeRegion ? { cursor: 'not-allowed', opacity: 0.85 } : undefined}
           >
-            <option value="">Todas las Ugel</option>
-            {regiones.map((region) => (
-              <option key={region.id} value={region.id}>
-                {region.region}
-              </option>
-            ))}
+            {canChangeRegion && <option value="">Todas las Ugel</option>}
+            {regiones
+              .filter((region) => canChangeRegion ? true : String(region.id) === String(filtroRegion))
+              .map((region) => (
+                <option key={region.id} value={region.id}>
+                  {region.region}
+                </option>
+              ))}
           </select>
         </div>
       </div>

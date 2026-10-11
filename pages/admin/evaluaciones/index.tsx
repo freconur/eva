@@ -12,7 +12,7 @@ import DuplicateEvaluacionModal from '@/modals/duplicarEvaluacion'
 import BulkDuplicateModal from '@/modals/duplicarEvaluacion/BulkDuplicateModal'
 import Link from 'next/link'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { MdAdd, MdContentCopy, MdAutoAwesome } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 import { toast } from 'react-toastify'
@@ -34,6 +34,8 @@ import EvaluacionesToolbar from '@/components/evaluaciones/EvaluacionesToolbar'
 import SortableRow from '@/components/evaluaciones/SortableRow'
 import EvaluacionesSidebarView from '@/components/evaluaciones/EvaluacionesSidebarView'
 import EvaluacionesSpotlightTour from '@/components/evaluaciones/EvaluacionesSpotlightTour'
+import EvaluacionesHeroBanner from '@/components/evaluaciones/EvaluacionesHeroBanner'
+import useEvaluacionesBannerConfig from '@/components/evaluaciones/useEvaluacionesBannerConfig'
 
 const Evaluaciones = () => {
   const { getEvaluaciones, getEvaluacion, updateEvaluacion, getGrades, getCategories, totalPreguntas, validacionSiEvaluacionTienePreguntasYPuntuacion } = useAgregarEvaluaciones()
@@ -93,6 +95,42 @@ const Evaluaciones = () => {
     tieneAccesoAEvaluacion,
     updateQueryParams,
   } = useEvaluacionesFilters()
+
+  // --- Configuración persistente del Hero Banner (Compacta vs Grande, textos e imagen en Firestore) ---
+  const bannerConfig = useEvaluacionesBannerConfig({ routeKey: 'admin' })
+
+  // --- Métricas para el Hero Banner (respetando año y mes seleccionados) ---
+  const metricasBanner = useMemo(() => {
+    const base = (evaluaciones || []).filter((eva) => {
+      const yr = String(eva.añoDelExamen || currentYear)
+      if (yr !== String(selectedYear)) return false
+
+      if (selectedMonth && selectedMonth !== 'all' && selectedMonth !== '') {
+        if (String(eva.mesDelExamen) !== String(selectedMonth)) return false
+      }
+
+      return true
+    })
+
+    const total = base.length
+    const activas = base.filter((eva) => Boolean(eva.active && !eva.cerrada)).length
+    const cerradas = base.filter((eva) => Boolean(eva.cerrada)).length
+
+    const gradesSet = new Set<number>()
+    base.forEach((eva) => {
+      if (eva.grado !== undefined && eva.grado !== null) {
+        gradesSet.add(Number(eva.grado))
+      }
+    })
+    const totalGrados = gradesSet.size > 0 ? gradesSet.size : (gradosFiltrados?.length || 0)
+
+    return {
+      total,
+      activas,
+      cerradas,
+      totalGrados,
+    }
+  }, [evaluaciones, selectedYear, selectedMonth, currentYear, gradosFiltrados])
 
   // --- Modal & editing states ---
   const [showDelete, setShowDelete] = useState<boolean>(false)
@@ -459,33 +497,61 @@ const Evaluaciones = () => {
         </div>,
         document.getElementById('portal-modal') || document.body
       )}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '2rem 2rem 0 2rem' }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>Seguimiento y retroalimentación al desempeño del estudiante</h1>
+      <div className="min-h-screen bg-slate-50/50">
+        {/* Hero Banner Ejecutivo Institucional Modular */}
+        <div className="px-3 sm:px-5 lg:px-8 pt-6 pb-2 w-full">
+          <EvaluacionesHeroBanner
+            title="GESTIÓN DE EVALUACIONES"
+            subtitle="Seguimiento y retroalimentación al desempeño del estudiante"
+            colegio={currentUserData?.institucion || currentUserData?.ugel || 'UGEL'}
+            badgeTema="Administración"
+            selectedYear={selectedYear ? Number(selectedYear) : Number(currentYear)}
+            selectedMonth={selectedMonth}
+            totalEvaluaciones={metricasBanner.total}
+            totalActivas={metricasBanner.activas}
+            totalCerradas={metricasBanner.cerradas}
+            totalGrados={metricasBanner.totalGrados}
+            variant={bannerConfig.variant}
+            backgroundImage={bannerConfig.backgroundImage}
+            backgroundImageOpacity={bannerConfig.backgroundImageOpacity}
+            customTitle={bannerConfig.customTitle}
+            customSubtitle={bannerConfig.customSubtitle}
+            isAuditing={bannerConfig.isAuditing}
+            isSavingVariant={bannerConfig.isSaving}
+            isSavingTexts={bannerConfig.isSavingTexts}
+            isUploadingImage={bannerConfig.isUploadingImage}
+            onVariantChange={bannerConfig.setBannerVariant}
+            onUploadBackgroundImage={bannerConfig.uploadBannerImage}
+            onRemoveBackgroundImage={bannerConfig.removeBannerImage}
+            onUpdateTexts={bannerConfig.updateBannerTexts}
+            onResetTexts={bannerConfig.resetBannerTexts}
+            actions={
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowOnboarding(true)}
+                  className={styles.onboardingHeaderButton}
+                  title="Ver guía de novedades: Clonación y Vista de Panel"
+                  aria-label="Ver guía de novedades"
+                >
+                  <MdAutoAwesome className={styles.onboardingHeaderIcon} />
+                  <span className="hidden sm:inline">Novedades</span>
+                  {!hasSeenOnboarding && <span className={styles.onboardingHeaderBadge}>Nuevo</span>}
+                </button>
 
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <button
-              type="button"
-              onClick={() => setShowOnboarding(true)}
-              className={styles.onboardingHeaderButton}
-              title="Ver guía de novedades: Clonación y Vista de Panel"
-              aria-label="Ver guía de novedades"
-            >
-              <MdAutoAwesome className={styles.onboardingHeaderIcon} />
-              <span>Novedades</span>
-              {!hasSeenOnboarding && <span className={styles.onboardingHeaderBadge}>Nuevo</span>}
-            </button>
-
-            <button
-              onClick={handleShowCreateModal}
-              className={styles.createExpandButton}
-              title="Crear nueva evaluación"
-              aria-label="Crear nueva evaluación"
-            >
-              <MdAdd className={styles.createButtonIcon} />
-              <span className={styles.createButtonText}>Crear Evaluación</span>
-            </button>
-          </div>
+                <button
+                  type="button"
+                  onClick={handleShowCreateModal}
+                  className={styles.createExpandButton}
+                  title="Crear nueva evaluación"
+                  aria-label="Crear nueva evaluación"
+                >
+                  <MdAdd className={styles.createButtonIcon} />
+                  <span className={styles.createButtonText}>Crear Evaluación</span>
+                </button>
+              </div>
+            }
+          />
         </div>
 
         {/* Controles de filtro (Año y Grados) */}

@@ -1,6 +1,6 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useRouter } from 'next/router';
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import { useColorsFromCSS } from '@/features/hooks/useColorsFromCSS';
 import { ModoOrganizarModal } from '@/components/reportes/ModoOrganizarModal';
 import {
@@ -16,10 +16,12 @@ import {
 } from 'chart.js';
 import { PreguntasRespuestas } from '@/features/types/types';
 import { RiLoader4Line } from 'react-icons/ri';
+import { RiBuilding4Line, RiGraduationCapLine } from 'react-icons/ri';
 import styles from './Reporte.module.css';
 import PrivateRouteEspecialista from '@/components/layouts/PrivateRoutesEspecialista';
 import AcordeonGraficosTendencia from '@/components/reportes/AcordeonGraficosTendencia';
 import AcordeonReportePregunta from '@/components/reportes/AcordeonReportePregunta';
+import LazyReportSection from '@/components/reportes/LazyReportSection';
 import PieChartComponent from '@/components/reportes/PieChartComponent';
 import BarChartDirectores from '@/components/reportes/BarChartDirectores';
 import ParticipacionDirectoresChart from '@/components/reportes/ParticipacionDirectoresChart';
@@ -31,13 +33,26 @@ import BarChartUgelStacked from '@/components/reportes/BarChartUgelStacked';
 // Modularized Components
 import HeaderControlesReporte from '@/components/reportes/HeaderControlesReporte';
 import TablaParticipacionDirectores from '@/components/reportes/TablaParticipacionDirectores';
+import DirectorHeroBanner from '@/components/reportes/director/DirectorHeroBanner';
+import useReportesBannerConfig from '@/components/reportes/director/useReportesBannerConfig';
+import { DirectorLayoutMode } from '@/components/reportes/director/DirectorLayoutModeSwitch';
+import AdminTabsNav, { AdminTabKey } from '@/components/reportes/admin/AdminTabsNav';
+import tabsStyles from '@/components/reportes/director/DirectorTabsNav.module.css';
 
 // Hook
 import { useReporteAdmin } from '@/features/hooks/useReporteAdmin';
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
-import { MdBarChart, MdBubbleChart } from 'react-icons/md';
+import {
+  MdBarChart,
+  MdBubbleChart,
+  MdTrendingUp,
+  MdAssignment,
+  MdKeyboardArrowUp,
+} from 'react-icons/md';
 import { isEvaluacionEnMatriz } from '@/components/reportes/director/useEvaluacionesMatriz';
 import UgelBrechasTab from '@/components/reportes/director/UgelBrechasTab';
+import AdminTendenciasTab from '@/components/reportes/admin/AdminTendenciasTab';
+import { regionTexto } from '@/fuctions/regiones';
 
 ChartJS.register(
   CategoryScale,
@@ -213,6 +228,7 @@ const Reporte = () => {
     filteredDirectoresByStatus,
     directoresStats,
     hasPieChartData,
+    totalEstudiantesPieChart,
     drillDownRef,
     directorsDetailRef,
     loadingCrearEstudiantes,
@@ -252,7 +268,138 @@ const Reporte = () => {
   const [mounted, setMounted] = useState(false);
   const [isOrganizerOpen, setIsOrganizerOpen] = useState(false);
   const [matrizConfigGrados, setMatrizConfigGrados] = useState<Record<string, any>>({});
-  const [activeTab, setActiveTab] = useState<'general' | 'brechas'>('general');
+  const [activeTab, setActiveTab] = useState<AdminTabKey>('general');
+
+  // Modo de diseño del reporte: 'tabs' (pestañas independientes) o 'cascade' (cascada vertical continua)
+  const [layoutMode, setLayoutMode] = useState<DirectorLayoutMode>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('eva_admin_report_layout');
+        if (saved === 'tabs' || saved === 'cascade') return saved;
+      } catch (e) {
+        console.error('Error al leer layoutMode:', e);
+      }
+    }
+    return 'tabs';
+  });
+
+  const handleToggleLayoutMode = (mode: DirectorLayoutMode) => {
+    setLayoutMode(mode);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('eva_admin_report_layout', mode);
+      } catch (e) {
+        console.error('Error al guardar layoutMode:', e);
+      }
+    }
+    if (mode === 'cascade' && activeTab) {
+      setTimeout(() => {
+        const elem = document.getElementById(`section-${activeTab}`);
+        if (elem) {
+          elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 150);
+    }
+  };
+
+  // Control de scroll programático para modo cascada
+  const isProgrammaticScroll = useRef(false);
+  const programmaticScrollTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handleTabChange = useCallback(
+    (key: AdminTabKey) => {
+      setActiveTab(key);
+      if (layoutMode === 'cascade') {
+        isProgrammaticScroll.current = true;
+        if (programmaticScrollTimer.current) {
+          clearTimeout(programmaticScrollTimer.current);
+        }
+        const elem = document.getElementById(`section-${key}`);
+        if (elem) {
+          elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        programmaticScrollTimer.current = setTimeout(() => {
+          isProgrammaticScroll.current = false;
+        }, 850);
+      }
+    },
+    [layoutMode]
+  );
+
+  // Configuración global por rol del Hero Banner (Variante Grande vs Compacta e Imagen de Fondo en Firestore)
+  const bannerConfig = useReportesBannerConfig({ routeKey: 'especialistas' });
+
+  // Modo de visualización superior: 'compacto' o 'ejecutivo' con Hero Banner
+  const [bannerMode, setBannerMode] = useState<'compacto' | 'ejecutivo'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('eva_especialista_banner_mode');
+        if (saved === 'ejecutivo' || saved === 'compacto') return saved;
+      } catch (e) {
+        console.error('Error al leer bannerMode:', e);
+      }
+    }
+    return 'ejecutivo';
+  });
+
+  const handleToggleBannerMode = (mode: 'compacto' | 'ejecutivo') => {
+    setBannerMode(mode);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('eva_especialista_banner_mode', mode);
+      } catch (e) {
+        console.error('Error al guardar bannerMode:', e);
+      }
+    }
+  };
+
+  // Permisos exclusivos de Administrador para configurar variante y fondo del banner
+  const [isAuditing, setIsAuditing] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const audited = sessionStorage.getItem('audited_user');
+      const realAdmin = sessionStorage.getItem('real_admin_user');
+      setIsAuditing(Boolean(audited || realAdmin));
+    }
+  }, [currentUserData]);
+
+  const isAdmin = Boolean(
+    isAuditing ||
+    currentUserData?.rol === 4 ||
+    (currentUserData as any)?.perfil?.rol === 4
+  );
+
+  const userRegion = currentUserData?.region ?? (currentUserData as any)?.perfil?.region;
+
+  // Métricas agregadas para el Hero Banner de Especialistas y Panel General
+  const totalEstudiantesEvaluados = useMemo(() => {
+    // Si tenemos el conteo real regional del gráfico de niveles/PieChart, usamos ese total exacto
+    if (typeof totalEstudiantesPieChart === 'number' && totalEstudiantesPieChart > 0) {
+      return totalEstudiantesPieChart;
+    }
+    // Fallback: Si todavía no cargaron los datos de niveles, sumar los directores disponibles
+    if (!dataDirectoresBar || !Array.isArray(dataDirectoresBar)) return 0;
+    const effectiveRegion = (!isAdmin && userRegion) ? String(userRegion) : filtros?.region;
+    const baseList = effectiveRegion
+      ? dataDirectoresBar.filter((d) => String(d.region) === String(effectiveRegion))
+      : dataDirectoresBar;
+    return baseList.reduce((acc, d) => acc + (d.totalEstudiantes || 0), 0);
+  }, [totalEstudiantesPieChart, dataDirectoresBar, filtros?.region, isAdmin, userRegion]);
+
+  const porcentajeCobertura = useMemo(() => {
+    if (!directoresStats || directoresStats.total <= 0) return 0;
+    return Math.round((directoresStats.participo / directoresStats.total) * 100);
+  }, [directoresStats]);
+
+  const especialistaStats = useMemo(() => ({
+    participaron: directoresStats?.participo || 0,
+    total: directoresStats?.total || 0,
+    coberturaPorcentaje: porcentajeCobertura,
+    totalEstudiantes: totalEstudiantesEvaluados,
+    totalDocentes: fullDocentesData?.length || 0,
+    totalAlertas: 0,
+  }), [directoresStats, porcentajeCobertura, totalEstudiantesEvaluados, fullDocentesData]);
 
   useEffect(() => {
     let isMounted = true;
@@ -280,6 +427,114 @@ const Reporte = () => {
   const isEvaluacionConfigurada = useMemo(() => {
     return isEvaluacionEnMatriz(evaluacion?.id, matrizConfigGrados);
   }, [evaluacion?.id, matrizConfigGrados]);
+
+  // Si la pestaña de Brechas no está habilitada para esta evaluación, redireccionar a Panel General
+  useEffect(() => {
+    if (!isEvaluacionConfigurada && activeTab === 'brechas') {
+      setActiveTab('general');
+    }
+  }, [isEvaluacionConfigurada, activeTab]);
+
+  // Carga diferida (Lazy loading) de preguntas en Modo Pestañas
+  useEffect(() => {
+    if (
+      activeTab === 'preguntas' &&
+      dataReportePreguntas.length === 0 &&
+      !loadingReportePreguntas
+    ) {
+      fetchReportePreguntas();
+    }
+  }, [activeTab, dataReportePreguntas.length, loadingReportePreguntas, fetchReportePreguntas]);
+
+  // Secciones visibles según si Brechas está habilitada
+  const visibleSections = useMemo<AdminTabKey[]>(() => {
+    const list: AdminTabKey[] = ['general', 'directores', 'docentes'];
+    if (isEvaluacionConfigurada) {
+      list.push('brechas');
+    }
+    list.push('tendencia', 'preguntas');
+    return list;
+  }, [isEvaluacionConfigurada]);
+
+  // Scroll Spy en modo Cascada: sincronizar activeTab según la sección actualmente visible
+  useEffect(() => {
+    if (layoutMode !== 'cascade') return;
+
+    let rafId: number | null = null;
+
+    const updateActiveTab = () => {
+      if (isProgrammaticScroll.current) return;
+
+      const navEl = document.getElementById('admin-tabs-nav-container');
+      const stickyBottom = navEl ? Math.max(navEl.getBoundingClientRect().bottom, 60) : 70;
+      // Umbral de activación: la sección se considera activa cuando su encabezado alcanza
+      // la zona de lectura debajo de las pestañas fijas (+55px de tolerancia).
+      const activationOffset = stickyBottom + 55;
+
+      // 1. Detectar si el scroll llegó al final del contenedor o ventana con scroll real
+      const contentWrapper = navEl?.closest<HTMLElement>('[class*="contentWrapper"]');
+      if (contentWrapper && contentWrapper.scrollTop > 200) {
+        const isWrapperBottom =
+          contentWrapper.scrollHeight - contentWrapper.scrollTop - contentWrapper.clientHeight <= 40;
+        if (isWrapperBottom && visibleSections.length > 0) {
+          const lastKey = visibleSections[visibleSections.length - 1];
+          setActiveTab((prev) => (prev !== lastKey ? lastKey : prev));
+          return;
+        }
+      } else if (typeof window !== 'undefined' && window.scrollY > 200) {
+        const scrollEl = document.scrollingElement || document.documentElement;
+        const totalHeight = Math.max(document.body?.scrollHeight || 0, scrollEl?.scrollHeight || 0);
+        if (totalHeight > window.innerHeight + 200) {
+          const isWindowBottom = window.innerHeight + window.scrollY >= totalHeight - 40;
+          if (isWindowBottom && visibleSections.length > 0) {
+            const lastKey = visibleSections[visibleSections.length - 1];
+            setActiveTab((prev) => (prev !== lastKey ? lastKey : prev));
+            return;
+          }
+        }
+      }
+
+      // 2. Encontrar la sección activa en el orden visible
+      let activeSectionKey = visibleSections[0];
+
+      for (const tabId of visibleSections) {
+        const el = document.getElementById(`section-${tabId}`);
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= activationOffset) {
+          activeSectionKey = tabId;
+        }
+      }
+
+      if (activeSectionKey) {
+        setActiveTab((prev) => (prev !== activeSectionKey ? activeSectionKey : prev));
+      }
+    };
+
+    const onScroll = () => {
+      if (isProgrammaticScroll.current) return;
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        updateActiveTab();
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+
+    // Verificación inicial al montar o alternar a modo cascada
+    const initialTimer = setTimeout(updateActiveTab, 150);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll, { capture: true });
+      window.removeEventListener('resize', onScroll);
+      clearTimeout(initialTimer);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, [layoutMode, visibleSections]);
 
   useEffect(() => {
     setMounted(true);
@@ -333,8 +588,10 @@ const Reporte = () => {
               dataGraficoTendenciaNiveles={dataGraficoTendenciaNiveles}
               filtros={filtros}
               onFilterChange={(name, value) => {
+                if (name === 'region' && !isAdmin) return;
                 setFiltros(prev => ({ ...prev, [name]: value }));
               }}
+              canChangeRegion={isAdmin}
             />
           );
         case 'ugel_stacked':
@@ -387,14 +644,24 @@ const Reporte = () => {
                 </div>
               ) : (
                 dataDirectoresBar && dataDirectoresBar.length > 0 && (
-                  <BarChartDirectores data={dataDirectoresBar} nivelYPuntaje={evaluacion?.nivelYPuntaje} />
+                  <BarChartDirectores
+                    data={dataDirectoresBar}
+                    nivelYPuntaje={evaluacion?.nivelYPuntaje}
+                    canChangeRegion={isAdmin}
+                    initialRegion={String(userRegion || '')}
+                  />
                 )
               )
             )
           );
         case 'docentes_bar':
           return evaluacion.tipoDeEvaluacion === '1' && !loadingProfesoresBuckets && fullDocentesData && fullDocentesData.length > 0 && (
-            <BarChartDocentes data={fullDocentesData} nivelYPuntaje={evaluacion?.nivelYPuntaje} />
+            <BarChartDocentes
+              data={fullDocentesData}
+              nivelYPuntaje={evaluacion?.nivelYPuntaje}
+              canChangeRegion={isAdmin}
+              initialRegion={String(userRegion || '')}
+            />
           );
         case 'docentes_buckets':
           return evaluacion.tipoDeEvaluacion === '1' && (
@@ -518,170 +785,126 @@ const Reporte = () => {
     [preguntasMap]
   );
 
-  if (loaderReporteDirector || !evaluacion) {
+  const getSectionMeta = (tabId: AdminTabKey) => {
+    switch (tabId) {
+      case 'general':
+        return {
+          label: 'Panel General y Macrométricas',
+          icon: MdBarChart,
+          iconColor: 'text-blue-600',
+          iconBg: 'bg-blue-50 border-blue-200/80',
+          description: 'Distribución general de niveles de logro y comparativa macro por UGEL.',
+          badge: (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
+              {totalEstudiantesEvaluados.toLocaleString('es-PE')} evaluados
+            </span>
+          ),
+        };
+      case 'directores':
+        return {
+          label: 'Gestión y Participación de Directores',
+          icon: RiBuilding4Line,
+          iconColor: 'text-purple-600',
+          iconBg: 'bg-purple-50 border-purple-200/80',
+          description: 'Monitoreo de participación institucional, ranking y reporte por directivo.',
+          badge: (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200/60">
+              {directoresStats.participo} de {directoresStats.total} ({porcentajeCobertura}%)
+            </span>
+          ),
+        };
+      case 'docentes':
+        return {
+          label: 'Rendimiento y Distribución Docente',
+          icon: RiGraduationCapLine,
+          iconColor: 'text-emerald-600',
+          iconBg: 'bg-emerald-50 border-emerald-200/80',
+          description: 'Distribución por rangos de desempeño docente, metas pedagógicas y detalle.',
+          badge: (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+              {fullDocentesData?.length || 0} docentes
+            </span>
+          ),
+        };
+      case 'brechas':
+        return {
+          label: 'Brechas de Aprendizaje Regional',
+          icon: MdBubbleChart,
+          iconColor: 'text-amber-600',
+          iconBg: 'bg-amber-50 border-amber-200/80',
+          description: 'Matriz de brechas regional UGEL con cuadrantes de priorización y decisiones pedagógicas.',
+          badge: (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
+              Regional UGEL
+            </span>
+          ),
+        };
+      case 'tendencia':
+        return {
+          label: 'Tendencias Históricas y Evolución',
+          icon: MdTrendingUp,
+          iconColor: 'text-indigo-600',
+          iconBg: 'bg-indigo-50 border-indigo-200/80',
+          description: 'Evolución histórica y análisis comparativo longitudinal de niveles de logro.',
+          badge: (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+              Longitudinal
+            </span>
+          ),
+        };
+      case 'preguntas':
+        return {
+          label: 'Análisis Psicométrico por Pregunta',
+          icon: MdAssignment,
+          iconColor: 'text-cyan-600',
+          iconBg: 'bg-cyan-50 border-cyan-200/80',
+          description: 'Desglose por ítem, porcentaje de aciertos, distractores y desempeño psicométrico.',
+          badge: (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-50 text-cyan-700 border border-cyan-200/60">
+              {preguntasRespuestas.length} preguntas
+            </span>
+          ),
+        };
+    }
+  };
+
+  const renderGeneralContent = () => {
+    const generalCharts = (mounted ? ordenGraficos : defaultLayout).filter(
+      (id) => (id === 'pie_chart' || id === 'ugel_stacked') && elementosVisibles.includes(id)
+    );
+
     return (
-      <div className={styles.loaderContainer}>
-        <div className={styles.loaderContent}>
-          <RiLoader4Line className={styles.loaderIcon} />
-          <span className={styles.loaderText}>...cargando</span>
-        </div>
+      <div className="space-y-6">
+        {generalCharts.length > 0 ? (
+          <div className={styles.chartsGrid}>
+            {generalCharts.map((idGrafico) => renderChart(idGrafico))}
+          </div>
+        ) : (
+          <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">
+            No hay gráficos visibles en el Panel General. Puedes activarlos desde el organizador de gráficos.
+          </div>
+        )}
       </div>
     );
-  }
+  };
 
-  return (
-    <>
-      <div className={styles.mainContainer}>
-        <main>
-          <HeaderControlesReporte
-            evaluacion={evaluacion}
-            styles={styles}
-            monthSelected={monthSelected}
-            setMonthSelected={setMonthSelected}
-            yearSelected={yearSelected}
-            years={years}
-            handleChangeYear={handleChangeYear}
-            chartColumns={chartColumns}
-            setChartColumns={setChartColumns}
-            loadingExportEstudiantes={loadingExportEstudiantes || loadingCrearEstudiantes || loadingExport}
-            handleExportEstudiantesToExcel={handleExportEstudiantesToExcel}
-            loadingExport={loadingExport}
-            handleExportToExcel={handleExportToExcel}
-            currentUserData={currentUserData}
-            loadConsolidado={loadConsolidado}
-            fetchBarGraphicsData={fetchBarGraphicsData}
-            fetchReportePreguntas={fetchReportePreguntas}
-            handleGenerarConsolidado={handleGenerarConsolidado}
-            loadingConsolidado={loadingConsolidado}
-            hasPieChartData={hasPieChartData}
-            consolidationStatus={consolidationStatus}
-            handleDetenerConsolidado={handleDetenerConsolidado}
-            onOpenOrganizer={() => setIsOrganizerOpen(true)}
-          />
+  const renderDirectoresContent = () => {
+    const directoresCharts = (mounted ? ordenGraficos : defaultLayout).filter(
+      (id) => (id === 'directores_bar' || id === 'participacion_directores') && elementosVisibles.includes(id)
+    );
 
-          {/* Selector de Pestañas (Reporte General vs. Brechas de Aprendizaje) si la evaluación está en matriz EDI/EP1/EP2 */}
-          {isEvaluacionConfigurada && (
-            <div className="flex items-center gap-2 my-4 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/90 max-w-fit shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setActiveTab('general')}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                  activeTab === 'general'
-                    ? 'bg-white text-blue-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-                }`}
-              >
-                <MdBarChart className="w-4 h-4 text-blue-600" />
-                <span>Panel General y Gráficos</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('brechas')}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                  activeTab === 'brechas'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-                }`}
-              >
-                <MdBubbleChart className="w-4 h-4" />
-                <span>Brechas de Aprendizaje</span>
-                <span
-                  className={`px-1.5 py-0.5 text-[10px] font-extrabold rounded-md uppercase tracking-wider ${
-                    activeTab === 'brechas'
-                      ? 'bg-white/20 text-white'
-                      : 'bg-blue-100 text-blue-700'
-                  }`}
-                >
-                  Regional UGEL
-                </span>
-              </button>
-            </div>
-          )}
-
-          {activeTab === 'brechas' && isEvaluacionConfigurada ? (
-            <div className="mt-4 mb-8">
-              <UgelBrechasTab
-                evaluacion={evaluacion}
-                evaluacionesDb={evaluacionesDb}
-                preguntasRespuestas={preguntasRespuestas}
-                currentUserData={currentUserData}
-                yearSelected={yearSelected}
-                monthSelected={monthSelected}
-              />
-            </div>
-          ) : (
-            <>
-              <div className={styles.chartsGrid}>
-                {(mounted ? ordenGraficos : defaultLayout)
-                  .filter((id) => elementosVisibles.includes(id))
-                  .map((idGrafico) => renderChart(idGrafico))}
-              </div>
-
-          {/* Detalle de Docentes y Directores (Drill-Down en posición de gráficos) */}
-          <div ref={drillDownRef}>
-            {elementosVisibles.includes('docente_detalle') && selectedRange && filteredDocentesByRange.length > 0 && (
-              <BarChartDocenteDetalle
-                data={filteredDocentesByRange}
-                selectedRange={selectedRange || ''}
-                metaSatisfactorio={evaluacion?.metaSatisfactorio || 80}
-                onSaveMeta={handleSaveMeta}
-              />
-            )}
-
-            {selectedDirectorStatus && (
-              <TablaParticipacionDirectores
-                styles={styles}
-                directorsDetailRef={directorsDetailRef}
-                selectedDirectorStatus={selectedDirectorStatus}
-                setSelectedDirectorStatus={setSelectedDirectorStatus}
-                selectedRegionDirector={selectedRegionDirector}
-                setSelectedRegionDirector={setSelectedRegionDirector}
-                selectedNivelDirector={selectedNivelDirector}
-                setSelectedNivelDirector={setSelectedNivelDirector}
-                pageSizeDirector={pageSizeDirector}
-                setPageSizeDirector={setPageSizeDirector}
-                searchTermDirector={searchTermDirector}
-                setSearchTermDirector={setSearchTermDirector}
-                filteredDirectoresByStatus={filteredDirectoresByStatus}
-                directoresStats={directoresStats}
-              />
-            )}
+    return (
+      <div className="space-y-6">
+        {directoresCharts.length > 0 && (
+          <div className={styles.chartsGrid}>
+            {directoresCharts.map((idGrafico) => renderChart(idGrafico))}
           </div>
+        )}
 
-          {elementosVisibles.includes('graficos_tendencia') && evaluacion.tipoDeEvaluacion === '1' && (
-            <AcordeonGraficosTendencia
-              idEvaluacion={`${router.query.idEvaluacion}`}
-            />
-          )}
-
-          {/* Componente de acordeón para reporte por pregunta */}
-          {elementosVisibles.includes('reporte_preguntas') && (
-            <AcordeonReportePregunta
-              preguntasMap={preguntasMap}
-              iterarPregunta={iterarPregunta}
-              obtenerRespuestaPorId={obtenerRespuestaPorId}
-              iterateData={iterateData}
-              options={options}
-              filtros={filtros}
-              distritosDisponibles={distritosDisponibles}
-              handleChangeFiltros={handleChangeFiltros}
-              handleRestablecerFiltros={handleRestablecerFiltros}
-              handleFiltrar={handleFiltrarPreguntas}
-              yearSelected={yearSelected}
-              dataReportePreguntas={dataReportePreguntas}
-              loadingReportePreguntas={loadingReportePreguntas}
-              questionColumns={questionColumns}
-              setQuestionColumns={setQuestionColumns}
-              globalStyles={styles}
-              mostrarDistrito={(evaluacion as any)?.realtimeEnabled === true}
-              hideUgelSelect={currentUserData?.rol === 1}
-            />
-          )}
-
-          {/* Detalle de Directores (Tabla al pie si no hay filtro activo de segmento) */}
-          {elementosVisibles.includes('tabla_directores') && !selectedDirectorStatus && (
+        <div ref={directorsDetailRef}>
+          {(elementosVisibles.includes('tabla_directores') || selectedDirectorStatus) && (
             loadingDetalleDirectores ? (
-              <div className={styles.loaderContainer} style={{ minHeight: '150px', marginTop: '2rem' }}>
+              <div className={styles.loaderContainer} style={{ minHeight: '150px', marginTop: '1.5rem' }}>
                 <div className={styles.loaderContent}>
                   <RiLoader4Line className={styles.loaderIcon} />
                   <span className={styles.loaderText}>Cargando perfiles y detalle de directores...</span>
@@ -703,10 +926,315 @@ const Reporte = () => {
                 setSearchTermDirector={setSearchTermDirector}
                 filteredDirectoresByStatus={filteredDirectoresByStatus}
                 directoresStats={directoresStats}
+                canChangeRegion={isAdmin}
               />
             )
           )}
-            </>
+        </div>
+      </div>
+    );
+  };
+
+  const renderDocentesContent = () => {
+    const docentesCharts = (mounted ? ordenGraficos : defaultLayout).filter(
+      (id) => (id === 'docentes_bar' || id === 'docentes_buckets') && elementosVisibles.includes(id)
+    );
+
+    return (
+      <div className="space-y-6">
+        {docentesCharts.length > 0 && (
+          <div className={styles.chartsGrid}>
+            {docentesCharts.map((idGrafico) => renderChart(idGrafico))}
+          </div>
+        )}
+
+        <div ref={drillDownRef}>
+          {elementosVisibles.includes('docente_detalle') && selectedRange && filteredDocentesByRange.length > 0 && (
+            <BarChartDocenteDetalle
+              data={filteredDocentesByRange}
+              selectedRange={selectedRange || ''}
+              metaSatisfactorio={evaluacion?.metaSatisfactorio || 80}
+              onSaveMeta={handleSaveMeta}
+            />
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderBrechasContent = () => (
+    <div className="mt-2 mb-4">
+      <UgelBrechasTab
+        evaluacion={evaluacion}
+        evaluacionesDb={evaluacionesDb}
+        preguntasRespuestas={preguntasRespuestas}
+        currentUserData={currentUserData}
+        yearSelected={yearSelected}
+        monthSelected={monthSelected}
+      />
+    </div>
+  );
+
+  const renderTendenciaContent = (isDirectView: boolean = false) => (
+    <div className="mt-2 mb-4">
+      {elementosVisibles.includes('graficos_tendencia') && evaluacion?.tipoDeEvaluacion === '1' && (
+        <AdminTendenciasTab
+          evaluacion={evaluacion}
+          evaluacionesDb={evaluacionesDb}
+          currentUserData={currentUserData}
+          yearSelected={yearSelected}
+          monthSelected={monthSelected}
+          initialUgel={filtros.region}
+          idEvaluacion={`${router.query.idEvaluacion}`}
+          isDirectView={isDirectView}
+          isAdmin={isAdmin}
+          onSelectEvaluacion={(id) => {
+            router.push({
+              pathname: '/admin/evaluaciones/evaluacion/reporte',
+              query: { idEvaluacion: id },
+            });
+          }}
+        />
+      )}
+    </div>
+  );
+
+  const renderPreguntasContent = (isDirectView: boolean = false) => (
+    <div>
+      {elementosVisibles.includes('reporte_preguntas') && (
+        <AcordeonReportePregunta
+          preguntasMap={preguntasMap}
+          iterarPregunta={iterarPregunta}
+          obtenerRespuestaPorId={obtenerRespuestaPorId}
+          iterateData={iterateData}
+          options={options}
+          filtros={filtros}
+          distritosDisponibles={distritosDisponibles}
+          handleChangeFiltros={handleChangeFiltros}
+          handleRestablecerFiltros={handleRestablecerFiltros}
+          handleFiltrar={handleFiltrarPreguntas}
+          yearSelected={yearSelected}
+          dataReportePreguntas={dataReportePreguntas}
+          loadingReportePreguntas={loadingReportePreguntas}
+          questionColumns={questionColumns}
+          setQuestionColumns={setQuestionColumns}
+          globalStyles={styles}
+          mostrarDistrito={(evaluacion as any)?.realtimeEnabled === true}
+          hideUgelSelect={!isAdmin}
+          isDirectView={isDirectView}
+        />
+      )}
+    </div>
+  );
+
+  const renderCascadeView = () => {
+    return (
+      <div className="space-y-6 sm:space-y-8 pb-12">
+        {visibleSections.map((tabId) => {
+          const meta = getSectionMeta(tabId);
+          const Icon = meta.icon;
+
+          return (
+            <section
+              key={tabId}
+              id={`section-${tabId}`}
+              className="scroll-mt-24 sm:scroll-mt-28 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow duration-200 p-4 sm:p-6"
+              aria-label={meta.label}
+            >
+              {/* Cabecera accesible de la Sección en Cascada */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-slate-100">
+                <div className="flex items-start sm:items-center gap-3 min-w-0">
+                  <div
+                    className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${meta.iconBg}`}
+                  >
+                    <Icon className={`w-5 h-5 ${meta.iconColor}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h2 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight leading-snug">
+                        {meta.label}
+                      </h2>
+                      {meta.badge}
+                    </div>
+                    <p className="text-xs text-slate-500 leading-tight mt-0.5">
+                      {meta.description}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="self-end sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50/80 active:bg-blue-100/60 rounded-xl transition-all duration-150 cursor-pointer border border-slate-200/80 hover:border-blue-200/80 shrink-0 shadow-2xs"
+                  title="Volver a la parte superior del reporte"
+                  aria-label="Volver arriba"
+                >
+                  <MdKeyboardArrowUp className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+                  <span>Subir</span>
+                </button>
+              </div>
+
+              {/* Contenido Modular de la Sección */}
+              <div>
+                {tabId === 'general' && renderGeneralContent()}
+                {tabId === 'directores' && renderDirectoresContent()}
+                {tabId === 'docentes' && renderDocentesContent()}
+                {tabId === 'brechas' && isEvaluacionConfigurada && renderBrechasContent()}
+                {tabId === 'tendencia' && (
+                  <LazyReportSection
+                    title="Cargando Tendencias Históricas..."
+                    minHeight={360}
+                    forceLoad={activeTab === 'tendencia'}
+                  >
+                    {renderTendenciaContent(true)}
+                  </LazyReportSection>
+                )}
+                {tabId === 'preguntas' && (
+                  <LazyReportSection
+                    title="Cargando Análisis por Pregunta..."
+                    minHeight={450}
+                    forceLoad={activeTab === 'preguntas'}
+                    onVisible={() => {
+                      if (dataReportePreguntas.length === 0 && !loadingReportePreguntas) {
+                        fetchReportePreguntas();
+                      }
+                    }}
+                  >
+                    {renderPreguntasContent(true)}
+                  </LazyReportSection>
+                )}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    );
+  };
+
+  if (loaderReporteDirector || !evaluacion) {
+    return (
+      <div className={styles.loaderContainer}>
+        <div className={styles.loaderContent}>
+          <RiLoader4Line className={styles.loaderIcon} />
+          <span className={styles.loaderText}>...cargando</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className={styles.mainContainer}>
+        <main>
+          {bannerMode === 'ejecutivo' && (
+            <DirectorHeroBanner
+              role="especialista"
+              evaluacion={evaluacion}
+              preguntasRespuestas={preguntasRespuestas}
+              monthSelected={monthSelected}
+              yearSelected={yearSelected}
+              colegio={String(
+                currentUserData?.institucion ||
+                (userRegion ? `UGEL ${regionTexto(userRegion) || userRegion}` : 'UGEL Regional')
+              )}
+              onSwitchToCompact={() => handleToggleBannerMode('compacto')}
+              layoutMode={layoutMode}
+              onChangeLayoutMode={handleToggleLayoutMode}
+              especialistaStats={especialistaStats}
+              variant={bannerConfig.variant}
+              onVariantChange={isAdmin ? bannerConfig.setBannerVariant : undefined}
+              isSavingVariant={bannerConfig.isSavingVariant}
+              backgroundImage={bannerConfig.backgroundImage}
+              backgroundImageOpacity={bannerConfig.backgroundImageOpacity}
+              onUploadBackgroundImage={isAdmin ? bannerConfig.uploadBannerImage : undefined}
+              onRemoveBackgroundImage={isAdmin ? bannerConfig.removeBannerImage : undefined}
+              isUploadingImage={bannerConfig.isUploadingImage}
+              canConfigureBanner={isAdmin}
+            />
+          )}
+
+          <HeaderControlesReporte
+            evaluacion={evaluacion}
+            styles={styles}
+            chartColumns={chartColumns}
+            setChartColumns={setChartColumns}
+            loadingExportEstudiantes={loadingExportEstudiantes || loadingCrearEstudiantes || loadingExport}
+            handleExportEstudiantesToExcel={handleExportEstudiantesToExcel}
+            loadingExport={loadingExport}
+            handleExportToExcel={handleExportToExcel}
+            currentUserData={currentUserData}
+            loadConsolidado={loadConsolidado}
+            fetchBarGraphicsData={fetchBarGraphicsData}
+            fetchReportePreguntas={fetchReportePreguntas}
+            handleGenerarConsolidado={handleGenerarConsolidado}
+            loadingConsolidado={loadingConsolidado}
+            hasPieChartData={hasPieChartData}
+            consolidationStatus={consolidationStatus}
+            handleDetenerConsolidado={handleDetenerConsolidado}
+            onOpenOrganizer={() => setIsOrganizerOpen(true)}
+            hideTitle={bannerMode === 'ejecutivo'}
+            bannerMode={bannerMode}
+            onToggleBannerMode={handleToggleBannerMode}
+            layoutMode={layoutMode}
+            onChangeLayoutMode={handleToggleLayoutMode}
+          />
+
+          {/* Barra Ergonómica de Pestañas (Tabs) / Salto Rápido en Cascada */}
+          <div
+            id="admin-tabs-nav-container"
+            className={`transition-all duration-200 ${
+              layoutMode === 'cascade'
+                ? 'sticky top-0 z-[300] bg-white/95 backdrop-blur-md pt-2 pb-1.5 mb-6 border-b border-slate-200/80 shadow-2xs'
+                : ''
+            }`}
+          >
+            <AdminTabsNav
+              activeTab={activeTab}
+              onChangeTab={handleTabChange}
+              totalEstudiantes={totalEstudiantesEvaluados}
+              directoresStats={directoresStats}
+              totalDocentes={fullDocentesData?.length || 0}
+              totalPreguntas={preguntasRespuestas.length}
+              hideBrechas={!isEvaluacionConfigurada}
+            />
+          </div>
+
+          {/* Contenedor del Reporte: Pestañas (Folder Card) o Cascada Vertical Continua */}
+          {layoutMode === 'tabs' ? (
+            <div className="bg-white border-x-2 border-b-2 border-blue-600 rounded-b-3xl p-4 sm:p-6 shadow-xs -mt-[2px] min-h-[520px]">
+              {activeTab === 'general' && (
+                <div key="general" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                  {renderGeneralContent()}
+                </div>
+              )}
+              {activeTab === 'directores' && (
+                <div key="directores" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                  {renderDirectoresContent()}
+                </div>
+              )}
+              {activeTab === 'docentes' && (
+                <div key="docentes" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                  {renderDocentesContent()}
+                </div>
+              )}
+              {activeTab === 'brechas' && isEvaluacionConfigurada && (
+                <div key="brechas" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                  {renderBrechasContent()}
+                </div>
+              )}
+              {activeTab === 'tendencia' && (
+                <div key="tendencia" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                  {renderTendenciaContent(true)}
+                </div>
+              )}
+              {activeTab === 'preguntas' && (
+                <div key="preguntas" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                  {renderPreguntasContent(true)}
+                </div>
+              )}
+            </div>
+          ) : (
+            renderCascadeView()
           )}
         </main>
 

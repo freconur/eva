@@ -1,37 +1,37 @@
 import React, { useRef, useEffect } from 'react'
 import { MdViewColumn, MdTableChart, MdAccountTree } from 'react-icons/md'
-import { IoIosArrowDown } from 'react-icons/io'
 import { IoSearch, IoClose } from 'react-icons/io5'
 import { getNivelGrado } from '@/features/hooks/useEvaluacionesFilters'
+import SegmentedFilterBar, { FilterItem } from '@/components/common/SegmentedFilterBar'
 import styles from '../../pages/admin/evaluaciones/evaluaciones.module.css'
 
 interface EvaluacionesToolbarProps {
   // Year filter
   selectedYear: string
   setSelectedYear: (year: string) => void
-  showYearMenu: boolean
-  setShowYearMenu: (val: boolean | ((prev: boolean) => boolean)) => void
+  showYearMenu?: boolean
+  setShowYearMenu?: (val: boolean | ((prev: boolean) => boolean)) => void
   years: string[]
 
   // Grado filter
   selectedGrado: string
   setSelectedGrado: (grado: string) => void
-  showGradoMenu: boolean
-  setShowGradoMenu: (val: boolean | ((prev: boolean) => boolean)) => void
+  showGradoMenu?: boolean
+  setShowGradoMenu?: (val: boolean | ((prev: boolean) => boolean)) => void
   gradosFiltrados: any[]
 
   // Month filter
   selectedMonth: string
   setSelectedMonth: (month: string) => void
-  showMonthMenu: boolean
-  setShowMonthMenu: (val: boolean | ((prev: boolean) => boolean)) => void
+  showMonthMenu?: boolean
+  setShowMonthMenu?: (val: boolean | ((prev: boolean) => boolean)) => void
   availableMonths: { id: string; name: string; count?: number }[]
 
   // Categoría filter
   selectedCategoria: string
   setSelectedCategoria: (categoria: string) => void
-  showCategoriaMenu: boolean
-  setShowCategoriaMenu: (val: boolean | ((prev: boolean) => boolean)) => void
+  showCategoriaMenu?: boolean
+  setShowCategoriaMenu?: (val: boolean | ((prev: boolean) => boolean)) => void
   availableCategories: { id: string; name: string; count?: number }[]
 
   // Search filter
@@ -125,243 +125,113 @@ const EvaluacionesToolbar = ({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [searchQuery, selectedYear, selectedGrado, selectedMonth, selectedCategoria, updateQueryParams, setSearchQuery])
 
+  const filters: FilterItem<any>[] = [
+    {
+      id: 'year',
+      label: 'Año',
+      value: selectedYear,
+      onChange: (year) => {
+        const yStr = String(year);
+        setSelectedYear(yStr);
+        updateQueryParams(yStr, selectedGrado, selectedMonth, selectedCategoria, searchQuery);
+      },
+      options: years.map((year) => ({
+        value: year,
+        label: String(year),
+      })),
+      minWidth: 'md:min-w-[110px]',
+    },
+    {
+      id: 'month',
+      label: 'Mes',
+      value: selectedMonth === '' ? 'all' : selectedMonth,
+      onChange: (month) => {
+        const mStr = month === 'all' ? '' : String(month);
+        setSelectedMonth(mStr);
+        updateQueryParams(selectedYear, selectedGrado, mStr, selectedCategoria, searchQuery);
+      },
+      options: [
+        { value: 'all', label: 'Todos los Meses' },
+        ...availableMonths.map((m) => ({
+          value: m.id,
+          label: m.name,
+          badge: m.count !== undefined && m.count > 0 ? String(m.count) : undefined,
+          badgeType: 'neutral' as const,
+        })),
+      ],
+      minWidth: 'md:min-w-[150px]',
+    },
+    ...(viewMode !== 'sidebar'
+      ? [
+          {
+            id: 'grade',
+            label: 'Grado',
+            value: selectedGrado,
+            onChange: (grado: string) => {
+              const gStr = String(grado);
+              setSelectedGrado(gStr);
+              updateQueryParams(selectedYear, gStr, selectedMonth, selectedCategoria, searchQuery);
+            },
+            options: [
+              { value: 'all', label: 'Todos los Grados' },
+              ...gradosFiltrados.map((grado) => ({
+                value: grado.grado?.toString() || '',
+                label: `${grado.nombre} - Nivel ${getNivelGrado(grado.grado || 0)}`,
+              })),
+            ],
+            minWidth: 'md:min-w-[180px]',
+            showSearch: true,
+          },
+        ]
+      : []),
+    {
+      id: 'categoria',
+      label: 'Categoría',
+      value: selectedCategoria,
+      onChange: (cat: string) => {
+        const cStr = String(cat);
+        setSelectedCategoria(cStr);
+        updateQueryParams(selectedYear, selectedGrado, selectedMonth, cStr, searchQuery);
+      },
+      options: [
+        { value: 'all', label: 'Todas las Categorías' },
+        ...availableCategories.map((cat) => ({
+          value: cat.id,
+          label: cat.name,
+          badge: cat.count !== undefined && cat.count > 0 ? String(cat.count) : undefined,
+          badgeType: 'neutral' as const,
+        })),
+      ],
+      minWidth: 'md:min-w-[160px]',
+    },
+  ];
+
+  const hasActiveFilters = Boolean(
+    selectedMonth !== '' ||
+    selectedGrado !== 'all' ||
+    selectedCategoria !== 'all' ||
+    searchQuery.trim() !== ''
+  );
+
+  const handleResetFilters = () => {
+    setSelectedMonth('');
+    setSelectedGrado('all');
+    setSelectedCategoria('all');
+    setSearchQuery('');
+    updateQueryParams(selectedYear, 'all', '', 'all', '');
+  };
+
   return (
     <div className={styles.toolbar}>
-      <div className={styles.filtersContainer}>
-        {/* Filtro de Año */}
-        <div className={styles.customSelectContainer}>
-          <button
-            type="button"
-            onClick={() => setShowYearMenu(prev => !prev)}
-            className={`${styles.customSelectButton} ${showYearMenu ? styles.customSelectButtonActive : ''}`}
-            title="Filtrar por año"
-          >
-            <div className={styles.filterPillContent}>
-              <span className={styles.filterPillLabel}>Año:</span>
-              <span className={styles.filterPillValue}>{selectedYear}</span>
-            </div>
-            <IoIosArrowDown className={`${styles.customSelectChevron} ${showYearMenu ? styles.customSelectChevronRotate : ''}`} />
-          </button>
-          {showYearMenu && (
-            <>
-              <div className={styles.customSelectOverlay} onClick={() => setShowYearMenu(false)} />
-              <div className={styles.customSelectDropdown}>
-                {years.map(year => (
-                  <div
-                    key={year}
-                    onClick={() => {
-                      setSelectedYear(year);
-                      updateQueryParams(year, selectedGrado, selectedMonth, selectedCategoria, searchQuery);
-                      setShowYearMenu(false);
-                    }}
-                    className={`${styles.customSelectOption} ${selectedYear === year ? styles.customSelectOptionActive : ''}`}
-                  >
-                    {year}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Filtro de Mes */}
-        <div className={styles.customSelectContainer}>
-          <button
-            type="button"
-            onClick={() => setShowMonthMenu(prev => !prev)}
-            className={`${styles.customSelectButton} ${showMonthMenu ? styles.customSelectButtonActive : ''} ${selectedMonth !== '' ? styles.customSelectButtonFiltering : ''}`}
-            title="Filtrar por mes"
-          >
-            <div className={styles.filterPillContent}>
-              <span className={styles.filterPillLabel}>Mes:</span>
-              <span className={styles.filterPillValue}>
-                {selectedMonth === '' 
-                  ? 'Todos'
-                  : availableMonths.find(m => m.id === selectedMonth)?.name || 'Todos'
-                }
-              </span>
-            </div>
-            <IoIosArrowDown className={`${styles.customSelectChevron} ${showMonthMenu ? styles.customSelectChevronRotate : ''}`} />
-          </button>
-          {showMonthMenu && (
-            <>
-              <div className={styles.customSelectOverlay} onClick={() => setShowMonthMenu(false)} />
-              <div className={styles.customSelectDropdown}>
-                <div
-                  onClick={() => {
-                    setSelectedMonth('');
-                    updateQueryParams(selectedYear, selectedGrado, '', selectedCategoria, searchQuery);
-                    setShowMonthMenu(false);
-                  }}
-                  className={`${styles.customSelectOption} ${selectedMonth === '' ? styles.customSelectOptionActive : ''}`}
-                >
-                  Todos
-                </div>
-                {availableMonths.map(month => (
-                  <div
-                    key={month.id}
-                    onClick={() => {
-                      setSelectedMonth(month.id);
-                      updateQueryParams(selectedYear, selectedGrado, month.id, selectedCategoria, searchQuery);
-                      setShowMonthMenu(false);
-                    }}
-                    className={`${styles.customSelectOption} ${selectedMonth === month.id ? styles.customSelectOptionActive : ''}`}
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                  >
-                    <span>{month.name}</span>
-                    {month.count !== undefined && month.count > 0 && (
-                      <span style={{ fontSize: '0.75rem', color: '#64748b', opacity: 0.85, marginLeft: '0.5rem' }}>
-                        ({month.count})
-                      </span>
-                    )}
-                  </div>
-                ))}
-                {availableMonths.length === 0 && (
-                  <div className={styles.customSelectOption} style={{ color: '#94a3b8', fontStyle: 'italic', cursor: 'default' }}>
-                    Sin evaluaciones en este año
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Filtro de Grado */}
-        {viewMode !== 'sidebar' && (
-          <div className={styles.customSelectContainer}>
-            <button
-              type="button"
-              onClick={() => setShowGradoMenu(prev => !prev)}
-              className={`${styles.customSelectButton} ${showGradoMenu ? styles.customSelectButtonActive : ''} ${selectedGrado !== 'all' ? styles.customSelectButtonFiltering : ''}`}
-              title="Filtrar por grado"
-            >
-              <div className={styles.filterPillContent} style={{ maxWidth: '160px' }}>
-                <span className={styles.filterPillLabel}>Grado:</span>
-                <span className={styles.filterPillValue}>
-                  {selectedGrado === 'all' 
-                    ? 'Todos' 
-                    : gradosFiltrados.find(g => g.grado?.toString() === selectedGrado)?.nombre || selectedGrado
-                  }
-                </span>
-              </div>
-              <IoIosArrowDown className={`${styles.customSelectChevron} ${showGradoMenu ? styles.customSelectChevronRotate : ''}`} />
-            </button>
-            {showGradoMenu && (
-              <>
-                <div className={styles.customSelectOverlay} onClick={() => setShowGradoMenu(false)} />
-                <div className={styles.customSelectDropdown} style={{ minWidth: '220px' }}>
-                  <div
-                    onClick={() => {
-                      setSelectedGrado('all');
-                      updateQueryParams(selectedYear, 'all', selectedMonth, selectedCategoria, searchQuery);
-                      setShowGradoMenu(false);
-                    }}
-                    className={`${styles.customSelectOption} ${selectedGrado === 'all' ? styles.customSelectOptionActive : ''}`}
-                  >
-                    Todos los grados permitidos
-                  </div>
-                  {gradosFiltrados.map(grado => (
-                    <div
-                      key={grado.id}
-                      onClick={() => {
-                        const val = grado.grado?.toString() || '';
-                        setSelectedGrado(val);
-                        updateQueryParams(selectedYear, val, selectedMonth, selectedCategoria, searchQuery);
-                        setShowGradoMenu(false);
-                      }}
-                      className={`${styles.customSelectOption} ${selectedGrado === grado.grado?.toString() ? styles.customSelectOptionActive : ''}`}
-                    >
-                      {grado.nombre} - Nivel {getNivelGrado(grado.grado || 0)}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Filtro de Categoría */}
-        <div className={styles.customSelectContainer}>
-          <button
-            type="button"
-            onClick={() => setShowCategoriaMenu(prev => !prev)}
-            className={`${styles.customSelectButton} ${showCategoriaMenu ? styles.customSelectButtonActive : ''} ${selectedCategoria !== 'all' ? styles.customSelectButtonFiltering : ''}`}
-            title="Filtrar por categoría"
-          >
-            <div className={styles.filterPillContent} style={{ maxWidth: '160px' }}>
-              <span className={styles.filterPillLabel}>Categoría:</span>
-              <span className={styles.filterPillValue} style={{ textTransform: 'capitalize' }}>
-                {selectedCategoria === 'all' 
-                  ? 'Todas' 
-                  : availableCategories.find(c => c.id === selectedCategoria)?.name || selectedCategoria
-                }
-              </span>
-            </div>
-            <IoIosArrowDown className={`${styles.customSelectChevron} ${showCategoriaMenu ? styles.customSelectChevronRotate : ''}`} />
-          </button>
-          {showCategoriaMenu && (
-            <>
-              <div className={styles.customSelectOverlay} onClick={() => setShowCategoriaMenu(false)} />
-              <div className={styles.customSelectDropdown} style={{ minWidth: '200px' }}>
-                <div
-                  onClick={() => {
-                    setSelectedCategoria('all');
-                    updateQueryParams(selectedYear, selectedGrado, selectedMonth, 'all', searchQuery);
-                    setShowCategoriaMenu(false);
-                  }}
-                  className={`${styles.customSelectOption} ${selectedCategoria === 'all' ? styles.customSelectOptionActive : ''}`}
-                >
-                  Todas las categorías
-                </div>
-                {availableCategories.map(cat => (
-                  <div
-                    key={cat.id}
-                    onClick={() => {
-                      setSelectedCategoria(cat.id);
-                      updateQueryParams(selectedYear, selectedGrado, selectedMonth, cat.id, searchQuery);
-                      setShowCategoriaMenu(false);
-                    }}
-                    className={`${styles.customSelectOption} ${selectedCategoria === cat.id ? styles.customSelectOptionActive : ''}`}
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                  >
-                    <span style={{ textTransform: 'capitalize' }}>{cat.name}</span>
-                    {cat.count !== undefined && cat.count > 0 && (
-                      <span style={{ fontSize: '0.75rem', color: '#64748b', opacity: 0.85, marginLeft: '0.5rem' }}>
-                        ({cat.count})
-                      </span>
-                    )}
-                  </div>
-                ))}
-                {availableCategories.length === 0 && (
-                  <div className={styles.customSelectOption} style={{ color: '#94a3b8', fontStyle: 'italic', cursor: 'default' }}>
-                    Sin categorías registradas
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Botón de limpiar filtros activos */}
-        {(selectedMonth !== '' || selectedGrado !== 'all' || selectedCategoria !== 'all' || searchQuery.trim() !== '') && (
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedMonth('');
-              setSelectedGrado('all');
-              setSelectedCategoria('all');
-              setSearchQuery('');
-              updateQueryParams(selectedYear, 'all', '', 'all', '');
-            }}
-            className={styles.clearAllFiltersBtn}
-            title="Restablecer todos los filtros"
-            aria-label="Restablecer todos los filtros"
-          >
-            <IoClose style={{ fontSize: '0.95rem' }} />
-            <span>Limpiar</span>
-          </button>
-        )}
-      </div>
+      {/* Barra de Filtros Segmentada Modular (Patrón oficial de Directores y Especialistas) */}
+      <SegmentedFilterBar
+        title="Filtrar por"
+        className="w-full xl:w-auto xl:flex-1 min-w-0"
+        filters={filters}
+        onReset={handleResetFilters}
+        showReset={hasActiveFilters}
+        resetLabel="Limpiar Filtros"
+      />
 
       {/* Acciones Derecha: Búsqueda Inteligente y Configuración de Columnas */}
       <div className={styles.toolbarActionsRight}>

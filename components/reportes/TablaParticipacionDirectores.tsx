@@ -39,6 +39,7 @@ interface TablaParticipacionDirectoresProps {
   setSearchTermDirector: (term: string) => void;
   filteredDirectoresByStatus: DirectorData[];
   directoresStats: { participo: number; no_participo: number; total: number };
+  canChangeRegion?: boolean;
 }
 
 const getNivelTexto = (nivel: any) => {
@@ -70,6 +71,7 @@ const TablaParticipacionDirectores: React.FC<TablaParticipacionDirectoresProps> 
   setSearchTermDirector,
   filteredDirectoresByStatus,
   directoresStats,
+  canChangeRegion = true,
 }) => {
   const [mounted, setMounted] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
@@ -290,13 +292,24 @@ const TablaParticipacionDirectores: React.FC<TablaParticipacionDirectoresProps> 
                   <select 
                     className={drawerStyles.drawerRowsPerPageSelect}
                     value={selectedRegionDirector}
-                    onChange={(e) => setSelectedRegionDirector(e.target.value)}
-                    style={{ minWidth: '160px' }}
+                    disabled={!canChangeRegion}
+                    onChange={(e) => {
+                      if (!canChangeRegion) return;
+                      setSelectedRegionDirector(e.target.value);
+                    }}
+                    style={{
+                      minWidth: '160px',
+                      cursor: !canChangeRegion ? 'not-allowed' : 'pointer',
+                      opacity: !canChangeRegion ? 0.85 : 1
+                    }}
+                    aria-label="Filtrar por UGEL"
                   >
-                    <option value="all">Todas las UGEL</option>
-                    {regiones.map(r => (
-                      <option key={r.id} value={r.id}>UGEL {r.region}</option>
-                    ))}
+                    {canChangeRegion && <option value="all">Todas las UGEL</option>}
+                    {regiones
+                      .filter(r => canChangeRegion ? true : String(r.id) === String(selectedRegionDirector))
+                      .map(r => (
+                        <option key={r.id} value={r.id}>UGEL {r.region}</option>
+                      ))}
                   </select>
                 </div>
 

@@ -54,6 +54,7 @@ import DirectorTendenciasTab from '@/components/reportes/director/DirectorTenden
 import DirectorComparativaTab from '@/components/reportes/director/DirectorComparativaTab';
 import DirectorExportMenu from '@/components/reportes/director/DirectorExportMenu';
 import DirectorHeroBanner from '@/components/reportes/director/DirectorHeroBanner';
+import useReportesBannerConfig from '@/components/reportes/director/useReportesBannerConfig';
 import DirectorLayoutModeSwitch, {
   DirectorLayoutMode,
 } from '@/components/reportes/director/DirectorLayoutModeSwitch';
@@ -125,6 +126,9 @@ const Reportes = () => {
       }
     }
   };
+
+  // Configuración global por rol del Hero Banner (Variante Grande vs Compacta e Imagen de Fondo en Firestore)
+  const bannerConfig = useReportesBannerConfig({ routeKey: 'docentes' });
 
   // Modo de diseño: 'tabs' (pestañas) o 'cascade' (cascada vertical)
   const [layoutMode, setLayoutMode] = useState<DirectorLayoutMode>(() => {
@@ -333,12 +337,24 @@ const Reportes = () => {
 
   // Filtros unificados de la barra de herramientas
   const [filtros, setFiltros] = useState<FiltrosState>({
-    grado: (route.query.grado as string) || '',
+    grado:
+      (route.query.grado as string) ||
+      (evaluacion?.grado !== undefined && evaluacion?.grado !== null
+        ? String(evaluacion.grado)
+        : ''),
     seccion: (route.query.seccion as string) || '',
     orden: (route.query.orden as string) || (route.query.order as string) || '',
     genero: (route.query.genero as string) || '',
     nivel: (route.query.nivel as string) || '',
   });
+
+  // Sincronizar el grado de la evaluación con los filtros si no está definido
+  useEffect(() => {
+    if (evaluacion?.grado !== undefined && evaluacion?.grado !== null && !filtros.grado) {
+      const gradoStr = String(evaluacion.grado);
+      setFiltros((prev) => ({ ...prev, grado: gradoStr }));
+    }
+  }, [evaluacion?.grado, filtros.grado]);
 
   const [columnasVisibles, setColumnasVisibles] = useState<ColumnasVisiblesState>({
     showRC: true,
@@ -436,7 +452,12 @@ const Reportes = () => {
     }
 
     setFiltros((prev) => {
-      const newGrado = (route.query.grado as string) || prev.grado;
+      const newGrado =
+        (route.query.grado as string) ||
+        prev.grado ||
+        (evaluacion?.grado !== undefined && evaluacion?.grado !== null
+          ? String(evaluacion.grado)
+          : '');
       const newSeccion = (route.query.seccion as string) || prev.seccion;
       const newNivel = (route.query.nivel as string) || prev.nivel;
       const newOrden = (route.query.orden as string) || (route.query.order as string) || prev.orden;
@@ -471,6 +492,7 @@ const Reportes = () => {
     route.query.orden,
     route.query.order,
     route.query.genero,
+    evaluacion?.grado,
   ]);
 
   // Función para actualizar la URL con los filtros actuales
@@ -499,7 +521,10 @@ const Reportes = () => {
   };
 
   const handleLimpiarFiltros = () => {
-    const gradoDefault = String(evaluacion?.grado || '');
+    const gradoDefault =
+      evaluacion?.grado !== undefined && evaluacion?.grado !== null
+        ? String(evaluacion.grado)
+        : '';
     setFiltros({
       grado: gradoDefault,
       seccion: '',
@@ -555,6 +580,24 @@ const Reportes = () => {
       let tempEst = { ...est, respuestas: respuestasReconstruidas } as any;
       tempEst = calculoPreguntasCorrectas(tempEst);
       tempEst = calculoNivel(tempEst, evaluacion);
+      if (
+        (tempEst.puntaje === 0 || tempEst.puntaje === undefined) &&
+        est.puntaje !== undefined &&
+        est.puntaje !== null
+      ) {
+        tempEst.puntaje = est.puntaje;
+      }
+      if (
+        (tempEst.nivel === 'sin clasificar' || !tempEst.nivel) &&
+        est.nivel &&
+        est.nivel !== 'sin clasificar'
+      ) {
+        tempEst.nivel = est.nivel;
+      }
+      const rawEst = est as any;
+      if (!tempEst.nombresApellidos && (rawEst.nombres || rawEst.apellidos)) {
+        tempEst.nombresApellidos = `${rawEst.nombres || ''} ${rawEst.apellidos || ''}`.trim();
+      }
 
       return tempEst as Estudiante | UserEstudiante;
     });
@@ -591,15 +634,17 @@ const Reportes = () => {
       );
     }
 
-    // Ordenamiento
-    const currentOrder = Number(filtros.orden) || 0;
-    if (currentOrder !== 0) {
+    // Ordenamiento por puntaje (soporta 'asc', 'desc' y valores numéricos legacy '1', '2')
+    if (filtros.orden) {
+      const orderMode = String(filtros.orden).toLowerCase().trim();
       filtered = [...filtered].sort((a, b) => {
         const valA = Number(a.puntaje) || 0;
         const valB = Number(b.puntaje) || 0;
-        if (currentOrder === 1) return valA - valB;
-        if (currentOrder === 2) return valB - valA;
-        return 0;
+        if (valA !== valB) {
+          if (orderMode === 'asc' || orderMode === '1') return valA - valB;
+          if (orderMode === 'desc' || orderMode === '2') return valB - valA;
+        }
+        return (a.nombresApellidos || '').localeCompare(b.nombresApellidos || '');
       });
     }
 
@@ -987,8 +1032,8 @@ const Reportes = () => {
               : ''
           }
           customColumns={{
-            showPuntaje: hasValidPuntaje() && columnasVisibles.showPuntaje,
-            showNivel: hasValidNivel() && columnasVisibles.showNivel,
+            showPuntaje: columnasVisibles.showPuntaje,
+            showNivel: columnasVisibles.showNivel,
             showRC: columnasVisibles.showRC,
             showTP: columnasVisibles.showTP,
             showDniDocente: false,
@@ -1240,6 +1285,7 @@ const Reportes = () => {
       <GuiaBurbujasModal
         isOpen={isBurbujasModalOpen}
         onClose={() => setIsBurbujasModalOpen(false)}
+        baremo={baremo}
       />
       <GuiaDecisionesModal
         isOpen={isDecisionesModalOpen}
@@ -1330,6 +1376,14 @@ const Reportes = () => {
                 imagenesGeneradas={imagenesGeneradas}
                 hasPreguntasConImagenes={reporteCompletoConImagenes.length > 0}
                 onExport={handleExportOption}
+                variant={bannerConfig.variant}
+                onVariantChange={bannerConfig.setBannerVariant}
+                isSavingVariant={bannerConfig.isSavingVariant}
+                backgroundImage={bannerConfig.backgroundImage}
+                backgroundImageOpacity={bannerConfig.backgroundImageOpacity}
+                onUploadBackgroundImage={bannerConfig.uploadBannerImage}
+                onRemoveBackgroundImage={bannerConfig.removeBannerImage}
+                isUploadingImage={bannerConfig.isUploadingImage}
               />
             )}
 

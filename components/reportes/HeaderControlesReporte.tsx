@@ -1,22 +1,25 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { RiLoader4Line, RiFileExcel2Line, RiDownloadLine } from 'react-icons/ri';
+import { RiLoader4Line, RiFileExcel2Line, RiDownloadLine, RiSparklingLine } from 'react-icons/ri';
 import { MdVisibility, MdAnalytics, MdClose, MdViewStream, MdGridView, MdViewModule, MdOutlineDashboardCustomize, MdSettings, MdAdminPanelSettings } from 'react-icons/md';
 import { toast } from 'react-toastify';
-import { getAllMonths } from '@/fuctions/dates';
 import { Evaluaciones } from '@/features/types/types';
-import { getFirestore, doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { getFirestore, doc, updateDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { app } from '@/firebase/firebase.config';
+
+import DirectorLayoutModeSwitch, {
+  DirectorLayoutMode,
+} from '@/components/reportes/director/DirectorLayoutModeSwitch';
 
 interface HeaderControlesReporteProps {
   evaluacion: Evaluaciones;
   styles: any;
-  monthSelected: number;
-  setMonthSelected: (month: number) => void;
-  yearSelected: number;
-  years: number[];
-  handleChangeYear: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  monthSelected?: number;
+  setMonthSelected?: (month: number) => void;
+  yearSelected?: number;
+  years?: number[];
+  handleChangeYear?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   chartColumns: number;
   setChartColumns: (cols: number) => void;
   loadingExportEstudiantes: boolean;
@@ -33,16 +36,16 @@ interface HeaderControlesReporteProps {
   consolidationStatus: any;
   handleDetenerConsolidado: () => Promise<void>;
   onOpenOrganizer: () => void;
+  hideTitle?: boolean;
+  bannerMode?: 'compacto' | 'ejecutivo';
+  onToggleBannerMode?: (mode: 'compacto' | 'ejecutivo') => void;
+  layoutMode?: DirectorLayoutMode;
+  onChangeLayoutMode?: (mode: DirectorLayoutMode) => void;
 }
 
 const HeaderControlesReporte: React.FC<HeaderControlesReporteProps> = ({
   evaluacion,
   styles,
-  monthSelected,
-  setMonthSelected,
-  yearSelected,
-  years,
-  handleChangeYear,
   chartColumns,
   setChartColumns,
   loadingExportEstudiantes,
@@ -59,10 +62,13 @@ const HeaderControlesReporte: React.FC<HeaderControlesReporteProps> = ({
   consolidationStatus,
   handleDetenerConsolidado,
   onOpenOrganizer,
+  hideTitle = false,
+  bannerMode = 'ejecutivo',
+  onToggleBannerMode,
+  layoutMode,
+  onChangeLayoutMode,
 }) => {
   const router = useRouter();
-  const currentMonthId = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const idEvaluacion = evaluacion?.id || (router.query.idEvaluacion as string);
   const [isAuditing, setIsAuditing] = useState(false);
@@ -99,36 +105,63 @@ const HeaderControlesReporte: React.FC<HeaderControlesReporteProps> = ({
     return () => unsubscribe();
   }, []);
 
-  const isAdmin = currentUserData?.rol === 4 || isAuditing;
-  const showExportEstudiantes = isAdmin || (
-    evaluacion?.accionesEspecialista?.exportarEstudiantes !== false && accionesEspecialistaGlobal.exportarEstudiantes
+  const isAdmin = Boolean(
+    currentUserData?.rol === 4 ||
+    currentUserData?.perfil?.rol === 4 ||
+    isAuditing
   );
-  const showExportExcel = isAdmin || (
-    evaluacion?.accionesEspecialista?.exportarExcel !== false && accionesEspecialistaGlobal.exportarExcel
-  );
+
+  const isEstudiantesPermitted =
+    evaluacion?.accionesEspecialista?.exportarEstudiantes !== undefined
+      ? evaluacion.accionesEspecialista.exportarEstudiantes === true
+      : Boolean(accionesEspecialistaGlobal.exportarEstudiantes);
+
+  const isExcelPermitted =
+    evaluacion?.accionesEspecialista?.exportarExcel !== undefined
+      ? evaluacion.accionesEspecialista.exportarExcel === true
+      : Boolean(accionesEspecialistaGlobal.exportarExcel);
+
+  const showExportEstudiantes = isAdmin || isEstudiantesPermitted;
+  const showExportExcel = isAdmin || isExcelPermitted;
   const hasAnyAction = isAdmin || showExportEstudiantes || showExportExcel;
 
-  const handleChangeMonth = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedMonthName = e.target.value;
-    const foundMonth = getAllMonths.find((m) => m.name === selectedMonthName);
-    if (foundMonth) {
-      setMonthSelected(foundMonth.id);
-    }
-  };
-
   const handleTogglePermisoEspecialista = async (field: 'exportarEstudiantes' | 'exportarExcel', value: boolean) => {
-    if (!idEvaluacion) return;
     try {
       const db = getFirestore(app);
-      const evalRef = doc(db, 'evaluaciones', idEvaluacion);
-      const currentAcciones = evaluacion?.accionesEspecialista || { exportarEstudiantes: true, exportarExcel: true };
-      const updated = {
-        ...currentAcciones,
-        [field]: value,
-      };
-      await updateDoc(evalRef, {
-        accionesEspecialista: updated,
-      });
+
+      // 1. Sincronizar en la configuración general (configuracion/branding)
+      const brandRef = doc(db, 'configuracion', 'branding');
+      await setDoc(
+        brandRef,
+        {
+          accionesEspecialista: {
+            ...accionesEspecialistaGlobal,
+            [field]: value,
+          },
+        },
+        { merge: true }
+      );
+
+      // 2. Sincronizar también en la evaluación actual si existe
+      if (idEvaluacion) {
+        const evalRef = doc(db, 'evaluaciones', idEvaluacion);
+        const currentAcciones = evaluacion?.accionesEspecialista || {
+          exportarEstudiantes: true,
+          exportarExcel: true,
+        };
+        const updated = {
+          ...currentAcciones,
+          [field]: value,
+        };
+        await setDoc(
+          evalRef,
+          {
+            accionesEspecialista: updated,
+          },
+          { merge: true }
+        );
+      }
+
       toast.success(
         `Permiso "${field === 'exportarEstudiantes' ? 'Exportar Estudiantes' : 'Exportar Excel'}" ${
           value ? 'habilitado' : 'deshabilitado'
@@ -142,55 +175,12 @@ const HeaderControlesReporte: React.FC<HeaderControlesReporteProps> = ({
 
   return (
     <>
-      <h1 className={styles.title}>{evaluacion?.nombre?.toUpperCase() || 'REPORTE'}</h1>
+      {!hideTitle && (
+        <h1 className={styles.title}>{evaluacion?.nombre?.toUpperCase() || 'REPORTE'}</h1>
+      )}
 
       <div className={styles.toolbar}>
         <div className={styles.controlsGroup}>
-          <select
-            className={styles.select}
-            onChange={handleChangeMonth}
-            value={getAllMonths[monthSelected]?.name || ''}
-          >
-            {evaluacion?.mesDelExamen ? (
-              (() => {
-                const examMonthId = Number(evaluacion.mesDelExamen);
-                const examMonth = getAllMonths.find((m) => m.id === examMonthId);
-                return examMonth ? (
-                  <option key={examMonth.id} value={examMonth.name}>
-                    {examMonth.name}
-                  </option>
-                ) : null;
-              })()
-            ) : (
-              <>
-                <option value="">Mes</option>
-                {getAllMonths.slice(0, yearSelected < currentYear ? getAllMonths.length : currentMonthId + 1).map((mes) => (
-                  <option key={mes.id} value={mes.name}>
-                    {mes.name}
-                  </option>
-                ))}
-              </>
-            )}
-          </select>
-
-          <select
-            className={styles.select}
-            onChange={handleChangeYear}
-            value={yearSelected}
-          >
-            {evaluacion?.añoDelExamen ? (
-              <option value={evaluacion.añoDelExamen}>
-                {evaluacion.añoDelExamen}
-              </option>
-            ) : (
-              years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))
-            )}
-          </select>
-
           {/* Selector de Layout de Gráficos */}
           <div className={styles.layoutSelector}>
             <button
@@ -249,8 +239,8 @@ const HeaderControlesReporte: React.FC<HeaderControlesReporteProps> = ({
             </button>
           )}
 
-          {/* Botón Atajo a Configurar Evaluación */}
-          {idEvaluacion && (
+          {/* Botón Atajo a Configurar Evaluación (Solo Administradores) */}
+          {isAdmin && idEvaluacion && (
             <Link
               href={`/admin/evaluaciones/evaluacion/${idEvaluacion}`}
               className={styles.layoutButton}
@@ -285,6 +275,28 @@ const HeaderControlesReporte: React.FC<HeaderControlesReporteProps> = ({
         </div>
 
         <div className={styles.exportGroup}>
+          {/* Solo en modo compacto (cuando el Hero Banner no está visible) se muestran los switches aquí */}
+          {bannerMode === 'compacto' && onChangeLayoutMode && layoutMode && (
+            <DirectorLayoutModeSwitch
+              mode={layoutMode}
+              onChange={onChangeLayoutMode}
+              variant="light"
+            />
+          )}
+
+          {/* Solo en modo compacto se ofrece el botón para volver a abrir el banner ejecutivo */}
+          {bannerMode === 'compacto' && onToggleBannerMode && (
+            <button
+              type="button"
+              onClick={() => onToggleBannerMode('ejecutivo')}
+              className="h-[38px] flex items-center gap-1.5 px-3 text-xs font-semibold rounded-xl bg-blue-600 text-white shadow-xs hover:bg-blue-700 transition-all cursor-pointer"
+              title="Cambiar a vista ejecutiva con Hero Banner"
+            >
+              <RiSparklingLine className="w-3.5 h-3.5" />
+              <span>Ejecutivo</span>
+            </button>
+          )}
+
           {hasAnyAction && (
             <div className={styles.customSelectContainer}>
               <button
@@ -436,7 +448,7 @@ const HeaderControlesReporte: React.FC<HeaderControlesReporteProps> = ({
                         >
                           <input
                             type="checkbox"
-                            checked={evaluacion?.accionesEspecialista?.exportarEstudiantes !== false}
+                            checked={Boolean(isEstudiantesPermitted)}
                             onChange={(e) => handleTogglePermisoEspecialista('exportarEstudiantes', e.target.checked)}
                             style={{ width: '16px', height: '16px', accentColor: '#4f46e5', cursor: 'pointer' }}
                           />
@@ -458,7 +470,7 @@ const HeaderControlesReporte: React.FC<HeaderControlesReporteProps> = ({
                         >
                           <input
                             type="checkbox"
-                            checked={evaluacion?.accionesEspecialista?.exportarExcel !== false}
+                            checked={Boolean(isExcelPermitted)}
                             onChange={(e) => handleTogglePermisoEspecialista('exportarExcel', e.target.checked)}
                             style={{ width: '16px', height: '16px', accentColor: '#4f46e5', cursor: 'pointer' }}
                           />

@@ -12,8 +12,12 @@ import {
   MdFullscreenExit,
 } from 'react-icons/md';
 import { Evaluaciones, PreguntasRespuestas } from '@/features/types/types';
+import {
+  BaremoDecisiones,
+  DEFAULT_BAREMO_DECISIONES,
+} from '@/components/modals/ConfigurarBaremoModal';
 import { DirectorMetricasResumen, SeccionMetrica } from './types';
-import { formatQuestionCode } from './useMetricasDirector';
+import { formatQuestionCode, getAlertaInfo } from './useMetricasDirector';
 import EvidenciaCaptureButton from './EvidenciaCaptureButton';
 import EvidenciaBanner from './EvidenciaBanner';
 import styles from './DirectorVisualizaciones.module.css';
@@ -29,17 +33,25 @@ interface DirectorBurbujasTabProps {
   isUgelView?: boolean;
   benchmarkRow?: SeccionMetrica | null;
   headerLabel?: string;
+  baremo?: BaremoDecisiones;
 }
 
-// Función auxiliar para obtener el tamaño de burbuja según el % de rezago
-export const getBubbleClass = (pct: number) => {
-  if (pct <= 15) return styles.bubbleSize1;
-  if (pct <= 25) return styles.bubbleSize2;
-  if (pct <= 35) return styles.bubbleSize3;
-  if (pct <= 45) return styles.bubbleSize4;
-  if (pct <= 55) return styles.bubbleSize5;
-  if (pct <= 65) return styles.bubbleSize6;
-  return styles.bubbleSize7;
+// Función auxiliar para obtener el tamaño de burbuja según el % de rezago calibrado con el Baremo
+export const getBubbleClass = (
+  pct: number,
+  baremo: BaremoDecisiones = DEFAULT_BAREMO_DECISIONES
+) => {
+  const criticoExtreme = baremo.critico + Math.max(5, Math.round((100 - baremo.critico) / 4));
+  if (pct >= criticoExtreme) return styles.bubbleSize7;
+  if (pct >= baremo.critico) return styles.bubbleSize6;
+  if (pct >= baremo.alto) return styles.bubbleSize5;
+  if (pct >= baremo.medio) return styles.bubbleSize4;
+
+  const step1 = Math.round(baremo.medio * 0.38);
+  const step2 = Math.round(baremo.medio * 0.72);
+  if (pct <= step1) return styles.bubbleSize1;
+  if (pct <= step2) return styles.bubbleSize2;
+  return styles.bubbleSize3;
 };
 
 interface MatrixSectionRowProps {
@@ -47,7 +59,9 @@ interface MatrixSectionRowProps {
   sortedPreguntas: PreguntasRespuestas[];
   isUgelView: boolean;
   isDocenteView: boolean;
+  activeBaremo: BaremoDecisiones;
   onCellClick: (e: React.MouseEvent<HTMLElement>, order: number) => void;
+  displayMode?: 'burbujas' | 'pildoras';
 }
 
 /**
@@ -55,11 +69,13 @@ interface MatrixSectionRowProps {
  * Cada celda contiene directamente la burbuja sin capas DOM intermedias.
  */
 const MatrixSectionRow = React.memo<MatrixSectionRowProps>(
-  ({ sec, sortedPreguntas, isUgelView, isDocenteView, onCellClick }) => {
+  ({ sec, sortedPreguntas, isUgelView, isDocenteView, activeBaremo, onCellClick, displayMode = 'burbujas' }) => {
+    const baseClass = displayMode === 'pildoras' ? styles.bubbleBasePill : styles.bubbleBase;
+
     return (
-      <tr className="hover:bg-slate-50/80 group">
+      <tr className={`${styles.matrixRow} hover:bg-slate-50/70 transition-colors duration-75`}>
         {/* Celda Fija de Sección / Aula / IE */}
-        <td className="sticky left-0 z-20 bg-white group-hover:bg-slate-50/90 border-r border-slate-200/90 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] px-4 py-2.5 align-middle w-[210px] min-w-[210px] max-w-[230px]">
+        <td className="sticky left-0 z-20 bg-white border-r border-slate-200/90 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] px-4 py-2 align-middle w-[210px] min-w-[210px] max-w-[230px]">
           {isUgelView ? (
             <div className="flex flex-col items-start gap-0.5">
               <div
@@ -91,17 +107,18 @@ const MatrixSectionRow = React.memo<MatrixSectionRowProps>(
         {sortedPreguntas.map((p, idx) => {
           const order = p.order !== undefined && p.order !== null ? Number(p.order) : idx + 1;
           const stat = sec.preguntas[order];
-          const bubbleCls = stat ? getBubbleClass(stat.prevPct) : '';
+          const bubbleCls = stat ? getBubbleClass(stat.prevPct, activeBaremo) : '';
+          const alerta = stat ? getAlertaInfo(stat.prevPct, activeBaremo) : null;
           return (
             <td
               key={order}
               onClick={(e) => onCellClick(e, order)}
-              className="p-1 text-center align-middle relative border-r border-slate-100/60 last:border-r-0 h-[50px] cursor-pointer"
+              className="p-1 text-center align-middle relative border-r border-slate-100/70 last:border-r-0 h-11 w-[54px] min-w-[54px] cursor-pointer"
             >
               {stat && stat.totalEstudiantes > 0 ? (
                 <div
-                  className={`${styles.bubbleBase} ${bubbleCls}`}
-                  title={`${sec.nombre} · ${formatQuestionCode(order)}: ${stat.prevPct}% (${stat.falladas}/${stat.totalEstudiantes} falladas)`}
+                  className={`${baseClass} ${bubbleCls}`}
+                  title={`${sec.nombre} · ${formatQuestionCode(order)}: ${stat.prevPct}% (${stat.falladas}/${stat.totalEstudiantes} falladas)${alerta ? ` · Nivel ${alerta.label}` : ''}`}
                 >
                   <span className={styles.bubbleText}>{stat.prevPct}%</span>
                 </div>
@@ -127,8 +144,10 @@ export const DirectorBurbujasTab: React.FC<DirectorBurbujasTabProps> = ({
   isUgelView = false,
   benchmarkRow,
   headerLabel,
+  baremo,
 }) => {
   const { secciones, totalIe, sortedPreguntas } = metricas;
+  const activeBaremo = metricas.activeBaremo || baremo || DEFAULT_BAREMO_DECISIONES;
 
   // Referencias para Pantalla Completa y Captura de Evidencia en Alta Resolución
   const containerRef = useRef<HTMLDivElement>(null);
@@ -196,6 +215,8 @@ export const DirectorBurbujasTab: React.FC<DirectorBurbujasTabProps> = ({
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(25);
+  // Modo de visualización: 'burbujas' (círculos proporcionales planos) o 'pildoras' (heatmap uniforme ultrarrápido)
+  const [displayMode, setDisplayMode] = useState<'burbujas' | 'pildoras'>('burbujas');
 
   // Filtrado reactivo en memoria ultrarrápido
   const filteredSecciones = useMemo(() => {
@@ -316,122 +337,153 @@ export const DirectorBurbujasTab: React.FC<DirectorBurbujasTabProps> = ({
         {/* Contenedor de la Matriz con Tabla Semántica, Scroll Horizontal y Sticky Column */}
         <div className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
           {/* Barra de Filtro y Paginación (Se marca con data-no-capture="true" para no saturar la foto) */}
-          {showPaginationBar && (
-            <div data-no-capture="true" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-2.5 bg-slate-50/90 border-b border-slate-200 text-xs">
-            {/* Buscador inteligente en memoria */}
-            <div className="relative flex-1 max-w-xs">
-              <MdSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder={isUgelView ? 'Buscar institución...' : 'Buscar aula / docente...'}
-                className="w-full pl-8 pr-7 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 transition-all"
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setCurrentPage(1);
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
-                  title="Limpiar búsqueda"
-                >
-                  <MdClose className="text-sm" />
-                </button>
-              )}
-            </div>
+          {/* Barra de Filtro, Visualización y Paginación (Se marca con data-no-capture="true" para no saturar la foto) */}
+          {secciones.length > 0 && (
+            <div data-no-capture="true" className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 py-2.5 bg-slate-50/90 border-b border-slate-200 text-xs">
+              <div className="flex items-center gap-2.5 flex-1 max-w-lg">
+                {/* Buscador inteligente en memoria */}
+                <div className="relative flex-1 max-w-xs">
+                  <MdSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    placeholder={isUgelView ? 'Buscar institución...' : 'Buscar aula / docente...'}
+                    className="w-full pl-8 pr-7 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 transition-all"
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchTerm('');
+                        setCurrentPage(1);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                      title="Limpiar búsqueda"
+                    >
+                      <MdClose className="text-sm" />
+                    </button>
+                  )}
+                </div>
 
-            {/* Controles de Paginación */}
-            <div className="flex items-center gap-2 text-slate-600 flex-wrap">
-              <span className="text-[11px] text-slate-500">Mostrar:</span>
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="bg-white border border-slate-200 rounded-md px-2 py-1 text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none"
-              >
-                <option value={15}>15</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={9999}>Todas</option>
-              </select>
-              <span className="text-slate-300">|</span>
-              <span className="font-semibold text-slate-700">
-                {filteredSecciones.length === 0
-                  ? '0 resultados'
-                  : `${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, filteredSecciones.length)} de ${filteredSecciones.length}`}
-              </span>
-              {totalPages > 1 && (
-                <div className="inline-flex items-center gap-1 ml-1.5">
+                {/* Selector de Modo de Visualización (Burbujas Proporcionales vs Píldoras Heatmap) */}
+                <div className="inline-flex items-center p-0.5 bg-slate-200/80 rounded-lg border border-slate-300/80 shadow-2xs shrink-0" role="group" aria-label="Modo de visualización de la matriz">
                   <button
                     type="button"
-                    disabled={currentPage <= 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="p-1 rounded-md border border-slate-200 bg-white text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100"
-                    title="Página anterior"
+                    onClick={() => setDisplayMode('burbujas')}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                      displayMode === 'burbujas'
+                        ? 'bg-white text-blue-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                    }`}
+                    title="Ver matriz con círculos proporcionales calibrados al baremo"
                   >
-                    <MdChevronLeft className="text-base" />
+                    <span>🫧 Círculos</span>
                   </button>
-                  <span className="px-2 py-0.5 font-bold text-slate-700">
-                    {currentPage} / {totalPages}
-                  </span>
                   <button
                     type="button"
-                    disabled={currentPage >= totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className="p-1 rounded-md border border-slate-200 bg-white text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100"
-                    title="Página siguiente"
+                    onClick={() => setDisplayMode('pildoras')}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                      displayMode === 'pildoras'
+                        ? 'bg-white text-blue-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                    }`}
+                    title="Ver matriz con formato de píldoras uniformes tipo Heatmap para máxima rapidez y orden"
                   >
-                    <MdChevronRight className="text-base" />
+                    <span>▦ Píldoras</span>
                   </button>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
+              </div>
 
-        <div className="overflow-x-auto relative w-full" style={{ willChange: 'scroll-position' }}>
-          <table className="w-full border-collapse text-left min-w-max">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/90">
-                {/* Columna fija de cabecera */}
-                <th
-                  scope="col"
-                  className="sticky left-0 z-30 bg-slate-100/95 border-r border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] px-4 py-3.5 w-[210px] min-w-[210px] max-w-[230px] align-middle"
+              {/* Controles de Paginación */}
+              <div className="flex items-center gap-2 text-slate-600 flex-wrap">
+                <span className="text-[11px] text-slate-500">Mostrar:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-white border border-slate-200 rounded-md px-2 py-1 text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none"
                 >
-                  {isUgelView ? (
-                    <div
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-white font-semibold text-xs shadow-xs tracking-wide max-w-full"
-                      title={headerLabel || 'Institucion'}
+                  <option value={15}>15</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={9999}>Todas</option>
+                </select>
+                <span className="text-slate-300">|</span>
+                <span className="font-semibold text-slate-700">
+                  {filteredSecciones.length === 0
+                    ? '0 resultados'
+                    : `${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, filteredSecciones.length)} de ${filteredSecciones.length}`}
+                </span>
+                {totalPages > 1 && (
+                  <div className="inline-flex items-center gap-1 ml-1.5">
+                    <button
+                      type="button"
+                      disabled={currentPage <= 1}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      className="p-1 rounded-md border border-slate-200 bg-white text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100"
+                      title="Página anterior"
                     >
-                      <MdDomain className="w-3.5 h-3.5 shrink-0 text-slate-300" />
-                      <span className="truncate">{headerLabel || 'Institucion'}</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
-                      <MdClass className="w-4 h-4 text-slate-500 shrink-0" />
-                      <span>Sección / Aula</span>
-                    </div>
-                  )}
-                </th>
+                      <MdChevronLeft className="text-base" />
+                    </button>
+                    <span className="px-2 py-0.5 font-bold text-slate-700">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      className="p-1 rounded-md border border-slate-200 bg-white text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100"
+                      title="Página siguiente"
+                    >
+                      <MdChevronRight className="text-base" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-                {/* Columnas de Preguntas en Paleta Sobria */}
-                {sortedPreguntas.map((p, idx) => {
-                  const order = p.order !== undefined && p.order !== null ? Number(p.order) : idx + 1;
-                  const code = formatQuestionCode(order);
-                  return (
-                    <th
-                      key={order}
-                      scope="col"
-                      className="p-2 text-center align-middle border-r border-slate-100/90 last:border-r-0 min-w-[58px] bg-slate-50/90"
-                    >
+          <div className="overflow-x-auto relative w-full" style={{ willChange: 'scroll-position' }}>
+            <table className="w-full border-collapse text-left min-w-max table-fixed">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/90">
+                  {/* Columna fija de cabecera */}
+                  <th
+                    scope="col"
+                    className="sticky left-0 z-30 bg-slate-100/95 border-r border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] px-4 py-3.5 w-[210px] min-w-[210px] max-w-[230px] align-middle"
+                  >
+                    {isUgelView ? (
+                      <div
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-white font-semibold text-xs shadow-xs tracking-wide max-w-full"
+                        title={headerLabel || 'Institucion'}
+                      >
+                        <MdDomain className="w-3.5 h-3.5 shrink-0 text-slate-300" />
+                        <span className="truncate">{headerLabel || 'Institucion'}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+                        <MdClass className="w-4 h-4 text-slate-500 shrink-0" />
+                        <span>Sección / Aula</span>
+                      </div>
+                    )}
+                  </th>
+
+                  {/* Columnas de Preguntas en Paleta Sobria */}
+                  {sortedPreguntas.map((p, idx) => {
+                    const order = p.order !== undefined && p.order !== null ? Number(p.order) : idx + 1;
+                    const code = formatQuestionCode(order);
+                    return (
+                      <th
+                        key={order}
+                        scope="col"
+                        className="p-1.5 text-center align-middle border-r border-slate-100/90 last:border-r-0 w-[54px] min-w-[54px] bg-slate-50/90"
+                      >
                       <button
                         type="button"
                         onClick={(e) => handleHeaderClick(e, order)}
@@ -456,7 +508,9 @@ export const DirectorBurbujasTab: React.FC<DirectorBurbujasTabProps> = ({
                     sortedPreguntas={sortedPreguntas}
                     isUgelView={isUgelView}
                     isDocenteView={isDocenteView}
+                    activeBaremo={activeBaremo}
                     onCellClick={handleCellClick}
+                    displayMode={displayMode}
                   />
                 ))
               ) : (
@@ -472,8 +526,8 @@ export const DirectorBurbujasTab: React.FC<DirectorBurbujasTabProps> = ({
 
               {/* Fila Resumen "CONSOLIDADO I.E.", "CONSOLIDADO DOCENTE" o "CONSOLIDADO UGEL" */}
               {totalIe && (
-                <tr className="border-t-2 border-emerald-400/80 bg-emerald-50/30 hover:bg-emerald-50/60 group">
-                  <td className="sticky left-0 z-20 bg-emerald-50/95 group-hover:bg-emerald-100/70 border-r border-emerald-200/90 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] px-4 py-3 align-middle border-l-4 border-l-emerald-600 w-[210px] min-w-[210px] max-w-[230px]">
+                <tr className={`${styles.matrixRow} border-t-2 border-emerald-400/80 bg-emerald-50/30 hover:bg-emerald-50/60 transition-colors duration-75`}>
+                  <td className="sticky left-0 z-20 bg-emerald-50/95 border-r border-emerald-200/90 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] px-4 py-2.5 align-middle border-l-4 border-l-emerald-600 w-[210px] min-w-[210px] max-w-[230px]">
                     <div className="flex flex-col items-start gap-1">
                       <span className="font-extrabold text-emerald-950 text-xs tracking-tight uppercase leading-snug">
                         {isUgelView ? (totalIe.nombre || 'CONSOLIDADO UGEL') : isDocenteView ? 'CONSOLIDADO DOCENTE' : totalIe.nombre}
@@ -486,17 +540,19 @@ export const DirectorBurbujasTab: React.FC<DirectorBurbujasTabProps> = ({
                   {sortedPreguntas.map((p, idx) => {
                     const order = p.order !== undefined && p.order !== null ? Number(p.order) : idx + 1;
                     const stat = totalIe.preguntas[order];
-                    const bubbleCls = stat ? getBubbleClass(stat.prevPct) : '';
+                    const bubbleCls = stat ? getBubbleClass(stat.prevPct, activeBaremo) : '';
+                    const alerta = stat ? getAlertaInfo(stat.prevPct, activeBaremo) : null;
+                    const baseClass = displayMode === 'pildoras' ? styles.bubbleBasePill : styles.bubbleBase;
                     return (
                       <td
                         key={order}
                         onClick={(e) => handleCellClick(e, order)}
-                        className="p-1 text-center align-middle relative border-r border-emerald-100/60 last:border-r-0 h-[50px] cursor-pointer"
+                        className="p-1 text-center align-middle relative border-r border-emerald-100/60 last:border-r-0 h-11 w-[54px] min-w-[54px] cursor-pointer"
                       >
                         {stat && stat.totalEstudiantes > 0 ? (
                           <div
-                            className={`${styles.bubbleBase} ${bubbleCls}`}
-                            title={`${totalIe.nombre} · ${formatQuestionCode(order)}: ${stat.prevPct}% (${stat.falladas}/${stat.totalEstudiantes} evaluados)`}
+                            className={`${baseClass} ${bubbleCls}`}
+                            title={`${totalIe.nombre} · ${formatQuestionCode(order)}: ${stat.prevPct}% (${stat.falladas}/${stat.totalEstudiantes} evaluados)${alerta ? ` · Nivel ${alerta.label}` : ''}`}
                           >
                             <span className={styles.bubbleText}>{stat.prevPct}%</span>
                           </div>
@@ -511,8 +567,8 @@ export const DirectorBurbujasTab: React.FC<DirectorBurbujasTabProps> = ({
 
               {/* Fila Opcional de Benchmark Regional (ej. CONSOLIDADO UGEL al hacer drill-down a una IE) */}
               {benchmarkRow && (
-                <tr className="border-t border-slate-200/80 bg-slate-50/40 hover:bg-slate-100/60 group">
-                  <td className="sticky left-0 z-20 bg-slate-100/95 group-hover:bg-slate-200/60 border-r border-slate-200/90 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] px-4 py-3 align-middle border-l-4 border-l-slate-600 w-[210px] min-w-[210px] max-w-[230px]">
+                <tr className={`${styles.matrixRow} border-t border-slate-200/80 bg-slate-50/40 hover:bg-slate-100/60 transition-colors duration-75`}>
+                  <td className="sticky left-0 z-20 bg-slate-100/95 border-r border-slate-200/90 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] px-4 py-2.5 align-middle border-l-4 border-l-slate-600 w-[210px] min-w-[210px] max-w-[230px]">
                     <div className="flex flex-col items-start gap-1">
                       <span className="font-extrabold text-slate-800 text-xs tracking-tight uppercase leading-snug">
                         {benchmarkRow.nombre}
@@ -525,17 +581,19 @@ export const DirectorBurbujasTab: React.FC<DirectorBurbujasTabProps> = ({
                   {sortedPreguntas.map((p, idx) => {
                     const order = p.order !== undefined && p.order !== null ? Number(p.order) : idx + 1;
                     const stat = benchmarkRow.preguntas[order];
-                    const bubbleCls = stat ? getBubbleClass(stat.prevPct) : '';
+                    const bubbleCls = stat ? getBubbleClass(stat.prevPct, activeBaremo) : '';
+                    const alerta = stat ? getAlertaInfo(stat.prevPct, activeBaremo) : null;
+                    const baseClass = displayMode === 'pildoras' ? styles.bubbleBasePill : styles.bubbleBase;
                     return (
                       <td
                         key={order}
                         onClick={(e) => handleCellClick(e, order)}
-                        className="p-1 text-center align-middle relative border-r border-slate-200/60 last:border-r-0 h-[50px] cursor-pointer"
+                        className="p-1 text-center align-middle relative border-r border-slate-200/60 last:border-r-0 h-11 w-[54px] min-w-[54px] cursor-pointer"
                       >
                         {stat && stat.totalEstudiantes > 0 ? (
                           <div
-                            className={`${styles.bubbleBase} ${bubbleCls}`}
-                            title={`${benchmarkRow.nombre} · ${formatQuestionCode(order)}: ${stat.prevPct}% (${stat.falladas}/${stat.totalEstudiantes} evaluados en la UGEL)`}
+                            className={`${baseClass} ${bubbleCls}`}
+                            title={`${benchmarkRow.nombre} · ${formatQuestionCode(order)}: ${stat.prevPct}% (${stat.falladas}/${stat.totalEstudiantes} evaluados en la UGEL)${alerta ? ` · Nivel ${alerta.label}` : ''}`}
                           >
                             <span className={styles.bubbleText}>{stat.prevPct}%</span>
                           </div>
@@ -552,42 +610,52 @@ export const DirectorBurbujasTab: React.FC<DirectorBurbujasTabProps> = ({
         </div>
       </div>
 
-      {/* Leyenda Ejecutiva de la Matriz de Burbujas */}
+      {/* Leyenda de la Matriz de Burbujas sincronizada con el Baremo Oficial */}
       <div className={styles.legend}>
-        <span className={styles.legendTitle}>Escala:</span>
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <span className={styles.legendTitle}>Baremo (Rezago):</span>
+        <div className="flex items-center gap-2 flex-wrap">
           <div className={styles.legendItem}>
-            <div className={styles.legendDot} style={{ background: '#059669' }} />
-            <span>≤15%</span>
+            <div
+              className={styles.legendDot}
+              style={{ background: '#10b981', width: 11, height: 11 }}
+            />
+            <span>Bajo (&lt;{activeBaremo.medio}%)</span>
           </div>
           <div className={styles.legendItem}>
-            <div className={styles.legendDot} style={{ background: '#10b981' }} />
-            <span>16-25%</span>
+            <div
+              className={styles.legendDot}
+              style={{ background: '#d97706', width: 13, height: 13 }}
+            />
+            <span>Medio ({activeBaremo.medio}–{activeBaremo.alto - 1}%)</span>
           </div>
           <div className={styles.legendItem}>
-            <div className={styles.legendDot} style={{ background: '#84cc16' }} />
-            <span>26-35%</span>
+            <div
+              className={styles.legendDot}
+              style={{ background: '#ea580c', width: 15, height: 15 }}
+            />
+            <span>Alto ({activeBaremo.alto}–{activeBaremo.critico - 1}%)</span>
           </div>
           <div className={styles.legendItem}>
-            <div className={styles.legendDot} style={{ background: '#f59e0b' }} />
-            <span>36-45%</span>
-          </div>
-          <div className={styles.legendItem}>
-            <div className={styles.legendDot} style={{ background: '#f97316' }} />
-            <span>46-55%</span>
-          </div>
-          <div className={styles.legendItem}>
-            <div className={styles.legendDot} style={{ background: '#f43f5e' }} />
-            <span>56-65%</span>
-          </div>
-          <div className={styles.legendItem}>
-            <div className={styles.legendDot} style={{ background: '#e11d48' }} />
-            <span>&gt;65%</span>
+            <div
+              className={styles.legendDot}
+              style={{ background: '#e11d48', width: 17, height: 17 }}
+            />
+            <span>Crítico (≥{activeBaremo.critico}%)</span>
           </div>
         </div>
         <span className={styles.legendNotice}>
-          🫧 Diámetro y color indican criticidad de rezago (% de alumnos que fallaron la pregunta)
+          🫧 Escala calibrada con el baremo: mayor intensidad y tamaño representan mayor rezago pedagógico (% de falladas)
         </span>
+        <button
+          type="button"
+          className={styles.infoHelpBtn}
+          onClick={onOpenGuiaModal}
+          style={{ padding: '0.25rem 0.65rem', fontSize: '0.74rem', marginLeft: 'auto' }}
+          title="Ver explicación completa de la Matriz de Burbujas"
+        >
+          <MdHelpOutline className={styles.infoHelpIcon} style={{ fontSize: '0.95rem' }} />
+          <span>Ver guía completa</span>
+        </button>
       </div>
     </div>
   </div>

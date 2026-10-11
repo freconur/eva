@@ -61,29 +61,29 @@ export const getAlertaInfo = (pct: number, baremo: BaremoDecisiones): AlertaInfo
     return {
       label: 'Crítico',
       clase: 'alertaCritico',
-      color: '#e53935',
+      color: '#ef4444',
       accion: 'Intervención inmediata: Taller de reforzamiento',
     };
   } else if (pct >= baremo.alto) {
     return {
       label: 'Alto',
       clase: 'alertaAlto',
-      color: '#ff8a65',
+      color: '#f87171',
       accion: 'Priorizar: Sesiones de práctica adicionales',
     };
   } else if (pct >= baremo.medio) {
     return {
       label: 'Medio',
       clase: 'alertaMedio',
-      color: '#f9a825',
-      accion: 'Monitoreo: Seguimiento pedagógico',
+      color: '#f59e0b',
+      accion: 'Monitoreo: Seguimiento personalizado',
     };
   } else {
     return {
       label: 'Bajo',
       clase: 'alertaBajo',
-      color: '#66bb6a',
-      accion: 'Mantener: Estrategias actuales de aula',
+      color: '#22c55e',
+      accion: 'Mantener: Estrategias actuales',
     };
   }
 };

@@ -302,6 +302,8 @@ export type Evaluacion = {
 };
 export type UserEstudiante = {
   id?: string;
+  nombres?: string;
+  apellidos?: string;
   nombresApellidos?: string;
   dni?: string;
   dniDocente?: string;
@@ -321,6 +323,8 @@ export type UserEstudiante = {
 
 export type Estudiante = {
   id?: string;
+  nombres?: string;
+  apellidos?: string;
   respuestas?: PreguntasRespuestas[];
   dni?: string;
   nombresApellidos?: string;

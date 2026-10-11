@@ -915,6 +915,7 @@ export const DirectorBrechasTab: React.FC<DirectorBrechasTabProps> = ({
                   onOpenQuestionDetail={onOpenQuestionDetail}
                   onOpenGuiaModal={onOpenGuiaBurbujas}
                   isDocenteView={isDocenteView}
+                  baremo={effectiveBaremo}
                 />
               ) : (
                 <DirectorDecisionesTab

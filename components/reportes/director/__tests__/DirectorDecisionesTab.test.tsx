@@ -1,290 +1,159 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import DirectorDecisionesTab from '../DirectorDecisionesTab';
+import { DirectorDecisionesTab } from '../DirectorDecisionesTab';
 import { DirectorMetricasResumen } from '../types';
 import { DEFAULT_BAREMO_DECISIONES } from '@/components/modals/ConfigurarBaremoModal';
 
-describe('DirectorDecisionesTab Component', () => {
+describe('DirectorDecisionesTab - Lista de Desglose Ordenada por Criticidad', () => {
+  const mockOnOpenQuestionDetail = jest.fn();
+  const mockOnOpenGuiaModal = jest.fn();
+
   const mockMetricas: DirectorMetricasResumen = {
     secciones: [
       {
-        id: 'A',
-        nombre: 'Sección A',
-        docenteNombre: 'Profesor Juan Perez',
-        totalEstudiantes: 25,
-        preguntas: {
-          1: {
-            order: 1,
-            preguntaId: 'p1',
-            totalEstudiantes: 25,
-            correctas: 10,
-            falladas: 15,
-            aciertoPct: 40,
-            prevPct: 60,
-          },
-        },
-        avgPrev: 60,
+        id: 'sec-1',
+        nombre: '1° A',
+        docenteNombre: 'Juan Pérez',
+        totalEstudiantes: 20,
+        avgPrev: 45,
         criticas: 1,
-        altas: 0,
-        medias: 0,
-        bajas: 0,
+        altas: 1,
+        medias: 1,
+        bajas: 1,
         topPregunta: {
-          order: 1,
-          preguntaId: 'p1',
-          totalEstudiantes: 25,
-          correctas: 10,
-          falladas: 15,
-          aciertoPct: 40,
-          prevPct: 60,
+          order: 3,
+          preguntaId: 'q3',
+          totalEstudiantes: 20,
+          correctas: 4,
+          falladas: 16,
+          aciertoPct: 20,
+          prevPct: 80,
         },
         nivelRiesgo: {
           label: 'Crítico',
-          icon: 'critico',
+          icon: '',
           bg: '#fee2e2',
           text: '#991b1b',
           color: '#ef4444',
         },
-      },
-      {
-        id: 'B',
-        nombre: 'Sección B',
-        docenteNombre: 'Profesor Juan Perez',
-        totalEstudiantes: 20,
         preguntas: {
           1: {
             order: 1,
-            preguntaId: 'p1',
+            preguntaId: 'q1',
             totalEstudiantes: 20,
             correctas: 15,
             falladas: 5,
             aciertoPct: 75,
-            prevPct: 25,
+            prevPct: 25, // Nivel Bajo
+          },
+          2: {
+            order: 2,
+            preguntaId: 'q2',
+            totalEstudiantes: 20,
+            correctas: 11,
+            falladas: 9,
+            aciertoPct: 55,
+            prevPct: 45, // Nivel Medio
+          },
+          3: {
+            order: 3,
+            preguntaId: 'q3',
+            totalEstudiantes: 20,
+            correctas: 4,
+            falladas: 16,
+            aciertoPct: 20,
+            prevPct: 80, // Nivel Crítico
+          },
+          4: {
+            order: 4,
+            preguntaId: 'q4',
+            totalEstudiantes: 20,
+            correctas: 9,
+            falladas: 11,
+            aciertoPct: 45,
+            prevPct: 55, // Nivel Alto
           },
         },
-        avgPrev: 25,
-        criticas: 0,
-        altas: 0,
-        medias: 0,
-        bajas: 1,
-        topPregunta: {
-          order: 1,
-          preguntaId: 'p1',
-          totalEstudiantes: 20,
-          correctas: 15,
-          falladas: 5,
-          aciertoPct: 75,
-          prevPct: 25,
-        },
-        nivelRiesgo: {
-          label: 'Bajo',
-          icon: 'bajo',
-          bg: '#dcfce7',
-          text: '#166534',
-          color: '#22c55e',
-        },
       },
     ],
-    totalIe: {
-      id: 'total_ie',
-      nombre: 'TOTAL I.E.',
-      docenteNombre: 'Profesor Juan Perez',
-      totalEstudiantes: 45,
-      preguntas: {
-        1: {
-          order: 1,
-          preguntaId: 'p1',
-          totalEstudiantes: 45,
-          correctas: 25,
-          falladas: 20,
-          aciertoPct: 56,
-          prevPct: 44,
-        },
-      },
-      avgPrev: 44,
-      criticas: 0,
-      altas: 1,
-      medias: 0,
-      bajas: 0,
-      topPregunta: {
-        order: 1,
-        preguntaId: 'p1',
-        totalEstudiantes: 45,
-        correctas: 25,
-        falladas: 20,
-        aciertoPct: 56,
-        prevPct: 44,
-      },
-      nivelRiesgo: {
-        label: 'Medio',
-        icon: 'medio',
-        bg: '#fef9c3',
-        text: '#854d0e',
-        color: '#eab308',
-      },
-    },
-    sortedPreguntas: [
-      {
-        id: 'p1',
-        order: 1,
-        pregunta: '¿Cuál es la idea principal?',
-        preguntaDocente: 'Modelar inferencias de textos',
-        alternativas: [],
-        respuesta: 'A',
-      },
-    ],
+    totalIe: null,
+    sortedPreguntas: [],
     kpis: {
       totalCritico: 1,
-      totalAlto: 0,
-      totalMedio: 0,
+      totalAlto: 1,
+      totalMedio: 1,
       totalBajo: 1,
-      avgPrev: 43,
+      avgPrev: 45,
     },
     activeBaremo: DEFAULT_BAREMO_DECISIONES,
   };
 
-  const defaultProps = {
-    metricas: mockMetricas,
-    preguntas: mockMetricas.sortedPreguntas,
-    onOpenQuestionDetail: jest.fn(),
-    onOpenGuiaModal: jest.fn(),
-  };
+  const mockPreguntas = [
+    { id: 'q1', order: 1, pregunta: '¿Pregunta 1?', preguntaDocente: 'Competencia 1' },
+    { id: 'q2', order: 2, pregunta: '¿Pregunta 2?', preguntaDocente: 'Competencia 2' },
+    { id: 'q3', order: 3, pregunta: '¿Pregunta 3?', preguntaDocente: 'Competencia 3' },
+    { id: 'q4', order: 4, pregunta: '¿Pregunta 4?', preguntaDocente: 'Competencia 4' },
+  ];
 
-  describe('Vista Director (isDocenteView = false)', () => {
-    it('muestra columna "Sección / Docente" y muestra los nombres de los docentes en las filas', () => {
-      render(<DirectorDecisionesTab {...defaultProps} isDocenteView={false} />);
+  it('renderiza la tabla analítica con las cabeceras solicitadas en vez de cards', () => {
+    render(
+      <DirectorDecisionesTab
+        metricas={mockMetricas}
+        preguntas={mockPreguntas as any}
+        onOpenQuestionDetail={mockOnOpenQuestionDetail}
+        onOpenGuiaModal={mockOnOpenGuiaModal}
+      />
+    );
 
-      expect(screen.getByText('Sección / Docente')).toBeInTheDocument();
-      expect(screen.getAllByText(/Prof\. Profesor Juan Perez/).length).toBeGreaterThan(0);
-      expect(screen.getByText('Sección A')).toBeInTheDocument();
-      expect(screen.getByText('Sección B')).toBeInTheDocument();
-    });
-
-    it('permite filtrar por sección individual en modo director', () => {
-      render(
-        <DirectorDecisionesTab
-          {...defaultProps}
-          isDocenteView={false}
-          selectedSeccion="A"
-        />
-      );
-
-      // Aparece en el dropdown y en la fila de la tabla
-      expect(screen.getAllByText('Sección A').length).toBe(2);
-      expect(screen.queryByText('Sección B')).not.toBeInTheDocument();
-    });
+    // Las cabeceras exactas de la tabla
+    expect(screen.getByText('Ítem')).toBeInTheDocument();
+    expect(screen.getByText('% en Previo al Inicio (Rezago)')).toBeInTheDocument();
+    expect(screen.getByText('Estudiantes Afectados')).toBeInTheDocument();
+    expect(screen.getByText('Nivel de Alerta')).toBeInTheDocument();
+    expect(screen.getByText('Acción Recomendada')).toBeInTheDocument();
   });
 
-  describe('Vista Docente (isDocenteView = true)', () => {
-    it('por defecto activa vista "global", muestra "Cohorte", no muestra nombres de docente redundantes', () => {
-      render(<DirectorDecisionesTab {...defaultProps} isDocenteView={true} />);
+  it('ordena los ítems de mayor a menor rezago (de más crítico a menos crítico)', () => {
+    render(
+      <DirectorDecisionesTab
+        metricas={mockMetricas}
+        preguntas={mockPreguntas as any}
+        onOpenQuestionDetail={mockOnOpenQuestionDetail}
+        onOpenGuiaModal={mockOnOpenGuiaModal}
+      />
+    );
 
-      // Debe mostrar la columna Cohorte
-      expect(screen.getByText('Cohorte')).toBeInTheDocument();
+    // Los botones de ítem (P03, P04, P02, P01)
+    const itemButtons = screen.getAllByRole('button', { name: /^P0[1-4]$/ });
+    expect(itemButtons).toHaveLength(4);
 
-      // Debe mostrar la cohorte consolidada de todos sus estudiantes
-      expect(screen.getAllByText('Consolidado Global (Todos mis estudiantes)').length).toBeGreaterThan(0);
+    // Debe estar ordenado descendentemente:
+    // P03 (80%) -> P04 (55%) -> P02 (45%) -> P01 (25%)
+    expect(itemButtons[0]).toHaveTextContent('P03');
+    expect(itemButtons[1]).toHaveTextContent('P04');
+    expect(itemButtons[2]).toHaveTextContent('P02');
+    expect(itemButtons[3]).toHaveTextContent('P01');
 
-      // No debe mostrar "Prof. Profesor Juan Perez" redundante
-      expect(screen.queryByText(/Prof\. Profesor Juan Perez/)).not.toBeInTheDocument();
-
-      // Debe indicar Rezago Global en el KPI
-      expect(screen.getByText('Rezago Global')).toBeInTheDocument();
-    });
-
-    it('al seleccionar una sección específica muestra "Sección / Aula", filtra a esa sección y adapta el KPI a "Rezago Aula"', () => {
-      render(
-        <DirectorDecisionesTab
-          {...defaultProps}
-          isDocenteView={true}
-          selectedSeccion="A"
-        />
-      );
-
-      // Debe mostrar la columna "Sección / Aula"
-      expect(screen.getByText('Sección / Aula')).toBeInTheDocument();
-
-      // Solo muestra la sección A (en dropdown y fila)
-      expect(screen.getAllByText('Sección A').length).toBe(2);
-      expect(screen.queryByText('Sección B')).not.toBeInTheDocument();
-
-      // No debe mostrar el nombre del docente redundante
-      expect(screen.queryByText(/Prof\. Profesor Juan Perez/)).not.toBeInTheDocument();
-
-      // Debe indicar Rezago Aula en el KPI
-      expect(screen.getByText('Rezago Aula')).toBeInTheDocument();
-    });
-
-    it('llama a onSelectSeccion al cambiar de filtro en el dropdown custom', () => {
-      const onSelectSeccionMock = jest.fn();
-
-      render(
-        <DirectorDecisionesTab
-          {...defaultProps}
-          isDocenteView={true}
-          selectedSeccion="global"
-          onSelectSeccion={onSelectSeccionMock}
-        />
-      );
-
-      // Abrir el dropdown
-      const label = screen.getByText('Filtrar aula:');
-      const dropdownBtn = label.closest('div')!.querySelector('button')!;
-      fireEvent.click(dropdownBtn);
-
-      // Seleccionar Sección A en el listado desplegable
-      const options = screen.getAllByText('Sección A');
-      // La opción dentro del dropdown desplegado
-      fireEvent.click(options[options.length - 1]);
-
-      expect(onSelectSeccionMock).toHaveBeenCalledWith('A');
-    });
-
-    it('dropdownOptions incluye "Global (Todos mis estudiantes)" y "Todas mis secciones" para docentes con múltiples aulas', () => {
-      render(<DirectorDecisionesTab {...defaultProps} isDocenteView={true} />);
-
-      // Abrir el dropdown
-      const label = screen.getByText('Filtrar aula:');
-      const dropdownBtn = label.closest('div')!.querySelector('button')!;
-      fireEvent.click(dropdownBtn);
-
-      expect(screen.getAllByText('Global (Todos mis estudiantes)').length).toBeGreaterThan(0);
-      expect(screen.getByText(/Todas mis secciones \(2 aulas\)/)).toBeInTheDocument();
-      expect(screen.getByText('Sección A')).toBeInTheDocument();
-      expect(screen.getByText('Sección B')).toBeInTheDocument();
-    });
+    // Verificar texto de Estudiantes Afectados
+    expect(screen.getByText('16 de 20')).toBeInTheDocument();
+    expect(screen.getByText('11 de 20')).toBeInTheDocument();
+    expect(screen.getByText('9 de 20')).toBeInTheDocument();
+    expect(screen.getByText('5 de 20')).toBeInTheDocument();
   });
 
-  describe('isUgelView (Enfoque Especialista UGEL / Global)', () => {
-    it('muestra únicamente los datos consolidados globales de la UGEL y no por director', () => {
-      render(
-        <DirectorDecisionesTab
-          {...defaultProps}
-          isUgelView={true}
-          ugelName="Puno"
-        />
-      );
+  it('permite hacer clic en un ítem para abrir el detalle pedagógico', () => {
+    render(
+      <DirectorDecisionesTab
+        metricas={mockMetricas}
+        preguntas={mockPreguntas as any}
+        onOpenQuestionDetail={mockOnOpenQuestionDetail}
+        onOpenGuiaModal={mockOnOpenGuiaModal}
+      />
+    );
 
-      // Cabecera ejecutiva adaptada a UGEL
-      expect(
-        screen.getByText(/Priorización pedagógica consolidada a nivel de la UGEL Puno/i)
-      ).toBeInTheDocument();
+    const btnP03 = screen.getByRole('button', { name: 'P03' });
+    fireEvent.click(btnP03);
 
-      // Indicador de Rezago UGEL en KPI
-      expect(screen.getByText('Rezago UGEL')).toBeInTheDocument();
-
-      // Cabecera de tabla
-      expect(screen.getByText('Ámbito / Consolidado')).toBeInTheDocument();
-
-      // Fila única consolidada de la UGEL
-      expect(screen.getByText('Consolidado UGEL Puno')).toBeInTheDocument();
-      expect(screen.getByText(/estudiantes evaluados en la UGEL/i)).toBeInTheDocument();
-
-      // NO debe mostrar dropdown de filtrar aula
-      expect(screen.queryByText('Filtrar aula:')).not.toBeInTheDocument();
-
-      // NO debe listar las secciones individuales de colegios como filas separadas
-      expect(screen.queryByText('Sección A')).not.toBeInTheDocument();
-      expect(screen.queryByText('Sección B')).not.toBeInTheDocument();
-    });
+    expect(mockOnOpenQuestionDetail).toHaveBeenCalledWith(3, expect.any(Object));
   });
 });

@@ -10,13 +10,16 @@ import { getGradoTexto } from '@/fuctions/regiones';
 interface AcordeonGraficosTendenciaProps {
   idEvaluacion: string;
   dniDirector?: string;
+  isDirectView?: boolean;
 }
 
 const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
   idEvaluacion,
-  dniDirector
+  dniDirector,
+  isDirectView = false,
 }) => {
   const [mostrarGraficos, setMostrarGraficos] = useState(false);
+  const activo = isDirectView ? true : mostrarGraficos;
   const [evaluacionesAComparar, setEvaluacionesAComparar] = useState<string[]>([]);
   
   // Custom dropdown states
@@ -45,10 +48,10 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch evaluations directly from Firestore when accordion is opened to guarantee list populates
+  // Fetch evaluations directly from Firestore when accordion is opened or in direct view
   useEffect(() => {
     let isMounted = true;
-    if (mostrarGraficos && evaluacionesDb.length === 0) {
+    if (activo && evaluacionesDb.length === 0) {
       const loadEvaluaciones = async () => {
         try {
           if (isMounted) setLoadingEvaluaciones(true);
@@ -71,7 +74,7 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [mostrarGraficos, evaluacionesDb.length]);
+  }, [activo, evaluacionesDb.length]);
 
   // Filtrar evaluaciones que sean del mismo tipo de evaluación pero que no sea la actual
   const evaluacionesDisponiblesParaComparar = useMemo(() => {
@@ -123,25 +126,27 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
   }, [evaluacionesAComparar, evaluacionesDisponiblesParaComparar]);
 
   return (
-    <div className={styles.accordionContainer}>
-      <div 
-        onClick={toggleGraficos}
-        className={mostrarGraficos ? styles.headerOpen : styles.header}
-        style={{ cursor: 'pointer' }}
-      >
-        <div className={styles.titleGroup}>
-          <RiExchangeLine style={{ fontSize: '1.25rem', color: '#3b82f6' }} />
-          <h3 className={styles.title}>Gráfico Comparativo de Tendencias entre Evaluaciones</h3>
+    <div className={isDirectView ? 'w-full' : styles.accordionContainer}>
+      {!isDirectView && (
+        <div 
+          onClick={toggleGraficos}
+          className={mostrarGraficos ? styles.headerOpen : styles.header}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className={styles.titleGroup}>
+            <RiExchangeLine style={{ fontSize: '1.25rem', color: '#3b82f6' }} />
+            <h3 className={styles.title}>Gráfico Comparativo de Tendencias entre Evaluaciones</h3>
+          </div>
+          <div className={mostrarGraficos ? styles.chevronOpen : styles.chevron}>
+            <RiArrowDownSLine style={{ fontSize: '1.25rem' }} />
+          </div>
         </div>
-        <div className={mostrarGraficos ? styles.chevronOpen : styles.chevron}>
-          <RiArrowDownSLine style={{ fontSize: '1.25rem' }} />
-        </div>
-      </div>
+      )}
 
-      <div className={`${styles.contentWrapper} ${mostrarGraficos ? styles.contentWrapperOpen : ''}`}>
-        <div className={`${styles.contentInner} ${mostrarGraficos ? styles.innerVisible : ''}`}>
+      <div className={isDirectView ? 'w-full pt-1' : `${styles.contentWrapper} ${mostrarGraficos ? styles.contentWrapperOpen : ''}`}>
+        <div className={isDirectView ? 'w-full' : `${styles.contentInner} ${mostrarGraficos ? styles.innerVisible : ''}`}>
           
-          {mostrarGraficos && (
+          {activo && (
             <div className={styles.comparisonContainer}>
               <h4 className={styles.comparisonTitle}>
                 <RiExchangeLine className={styles.comparisonTitleIcon} />
@@ -279,7 +284,7 @@ const AcordeonGraficosTendencia: React.FC<AcordeonGraficosTendenciaProps> = ({
             </div>
           )}
 
-          {mostrarGraficos && (
+          {activo && (
             <GraficoTendencia
               idEvaluacion={idEvaluacion}
               evaluacionesAComparar={evaluacionesAComparar}

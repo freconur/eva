@@ -14,6 +14,7 @@ import AsignarEvaluacionUgelModal from './AsignarEvaluacionUgelModal'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState, useRef, useCallback } from 'react'
+import { toast } from 'react-toastify'
 import { MdEditSquare, MdEdit, MdDelete, MdAssignment, MdAddCircle, MdSettings, MdAssessment, MdTrendingUp, MdEmojiEvents, MdDragIndicator, MdViewList } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 import { FaArrowUp, FaArrowDown } from 'react-icons/fa'
@@ -43,6 +44,41 @@ const Evaluacion = () => {
   const route = useRouter()
   const { evaluacion, preguntasRespuestas, currentUserData, loaderPages } = useGlobalContext()
   const { getEvaluacion, getPreguntasRespuestas, updatePreguntaRespuesta, updatePreguntaPuntaje, updatePreguntasOrder, deletePreguntaRespuesta, updateEvaluacion } = useAgregarEvaluaciones()
+  const [isAuditing, setIsAuditing] = useState(false)
+
+  // Detectar modo auditoría
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const audited = sessionStorage.getItem('audited_user')
+      const realAdmin = sessionStorage.getItem('real_admin_user')
+      setIsAuditing(Boolean(audited || realAdmin))
+    }
+  }, [currentUserData])
+
+  const isAdmin = Boolean(
+    isAuditing ||
+    currentUserData?.rol === 4 ||
+    (currentUserData as any)?.perfil?.rol === 4
+  )
+
+  // Bloqueo y protección de acceso para usuarios no administradores
+  useEffect(() => {
+    if (!route.isReady) return
+
+    // Cuando el usuario esté disponible, verificar permiso de administrador
+    if (currentUserData && (currentUserData.dni || currentUserData.id)) {
+      if (!isAdmin) {
+        toast.error('Acceso denegado: Solo los administradores tienen permiso para configurar evaluaciones.')
+        const evalId = route.query.id
+        if (evalId) {
+          route.replace(`/admin/evaluaciones/evaluacion/reporte?idEvaluacion=${evalId}`)
+        } else {
+          route.replace('/mi-cuenta')
+        }
+      }
+    }
+  }, [currentUserData, isAdmin, route.isReady, route.query.id])
+
   const [showModal, setShowModal] = useState(false)
   const [preguntasLocales, setPreguntasLocales] = useState<any[]>([])
   const [scoresLocales, setScoresLocales] = useState<Record<string, string>>({})
@@ -337,12 +373,12 @@ const Evaluacion = () => {
   // Verificar si alguna pregunta tiene la propiedad puntaje
   const hayPuntajes = preguntasRespuestas.some(pregunta => pregunta.puntaje !== undefined && pregunta.puntaje !== null)
 
-  // Lógica de permisos centralizada
-  const isOwnerOrAdmin = currentUserData.rol === 4
+  // Lógica de permisos centralizada: restringido exclusivamente a administradores
+  const isOwnerOrAdmin = isAdmin
   const isAssignedRegional = evaluacion.usuariosConPermisos?.includes(currentUserData.dni || '')
   const isAssignedUgel = evaluacion.usuariosConPermisosUgel?.includes(currentUserData.dni || '')
 
-  const canManageEvaluation = isOwnerOrAdmin || isAssignedRegional || isAssignedUgel
+  const canManageEvaluation = isAdmin
   const canEditQuestions = canManageEvaluation && !evaluacion.active
 
   const handleshowModal = () => {
@@ -453,7 +489,7 @@ const Evaluacion = () => {
 
   useEffect(() => {
     const evalId = route.query.id;
-    if (!evalId) return;
+    if (!evalId || !isAdmin) return;
 
     const unsubscribeEvaluacion = getEvaluacion(`${evalId}`);
     const unsubscribePreguntas = getPreguntasRespuestas(`${evalId}`);
@@ -463,7 +499,7 @@ const Evaluacion = () => {
       if (unsubscribePreguntas) unsubscribePreguntas();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route.query.id]);
+  }, [route.query.id, isAdmin]);
 
   // Sincronizar estado local al recibir las preguntas de Firestore
   useEffect(() => {
@@ -482,6 +518,26 @@ const Evaluacion = () => {
       }, 100)
     }
   }, [preguntasRespuestas, restoreScrollPosition])
+
+  // Guarda de acceso: Si el usuario aún no cargó o no es administrador, no renderizar la configuración
+  if (!currentUserData || (!currentUserData.dni && !currentUserData.id)) {
+    return (
+      <div className={styles.loaderContainer} style={{ minHeight: '60vh' }}>
+        <RiLoader4Line className={styles.spinner} />
+        <span>Verificando permisos de acceso...</span>
+      </div>
+    )
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className={styles.loaderContainer} style={{ minHeight: '60vh' }}>
+        <RiLoader4Line className={styles.spinner} style={{ color: '#ef4444' }} />
+        <span style={{ color: '#dc2626', fontWeight: 600 }}>Acceso denegado. Redirigiendo al reporte...</span>
+      </div>
+    )
+  }
+
   return (
     <>
       {showModal && (
