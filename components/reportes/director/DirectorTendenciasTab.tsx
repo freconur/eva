@@ -26,7 +26,7 @@ import {
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 import GraficoTendenciaColegio from '@/components/grafico-tendencia';
 import { generarDataGraficoPiechart } from '@/features/utils/generar-data-grafico-piechart';
@@ -488,7 +488,15 @@ export const DirectorTendenciasTab: React.FC<DirectorTendenciasTabProps> = ({
     estudiantesFiltrados.forEach((e) => {
       const p = Number(e.puntaje) || 0;
       sumPts += p;
-      const niv = (e.nivel || '').toLowerCase();
+      let niv = (e.nivel || '').toLowerCase();
+      if ((!niv || niv === 'sin clasificar') && evaluacion?.nivelYPuntaje) {
+        const matchNivel = evaluacion.nivelYPuntaje.find(
+          (np: any) => p >= (np.min || 0) && p <= (np.max || 20)
+        );
+        if (matchNivel?.nivel) {
+          niv = matchNivel.nivel.toLowerCase();
+        }
+      }
       if (niv.includes('satisfactorio')) sat++;
       else if (niv.includes('proceso')) proc++;
       else if (niv.includes('previo')) prev++;
@@ -509,11 +517,11 @@ export const DirectorTendenciasTab: React.FC<DirectorTendenciasTabProps> = ({
         hasData: total > 0,
       },
     }));
-  }, [evaluacion?.id, estudiantesFiltrados]);
+  }, [evaluacion?.id, evaluacion?.nivelYPuntaje, estudiantesFiltrados]);
 
   // 2. Cargar asíncronamente las etapas restantes asignadas (EDI, EP1, EP2)
   useEffect(() => {
-    if (!isEtapaConfigurada || !dniDirector) return;
+    if (!isEtapaConfigurada || (!dniDirector && !dniDocente)) return;
 
     const idsParaConsultar = [ediId, ep1Id, ep2Id].filter(
       (id): id is string => !!id && id !== evaluacion?.id && !etapasCache[id]
@@ -531,24 +539,41 @@ export const DirectorTendenciasTab: React.FC<DirectorTendenciasTabProps> = ({
 
       for (const idTarget of idsParaConsultar) {
         try {
-          const targetEvalObj = (evaluacionesDb || []).find((e: any) => e.id === idTarget);
+          const db = getFirestore();
+          let targetEvalObj = (evaluacionesDb || []).find((e: any) => e.id === idTarget);
+          if (!targetEvalObj) {
+            try {
+              const evalSnap = await getDoc(doc(db, 'evaluaciones', idTarget));
+              if (evalSnap.exists()) {
+                targetEvalObj = { id: evalSnap.id, ...evalSnap.data() };
+              }
+            } catch (errEval) {
+              console.error(`Error al recuperar evaluación ${idTarget}:`, errEval);
+            }
+          }
+
           const targetYear = targetEvalObj?.añoDelExamen
             ? Number(targetEvalObj.añoDelExamen)
             : yearSelected || new Date().getFullYear();
 
           if (dniDocente) {
-            const db = getFirestore();
             const targetMonth =
               targetEvalObj?.mesDelExamen !== undefined && targetEvalObj.mesDelExamen !== ''
                 ? Number(targetEvalObj.mesDelExamen)
-                : monthSelected || 0;
+                : monthSelected !== undefined && monthSelected !== null
+                  ? monthSelected
+                  : 0;
 
             const coll = collection(
               db,
               `/evaluaciones/${idTarget}/estudiantes-evaluados/${targetYear}/${targetMonth}`
             );
-            const q = query(coll, where('dniDocente', '==', String(dniDocente)));
-            const snap = await getDocs(q);
+            let q = query(coll, where('dniDocente', '==', String(dniDocente)));
+            let snap = await getDocs(q);
+            if (snap.empty && !isNaN(Number(dniDocente))) {
+              const snapNum = await getDocs(query(coll, where('dniDocente', '==', Number(dniDocente))));
+              if (!snapNum.empty) snap = snapNum;
+            }
             const alumnos: any[] = [];
             snap.forEach((d) => alumnos.push(d.data()));
 
@@ -560,7 +585,15 @@ export const DirectorTendenciasTab: React.FC<DirectorTendenciasTabProps> = ({
               alumnos.forEach((e) => {
                 const p = Number(e.puntaje) || 0;
                 sumPts += p;
-                const niv = (e.nivel || '').toLowerCase();
+                let niv = (e.nivel || '').toLowerCase();
+                if ((!niv || niv === 'sin clasificar') && targetEvalObj?.nivelYPuntaje) {
+                  const matchNivel = targetEvalObj.nivelYPuntaje.find(
+                    (np: any) => p >= (np.min || 0) && p <= (np.max || 20)
+                  );
+                  if (matchNivel?.nivel) {
+                    niv = matchNivel.nivel.toLowerCase();
+                  }
+                }
                 if (niv.includes('satisfactorio')) sat++;
                 else if (niv.includes('proceso')) proc++;
                 else if (niv.includes('previo')) prev++;
@@ -579,7 +612,7 @@ export const DirectorTendenciasTab: React.FC<DirectorTendenciasTabProps> = ({
                 hasData: total > 0,
               };
             }
-          } else {
+          } else if (dniDirector) {
             const response: any = await getReporte({
               idEvaluacion: idTarget,
               year: targetYear,
@@ -595,7 +628,15 @@ export const DirectorTendenciasTab: React.FC<DirectorTendenciasTabProps> = ({
               alumnos.forEach((e) => {
                 const p = Number(e.puntaje) || 0;
                 sumPts += p;
-                const niv = (e.nivel || '').toLowerCase();
+                let niv = (e.nivel || '').toLowerCase();
+                if ((!niv || niv === 'sin clasificar') && targetEvalObj?.nivelYPuntaje) {
+                  const matchNivel = targetEvalObj.nivelYPuntaje.find(
+                    (np: any) => p >= (np.min || 0) && p <= (np.max || 20)
+                  );
+                  if (matchNivel?.nivel) {
+                    niv = matchNivel.nivel.toLowerCase();
+                  }
+                }
                 if (niv.includes('satisfactorio')) sat++;
                 else if (niv.includes('proceso')) proc++;
                 else if (niv.includes('previo')) prev++;
@@ -654,7 +695,7 @@ export const DirectorTendenciasTab: React.FC<DirectorTendenciasTabProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [ediId, ep1Id, ep2Id, evaluacion?.id, dniDirector, dniDocente, yearSelected, monthSelected, evaluacionesDb, etapasCache]);
+  }, [ediId, ep1Id, ep2Id, evaluacion?.id, dniDirector, dniDocente, yearSelected, monthSelected, evaluacionesDb, etapasCache, isEtapaConfigurada]);
 
   // Lista estructurada de las 3 etapas para los gráficos longitudinales
   const etapasLista = useMemo(() => {

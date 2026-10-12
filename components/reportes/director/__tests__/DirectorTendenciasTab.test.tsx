@@ -5,6 +5,23 @@ import DirectorTendenciasTab from '../DirectorTendenciasTab';
 // Mock de Firestore
 jest.mock('firebase/firestore', () => ({
   getFirestore: jest.fn(() => ({})),
+  collection: jest.fn(() => ({})),
+  query: jest.fn(() => ({})),
+  where: jest.fn(() => ({})),
+  getDocs: jest.fn(() =>
+    Promise.resolve({
+      empty: false,
+      forEach: (callback: any) => {
+        callback({
+          data: () => ({
+            puntaje: 18,
+            nivel: 'Satisfactorio',
+            dniDocente: '87654321',
+          }),
+        });
+      },
+    })
+  ),
   doc: jest.fn(),
   getDoc: jest.fn(() =>
     Promise.resolve({
@@ -402,5 +419,24 @@ describe('DirectorTendenciasTab Component', () => {
     expect(screen.getByText(/EP2 \(Progresiva 2\)/i)).toBeInTheDocument();
     expect(screen.queryByText(/EP1 \(Proceso 1\)/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/EP2 \(Proceso 2\)/i)).not.toBeInTheDocument();
+  });
+
+  it('permite cargar y graficar las etapas restantes para la vista de Docente usando dniDocente sin requerir dniDirector', async () => {
+    const firestore = require('firebase/firestore');
+    const docenteProps: any = {
+      ...defaultProps,
+      isDocenteView: true,
+      dniDocente: '87654321',
+      dniDirector: undefined,
+    };
+
+    await React.act(async () => {
+      render(<DirectorTendenciasTab {...docenteProps} />);
+    });
+
+    // Debe consultar Firestore para las etapas que faltan (EP1 y EP2)
+    expect(firestore.collection).toHaveBeenCalled();
+    expect(firestore.where).toHaveBeenCalledWith('dniDocente', '==', '87654321');
+    expect(screen.getByText(/Tendencia Longitudinal por Etapas/i)).toBeInTheDocument();
   });
 });

@@ -9,6 +9,8 @@ interface EvaluadosHeaderProps {
 	evaluadosCount: number;
 	onOpenColorConfig?: () => void;
 	onOpenOnboarding?: () => void;
+	backHref?: string;
+	title?: string;
 }
 
 export const EvaluadosHeader: React.FC<EvaluadosHeaderProps> = ({
@@ -17,11 +19,16 @@ export const EvaluadosHeader: React.FC<EvaluadosHeaderProps> = ({
 	evaluadosCount,
 	onOpenColorConfig,
 	onOpenOnboarding,
+	backHref,
+	title,
 }) => {
+	const returnUrl = backHref || `/admin/especialistas/evaluaciones-especialistas/evaluacion/${id}`;
+	const headerTitle = title || 'Especialistas Evaluados';
+
 	return (
 		<div className={styles.header}>
 			<div className={styles.headerTop}>
-				<Link href={`/admin/especialistas/evaluaciones-especialistas/evaluacion/${id}`} className={styles.backButton}>
+				<Link href={returnUrl} className={styles.backButton}>
 					<MdArrowBack /> Volver
 				</Link>
 
@@ -53,7 +60,7 @@ export const EvaluadosHeader: React.FC<EvaluadosHeaderProps> = ({
 			</div>
 			<div className={styles.headerContent}>
 				<h1 className={styles.headerTitle}>
-					Especialistas Evaluados
+					{headerTitle}
 				</h1>
 				{dataEvaluacionDocente?.name && (
 					<p className={styles.headerSubtitle}>

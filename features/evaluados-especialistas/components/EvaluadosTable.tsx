@@ -31,6 +31,9 @@ interface EvaluadosTableProps {
 	getNivel: (score: number) => any;
 	handleOpenEvolucion: (info: User, evalu?: User) => void;
 	handleDeleteClick: (e: React.MouseEvent, evalu: User) => void;
+	targetNoun?: string;
+	tableColumnLabel?: string;
+	getReporteIndividualHref?: (id: string, evalu: User) => string;
 }
 
 export const EvaluadosTable: React.FC<EvaluadosTableProps> = ({
@@ -57,6 +60,9 @@ export const EvaluadosTable: React.FC<EvaluadosTableProps> = ({
 	getNivel,
 	handleOpenEvolucion,
 	handleDeleteClick,
+	targetNoun = 'especialista',
+	tableColumnLabel = 'Especialista',
+	getReporteIndividualHref,
 }) => {
 	const [isTablePhaseDropdownOpen, setIsTablePhaseDropdownOpen] = useState(false);
 	const tablePhaseDropdownRef = useRef<HTMLDivElement>(null);
@@ -221,7 +227,7 @@ export const EvaluadosTable: React.FC<EvaluadosTableProps> = ({
 					<MdBarChart /> Gráficos
 				</button>
 				<span className={styles.resultCount}>
-					{groupedEvaluados.length} especialista{groupedEvaluados.length !== 1 ? 's' : ''}
+					{groupedEvaluados.length} {targetNoun}{groupedEvaluados.length !== 1 ? 's' : ''}
 				</span>
 			</div>
 
@@ -229,13 +235,13 @@ export const EvaluadosTable: React.FC<EvaluadosTableProps> = ({
 			{loaderPages ? (
 				<div className={styles.loaderContainer}>
 					<RiLoader4Line className={styles.loaderIcon} />
-					<p className={styles.loaderText}>Cargando especialistas...</p>
+					<p className={styles.loaderText}>Cargando {targetNoun}s...</p>
 				</div>
 			) : groupedEvaluados.length === 0 ? (
 				<div className={styles.emptyState}>
 					<MdPeople className={styles.emptyIcon} />
 					<p className={styles.emptyText}>
-						{searchQuery ? 'Sin resultados para tu búsqueda.' : 'Aún no hay especialistas evaluados.'}
+						{searchQuery ? 'Sin resultados para tu búsqueda.' : `Aún no hay ${targetNoun}s evaluados.`}
 					</p>
 				</div>
 			) : (
@@ -244,7 +250,7 @@ export const EvaluadosTable: React.FC<EvaluadosTableProps> = ({
 						<thead>
 							<tr>
 								<th style={{ width: '40px' }}></th>
-								<th>Especialista</th>
+								<th>{tableColumnLabel}</th>
 								<th>UGEL</th>
 								<th style={{ textAlign: 'center' }}>Evaluaciones</th>
 								<th style={{ textAlign: 'center' }}>Última Calif.</th>
@@ -371,7 +377,11 @@ export const EvaluadosTable: React.FC<EvaluadosTableProps> = ({
 																				<MdHistory /> Evolución
 																			</button>
 																			<Link
-																				href={`/admin/especialistas/evaluaciones-especialistas/evaluacion/reporte-especialista-individual?idEvaluacion=${id}&sessionId=${evalu.id}`}
+																				href={
+																					getReporteIndividualHref
+																						? getReporteIndividualHref(String(id), evalu)
+																						: `/admin/especialistas/evaluaciones-especialistas/evaluacion/reporte-especialista-individual?idEvaluacion=${id}&sessionId=${evalu.id}`
+																				}
 																				className={styles.viewReportLink}
 																				onClick={(e) => e.stopPropagation()}
 																			>

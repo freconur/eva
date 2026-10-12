@@ -27,6 +27,8 @@ interface RankingViewsProps {
 	ugelEspecialistasList: any[];
 	getNivel: (score: number) => any;
 	onUpdateNivelColor?: (nivelIdx: number, newColor: string) => Promise<void>;
+	targetNoun?: string;
+	targetNounSingular?: string;
 }
 
 export const RankingViews: React.FC<RankingViewsProps> = ({
@@ -52,6 +54,8 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 	ugelEspecialistasList,
 	getNivel,
 	onUpdateNivelColor,
+	targetNoun = 'especialistas',
+	targetNounSingular = 'Especialista',
 }) => {
 	const [ugelChartType, setUgelChartType] = useState<'bar' | 'pieUgel' | 'pieNivel'>('bar');
 	const [isPhaseDropdownOpen, setIsPhaseDropdownOpen] = useState(false);
@@ -480,12 +484,12 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 							<div className={styles.priorityAlertCard}>
 								<div className={styles.priorityAlertHeader}>
 									<MdWarningAmber className={styles.priorityAlertIcon} />
-									<span>Especialistas Identificados para Acompañamiento Pedagógico Prioritario</span>
+									<span>{targetNoun.charAt(0).toUpperCase() + targetNoun.slice(1)} Identificados para Acompañamiento Pedagógico Prioritario</span>
 								</div>
 								<table className={styles.table}>
 									<thead>
 										<tr>
-											<th>Especialista</th>
+											<th>{targetNounSingular}</th>
 											<th>UGEL</th>
 											<th style={{ textAlign: 'center' }}>Fases Evaluadas</th>
 											<th style={{ textAlign: 'right' }}>Última Eval.</th>
@@ -559,12 +563,12 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 
 						{/* Tabla General de Posiciones */}
 						<div className={styles.leaderboardWrapper}>
-							<h3 className={styles.leaderboardTitle}>Tabla General de Posiciones de Especialistas</h3>
+							<h3 className={styles.leaderboardTitle}>Tabla General de Posiciones de {targetNoun.charAt(0).toUpperCase() + targetNoun.slice(1)}</h3>
 							<table className={styles.table}>
 								<thead>
 									<tr>
 										<th style={{ width: '50px', textAlign: 'center' }}>Pos.</th>
-										<th>Especialista</th>
+										<th>{targetNounSingular}</th>
 										<th>UGEL</th>
 										<th style={{ textAlign: 'center' }}>Fases Evaluadas</th>
 										<th style={{ textAlign: 'right' }}>Última Eval.</th>
@@ -905,7 +909,7 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 													<thead>
 														<tr>
 															<th style={{ width: '30px', textAlign: 'center' }}>N°</th>
-															<th>Especialista</th>
+															<th>{targetNounSingular}</th>
 															<th style={{ textAlign: 'center' }}>Nivel</th>
 															<th style={{ textAlign: 'right' }}>Pts</th>
 														</tr>

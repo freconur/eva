@@ -33,6 +33,7 @@ import {
 import {
   EvaluacionConfigMenu,
   EvaluacionDetalleHeroBanner,
+  HeroBannerMetricItem,
 } from '@/components/evaluaciones-desempeno/containers';
 import {
   ModalAgregarDimension,
@@ -87,6 +88,7 @@ const EvaluacionDetalleDirector = () => {
   });
 
   const [activeTab, setActiveTab] = useState<'directores' | 'rubrica'>('directores');
+  const [filterEstado, setFilterEstado] = useState<'all' | 'evaluados' | 'pendientes'>('all');
   const [directoresPadron, setDirectoresPadron] = useState<User[]>([]);
   const [loadingDirectores, setLoadingDirectores] = useState<boolean>(true);
   const [searchDirector, setSearchDirector] = useState<string>('');
@@ -185,18 +187,26 @@ const EvaluacionDetalleDirector = () => {
     });
   }, [directoresPadron, currentEvaluados]);
 
-  // Filtro de búsqueda de directores
+  // Filtro de búsqueda y estado de directores
   const directoresFiltrados = useMemo(() => {
-    if (!searchDirector.trim()) return directoresConEstado;
+    let result = directoresConEstado;
+
+    if (filterEstado === 'evaluados') {
+      result = result.filter((d) => d.isEvaluated);
+    } else if (filterEstado === 'pendientes') {
+      result = result.filter((d) => !d.isEvaluated);
+    }
+
+    if (!searchDirector.trim()) return result;
     const query = searchDirector.toLowerCase().trim();
-    return directoresConEstado.filter(
+    return result.filter(
       (d) =>
         (d.nombres || '').toLowerCase().includes(query) ||
         (d.apellidos || '').toLowerCase().includes(query) ||
         (d.dni || '').includes(query) ||
         (d.institucion || '').toLowerCase().includes(query)
     );
-  }, [directoresConEstado, searchDirector]);
+  }, [directoresConEstado, filterEstado, searchDirector]);
 
   // Contadores de progreso
   const totalDirectores = directoresPadron.length;
@@ -205,46 +215,66 @@ const EvaluacionDetalleDirector = () => {
   const porcentajeAvance =
     totalDirectores > 0 ? Math.round((evaluadosCount / totalDirectores) * 100) : 0;
 
-  const metricasDirector = useMemo(
+  const metricasDirector = useMemo<HeroBannerMetricItem[]>(
     () => [
       {
         id: 'directores',
-        label: 'DIRECTORES',
+        label: 'Directores Asignados',
         value: isEspecialista ? totalDirectores : 'Por UGEL',
         icon: RiTeamLine,
-        badgeText: 'PADRÓN',
+        badgeText: 'Padrón',
         helperText: 'Directores asignados',
         colorTheme: 'blue' as const,
+        active: activeTab === 'directores' && filterEstado === 'all',
+        onClick: () => {
+          setActiveTab('directores');
+          setFilterEstado('all');
+        },
       },
       {
         id: 'evaluados',
-        label: 'EVALUADOS',
+        label: 'Evaluados',
         value: isEspecialista ? evaluadosCount : '-',
         icon: RiShieldCheckLine,
-        badgeText: 'CONCLUIDOS',
-        helperText: 'Fichas registradas',
+        badgeText: 'Concluidos',
+        helperText: 'Ver lista de evaluados',
         colorTheme: 'emerald' as const,
+        href: `/especialistas/evaluaciones-director/evaluacion/${idEvaluacion}/evaluados`,
       },
       {
         id: 'pendientes',
-        label: 'PENDIENTES',
+        label: 'Pendientes',
         value: isEspecialista ? pendientesCount : '-',
         icon: RiTimeLine,
-        badgeText: 'EN CURSO',
+        badgeText: 'En curso',
         helperText: 'Pendientes de monitoreo',
         colorTheme: 'amber' as const,
+        active: activeTab === 'directores' && filterEstado === 'pendientes',
+        onClick: () => {
+          setActiveTab('directores');
+          setFilterEstado('pendientes');
+        },
       },
       {
         id: 'progreso',
-        label: 'PROGRESO',
+        label: 'Progreso',
         value: isEspecialista ? `${porcentajeAvance}%` : '-',
         icon: RiPieChartLine,
-        badgeText: 'GLOBAL',
+        badgeText: 'Global',
         helperText: 'Avance del monitoreo',
         colorTheme: 'purple' as const,
       },
     ],
-    [isEspecialista, totalDirectores, evaluadosCount, pendientesCount, porcentajeAvance]
+    [
+      isEspecialista,
+      totalDirectores,
+      evaluadosCount,
+      pendientesCount,
+      porcentajeAvance,
+      activeTab,
+      filterEstado,
+      idEvaluacion,
+    ]
   );
 
   // Eliminar dimensión
@@ -413,7 +443,7 @@ const EvaluacionDetalleDirector = () => {
         ) : (
         <div className="space-y-4">
           {/* Barra de Búsqueda y Filtros */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <div className="flex items-center gap-3 flex-1 bg-transparent">
               <MdSearch className="text-xl text-slate-400" />
               <input
@@ -425,31 +455,96 @@ const EvaluacionDetalleDirector = () => {
               />
               {searchDirector && (
                 <button
+                  type="button"
                   onClick={() => setSearchDirector('')}
-                  className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 rounded bg-slate-100"
+                  className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 rounded bg-slate-100 transition-colors"
                 >
                   Limpiar
                 </button>
               )}
             </div>
 
-            {isDrep && (
-              <div className="flex items-center gap-2 sm:border-l sm:border-slate-200 sm:pl-3">
-                <MdFilterList className="text-slate-400" />
-                <select
-                  value={selectedRegion}
-                  onChange={(e) => setSelectedRegion(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            {/* Segmento de Estado (Todos / Evaluados / Pendientes) y Filtro UGEL */}
+            <div className="flex flex-wrap items-center gap-2.5 sm:border-t lg:border-t-0 lg:border-l border-slate-200 pt-2 lg:pt-0 lg:pl-4">
+              <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setFilterEstado('all')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    filterEstado === 'all'
+                      ? 'bg-white text-slate-800 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 >
-                  <option value="all">Todas las UGELs</option>
-                  {regiones?.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.region}
-                    </option>
-                  ))}
-                </select>
+                  <span>Todos</span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200/80 text-slate-700 font-bold">
+                    {totalDirectores}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFilterEstado('evaluados')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    filterEstado === 'evaluados'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-emerald-700'
+                  }`}
+                >
+                  <MdCheckCircle className="text-sm" />
+                  <span>Evaluados</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      filterEstado === 'evaluados'
+                        ? 'bg-emerald-700 text-white'
+                        : 'bg-emerald-100 text-emerald-800'
+                    }`}
+                  >
+                    {evaluadosCount}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFilterEstado('pendientes')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    filterEstado === 'pendientes'
+                      ? 'bg-amber-500 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-amber-700'
+                  }`}
+                >
+                  <MdPendingActions className="text-sm" />
+                  <span>Pendientes</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      filterEstado === 'pendientes'
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}
+                  >
+                    {pendientesCount}
+                  </span>
+                </button>
               </div>
-            )}
+
+              {isDrep && (
+                <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+                  <MdFilterList className="text-slate-400" />
+                  <select
+                    value={selectedRegion}
+                    onChange={(e) => setSelectedRegion(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="all">Todas las UGELs</option>
+                    {regiones?.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.region}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
           </div>
 
           {loadingDirectores ? (
@@ -459,10 +554,30 @@ const EvaluacionDetalleDirector = () => {
             </div>
           ) : directoresFiltrados.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
-              <p className="text-base font-semibold text-slate-700">No se encontraron directores</p>
-              <p className="text-sm text-slate-400 mt-1">
-                Verifica los filtros aplicados o que existan directivos registrados en la jurisdicción.
+              <p className="text-base font-semibold text-slate-700">
+                {filterEstado === 'evaluados'
+                  ? 'No hay directores evaluados con los filtros seleccionados'
+                  : filterEstado === 'pendientes'
+                  ? 'No hay directores pendientes con los filtros seleccionados'
+                  : 'No se encontraron directores'}
               </p>
+              <p className="text-sm text-slate-400 mt-1 max-w-md mx-auto">
+                {searchDirector || filterEstado !== 'all'
+                  ? 'Prueba modificando el término de búsqueda o cambiando el filtro de estado.'
+                  : 'Verifica los filtros aplicados o que existan directivos registrados en la jurisdicción.'}
+              </p>
+              {(searchDirector || filterEstado !== 'all') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchDirector('');
+                    setFilterEstado('all');
+                  }}
+                  className="mt-4 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                >
+                  Restablecer filtros
+                </button>
+              )}
             </div>
           ) : (
             <div className="overflow-hidden bg-white rounded-2xl border border-slate-200 shadow-sm">

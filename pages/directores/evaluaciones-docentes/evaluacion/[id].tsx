@@ -32,6 +32,7 @@ import {
 import {
   EvaluacionConfigMenu,
   EvaluacionDetalleHeroBanner,
+  HeroBannerMetricItem,
 } from '@/components/evaluaciones-desempeno/containers';
 import {
   ModalAgregarDimension,
@@ -76,6 +77,7 @@ const EvaluacionDetalleDirector = () => {
   });
 
   const [activeTab, setActiveTab] = useState<'docentes' | 'rubrica'>('docentes');
+  const [filterEstado, setFilterEstado] = useState<'all' | 'evaluados' | 'pendientes'>('all');
   const [docentesPadron, setDocentesPadron] = useState<User[]>([]);
   const [evaluadosList, setEvaluadosList] = useState<User[]>([]);
   const [loadingDocentes, setLoadingDocentes] = useState<boolean>(true);
@@ -172,17 +174,25 @@ const EvaluacionDetalleDirector = () => {
     });
   }, [docentesPadron, currentEvaluados]);
 
-  // Filtro de búsqueda de docentes
+  // Filtro de búsqueda y estado de docentes
   const docentesFiltrados = useMemo(() => {
-    if (!searchDocente.trim()) return docentesConEstado;
+    let result = docentesConEstado;
+
+    if (filterEstado === 'evaluados') {
+      result = result.filter((d) => d.isEvaluated);
+    } else if (filterEstado === 'pendientes') {
+      result = result.filter((d) => !d.isEvaluated);
+    }
+
+    if (!searchDocente.trim()) return result;
     const query = searchDocente.toLowerCase().trim();
-    return docentesConEstado.filter(
+    return result.filter(
       (d) =>
         (d.nombres || '').toLowerCase().includes(query) ||
         (d.apellidos || '').toLowerCase().includes(query) ||
         (d.dni || '').includes(query)
     );
-  }, [docentesConEstado, searchDocente]);
+  }, [docentesConEstado, filterEstado, searchDocente]);
 
   // Contadores de progreso
   const totalDocentes = docentesPadron.length;
@@ -192,66 +202,66 @@ const EvaluacionDetalleDirector = () => {
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
 
-  const metricasDocente = useMemo(
+  const metricasDocente = useMemo<HeroBannerMetricItem[]>(
     () => [
       {
         id: 'docentes',
-        label: 'DOCENTES',
+        label: 'Docentes Asignados',
         value: isDirector ? totalDocentes : 'Por I.E.',
         icon: RiTeamLine,
-        badgeText: 'PADRÓN',
+        badgeText: 'Padrón',
         helperText: 'Docentes en padrón',
-        theme: {
-          iconBg: 'bg-blue-400/20 border-blue-300/30 text-blue-200',
-          labelColor: 'text-blue-200/80',
-          cardBorder: 'hover:border-blue-400/40',
-          badgeBg: 'bg-blue-400/15 text-blue-200 border-blue-300/25',
+        colorTheme: 'blue' as const,
+        active: activeTab === 'docentes' && filterEstado === 'all',
+        onClick: () => {
+          setActiveTab('docentes');
+          setFilterEstado('all');
         },
       },
       {
         id: 'evaluados',
-        label: 'EVALUADOS',
+        label: 'Evaluados',
         value: isDirector ? evaluadosCount : '-',
         icon: RiShieldCheckLine,
-        badgeText: 'CONCLUIDOS',
-        helperText: 'Fichas registradas',
-        theme: {
-          iconBg: 'bg-emerald-400/20 border-emerald-300/30 text-emerald-200',
-          labelColor: 'text-emerald-200/80',
-          cardBorder: 'hover:border-emerald-400/40',
-          badgeBg: 'bg-emerald-400/15 text-emerald-200 border-emerald-300/25',
-        },
+        badgeText: 'Concluidos',
+        helperText: 'Ver lista de evaluados',
+        colorTheme: 'emerald' as const,
+        href: `/directores/evaluaciones-docentes/evaluacion/${idEvaluacion}/evaluados`,
       },
       {
         id: 'pendientes',
-        label: 'PENDIENTES',
+        label: 'Pendientes',
         value: isDirector ? pendientesCount : '-',
         icon: RiTimeLine,
-        badgeText: 'EN CURSO',
+        badgeText: 'En curso',
         helperText: 'Pendientes de registro',
-        theme: {
-          iconBg: 'bg-amber-400/20 border-amber-300/30 text-amber-200',
-          labelColor: 'text-amber-200/80',
-          cardBorder: 'hover:border-amber-400/40',
-          badgeBg: 'bg-amber-400/15 text-amber-200 border-amber-300/25',
+        colorTheme: 'amber' as const,
+        active: activeTab === 'docentes' && filterEstado === 'pendientes',
+        onClick: () => {
+          setActiveTab('docentes');
+          setFilterEstado('pendientes');
         },
       },
       {
         id: 'progreso',
-        label: 'PROGRESO',
+        label: 'Progreso',
         value: isDirector ? `${porcentajeAvance}%` : '-',
         icon: RiPieChartLine,
-        badgeText: 'GLOBAL',
+        badgeText: 'Global',
         helperText: 'Avance del monitoreo',
-        theme: {
-          iconBg: 'bg-purple-400/20 border-purple-300/30 text-purple-200',
-          labelColor: 'text-purple-200/80',
-          cardBorder: 'hover:border-purple-400/40',
-          badgeBg: 'bg-purple-400/15 text-purple-200 border-purple-300/25',
-        },
+        colorTheme: 'purple' as const,
       },
     ],
-    [isDirector, totalDocentes, evaluadosCount, pendientesCount, porcentajeAvance]
+    [
+      isDirector,
+      totalDocentes,
+      evaluadosCount,
+      pendientesCount,
+      porcentajeAvance,
+      activeTab,
+      filterEstado,
+      idEvaluacion,
+    ]
   );
 
   // Eliminar dimensión
@@ -415,24 +425,91 @@ const EvaluacionDetalleDirector = () => {
           </div>
         ) : (
         <div className="space-y-4">
-          {/* Barra de Búsqueda */}
-          <div className="flex items-center gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-            <MdSearch className="text-xl text-slate-400" />
-            <input
-              type="text"
-              placeholder="Buscar docente por nombre, apellidos o DNI..."
-              value={searchDocente}
-              onChange={(e) => setSearchDocente(e.target.value)}
-              className="w-full bg-transparent text-sm text-slate-700 placeholder-slate-400 focus:outline-none"
-            />
-            {searchDocente && (
-              <button
-                onClick={() => setSearchDocente('')}
-                className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 rounded bg-slate-100"
-              >
-                Limpiar
-              </button>
-            )}
+          {/* Barra de Búsqueda y Filtros */}
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-3 flex-1 bg-transparent">
+              <MdSearch className="text-xl text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar docente por nombre, apellidos o DNI..."
+                value={searchDocente}
+                onChange={(e) => setSearchDocente(e.target.value)}
+                className="w-full bg-transparent text-sm text-slate-700 placeholder-slate-400 focus:outline-none"
+              />
+              {searchDocente && (
+                <button
+                  type="button"
+                  onClick={() => setSearchDocente('')}
+                  className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 rounded bg-slate-100 transition-colors"
+                >
+                  Limpiar
+                </button>
+              )}
+            </div>
+
+            {/* Segmento de Estado (Todos / Evaluados / Pendientes) */}
+            <div className="flex flex-wrap items-center gap-2.5 sm:border-t lg:border-t-0 lg:border-l border-slate-200 pt-2 lg:pt-0 lg:pl-4">
+              <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setFilterEstado('all')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    filterEstado === 'all'
+                      ? 'bg-white text-slate-800 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span>Todos</span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200/80 text-slate-700 font-bold">
+                    {totalDocentes}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFilterEstado('evaluados')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    filterEstado === 'evaluados'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-emerald-700'
+                  }`}
+                >
+                  <MdCheckCircle className="text-sm" />
+                  <span>Evaluados</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      filterEstado === 'evaluados'
+                        ? 'bg-emerald-700 text-white'
+                        : 'bg-emerald-100 text-emerald-800'
+                    }`}
+                  >
+                    {evaluadosCount}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFilterEstado('pendientes')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    filterEstado === 'pendientes'
+                      ? 'bg-amber-500 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-amber-700'
+                  }`}
+                >
+                  <MdPendingActions className="text-sm" />
+                  <span>Pendientes</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      filterEstado === 'pendientes'
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}
+                  >
+                    {pendientesCount}
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {loadingDocentes ? (
@@ -442,10 +519,30 @@ const EvaluacionDetalleDirector = () => {
             </div>
           ) : docentesFiltrados.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
-              <p className="text-base font-semibold text-slate-700">No se encontraron docentes</p>
-              <p className="text-sm text-slate-400 mt-1">
-                Verifica que los docentes de tu I.E. tengan registrado tu DNI de Director.
+              <p className="text-base font-semibold text-slate-700">
+                {filterEstado === 'evaluados'
+                  ? 'No hay docentes evaluados con los filtros seleccionados'
+                  : filterEstado === 'pendientes'
+                  ? 'No hay docentes pendientes con los filtros seleccionados'
+                  : 'No se encontraron docentes'}
               </p>
+              <p className="text-sm text-slate-400 mt-1 max-w-md mx-auto">
+                {searchDocente || filterEstado !== 'all'
+                  ? 'Prueba modificando el término de búsqueda o cambiando el filtro de estado.'
+                  : 'Verifica que los docentes de tu I.E. tengan registrado tu DNI de Director.'}
+              </p>
+              {(searchDocente || filterEstado !== 'all') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchDocente('');
+                    setFilterEstado('all');
+                  }}
+                  className="mt-4 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                >
+                  Restablecer filtros
+                </button>
+              )}
             </div>
           ) : (
             <div className="overflow-hidden bg-white rounded-2xl border border-slate-200 shadow-sm">

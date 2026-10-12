@@ -29,12 +29,16 @@ interface ModalRankingGeneralProps {
 	ugelEspecialistasList: any[];
 	getNivel: (score: number) => any;
 	onUpdateNivelColor?: (nivelIdx: number, newColor: string) => Promise<void>;
+	targetNoun?: string;
+	targetNounSingular?: string;
 }
 
 export const ModalRankingGeneral: React.FC<ModalRankingGeneralProps> = ({
 	showModalRanking,
 	onClose,
 	onSwitchToFullView,
+	targetNoun = 'especialistas',
+	targetNounSingular = 'Especialista',
 	...rankingProps
 }) => {
 	if (!showModalRanking) return null;
@@ -46,9 +50,9 @@ export const ModalRankingGeneral: React.FC<ModalRankingGeneralProps> = ({
 					<div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
 						<MdLeaderboard style={{ fontSize: '1.6rem', color: '#2563eb' }} />
 						<div>
-							<h2 className={styles.modalTitle}>Ranking de Especialistas</h2>
+							<h2 className={styles.modalTitle}>Ranking de {targetNoun.charAt(0).toUpperCase() + targetNoun.slice(1)}</h2>
 							<p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>
-								Comparativa general de desempeño según puntajes alcanzados ({rankingProps.rankingEspecialistas.length} especialistas)
+								Comparativa general de desempeño según puntajes alcanzados ({rankingProps.rankingEspecialistas.length} {targetNoun})
 							</p>
 						</div>
 					</div>

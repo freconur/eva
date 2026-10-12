@@ -4,3 +4,7 @@ export { default as EvaluacionDetalleHeroBanner } from './EvaluacionDetalleHeroB
 export * from './EvaluacionDetalleHeroBanner';
 export { default as DesempenoHeroBanner } from './DesempenoHeroBanner';
 export type { DesempenoHeroBannerProps } from './DesempenoHeroBanner';
+export { default as EvaluadosDashboardContainer } from './EvaluadosDashboardContainer';
+export * from './EvaluadosDashboardContainer';
+export { default as ReporteIndividualContainer } from './ReporteIndividualContainer';
+export * from './ReporteIndividualContainer';
