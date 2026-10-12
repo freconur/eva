@@ -2,29 +2,50 @@ import { createPortal } from "react-dom"
 import styles from './configurarFase.module.css'
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { RiLoader4Line } from "react-icons/ri";
-import { useState, useMemo } from "react";
-import UseEvaluacionEspecialistas from "@/features/hooks/UseEvaluacionEspecialistas";
+import { useState, useMemo, useEffect } from "react";
+import useEvaluacionDesempenoBase from "@/features/hooks/useEvaluacionDesempenoBase";
 import { MdEdit, MdDelete, MdCheck, MdClose, MdHistory } from "react-icons/md";
 
 import { getUniquePhases } from "@/features/utils/phaseUtils";
 
 interface Props {
-    handleShowConfigurarFase: () => void,
+    handleShowConfigurarFase?: () => void,
+    onClose?: () => void,
+    onSuccess?: () => void,
     idEvaluacion: string,
-    faseActual?: string
+    faseActual?: string,
+    collectionName?: string
 }
 
-const ConfigurarFaseEspecialistas = ({ handleShowConfigurarFase, idEvaluacion, faseActual }: Props) => {
+const ConfigurarFaseEspecialistas = ({
+    handleShowConfigurarFase,
+    onClose,
+    onSuccess,
+    idEvaluacion,
+    faseActual,
+    collectionName = 'evaluaciones-especialista'
+}: Props) => {
     const { loaderModales, evaluadosEspecialista, dataEvaluacionDocente } = useGlobalContext()
     const { 
         updateFaseEvaluacion, 
         updateNombreFaseEvaluacion, 
         deleteFaseEvaluacion 
-    } = UseEvaluacionEspecialistas()
+    } = useEvaluacionDesempenoBase({ collectionName })
+    const closeHandler = onClose || handleShowConfigurarFase;
     
     const [nombreFase, setNombreFase] = useState(faseActual || "")
     const [editingFaseId, setEditingFaseId] = useState<string | null>(null);
     const [editingNombre, setEditingNombre] = useState("");
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && closeHandler) {
+                closeHandler();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [closeHandler]);
 
     // Obtener fases únicas unificadas
     const fasesExistentes = useMemo(() => {
@@ -34,7 +55,8 @@ const ConfigurarFaseEspecialistas = ({ handleShowConfigurarFase, idEvaluacion, f
     const handleSaveNew = async () => {
         if (nombreFase.trim() === "") return;
         await updateFaseEvaluacion(idEvaluacion, nombreFase);
-        handleShowConfigurarFase();
+        if (onSuccess) onSuccess();
+        if (closeHandler) closeHandler();
     };
 
     const handleEditClick = (fase: { id: string, nombre: string }) => {
@@ -73,7 +95,7 @@ const ConfigurarFaseEspecialistas = ({ handleShowConfigurarFase, idEvaluacion, f
                 <div className={styles.containerSale}>
                     <div className={styles.closeModalContainer}>
                         <h3 className={styles.title}>Etapas de Evaluación</h3>
-                        <div className={styles.close} onClick={handleShowConfigurarFase}>cerrar</div>
+                        <div className={styles.close} onClick={closeHandler}>cerrar</div>
                     </div>
 
                     {loaderModales ? (

@@ -708,23 +708,40 @@ const UseEvaluacionEspecialistas = () => {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      if (docSnap.data().rol === 1) {
-        console.log('es un especialista');
-        dispatch({ type: AppAction.DATA_DIRECTOR, payload: docSnap.data() });
+      const data = docSnap.data();
+      if (data.rol === 1 || data.rol === 2) {
+        dispatch({ type: AppAction.DATA_DIRECTOR, payload: data });
       } else {
         dispatch({ type: AppAction.DATA_DIRECTOR, payload: {} });
-        dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: 'no se encontro especialista' });
+        dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: 'no se encontro especialista o directivo' });
       }
     } else {
       dispatch({ type: AppAction.DATA_DIRECTOR, payload: {} });
-      dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: 'no se encontro especialista' });
+      dispatch({ type: AppAction.WARNING_DATA_DOCENTE, payload: 'no se encontro especialista o directivo' });
     }
   };
 
-  const getTodosLosEspecialistas = async () => {
+  const getTodosLosEspecialistas = async (filterRegion?: number | string) => {
     dispatch({ type: AppAction.LOADER_PAGES, payload: true });
-    const q = query(collection(db, 'usuarios'), where('rol', '==', 1));
     try {
+      const isDrep = currentUserData?.rol === 4 || currentUserData?.rol === 0;
+      const targetRegion = filterRegion !== undefined ? filterRegion : (!isDrep ? currentUserData?.region : undefined);
+
+      let q;
+      if (targetRegion && targetRegion !== 'all' && targetRegion !== '') {
+        const regionNum = Number(targetRegion);
+        q = query(
+          collection(db, 'usuarios'),
+          where('rol', 'in', [1, 2]),
+          where('region', '==', isNaN(regionNum) ? targetRegion : regionNum)
+        );
+      } else {
+        q = query(
+          collection(db, 'usuarios'),
+          where('rol', 'in', [1, 2])
+        );
+      }
+
       const querySnapshot = await getDocs(q);
       const especialistas: User[] = [];
       querySnapshot.forEach((doc) => {
@@ -732,7 +749,7 @@ const UseEvaluacionEspecialistas = () => {
       });
       return especialistas;
     } catch (error) {
-      console.error("Error fetching all specialists:", error);
+      console.error("Error fetching all specialists/directors:", error);
       return [];
     } finally {
       dispatch({ type: AppAction.LOADER_PAGES, payload: false });

@@ -45,7 +45,10 @@ export const useEvaluacionesBannerConfig = (
       const audited = sessionStorage.getItem('audited_user');
       const realAdmin = sessionStorage.getItem('real_admin_user');
       const isUserAdmin =
-        currentUserData?.rol === 4 || currentUserData?.perfil?.rol === 4;
+        currentUserData?.rol === 4 ||
+        currentUserData?.perfil?.rol === 4 ||
+        currentUserData?.rol === 0 ||
+        currentUserData?.perfil?.rol === 0;
       const nextVal = Boolean(audited || realAdmin || isUserAdmin);
       setIsAuditing((prev) => (prev !== nextVal ? nextVal : prev));
     }

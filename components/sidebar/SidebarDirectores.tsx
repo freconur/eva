@@ -4,8 +4,7 @@ import { useRolUsers } from '@/features/hooks/useRolUsers';
 import SidebarRegional from './SidebarRegional';
 import styles from './sidebar.module.css'
 import { FaUserGraduate, FaUserTie } from 'react-icons/fa';
-import { MdAccountCircle, MdAttachMoney } from 'react-icons/md';
-import { LuListTodo } from "react-icons/lu";
+import { MdAccountCircle } from 'react-icons/md';
 import { IoIosArrowDown, IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useSidebarLabels } from '@/features/context/SidebarLabelsContext';
@@ -188,44 +187,6 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
                     <CustomSidebarRenderer role="director" parentId="director_docentes" customItems={customItems} isSubmenu={true} />
                   </ul>
                 </li>
-
-                {/* Autorreporte */}
-                <PermissionGate permission={PERMISSIONS.VIEW_AUTORREPORTE}>
-                  {customItems.some(item => (item.role === 'director' || item.role === 'all') && item.parentId === 'director_autorreporte') ? (
-                    <li className={`${styles.menuItem} ${openDropdown === 'autorreporte' ? styles.itemOpen : ''}`}>
-                      <div className={styles.menuHeader} onClick={(e) => {
-                        e.stopPropagation();
-                        toggleDropdown('autorreporte');
-                      }}>
-                        <LuListTodo className={styles.icon} />
-                        <span className={styles.link}>{getLabel('director_autorreporte', 'Autorreporte')}</span>
-                        <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'autorreporte' ? styles.arrowRotate : ''}`} />
-                      </div>
-                      <ul className={`${styles.submenu} ${openDropdown === 'autorreporte' ? styles.show : ''}`}>
-                        <li className={styles.flyoutHeader}>{getLabel('director_autorreporte', 'Autorreporte')}</li>
-                        <li>
-                          <Link
-                            href="/admin/conocimientos-pedagogicos?rol=2"
-                            className={`${styles.submenuLink} ${router.pathname.includes('/admin/conocimientos-pedagogicos') && router.query.rol === '2' ? styles.activeLink : ''}`}
-                          >
-                            {getLabel('director_autorreporte', 'Autorreporte')}
-                          </Link>
-                        </li>
-                        <CustomSidebarRenderer role="director" parentId="director_autorreporte" customItems={customItems} isSubmenu={true} />
-                      </ul>
-                    </li>
-                  ) : (
-                    <li className={styles.menuItem}>
-                      <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/conocimientos-pedagogicos') && router.query.rol === '2' ? styles.activeLink : ''}`} style={{ margin: "3px 12px" }}>
-                        <LuListTodo className={styles.dashboardIcon} />
-                        <Link className={styles.dashboardLink} href="/admin/conocimientos-pedagogicos?rol=2" aria-haspopup="true">
-                          {getLabel('director_autorreporte', 'Autorreporte')}
-                        </Link>
-                        <span className={styles.tooltip}>{getLabel('director_autorreporte', 'Autorreporte')}</span>
-                      </div>
-                    </li>
-                  )}
-                </PermissionGate>
 
                 {/* Menús Personalizados de Nivel Superior */}
                 <CustomSidebarRenderer role="director" customItems={customItems} isSubmenu={false} asMenuItem={true} />

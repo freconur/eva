@@ -20,6 +20,8 @@ import { RiLoader4Line } from 'react-icons/ri'
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores'
 import UseEvaluacionDocentes from '@/features/hooks/UseEvaluacionDocentes'
 import Image from 'next/image'
+import Link from 'next/link'
+import { MdArrowBack } from 'react-icons/md'
 import styles from './styles.module.css'
 import { gradosDeColegio, sectionByGrade, ordernarAscDsc, niveles, genero, regiones, area, caracteristicasDirectivo } from '@/fuctions/regiones'
 import { currentMonth, getAllMonths } from '@/fuctions/dates'
@@ -178,6 +180,13 @@ const Reportes = () => {
   }, [route.query.idEvaluacion, currentUserData.dni])
 
   useEffect(() => {
+    if (allEvaluacionesDirectorDocente && allEvaluacionesDirectorDocente.length > 0) {
+      reporteTablaEvaluacionDirectorDocente(allEvaluacionesDirectorDocente, filtros);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allEvaluacionesDirectorDocente]);
+
+  useEffect(() => {
     /* if (filtros.grado || filtros.seccion || filtros.orden) { */
       if (filtros.genero || filtros.grado || filtros.seccion ) {
       console.log('Filtros aplicados:', filtros);
@@ -230,9 +239,19 @@ useEffect(() => {
               />
 
               <div className={styles.headerContent}>
-                <h1 className={styles.headerTitle}>
-                  Reporte de la rúbrica de la mediación didáctica de la {dataEvaluacionDocente?.name}
-                </h1>
+                <div className="flex items-center gap-4">
+                  <Link
+                    href={`/directores/evaluaciones-docentes/evaluacion/${route.query.idEvaluacion}`}
+                    className="p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-xl transition-colors inline-flex items-center gap-1.5 text-sm font-semibold border border-white/20"
+                    title="Volver a la evaluación"
+                  >
+                    <MdArrowBack className="text-xl" />
+                    <span>Volver</span>
+                  </Link>
+                  <h1 className={styles.headerTitle}>
+                    Reporte de la rúbrica de la mediación didáctica de la {dataEvaluacionDocente?.name}
+                  </h1>
+                </div>
               </div>
             </div>
 

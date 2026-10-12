@@ -30,13 +30,14 @@ const PrivateRouteDirectores = ({ children }: Props) => {
   useEffect(() => {
     console.log('se habilita para director y admin')
     if (currentUserData.dni) {
-      if (currentUserData.perfil?.rol !== undefined) {
-        const rol = Number(currentUserData?.perfil.rol);
-        if (rol !== 2 && rol !== 4) {
-          router.push('/login')
+      const rolRaw = currentUserData.perfil?.rol !== undefined ? currentUserData.perfil.rol : currentUserData.rol;
+      if (rolRaw !== undefined) {
+        const rol = Number(rolRaw);
+        if (rol !== 2 && rol !== 4 && rol !== 0) {
+          router.push('/login');
         }
       } else {
-        router.push('/login')
+        router.push('/login');
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

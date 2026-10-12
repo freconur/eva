@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { MdSearch, MdSort, MdExpandMore, MdExpandLess, MdLeaderboard, MdPeople, MdHistory, MdDelete, MdFilterList, MdCheck, MdBarChart } from 'react-icons/md';
 import { RiLoader4Line } from 'react-icons/ri';
 import { User } from '@/features/types/types';
-import { regionTexto } from '@/fuctions/regiones';
+import { regiones, regionTexto } from '@/fuctions/regiones';
 import { getCleanPhaseName, getLocalDateString, formatTime } from './utils';
 import styles from '../styles.module.css';
 
@@ -13,6 +13,8 @@ interface EvaluadosTableProps {
 	setSearchQuery: (val: string) => void;
 	selectedFase: string;
 	setSelectedFase: (val: string) => void;
+	selectedUgel?: string;
+	setSelectedUgel?: (val: string) => void;
 	fasesUnicas: any[];
 	sortOrder: 'default' | 'score-desc' | 'score-asc';
 	setSortOrder: (val: 'default' | 'score-desc' | 'score-asc') => void;
@@ -37,6 +39,8 @@ export const EvaluadosTable: React.FC<EvaluadosTableProps> = ({
 	setSearchQuery,
 	selectedFase,
 	setSelectedFase,
+	selectedUgel,
+	setSelectedUgel,
 	fasesUnicas,
 	sortOrder,
 	setSortOrder,
@@ -56,11 +60,16 @@ export const EvaluadosTable: React.FC<EvaluadosTableProps> = ({
 }) => {
 	const [isTablePhaseDropdownOpen, setIsTablePhaseDropdownOpen] = useState(false);
 	const tablePhaseDropdownRef = useRef<HTMLDivElement>(null);
+	const [isTableUgelDropdownOpen, setIsTableUgelDropdownOpen] = useState(false);
+	const tableUgelDropdownRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (tablePhaseDropdownRef.current && !tablePhaseDropdownRef.current.contains(event.target as Node)) {
 				setIsTablePhaseDropdownOpen(false);
+			}
+			if (tableUgelDropdownRef.current && !tableUgelDropdownRef.current.contains(event.target as Node)) {
+				setIsTableUgelDropdownOpen(false);
 			}
 		};
 		document.addEventListener('mousedown', handleClickOutside);
@@ -117,6 +126,48 @@ export const EvaluadosTable: React.FC<EvaluadosTableProps> = ({
 									>
 										<span>{f.nombre}</span>
 										{selectedFase === f.id && <MdCheck className={styles.customDropdownCheck} />}
+									</div>
+								))}
+							</div>
+						)}
+					</div>
+				)}
+
+				{/* Custom UGEL Filter Dropdown */}
+				{setSelectedUgel && (
+					<div className={styles.customDropdownContainer} ref={tableUgelDropdownRef}>
+						<button
+							type="button"
+							className={`${styles.customDropdownTrigger} ${isTableUgelDropdownOpen ? styles.customDropdownTriggerActive : ''}`}
+							onClick={() => setIsTableUgelDropdownOpen(!isTableUgelDropdownOpen)}
+						>
+							<MdFilterList className={styles.customDropdownIcon} />
+							<span className={styles.customDropdownLabel}>
+								{selectedUgel && selectedUgel !== 'all'
+									? `UGEL ${regionTexto(selectedUgel) || selectedUgel}`
+									: 'Todas las UGELs'
+								}
+							</span>
+							<MdExpandMore className={`${styles.customDropdownArrow} ${isTableUgelDropdownOpen ? styles.customDropdownArrowOpen : ''}`} />
+						</button>
+
+						{isTableUgelDropdownOpen && (
+							<div className={styles.customDropdownMenu}>
+								<div
+									className={`${styles.customDropdownItem} ${(!selectedUgel || selectedUgel === 'all') ? styles.customDropdownItemActive : ''}`}
+									onClick={() => { setSelectedUgel('all'); setIsTableUgelDropdownOpen(false); }}
+								>
+									<span>Todas las UGELs</span>
+									{(!selectedUgel || selectedUgel === 'all') && <MdCheck className={styles.customDropdownCheck} />}
+								</div>
+								{regiones.map((reg) => (
+									<div
+										key={reg.id}
+										className={`${styles.customDropdownItem} ${String(selectedUgel) === String(reg.id) ? styles.customDropdownItemActive : ''}`}
+										onClick={() => { setSelectedUgel(String(reg.id)); setIsTableUgelDropdownOpen(false); }}
+									>
+										<span>UGEL {reg.region}</span>
+										{String(selectedUgel) === String(reg.id) && <MdCheck className={styles.customDropdownCheck} />}
 									</div>
 								))}
 							</div>

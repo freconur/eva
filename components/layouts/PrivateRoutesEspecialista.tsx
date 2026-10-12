@@ -30,10 +30,10 @@ const PrivateRouteEspecialista = ({ children }: Props) => {
   useEffect(() => {
     console.log('userData de especialista', currentUserData)
     if (currentUserData.dni) {
-      if (currentUserData.perfil?.rol !== undefined) {
-        const rol = Number(currentUserData?.perfil.rol);
-        if (rol !== 1 && rol !== 4 && rol !== 5) {
-         /*  if (rol !== 1) { */
+      const rolRaw = currentUserData.perfil?.rol !== undefined ? currentUserData.perfil.rol : currentUserData.rol;
+      if (rolRaw !== undefined) {
+        const rol = Number(rolRaw);
+        if (rol !== 1 && rol !== 4 && rol !== 5 && rol !== 0) {
           router.push('/login')
         }
       } else {

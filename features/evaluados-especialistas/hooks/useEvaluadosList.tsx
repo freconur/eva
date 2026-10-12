@@ -8,6 +8,7 @@ import styles from '../styles.module.css';
 export const useEvaluadosList = (evaluadosEspecialista: User[] | undefined, dataEvaluacionDocente: any) => {
 	const [searchQuery, setSearchQuery] = useState<string>('');
 	const [selectedFase, setSelectedFase] = useState<string>('');
+	const [selectedUgel, setSelectedUgel] = useState<string>('');
 	const [sortOrder, setSortOrder] = useState<'default' | 'score-desc' | 'score-asc'>('score-desc');
 	const [showSortDropdown, setShowSortDropdown] = useState(false);
 	const sortDropdownRef = useRef<HTMLDivElement>(null);
@@ -102,6 +103,13 @@ export const useEvaluadosList = (evaluadosEspecialista: User[] | undefined, data
 			);
 		}
 
+		if (selectedUgel && selectedUgel !== 'all') {
+			result = result.filter(group => {
+				const reg = group.info.region;
+				return String(reg) === String(selectedUgel) || Number(reg) === Number(selectedUgel);
+			});
+		}
+
 		if (sortOrder === 'score-desc') {
 			result.sort((a, b) => {
 				const scoreA = a.evaluations[0] ? getDisplayCalificacion(a.evaluations[0]) : 0;
@@ -118,7 +126,7 @@ export const useEvaluadosList = (evaluadosEspecialista: User[] | undefined, data
 
 		return result;
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [evaluadosEspecialista, searchQuery, selectedFase, sortOrder, dataEvaluacionDocente]);
+	}, [evaluadosEspecialista, searchQuery, selectedFase, selectedUgel, sortOrder, dataEvaluacionDocente]);
 
 	const getTrend = (evaluations: User[]) => {
 		if (evaluations.length < 2) return null;
@@ -160,6 +168,8 @@ export const useEvaluadosList = (evaluadosEspecialista: User[] | undefined, data
 		setSearchQuery,
 		selectedFase,
 		setSelectedFase,
+		selectedUgel,
+		setSelectedUgel,
 		sortOrder,
 		setSortOrder,
 		showSortDropdown,

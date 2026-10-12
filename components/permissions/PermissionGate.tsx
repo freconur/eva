@@ -18,18 +18,13 @@ const PermissionGate: React.FC<PermissionGateProps> = ({
   fallback = null
 }) => {
   const { currentUserData } = useGlobalContext();
-  const userRole = currentUserData.perfil?.rol || 0;
+  const userRole = currentUserData.rol || currentUserData.perfil?.rol || 0;
   const institutionLevels = currentUserData.nivelDeInstitucion || [];
   
   const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions(
     userRole, 
     institutionLevels
   );
-  
-  // Si el usuario tiene nivelDeInstitucion, no tiene permiso
-  if (currentUserData.nivelDeInstitucion && currentUserData.nivelDeInstitucion.length > 0) {
-    return <>{fallback}</>;
-  }
 
   // Si se especifica un permiso específico
   if (permission) {

@@ -1,0 +1,13 @@
+export { default as ModalAgregarDimension } from './ModalAgregarDimension';
+export { default as ModalUpdateDimension } from './ModalUpdateDimension';
+export { default as ModalConfigurarEscala } from './ModalConfigurarEscala';
+export { default as ModalConfigurarFase } from './ModalConfigurarFase';
+export { default as ModalConfigurarNiveles } from './ModalConfigurarNiveles';
+export { default as ModalConfigurarNivelesPorDominio } from './ModalConfigurarNivelesPorDominio';
+export { default as ModalConfigurarDescripcion } from './ModalConfigurarDescripcion';
+export { default as ModalAgregarPregunta } from './ModalAgregarPregunta';
+export { default as ModalUpdatePregunta } from './ModalUpdatePregunta';
+export { default as ModalEvidencias } from './ModalEvidencias';
+export { default as ModalCrearEvaluacionDesempeno } from './ModalCrearEvaluacionDesempeno';
+export { default as ModalEditarTituloDescripcion } from './ModalEditarTituloDescripcion';
+export * from './ModalEditarTituloDescripcion';

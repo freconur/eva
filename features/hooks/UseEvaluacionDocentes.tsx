@@ -152,16 +152,79 @@ const UseEvaluacionDocentes = () => {
     }
   }
   const buscarDocenteReporteDeEvaluacion = async (idEvaluacion: string, idDocente: string) => {
-    `/usuarios/49163626/KtOATuI2gOKH80n1R6yt/88490965`
-    if (idEvaluacion.length > 0 && idDocente.length > 0) {
-      const path = doc(db, `/usuarios/${currentUserData?.dni}/${idEvaluacion}/${currentYear}/${currentMonth}`, idDocente)
-      // const docRef = doc(db, path, `${idDocente}`);
-      await getDoc(path)
-        .then(response => {
-          if (response.exists()) {
-            dispatch({ type: AppAction.REPORTE_INDIVIDUAL_DOCENTE, payload: response.data() })
-          }
-        })
+    if (idEvaluacion?.length > 0 && idDocente?.length > 0) {
+      try {
+        // 1. Buscar primero en la colección estandarizada: /evaluaciones-docentes/${idEvaluacion}/evaluados
+        const evaluadosRef = collection(db, `/evaluaciones-docentes/${idEvaluacion}/evaluados`);
+        let q = query(evaluadosRef, where('docenteDni', '==', idDocente));
+        let snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          q = query(evaluadosRef, where('dni', '==', idDocente));
+          snapshot = await getDocs(q);
+        }
+
+        if (!snapshot.empty) {
+          const docData = snapshot.docs[0].data();
+          const formattedData: any = {
+            ...docData,
+            id: snapshot.docs[0].id,
+            resultados: docData.resultadosSeguimientoRetroalimentacion || docData.resultados || [],
+            calificacion: docData.calificacion,
+            dni: docData.docenteDni || docData.dni,
+            info: docData.info || {
+              nombres: docData.nombres,
+              apellidos: docData.apellidos,
+              dni: docData.docenteDni || docData.dni,
+              institucion: docData.institucion,
+              region: docData.region,
+              perfil: docData.perfil,
+              caracteristicaCurricular: docData.caracteristicaCurricular,
+              cargo: docData.cargo,
+            },
+            observacionesMonitoreo: docData.observacionesMonitoreo || {},
+            retroalimentacionDinamica: docData.retroalimentacionDinamica || [],
+          };
+          dispatch({ type: AppAction.REPORTE_INDIVIDUAL_DOCENTE, payload: formattedData });
+          return;
+        }
+
+        // 2. Probar directamente por doc ID en /evaluaciones-docentes/${idEvaluacion}/evaluados/${idDocente}
+        const directSnap = await getDoc(doc(db, `/evaluaciones-docentes/${idEvaluacion}/evaluados`, idDocente));
+        if (directSnap.exists()) {
+          const docData = directSnap.data();
+          const formattedData: any = {
+            ...docData,
+            id: directSnap.id,
+            resultados: docData.resultadosSeguimientoRetroalimentacion || docData.resultados || [],
+            calificacion: docData.calificacion,
+            dni: docData.docenteDni || docData.dni,
+            info: docData.info || {
+              nombres: docData.nombres,
+              apellidos: docData.apellidos,
+              dni: docData.docenteDni || docData.dni,
+              institucion: docData.institucion,
+              region: docData.region,
+              perfil: docData.perfil,
+              caracteristicaCurricular: docData.caracteristicaCurricular,
+              cargo: docData.cargo,
+            },
+            observacionesMonitoreo: docData.observacionesMonitoreo || {},
+            retroalimentacionDinamica: docData.retroalimentacionDinamica || [],
+          };
+          dispatch({ type: AppAction.REPORTE_INDIVIDUAL_DOCENTE, payload: formattedData });
+          return;
+        }
+      } catch (err) {
+        console.warn('Error al buscar en evaluados unificado, probando fallback:', err);
+      }
+
+      // 3. Fallback a ruta histórica
+      const path = doc(db, `/usuarios/${currentUserData?.dni}/${idEvaluacion}/${currentYear}/${currentMonth}`, idDocente);
+      const response = await getDoc(path);
+      if (response.exists()) {
+        dispatch({ type: AppAction.REPORTE_INDIVIDUAL_DOCENTE, payload: response.data() });
+      }
     }
   }
 
@@ -298,15 +361,53 @@ const UseEvaluacionDocentes = () => {
     dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_DOCENTE_TABLA, payload: [] })
   }
   const getDocentesDelDirector = async (idEvaluacion: string, month: number) => {
-    const path = `/usuarios/${currentUserData.dni}/${idEvaluacion}/${currentYear}/${month}`
-    const docentesDelDirectorarray: ReporteDocenteIndividual[] = []
-    const getDocenterIdRef = collection(db, path)
-    const docentesDelDirector = await getDocs(getDocenterIdRef)
-    docentesDelDirector.forEach(doc => {
-      docentesDelDirectorarray.push(doc.data())
-    })
-    return docentesDelDirectorarray
-  }
+    const docentesDelDirectorarray: ReporteDocenteIndividual[] = [];
+    try {
+      // 1. Intentar cargar desde la estructura unificada /evaluaciones-docentes/${idEvaluacion}/evaluados
+      const evaluadosRef = collection(db, `/evaluaciones-docentes/${idEvaluacion}/evaluados`);
+      const q = currentUserData?.dni
+        ? query(evaluadosRef, where('dniDirector', '==', currentUserData.dni))
+        : evaluadosRef;
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        snapshot.forEach((docSnap) => {
+          const d = docSnap.data();
+          docentesDelDirectorarray.push({
+            ...d,
+            id: docSnap.id,
+            resultados: d.resultadosSeguimientoRetroalimentacion || d.resultados || [],
+            calificacion: d.calificacion,
+            dni: d.docenteDni || d.dni,
+            info: d.info || {
+              nombres: d.nombres,
+              apellidos: d.apellidos,
+              dni: d.docenteDni || d.dni,
+              institucion: d.institucion,
+              region: d.region,
+              perfil: d.perfil,
+              caracteristicaCurricular: d.caracteristicaCurricular,
+              cargo: d.cargo,
+            },
+            observacionesMonitoreo: d.observacionesMonitoreo || {},
+            retroalimentacionDinamica: d.retroalimentacionDinamica || [],
+          } as any);
+        });
+        return docentesDelDirectorarray;
+      }
+    } catch (e) {
+      console.warn('Fallback a estructura anterior en getDocentesDelDirector:', e);
+    }
+
+    // 2. Fallback a estructura heredada
+    const path = `/usuarios/${currentUserData?.dni}/${idEvaluacion}/${currentYear}/${month}`;
+    const getDocenterIdRef = collection(db, path);
+    const docentesDelDirector = await getDocs(getDocenterIdRef);
+    docentesDelDirector.forEach((docSnap) => {
+      docentesDelDirectorarray.push(docSnap.data());
+    });
+    return docentesDelDirectorarray;
+  };
   const reporteTablaEvaluacionEspecialistaDocente = (data: ReporteDocenteIndividual[], { genero, grado, seccion, order }: { genero: string, grado: string, seccion: string, order: string }) => {
 
     const dataFiltrada = data?.filter(docente => {

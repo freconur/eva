@@ -48,8 +48,8 @@ export const useEvaluarEspecialista = () => {
         getEspecialistasEvaluados,
     } = UseEvaluacionEspecialistas();
 
-    // Condicional de rol
-    const isAutoreporte = currentUserData?.rol === 1;
+    // Condicional de rol (solo autorreporte si es rol 1 y no se especificó un director a evaluar)
+    const isAutoreporte = currentUserData?.rol === 1 && !router.query.idDirector && !router.query.dniDirector;
 
     // ── Estado principal ──────────────────────────────────────────────────────
     const [originalPR, setOriginalPR] = useState<PRDocentes[]>([]);
@@ -218,6 +218,17 @@ export const useEvaluarEspecialista = () => {
             getDataSeguimientoRetroalimentacionEspecialista(evaluacionId, currentUserData.dni);
         }
     }, [isAutoreporte, currentUserData?.dni, evaluacionId, dataDirector.dni]);
+
+    // Auto-cargar director si viene por parámetro de URL (ej. desde el padrón de directores)
+    useEffect(() => {
+        const queryDni = router.query.idDirector || router.query.dniDirector || router.query.dni;
+        if (queryDni && typeof queryDni === 'string' && queryDni.length === 8 && !dataDirector.dni) {
+            buscarEspecialista(queryDni);
+            if (evaluacionId) {
+                getDataSeguimientoRetroalimentacionEspecialista(evaluacionId, queryDni);
+            }
+        }
+    }, [router.query.idDirector, router.query.dniDirector, router.query.dni, evaluacionId, dataDirector.dni]);
 
     // Verificar si el especialista ya se autoevaluó en la fase actual para cargar su sesión
     useEffect(() => {

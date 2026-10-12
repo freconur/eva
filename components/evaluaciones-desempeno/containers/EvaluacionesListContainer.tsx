@@ -1,0 +1,374 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import {
+  MdAddCircle,
+  MdDeleteForever,
+  MdEditSquare,
+  MdVisibility,
+  MdVisibilityOff,
+  MdSearch,
+} from 'react-icons/md';
+import {
+  RiLoader4Line,
+  RiBookOpenLine,
+  RiTimeLine,
+  RiShieldCheckLine,
+  RiGraduationCapLine,
+} from 'react-icons/ri';
+import { useGlobalContext } from '@/features/context/GlolbalContext';
+import useEvaluacionDesempenoBase from '@/features/hooks/useEvaluacionDesempenoBase';
+import { CrearEvaluacionDocente } from '@/features/types/types';
+import DesempenoHeroBanner, { HeroBannerMetricItem } from './DesempenoHeroBanner';
+import ModalCrearEvaluacionDesempeno from '../modals/ModalCrearEvaluacionDesempeno';
+import DeleteEvaluacionDocente from '@/modals/DeleteEvaluacionDocente';
+import DeleteEvaluacionEspecialista from '@/modals/DeleteEvaluacionEscpecialista';
+import DeleteEvaluacionDirector from '@/modals/DeleteEvaluacionDirector';
+
+export interface EvaluacionesListContainerProps {
+  role: 'especialista' | 'director';
+  title: string;
+  collectionName?: 'evaluaciones-especialista' | 'evaluaciones-docentes' | string;
+  baseDetailRoute: string; // e.g. '/admin/especialistas/evaluaciones-especialistas/evaluacion' o '/directores/evaluaciones-docentes/evaluacion'
+  canCreate?: boolean;
+}
+
+export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps> = ({
+  role,
+  title,
+  collectionName: propCollectionName,
+  baseDetailRoute,
+  canCreate = true,
+}) => {
+  const collectionName =
+    propCollectionName ||
+    (role === 'director' ? 'evaluaciones-docentes' : 'evaluaciones-especialista');
+
+  const { evaluacionDesempeñoDocente, loaderPages } = useGlobalContext();
+  const { getEvaluaciones, updateEstadoEvaluacion } = useEvaluacionDesempenoBase({
+    collectionName,
+    role,
+  });
+
+  const [search, setSearch] = useState<string>('');
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [deleteEvalId, setDeleteEvalId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = getEvaluaciones();
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, [getEvaluaciones]);
+
+  const filteredEvaluaciones = useMemo(() => {
+    if (!evaluacionDesempeñoDocente) return [];
+    return [...evaluacionDesempeñoDocente]
+      .filter((ev) => {
+        const query = search.toLowerCase().trim();
+        return (
+          (ev.name || '').toLowerCase().includes(query) ||
+          (ev.categoria || '').toLowerCase().includes(query)
+        );
+      })
+      .sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })
+      );
+  }, [evaluacionDesempeñoDocente, search]);
+
+  const handleToggleActive = async (id: string, currentStatus?: boolean) => {
+    try {
+      await updateEstadoEvaluacion(id, !currentStatus);
+    } catch (error) {
+      console.error('Error al cambiar estado de la evaluación:', error);
+    }
+  };
+
+  const metricasBanner = useMemo(() => {
+    const list = evaluacionDesempeñoDocente || [];
+    const total = list.length;
+    const activas = list.filter((ev) => Boolean(ev.active)).length;
+    const inactivas = total - activas;
+    const categoriasSet = new Set<string>();
+    list.forEach((ev) => {
+      if (ev.categoria) categoriasSet.add(ev.categoria);
+    });
+    const totalCategorias = categoriasSet.size;
+
+    return { total, activas, inactivas, totalCategorias };
+  }, [evaluacionDesempeñoDocente]);
+
+  const metricsItems = useMemo<HeroBannerMetricItem[]>(() => {
+    return [
+      {
+        id: 'total',
+        label: 'Evaluaciones',
+        value: metricasBanner.total,
+        icon: RiBookOpenLine,
+        colorTheme: 'blue',
+        tooltip: `${metricasBanner.total} instrumentos de evaluación registrados`,
+        badgeText: 'Total',
+        helperText: 'Instrumentos activos',
+      },
+      {
+        id: 'activas',
+        label: 'Activas',
+        value: metricasBanner.activas,
+        icon: RiTimeLine,
+        colorTheme: 'teal',
+        tooltip: `${metricasBanner.activas} evaluaciones habilitadas para calificación`,
+        badgeText: 'Habilitadas',
+        helperText: 'En curso',
+      },
+      {
+        id: 'inactivas',
+        label: 'Inactivas',
+        value: metricasBanner.inactivas,
+        icon: RiShieldCheckLine,
+        colorTheme: 'purple',
+        tooltip: `${metricasBanner.inactivas} evaluaciones en borrador o pausadas`,
+        badgeText: 'Pausadas',
+        helperText: 'En edición',
+      },
+      {
+        id: 'categorias',
+        label: 'Categorías',
+        value: metricasBanner.totalCategorias,
+        icon: RiGraduationCapLine,
+        colorTheme: 'amber',
+        tooltip: `${metricasBanner.totalCategorias} categorías de rúbricas`,
+        badgeText: 'Áreas',
+        helperText: 'Categorías configuradas',
+      },
+    ];
+  }, [metricasBanner]);
+
+  return (
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      {/* Modal de Creación */}
+      {showCreateModal && (
+        <ModalCrearEvaluacionDesempeno
+          idEvaluacion=""
+          collectionName={collectionName}
+          title={
+            collectionName.includes('director')
+              ? 'Crear Evaluación de Director'
+              : role === 'director'
+              ? 'Crear Evaluación de Docente'
+              : 'Crear Evaluación de Especialista'
+          }
+          onClose={() => setShowCreateModal(false)}
+        />
+      )}
+
+      {/* Modal de Eliminación */}
+      {deleteEvalId && collectionName.includes('director') && (
+        <DeleteEvaluacionDirector
+          idEva={deleteEvalId}
+          handleShowModalDelete={() => setDeleteEvalId(null)}
+        />
+      )}
+      {deleteEvalId && !collectionName.includes('director') && role === 'especialista' && (
+        <DeleteEvaluacionEspecialista
+          idEva={deleteEvalId}
+          handleShowModalDelete={() => setDeleteEvalId(null)}
+        />
+      )}
+      {deleteEvalId && role === 'director' && (
+        <DeleteEvaluacionDocente
+          idEva={deleteEvalId}
+          handleShowModalDelete={() => setDeleteEvalId(null)}
+        />
+      )}
+
+      {/* Hero Banner Modular Reutilizable para Seguimiento y Retroalimentación */}
+      <DesempenoHeroBanner
+        routeKey={
+          collectionName.includes('director')
+            ? 'especialistas_evaluaciones_directores'
+            : 'directores_evaluaciones_docentes'
+        }
+        title={title}
+        subtitle={
+          role === 'director'
+            ? 'Seguimiento y retroalimentación pedagógica continua al desempeño docente en aula'
+            : 'Seguimiento y retroalimentación directiva a la gestión institucional'
+        }
+        badgeTema={role === 'director' ? 'Desempeño Docente' : 'Desempeño Directivo'}
+        metrics={metricsItems}
+        actions={
+          canCreate ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white text-slate-800 hover:bg-slate-100 hover:text-blue-600 transition-all duration-200 shadow-sm border border-slate-200 cursor-pointer active:scale-95"
+                title="Crear nueva evaluación"
+              >
+                <MdAddCircle className="text-lg text-blue-600" />
+                <span className="hidden sm:inline">Nueva Evaluación</span>
+              </button>
+            </div>
+          ) : undefined
+        }
+      />
+
+      {/* Barra de Filtro y Búsqueda */}
+      <div className="flex items-center gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <MdSearch className="text-xl text-slate-400" />
+        <input
+          type="text"
+          placeholder="Buscar evaluación por nombre o categoría..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full bg-transparent text-sm text-slate-700 placeholder-slate-400 focus:outline-none"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 rounded bg-slate-100"
+          >
+            Limpiar
+          </button>
+        )}
+      </div>
+
+      {/* Contenido / Tabla */}
+      {loaderPages ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200">
+          <RiLoader4Line className="text-4xl text-blue-600 animate-spin mb-3" />
+          <p className="text-sm font-medium text-slate-600">Cargando evaluaciones...</p>
+        </div>
+      ) : filteredEvaluaciones.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
+          <p className="text-base font-semibold text-slate-700">No se encontraron evaluaciones</p>
+          <p className="text-sm text-slate-400 mt-1">
+            {search ? 'Prueba con otro término de búsqueda.' : 'Crea una evaluación para comenzar.'}
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-hidden bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th scope="col" className="w-16 px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  #
+                </th>
+                <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Nombre del Instrumento
+                </th>
+                <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Categoría
+                </th>
+                <th scope="col" className="w-40 px-6 py-3.5 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Tipo / Estado
+                </th>
+                <th scope="col" className="w-32 px-6 py-3.5 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {filteredEvaluaciones.map((evaluacion, index) => {
+                const evalId = evaluacion.id || String(index);
+                const detailUrl = `${baseDetailRoute}/${evalId}`;
+
+                return (
+                  <tr key={evalId} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-400">
+                      {index + 1}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <Link
+                        href={detailUrl}
+                        className="text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors block"
+                      >
+                        {evaluacion.name}
+                      </Link>
+                      <span className="text-xs text-slate-400">
+                        {evaluacion.faseNombre ? `Fase: ${evaluacion.faseNombre}` : 'Sin etapa asignada'}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                        {evaluacion.categoria || 'General'}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      {canCreate ? (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActive(evalId, evaluacion.active)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                            evaluacion.active
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                              : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+                          }`}
+                          title={evaluacion.active ? 'Evaluación activa (Clic para pausar)' : 'Inactiva (Clic para activar)'}
+                        >
+                          {evaluacion.active ? (
+                            <>
+                              <MdVisibility className="text-emerald-600" /> Activa
+                            </>
+                          ) : (
+                            <>
+                              <MdVisibilityOff className="text-slate-400" /> Inactiva
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                            evaluacion.active
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-slate-100 text-slate-500 border border-slate-200'
+                          }`}
+                        >
+                          {evaluacion.active ? (
+                            <>
+                              <MdVisibility className="text-emerald-600" /> Activa
+                            </>
+                          ) : (
+                            <>
+                              <MdVisibilityOff className="text-slate-400" /> Inactiva
+                            </>
+                          )}
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <Link
+                          href={detailUrl}
+                          className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title={canCreate ? 'Configurar / Monitorear' : 'Evaluar docentes'}
+                        >
+                          <MdEditSquare className="text-lg" />
+                        </Link>
+                        {canCreate && (
+                          <button
+                            type="button"
+                            onClick={() => setDeleteEvalId(evalId)}
+                            className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Eliminar evaluación"
+                          >
+                            <MdDeleteForever className="text-lg" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default EvaluacionesListContainer;

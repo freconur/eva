@@ -250,6 +250,8 @@ const EvaluadosPage = () => {
 							setSearchQuery={evaluadosList.setSearchQuery}
 							selectedFase={evaluadosList.selectedFase}
 							setSelectedFase={evaluadosList.setSelectedFase}
+							selectedUgel={evaluadosList.selectedUgel}
+							setSelectedUgel={evaluadosList.setSelectedUgel}
 							fasesUnicas={evaluadosList.fasesUnicas}
 							sortOrder={evaluadosList.sortOrder}
 							setSortOrder={evaluadosList.setSortOrder}

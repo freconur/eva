@@ -3,27 +3,38 @@ import styles from './agregarDimension.module.css'
 import { useForm } from "react-hook-form";
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { RiLoader4Line } from "react-icons/ri";
-import UseEvaluacionEspecialistas from "@/features/hooks/UseEvaluacionEspecialistas";
+import useEvaluacionDesempenoBase from "@/features/hooks/useEvaluacionDesempenoBase";
 
 interface Props {
-    handleShowModalDimension: () => void,
-    idEvaluacion: string
+    handleShowModalDimension?: () => void,
+    onClose?: () => void,
+    onSuccess?: () => void,
+    idEvaluacion: string,
+    collectionName?: string
 }
 
-const AgregarDimensionEspecialistas = ({ handleShowModalDimension, idEvaluacion }: Props) => {
+const AgregarDimensionEspecialistas = ({
+    handleShowModalDimension,
+    onClose,
+    onSuccess,
+    idEvaluacion,
+    collectionName = 'evaluaciones-especialista'
+}: Props) => {
     const { loaderModales } = useGlobalContext()
-    const { createDimensionEspecialista } = UseEvaluacionEspecialistas()
+    const { createDimension } = useEvaluacionDesempenoBase({ collectionName })
+    const closeHandler = onClose || handleShowModalDimension;
 
     let container;
     if (typeof window !== "undefined") {
         container = document.getElementById("portal-modal");
     }
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm()
+    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm()
     const handleSubmitform = handleSubmit(async (data) => {
-        await createDimensionEspecialista(idEvaluacion, data.nombre)
+        await createDimension(idEvaluacion, data.nombre)
         reset()
-        handleShowModalDimension()
+        if (onSuccess) onSuccess()
+        if (closeHandler) closeHandler()
     })
 
     return container
@@ -38,7 +49,7 @@ const AgregarDimensionEspecialistas = ({ handleShowModalDimension, idEvaluacion 
                     <div className={styles.containerSale}>
                         <div className={styles.closeModalContainer}>
                             <h3 className={styles.title}>agregar dominio</h3>
-                            <div className={styles.close} onClick={handleShowModalDimension}>cerrar</div>
+                            <div className={styles.close} onClick={closeHandler}>cerrar</div>
                         </div>
                         <form onSubmit={handleSubmitform}>
                             <div className={styles.formGroup}>
@@ -54,7 +65,7 @@ const AgregarDimensionEspecialistas = ({ handleShowModalDimension, idEvaluacion 
                                 />
                                 {errors.nombre && <span className={styles.error}>{errors.nombre.message as string}</span>}
                             </div>
-                            <button type="submit" className={styles.submitButton}>guardar</button>
+                            <button type="submit" disabled={isSubmitting || loaderModales} className={styles.submitButton}>guardar</button>
                         </form>
                     </div>
                 )}

@@ -1,15 +1,21 @@
 import { createPortal } from "react-dom"
 import styles from './updateEvaluacion.module.css'
 import { useGlobalContext } from "@/features/context/GlolbalContext";
-import { AlternativasDocente, PRDocentes } from "@/features/types/types";
+import { AlternativasDocente, PRDocentes, DimensionEspecialista } from "@/features/types/types";
 import { RiLoader4Line } from "react-icons/ri";
+import useEvaluacionDesempenoBase from "@/features/hooks/useEvaluacionDesempenoBase";
 import { useEffect, useState } from "react";
-import UseEvaluacionEspecialistas from "@/features/hooks/UseEvaluacionEspecialistas";
 
 interface Props {
   dataUpdate: PRDocentes,
-  handleShowUpdateModal: () => void,
-  id: string
+  handleShowUpdateModal?: () => void,
+  onClose?: () => void,
+  onSuccess?: () => void,
+  id?: string,
+  idEvaluacion?: string,
+  dimensiones?: DimensionEspecialista[],
+  escala?: AlternativasDocente[],
+  collectionName?: string
 }
 const initialValue = {
   id: "",
@@ -19,18 +25,41 @@ const initialValue = {
 
 const initialValueAlternativas = { descripcion: "", alternativa: "", value: 0 }
 
-const UpdatePreguntaRespuestaEspecialistas = ({ dataUpdate, handleShowUpdateModal, id }: Props) => {
+const UpdatePreguntaRespuestaEspecialistas = ({
+  dataUpdate,
+  handleShowUpdateModal,
+  onClose,
+  onSuccess,
+  id,
+  idEvaluacion,
+  dimensiones: propDimensiones,
+  collectionName = 'evaluaciones-especialista'
+}: Props) => {
   const { loaderSalvarPregunta, dimensionesEspecialistas, dataEvaluacionDocente } = useGlobalContext()
-  const { updatePreResEspecialistas, getDimensionesEspecialistas } = UseEvaluacionEspecialistas()
+  const targetId = idEvaluacion || id || ''
+  const closeHandler = onClose || handleShowUpdateModal
+  const dimensiones = propDimensiones || dimensionesEspecialistas || []
+  const { updatePreguntaRespuesta, getDimensiones } = useEvaluacionDesempenoBase({ collectionName })
   const [inputValue, setInputValue] = useState<PRDocentes>(initialValue)
   const [dimensionId, setDimensionId] = useState<string>('')
   const [requiereEvidencia, setRequiereEvidencia] = useState<boolean>(false)
   const [descripcionEvidencia, setDescripcionEvidencia] = useState<string>('')
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && closeHandler) {
+        closeHandler();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [closeHandler]);
 
   useEffect(() => {
-    getDimensionesEspecialistas(id)
-  }, [id])
+    if (targetId) {
+      getDimensiones(targetId)
+    }
+  }, [targetId, getDimensiones])
   const [dataA, setDataA] = useState<AlternativasDocente>(initialValueAlternativas)
   const [dataB, setDataB] = useState<AlternativasDocente>(initialValueAlternativas)
   const [dataC, setDataC] = useState<AlternativasDocente>(initialValueAlternativas)
@@ -43,14 +72,16 @@ const UpdatePreguntaRespuestaEspecialistas = ({ dataUpdate, handleShowUpdateModa
   const handleOnChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => { setInputValue({ ...inputValue, criterio: e.target.value }) }
   const handleDimensionChange = (e: React.ChangeEvent<HTMLSelectElement>) => { setDimensionId(e.target.value) }
 
-  const handleUpdatePRDirector = () => {
-    updatePreResEspecialistas({
+  const handleUpdatePRDirector = async () => {
+    await updatePreguntaRespuesta({
       ...inputValue,
       dimensionId: dimensionId,
       alternativas: dataUpdate.alternativas, // Keep existing scale
       requiereEvidencia,
       descripcionEvidencia
-    }, id)
+    }, targetId)
+    if (onSuccess) onSuccess()
+    if (closeHandler) closeHandler()
   }
 
 
@@ -78,7 +109,7 @@ const UpdatePreguntaRespuestaEspecialistas = ({ dataUpdate, handleShowUpdateModa
               :
               <>
                 <div className={styles.modalHeader}>
-                  <div onClick={() => handleShowUpdateModal()} className={styles.closeButton}>cerrar</div>
+                  <div onClick={() => closeHandler && closeHandler()} className={styles.closeButton}>cerrar</div>
                 </div>
                 <h3 className={styles.modalTitle}>Editar pregunta</h3>
                 <div className={styles.modalContent}>
@@ -90,7 +121,7 @@ const UpdatePreguntaRespuestaEspecialistas = ({ dataUpdate, handleShowUpdateModa
                       onChange={handleDimensionChange}
                     >
                       <option value="">Seleccione un dominio</option>
-                      {dimensionesEspecialistas?.map((dim) => (
+                      {dimensiones?.map((dim) => (
                         <option key={dim.id} value={dim.id}>
                           {dim.nombre}
                         </option>
@@ -136,8 +167,8 @@ const UpdatePreguntaRespuestaEspecialistas = ({ dataUpdate, handleShowUpdateModa
                   </div>
                   <p className={styles.confirmationText}>¿Quieres actualizar esta pregunta y sus alternativas?</p>
                   <div className={styles.buttonContainer}>
-                    <button onClick={() => handleShowUpdateModal()} className={styles.cancelButton}>CANCELAR</button>
-                    <button onClick={() => { handleUpdatePRDirector(); handleShowUpdateModal() }} className={styles.confirmButton}>SI</button>
+                    <button onClick={() => closeHandler && closeHandler()} className={styles.cancelButton}>CANCELAR</button>
+                    <button onClick={() => handleUpdatePRDirector()} className={styles.confirmButton}>SI</button>
                   </div>
                 </div>
               </>

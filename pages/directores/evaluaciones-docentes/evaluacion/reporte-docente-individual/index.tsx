@@ -12,6 +12,9 @@ import DatosInstitucion from '@/components/curricular/datos-institucion'
 import DatosMonitor from '@/components/curricular/datos-monitor'
 import AnexosSeguimientoRetroalimentacion from '@/modals/anexosSeguimientoRetroalimentacion'
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular'
+import Link from 'next/link'
+import { MdArrowBack } from 'react-icons/md'
+import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores'
 
 const ReporteDocenteIndividual = () => {
 
@@ -147,9 +150,24 @@ const ReporteDocenteIndividual = () => {
       </div>
     );
   }
+  const effectiveDocente = dataDocente?.dni ? dataDocente : (reporteIndividualDocente.info || reporteIndividualDocente);
+  const resultadosFinales = reporteIndividualDocente.resultados || (reporteIndividualDocente as any).resultadosSeguimientoRetroalimentacion || [];
+  const retroDinamica = (reporteIndividualDocente as any).retroalimentacionDinamica || [];
+
   return (
     <div className={styles.container}>
-      <button onClick={handleDownloadPdf} className={styles.downloadButton}>descargar pdf</button>
+      <div className="flex items-center gap-3 mb-4">
+        <Link
+          href={`/directores/evaluaciones-docentes/evaluacion/${route.query.idEvaluacion}`}
+          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl inline-flex items-center gap-2 transition-colors border border-slate-200"
+        >
+          <MdArrowBack /> Volver al panel
+        </Link>
+        <button onClick={handleDownloadPdf} className={styles.downloadButton}>
+          Descargar PDF
+        </button>
+      </div>
+
       {
         reporteIndividualDocente?.dni ?
           <div ref={printRef} className={styles.reporteContainer}>
@@ -157,14 +175,8 @@ const ReporteDocenteIndividual = () => {
               <h3>Rúbrica de la mediación didáctica de la {dataEvaluacionMediacionDirector?.name}</h3>
               <h2 className="text-3xl text-slate-500">(Director evalúa al docente)</h2>
             </div>
-            <DatosInstitucion dataDocente={dataDocente} />
+            <DatosInstitucion dataDocente={effectiveDocente} />
             <DatosMonitor dataMonitor={currentUserData} />
-            {/* <div className={styles.infoSection}>
-              <h4>Profesor: <strong>{reporteIndividualDocente.info?.nombres} {reporteIndividualDocente.info?.apellidos}</strong></h4>
-              <h4>Institución: <strong>{reporteIndividualDocente.info?.institucion}</strong></h4>
-              <h4>Región: <strong>{regionTexto(`${reporteIndividualDocente.info?.region}`)}</strong></h4>
-              <h4>Rol: <strong>{reporteIndividualDocente.info?.perfil?.nombre}</strong></h4>
-            </div> */}
 
             <div className={styles.sectionTitle}>
               <h5>Detalle de evaluación y calificación</h5>
@@ -180,13 +192,13 @@ const ReporteDocenteIndividual = () => {
               </thead>
               <tbody>
                 {
-                  reporteIndividualDocente.resultados?.map((al, index) => {
+                  resultadosFinales.map((al: any, index: number) => {
                     return (
                       <tr key={index} className={styles.tableRow}>
-                        <td className={styles.tableCell}>{al.subOrden || al.order}</td>
+                        <td className={styles.tableCell}>{al.subOrden || al.order || index + 1}</td>
                         <td className={styles.tableCellLeft}>{al.criterio}</td>
-                        <td className={styles.tableCell}>{al.alternativas?.map(select => select.selected ? select.value : null).filter(Boolean)[0]}</td>
-                        <td className={styles.tableCell}>{al.alternativas?.map(select => select.selected ? select.value : null).filter(Boolean)[0]}</td>
+                        <td className={styles.tableCell}>{al.alternativas?.map((select: any) => select.selected ? select.value : null).filter(Boolean)[0]}</td>
+                        <td className={styles.tableCell}>{al.alternativas?.map((select: any) => select.selected ? select.value : null).filter(Boolean)[0]}</td>
                       </tr>
                     )
                   })
@@ -202,7 +214,28 @@ const ReporteDocenteIndividual = () => {
             <div>
               {calculoProgreso()}
             </div>
-            <AnexosSeguimientoRetroalimentacion idEvaluacion={`${route.query.idEvaluacion}`} dataDocente={dataDocente} />
+
+            {retroDinamica.length > 0 && (
+              <div className="my-6 p-6 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
+                <h4 className="text-base font-bold text-slate-800">
+                  Retroalimentación Cualitativa y Compromisos
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {retroDinamica.map((item: any, idx: number) => (
+                    <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
+                      <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">
+                        {item.titulo || item.tipo}
+                      </span>
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                        {item.contenido || 'Sin observaciones registradas.'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <AnexosSeguimientoRetroalimentacion idEvaluacion={`${route.query.idEvaluacion}`} dataDocente={effectiveDocente} />
 
           </div>
           :
@@ -212,4 +245,5 @@ const ReporteDocenteIndividual = () => {
   )
 }
 
+ReporteDocenteIndividual.Auth = PrivateRouteDirectores
 export default ReporteDocenteIndividual

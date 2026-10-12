@@ -3,18 +3,39 @@ import styles from './configurarDescripcion.module.css'
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { RiLoader4Line } from "react-icons/ri";
 import { useEffect, useState } from "react";
-import UseEvaluacionEspecialistas from "@/features/hooks/UseEvaluacionEspecialistas";
+import useEvaluacionDesempenoBase from "@/features/hooks/useEvaluacionDesempenoBase";
 
 interface Props {
-    handleShowConfigurarDescripcion: () => void,
+    handleShowConfigurarDescripcion?: () => void,
+    onClose?: () => void,
+    onSuccess?: () => void,
     idEvaluacion: string,
-    descripcionActual?: string
+    descripcionActual?: string,
+    collectionName?: string
 }
 
-const ConfigurarDescripcionEspecialistas = ({ handleShowConfigurarDescripcion, idEvaluacion, descripcionActual }: Props) => {
+const ConfigurarDescripcionEspecialistas = ({
+    handleShowConfigurarDescripcion,
+    onClose,
+    onSuccess,
+    idEvaluacion,
+    descripcionActual,
+    collectionName = 'evaluaciones-especialista'
+}: Props) => {
     const { loaderModales } = useGlobalContext()
-    const { updateDescripcionEvaluacion } = UseEvaluacionEspecialistas()
+    const { updateDescripcionEvaluacion } = useEvaluacionDesempenoBase({ collectionName })
+    const closeHandler = onClose || handleShowConfigurarDescripcion;
     const [descripcion, setDescripcion] = useState<string>('')
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && closeHandler) {
+                closeHandler();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [closeHandler]);
 
     useEffect(() => {
         if (descripcionActual) {
@@ -24,7 +45,8 @@ const ConfigurarDescripcionEspecialistas = ({ handleShowConfigurarDescripcion, i
 
     const handleSave = async () => {
         await updateDescripcionEvaluacion(idEvaluacion, descripcion);
-        handleShowConfigurarDescripcion();
+        if (onSuccess) onSuccess();
+        if (closeHandler) closeHandler();
     };
 
     let container;
@@ -44,7 +66,7 @@ const ConfigurarDescripcionEspecialistas = ({ handleShowConfigurarDescripcion, i
                     <div className={styles.containerSale}>
                         <div className={styles.closeModalContainer}>
                             <h3 className={styles.title}>Configurar título PDF</h3>
-                            <div className={styles.close} onClick={handleShowConfigurarDescripcion}>cerrar</div>
+                            <div className={styles.close} onClick={closeHandler}>cerrar</div>
                         </div>
                         <div className={styles.description}>
                             Escribe un título principal. Este título se verá al exportar en el PDF.

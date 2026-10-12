@@ -3,31 +3,60 @@ import styles from './agregarPreguntaRespuestas.module.css'
 import { useForm } from "react-hook-form";
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { RiLoader4Line } from "react-icons/ri";
-import UseEvaluacionEspecialistas from "@/features/hooks/UseEvaluacionEspecialistas";
+import useEvaluacionDesempenoBase from "@/features/hooks/useEvaluacionDesempenoBase";
 import { useEffect } from "react";
+import { DimensionEspecialista } from "@/features/types/types";
 
 interface Props {
-  handleShowModalPreguntas: () => void,
-  idEvaluacion: string
+  handleShowModalPreguntas?: () => void,
+  onClose?: () => void,
+  onSuccess?: () => void,
+  idEvaluacion: string,
+  dimensiones?: DimensionEspecialista[],
+  escala?: any[],
+  collectionName?: string
 }
 
-const AgregarPreguntasRespuestasEspecialistas = ({ handleShowModalPreguntas, idEvaluacion }: Props) => {
+const AgregarPreguntasRespuestasEspecialistas = ({
+  handleShowModalPreguntas,
+  onClose,
+  onSuccess,
+  idEvaluacion,
+  dimensiones: propDimensiones,
+  escala: propEscala,
+  collectionName = 'evaluaciones-especialista'
+}: Props) => {
   const { currentUserData, loaderModales, dimensionesEspecialistas, dataEvaluacionDocente } = useGlobalContext()
-  const { addPreguntasEvaluacionEspecialistas, getDimensionesEspecialistas } = UseEvaluacionEspecialistas()
+  const { addPreguntaRespuesta, getDimensiones } = useEvaluacionDesempenoBase({ collectionName })
+  const closeHandler = onClose || handleShowModalPreguntas;
+  const dimensiones = propDimensiones || dimensionesEspecialistas || [];
 
   useEffect(() => {
-    getDimensionesEspecialistas(idEvaluacion)
-  }, [idEvaluacion])
+    getDimensiones(idEvaluacion)
+  }, [idEvaluacion, getDimensiones])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && closeHandler) {
+        closeHandler();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [closeHandler]);
 
   let container;
   if (typeof window !== "undefined") {
     container = document.getElementById("portal-modal");
   }
 
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm()
+  const { register, handleSubmit, watch, reset, formState: { errors, isSubmitting } } = useForm()
   const handleSubmitform = handleSubmit(async (data) => {
-    addPreguntasEvaluacionEspecialistas(data, idEvaluacion, dataEvaluacionDocente?.escala)
+    const escalaToUse = propEscala || dataEvaluacionDocente?.escala;
+    await addPreguntaRespuesta(data as any, idEvaluacion, escalaToUse)
     reset()
+    if (onSuccess) onSuccess()
+    if (closeHandler) closeHandler()
   })
 
   return container
@@ -42,7 +71,7 @@ const AgregarPreguntasRespuestasEspecialistas = ({ handleShowModalPreguntas, idE
           <div className={styles.containerSale}>
             <div className={styles.closeModalContainer}>
               <h3 className={styles.title}>agregar preguntas y respuestas</h3>
-              <div className={styles.close} onClick={handleShowModalPreguntas}>cerrar</div>
+              <div className={styles.close} onClick={closeHandler}>cerrar</div>
             </div>
             <form onSubmit={handleSubmitform}>
               <div className={styles.formGroup}>
@@ -54,7 +83,7 @@ const AgregarPreguntasRespuestasEspecialistas = ({ handleShowModalPreguntas, idE
                   })}
                 >
                   <option value="">Seleccione un dominio</option>
-                  {dimensionesEspecialistas?.map((dim) => (
+                  {dimensiones?.map((dim) => (
                     <option key={dim.id} value={dim.id}>
                       {dim.nombre}
                     </option>
@@ -65,6 +94,7 @@ const AgregarPreguntasRespuestasEspecialistas = ({ handleShowModalPreguntas, idE
               <div className={styles.formGroup}>
                 <p className={styles.titlePregunta}>criterio / pregunta</p>
                 <textarea
+                  autoFocus
                   className={styles.textAreaPregunta}
                   placeholder="Escriba la pregunta o criterio a evaluar"
                   {...register("criterio", {
@@ -101,8 +131,8 @@ const AgregarPreguntasRespuestasEspecialistas = ({ handleShowModalPreguntas, idE
               <div className={styles.infoScale}>
                 <p>Nota: Esta evaluación utiliza la siguiente escala:</p>
                 <ul>
-                  {dataEvaluacionDocente?.escala?.length ? (
-                    dataEvaluacionDocente.escala.map((opt, i) => (
+                  {(propEscala || dataEvaluacionDocente?.escala)?.length ? (
+                    (propEscala || dataEvaluacionDocente?.escala)!.map((opt: any, i: number) => (
                       <li key={i}>{opt.value} = {opt.descripcion}</li>
                     ))
                   ) : (
@@ -114,7 +144,7 @@ const AgregarPreguntasRespuestasEspecialistas = ({ handleShowModalPreguntas, idE
                   )}
                 </ul>
               </div>
-              <button type="submit" className={styles.submitButton}>guardar</button>
+              <button type="submit" disabled={isSubmitting || loaderModales} className={styles.submitButton}>guardar</button>
             </form>
           </div>
         )}

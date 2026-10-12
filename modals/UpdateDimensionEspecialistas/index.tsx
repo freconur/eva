@@ -3,40 +3,56 @@ import styles from './updateDimension.module.css'
 import { useForm } from "react-hook-form";
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { RiLoader4Line } from "react-icons/ri";
-import UseEvaluacionEspecialistas from "@/features/hooks/UseEvaluacionEspecialistas";
+import useEvaluacionDesempenoBase from "@/features/hooks/useEvaluacionDesempenoBase";
 import { DimensionEspecialista } from "@/features/types/types";
 import { useEffect } from "react";
 
 interface Props {
-    handleShowUpdateDimension: () => void,
+    handleShowUpdateDimension?: () => void,
+    onClose?: () => void,
+    onSuccess?: () => void,
     idEvaluacion: string,
-    dimensionUpdate: DimensionEspecialista
+    dimensionUpdate?: DimensionEspecialista | null,
+    dimension?: DimensionEspecialista | null,
+    collectionName?: string
 }
 
-const UpdateDimensionEspecialistas = ({ handleShowUpdateDimension, idEvaluacion, dimensionUpdate }: Props) => {
+const UpdateDimensionEspecialistas = ({
+    handleShowUpdateDimension,
+    onClose,
+    onSuccess,
+    idEvaluacion,
+    dimensionUpdate,
+    dimension,
+    collectionName = 'evaluaciones-especialista'
+}: Props) => {
     const { loaderModales } = useGlobalContext()
-    const { updateDimensionEspecialista } = UseEvaluacionEspecialistas()
+    const { updateDimension } = useEvaluacionDesempenoBase({ collectionName })
+    const targetDimension = dimensionUpdate || dimension;
+    const closeHandler = onClose || handleShowUpdateDimension;
 
     let container;
     if (typeof window !== "undefined") {
         container = document.getElementById("portal-modal");
     }
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
         defaultValues: {
-            nombre: dimensionUpdate.nombre
+            nombre: targetDimension?.nombre || ''
         }
     })
 
     useEffect(() => {
-        if (dimensionUpdate) {
-            reset({ nombre: dimensionUpdate.nombre });
+        if (targetDimension) {
+            reset({ nombre: targetDimension.nombre || '' });
         }
-    }, [dimensionUpdate, reset]);
+    }, [targetDimension, reset]);
+
     const handleSubmitform = handleSubmit(async (data) => {
-        if (dimensionUpdate.id && data.nombre) {
-            await updateDimensionEspecialista(idEvaluacion, dimensionUpdate.id, data.nombre)
-            handleShowUpdateDimension()
+        if (targetDimension?.id && data.nombre) {
+            await updateDimension(idEvaluacion, targetDimension.id, data.nombre)
+            if (onSuccess) onSuccess()
+            if (closeHandler) closeHandler()
         }
     })
 
@@ -52,7 +68,7 @@ const UpdateDimensionEspecialistas = ({ handleShowUpdateDimension, idEvaluacion,
                     <div className={styles.containerSale}>
                         <div className={styles.closeModalContainer}>
                             <h3 className={styles.title}>editar dominio</h3>
-                            <div className={styles.close} onClick={handleShowUpdateDimension}>cerrar</div>
+                            <div className={styles.close} onClick={closeHandler}>cerrar</div>
                         </div>
                         <form onSubmit={handleSubmitform}>
                             <div className={styles.formGroup}>
@@ -68,7 +84,7 @@ const UpdateDimensionEspecialistas = ({ handleShowUpdateDimension, idEvaluacion,
                                 />
                                 {errors.nombre && <span className={styles.error}>{errors.nombre.message as string}</span>}
                             </div>
-                            <button type="submit" className={styles.submitButton}>actualizar</button>
+                            <button type="submit" disabled={isSubmitting || loaderModales} className={styles.submitButton}>actualizar</button>
                         </form>
                     </div>
                 )}

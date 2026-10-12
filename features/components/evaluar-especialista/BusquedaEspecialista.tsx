@@ -15,6 +15,8 @@ interface BusquedaEspecialistaProps {
     handleBuscarDocente: () => void;
     handleStartNewEvaluation: () => void;
     handleContinueEvaluation: (sessionId: string) => void;
+    labelBusqueda?: string;
+    emptyMessage?: string;
 }
 
 const BusquedaEspecialista: React.FC<BusquedaEspecialistaProps> = ({
@@ -30,10 +32,12 @@ const BusquedaEspecialista: React.FC<BusquedaEspecialistaProps> = ({
     handleBuscarDocente,
     handleStartNewEvaluation,
     handleContinueEvaluation,
+    labelBusqueda,
+    emptyMessage,
 }) => (
     <div className={styles.searchForm}>
         <div className={styles.searchInputContainer} ref={searchRef}>
-            <label className={styles.searchLabel}>Búsqueda de Especialista</label>
+            <label className={styles.searchLabel}>{labelBusqueda || 'Búsqueda de Especialista'}</label>
             <input
                 name="dni"
                 className={styles.searchInput}
@@ -60,7 +64,7 @@ const BusquedaEspecialista: React.FC<BusquedaEspecialistaProps> = ({
                             </div>
                         ))
                     ) : (
-                        <div className={styles.noResults}>No se encontraron especialistas</div>
+                        <div className={styles.noResults}>{emptyMessage || 'No se encontraron especialistas'}</div>
                     )}
                 </div>
             )}

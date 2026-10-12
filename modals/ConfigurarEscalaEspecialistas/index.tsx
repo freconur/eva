@@ -4,18 +4,39 @@ import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { AlternativasDocente } from "@/features/types/types";
 import { RiLoader4Line, RiDeleteBin6Line, RiAddLine } from "react-icons/ri";
 import { useEffect, useState } from "react";
-import UseEvaluacionEspecialistas from "@/features/hooks/UseEvaluacionEspecialistas";
+import useEvaluacionDesempenoBase from "@/features/hooks/useEvaluacionDesempenoBase";
 
 interface Props {
-    handleShowConfigurarEscala: () => void,
+    handleShowConfigurarEscala?: () => void,
+    onClose?: () => void,
+    onSuccess?: () => void,
     idEvaluacion: string,
-    escalaActual?: AlternativasDocente[]
+    escalaActual?: AlternativasDocente[],
+    collectionName?: string
 }
 
-const ConfigurarEscalaEspecialistas = ({ handleShowConfigurarEscala, idEvaluacion, escalaActual }: Props) => {
+const ConfigurarEscalaEspecialistas = ({
+    handleShowConfigurarEscala,
+    onClose,
+    onSuccess,
+    idEvaluacion,
+    escalaActual,
+    collectionName = 'evaluaciones-especialista'
+}: Props) => {
     const { loaderModales } = useGlobalContext()
-    const { updateEscalaEvaluacion } = UseEvaluacionEspecialistas()
+    const { updateEscalaEvaluacion } = useEvaluacionDesempenoBase({ collectionName })
+    const closeHandler = onClose || handleShowConfigurarEscala;
     const [escala, setEscala] = useState<AlternativasDocente[]>([])
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && closeHandler) {
+                closeHandler();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [closeHandler]);
 
     useEffect(() => {
         if (escalaActual && escalaActual.length > 0) {
@@ -46,7 +67,8 @@ const ConfigurarEscalaEspecialistas = ({ handleShowConfigurarEscala, idEvaluacio
 
     const handleSave = async () => {
         await updateEscalaEvaluacion(idEvaluacion, escala);
-        handleShowConfigurarEscala();
+        if (onSuccess) onSuccess();
+        if (closeHandler) closeHandler();
     };
 
     let container;
@@ -66,7 +88,7 @@ const ConfigurarEscalaEspecialistas = ({ handleShowConfigurarEscala, idEvaluacio
                     <div className={styles.containerSale}>
                         <div className={styles.closeModalContainer}>
                             <h3 className={styles.title}>configurar escala</h3>
-                            <div className={styles.close} onClick={handleShowConfigurarEscala}>cerrar</div>
+                            <div className={styles.close} onClick={closeHandler}>cerrar</div>
                         </div>
                         <div className={styles.description}>
                             Define los valores y etiquetas para la evaluación. Se aplicarán a las preguntas nuevas.

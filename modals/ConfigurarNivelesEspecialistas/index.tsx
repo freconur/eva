@@ -4,19 +4,40 @@ import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { NivelYPuntaje } from "@/features/types/types";
 import { RiLoader4Line, RiDeleteBin6Line, RiAddLine } from "react-icons/ri";
 import { useEffect, useState } from "react";
-import UseEvaluacionEspecialistas from "@/features/hooks/UseEvaluacionEspecialistas";
+import useEvaluacionDesempenoBase from "@/features/hooks/useEvaluacionDesempenoBase";
 import PaletteColorPopover from "@/components/common/PaletteColorPopover";
 
 interface Props {
-    handleShowConfigurarNiveles: () => void,
+    handleShowConfigurarNiveles?: () => void,
+    onClose?: () => void,
+    onSuccess?: () => void,
     idEvaluacion: string,
-    nivelesActuales?: NivelYPuntaje[]
+    nivelesActuales?: NivelYPuntaje[],
+    collectionName?: string
 }
 
-const ConfigurarNivelesEspecialistas = ({ handleShowConfigurarNiveles, idEvaluacion, nivelesActuales }: Props) => {
+const ConfigurarNivelesEspecialistas = ({
+    handleShowConfigurarNiveles,
+    onClose,
+    onSuccess,
+    idEvaluacion,
+    nivelesActuales,
+    collectionName = 'evaluaciones-especialista'
+}: Props) => {
     const { loaderModales } = useGlobalContext()
-    const { updateNivelesEvaluacion } = UseEvaluacionEspecialistas()
+    const { updateNivelesEvaluacion } = useEvaluacionDesempenoBase({ collectionName })
+    const closeHandler = onClose || handleShowConfigurarNiveles;
     const [niveles, setNiveles] = useState<NivelYPuntaje[]>([])
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && closeHandler) {
+                closeHandler();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [closeHandler]);
 
     useEffect(() => {
         if (nivelesActuales && nivelesActuales.length > 0) {
@@ -54,7 +75,8 @@ const ConfigurarNivelesEspecialistas = ({ handleShowConfigurarNiveles, idEvaluac
 
     const handleSave = async () => {
         await updateNivelesEvaluacion(idEvaluacion, niveles);
-        handleShowConfigurarNiveles();
+        if (onSuccess) onSuccess();
+        if (closeHandler) closeHandler();
     };
 
     let container;
@@ -74,7 +96,7 @@ const ConfigurarNivelesEspecialistas = ({ handleShowConfigurarNiveles, idEvaluac
                     <div className={styles.containerSale}>
                         <div className={styles.closeModalContainer}>
                             <h3 className={styles.title}>configurar niveles de logro</h3>
-                            <div className={styles.close} onClick={handleShowConfigurarNiveles}>cerrar</div>
+                            <div className={styles.close} onClick={closeHandler}>cerrar</div>
                         </div>
                         <div className={styles.description}>
                             Define los rangos de puntaje para categorizar el desempeño de los especialistas.

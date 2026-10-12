@@ -527,6 +527,13 @@ export type CrearEvaluacionDocente = {
   escala?: AlternativasDocente[];
   camposRetroalimentacion?: string[];
   active?: boolean;
+  faseNombre?: string;
+  faseActualID?: string;
+  fases?: any[];
+  niveles?: NivelYPuntaje[];
+  descripcion?: string;
+  activarEvidencias?: boolean;
+  fechaCreacion?: any;
 };
 
 export type PreviewPRDocentes = {
@@ -588,6 +595,8 @@ export type DataEvaluacion = {
   faseNombre?: string;
   fases?: Array<{ id: string; nombre: string }>;
   descripcion?: string;
+  backgroundImage?: string | null;
+  backgroundImageOpacity?: number;
 };
 
 export type NivelYPuntaje = {

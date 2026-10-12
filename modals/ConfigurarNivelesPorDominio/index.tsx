@@ -4,16 +4,19 @@ import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { AlternativasDocente, DimensionEspecialista, NivelYPuntaje, PRDocentes } from '@/features/types/types';
 import { RiLoader4Line, RiDeleteBin6Line, RiAddLine, RiAwardLine, RiCheckLine, RiFileCopyLine, RiMagicLine, RiPaletteLine } from 'react-icons/ri';
 import React, { useEffect, useState } from 'react';
-import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialistas';
+import useEvaluacionDesempenoBase from '@/features/hooks/useEvaluacionDesempenoBase';
 import PaletteColorPopover from '@/components/common/PaletteColorPopover';
 
 interface Props {
-  handleShowModal: () => void;
+  handleShowModal?: () => void;
+  onClose?: () => void;
+  onSuccess?: () => void;
   idEvaluacion: string;
   dimensiones: DimensionEspecialista[];
   preguntas?: PRDocentes[];
   escala?: AlternativasDocente[];
   initialDimensionId?: string;
+  collectionName?: string;
 }
 
 const DEFAULT_LEVELS_TEMPLATE = [
@@ -24,14 +27,30 @@ const DEFAULT_LEVELS_TEMPLATE = [
 
 const ConfigurarNivelesPorDominio = ({
   handleShowModal,
+  onClose,
+  onSuccess,
   idEvaluacion,
   dimensiones = [],
   preguntas = [],
   escala = [],
   initialDimensionId,
+  collectionName = 'evaluaciones-especialista',
 }: Props) => {
   const { loaderModales } = useGlobalContext();
-  const { updateDimensionNiveles, updateAllDimensionesNiveles } = UseEvaluacionEspecialistas();
+  const { updateDimensionNiveles, updateAllDimensionesNiveles } = useEvaluacionDesempenoBase({
+    collectionName,
+  });
+  const closeHandler = onClose || handleShowModal;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && closeHandler) {
+        closeHandler();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [closeHandler]);
 
   const [selectedDimId, setSelectedDimId] = useState<string>(
     initialDimensionId || dimensiones[0]?.id || ''
@@ -193,7 +212,8 @@ const ConfigurarNivelesPorDominio = ({
     if (!selectedDimId) return;
     try {
       await updateDimensionNiveles(idEvaluacion, selectedDimId, currentLevels);
-      handleShowModal();
+      if (onSuccess) onSuccess();
+      if (closeHandler) closeHandler();
     } catch (err) {
       console.error('Error al guardar niveles del dominio:', err);
     }
@@ -209,7 +229,8 @@ const ConfigurarNivelesPorDominio = ({
         }));
 
       await updateAllDimensionesNiveles(idEvaluacion, payload);
-      handleShowModal();
+      if (onSuccess) onSuccess();
+      if (closeHandler) closeHandler();
     } catch (err) {
       console.error('Error al guardar todos los niveles de dominios:', err);
     }
@@ -235,7 +256,7 @@ const ConfigurarNivelesPorDominio = ({
                   <RiAwardLine style={{ color: '#2563eb', fontSize: '1.4rem' }} />
                   <h3 className={styles.title}>Niveles de Logro por Dominio</h3>
                 </div>
-                <div className={styles.close} onClick={handleShowModal}>
+                <div className={styles.close} onClick={closeHandler}>
                   cerrar
                 </div>
               </div>

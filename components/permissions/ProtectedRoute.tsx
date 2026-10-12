@@ -20,7 +20,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const router = useRouter();
   const { currentUserData } = useGlobalContext();
-  const userRole = currentUserData.perfil?.rol || 0;
+  const userRole = currentUserData.rol || currentUserData.perfil?.rol || 0;
   const institutionLevels = currentUserData.nivelDeInstitucion || [];
   
   const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions(

@@ -3,7 +3,7 @@ import { usePermissions as usePermissionsUtil, PERMISSIONS } from '@/features/ut
 
 export const usePermissions = () => {
   const { currentUserData } = useGlobalContext();
-  const userRole = currentUserData.perfil?.rol || 0;
+  const userRole = currentUserData.rol || currentUserData.perfil?.rol || 0;
   const institutionLevels = currentUserData.nivelDeInstitucion || [];
   
   return usePermissionsUtil(userRole, institutionLevels);

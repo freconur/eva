@@ -112,7 +112,7 @@ const DatosEspecialista: React.FC<DatosEspecialistaProps> = ({
                 <button
                     onClick={handleCerrarEspecialista}
                     className={styles.closeButton}
-                    title="Cerrar especialista"
+                    title="Cerrar"
                 >
                     <RiCloseLine className={styles.closeIcon} />
                 </button>
@@ -121,15 +121,17 @@ const DatosEspecialista: React.FC<DatosEspecialistaProps> = ({
 
         <div className={styles.infoTable}>
             <div className={styles.infoRow}>
-                <div className={styles.infoLabel}>UGEL:</div>
+                <div className={styles.infoLabel}>
+                    {dataDirector.institucion ? 'INSTITUCIÓN EDUCATIVA:' : 'UGEL:'}
+                </div>
                 <div className={styles.infoValue}>
-                    {regionTexto(String(dataDirector.region || '')) || 'UGEL 01'}
+                    {dataDirector.institucion || regionTexto(String(dataDirector.region || '')) || 'UGEL 01'}
                 </div>
             </div>
             <div className={styles.infoRow}>
                 <div className={styles.infoLabel}>APELLIDOS Y NOMBRES:</div>
                 <div className={styles.infoValue}>
-                    {`${dataDirector.apellidos?.toUpperCase()} ${dataDirector.nombres?.toUpperCase()}`}
+                    {`${dataDirector.apellidos?.toUpperCase() || ''} ${dataDirector.nombres?.toUpperCase() || ''}`}
                 </div>
             </div>
             <div className={styles.infoRowGroup}>

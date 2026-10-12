@@ -33,3 +33,12 @@ Cuando `evaluacion.active === true`, el sistema entra en modo de protección par
 * Los inputs de puntajes individuales pasan a modo de solo lectura (Badge de texto).
 * El botón para cambiar de vista ("Vista Detallada" / "Vista Compacta") sigue visible, pero las funciones de arrastrar (`draggable`) y los controles de reordenación quedan lógicamente bloqueados y el indicador de arrastre (`MdDragIndicator`) se oculta.
 * El título de la evaluación en la cabecera se muestra en mayúsculas (`.toUpperCase()`).
+
+---
+
+## 4. Autonomía y Flujo de Trabajo del Agente
+* **Ejecución Autónoma sin Bloqueos**: El agente debe priorizar avanzar y completar las tareas de principio a fin de manera autónoma, sin detenerse a solicitar confirmaciones intermedias, permisos repetitivos ni preguntas de selección múltiple sobre decisiones de diseño o implementación estándar.
+* **Toma de Decisiones Proactiva**: Ante múltiples alternativas técnicas viables, el agente debe elegir e implementar proactivamente la solución más robusta y consistente con la arquitectura existente del proyecto.
+* **Excepción Única (Acciones Críticas Destructivas)**: Solo se debe pausar para pedir confirmación al usuario ante acciones de alto riesgo que provoquen pérdida irreversible de datos (por ejemplo, purga o eliminación de bases de datos de producción).
+* **Informe al Finalizar**: Todas las decisiones técnicas adoptadas se deben resumir de forma clara en la respuesta final una vez concluido el trabajo, permitiendo al usuario revisar lo realizado sin frenar el avance de la tarea.
+
