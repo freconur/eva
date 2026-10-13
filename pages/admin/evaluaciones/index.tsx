@@ -37,7 +37,6 @@ import EvaluacionesSidebarView from '@/components/evaluaciones/EvaluacionesSideb
 import EvaluacionesSpotlightTour from '@/components/evaluaciones/EvaluacionesSpotlightTour'
 import EvaluacionesHeroBanner from '@/components/evaluaciones/EvaluacionesHeroBanner'
 import useEvaluacionesBannerConfig from '@/components/evaluaciones/useEvaluacionesBannerConfig'
-import ModalDemoSelector, { DirectorCandidato } from '@/components/evaluaciones/ModalDemoSelector'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/firebase.config'
 import { isEvaluacionEnMatriz } from '@/components/reportes/director/useEvaluacionesMatriz'
@@ -260,42 +259,6 @@ const Evaluaciones = () => {
     }
   }, [])
 
-  // --- Demo Mode state and handlers ---
-  const [showDemoModal, setShowDemoModal] = useState<boolean>(false)
-  const [selectedEvaForDemo, setSelectedEvaForDemo] = useState<any>(null)
-
-  const handleOpenDemoModal = (eva: any) => {
-    setSelectedEvaForDemo(eva)
-    setShowDemoModal(true)
-  }
-
-  const handleCloseDemoModal = () => {
-    setShowDemoModal(false)
-    setSelectedEvaForDemo(null)
-  }
-
-  const handleConfirmDemo = (director: DirectorCandidato) => {
-    if (typeof window !== 'undefined' && selectedEvaForDemo) {
-      const demoPayload = {
-        active: true,
-        dniDirector: director.dniDirector,
-        idEvaluacion: selectedEvaForDemo.id,
-        nombreEvaluacion: selectedEvaForDemo.nombre,
-        totalEstudiantes: director.totalEstudiantes,
-        realDirector: {
-          nombres: director.nombres,
-          apellidos: director.apellidos,
-          institucion: director.institucion,
-        },
-      }
-      sessionStorage.setItem('eva_demo_mode', JSON.stringify(demoPayload))
-      toast.info(`Iniciando demostración institucional con datos de ${director.institucion || director.dniDirector}...`)
-      router.push(
-        `/directores/evaluaciones/evaluacion/reporte?id=${director.dniDirector}&idEvaluacion=${selectedEvaForDemo.id}&demo=true`
-      )
-    }
-  }
-
   const handleActivateEvaluacion = async () => {
     if (successData) {
       const updatedEva = { ...successData.evaluacion, active: true, cerrada: false }
@@ -504,15 +467,6 @@ const Evaluaciones = () => {
           evaluaciones={selectedEvaluacionesList}
           grados={grados}
           onCompleted={handleBulkDuplicated}
-        />
-      )}
-      {showDemoModal && selectedEvaForDemo && (
-        <ModalDemoSelector
-          showModal={showDemoModal}
-          handleClose={handleCloseDemoModal}
-          evaluacion={selectedEvaForDemo}
-          matrizConfigGrados={matrizConfigGrados}
-          onConfirmDemo={handleConfirmDemo}
         />
       )}
       {/* Tour Interactivo Guiado Spotlight (Señala los botones reales en pantalla) */}
@@ -780,7 +734,6 @@ const Evaluaciones = () => {
                                   selectedGrado={selectedGrado}
                                   handleOpenPuntuacionModal={handleOpenPuntuacionModal}
                                   handleOpenDuplicateModal={handleOpenDuplicateModal}
-                                  handleOpenDemoModal={handleOpenDemoModal}
                                   isEnMatriz={isEnMatriz}
                                   isSelected={selectedEvaIds.includes(eva.id)}
                                   onToggleSelect={handleToggleSelect}
@@ -870,7 +823,6 @@ const Evaluaciones = () => {
                 visibleColumns={visibleColumns}
                 handleOpenPuntuacionModal={handleOpenPuntuacionModal}
                 handleOpenDuplicateModal={handleOpenDuplicateModal}
-                handleOpenDemoModal={handleOpenDemoModal}
                 matrizConfigGrados={matrizConfigGrados}
                 selectedEvaIds={selectedEvaIds}
                 setSelectedEvaIds={setSelectedEvaIds}

@@ -21,7 +21,7 @@ describe('DemoModeFloatingBanner', () => {
     expect(screen.getByText('Modo Demo Activo')).toBeInTheDocument()
     expect(screen.getByText('I.E. 70001 San Martín de Porres')).toBeInTheDocument()
     expect(screen.getByText('Lic. Carlos Alberto Mamani Quispe')).toBeInTheDocument()
-    expect(screen.getByText('Respuestas Reales · PII Anonimizada')).toBeInTheDocument()
+    expect(screen.getByText(/Respuestas Reales · PII Anonimizada/i)).toBeInTheDocument()
   })
 
   it('permite salir del modo demo al hacer clic en el botón', () => {
@@ -33,7 +33,7 @@ describe('DemoModeFloatingBanner', () => {
       />
     )
 
-    const exitBtn = screen.getByRole('button', { name: /salir de la demo/i })
+    const exitBtn = screen.getByRole('button', { name: /desactivar demo/i })
     expect(exitBtn).toBeInTheDocument()
 
     fireEvent.click(exitBtn)

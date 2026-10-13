@@ -228,7 +228,11 @@ export const calculateMetricasDirector = ({
         )
       );
       const docenteNombre =
-        docentesUnicos.length > 0 ? docentesUnicos.join(', ') : undefined;
+        docentesUnicos.length > 0
+          ? docentesUnicos.join(', ')
+          : docentesMap.get(`sec_${String(sec.id).toUpperCase()}`) ||
+            docentesMap.get(`sec_${String(sec.name).toUpperCase()}`) ||
+            undefined;
 
       const preguntasMetricas: Record<number, PreguntaMetricaSeccion> = {};
       let sumPrev = 0;

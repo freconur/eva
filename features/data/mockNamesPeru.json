@@ -1,0 +1,3287 @@
+{
+  "version": "1.1.0",
+  "totalEstudiantes": 400,
+  "estudiantes": [
+    {
+      "id": "mock-est-1",
+      "nombres": "Leonardo Daniel",
+      "apellidos": "Salazar Choque",
+      "nombresApellidos": "Salazar Choque, Leonardo Daniel",
+      "dni": "72***109",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-2",
+      "nombres": "Mariluz Celia",
+      "apellidos": "Cornejo Castillo",
+      "nombresApellidos": "Cornejo Castillo, Mariluz Celia",
+      "dni": "78***989",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-3",
+      "nombres": "Alonso Gonzalo",
+      "apellidos": "Ramos Salazar",
+      "nombresApellidos": "Ramos Salazar, Alonso Gonzalo",
+      "dni": "77***155",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-4",
+      "nombres": "Fatima Jimena",
+      "apellidos": "Campos Peña",
+      "nombresApellidos": "Campos Peña, Fatima Jimena",
+      "dni": "70***279",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-5",
+      "nombres": "Adrián Alejandro",
+      "apellidos": "Yana Mamani",
+      "nombresApellidos": "Yana Mamani, Adrián Alejandro",
+      "dni": "76***237",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-6",
+      "nombres": "Mía Valentina",
+      "apellidos": "Huarcaya Vargas",
+      "nombresApellidos": "Huarcaya Vargas, Mía Valentina",
+      "dni": "72***730",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-7",
+      "nombres": "Facundo Nicolás",
+      "apellidos": "Chura Pacheco",
+      "nombresApellidos": "Chura Pacheco, Facundo Nicolás",
+      "dni": "73***349",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-8",
+      "nombres": "Eliana Soledad",
+      "apellidos": "Cordova Zeballos",
+      "nombresApellidos": "Cordova Zeballos, Eliana Soledad",
+      "dni": "71***832",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-9",
+      "nombres": "Rolando Efraín",
+      "apellidos": "Laquihuanaco Guevara",
+      "nombresApellidos": "Laquihuanaco Guevara, Rolando Efraín",
+      "dni": "72***218",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-10",
+      "nombres": "Victoria Allison",
+      "apellidos": "Villanueva Morales",
+      "nombresApellidos": "Villanueva Morales, Victoria Allison",
+      "dni": "70***315",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-11",
+      "nombres": "Juan Pablo",
+      "apellidos": "Ccari Carrillo",
+      "nombresApellidos": "Ccari Carrillo, Juan Pablo",
+      "dni": "70***980",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-12",
+      "nombres": "Catalina Leonor",
+      "apellidos": "Salas Chura",
+      "nombresApellidos": "Salas Chura, Catalina Leonor",
+      "dni": "73***280",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-13",
+      "nombres": "Mathías Emmanuel",
+      "apellidos": "Ortiz Carrasco",
+      "nombresApellidos": "Ortiz Carrasco, Mathías Emmanuel",
+      "dni": "72***598",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-14",
+      "nombres": "Carmen Elena",
+      "apellidos": "Guillén Cárdenas",
+      "nombresApellidos": "Guillén Cárdenas, Carmen Elena",
+      "dni": "77***686",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-15",
+      "nombres": "Víctor Raúl",
+      "apellidos": "Calisaya Aguilar",
+      "nombresApellidos": "Calisaya Aguilar, Víctor Raúl",
+      "dni": "70***443",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-16",
+      "nombres": "Keisy Dayana",
+      "apellidos": "Escobar Cáceres",
+      "nombresApellidos": "Escobar Cáceres, Keisy Dayana",
+      "dni": "70***110",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-17",
+      "nombres": "Ronald Josué",
+      "apellidos": "Condori Huancco",
+      "nombresApellidos": "Condori Huancco, Ronald Josué",
+      "dni": "71***134",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-18",
+      "nombres": "Romina Lucía",
+      "apellidos": "Palomino Quilca",
+      "nombresApellidos": "Palomino Quilca, Romina Lucía",
+      "dni": "74***204",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-19",
+      "nombres": "André Rodrigo",
+      "apellidos": "Vargas Dávila",
+      "nombresApellidos": "Vargas Dávila, André Rodrigo",
+      "dni": "73***299",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-20",
+      "nombres": "Judith Yanet",
+      "apellidos": "Ilaquita Flores",
+      "nombresApellidos": "Ilaquita Flores, Judith Yanet",
+      "dni": "72***418",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-21",
+      "nombres": "Roger Abraham",
+      "apellidos": "Díaz Caballero",
+      "nombresApellidos": "Díaz Caballero, Roger Abraham",
+      "dni": "71***715",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-22",
+      "nombres": "Luz Marina",
+      "apellidos": "Pacheco Hilasaca",
+      "nombresApellidos": "Pacheco Hilasaca, Luz Marina",
+      "dni": "73***255",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-23",
+      "nombres": "Edgar Isaac",
+      "apellidos": "Valdivia Castañeda",
+      "nombresApellidos": "Valdivia Castañeda, Edgar Isaac",
+      "dni": "76***434",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-24",
+      "nombres": "Melanie Sophia",
+      "apellidos": "Tumi Paredes",
+      "nombresApellidos": "Tumi Paredes, Melanie Sophia",
+      "dni": "72***485",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-25",
+      "nombres": "Mario Alberto",
+      "apellidos": "Flores Mendoza",
+      "nombresApellidos": "Flores Mendoza, Mario Alberto",
+      "dni": "74***406",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-26",
+      "nombres": "Emilia Samantha",
+      "apellidos": "Figueroa Solís",
+      "nombresApellidos": "Figueroa Solís, Emilia Samantha",
+      "dni": "70***336",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-27",
+      "nombres": "Oliver André",
+      "apellidos": "Mamani Quenta",
+      "nombresApellidos": "Mamani Quenta, Oliver André",
+      "dni": "74***348",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-28",
+      "nombres": "Sonia Patricia",
+      "apellidos": "Aguilar Salas",
+      "nombresApellidos": "Aguilar Salas, Sonia Patricia",
+      "dni": "76***528",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-29",
+      "nombres": "Elber Agustín",
+      "apellidos": "Pillco Soto",
+      "nombresApellidos": "Pillco Soto, Elber Agustín",
+      "dni": "78***730",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-30",
+      "nombres": "María Fernanda",
+      "apellidos": "Velasco Tejada",
+      "nombresApellidos": "Velasco Tejada, María Fernanda",
+      "dni": "77***625",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-31",
+      "nombres": "Jean Pierre",
+      "apellidos": "Cutipa Miranda",
+      "nombresApellidos": "Cutipa Miranda, Jean Pierre",
+      "dni": "75***272",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-32",
+      "nombres": "Glenda Patricia",
+      "apellidos": "Canaza Campos",
+      "nombresApellidos": "Canaza Campos, Glenda Patricia",
+      "dni": "74***130",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-33",
+      "nombres": "Jorge Luis",
+      "apellidos": "Valenzuela Valdivia",
+      "nombresApellidos": "Valenzuela Valdivia, Jorge Luis",
+      "dni": "74***274",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-34",
+      "nombres": "Ruth Karina",
+      "apellidos": "Huamán Delgado",
+      "nombresApellidos": "Huamán Delgado, Ruth Karina",
+      "dni": "73***328",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-35",
+      "nombres": "Diego Alonso",
+      "apellidos": "Sucasaca Pérez",
+      "nombresApellidos": "Sucasaca Pérez, Diego Alonso",
+      "dni": "73***321",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-36",
+      "nombres": "Fernanda Nicole",
+      "apellidos": "Silva Sucaticona",
+      "nombresApellidos": "Silva Sucaticona, Fernanda Nicole",
+      "dni": "76***562",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-37",
+      "nombres": "Rene Guillermo",
+      "apellidos": "Morales Pillco",
+      "nombresApellidos": "Morales Pillco, Rene Guillermo",
+      "dni": "77***737",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-38",
+      "nombres": "Gabriela Paula",
+      "apellidos": "Bustamante Carranza",
+      "nombresApellidos": "Bustamante Carranza, Gabriela Paula",
+      "dni": "78***810",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-39",
+      "nombres": "Esteban Mauricio",
+      "apellidos": "Carrillo Barreda",
+      "nombresApellidos": "Carrillo Barreda, Esteban Mauricio",
+      "dni": "78***378",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-40",
+      "nombres": "Vilma Haydee",
+      "apellidos": "Miranda Capajaña",
+      "nombresApellidos": "Miranda Capajaña, Vilma Haydee",
+      "dni": "72***173",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-41",
+      "nombres": "Jeferson Jair",
+      "apellidos": "Paredes Álvarez",
+      "nombresApellidos": "Paredes Álvarez, Jeferson Jair",
+      "dni": "78***197",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-42",
+      "nombres": "Gladys Petrona",
+      "apellidos": "Bermúdez Valencia",
+      "nombresApellidos": "Bermúdez Valencia, Gladys Petrona",
+      "dni": "71***910",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-43",
+      "nombres": "Bruno Fabián",
+      "apellidos": "Quenta Solorzano",
+      "nombresApellidos": "Quenta Solorzano, Bruno Fabián",
+      "dni": "70***704",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-44",
+      "nombres": "Norma Elizabeth",
+      "apellidos": "Apaza Chata",
+      "nombresApellidos": "Apaza Chata, Norma Elizabeth",
+      "dni": "70***872",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-45",
+      "nombres": "Jaime Leonardo",
+      "apellidos": "Medina Charca",
+      "nombresApellidos": "Medina Charca, Jaime Leonardo",
+      "dni": "77***618",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-46",
+      "nombres": "Rosa María",
+      "apellidos": "Quispe Gómez",
+      "nombresApellidos": "Quispe Gómez, Rosa María",
+      "dni": "76***629",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-47",
+      "nombres": "Alonso Esteban",
+      "apellidos": "Mejía Cornejo",
+      "nombresApellidos": "Mejía Cornejo, Alonso Esteban",
+      "dni": "71***584",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-48",
+      "nombres": "Astrid Xiomara",
+      "apellidos": "Sucaticona Mejía",
+      "nombresApellidos": "Sucaticona Mejía, Astrid Xiomara",
+      "dni": "76***483",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-49",
+      "nombres": "Simon Marcelo",
+      "apellidos": "Castro Medina",
+      "nombresApellidos": "Castro Medina, Simon Marcelo",
+      "dni": "76***787",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-50",
+      "nombres": "Beatriz Marleny",
+      "apellidos": "Barreda Roque",
+      "nombresApellidos": "Barreda Roque, Beatriz Marleny",
+      "dni": "77***609",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-51",
+      "nombres": "Brayan Alexis",
+      "apellidos": "Peña Catacora",
+      "nombresApellidos": "Peña Catacora, Brayan Alexis",
+      "dni": "78***405",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-52",
+      "nombres": "Valeria Julieta",
+      "apellidos": "Surco Contreras",
+      "nombresApellidos": "Surco Contreras, Valeria Julieta",
+      "dni": "73***687",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-53",
+      "nombres": "Fredy Leonidas",
+      "apellidos": "Montoya Herrera",
+      "nombresApellidos": "Montoya Herrera, Fredy Leonidas",
+      "dni": "73***775",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-54",
+      "nombres": "Doris Marleni",
+      "apellidos": "Cárdenas Canaza",
+      "nombresApellidos": "Cárdenas Canaza, Doris Marleni",
+      "dni": "72***987",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-55",
+      "nombres": "Yohan Neymar",
+      "apellidos": "Carrasco Sucasaca",
+      "nombresApellidos": "Carrasco Sucasaca, Yohan Neymar",
+      "dni": "76***859",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-56",
+      "nombres": "Kiara Flavia",
+      "apellidos": "Gómez Castro",
+      "nombresApellidos": "Gómez Castro, Kiara Flavia",
+      "dni": "74***845",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-57",
+      "nombres": "Thiago Gabriel",
+      "apellidos": "Vilca Ortiz",
+      "nombresApellidos": "Vilca Ortiz, Thiago Gabriel",
+      "dni": "71***841",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-58",
+      "nombres": "Rosaura Violeta",
+      "apellidos": "Challo Maldonado",
+      "nombresApellidos": "Challo Maldonado, Rosaura Violeta",
+      "dni": "78***532",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-59",
+      "nombres": "Luis Fernando",
+      "apellidos": "Solorzano Rivera",
+      "nombresApellidos": "Solorzano Rivera, Luis Fernando",
+      "dni": "71***186",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-60",
+      "nombres": "Naty Leonor",
+      "apellidos": "Colquehuanca Cuno",
+      "nombresApellidos": "Colquehuanca Cuno, Naty Leonor",
+      "dni": "76***198",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-61",
+      "nombres": "Salvador Tomás",
+      "apellidos": "Zamora Ccari",
+      "nombresApellidos": "Zamora Ccari, Salvador Tomás",
+      "dni": "74***155",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-62",
+      "nombres": "Florencia Paz",
+      "apellidos": "Luque Montes",
+      "nombresApellidos": "Luque Montes, Florencia Paz",
+      "dni": "71***561",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-63",
+      "nombres": "Anthony Fabricio",
+      "apellidos": "Chata Bellido",
+      "nombresApellidos": "Chata Bellido, Anthony Fabricio",
+      "dni": "74***241",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-64",
+      "nombres": "Yovana Pilar",
+      "apellidos": "Valencia Quispe",
+      "nombresApellidos": "Valencia Quispe, Yovana Pilar",
+      "dni": "75***350",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-65",
+      "nombres": "Juan Carlos",
+      "apellidos": "Rojas Uturunco",
+      "nombresApellidos": "Rojas Uturunco, Juan Carlos",
+      "dni": "70***767",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-66",
+      "nombres": "Diana Noemí",
+      "apellidos": "Ticona Chávez",
+      "nombresApellidos": "Ticona Chávez, Diana Noemí",
+      "dni": "70***141",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-67",
+      "nombres": "David Fernando",
+      "apellidos": "Gutiérrez Cuentas",
+      "nombresApellidos": "Gutiérrez Cuentas, David Fernando",
+      "dni": "77***694",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-68",
+      "nombres": "Abigail Belén",
+      "apellidos": "Huanca Escobar",
+      "nombresApellidos": "Huanca Escobar, Abigail Belén",
+      "dni": "76***837",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-69",
+      "nombres": "Jhamil Anderson",
+      "apellidos": "Cáceres Apaza",
+      "nombresApellidos": "Cáceres Apaza, Jhamil Anderson",
+      "dni": "74***588",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-70",
+      "nombres": "Emma Sofía",
+      "apellidos": "Huancco Ticona",
+      "nombresApellidos": "Huancco Ticona, Emma Sofía",
+      "dni": "71***572",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-71",
+      "nombres": "Walter Edgar",
+      "apellidos": "Solís Valenzuela",
+      "nombresApellidos": "Solís Valenzuela, Walter Edgar",
+      "dni": "77***266",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-72",
+      "nombres": "Nayeli Briggith",
+      "apellidos": "Vega Velasco",
+      "nombresApellidos": "Vega Velasco, Nayeli Briggith",
+      "dni": "71***368",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-73",
+      "nombres": "Lorenzo David",
+      "apellidos": "Arapa Pari",
+      "nombresApellidos": "Arapa Pari, Lorenzo David",
+      "dni": "74***622",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-74",
+      "nombres": "Camila Zoe",
+      "apellidos": "Choque Rodríguez",
+      "nombresApellidos": "Choque Rodríguez, Camila Zoe",
+      "dni": "70***243",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-75",
+      "nombres": "Carlos Eduardo",
+      "apellidos": "Carranza Navarro",
+      "nombresApellidos": "Carranza Navarro, Carlos Eduardo",
+      "dni": "76***491",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-76",
+      "nombres": "Renata Micaela",
+      "apellidos": "Cuentas Huamán",
+      "nombresApellidos": "Cuentas Huamán, Renata Micaela",
+      "dni": "76***159",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-77",
+      "nombres": "Piero Facundo",
+      "apellidos": "Dávila Yana",
+      "nombresApellidos": "Dávila Yana, Piero Facundo",
+      "dni": "70***314",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-78",
+      "nombres": "Bárbara Estefanía",
+      "apellidos": "Pérez Gutiérrez",
+      "nombresApellidos": "Pérez Gutiérrez, Bárbara Estefanía",
+      "dni": "75***579",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-79",
+      "nombres": "Fabricio Daniel",
+      "apellidos": "Tonconi Cordova",
+      "nombresApellidos": "Tonconi Cordova, Fabricio Daniel",
+      "dni": "71***306",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-80",
+      "nombres": "Silvia Verónica",
+      "apellidos": "Fuentes Tapia",
+      "nombresApellidos": "Fuentes Tapia, Silvia Verónica",
+      "dni": "78***336",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-81",
+      "nombres": "Lucas Benjamín",
+      "apellidos": "Maquera Romero",
+      "nombresApellidos": "Maquera Romero, Lucas Benjamín",
+      "dni": "71***839",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-82",
+      "nombres": "Genesis Adriana",
+      "apellidos": "Villar Díaz",
+      "nombresApellidos": "Villar Díaz, Genesis Adriana",
+      "dni": "75***563",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-83",
+      "nombres": "Reynaldo Hugo",
+      "apellidos": "Catacora Luque",
+      "nombresApellidos": "Catacora Luque, Reynaldo Hugo",
+      "dni": "76***387",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-84",
+      "nombres": "Aitana Montserrat",
+      "apellidos": "Tejada Montoya",
+      "nombresApellidos": "Tejada Montoya, Aitana Montserrat",
+      "dni": "76***226",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-85",
+      "nombres": "Nicolás Alexander",
+      "apellidos": "Quilca Reyes",
+      "nombresApellidos": "Quilca Reyes, Nicolás Alexander",
+      "dni": "75***116",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-86",
+      "nombres": "Fabiana Ariana",
+      "apellidos": "Churata Ríos",
+      "nombresApellidos": "Churata Ríos, Fabiana Ariana",
+      "dni": "72***547",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-87",
+      "nombres": "Ian Dylan",
+      "apellidos": "Quecara Bustamante",
+      "nombresApellidos": "Quecara Bustamante, Ian Dylan",
+      "dni": "73***994",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-88",
+      "nombres": "Ana Lucía",
+      "apellidos": "Bautista Maquera",
+      "nombresApellidos": "Bautista Maquera, Ana Lucía",
+      "dni": "72***732",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-89",
+      "nombres": "Emilio Mateo",
+      "apellidos": "Montes Arapa",
+      "nombresApellidos": "Montes Arapa, Emilio Mateo",
+      "dni": "74***258",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-90",
+      "nombres": "Isabella Luciana",
+      "apellidos": "Romero Vega",
+      "nombresApellidos": "Romero Vega, Isabella Luciana",
+      "dni": "71***931",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-91",
+      "nombres": "Ricardo Manuel",
+      "apellidos": "Lozano Ponce",
+      "nombresApellidos": "Lozano Ponce, Ricardo Manuel",
+      "dni": "74***571",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-92",
+      "nombres": "Teresa De Jesús",
+      "apellidos": "Navarro Ccallo",
+      "nombresApellidos": "Navarro Ccallo, Teresa De Jesús",
+      "dni": "74***682",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-93",
+      "nombres": "Renzo Alejandro",
+      "apellidos": "Cuno Palomino",
+      "nombresApellidos": "Cuno Palomino, Renzo Alejandro",
+      "dni": "71***450",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-94",
+      "nombres": "Daniela Ximena",
+      "apellidos": "Pinto García",
+      "nombresApellidos": "Pinto García, Daniela Ximena",
+      "dni": "73***237",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-95",
+      "nombres": "Bautista Gael",
+      "apellidos": "Ponce Peralta",
+      "nombresApellidos": "Ponce Peralta, Bautista Gael",
+      "dni": "72***456",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-96",
+      "nombres": "Valeska Romina",
+      "apellidos": "Roque Chambi",
+      "nombresApellidos": "Roque Chambi, Valeska Romina",
+      "dni": "75***664",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-97",
+      "nombres": "Franco Sebastián",
+      "apellidos": "Charca Lozano",
+      "nombresApellidos": "Charca Lozano, Franco Sebastián",
+      "dni": "72***460",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-98",
+      "nombres": "Edith Judith",
+      "apellidos": "Zeballos Huarcaya",
+      "nombresApellidos": "Zeballos Huarcaya, Edith Judith",
+      "dni": "70***659",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-99",
+      "nombres": "Edwin Percy",
+      "apellidos": "Soto Benítez",
+      "nombresApellidos": "Soto Benítez, Edwin Percy",
+      "dni": "78***441",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-100",
+      "nombres": "Yazmín Nicolle",
+      "apellidos": "Álvarez Churata",
+      "nombresApellidos": "Álvarez Churata, Yazmín Nicolle",
+      "dni": "75***840",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-101",
+      "nombres": "Santiago Samuel",
+      "apellidos": "Ccallo Cruz",
+      "nombresApellidos": "Ccallo Cruz, Santiago Samuel",
+      "dni": "73***380",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-102",
+      "nombres": "Priscila Milagros",
+      "apellidos": "Benítez Vilca",
+      "nombresApellidos": "Benítez Vilca, Priscila Milagros",
+      "dni": "77***387",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-103",
+      "nombres": "Christopher David",
+      "apellidos": "Bellido Fuentes",
+      "nombresApellidos": "Bellido Fuentes, Christopher David",
+      "dni": "77***446",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-104",
+      "nombres": "Karely Lucero",
+      "apellidos": "Cruz Rojas",
+      "nombresApellidos": "Cruz Rojas, Karely Lucero",
+      "dni": "75***845",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-105",
+      "nombres": "Gael Matías",
+      "apellidos": "Pari Bravo",
+      "nombresApellidos": "Pari Bravo, Gael Matías",
+      "dni": "72***198",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-106",
+      "nombres": "Daleshka Anahí",
+      "apellidos": "Mendoza Livisi",
+      "nombresApellidos": "Mendoza Livisi, Daleshka Anahí",
+      "dni": "73***626",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-107",
+      "nombres": "Jerónimo Damián",
+      "apellidos": "Espinoza Cueva",
+      "nombresApellidos": "Espinoza Cueva, Jerónimo Damián",
+      "dni": "78***238",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-108",
+      "nombres": "Mariana Antonella",
+      "apellidos": "Sánchez Torres",
+      "nombresApellidos": "Sánchez Torres, Mariana Antonella",
+      "dni": "75***861",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-109",
+      "nombres": "Marcos Abel",
+      "apellidos": "Arias Ramos",
+      "nombresApellidos": "Arias Ramos, Marcos Abel",
+      "dni": "76***104",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-110",
+      "nombres": "Luana Yamileth",
+      "apellidos": "Caballero Bautista",
+      "nombresApellidos": "Caballero Bautista, Luana Yamileth",
+      "dni": "71***286",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-111",
+      "nombres": "Maximiliano",
+      "apellidos": "Reyes Villar",
+      "nombresApellidos": "Reyes Villar, Maximiliano",
+      "dni": "78***773",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-112",
+      "nombres": "Grecia Milagros",
+      "apellidos": "Contreras Calisaya",
+      "nombresApellidos": "Contreras Calisaya, Grecia Milagros",
+      "dni": "71***278",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-113",
+      "nombres": "Hugo Wilson",
+      "apellidos": "Hilasaca Bermúdez",
+      "nombresApellidos": "Hilasaca Bermúdez, Hugo Wilson",
+      "dni": "78***624",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-114",
+      "nombres": "Roxana Maribel",
+      "apellidos": "Capajaña Ilaquita",
+      "nombresApellidos": "Capajaña Ilaquita, Roxana Maribel",
+      "dni": "72***858",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-115",
+      "nombres": "Felipe Ignacio",
+      "apellidos": "Calderón Guillén",
+      "nombresApellidos": "Calderón Guillén, Felipe Ignacio",
+      "dni": "75***873",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-116",
+      "nombres": "Marjorie Noelia",
+      "apellidos": "Uturunco Quecara",
+      "nombresApellidos": "Uturunco Quecara, Marjorie Noelia",
+      "dni": "70***234",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-117",
+      "nombres": "Julio César",
+      "apellidos": "Zea Pinto",
+      "nombresApellidos": "Zea Pinto, Julio César",
+      "dni": "74***787",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-118",
+      "nombres": "Jazmín Abigail",
+      "apellidos": "Chávez Tonconi",
+      "nombresApellidos": "Chávez Tonconi, Jazmín Abigail",
+      "dni": "75***765",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-119",
+      "nombres": "Jostin Yampier",
+      "apellidos": "Chambi Challo",
+      "nombresApellidos": "Chambi Challo, Jostin Yampier",
+      "dni": "77***934",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-120",
+      "nombres": "Gia Guadalupe",
+      "apellidos": "Tapia Huanca",
+      "nombresApellidos": "Tapia Huanca, Gia Guadalupe",
+      "dni": "71***136",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-121",
+      "nombres": "Guillermo Antonio",
+      "apellidos": "Herrera Espinoza",
+      "nombresApellidos": "Herrera Espinoza, Guillermo Antonio",
+      "dni": "75***624",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-122",
+      "nombres": "Sheyla Pamela",
+      "apellidos": "Delgado Sánchez",
+      "nombresApellidos": "Delgado Sánchez, Sheyla Pamela",
+      "dni": "76***806",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-123",
+      "nombres": "Ángel Gabriel",
+      "apellidos": "Coila Condori",
+      "nombresApellidos": "Coila Condori, Ángel Gabriel",
+      "dni": "72***163",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-124",
+      "nombres": "Brianna Danna",
+      "apellidos": "Rivera Arias",
+      "nombresApellidos": "Rivera Arias, Brianna Danna",
+      "dni": "73***761",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-125",
+      "nombres": "Valentino Joshua",
+      "apellidos": "Livisi Cutipa",
+      "nombresApellidos": "Livisi Cutipa, Valentino Joshua",
+      "dni": "76***796",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-126",
+      "nombres": "Miriam Gladys",
+      "apellidos": "García Zamora",
+      "nombresApellidos": "García Zamora, Miriam Gladys",
+      "dni": "73***870",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-127",
+      "nombres": "Emiliano Axel",
+      "apellidos": "Castañeda Tumi",
+      "nombresApellidos": "Castañeda Tumi, Emiliano Axel",
+      "dni": "78***846",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-128",
+      "nombres": "Miranda Belén",
+      "apellidos": "Torres Figueroa",
+      "nombresApellidos": "Torres Figueroa, Miranda Belén",
+      "dni": "71***443",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-129",
+      "nombres": "César Augusto",
+      "apellidos": "Bravo Calderón",
+      "nombresApellidos": "Bravo Calderón, César Augusto",
+      "dni": "74***252",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-130",
+      "nombres": "Yeny Maritza",
+      "apellidos": "Peralta Surco",
+      "nombresApellidos": "Peralta Surco, Yeny Maritza",
+      "dni": "78***534",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-131",
+      "nombres": "Erick Josué",
+      "apellidos": "Guevara Coila",
+      "nombresApellidos": "Guevara Coila, Erick Josué",
+      "dni": "75***756",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-132",
+      "nombres": "Amelia Gracia",
+      "apellidos": "Ríos Colquehuanca",
+      "nombresApellidos": "Ríos Colquehuanca, Amelia Gracia",
+      "dni": "71***535",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-133",
+      "nombres": "Marco Antonio",
+      "apellidos": "Maldonado Villanueva",
+      "nombresApellidos": "Maldonado Villanueva, Marco Antonio",
+      "dni": "74***925",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-134",
+      "nombres": "Dayiro Celeste",
+      "apellidos": "Cueva Laquihuanaco",
+      "nombresApellidos": "Cueva Laquihuanaco, Dayiro Celeste",
+      "dni": "72***848",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-135",
+      "nombres": "Joaquín Sebastián",
+      "apellidos": "Castillo Zea",
+      "nombresApellidos": "Castillo Zea, Joaquín Sebastián",
+      "dni": "71***677",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-136",
+      "nombres": "Fiorela Rosario",
+      "apellidos": "Rodríguez Silva",
+      "nombresApellidos": "Rodríguez Silva, Fiorela Rosario",
+      "dni": "75***356",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-137",
+      "nombres": "Álvaro Diego",
+      "apellidos": "Salazar Choque",
+      "nombresApellidos": "Salazar Choque, Álvaro Diego",
+      "dni": "76***553",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-138",
+      "nombres": "Andrea Nicole",
+      "apellidos": "Cornejo Castillo",
+      "nombresApellidos": "Cornejo Castillo, Andrea Nicole",
+      "dni": "72***994",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-139",
+      "nombres": "Elias Rafael",
+      "apellidos": "Ramos Salazar",
+      "nombresApellidos": "Ramos Salazar, Elias Rafael",
+      "dni": "76***971",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-140",
+      "nombres": "Mery Yolanda",
+      "apellidos": "Campos Peña",
+      "nombresApellidos": "Campos Peña, Mery Yolanda",
+      "dni": "70***520",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-141",
+      "nombres": "Christian Leonardo",
+      "apellidos": "Yana Mamani",
+      "nombresApellidos": "Yana Mamani, Christian Leonardo",
+      "dni": "78***632",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-142",
+      "nombres": "Martina Belén",
+      "apellidos": "Huarcaya Vargas",
+      "nombresApellidos": "Huarcaya Vargas, Martina Belén",
+      "dni": "71***628",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-143",
+      "nombres": "Liam Mateo",
+      "apellidos": "Chura Pacheco",
+      "nombresApellidos": "Chura Pacheco, Liam Mateo",
+      "dni": "75***674",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-144",
+      "nombres": "Nelly Maritza",
+      "apellidos": "Cordova Zeballos",
+      "nombresApellidos": "Cordova Zeballos, Nelly Maritza",
+      "dni": "78***244",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-145",
+      "nombres": "Raúl Andrés",
+      "apellidos": "Laquihuanaco Guevara",
+      "nombresApellidos": "Laquihuanaco Guevara, Raúl Andrés",
+      "dni": "75***702",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-146",
+      "nombres": "Cynthia Gisela",
+      "apellidos": "Villanueva Morales",
+      "nombresApellidos": "Villanueva Morales, Cynthia Gisela",
+      "dni": "72***709",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-147",
+      "nombres": "Héctor Daniel",
+      "apellidos": "Ccari Carrillo",
+      "nombresApellidos": "Ccari Carrillo, Héctor Daniel",
+      "dni": "77***921",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-148",
+      "nombres": "Mariluz Celia",
+      "apellidos": "Salas Chura",
+      "nombresApellidos": "Salas Chura, Mariluz Celia",
+      "dni": "72***337",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-149",
+      "nombres": "José Manuel",
+      "apellidos": "Ortiz Carrasco",
+      "nombresApellidos": "Ortiz Carrasco, José Manuel",
+      "dni": "71***565",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-150",
+      "nombres": "Fatima Jimena",
+      "apellidos": "Guillén Cárdenas",
+      "nombresApellidos": "Guillén Cárdenas, Fatima Jimena",
+      "dni": "76***100",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-151",
+      "nombres": "Oscar Raúl",
+      "apellidos": "Calisaya Aguilar",
+      "nombresApellidos": "Calisaya Aguilar, Oscar Raúl",
+      "dni": "71***101",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-152",
+      "nombres": "Mía Valentina",
+      "apellidos": "Escobar Cáceres",
+      "nombresApellidos": "Escobar Cáceres, Mía Valentina",
+      "dni": "75***173",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-153",
+      "nombres": "Dante Alonso",
+      "apellidos": "Condori Huancco",
+      "nombresApellidos": "Condori Huancco, Dante Alonso",
+      "dni": "73***531",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-154",
+      "nombres": "Eliana Soledad",
+      "apellidos": "Palomino Quilca",
+      "nombresApellidos": "Palomino Quilca, Eliana Soledad",
+      "dni": "75***557",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-155",
+      "nombres": "Kevin Alexis",
+      "apellidos": "Vargas Dávila",
+      "nombresApellidos": "Vargas Dávila, Kevin Alexis",
+      "dni": "77***548",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-156",
+      "nombres": "Victoria Allison",
+      "apellidos": "Ilaquita Flores",
+      "nombresApellidos": "Ilaquita Flores, Victoria Allison",
+      "dni": "76***342",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-157",
+      "nombres": "Leonardo Daniel",
+      "apellidos": "Díaz Caballero",
+      "nombresApellidos": "Díaz Caballero, Leonardo Daniel",
+      "dni": "73***599",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-158",
+      "nombres": "Catalina Leonor",
+      "apellidos": "Pacheco Hilasaca",
+      "nombresApellidos": "Pacheco Hilasaca, Catalina Leonor",
+      "dni": "70***297",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-159",
+      "nombres": "Alonso Gonzalo",
+      "apellidos": "Valdivia Castañeda",
+      "nombresApellidos": "Valdivia Castañeda, Alonso Gonzalo",
+      "dni": "75***662",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-160",
+      "nombres": "Carmen Elena",
+      "apellidos": "Tumi Paredes",
+      "nombresApellidos": "Tumi Paredes, Carmen Elena",
+      "dni": "77***185",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-161",
+      "nombres": "Adrián Alejandro",
+      "apellidos": "Flores Mendoza",
+      "nombresApellidos": "Flores Mendoza, Adrián Alejandro",
+      "dni": "74***363",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-162",
+      "nombres": "Keisy Dayana",
+      "apellidos": "Figueroa Solís",
+      "nombresApellidos": "Figueroa Solís, Keisy Dayana",
+      "dni": "73***448",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-163",
+      "nombres": "Facundo Nicolás",
+      "apellidos": "Mamani Quenta",
+      "nombresApellidos": "Mamani Quenta, Facundo Nicolás",
+      "dni": "73***356",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-164",
+      "nombres": "Romina Lucía",
+      "apellidos": "Aguilar Salas",
+      "nombresApellidos": "Aguilar Salas, Romina Lucía",
+      "dni": "71***108",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-165",
+      "nombres": "Rolando Efraín",
+      "apellidos": "Pillco Soto",
+      "nombresApellidos": "Pillco Soto, Rolando Efraín",
+      "dni": "70***561",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-166",
+      "nombres": "Judith Yanet",
+      "apellidos": "Velasco Tejada",
+      "nombresApellidos": "Velasco Tejada, Judith Yanet",
+      "dni": "78***977",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-167",
+      "nombres": "Juan Pablo",
+      "apellidos": "Cutipa Miranda",
+      "nombresApellidos": "Cutipa Miranda, Juan Pablo",
+      "dni": "70***941",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-168",
+      "nombres": "Luz Marina",
+      "apellidos": "Canaza Campos",
+      "nombresApellidos": "Canaza Campos, Luz Marina",
+      "dni": "74***579",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-169",
+      "nombres": "Mathías Emmanuel",
+      "apellidos": "Valenzuela Valdivia",
+      "nombresApellidos": "Valenzuela Valdivia, Mathías Emmanuel",
+      "dni": "75***841",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-170",
+      "nombres": "Melanie Sophia",
+      "apellidos": "Huamán Delgado",
+      "nombresApellidos": "Huamán Delgado, Melanie Sophia",
+      "dni": "70***508",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-171",
+      "nombres": "Víctor Raúl",
+      "apellidos": "Sucasaca Pérez",
+      "nombresApellidos": "Sucasaca Pérez, Víctor Raúl",
+      "dni": "74***338",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-172",
+      "nombres": "Emilia Samantha",
+      "apellidos": "Silva Sucaticona",
+      "nombresApellidos": "Silva Sucaticona, Emilia Samantha",
+      "dni": "74***505",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-173",
+      "nombres": "Ronald Josué",
+      "apellidos": "Morales Pillco",
+      "nombresApellidos": "Morales Pillco, Ronald Josué",
+      "dni": "78***967",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-174",
+      "nombres": "Sonia Patricia",
+      "apellidos": "Bustamante Carranza",
+      "nombresApellidos": "Bustamante Carranza, Sonia Patricia",
+      "dni": "74***906",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-175",
+      "nombres": "André Rodrigo",
+      "apellidos": "Carrillo Barreda",
+      "nombresApellidos": "Carrillo Barreda, André Rodrigo",
+      "dni": "76***724",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-176",
+      "nombres": "María Fernanda",
+      "apellidos": "Miranda Capajaña",
+      "nombresApellidos": "Miranda Capajaña, María Fernanda",
+      "dni": "70***392",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-177",
+      "nombres": "Roger Abraham",
+      "apellidos": "Paredes Álvarez",
+      "nombresApellidos": "Paredes Álvarez, Roger Abraham",
+      "dni": "77***959",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-178",
+      "nombres": "Glenda Patricia",
+      "apellidos": "Bermúdez Valencia",
+      "nombresApellidos": "Bermúdez Valencia, Glenda Patricia",
+      "dni": "75***460",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-179",
+      "nombres": "Edgar Isaac",
+      "apellidos": "Quenta Solorzano",
+      "nombresApellidos": "Quenta Solorzano, Edgar Isaac",
+      "dni": "76***709",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-180",
+      "nombres": "Ruth Karina",
+      "apellidos": "Apaza Chata",
+      "nombresApellidos": "Apaza Chata, Ruth Karina",
+      "dni": "72***384",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-181",
+      "nombres": "Mario Alberto",
+      "apellidos": "Medina Charca",
+      "nombresApellidos": "Medina Charca, Mario Alberto",
+      "dni": "78***150",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-182",
+      "nombres": "Fernanda Nicole",
+      "apellidos": "Quispe Gómez",
+      "nombresApellidos": "Quispe Gómez, Fernanda Nicole",
+      "dni": "71***834",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-183",
+      "nombres": "Oliver André",
+      "apellidos": "Mejía Cornejo",
+      "nombresApellidos": "Mejía Cornejo, Oliver André",
+      "dni": "77***839",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-184",
+      "nombres": "Gabriela Paula",
+      "apellidos": "Sucaticona Mejía",
+      "nombresApellidos": "Sucaticona Mejía, Gabriela Paula",
+      "dni": "76***383",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-185",
+      "nombres": "Elber Agustín",
+      "apellidos": "Castro Medina",
+      "nombresApellidos": "Castro Medina, Elber Agustín",
+      "dni": "73***595",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-186",
+      "nombres": "Vilma Haydee",
+      "apellidos": "Barreda Roque",
+      "nombresApellidos": "Barreda Roque, Vilma Haydee",
+      "dni": "72***805",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-187",
+      "nombres": "Jean Pierre",
+      "apellidos": "Peña Catacora",
+      "nombresApellidos": "Peña Catacora, Jean Pierre",
+      "dni": "76***840",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-188",
+      "nombres": "Gladys Petrona",
+      "apellidos": "Surco Contreras",
+      "nombresApellidos": "Surco Contreras, Gladys Petrona",
+      "dni": "71***455",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-189",
+      "nombres": "Jorge Luis",
+      "apellidos": "Montoya Herrera",
+      "nombresApellidos": "Montoya Herrera, Jorge Luis",
+      "dni": "74***391",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-190",
+      "nombres": "Norma Elizabeth",
+      "apellidos": "Cárdenas Canaza",
+      "nombresApellidos": "Cárdenas Canaza, Norma Elizabeth",
+      "dni": "74***182",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-191",
+      "nombres": "Diego Alonso",
+      "apellidos": "Carrasco Sucasaca",
+      "nombresApellidos": "Carrasco Sucasaca, Diego Alonso",
+      "dni": "78***282",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-192",
+      "nombres": "Rosa María",
+      "apellidos": "Gómez Castro",
+      "nombresApellidos": "Gómez Castro, Rosa María",
+      "dni": "75***610",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-193",
+      "nombres": "Rene Guillermo",
+      "apellidos": "Vilca Ortiz",
+      "nombresApellidos": "Vilca Ortiz, Rene Guillermo",
+      "dni": "70***343",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-194",
+      "nombres": "Astrid Xiomara",
+      "apellidos": "Challo Maldonado",
+      "nombresApellidos": "Challo Maldonado, Astrid Xiomara",
+      "dni": "72***403",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-195",
+      "nombres": "Esteban Mauricio",
+      "apellidos": "Solorzano Rivera",
+      "nombresApellidos": "Solorzano Rivera, Esteban Mauricio",
+      "dni": "76***884",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-196",
+      "nombres": "Beatriz Marleny",
+      "apellidos": "Colquehuanca Cuno",
+      "nombresApellidos": "Colquehuanca Cuno, Beatriz Marleny",
+      "dni": "70***871",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-197",
+      "nombres": "Jeferson Jair",
+      "apellidos": "Zamora Ccari",
+      "nombresApellidos": "Zamora Ccari, Jeferson Jair",
+      "dni": "74***551",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-198",
+      "nombres": "Valeria Julieta",
+      "apellidos": "Luque Montes",
+      "nombresApellidos": "Luque Montes, Valeria Julieta",
+      "dni": "74***919",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-199",
+      "nombres": "Bruno Fabián",
+      "apellidos": "Chata Bellido",
+      "nombresApellidos": "Chata Bellido, Bruno Fabián",
+      "dni": "71***547",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-200",
+      "nombres": "Doris Marleni",
+      "apellidos": "Valencia Quispe",
+      "nombresApellidos": "Valencia Quispe, Doris Marleni",
+      "dni": "75***716",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-201",
+      "nombres": "Jaime Leonardo",
+      "apellidos": "Rojas Uturunco",
+      "nombresApellidos": "Rojas Uturunco, Jaime Leonardo",
+      "dni": "78***440",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-202",
+      "nombres": "Kiara Flavia",
+      "apellidos": "Ticona Chávez",
+      "nombresApellidos": "Ticona Chávez, Kiara Flavia",
+      "dni": "71***353",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-203",
+      "nombres": "Alonso Esteban",
+      "apellidos": "Gutiérrez Cuentas",
+      "nombresApellidos": "Gutiérrez Cuentas, Alonso Esteban",
+      "dni": "77***713",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-204",
+      "nombres": "Rosaura Violeta",
+      "apellidos": "Huanca Escobar",
+      "nombresApellidos": "Huanca Escobar, Rosaura Violeta",
+      "dni": "77***609",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-205",
+      "nombres": "Simon Marcelo",
+      "apellidos": "Cáceres Apaza",
+      "nombresApellidos": "Cáceres Apaza, Simon Marcelo",
+      "dni": "71***405",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-206",
+      "nombres": "Naty Leonor",
+      "apellidos": "Huancco Ticona",
+      "nombresApellidos": "Huancco Ticona, Naty Leonor",
+      "dni": "76***645",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-207",
+      "nombres": "Brayan Alexis",
+      "apellidos": "Solís Valenzuela",
+      "nombresApellidos": "Solís Valenzuela, Brayan Alexis",
+      "dni": "76***963",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-208",
+      "nombres": "Florencia Paz",
+      "apellidos": "Vega Velasco",
+      "nombresApellidos": "Vega Velasco, Florencia Paz",
+      "dni": "75***206",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-209",
+      "nombres": "Fredy Leonidas",
+      "apellidos": "Arapa Pari",
+      "nombresApellidos": "Arapa Pari, Fredy Leonidas",
+      "dni": "76***603",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-210",
+      "nombres": "Yovana Pilar",
+      "apellidos": "Choque Rodríguez",
+      "nombresApellidos": "Choque Rodríguez, Yovana Pilar",
+      "dni": "71***677",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-211",
+      "nombres": "Yohan Neymar",
+      "apellidos": "Carranza Navarro",
+      "nombresApellidos": "Carranza Navarro, Yohan Neymar",
+      "dni": "71***643",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-212",
+      "nombres": "Diana Noemí",
+      "apellidos": "Cuentas Huamán",
+      "nombresApellidos": "Cuentas Huamán, Diana Noemí",
+      "dni": "74***449",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-213",
+      "nombres": "Thiago Gabriel",
+      "apellidos": "Dávila Yana",
+      "nombresApellidos": "Dávila Yana, Thiago Gabriel",
+      "dni": "74***468",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-214",
+      "nombres": "Abigail Belén",
+      "apellidos": "Pérez Gutiérrez",
+      "nombresApellidos": "Pérez Gutiérrez, Abigail Belén",
+      "dni": "76***975",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-215",
+      "nombres": "Luis Fernando",
+      "apellidos": "Tonconi Cordova",
+      "nombresApellidos": "Tonconi Cordova, Luis Fernando",
+      "dni": "74***321",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-216",
+      "nombres": "Emma Sofía",
+      "apellidos": "Fuentes Tapia",
+      "nombresApellidos": "Fuentes Tapia, Emma Sofía",
+      "dni": "72***531",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-217",
+      "nombres": "Salvador Tomás",
+      "apellidos": "Maquera Romero",
+      "nombresApellidos": "Maquera Romero, Salvador Tomás",
+      "dni": "78***756",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-218",
+      "nombres": "Nayeli Briggith",
+      "apellidos": "Villar Díaz",
+      "nombresApellidos": "Villar Díaz, Nayeli Briggith",
+      "dni": "74***600",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-219",
+      "nombres": "Anthony Fabricio",
+      "apellidos": "Catacora Luque",
+      "nombresApellidos": "Catacora Luque, Anthony Fabricio",
+      "dni": "76***373",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-220",
+      "nombres": "Camila Zoe",
+      "apellidos": "Tejada Montoya",
+      "nombresApellidos": "Tejada Montoya, Camila Zoe",
+      "dni": "77***556",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-221",
+      "nombres": "Juan Carlos",
+      "apellidos": "Quilca Reyes",
+      "nombresApellidos": "Quilca Reyes, Juan Carlos",
+      "dni": "77***929",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-222",
+      "nombres": "Renata Micaela",
+      "apellidos": "Churata Ríos",
+      "nombresApellidos": "Churata Ríos, Renata Micaela",
+      "dni": "72***614",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-223",
+      "nombres": "David Fernando",
+      "apellidos": "Quecara Bustamante",
+      "nombresApellidos": "Quecara Bustamante, David Fernando",
+      "dni": "76***306",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-224",
+      "nombres": "Bárbara Estefanía",
+      "apellidos": "Bautista Maquera",
+      "nombresApellidos": "Bautista Maquera, Bárbara Estefanía",
+      "dni": "76***866",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-225",
+      "nombres": "Jhamil Anderson",
+      "apellidos": "Montes Arapa",
+      "nombresApellidos": "Montes Arapa, Jhamil Anderson",
+      "dni": "73***862",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-226",
+      "nombres": "Silvia Verónica",
+      "apellidos": "Romero Vega",
+      "nombresApellidos": "Romero Vega, Silvia Verónica",
+      "dni": "78***630",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-227",
+      "nombres": "Walter Edgar",
+      "apellidos": "Lozano Ponce",
+      "nombresApellidos": "Lozano Ponce, Walter Edgar",
+      "dni": "74***607",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-228",
+      "nombres": "Genesis Adriana",
+      "apellidos": "Navarro Ccallo",
+      "nombresApellidos": "Navarro Ccallo, Genesis Adriana",
+      "dni": "71***763",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-229",
+      "nombres": "Lorenzo David",
+      "apellidos": "Cuno Palomino",
+      "nombresApellidos": "Cuno Palomino, Lorenzo David",
+      "dni": "75***584",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-230",
+      "nombres": "Aitana Montserrat",
+      "apellidos": "Pinto García",
+      "nombresApellidos": "Pinto García, Aitana Montserrat",
+      "dni": "71***142",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-231",
+      "nombres": "Carlos Eduardo",
+      "apellidos": "Ponce Peralta",
+      "nombresApellidos": "Ponce Peralta, Carlos Eduardo",
+      "dni": "72***828",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-232",
+      "nombres": "Fabiana Ariana",
+      "apellidos": "Roque Chambi",
+      "nombresApellidos": "Roque Chambi, Fabiana Ariana",
+      "dni": "77***197",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-233",
+      "nombres": "Piero Facundo",
+      "apellidos": "Charca Lozano",
+      "nombresApellidos": "Charca Lozano, Piero Facundo",
+      "dni": "77***754",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-234",
+      "nombres": "Ana Lucía",
+      "apellidos": "Zeballos Huarcaya",
+      "nombresApellidos": "Zeballos Huarcaya, Ana Lucía",
+      "dni": "72***140",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-235",
+      "nombres": "Fabricio Daniel",
+      "apellidos": "Soto Benítez",
+      "nombresApellidos": "Soto Benítez, Fabricio Daniel",
+      "dni": "77***194",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-236",
+      "nombres": "Isabella Luciana",
+      "apellidos": "Álvarez Churata",
+      "nombresApellidos": "Álvarez Churata, Isabella Luciana",
+      "dni": "78***851",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-237",
+      "nombres": "Lucas Benjamín",
+      "apellidos": "Ccallo Cruz",
+      "nombresApellidos": "Ccallo Cruz, Lucas Benjamín",
+      "dni": "74***264",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-238",
+      "nombres": "Teresa De Jesús",
+      "apellidos": "Benítez Vilca",
+      "nombresApellidos": "Benítez Vilca, Teresa De Jesús",
+      "dni": "71***498",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-239",
+      "nombres": "Reynaldo Hugo",
+      "apellidos": "Bellido Fuentes",
+      "nombresApellidos": "Bellido Fuentes, Reynaldo Hugo",
+      "dni": "76***755",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-240",
+      "nombres": "Daniela Ximena",
+      "apellidos": "Cruz Rojas",
+      "nombresApellidos": "Cruz Rojas, Daniela Ximena",
+      "dni": "77***297",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-241",
+      "nombres": "Nicolás Alexander",
+      "apellidos": "Pari Bravo",
+      "nombresApellidos": "Pari Bravo, Nicolás Alexander",
+      "dni": "76***871",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-242",
+      "nombres": "Valeska Romina",
+      "apellidos": "Mendoza Livisi",
+      "nombresApellidos": "Mendoza Livisi, Valeska Romina",
+      "dni": "74***352",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-243",
+      "nombres": "Ian Dylan",
+      "apellidos": "Espinoza Cueva",
+      "nombresApellidos": "Espinoza Cueva, Ian Dylan",
+      "dni": "78***454",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-244",
+      "nombres": "Edith Judith",
+      "apellidos": "Sánchez Torres",
+      "nombresApellidos": "Sánchez Torres, Edith Judith",
+      "dni": "76***832",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-245",
+      "nombres": "Emilio Mateo",
+      "apellidos": "Arias Ramos",
+      "nombresApellidos": "Arias Ramos, Emilio Mateo",
+      "dni": "74***868",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-246",
+      "nombres": "Yazmín Nicolle",
+      "apellidos": "Caballero Bautista",
+      "nombresApellidos": "Caballero Bautista, Yazmín Nicolle",
+      "dni": "75***555",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-247",
+      "nombres": "Ricardo Manuel",
+      "apellidos": "Reyes Villar",
+      "nombresApellidos": "Reyes Villar, Ricardo Manuel",
+      "dni": "72***441",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-248",
+      "nombres": "Priscila Milagros",
+      "apellidos": "Contreras Calisaya",
+      "nombresApellidos": "Contreras Calisaya, Priscila Milagros",
+      "dni": "71***607",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-249",
+      "nombres": "Renzo Alejandro",
+      "apellidos": "Hilasaca Bermúdez",
+      "nombresApellidos": "Hilasaca Bermúdez, Renzo Alejandro",
+      "dni": "72***281",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-250",
+      "nombres": "Karely Lucero",
+      "apellidos": "Capajaña Ilaquita",
+      "nombresApellidos": "Capajaña Ilaquita, Karely Lucero",
+      "dni": "78***114",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-251",
+      "nombres": "Bautista Gael",
+      "apellidos": "Calderón Guillén",
+      "nombresApellidos": "Calderón Guillén, Bautista Gael",
+      "dni": "75***509",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-252",
+      "nombres": "Daleshka Anahí",
+      "apellidos": "Uturunco Quecara",
+      "nombresApellidos": "Uturunco Quecara, Daleshka Anahí",
+      "dni": "75***325",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-253",
+      "nombres": "Franco Sebastián",
+      "apellidos": "Zea Pinto",
+      "nombresApellidos": "Zea Pinto, Franco Sebastián",
+      "dni": "71***495",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-254",
+      "nombres": "Mariana Antonella",
+      "apellidos": "Chávez Tonconi",
+      "nombresApellidos": "Chávez Tonconi, Mariana Antonella",
+      "dni": "78***106",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-255",
+      "nombres": "Edwin Percy",
+      "apellidos": "Chambi Challo",
+      "nombresApellidos": "Chambi Challo, Edwin Percy",
+      "dni": "78***662",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-256",
+      "nombres": "Luana Yamileth",
+      "apellidos": "Tapia Huanca",
+      "nombresApellidos": "Tapia Huanca, Luana Yamileth",
+      "dni": "75***324",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-257",
+      "nombres": "Santiago Samuel",
+      "apellidos": "Herrera Espinoza",
+      "nombresApellidos": "Herrera Espinoza, Santiago Samuel",
+      "dni": "78***118",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-258",
+      "nombres": "Grecia Milagros",
+      "apellidos": "Delgado Sánchez",
+      "nombresApellidos": "Delgado Sánchez, Grecia Milagros",
+      "dni": "76***682",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-259",
+      "nombres": "Christopher David",
+      "apellidos": "Coila Condori",
+      "nombresApellidos": "Coila Condori, Christopher David",
+      "dni": "75***719",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-260",
+      "nombres": "Roxana Maribel",
+      "apellidos": "Rivera Arias",
+      "nombresApellidos": "Rivera Arias, Roxana Maribel",
+      "dni": "72***644",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-261",
+      "nombres": "Gael Matías",
+      "apellidos": "Livisi Cutipa",
+      "nombresApellidos": "Livisi Cutipa, Gael Matías",
+      "dni": "71***571",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-262",
+      "nombres": "Marjorie Noelia",
+      "apellidos": "García Zamora",
+      "nombresApellidos": "García Zamora, Marjorie Noelia",
+      "dni": "78***143",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-263",
+      "nombres": "Jerónimo Damián",
+      "apellidos": "Castañeda Tumi",
+      "nombresApellidos": "Castañeda Tumi, Jerónimo Damián",
+      "dni": "75***643",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-264",
+      "nombres": "Jazmín Abigail",
+      "apellidos": "Torres Figueroa",
+      "nombresApellidos": "Torres Figueroa, Jazmín Abigail",
+      "dni": "71***474",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-265",
+      "nombres": "Marcos Abel",
+      "apellidos": "Bravo Calderón",
+      "nombresApellidos": "Bravo Calderón, Marcos Abel",
+      "dni": "77***712",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-266",
+      "nombres": "Gia Guadalupe",
+      "apellidos": "Peralta Surco",
+      "nombresApellidos": "Peralta Surco, Gia Guadalupe",
+      "dni": "76***605",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-267",
+      "nombres": "Maximiliano",
+      "apellidos": "Guevara Coila",
+      "nombresApellidos": "Guevara Coila, Maximiliano",
+      "dni": "72***707",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-268",
+      "nombres": "Sheyla Pamela",
+      "apellidos": "Ríos Colquehuanca",
+      "nombresApellidos": "Ríos Colquehuanca, Sheyla Pamela",
+      "dni": "72***575",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-269",
+      "nombres": "Hugo Wilson",
+      "apellidos": "Maldonado Villanueva",
+      "nombresApellidos": "Maldonado Villanueva, Hugo Wilson",
+      "dni": "78***288",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-270",
+      "nombres": "Brianna Danna",
+      "apellidos": "Cueva Laquihuanaco",
+      "nombresApellidos": "Cueva Laquihuanaco, Brianna Danna",
+      "dni": "76***440",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-271",
+      "nombres": "Felipe Ignacio",
+      "apellidos": "Castillo Zea",
+      "nombresApellidos": "Castillo Zea, Felipe Ignacio",
+      "dni": "77***589",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-272",
+      "nombres": "Miriam Gladys",
+      "apellidos": "Rodríguez Silva",
+      "nombresApellidos": "Rodríguez Silva, Miriam Gladys",
+      "dni": "74***596",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-273",
+      "nombres": "Julio César",
+      "apellidos": "Salazar Choque",
+      "nombresApellidos": "Salazar Choque, Julio César",
+      "dni": "71***521",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-274",
+      "nombres": "Miranda Belén",
+      "apellidos": "Cornejo Castillo",
+      "nombresApellidos": "Cornejo Castillo, Miranda Belén",
+      "dni": "78***502",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-275",
+      "nombres": "Jostin Yampier",
+      "apellidos": "Ramos Salazar",
+      "nombresApellidos": "Ramos Salazar, Jostin Yampier",
+      "dni": "73***996",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-276",
+      "nombres": "Yeny Maritza",
+      "apellidos": "Campos Peña",
+      "nombresApellidos": "Campos Peña, Yeny Maritza",
+      "dni": "74***258",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-277",
+      "nombres": "Guillermo Antonio",
+      "apellidos": "Yana Mamani",
+      "nombresApellidos": "Yana Mamani, Guillermo Antonio",
+      "dni": "71***927",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-278",
+      "nombres": "Amelia Gracia",
+      "apellidos": "Huarcaya Vargas",
+      "nombresApellidos": "Huarcaya Vargas, Amelia Gracia",
+      "dni": "72***732",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-279",
+      "nombres": "Ángel Gabriel",
+      "apellidos": "Chura Pacheco",
+      "nombresApellidos": "Chura Pacheco, Ángel Gabriel",
+      "dni": "73***621",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-280",
+      "nombres": "Dayiro Celeste",
+      "apellidos": "Cordova Zeballos",
+      "nombresApellidos": "Cordova Zeballos, Dayiro Celeste",
+      "dni": "74***828",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-281",
+      "nombres": "Valentino Joshua",
+      "apellidos": "Laquihuanaco Guevara",
+      "nombresApellidos": "Laquihuanaco Guevara, Valentino Joshua",
+      "dni": "71***460",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-282",
+      "nombres": "Fiorela Rosario",
+      "apellidos": "Villanueva Morales",
+      "nombresApellidos": "Villanueva Morales, Fiorela Rosario",
+      "dni": "78***645",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-283",
+      "nombres": "Emiliano Axel",
+      "apellidos": "Ccari Carrillo",
+      "nombresApellidos": "Ccari Carrillo, Emiliano Axel",
+      "dni": "77***135",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-284",
+      "nombres": "Andrea Nicole",
+      "apellidos": "Salas Chura",
+      "nombresApellidos": "Salas Chura, Andrea Nicole",
+      "dni": "70***570",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-285",
+      "nombres": "César Augusto",
+      "apellidos": "Ortiz Carrasco",
+      "nombresApellidos": "Ortiz Carrasco, César Augusto",
+      "dni": "76***295",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-286",
+      "nombres": "Mery Yolanda",
+      "apellidos": "Guillén Cárdenas",
+      "nombresApellidos": "Guillén Cárdenas, Mery Yolanda",
+      "dni": "74***998",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-287",
+      "nombres": "Erick Josué",
+      "apellidos": "Calisaya Aguilar",
+      "nombresApellidos": "Calisaya Aguilar, Erick Josué",
+      "dni": "78***603",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-288",
+      "nombres": "Martina Belén",
+      "apellidos": "Escobar Cáceres",
+      "nombresApellidos": "Escobar Cáceres, Martina Belén",
+      "dni": "77***381",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-289",
+      "nombres": "Marco Antonio",
+      "apellidos": "Condori Huancco",
+      "nombresApellidos": "Condori Huancco, Marco Antonio",
+      "dni": "74***134",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-290",
+      "nombres": "Nelly Maritza",
+      "apellidos": "Palomino Quilca",
+      "nombresApellidos": "Palomino Quilca, Nelly Maritza",
+      "dni": "74***340",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-291",
+      "nombres": "Joaquín Sebastián",
+      "apellidos": "Vargas Dávila",
+      "nombresApellidos": "Vargas Dávila, Joaquín Sebastián",
+      "dni": "75***836",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-292",
+      "nombres": "Cynthia Gisela",
+      "apellidos": "Ilaquita Flores",
+      "nombresApellidos": "Ilaquita Flores, Cynthia Gisela",
+      "dni": "73***703",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-293",
+      "nombres": "Álvaro Diego",
+      "apellidos": "Díaz Caballero",
+      "nombresApellidos": "Díaz Caballero, Álvaro Diego",
+      "dni": "74***652",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-294",
+      "nombres": "Mariluz Celia",
+      "apellidos": "Pacheco Hilasaca",
+      "nombresApellidos": "Pacheco Hilasaca, Mariluz Celia",
+      "dni": "74***842",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-295",
+      "nombres": "Elias Rafael",
+      "apellidos": "Valdivia Castañeda",
+      "nombresApellidos": "Valdivia Castañeda, Elias Rafael",
+      "dni": "72***874",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-296",
+      "nombres": "Fatima Jimena",
+      "apellidos": "Tumi Paredes",
+      "nombresApellidos": "Tumi Paredes, Fatima Jimena",
+      "dni": "76***523",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-297",
+      "nombres": "Christian Leonardo",
+      "apellidos": "Flores Mendoza",
+      "nombresApellidos": "Flores Mendoza, Christian Leonardo",
+      "dni": "76***368",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-298",
+      "nombres": "Mía Valentina",
+      "apellidos": "Figueroa Solís",
+      "nombresApellidos": "Figueroa Solís, Mía Valentina",
+      "dni": "74***908",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-299",
+      "nombres": "Liam Mateo",
+      "apellidos": "Mamani Quenta",
+      "nombresApellidos": "Mamani Quenta, Liam Mateo",
+      "dni": "77***799",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-300",
+      "nombres": "Eliana Soledad",
+      "apellidos": "Aguilar Salas",
+      "nombresApellidos": "Aguilar Salas, Eliana Soledad",
+      "dni": "72***249",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-301",
+      "nombres": "Raúl Andrés",
+      "apellidos": "Pillco Soto",
+      "nombresApellidos": "Pillco Soto, Raúl Andrés",
+      "dni": "75***447",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-302",
+      "nombres": "Victoria Allison",
+      "apellidos": "Velasco Tejada",
+      "nombresApellidos": "Velasco Tejada, Victoria Allison",
+      "dni": "74***673",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-303",
+      "nombres": "Héctor Daniel",
+      "apellidos": "Cutipa Miranda",
+      "nombresApellidos": "Cutipa Miranda, Héctor Daniel",
+      "dni": "73***281",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-304",
+      "nombres": "Catalina Leonor",
+      "apellidos": "Canaza Campos",
+      "nombresApellidos": "Canaza Campos, Catalina Leonor",
+      "dni": "71***365",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-305",
+      "nombres": "José Manuel",
+      "apellidos": "Valenzuela Valdivia",
+      "nombresApellidos": "Valenzuela Valdivia, José Manuel",
+      "dni": "77***340",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-306",
+      "nombres": "Carmen Elena",
+      "apellidos": "Huamán Delgado",
+      "nombresApellidos": "Huamán Delgado, Carmen Elena",
+      "dni": "75***569",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-307",
+      "nombres": "Oscar Raúl",
+      "apellidos": "Sucasaca Pérez",
+      "nombresApellidos": "Sucasaca Pérez, Oscar Raúl",
+      "dni": "76***649",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-308",
+      "nombres": "Keisy Dayana",
+      "apellidos": "Silva Sucaticona",
+      "nombresApellidos": "Silva Sucaticona, Keisy Dayana",
+      "dni": "71***377",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-309",
+      "nombres": "Dante Alonso",
+      "apellidos": "Morales Pillco",
+      "nombresApellidos": "Morales Pillco, Dante Alonso",
+      "dni": "77***445",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-310",
+      "nombres": "Romina Lucía",
+      "apellidos": "Bustamante Carranza",
+      "nombresApellidos": "Bustamante Carranza, Romina Lucía",
+      "dni": "70***188",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-311",
+      "nombres": "Kevin Alexis",
+      "apellidos": "Carrillo Barreda",
+      "nombresApellidos": "Carrillo Barreda, Kevin Alexis",
+      "dni": "71***506",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-312",
+      "nombres": "Judith Yanet",
+      "apellidos": "Miranda Capajaña",
+      "nombresApellidos": "Miranda Capajaña, Judith Yanet",
+      "dni": "75***733",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-313",
+      "nombres": "Leonardo Daniel",
+      "apellidos": "Paredes Álvarez",
+      "nombresApellidos": "Paredes Álvarez, Leonardo Daniel",
+      "dni": "72***111",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-314",
+      "nombres": "Luz Marina",
+      "apellidos": "Bermúdez Valencia",
+      "nombresApellidos": "Bermúdez Valencia, Luz Marina",
+      "dni": "78***117",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-315",
+      "nombres": "Alonso Gonzalo",
+      "apellidos": "Quenta Solorzano",
+      "nombresApellidos": "Quenta Solorzano, Alonso Gonzalo",
+      "dni": "77***163",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-316",
+      "nombres": "Melanie Sophia",
+      "apellidos": "Apaza Chata",
+      "nombresApellidos": "Apaza Chata, Melanie Sophia",
+      "dni": "76***521",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-317",
+      "nombres": "Adrián Alejandro",
+      "apellidos": "Medina Charca",
+      "nombresApellidos": "Medina Charca, Adrián Alejandro",
+      "dni": "77***861",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-318",
+      "nombres": "Emilia Samantha",
+      "apellidos": "Quispe Gómez",
+      "nombresApellidos": "Quispe Gómez, Emilia Samantha",
+      "dni": "70***453",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-319",
+      "nombres": "Facundo Nicolás",
+      "apellidos": "Mejía Cornejo",
+      "nombresApellidos": "Mejía Cornejo, Facundo Nicolás",
+      "dni": "72***505",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-320",
+      "nombres": "Sonia Patricia",
+      "apellidos": "Sucaticona Mejía",
+      "nombresApellidos": "Sucaticona Mejía, Sonia Patricia",
+      "dni": "75***857",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-321",
+      "nombres": "Rolando Efraín",
+      "apellidos": "Castro Medina",
+      "nombresApellidos": "Castro Medina, Rolando Efraín",
+      "dni": "76***457",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-322",
+      "nombres": "María Fernanda",
+      "apellidos": "Barreda Roque",
+      "nombresApellidos": "Barreda Roque, María Fernanda",
+      "dni": "70***507",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-323",
+      "nombres": "Juan Pablo",
+      "apellidos": "Peña Catacora",
+      "nombresApellidos": "Peña Catacora, Juan Pablo",
+      "dni": "77***802",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-324",
+      "nombres": "Glenda Patricia",
+      "apellidos": "Surco Contreras",
+      "nombresApellidos": "Surco Contreras, Glenda Patricia",
+      "dni": "75***451",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-325",
+      "nombres": "Mathías Emmanuel",
+      "apellidos": "Montoya Herrera",
+      "nombresApellidos": "Montoya Herrera, Mathías Emmanuel",
+      "dni": "78***289",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-326",
+      "nombres": "Ruth Karina",
+      "apellidos": "Cárdenas Canaza",
+      "nombresApellidos": "Cárdenas Canaza, Ruth Karina",
+      "dni": "73***582",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-327",
+      "nombres": "Víctor Raúl",
+      "apellidos": "Carrasco Sucasaca",
+      "nombresApellidos": "Carrasco Sucasaca, Víctor Raúl",
+      "dni": "71***831",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-328",
+      "nombres": "Fernanda Nicole",
+      "apellidos": "Gómez Castro",
+      "nombresApellidos": "Gómez Castro, Fernanda Nicole",
+      "dni": "72***450",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-329",
+      "nombres": "Ronald Josué",
+      "apellidos": "Vilca Ortiz",
+      "nombresApellidos": "Vilca Ortiz, Ronald Josué",
+      "dni": "73***899",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-330",
+      "nombres": "Gabriela Paula",
+      "apellidos": "Challo Maldonado",
+      "nombresApellidos": "Challo Maldonado, Gabriela Paula",
+      "dni": "71***436",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-331",
+      "nombres": "André Rodrigo",
+      "apellidos": "Solorzano Rivera",
+      "nombresApellidos": "Solorzano Rivera, André Rodrigo",
+      "dni": "70***146",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-332",
+      "nombres": "Vilma Haydee",
+      "apellidos": "Colquehuanca Cuno",
+      "nombresApellidos": "Colquehuanca Cuno, Vilma Haydee",
+      "dni": "76***565",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-333",
+      "nombres": "Roger Abraham",
+      "apellidos": "Zamora Ccari",
+      "nombresApellidos": "Zamora Ccari, Roger Abraham",
+      "dni": "71***935",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-334",
+      "nombres": "Gladys Petrona",
+      "apellidos": "Luque Montes",
+      "nombresApellidos": "Luque Montes, Gladys Petrona",
+      "dni": "77***722",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-335",
+      "nombres": "Edgar Isaac",
+      "apellidos": "Chata Bellido",
+      "nombresApellidos": "Chata Bellido, Edgar Isaac",
+      "dni": "70***769",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-336",
+      "nombres": "Norma Elizabeth",
+      "apellidos": "Valencia Quispe",
+      "nombresApellidos": "Valencia Quispe, Norma Elizabeth",
+      "dni": "71***886",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-337",
+      "nombres": "Mario Alberto",
+      "apellidos": "Rojas Uturunco",
+      "nombresApellidos": "Rojas Uturunco, Mario Alberto",
+      "dni": "70***435",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-338",
+      "nombres": "Rosa María",
+      "apellidos": "Ticona Chávez",
+      "nombresApellidos": "Ticona Chávez, Rosa María",
+      "dni": "73***219",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-339",
+      "nombres": "Oliver André",
+      "apellidos": "Gutiérrez Cuentas",
+      "nombresApellidos": "Gutiérrez Cuentas, Oliver André",
+      "dni": "77***719",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-340",
+      "nombres": "Astrid Xiomara",
+      "apellidos": "Huanca Escobar",
+      "nombresApellidos": "Huanca Escobar, Astrid Xiomara",
+      "dni": "78***364",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-341",
+      "nombres": "Elber Agustín",
+      "apellidos": "Cáceres Apaza",
+      "nombresApellidos": "Cáceres Apaza, Elber Agustín",
+      "dni": "78***348",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-342",
+      "nombres": "Beatriz Marleny",
+      "apellidos": "Huancco Ticona",
+      "nombresApellidos": "Huancco Ticona, Beatriz Marleny",
+      "dni": "71***531",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-343",
+      "nombres": "Jean Pierre",
+      "apellidos": "Solís Valenzuela",
+      "nombresApellidos": "Solís Valenzuela, Jean Pierre",
+      "dni": "74***868",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-344",
+      "nombres": "Valeria Julieta",
+      "apellidos": "Vega Velasco",
+      "nombresApellidos": "Vega Velasco, Valeria Julieta",
+      "dni": "71***987",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-345",
+      "nombres": "Jorge Luis",
+      "apellidos": "Arapa Pari",
+      "nombresApellidos": "Arapa Pari, Jorge Luis",
+      "dni": "77***973",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-346",
+      "nombres": "Doris Marleni",
+      "apellidos": "Choque Rodríguez",
+      "nombresApellidos": "Choque Rodríguez, Doris Marleni",
+      "dni": "73***277",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-347",
+      "nombres": "Diego Alonso",
+      "apellidos": "Carranza Navarro",
+      "nombresApellidos": "Carranza Navarro, Diego Alonso",
+      "dni": "74***827",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-348",
+      "nombres": "Kiara Flavia",
+      "apellidos": "Cuentas Huamán",
+      "nombresApellidos": "Cuentas Huamán, Kiara Flavia",
+      "dni": "76***533",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-349",
+      "nombres": "Rene Guillermo",
+      "apellidos": "Dávila Yana",
+      "nombresApellidos": "Dávila Yana, Rene Guillermo",
+      "dni": "70***250",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-350",
+      "nombres": "Rosaura Violeta",
+      "apellidos": "Pérez Gutiérrez",
+      "nombresApellidos": "Pérez Gutiérrez, Rosaura Violeta",
+      "dni": "71***360",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-351",
+      "nombres": "Esteban Mauricio",
+      "apellidos": "Tonconi Cordova",
+      "nombresApellidos": "Tonconi Cordova, Esteban Mauricio",
+      "dni": "74***971",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-352",
+      "nombres": "Naty Leonor",
+      "apellidos": "Fuentes Tapia",
+      "nombresApellidos": "Fuentes Tapia, Naty Leonor",
+      "dni": "77***900",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-353",
+      "nombres": "Jeferson Jair",
+      "apellidos": "Maquera Romero",
+      "nombresApellidos": "Maquera Romero, Jeferson Jair",
+      "dni": "70***859",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-354",
+      "nombres": "Florencia Paz",
+      "apellidos": "Villar Díaz",
+      "nombresApellidos": "Villar Díaz, Florencia Paz",
+      "dni": "76***514",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-355",
+      "nombres": "Bruno Fabián",
+      "apellidos": "Catacora Luque",
+      "nombresApellidos": "Catacora Luque, Bruno Fabián",
+      "dni": "72***684",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-356",
+      "nombres": "Yovana Pilar",
+      "apellidos": "Tejada Montoya",
+      "nombresApellidos": "Tejada Montoya, Yovana Pilar",
+      "dni": "75***526",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-357",
+      "nombres": "Jaime Leonardo",
+      "apellidos": "Quilca Reyes",
+      "nombresApellidos": "Quilca Reyes, Jaime Leonardo",
+      "dni": "73***969",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-358",
+      "nombres": "Diana Noemí",
+      "apellidos": "Churata Ríos",
+      "nombresApellidos": "Churata Ríos, Diana Noemí",
+      "dni": "77***635",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-359",
+      "nombres": "Alonso Esteban",
+      "apellidos": "Quecara Bustamante",
+      "nombresApellidos": "Quecara Bustamante, Alonso Esteban",
+      "dni": "77***946",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-360",
+      "nombres": "Abigail Belén",
+      "apellidos": "Bautista Maquera",
+      "nombresApellidos": "Bautista Maquera, Abigail Belén",
+      "dni": "73***580",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-361",
+      "nombres": "Simon Marcelo",
+      "apellidos": "Montes Arapa",
+      "nombresApellidos": "Montes Arapa, Simon Marcelo",
+      "dni": "71***109",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-362",
+      "nombres": "Emma Sofía",
+      "apellidos": "Romero Vega",
+      "nombresApellidos": "Romero Vega, Emma Sofía",
+      "dni": "75***598",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-363",
+      "nombres": "Brayan Alexis",
+      "apellidos": "Lozano Ponce",
+      "nombresApellidos": "Lozano Ponce, Brayan Alexis",
+      "dni": "76***444",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-364",
+      "nombres": "Nayeli Briggith",
+      "apellidos": "Navarro Ccallo",
+      "nombresApellidos": "Navarro Ccallo, Nayeli Briggith",
+      "dni": "76***644",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-365",
+      "nombres": "Fredy Leonidas",
+      "apellidos": "Cuno Palomino",
+      "nombresApellidos": "Cuno Palomino, Fredy Leonidas",
+      "dni": "73***371",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-366",
+      "nombres": "Camila Zoe",
+      "apellidos": "Pinto García",
+      "nombresApellidos": "Pinto García, Camila Zoe",
+      "dni": "70***340",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-367",
+      "nombres": "Yohan Neymar",
+      "apellidos": "Ponce Peralta",
+      "nombresApellidos": "Ponce Peralta, Yohan Neymar",
+      "dni": "76***518",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-368",
+      "nombres": "Renata Micaela",
+      "apellidos": "Roque Chambi",
+      "nombresApellidos": "Roque Chambi, Renata Micaela",
+      "dni": "75***969",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-369",
+      "nombres": "Thiago Gabriel",
+      "apellidos": "Charca Lozano",
+      "nombresApellidos": "Charca Lozano, Thiago Gabriel",
+      "dni": "77***244",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-370",
+      "nombres": "Bárbara Estefanía",
+      "apellidos": "Zeballos Huarcaya",
+      "nombresApellidos": "Zeballos Huarcaya, Bárbara Estefanía",
+      "dni": "76***245",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-371",
+      "nombres": "Luis Fernando",
+      "apellidos": "Soto Benítez",
+      "nombresApellidos": "Soto Benítez, Luis Fernando",
+      "dni": "75***936",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-372",
+      "nombres": "Silvia Verónica",
+      "apellidos": "Álvarez Churata",
+      "nombresApellidos": "Álvarez Churata, Silvia Verónica",
+      "dni": "74***517",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-373",
+      "nombres": "Salvador Tomás",
+      "apellidos": "Ccallo Cruz",
+      "nombresApellidos": "Ccallo Cruz, Salvador Tomás",
+      "dni": "73***885",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-374",
+      "nombres": "Genesis Adriana",
+      "apellidos": "Benítez Vilca",
+      "nombresApellidos": "Benítez Vilca, Genesis Adriana",
+      "dni": "74***893",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-375",
+      "nombres": "Anthony Fabricio",
+      "apellidos": "Bellido Fuentes",
+      "nombresApellidos": "Bellido Fuentes, Anthony Fabricio",
+      "dni": "71***901",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-376",
+      "nombres": "Aitana Montserrat",
+      "apellidos": "Cruz Rojas",
+      "nombresApellidos": "Cruz Rojas, Aitana Montserrat",
+      "dni": "70***682",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-377",
+      "nombres": "Juan Carlos",
+      "apellidos": "Pari Bravo",
+      "nombresApellidos": "Pari Bravo, Juan Carlos",
+      "dni": "72***514",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-378",
+      "nombres": "Fabiana Ariana",
+      "apellidos": "Mendoza Livisi",
+      "nombresApellidos": "Mendoza Livisi, Fabiana Ariana",
+      "dni": "72***399",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-379",
+      "nombres": "David Fernando",
+      "apellidos": "Espinoza Cueva",
+      "nombresApellidos": "Espinoza Cueva, David Fernando",
+      "dni": "74***791",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-380",
+      "nombres": "Ana Lucía",
+      "apellidos": "Sánchez Torres",
+      "nombresApellidos": "Sánchez Torres, Ana Lucía",
+      "dni": "70***288",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-381",
+      "nombres": "Jhamil Anderson",
+      "apellidos": "Arias Ramos",
+      "nombresApellidos": "Arias Ramos, Jhamil Anderson",
+      "dni": "73***344",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-382",
+      "nombres": "Isabella Luciana",
+      "apellidos": "Caballero Bautista",
+      "nombresApellidos": "Caballero Bautista, Isabella Luciana",
+      "dni": "73***133",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-383",
+      "nombres": "Walter Edgar",
+      "apellidos": "Reyes Villar",
+      "nombresApellidos": "Reyes Villar, Walter Edgar",
+      "dni": "78***127",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-384",
+      "nombres": "Teresa De Jesús",
+      "apellidos": "Contreras Calisaya",
+      "nombresApellidos": "Contreras Calisaya, Teresa De Jesús",
+      "dni": "71***782",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-385",
+      "nombres": "Lorenzo David",
+      "apellidos": "Hilasaca Bermúdez",
+      "nombresApellidos": "Hilasaca Bermúdez, Lorenzo David",
+      "dni": "76***438",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-386",
+      "nombres": "Daniela Ximena",
+      "apellidos": "Capajaña Ilaquita",
+      "nombresApellidos": "Capajaña Ilaquita, Daniela Ximena",
+      "dni": "77***813",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-387",
+      "nombres": "Carlos Eduardo",
+      "apellidos": "Calderón Guillén",
+      "nombresApellidos": "Calderón Guillén, Carlos Eduardo",
+      "dni": "77***775",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-388",
+      "nombres": "Valeska Romina",
+      "apellidos": "Uturunco Quecara",
+      "nombresApellidos": "Uturunco Quecara, Valeska Romina",
+      "dni": "78***889",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-389",
+      "nombres": "Piero Facundo",
+      "apellidos": "Zea Pinto",
+      "nombresApellidos": "Zea Pinto, Piero Facundo",
+      "dni": "76***807",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-390",
+      "nombres": "Edith Judith",
+      "apellidos": "Chávez Tonconi",
+      "nombresApellidos": "Chávez Tonconi, Edith Judith",
+      "dni": "77***696",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-391",
+      "nombres": "Fabricio Daniel",
+      "apellidos": "Chambi Challo",
+      "nombresApellidos": "Chambi Challo, Fabricio Daniel",
+      "dni": "75***978",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-392",
+      "nombres": "Yazmín Nicolle",
+      "apellidos": "Tapia Huanca",
+      "nombresApellidos": "Tapia Huanca, Yazmín Nicolle",
+      "dni": "71***567",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-393",
+      "nombres": "Lucas Benjamín",
+      "apellidos": "Herrera Espinoza",
+      "nombresApellidos": "Herrera Espinoza, Lucas Benjamín",
+      "dni": "74***528",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-394",
+      "nombres": "Priscila Milagros",
+      "apellidos": "Delgado Sánchez",
+      "nombresApellidos": "Delgado Sánchez, Priscila Milagros",
+      "dni": "77***330",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-395",
+      "nombres": "Reynaldo Hugo",
+      "apellidos": "Coila Condori",
+      "nombresApellidos": "Coila Condori, Reynaldo Hugo",
+      "dni": "70***919",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-396",
+      "nombres": "Karely Lucero",
+      "apellidos": "Rivera Arias",
+      "nombresApellidos": "Rivera Arias, Karely Lucero",
+      "dni": "74***727",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-397",
+      "nombres": "Nicolás Alexander",
+      "apellidos": "Livisi Cutipa",
+      "nombresApellidos": "Livisi Cutipa, Nicolás Alexander",
+      "dni": "72***299",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-398",
+      "nombres": "Daleshka Anahí",
+      "apellidos": "García Zamora",
+      "nombresApellidos": "García Zamora, Daleshka Anahí",
+      "dni": "72***402",
+      "genero": "2"
+    },
+    {
+      "id": "mock-est-399",
+      "nombres": "Ian Dylan",
+      "apellidos": "Castañeda Tumi",
+      "nombresApellidos": "Castañeda Tumi, Ian Dylan",
+      "dni": "76***919",
+      "genero": "1"
+    },
+    {
+      "id": "mock-est-400",
+      "nombres": "Mariana Antonella",
+      "apellidos": "Torres Figueroa",
+      "nombresApellidos": "Torres Figueroa, Mariana Antonella",
+      "dni": "71***548",
+      "genero": "2"
+    }
+  ],
+  "directores": [
+    "Mg. Carlos Alberto Mamani Quispe",
+    "Lic. Diana Noemí Condori Campos",
+    "Dr. Jorge Luis Flores Ramos",
+    "Mg. Alonso Esteban Chambi Chávez",
+    "Lic. Rosa María Ticona Apaza",
+    "Dr. Víctor Hugo Paredes Vargas",
+    "Mg. Edwin Percy Huanca Mendoza",
+    "Lic. Carmen Elena Morales Castro",
+    "Mg. Julio César Vilca Aguilar",
+    "Lic. Sonia Patricia Choque Díaz",
+    "Dr. David Fernando Machaca Cutipa",
+    "Mg. Beatriz Marleny Ccallo Coila",
+    "Lic. Walter Edgar Cáceres Yana",
+    "Mg. Miriam Gladys Tapia Palomino",
+    "Dr. Ricardo Manuel Barreda Zea",
+    "Lic. Silvia Verónica Montoya Cordova",
+    "Mg. Oscar Raúl Ponce Delgado",
+    "Lic. Teresa De Jesús Villanueva Ríos",
+    "Dr. Juan Carlos Romero Carrillo",
+    "Mg. César Augusto Cueva Bustamante"
+  ],
+  "docentes": [
+    "Prof. Edwin Condori Ramos",
+    "Prof. Maritza Flores Mamani",
+    "Prof. Hugo Wilson Quispe Hancco",
+    "Prof. Gladys Ticona Apaza",
+    "Prof. Ronald Chambi Vargas",
+    "Prof. Yeny Sucaticona Aguilar",
+    "Prof. Oscar Vilca Morales",
+    "Prof. Petrona Castillo Laquihuanaco",
+    "Prof. Jaime Mamani Castro",
+    "Prof. Rosaura Chahuara Cordova",
+    "Prof. Elber Huanccollo Quispe",
+    "Prof. Violeta Ticona Flores",
+    "Prof. Rolando Choquemamani Tonconi",
+    "Prof. David Efraín Challo Ticona",
+    "Prof. Naty Leonor Surco Turpo",
+    "Prof. Rolando Ccari Coyla",
+    "Prof. Elias Calderón Cueva",
+    "Prof. Julio Oscar Livisi Quispe",
+    "Prof. Fiorela Solorzano Huayta",
+    "Prof. Reynaldo Huarcaya Portillo",
+    "Prof. Roger Hugo Roque Vargas",
+    "Prof. Carlos Churata Colquerhuanca",
+    "Prof. Guillermo Ramos Viza",
+    "Prof. Henry Quispe Chambi",
+    "Prof. Edwin Julio Cutipa Cruz",
+    "Prof. Simon Fredy Parrilla Mamani",
+    "Prof. Marcos Abel Cuno Puma",
+    "Prof. Fredy Uturunco Pacco",
+    "Prof. Rene Leonidas Tumi Chata",
+    "Prof. Edgar Canaza Zapata"
+  ],
+  "instituciones": [
+    "I.E. 70001 San Martín de Porres",
+    "I.E. Gran Unidad Escolar San Carlos",
+    "I.E. Almirante Miguel Grau",
+    "I.E. Santa Rosa de Lima",
+    "I.E. Politécnico Regional Los Andes",
+    "I.E. Nuestra Señora de Guadalupe",
+    "I.E. 6038 Ollantay",
+    "I.E. Coronel Francisco Bolognesi",
+    "I.E. 70542 Túpac Amaru",
+    "I.E. Mercedes Indacochea",
+    "I.E. Sagrado Corazón de Jesús",
+    "I.E. Faustino Maldonado",
+    "I.E. Simón Bolívar",
+    "I.E. María Parado de Bellido",
+    "I.E. Micaela Bastidas",
+    "I.E. Glorioso 80003 Mariscal Castilla",
+    "I.E. San Juan Bautista",
+    "I.E. 71013 San Antonio de Padua",
+    "I.E. Independencia Americana",
+    "I.E. Mariano Melgar",
+    "I.E. Fe y Alegría N° 23",
+    "I.E. Pedro Paulet",
+    "I.E. Clorinda Matto de Turner",
+    "I.E. Daniel Alcides Carrión",
+    "I.E. César Vallejo"
+  ]
+}

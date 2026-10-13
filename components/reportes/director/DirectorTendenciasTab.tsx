@@ -418,7 +418,12 @@ export const DirectorTendenciasTab: React.FC<DirectorTendenciasTabProps> = ({
               .filter(Boolean)
           )
         );
-        const docenteNombre = docentesUnicos.length > 0 ? docentesUnicos.join(', ') : undefined;
+        const docenteNombre =
+          docentesUnicos.length > 0
+            ? docentesUnicos.join(', ')
+            : docentesMap.get(`sec_${String(seccionObj.id).toUpperCase()}`) ||
+              docentesMap.get(`sec_${String(seccionObj.name).toUpperCase()}`) ||
+              undefined;
         const totalPuntaje = ests.reduce((acc, est) => acc + (est.puntaje || 0), 0);
         const promedio = ests.length > 0 ? totalPuntaje / ests.length : 0;
 

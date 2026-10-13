@@ -40,7 +40,7 @@ const DemoModeFloatingBanner: React.FC<Props> = ({
 
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
               <RiShieldCheckLine className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Respuestas Reales · PII Anonimizada</span>
+              <span>Respuestas Reales · PII Anonimizada (Pool 400)</span>
             </span>
           </div>
 
@@ -48,10 +48,10 @@ const DemoModeFloatingBanner: React.FC<Props> = ({
             type="button"
             onClick={onExitDemo}
             className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-purple-600/70 hover:bg-red-600 active:bg-red-700 transition-all shadow-xs border border-purple-400/40 hover:border-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 shrink-0 cursor-pointer"
-            title="Finalizar demostración y regresar a la gestión de evaluaciones"
+            title="Desactivar modo demo (volver a nombres originales)"
           >
             <RiLogoutBoxRLine className="w-3.5 h-3.5" />
-            <span>Salir de la Demo</span>
+            <span>Desactivar Demo</span>
           </button>
         </div>
       </div>

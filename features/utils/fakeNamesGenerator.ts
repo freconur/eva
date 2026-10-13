@@ -1,4 +1,5 @@
 import { UserEstudiante } from '@/features/types/types';
+import mockData from '@/features/data/mockNamesPeru.json';
 
 /**
  * Algoritmo de hash determinista (DJB2) para convertir strings/números en enteros positivos estables.
@@ -14,155 +15,83 @@ export const stringHash = (str: string | number): number => {
   return hash;
 };
 
-// Nombres masculinos comunes en niños y jóvenes escolares peruanos
-export const NOMBRES_MASCULINOS = [
-  'Mateo', 'Liam', 'Thiago', 'Sebastián', 'Joaquín', 'Lucas', 'Gabriel', 'Santiago',
-  'Rodrigo', 'Alejandro', 'Leonardo', 'Adrián', 'Ángel', 'Daniel', 'Diego', 'Carlos',
-  'José', 'Luis', 'Manuel', 'Jorge', 'Víctor', 'Jhair', 'Alonso', 'Piero',
-  'Alexander', 'Fabricio', 'Esteban', 'Renato', 'Mauricio', 'Álvaro', 'Gael', 'Emiliano',
-  'Bruno', 'Facundo', 'César', 'Edwin', 'Edgar', 'Percy', 'Walter', 'Yampier',
-  'Jhonatan', 'Braulio', 'Cristhian', 'Nicolás', 'Jean Paul', 'Ronaldo', 'David', 'Franco',
-  'Kevin', 'Erick', 'Javier', 'Eduardo', 'Óscar', 'Fernando', 'André', 'Matías',
-  'Benjamín', 'Josué', 'Raúl', 'Rubén',
-];
-
-// Nombres femeninos comunes en niñas y jóvenes escolares peruanas
-export const NOMBRES_FEMENINOS = [
-  'Valentina', 'Camila', 'Luciana', 'Sofía', 'Mía', 'Isabella', 'Valeria', 'Briana',
-  'Fabiana', 'Emma', 'Victoria', 'Martina', 'Daniela', 'Andrea', 'Adriana', 'Gabriela',
-  'Natalia', 'Mariana', 'Paula', 'Ximena', 'Romina', 'Ariana', 'Nicole', 'Gia',
-  'Génesis', 'Abigail', 'Milagros', 'Luz', 'Rosa', 'María', 'Flor', 'Carmen',
-  'Ana', 'Nayeli', 'Danna', 'Sayuri', 'Mayra', 'Shirley', 'Yadhira', 'Kiara',
-  'Fiorella', 'Brenda', 'Diana', 'Claudia', 'Estefany', 'Belén', 'Noemí', 'Dayana',
-  'Melanie', 'Xiomara', 'Rocío', 'Sara', 'Maricielo', 'Evelyn', 'Karla', 'Ruth',
-  'Carolina', 'Tatiana', 'Maricarmen', 'Elena',
-];
-
-// Apellidos peruanos frecuentes (con alta representatividad en el sur y regiones andinas)
-export const APELLIDOS_PERUANOS = [
-  'Quispe', 'Flores', 'Mamani', 'Condori', 'Ramos', 'Chambi', 'Huanca', 'Morales',
-  'Paredes', 'Apaza', 'Vargas', 'Gutiérrez', 'López', 'Mendoza', 'Castro', 'Cruz',
-  'Pérez', 'Torres', 'García', 'Aguilar', 'Rojas', 'Choque', 'Díaz', 'Vilca',
-  'Sánchez', 'Ticona', 'Medina', 'Charaja', 'Valdivia', 'Calderón', 'Espinoza', 'Castillo',
-  'Bravo', 'Bellido', 'Ccallo', 'Cahuana', 'Cutipa', 'Ccama', 'Coila', 'Machaca',
-  'Arias', 'Salazar', 'Reyes', 'Herrera', 'Guillén', 'Peña', 'Vásquez', 'Huamán',
-  'Cáceres', 'Chávez', 'Zamalloa', 'Palomino', 'Yana', 'Quenta', 'Cari', 'Centeno',
-  'Barreda', 'Zúñiga', 'Cárcamo', 'Tapia', 'Huallpa', 'Escobar', 'Cornejo', 'Guzmán',
-  'Pinto', 'Zea', 'Portocarrero', 'Navarro', 'Benavente', 'Montoya', 'Cordova', 'Alarcón',
-  'Ponce', 'Delgado', 'Villanueva', 'Campos', 'Vega', 'Ríos', 'Soto', 'Mejía',
-  'Romero', 'Carrillo', 'Silva',
-];
-
-// Nombres de instituciones educativas emblemáticas ficticias
-export const INSTITUCIONES_PERUANAS = [
-  'I.E. 70001 San Martín de Porres',
-  'I.E. Gran Unidad San Carlos',
-  'I.E. Almirante Miguel Grau',
-  'I.E. Santa Rosa de Lima',
-  'I.E. Politécnico Regional Los Andes',
-  'I.E. Nuestra Señora de Guadalupe',
-  'I.E. José Antonio Encinas',
-  'I.E. Coronel Francisco Bolognesi',
-  'I.E. 70542 Túpac Amaru',
-  'I.E. Mercedes Indacochea',
-  'I.E. Sagrado Corazón de Jesús',
-  'I.E. Faustino Maldonado',
-  'I.E. Simón Bolívar',
-  'I.E. María Parado de Bellido',
-  'I.E. Micaela Bastidas',
-  'I.E. Glorioso 80003 Mariscal Castilla',
-  'I.E. San Juan Bautista',
-  'I.E. 71013 San Antonio de Padua',
-  'I.E. Independencia Americana',
-  'I.E. Mariano Melgar',
-];
+export const MOCK_ESTUDIANTES = mockData.estudiantes;
+export const MOCK_ESTUDIANTES_M = mockData.estudiantes.filter((e) => e.genero === '1');
+export const MOCK_ESTUDIANTES_F = mockData.estudiantes.filter((e) => e.genero === '2');
+export const MOCK_DIRECTORES = mockData.directores;
+export const MOCK_DOCENTES = mockData.docentes;
+export const MOCK_INSTITUCIONES = mockData.instituciones;
 
 /**
- * Genera un nombre de estudiante realista y peruano a partir de un seed determinista.
+ * Genera un nombre de estudiante realista y peruano a partir del JSON de 400 nombres.
+ * Utiliza pools segregados por género para asegurar coherencia sin colisiones ni repeticiones consecutivas.
  */
 export const generateRealisticStudentName = (
   seed: string | number,
-  genero?: string
-): { nombres: string; apellidos: string; nombresApellidos: string; dni: string } => {
-  const h = stringHash(seed);
-  const genUpper = (genero || '').toUpperCase().trim();
+  indexOrGenero?: number | string,
+  generoParam?: string
+): { nombres: string; apellidos: string; nombresApellidos: string; dni: string; genero: string } => {
+  const targetGenero =
+    typeof indexOrGenero === 'string' &&
+    (indexOrGenero === '1' || indexOrGenero === '2' || indexOrGenero === 'M' || indexOrGenero === 'F')
+      ? indexOrGenero
+      : generoParam;
 
-  // Selección de género
-  const esFemenino = genUpper === 'F' || genUpper === 'FEMENINO' || (genUpper === '' && h % 2 === 1);
-  const nombresPool = esFemenino ? NOMBRES_FEMENINOS : NOMBRES_MASCULINOS;
+  const isFemale = targetGenero === '2' || targetGenero?.toUpperCase() === 'F';
+  const isMale = targetGenero === '1' || targetGenero?.toUpperCase() === 'M';
 
-  const n1Idx = h % nombresPool.length;
-  const n2Idx = (Math.floor(h / 7) + 3) % nombresPool.length;
+  // Usar sub-pool específico por género para garantizar coincidencia de género sin desfasar índices ni provocar duplicados
+  const pool = isFemale
+    ? MOCK_ESTUDIANTES_F
+    : isMale
+    ? MOCK_ESTUDIANTES_M
+    : MOCK_ESTUDIANTES;
 
-  const primerNombre = nombresPool[n1Idx];
-  const segundoNombre = n1Idx !== n2Idx ? nombresPool[n2Idx] : nombresPool[(n2Idx + 1) % nombresPool.length];
-  const nombres = `${primerNombre} ${segundoNombre}`;
-
-  // Apellidos paterno y materno
-  const a1Idx = (Math.floor(h / 13)) % APELLIDOS_PERUANOS.length;
-  let a2Idx = (Math.floor(h / 29) + 5) % APELLIDOS_PERUANOS.length;
-  if (a1Idx === a2Idx) {
-    a2Idx = (a2Idx + 1) % APELLIDOS_PERUANOS.length;
+  let idx: number;
+  if (typeof indexOrGenero === 'number') {
+    idx = Math.abs(indexOrGenero) % pool.length;
+  } else {
+    idx = stringHash(seed) % pool.length;
   }
 
-  const apellidoPaterno = APELLIDOS_PERUANOS[a1Idx];
-  const apellidoMaterno = APELLIDOS_PERUANOS[a2Idx];
-  const apellidos = `${apellidoPaterno} ${apellidoMaterno}`;
-
-  // Formato oficial peruano: "Apellidos, Nombres"
-  const nombresApellidos = `${apellidos}, ${nombres}`;
-
-  // DNI enmascarado de 8 dígitos manteniendo privacidad
-  const dniNum = (h % 90000000) + 10000000;
-  const dniStr = String(dniNum);
-  const dni = `${dniStr.slice(0, 2)}***${dniStr.slice(5)}`;
-
-  return { nombres, apellidos, nombresApellidos, dni };
+  const item = pool[idx];
+  return {
+    nombres: item.nombres,
+    apellidos: item.apellidos,
+    nombresApellidos: item.nombresApellidos,
+    dni: item.dni,
+    genero: item.genero,
+  };
 };
 
 /**
- * Genera un nombre docente realista (ej. "Prof. Edwin Condori Ramos").
+ * Genera un nombre docente realista desde el pool local de docentes peruanos.
  */
-export const generateRealisticDocenteName = (seed: string | number): string => {
-  const h = stringHash(seed);
-  const esFemenino = h % 2 === 1;
-  const nombresPool = esFemenino ? NOMBRES_FEMENINOS : NOMBRES_MASCULINOS;
-
-  const nIdx = h % nombresPool.length;
-  const a1Idx = (Math.floor(h / 11)) % APELLIDOS_PERUANOS.length;
-  let a2Idx = (Math.floor(h / 23) + 2) % APELLIDOS_PERUANOS.length;
-  if (a1Idx === a2Idx) a2Idx = (a2Idx + 1) % APELLIDOS_PERUANOS.length;
-
-  const nombre = nombresPool[nIdx];
-  const ape1 = APELLIDOS_PERUANOS[a1Idx];
-  const ape2 = APELLIDOS_PERUANOS[a2Idx];
-
-  const prefix = esFemenino ? 'Prof. (a)' : 'Prof.';
-  return `${prefix} ${nombre} ${ape1} ${ape2}`;
+export const generateRealisticDocenteName = (
+  seed: string | number,
+  index?: number,
+  includePrefix: boolean = true
+): string => {
+  const pool = MOCK_DOCENTES;
+  const idx = index !== undefined
+    ? Math.abs(index) % pool.length
+    : stringHash(seed) % pool.length;
+  const raw = pool[idx];
+  return includePrefix ? raw : raw.replace(/^Prof\.\s*/i, '');
 };
 
 /**
- * Genera un nombre de Director realista para la demostración institucional.
+ * Genera un nombre de Director realista desde el pool local para demostración institucional.
  */
 export const generateRealisticDirectorName = (
   seed: string | number
 ): { nombres: string; apellidos: string; fullName: string; dni: string } => {
+  const pool = MOCK_DIRECTORES;
   const h = stringHash(seed);
-  const esFemenino = h % 3 === 0;
-  const nombresPool = esFemenino ? NOMBRES_FEMENINOS : NOMBRES_MASCULINOS;
-
-  const nIdx = h % nombresPool.length;
-  const a1Idx = (Math.floor(h / 7)) % APELLIDOS_PERUANOS.length;
-  let a2Idx = (Math.floor(h / 19) + 4) % APELLIDOS_PERUANOS.length;
-  if (a1Idx === a2Idx) a2Idx = (a2Idx + 1) % APELLIDOS_PERUANOS.length;
-
-  const nombres = `${nombresPool[nIdx]} ${nombresPool[(nIdx + 4) % nombresPool.length]}`;
-  const apellidos = `${APELLIDOS_PERUANOS[a1Idx]} ${APELLIDOS_PERUANOS[a2Idx]}`;
-
-  const titulos = ['Lic.', 'Mg.', 'Dr.'];
-  const tit = titulos[h % titulos.length];
-  const fullName = `${tit} ${nombres} ${apellidos}`;
-
+  const fullName = pool[h % pool.length];
+  const parts = fullName.replace(/^(Mg\.|Lic\.|Dr\.)\s*/, '').split(' ');
+  const nombres = parts.slice(0, 2).join(' ');
+  const apellidos = parts.slice(2).join(' ');
   const dniNum = (h % 90000000) + 10000000;
   const dniStr = String(dniNum);
   const dni = `${dniStr.slice(0, 2)}***${dniStr.slice(5)}`;
@@ -171,27 +100,30 @@ export const generateRealisticDirectorName = (
 };
 
 /**
- * Genera un nombre de institución educativa realista y creíble.
+ * Genera un nombre de institución educativa realista desde el pool local.
  */
 export const generateRealisticInstitucion = (
   seed: string | number,
   _originalName?: string
 ): string => {
+  const pool = MOCK_INSTITUCIONES;
   const h = stringHash(seed);
-  const idx = h % INSTITUCIONES_PERUANAS.length;
-  return INSTITUCIONES_PERUANAS[idx];
+  return pool[h % pool.length];
 };
 
 /**
  * Anonimiza un estudiante real reemplazando únicamente sus datos de identidad (PII)
- * con un nombre peruano realista, preservando íntegramente sus puntajes, niveles y respuestas.
+ * con un nombre peruano del JSON de 400 nombres, preservando íntegramente sus puntajes, niveles y respuestas.
  */
 export const generateRealisticEstudiante = (
   estudiante: UserEstudiante,
   index: number = 0
 ): UserEstudiante => {
-  const seed = estudiante.dni || estudiante.id || `est-${index}`;
-  const fake = generateRealisticStudentName(seed, estudiante.genero);
+  const fake = generateRealisticStudentName(
+    estudiante.dni || estudiante.id || index,
+    index,
+    estudiante.genero
+  );
 
   return {
     ...estudiante,
@@ -203,11 +135,29 @@ export const generateRealisticEstudiante = (
 };
 
 /**
- * Transforma un arreglo completo de estudiantes reales en datos anonimizados y coherentes.
+ * Transforma un arreglo completo de estudiantes reales en datos anonimizados usando el JSON local de 400 nombres.
+ * Utiliza contadores independientes por género para garantizar que ningún nombre se repita en la lista.
  */
-export const anonymizeEstudiantesList = (
-  estudiantes: UserEstudiante[]
-): UserEstudiante[] => {
+export const anonymizeEstudiantesList = <T extends UserEstudiante>(
+  estudiantes: T[],
+  offset: number = 0
+): T[] => {
   if (!Array.isArray(estudiantes)) return [];
-  return estudiantes.map((est, idx) => generateRealisticEstudiante(est, idx));
+  let femaleCount = 0;
+  let maleCount = 0;
+  let otherCount = 0;
+
+  return estudiantes.map((est) => {
+    const isFemale = est.genero === '2' || est.genero?.toUpperCase() === 'F';
+    const isMale = est.genero === '1' || est.genero?.toUpperCase() === 'M';
+    let idx: number;
+    if (isFemale) {
+      idx = femaleCount++;
+    } else if (isMale) {
+      idx = maleCount++;
+    } else {
+      idx = otherCount++;
+    }
+    return generateRealisticEstudiante(est, idx + offset) as T;
+  });
 };

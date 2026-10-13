@@ -10,7 +10,6 @@ import {
   MdContentCopy,
   MdLock,
   MdCheck,
-  MdCoPresent,
 } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 import { useSortable } from '@dnd-kit/sortable'
@@ -51,7 +50,6 @@ export interface SortableRowProps {
   selectedGrado: string
   handleOpenPuntuacionModal: (eva: any) => void
   handleOpenDuplicateModal?: (eva: any) => void
-  handleOpenDemoModal?: (eva: any) => void
   isEnMatriz?: boolean
   isSelected?: boolean
   onToggleSelect?: (id: string) => void
@@ -84,7 +82,6 @@ const SortableRow = ({
   selectedGrado,
   handleOpenPuntuacionModal,
   handleOpenDuplicateModal,
-  handleOpenDemoModal,
   isEnMatriz,
   isSelected,
   onToggleSelect,
@@ -401,17 +398,6 @@ const SortableRow = ({
           {puedeAcceder && currentUserData?.perfil?.rol === 4 ? (
             <div className={styles.actionsContainer}>
               {!eva.realtimeEnabled && <ConsolidationAction eva={eva} />}
-              {handleOpenDemoModal && isEnMatriz && (
-                <button
-                  type="button"
-                  onClick={() => handleOpenDemoModal(eva)}
-                  className={`${styles.actionIcon} text-purple-600 hover:text-purple-700 hover:bg-purple-50`}
-                  title="Modo Demo: Presentar evaluación como Director"
-                  aria-label={`Modo Demo para ${eva.nombre}`}
-                >
-                  <MdCoPresent style={{ fontSize: '1.25rem' }} />
-                </button>
-              )}
               <MdContentCopy
                 onClick={() => handleOpenDuplicateModal && handleOpenDuplicateModal(eva)}
                 className={`${styles.actionIcon} ${styles.copyIcon}`}

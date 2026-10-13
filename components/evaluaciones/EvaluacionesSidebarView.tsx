@@ -55,7 +55,6 @@ interface EvaluacionesSidebarViewProps {
   visibleColumns: Record<string, boolean>
   handleOpenPuntuacionModal: (eva: any) => void
   handleOpenDuplicateModal: (eva: any) => void
-  handleOpenDemoModal?: (eva: any) => void
   selectedEvaIds: string[]
   setSelectedEvaIds: React.Dispatch<React.SetStateAction<string[]>>
   handleToggleSelect: (id: string) => void
@@ -118,7 +117,6 @@ const EvaluacionesSidebarView: React.FC<EvaluacionesSidebarViewProps> = ({
   visibleColumns,
   handleOpenPuntuacionModal,
   handleOpenDuplicateModal,
-  handleOpenDemoModal,
   selectedEvaIds,
   setSelectedEvaIds,
   handleToggleSelect,
@@ -562,7 +560,6 @@ const EvaluacionesSidebarView: React.FC<EvaluacionesSidebarViewProps> = ({
                           selectedGrado={selectedGrado}
                           handleOpenPuntuacionModal={handleOpenPuntuacionModal}
                           handleOpenDuplicateModal={handleOpenDuplicateModal}
-                          handleOpenDemoModal={handleOpenDemoModal}
                           isEnMatriz={isEnMatriz}
                           isSelected={selectedEvaIds.includes(eva.id)}
                           onToggleSelect={handleToggleSelect}

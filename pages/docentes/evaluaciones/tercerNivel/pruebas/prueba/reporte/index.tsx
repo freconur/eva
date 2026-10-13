@@ -69,6 +69,13 @@ import DirectorFiltrosBar, {
   FiltrosState,
 } from '@/components/reportes/director/DirectorFiltrosBar';
 import tabsStyles from '@/components/reportes/director/DirectorTabsNav.module.css';
+import DemoModeFloatingBanner from '@/components/evaluaciones/DemoModeFloatingBanner';
+import DemoModeToggleSwitch from '@/components/evaluaciones/DemoModeToggleSwitch';
+import {
+  generateRealisticInstitucion,
+  generateRealisticDocenteName,
+  generateRealisticEstudiante,
+} from '@/features/utils/fakeNamesGenerator';
 
 ChartJS.register(
   CategoryScale,
@@ -99,6 +106,82 @@ const Reportes = () => {
     loaderReporteDirector,
     warningEvaEstudianteSinRegistro,
   } = useGlobalContext();
+
+  // --- MODO DEMOSTRACIÓN (ANONIMIZACIÓN LOCAL CON POOL DE 400 NOMBRES) ---
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedActive = sessionStorage.getItem('eva_demo_active') === 'true';
+      const storedLegacy = sessionStorage.getItem('eva_demo_mode');
+      const urlDemo = route.query.demo === 'true';
+      if (storedActive || urlDemo || (storedLegacy && JSON.parse(storedLegacy || '{}')?.active)) {
+        setIsDemoMode(true);
+      }
+    }
+  }, [route.query.demo]);
+
+  const handleToggleDemoMode = useCallback(() => {
+    setIsDemoMode((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        if (next) {
+          sessionStorage.setItem('eva_demo_active', 'true');
+        } else {
+          sessionStorage.removeItem('eva_demo_active');
+          sessionStorage.removeItem('eva_demo_mode');
+        }
+        window.dispatchEvent(new Event('eva_demo_mode_changed'));
+      }
+      return next;
+    });
+  }, []);
+
+  const handleExitDemo = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('eva_demo_active');
+      sessionStorage.removeItem('eva_demo_mode');
+      window.dispatchEvent(new Event('eva_demo_mode_changed'));
+    }
+    setIsDemoMode(false);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('eva_demo_active') === 'true') {
+      window.dispatchEvent(new Event('eva_demo_mode_changed'));
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('eva_demo_active');
+        sessionStorage.removeItem('eva_demo_mode');
+        window.dispatchEvent(new Event('eva_demo_mode_changed'));
+      }
+    };
+  }, []);
+
+  const effectiveDocenteDni = useMemo(() => {
+    return (route.query.id as string) || currentUserData?.dni || '';
+  }, [route.query.id, currentUserData?.dni]);
+
+  const fakeDocenteName = useMemo(() => {
+    if (!isDemoMode || !effectiveDocenteDni) return null;
+    return generateRealisticDocenteName(effectiveDocenteDni, 0, false);
+  }, [isDemoMode, effectiveDocenteDni]);
+
+  const fakeInstitucionName = useMemo(() => {
+    if (!isDemoMode || !effectiveDocenteDni) return null;
+    return generateRealisticInstitucion(effectiveDocenteDni, currentUserData?.institucion);
+  }, [isDemoMode, effectiveDocenteDni, currentUserData?.institucion]);
+
+  const effectiveInstitucion = useMemo(() => {
+    if (isDemoMode && fakeInstitucionName) return fakeInstitucionName;
+    return currentUserData?.institucion || '';
+  }, [isDemoMode, fakeInstitucionName, currentUserData?.institucion]);
+
+  const effectiveDocenteName = useMemo(() => {
+    if (isDemoMode && fakeDocenteName) return fakeDocenteName;
+    return `${currentUserData?.nombres || ''} ${currentUserData?.apellidos || ''}`.trim() || 'Docente';
+  }, [isDemoMode, fakeDocenteName, currentUserData?.nombres, currentUserData?.apellidos]);
 
   // Pestaña activa
   const [activeTab, setActiveTab] = useState<DirectorTabKey>('grilla');
@@ -324,6 +407,12 @@ const Reportes = () => {
   const allowGenerarPdfPreguntas = isAuditing || accionesDocente.generarPdfPreguntas !== false;
   const allowActualizarRespuestas = Boolean(accionesDocente.actualizarRespuestas);
   const hasAnyDocenteAction = allowExportGrillaPdf || allowExportExcel || allowGenerarPdfPreguntas;
+  const canUseDemo = Boolean(
+    isAuditing ||
+    currentUserData?.rol === 4 ||
+    currentUserData?.perfil?.rol === 4 ||
+    isDemoMode
+  );
 
   const [yearSelected, setYearSelected] = useState<string>((route.query.year as string) || '');
   const [monthSelected, setMonthSelected] = useState<number>(() => {
@@ -430,9 +519,9 @@ const Reportes = () => {
   }, [seccionesDisponibles]);
 
   const docentesMap = useMemo(() => {
-    const nombre = `${currentUserData?.nombres || ''} ${currentUserData?.apellidos || ''}`.trim() || 'Docente';
+    const nombre = effectiveDocenteName;
     return new Map<string, string>([[String(currentUserData?.dni || ''), nombre]]);
-  }, [currentUserData]);
+  }, [currentUserData?.dni, effectiveDocenteName]);
 
   // Sincronizar estados locales con la URL cuando esta cambie
   useEffect(() => {
@@ -548,22 +637,33 @@ const Reportes = () => {
   // Versión de estudiantes sincronizada con la definición global
   const estudiantesBase = useMemo(() => {
     if (!estudiantesGlob || !preguntasRespuestas || !evaluacion) return [];
+    let maleCount = 0;
+    let femaleCount = 0;
+    let otherCount = 0;
 
     return estudiantesGlob.map((est) => {
-      if (!est.respuestas) return est;
+      let assignedIndex = 0;
+      if (isDemoMode) {
+        const isFemale = est.genero === '2' || est.genero?.toUpperCase() === 'F';
+        const isMale = est.genero === '1' || est.genero?.toUpperCase() === 'M';
+        assignedIndex = isFemale ? femaleCount++ : isMale ? maleCount++ : otherCount++;
+      }
+      const baseEst = isDemoMode ? generateRealisticEstudiante(est, assignedIndex) : est;
+
+      if (!baseEst.respuestas) return baseEst;
 
       let respuestasReconstruidas: PreguntasRespuestas[] = [];
 
-      if (Array.isArray(est.respuestas)) {
-        respuestasReconstruidas = est.respuestas.map((r) => {
+      if (Array.isArray(baseEst.respuestas)) {
+        respuestasReconstruidas = baseEst.respuestas.map((r) => {
           const globalP = preguntasRespuestas.find(
             (p) => (r.id && p.id === r.id) || (r.order !== undefined && p.order === r.order)
           );
           return { ...r, respuesta: globalP?.respuesta || r.respuesta };
         });
-      } else if (typeof est.respuestas === 'object') {
+      } else if (typeof baseEst.respuestas === 'object') {
         respuestasReconstruidas = preguntasRespuestas.map((p) => {
-          const alternativaSeleccionada = (est.respuestas as any)[p.id || ''];
+          const alternativaSeleccionada = (baseEst.respuestas as any)[p.id || ''];
           const alternativasReconstruidas =
             p.alternativas?.map((alt) => ({
               ...alt,
@@ -580,31 +680,47 @@ const Reportes = () => {
         });
       }
 
-      let tempEst = { ...est, respuestas: respuestasReconstruidas } as any;
+      let tempEst = { ...baseEst, respuestas: respuestasReconstruidas } as any;
       tempEst = calculoPreguntasCorrectas(tempEst);
       tempEst = calculoNivel(tempEst, evaluacion);
       if (
         (tempEst.puntaje === 0 || tempEst.puntaje === undefined) &&
-        est.puntaje !== undefined &&
-        est.puntaje !== null
+        baseEst.puntaje !== undefined &&
+        baseEst.puntaje !== null
       ) {
-        tempEst.puntaje = est.puntaje;
+        tempEst.puntaje = baseEst.puntaje;
       }
       if (
         (tempEst.nivel === 'sin clasificar' || !tempEst.nivel) &&
-        est.nivel &&
-        est.nivel !== 'sin clasificar'
+        baseEst.nivel &&
+        baseEst.nivel !== 'sin clasificar'
       ) {
-        tempEst.nivel = est.nivel;
+        tempEst.nivel = baseEst.nivel;
       }
-      const rawEst = est as any;
+      const rawEst = baseEst as any;
       if (!tempEst.nombresApellidos && (rawEst.nombres || rawEst.apellidos)) {
         tempEst.nombresApellidos = `${rawEst.nombres || ''} ${rawEst.apellidos || ''}`.trim();
       }
 
       return tempEst as Estudiante | UserEstudiante;
     });
-  }, [estudiantesGlob, preguntasRespuestas, evaluacion]);
+  }, [estudiantesGlob, preguntasRespuestas, evaluacion, isDemoMode]);
+
+  const effectivePendientes = useMemo(() => {
+    if (!isDemoMode || !estudiantesDeEvaluacion) return estudiantesDeEvaluacion;
+    const baseFemales = estudiantesBase.filter((e) => e.genero === '2' || e.genero?.toUpperCase() === 'F').length;
+    const baseMales = estudiantesBase.filter((e) => e.genero === '1' || e.genero?.toUpperCase() === 'M').length;
+    let femaleCount = baseFemales;
+    let maleCount = baseMales;
+    let otherCount = estudiantesBase.length;
+
+    return estudiantesDeEvaluacion.map((est) => {
+      const isFemale = est.genero === '2' || est.genero?.toUpperCase() === 'F';
+      const isMale = est.genero === '1' || est.genero?.toUpperCase() === 'M';
+      const assignedIndex = isFemale ? femaleCount++ : isMale ? maleCount++ : otherCount++;
+      return generateRealisticEstudiante(est, assignedIndex);
+    });
+  }, [isDemoMode, estudiantesDeEvaluacion, estudiantesBase]);
 
   // Aplicar filtros de la barra de herramientas a los estudiantes
   const estudiantesFiltrados = useMemo(() => {
@@ -668,7 +784,7 @@ const Reportes = () => {
     setLoading(true);
     try {
       const evalName = evaluacion?.nombre || 'evaluacion';
-      const fileName = `estudiantes_${evalName}_${currentUserData.dni}_${getMonthName(monthSelected)}.xlsx`;
+      const fileName = `estudiantes_${evalName}_${isDemoMode ? 'demo' : currentUserData.dni}_${getMonthName(monthSelected)}.xlsx`;
       exportEstudiantesToExcel(estudiantesFiltrados, fileName, preguntasRespuestas);
     } catch (error) {
       console.error('Error al exportar a Excel:', error);
@@ -730,7 +846,8 @@ const Reportes = () => {
         preguntasRespuestas,
         evaluacion,
         monthSelected,
-        nombreDocente: `${currentUserData.nombres || ''} ${currentUserData.apellidos || ''}`.trim() || 'Docente',
+        nombreDocente: effectiveDocenteName,
+        tipoUsuario: 'Docente',
       });
     } catch (error) {
       console.error('Error al exportar grilla:', error);
@@ -749,6 +866,16 @@ const Reportes = () => {
     }
   };
 
+  const currentUserDataEffective = useMemo(() => {
+    if (!isDemoMode) return currentUserData;
+    return {
+      ...currentUserData,
+      nombres: fakeDocenteName || currentUserData?.nombres || '',
+      apellidos: '',
+      institucion: effectiveInstitucion,
+    };
+  }, [isDemoMode, currentUserData, fakeDocenteName, effectiveInstitucion]);
+
   const {
     imagenesGeneradas,
     loadingPDF,
@@ -757,7 +884,7 @@ const Reportes = () => {
     handleGenerarPDF,
   } = useGenerarPDFReporte({
     reporteCompleto,
-    currentUserData,
+    currentUserData: currentUserDataEffective,
     titulo: 'Reporte de Evaluación - Docente',
     tipoUsuario: 'Docente',
     monthSelected,
@@ -969,7 +1096,7 @@ const Reportes = () => {
           onLimpiarFiltros={handleLimpiarFiltros}
         />
 
-        {evaluacion.tipoDeEvaluacion === '1' && !isSoloLectura && (
+        {evaluacion.tipoDeEvaluacion === '1' && !isSoloLectura && !isDemoMode && (
           <button
             onClick={handleShowCorregirPuntajesModal}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/90 shadow-2xs transition-all cursor-pointer shrink-0 self-start sm:self-auto"
@@ -1017,20 +1144,20 @@ const Reportes = () => {
           estudiantes={estudiantesFiltrados}
           preguntasRespuestas={preguntasRespuestas}
           warningEvaEstudianteSinRegistro={warningEvaEstudianteSinRegistro || undefined}
-          showDeleteButton={!isSoloLectura}
-          showEditButton={allowActualizarRespuestas}
+          showDeleteButton={!isSoloLectura && !isDemoMode}
+          showEditButton={allowActualizarRespuestas && !isDemoMode}
           onDeleteEstudiante={(dni) => {
-            if (isSoloLectura) return;
+            if (isSoloLectura || isDemoMode) return;
             handleShowModalDelete();
             setIdEstudiante(dni);
           }}
           onEditEstudiante={(dni) => {
-            if (!allowActualizarRespuestas) return;
+            if (!allowActualizarRespuestas || isDemoMode) return;
             setEditingEstudianteDni(dni);
             setIsActualizarDrawerOpen(true);
           }}
           linkToEdit={
-            allowActualizarRespuestas
+            allowActualizarRespuestas && !isDemoMode
               ? `/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte/actualizar-evaluacion?idExamen=${idExamen}&mes=${monthSelected}`
               : ''
           }
@@ -1067,7 +1194,7 @@ const Reportes = () => {
       isLoadingData={loading || loaderReporteDirector}
       availableSections={availableSections}
       docentesMap={docentesMap}
-      dniDocente={currentUserData?.dni}
+      dniDocente={effectiveDocenteDni}
       isDocenteView={true}
       yearSelected={Number(yearSelected)}
       baremo={baremo}
@@ -1093,12 +1220,12 @@ const Reportes = () => {
       availableSections={availableSections}
       docentesMap={docentesMap}
       evaluados={estudiantesBase.length}
-      pendientes={estudiantesDeEvaluacion.length}
-      listaPendientes={estudiantesDeEvaluacion}
+      pendientes={effectivePendientes.length}
+      listaPendientes={effectivePendientes}
       estudiantesFiltrados={estudiantesFiltrados}
       evaluacionesDb={evaluacionesDb}
       loadingEvaluaciones={loadingEvaluaciones}
-      dniDocente={currentUserData?.dni}
+      dniDocente={effectiveDocenteDni}
       isDocenteView={true}
       routeEvaluacionId={idExamen}
       initialGrado={filtros.grado || evaluacion?.grado}
@@ -1114,7 +1241,7 @@ const Reportes = () => {
       evaluacion={evaluacion}
       evaluacionesDb={evaluacionesDb}
       loadingEvaluaciones={loadingEvaluaciones}
-      dniDocente={currentUserData?.dni}
+      dniDocente={effectiveDocenteDni}
       routeEvaluacionId={idExamen}
       monthSelected={monthSelected}
       yearSelected={Number(yearSelected)}
@@ -1353,18 +1480,27 @@ const Reportes = () => {
               </div>
             )}
 
+            {/* Aviso de Modo Demostración Integrado */}
+            {isDemoMode && fakeDocenteName && (
+              <DemoModeFloatingBanner
+                directorName={fakeDocenteName}
+                institucionName={effectiveInstitucion}
+                onExitDemo={handleExitDemo}
+              />
+            )}
+
             {/* Modo Ejecutivo: Hero Banner */}
             {bannerMode === 'ejecutivo' && (
               <DirectorHeroBanner
                 evaluacion={evaluacion}
                 estudiantesFiltrados={estudiantesFiltrados}
-                estudiantesDeEvaluacion={estudiantesDeEvaluacion}
+                estudiantesDeEvaluacion={effectivePendientes}
                 preguntasRespuestas={preguntasRespuestas}
                 metricasDirector={metricasDirector}
                 monthSelected={monthSelected}
                 yearSelected={Number(yearSelected)}
-                colegio={currentUserData?.institucion}
-                totalEstudiantesMatriculados={estudiantesBase.length + estudiantesDeEvaluacion.length}
+                colegio={effectiveInstitucion}
+                totalEstudiantesMatriculados={estudiantesBase.length + effectivePendientes.length}
                 estudiantes={estudiantesBase}
                 filtros={filtros}
                 layoutMode={layoutMode}
@@ -1387,6 +1523,15 @@ const Reportes = () => {
                 onUploadBackgroundImage={bannerConfig.uploadBannerImage}
                 onRemoveBackgroundImage={bannerConfig.removeBannerImage}
                 isUploadingImage={bannerConfig.isUploadingImage}
+                customActions={
+                  canUseDemo ? (
+                    <DemoModeToggleSwitch
+                      isDemoMode={isDemoMode}
+                      onToggle={handleToggleDemoMode}
+                      variant="glass"
+                    />
+                  ) : undefined
+                }
               />
             )}
 
@@ -1406,18 +1551,27 @@ const Reportes = () => {
                       {getMonthName(monthSelected)} {yearSelected}
                     </span>
                   </span>
-                  {currentUserData?.institucion && (
+                  {effectiveInstitucion && (
                     <span
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200/90 text-slate-700 shadow-2xs max-w-[220px] truncate"
-                      title={currentUserData.institucion}
+                      title={effectiveInstitucion}
                     >
                       <RiBuilding4Line className="w-4 h-4 text-purple-600 shrink-0" />
-                      <span className="truncate">{currentUserData.institucion}</span>
+                      <span className="truncate">{effectiveInstitucion}</span>
                     </span>
                   )}
                 </div>
 
                 <div className="flex items-center gap-2.5 flex-wrap">
+                  {/* Conmutador de Modo Demo */}
+                  {canUseDemo && (
+                    <DemoModeToggleSwitch
+                      isDemoMode={isDemoMode}
+                      onToggle={handleToggleDemoMode}
+                      variant="light"
+                    />
+                  )}
+
                   <DirectorLayoutModeSwitch
                     mode={layoutMode}
                     onChange={handleToggleLayoutMode}

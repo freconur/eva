@@ -45,6 +45,22 @@ const LayoutMenu = ({ children }: Props) => {
 
   const [isAuditing, setIsAuditing] = useState(false)
   const [auditedUserName, setAuditedUserName] = useState('')
+  const [isDemoActive, setIsDemoActive] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const checkDemo = () => {
+        setIsDemoActive(sessionStorage.getItem('eva_demo_active') === 'true')
+      }
+      checkDemo()
+      window.addEventListener('eva_demo_mode_changed', checkDemo)
+      window.addEventListener('storage', checkDemo)
+      return () => {
+        window.removeEventListener('eva_demo_mode_changed', checkDemo)
+        window.removeEventListener('storage', checkDemo)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     getUserData()
@@ -289,7 +305,7 @@ const LayoutMenu = ({ children }: Props) => {
         </main>
       </div>
 
-      {isAuditing && (
+      {isAuditing && !isDemoActive && (
         <aside className={styles.auditPill} role="status" aria-live="polite">
           <div className={styles.auditInfo}>
             <div className={styles.auditBadge}>

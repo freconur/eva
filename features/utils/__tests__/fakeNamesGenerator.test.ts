@@ -55,6 +55,12 @@ describe('fakeNamesGenerator', () => {
       const doc = generateRealisticDocenteName('40112233');
       expect(doc).toMatch(/^Prof\./);
     });
+
+    it('genera un docente sin prefijo cuando includePrefix es false', () => {
+      const doc = generateRealisticDocenteName('40112233', undefined, false);
+      expect(doc).not.toMatch(/^Prof\./);
+      expect(doc.length).toBeGreaterThan(3);
+    });
   });
 
   describe('generateRealisticInstitucion', () => {
@@ -110,6 +116,49 @@ describe('fakeNamesGenerator', () => {
       expect(res).toHaveLength(2);
       expect(res[0].puntaje).toBe(18);
       expect(res[1].dni).not.toBe('74112233');
+    });
+
+    it('no genera nombres duplicados cuando varios estudiantes consecutivos tienen el mismo género', () => {
+      // Simulación del patrón del usuario con 5 mujeres y 5 varones consecutivos
+      const genders = ['1', '2', '1', '2', '2', '2', '2', '2', '1', '1'];
+      const students: UserEstudiante[] = genders.map((g, idx) => ({
+        ...realStudent,
+        id: `est-${idx}`,
+        dni: `7000000${idx}`,
+        genero: g,
+      }));
+
+      const anonymized = anonymizeEstudiantesList(students);
+      const uniqueNames = new Set(anonymized.map((s) => s.nombresApellidos));
+      expect(uniqueNames.size).toBe(students.length);
+
+      // Verificar que las mujeres consecutivas (posiciones 3 a 7) tienen nombres distintos
+      const femaleNames = new Set([
+        anonymized[3].nombresApellidos,
+        anonymized[4].nombresApellidos,
+        anonymized[5].nombresApellidos,
+        anonymized[6].nombresApellidos,
+        anonymized[7].nombresApellidos,
+      ]);
+      expect(femaleNames.size).toBe(5);
+
+      // Verificar que los varones consecutivos (posiciones 8 y 9) tienen nombres distintos
+      expect(anonymized[8].nombresApellidos).not.toBe(anonymized[9].nombresApellidos);
+    });
+
+    it('utiliza el pool local de 400 nombres con estudiantes únicos', () => {
+      const { MOCK_ESTUDIANTES, MOCK_ESTUDIANTES_M, MOCK_ESTUDIANTES_F } = require('../fakeNamesGenerator');
+      expect(MOCK_ESTUDIANTES).toHaveLength(400);
+      expect(MOCK_ESTUDIANTES_M).toHaveLength(200);
+      expect(MOCK_ESTUDIANTES_F).toHaveLength(200);
+
+      // Los primeros 50 estudiantes mapeados por índice son todos distintos
+      const sampleNames = new Set();
+      for (let i = 0; i < 50; i++) {
+        const student = generateRealisticStudentName('test', i);
+        sampleNames.add(student.nombresApellidos);
+      }
+      expect(sampleNames.size).toBe(50);
     });
   });
 });

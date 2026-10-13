@@ -84,6 +84,7 @@ import DirectorFiltrosBar, {
 } from '@/components/reportes/director/DirectorFiltrosBar';
 import tabsStyles from '@/components/reportes/director/DirectorTabsNav.module.css';
 import DemoModeFloatingBanner from '@/components/evaluaciones/DemoModeFloatingBanner';
+import DemoModeToggleSwitch from '@/components/evaluaciones/DemoModeToggleSwitch';
 import {
   generateRealisticInstitucion,
   generateRealisticDirectorName,
@@ -113,39 +114,61 @@ const Reporte = () => {
   const dispatch = useGlobalContextDispatch();
   const route = useRouter();
 
-  // --- MODO DEMOSTRACIÓN (DIRECTOR CON DATOS REALES Y PRIVACIDAD ENMASCARADA) ---
-  const [demoSession, setDemoSession] = useState<{
-    active: boolean;
-    dniDirector: string;
-    realDirector?: { nombres?: string; apellidos?: string; institucion?: string };
-  } | null>(null);
+  // --- MODO DEMOSTRACIÓN (ANONIMIZACIÓN LOCAL CON POOL DE 400 NOMBRES) ---
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      try {
-        const stored = sessionStorage.getItem('eva_demo_mode');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed?.active) {
-            setDemoSession(parsed);
-          }
-        }
-      } catch (e) {
-        console.error('Error leyendo eva_demo_mode de sessionStorage:', e);
+      const storedActive = sessionStorage.getItem('eva_demo_active') === 'true';
+      const storedLegacy = sessionStorage.getItem('eva_demo_mode');
+      const urlDemo = route.query.demo === 'true';
+      if (storedActive || urlDemo || (storedLegacy && JSON.parse(storedLegacy || '{}')?.active)) {
+        setIsDemoMode(true);
       }
     }
-  }, [route.query]);
+  }, [route.query.demo]);
 
-  const isDemoMode = useMemo(() => {
-    return route.query.demo === 'true' || Boolean(demoSession?.active);
-  }, [route.query.demo, demoSession]);
+  const handleToggleDemoMode = useCallback(() => {
+    setIsDemoMode((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        if (next) {
+          sessionStorage.setItem('eva_demo_active', 'true');
+        } else {
+          sessionStorage.removeItem('eva_demo_active');
+          sessionStorage.removeItem('eva_demo_mode');
+        }
+        window.dispatchEvent(new Event('eva_demo_mode_changed'));
+      }
+      return next;
+    });
+  }, []);
+
+  const handleExitDemo = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('eva_demo_active');
+      sessionStorage.removeItem('eva_demo_mode');
+      window.dispatchEvent(new Event('eva_demo_mode_changed'));
+    }
+    setIsDemoMode(false);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('eva_demo_active') === 'true') {
+      window.dispatchEvent(new Event('eva_demo_mode_changed'));
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('eva_demo_active');
+        sessionStorage.removeItem('eva_demo_mode');
+        window.dispatchEvent(new Event('eva_demo_mode_changed'));
+      }
+    };
+  }, []);
 
   const effectiveDirectorDni = useMemo(() => {
-    if (isDemoMode) {
-      return (route.query.id as string) || demoSession?.dniDirector || '';
-    }
-    return currentUserData?.dni || (route.query.id as string) || '';
-  }, [isDemoMode, route.query.id, demoSession?.dniDirector, currentUserData?.dni]);
+    return (route.query.id as string) || currentUserData?.dni || '';
+  }, [route.query.id, currentUserData?.dni]);
 
   const fakeDirectorInfo = useMemo(() => {
     if (!isDemoMode || !effectiveDirectorDni) return null;
@@ -154,23 +177,13 @@ const Reporte = () => {
 
   const fakeInstitucionName = useMemo(() => {
     if (!isDemoMode || !effectiveDirectorDni) return null;
-    return generateRealisticInstitucion(
-      effectiveDirectorDni,
-      demoSession?.realDirector?.institucion
-    );
-  }, [isDemoMode, effectiveDirectorDni, demoSession?.realDirector?.institucion]);
+    return generateRealisticInstitucion(effectiveDirectorDni, currentUserData?.institucion);
+  }, [isDemoMode, effectiveDirectorDni, currentUserData?.institucion]);
 
   const effectiveInstitucion = useMemo(() => {
     if (isDemoMode && fakeInstitucionName) return fakeInstitucionName;
     return currentUserData?.institucion || '';
   }, [isDemoMode, fakeInstitucionName, currentUserData?.institucion]);
-
-  const handleExitDemo = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('eva_demo_mode');
-    }
-    route.push('/admin/evaluaciones');
-  }, [route]);
 
   // Pestaña activa del Director
   const [activeTab, setActiveTab] = useState<DirectorTabKey>('grilla');
@@ -350,6 +363,12 @@ const Reporte = () => {
     generarPdfPreguntas: true,
   });
   const [isAuditing, setIsAuditing] = useState(false);
+  const canUseDemo = Boolean(
+    isAuditing ||
+    currentUserData?.rol === 4 ||
+    currentUserData?.perfil?.rol === 4 ||
+    isDemoMode
+  );
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -602,18 +621,144 @@ const Reporte = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUserData?.dni, currentUserData?.rol, isDemoMode, effectiveDirectorDni]);
 
-  const docentesMap = useMemo(() => {
+  // Normalizador de nombres de docentes para garantizar coherencia en todas las vistas
+  const normalizeTeacherKey = useCallback((name: string): string => {
+    return (name || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/^(prof\.|lic\.|mg\.|dr\.)\s*/i, '')
+      .replace(/[^a-z0-9]/g, ' ')
+      .trim()
+      .replace(/\s+/g, ' ');
+  }, []);
+
+  const { docentesMap, getFakeDocenteName } = useMemo(() => {
     const map = new Map<string, string>();
-    docentesDeDirectores?.forEach((docente) => {
-      if (docente.dni) {
-        const name = isDemoMode
-          ? generateRealisticDocenteName(docente.dni)
-          : `${docente.nombres} ${docente.apellidos}`;
-        map.set(String(docente.dni), name);
-      }
+
+    if (!isDemoMode) {
+      docentesDeDirectores?.forEach((d) => {
+        if (d.dni) {
+          const fullName = `${d.nombres || ''} ${d.apellidos || ''}`.trim();
+          map.set(String(d.dni), fullName);
+          const norm = normalizeTeacherKey(fullName);
+          if (norm) map.set(norm, fullName);
+        }
+      });
+      return {
+        docentesMap: map,
+        getFakeDocenteName: (key: string) => key || '',
+      };
+    }
+
+    type TeacherIdentity = {
+      dni?: string;
+      rawName?: string;
+      normName?: string;
+      secciones: Set<string>;
+    };
+
+    const teachersList: TeacherIdentity[] = [];
+    const dniIndexMap = new Map<string, number>();
+    const nameIndexMap = new Map<string, number>();
+
+    // 1. Docentes oficiales desde docentesDeDirectores
+    docentesDeDirectores?.forEach((d) => {
+      const dni = d.dni ? String(d.dni).trim() : '';
+      const rawName = `${d.nombres || ''} ${d.apellidos || ''}`.trim();
+      const norm = normalizeTeacherKey(rawName);
+
+      const entry: TeacherIdentity = {
+        dni: dni || undefined,
+        rawName: rawName || undefined,
+        normName: norm || undefined,
+        secciones: new Set<string>(),
+      };
+      const idx = teachersList.length;
+      teachersList.push(entry);
+      if (dni) dniIndexMap.set(dni, idx);
+      if (norm) nameIndexMap.set(norm, idx);
     });
-    return map;
-  }, [docentesDeDirectores, isDemoMode]);
+
+    // 2. Docentes asociados en la lista de estudiantes
+    if (Array.isArray(estudiantes)) {
+      estudiantes.forEach((est) => {
+        const dniDoc = est.dniDocente ? String(est.dniDocente).trim() : '';
+        const sec = est.seccion ? String(est.seccion).trim() : '';
+        if (dniDoc) {
+          let idx = dniIndexMap.get(dniDoc);
+          if (idx === undefined) {
+            idx = teachersList.length;
+            const entry: TeacherIdentity = {
+              dni: dniDoc,
+              secciones: new Set<string>(),
+            };
+            teachersList.push(entry);
+            dniIndexMap.set(dniDoc, idx);
+          }
+          if (sec) teachersList[idx].secciones.add(sec);
+        }
+      });
+    }
+
+    // 3. Docentes en el resumen promedioPorDocente
+    if (Array.isArray(promedioPorDocente)) {
+      promedioPorDocente.forEach((p) => {
+        const rawName = p.docenteNombre ? String(p.docenteNombre).trim() : '';
+        const norm = normalizeTeacherKey(rawName);
+        if (norm) {
+          let idx = nameIndexMap.get(norm);
+          if (idx === undefined && p.dniDocente) {
+            idx = dniIndexMap.get(String(p.dniDocente).trim());
+          }
+          if (idx === undefined) {
+            idx = teachersList.length;
+            const entry: TeacherIdentity = {
+              dni: p.dniDocente ? String(p.dniDocente).trim() : undefined,
+              rawName,
+              normName: norm,
+              secciones: new Set<string>(),
+            };
+            teachersList.push(entry);
+            nameIndexMap.set(norm, idx);
+            if (entry.dni) dniIndexMap.set(entry.dni, idx);
+          } else {
+            if (!teachersList[idx].rawName) teachersList[idx].rawName = rawName;
+            if (!teachersList[idx].normName) teachersList[idx].normName = norm;
+            nameIndexMap.set(norm, idx);
+          }
+          if (p.seccion) teachersList[idx].secciones.add(String(p.seccion).trim());
+        }
+      });
+    }
+
+    // 4. Asignar un docente falso determinista y único a cada docente real
+    teachersList.forEach((t, i) => {
+      const fakeName = generateRealisticDocenteName(t.dni || t.normName || i, i, false).toUpperCase();
+
+      if (t.dni) map.set(t.dni, fakeName);
+      if (t.normName) map.set(t.normName, fakeName);
+      if (t.rawName) {
+        map.set(normalizeTeacherKey(t.rawName), fakeName);
+        map.set(t.rawName.trim().toUpperCase(), fakeName);
+      }
+      t.secciones.forEach((sec) => {
+        map.set(`sec_${sec.toUpperCase()}`, fakeName);
+      });
+    });
+
+    const getFakeDocenteName = (key: string): string => {
+      if (!key) return '';
+      const str = String(key).trim();
+      if (map.has(str)) return map.get(str)!;
+      const norm = normalizeTeacherKey(str);
+      if (map.has(norm)) return map.get(norm)!;
+      if (map.has(`sec_${str.toUpperCase()}`)) return map.get(`sec_${str.toUpperCase()}`)!;
+      return generateRealisticDocenteName(str, undefined, false).toUpperCase();
+    };
+
+    return { docentesMap: map, getFakeDocenteName };
+  }, [docentesDeDirectores, estudiantes, promedioPorDocente, isDemoMode, normalizeTeacherKey]);
 
   // Secciones con datos en la evaluación
   const availableSections = useMemo(() => {
@@ -784,8 +929,18 @@ const Reporte = () => {
   // Reconstrucción en memoria de respuestas
   const estudiantesBase = useMemo(() => {
     if (!estudiantes || !preguntasRespuestas) return [];
-    return estudiantes.map((est, idx) => {
-      const baseEst = isDemoMode ? generateRealisticEstudiante(est, idx) : est;
+    let maleCount = 0;
+    let femaleCount = 0;
+    let otherCount = 0;
+
+    return estudiantes.map((est) => {
+      let assignedIndex = 0;
+      if (isDemoMode) {
+        const isFemale = est.genero === '2' || est.genero?.toUpperCase() === 'F';
+        const isMale = est.genero === '1' || est.genero?.toUpperCase() === 'M';
+        assignedIndex = isFemale ? femaleCount++ : isMale ? maleCount++ : otherCount++;
+      }
+      const baseEst = isDemoMode ? generateRealisticEstudiante(est, assignedIndex) : est;
 
       let respuestasReconstruidas: PreguntasRespuestas[] = [];
       if (Array.isArray(baseEst.respuestas)) {
@@ -835,7 +990,7 @@ const Reporte = () => {
 
   // Carga de estudiantes con guardias vinculados al ciclo de vida
   useEffect(() => {
-    const targetDni = isDemoMode ? effectiveDirectorDni : currentUserData?.dni;
+    const targetDni = currentUserData?.dni || (route.query.id as string);
     const currentFetchKey = `${route.query.idEvaluacion}-${monthSelected}-${yearSelected}-${evaluacion.id}-${targetDni}`;
     if (
       targetDni &&
@@ -846,20 +1001,11 @@ const Reporte = () => {
       if (lastFetchParamsRef.current === currentFetchKey) return;
       lastFetchParamsRef.current = currentFetchKey;
 
-      const userForFetch = isDemoMode
-        ? {
-            ...currentUserData,
-            dni: targetDni,
-            institucion: fakeInstitucionName || currentUserData?.institucion,
-            rol: 2,
-          }
-        : currentUserData;
-
       reporteDirectorEstudiantes(
         `${route.query.idEvaluacion}`,
         monthSelected,
         yearSelected,
-        userForFetch,
+        currentUserData,
         evaluacion
       )
         .then((res) => {
@@ -874,13 +1020,11 @@ const Reporte = () => {
     }
   }, [
     route.query.idEvaluacion,
+    route.query.id,
     currentUserData,
     yearSelected,
     monthSelected,
     evaluacion,
-    isDemoMode,
-    effectiveDirectorDni,
-    fakeInstitucionName,
     obtenerCoberturaDirector,
     reporteDirectorEstudiantes,
   ]);
@@ -1110,8 +1254,37 @@ const Reporte = () => {
 
   const effectivePendientes = useMemo(() => {
     if (!isDemoMode || !estudiantesDeEvaluacion) return estudiantesDeEvaluacion;
-    return estudiantesDeEvaluacion.map((est, i) => generateRealisticEstudiante(est, i));
-  }, [isDemoMode, estudiantesDeEvaluacion]);
+    const baseFemales = estudiantesBase.filter((e) => e.genero === '2' || e.genero?.toUpperCase() === 'F').length;
+    const baseMales = estudiantesBase.filter((e) => e.genero === '1' || e.genero?.toUpperCase() === 'M').length;
+    let femaleCount = baseFemales;
+    let maleCount = baseMales;
+    let otherCount = estudiantesBase.length;
+
+    return estudiantesDeEvaluacion.map((est) => {
+      const isFemale = est.genero === '2' || est.genero?.toUpperCase() === 'F';
+      const isMale = est.genero === '1' || est.genero?.toUpperCase() === 'M';
+      const assignedIndex = isFemale ? femaleCount++ : isMale ? maleCount++ : otherCount++;
+      return generateRealisticEstudiante(est, assignedIndex);
+    });
+  }, [isDemoMode, estudiantesDeEvaluacion, estudiantesBase]);
+
+  const effectivePromedioPorDocente = useMemo(() => {
+    if (!isDemoMode || !promedioPorDocente || promedioPorDocente.length === 0) {
+      return promedioPorDocente;
+    }
+    return promedioPorDocente.map((item, idx) => {
+      const fakeName = getFakeDocenteName(
+        item.docenteNombre || item.dniDocente || item.docente || item.seccion || idx
+      );
+
+      return {
+        ...item,
+        docente: fakeName,
+        docenteNombre: fakeName,
+        seccion: item.seccion === item.docenteNombre ? fakeName : item.seccion,
+      };
+    });
+  }, [isDemoMode, promedioPorDocente, getFakeDocenteName]);
 
   // Helper de renderizado: TAB 2 (Brechas de Aprendizaje)
   const renderBrechasContent = () => (
@@ -1149,7 +1322,7 @@ const Reporte = () => {
       estudiantes={estudiantesBase}
       availableSections={availableSections}
       docentesMap={docentesMap}
-      promedioPorDocente={promedioPorDocente}
+      promedioPorDocente={effectivePromedioPorDocente}
       evaluados={estudiantesBase.length}
       pendientes={effectivePendientes.length}
       listaPendientes={effectivePendientes}
@@ -1393,6 +1566,15 @@ const Reporte = () => {
                 onUploadBackgroundImage={bannerConfig.uploadBannerImage}
                 onRemoveBackgroundImage={bannerConfig.removeBannerImage}
                 isUploadingImage={bannerConfig.isUploadingImage}
+                customActions={
+                  canUseDemo ? (
+                    <DemoModeToggleSwitch
+                      isDemoMode={isDemoMode}
+                      onToggle={handleToggleDemoMode}
+                      variant="glass"
+                    />
+                  ) : undefined
+                }
               />
             )}
 
@@ -1424,6 +1606,15 @@ const Reporte = () => {
 
                 {/* Acciones en modo compacto: Conmutador de vista y Menú de Exportación */}
                 <div className="flex items-center gap-2.5 flex-wrap">
+                  {/* Conmutador de Modo Demo */}
+                  {canUseDemo && (
+                    <DemoModeToggleSwitch
+                      isDemoMode={isDemoMode}
+                      onToggle={handleToggleDemoMode}
+                      variant="light"
+                    />
+                  )}
+
                   {/* Conmutador de modo de diseño Pestañas / Cascada */}
                   <DirectorLayoutModeSwitch
                     mode={layoutMode}
