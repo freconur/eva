@@ -88,11 +88,11 @@ import styles from './Reporte.module.css';
 
 ChartJS.register(CategoryScale, LinearScale, Title, Tooltip, Legend);
 
-// Guardias persistentes fuera del componente para evitar re-montajes accidentales
-let globalLastFetchParams = '';
-let globalLastFetchTrendParams = '';
-
 const Reporte = () => {
+  // Guardias de ciclo de vida del componente para evitar fetches duplicados en el mismo montaje
+  const lastFetchParamsRef = useRef<string>('');
+  const lastFetchTrendParamsRef = useRef<string>('');
+
   const {
     currentUserData,
     reporteDirector,
@@ -378,12 +378,15 @@ const Reporte = () => {
     (params: Record<string, any>) => {
       if (!route.isReady) return;
       const newQuery = { ...route.query, ...params };
+      if (newQuery.page === 1 || newQuery.page === '1') {
+        delete newQuery.page;
+      }
       Object.keys(newQuery).forEach((key) => {
         if (newQuery[key] === '' || newQuery[key] === undefined || newQuery[key] === null) {
           delete newQuery[key];
         }
       });
-      route.push({ pathname: route.pathname, query: newQuery }, undefined, { shallow: true });
+      route.replace({ pathname: route.pathname, query: newQuery }, undefined, { shallow: true });
     },
     [route]
   );
@@ -400,23 +403,33 @@ const Reporte = () => {
       });
       if (route.query.year) setYearSelected(Number(route.query.year));
 
-      if (evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null) {
+      if (
+        evaluacion?.id &&
+        String(evaluacion.id) === String(route.query.idEvaluacion) &&
+        evaluacion?.mesDelExamen !== undefined &&
+        evaluacion?.mesDelExamen !== null
+      ) {
         setMonthSelected(Number(evaluacion.mesDelExamen));
       } else if (route.query.mes) {
         setMonthSelected(Number(route.query.mes));
       }
     }
-  }, [route.query, route.isReady, evaluacion?.mesDelExamen]);
+  }, [route.query, route.isReady, evaluacion]);
 
   useEffect(() => {
-    if (evaluacion?.mesDelExamen !== undefined && evaluacion?.mesDelExamen !== null) {
+    if (
+      evaluacion?.id &&
+      String(evaluacion.id) === String(route.query.idEvaluacion) &&
+      evaluacion?.mesDelExamen !== undefined &&
+      evaluacion?.mesDelExamen !== null
+    ) {
       const examMonth = Number(evaluacion.mesDelExamen);
       setMonthSelected(examMonth);
       if (route.isReady && Number(route.query.mes) !== examMonth) {
         updateQuery({ mes: examMonth });
       }
     }
-  }, [evaluacion?.mesDelExamen, route.isReady, updateQuery]);
+  }, [evaluacion, route.isReady, route.query.idEvaluacion, route.query.mes, updateQuery]);
 
   const handleSelectEvaluacion = useCallback(
     (evalId: string, mesDelExamen?: number, newGrado?: number | string) => {
@@ -495,6 +508,7 @@ const Reporte = () => {
     reporteDirectorEstudiantes,
     getGrados,
     estudiantes,
+    setEstudiantes,
     getAllEvaluacionesDeEstudiantesPorMes,
     datosPorMes,
     promedioGlobal,
@@ -539,13 +553,19 @@ const Reporte = () => {
   // Auto-seleccionar grado de la evaluación para Directores
   useEffect(() => {
     if (!route.isReady) return;
-    const gradoEvaluacion = evaluacion?.grado;
-    if (currentUserData?.rol === 2 && gradoEvaluacion && !filtros.grado) {
-      const gradoId = String(gradoEvaluacion);
-      setFiltros((prev: any) => ({ ...prev, grado: gradoId }));
-      updateQuery({ grado: gradoId });
+    if (
+      currentUserData?.rol === 2 &&
+      evaluacion?.id &&
+      String(evaluacion.id) === String(route.query.idEvaluacion) &&
+      evaluacion?.grado
+    ) {
+      const gradoId = String(evaluacion.grado);
+      if (filtros.grado !== gradoId || route.query.grado !== gradoId) {
+        setFiltros((prev: any) => ({ ...prev, grado: gradoId }));
+        updateQuery({ grado: gradoId });
+      }
     }
-  }, [currentUserData?.rol, evaluacion, filtros.grado, updateQuery, route.isReady]);
+  }, [currentUserData?.rol, evaluacion, route.query.idEvaluacion, route.query.grado, filtros.grado, updateQuery, route.isReady]);
 
   const nivelesLeyenda: any[] =
     (evaluacion as any)?.niveles?.length > 0
@@ -666,10 +686,26 @@ const Reporte = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    getPreguntasRespuestas(`${route.query.idEvaluacion}`);
-    getEvaluacion(`${route.query.idEvaluacion}`);
+    if (!route.query.idEvaluacion) return;
+    const evalId = String(route.query.idEvaluacion);
+    const unsubPR = getPreguntasRespuestas(evalId);
+    const unsubEval = getEvaluacion(evalId);
+
+    // Reset guards and student list when mounting or changing evaluation
+    lastFetchParamsRef.current = '';
+    lastFetchTrendParamsRef.current = '';
+    setEstudiantes([]);
+
+    return () => {
+      if (typeof unsubPR === 'function') unsubPR();
+      if (typeof unsubEval === 'function') unsubEval();
+      dispatch({ type: AppAction.EVALUACION, payload: {} as any });
+      dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: [] });
+      dispatch({ type: AppAction.DATA_FILTRADA_DIRECTOR_TABLA, payload: [] });
+      dispatch({ type: AppAction.ESTUDIANTES_DE_EVALUACION, payload: [] });
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUserData.dni, route.query.idEvaluacion]);
+  }, [currentUserData?.dni, route.query.idEvaluacion]);
 
   // Reconstrucción en memoria de respuestas
   const estudiantesBase = useMemo(() => {
@@ -721,12 +757,17 @@ const Reporte = () => {
     baremo,
   });
 
-  // Carga de estudiantes con guardias
+  // Carga de estudiantes con guardias vinculados al ciclo de vida
   useEffect(() => {
     const currentFetchKey = `${route.query.idEvaluacion}-${monthSelected}-${yearSelected}-${evaluacion.id}`;
-    if (currentUserData.dni && evaluacion.id && monthSelected !== undefined) {
-      if (globalLastFetchParams === currentFetchKey) return;
-      globalLastFetchParams = currentFetchKey;
+    if (
+      currentUserData?.dni &&
+      evaluacion?.id &&
+      String(evaluacion.id) === String(route.query.idEvaluacion) &&
+      monthSelected !== undefined
+    ) {
+      if (lastFetchParamsRef.current === currentFetchKey) return;
+      lastFetchParamsRef.current = currentFetchKey;
       reporteDirectorEstudiantes(
         `${route.query.idEvaluacion}`,
         monthSelected,
@@ -761,12 +802,15 @@ const Reporte = () => {
 
   useEffect(() => {
     const trendKey = `${evaluacion.id}-${yearSelected}`;
-    if (evaluacion.id) {
-      if (globalLastFetchTrendParams === trendKey) return;
-      globalLastFetchTrendParams = trendKey;
+    if (
+      evaluacion?.id &&
+      String(evaluacion.id) === String(route.query.idEvaluacion)
+    ) {
+      if (lastFetchTrendParamsRef.current === trendKey) return;
+      lastFetchTrendParamsRef.current = trendKey;
       getAllEvaluacionesDeEstudiantesPorMes(evaluacion, yearSelected);
     }
-  }, [evaluacion, yearSelected, getAllEvaluacionesDeEstudiantesPorMes]);
+  }, [evaluacion, yearSelected, route.query.idEvaluacion, getAllEvaluacionesDeEstudiantesPorMes]);
 
   const handleChangeMonth = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;

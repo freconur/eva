@@ -38,12 +38,14 @@ jest.mock('@/components/layouts/PrivateRoutesDocentes', () => {
 });
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('next/router', () => ({
   useRouter: () => ({
     query: { idExamen: 'eval-doc-1', mes: '3', year: '2026' },
     pathname: '/docentes/evaluaciones/tercerNivel/pruebas/prueba/reporte',
     isReady: true,
     push: mockPush,
+    replace: mockReplace,
   }),
 }));
 

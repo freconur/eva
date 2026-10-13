@@ -211,6 +211,9 @@ const Reportes = () => {
     if (!route.isReady) return; // No actualizar si el router no está listo
 
     const newQuery = { ...route.query, ...params };
+    if (newQuery.page === 1 || newQuery.page === '1') {
+      delete newQuery.page;
+    }
     // Eliminar parámetros vacíos o nulos para mantener la URL limpia
     Object.keys(newQuery).forEach(key => {
       if (newQuery[key] === '' || newQuery[key] === undefined || newQuery[key] === null) {
@@ -219,7 +222,7 @@ const Reportes = () => {
     });
 
     // Solo navegar si hay un cambio real para evitar bucles o refrescos innecesarios
-    route.push({ pathname: route.pathname, query: newQuery }, undefined, { shallow: true });
+    route.replace({ pathname: route.pathname, query: newQuery }, undefined, { shallow: true });
   };
 
   // Crear una versión de estudiantes sincronizada con la definición global o reconstruida a partir del mapa de respuestas

@@ -282,13 +282,16 @@ const Reportes = () => {
     if (!route.isReady) return;
 
     const newQuery = { ...route.query, ...params };
+    if (newQuery.page === 1 || newQuery.page === '1') {
+      delete newQuery.page;
+    }
     Object.keys(newQuery).forEach(key => {
       if (newQuery[key] === '' || newQuery[key] === undefined || newQuery[key] === null) {
         delete newQuery[key];
       }
     });
 
-    route.push({ pathname: route.pathname, query: newQuery }, undefined, { shallow: true });
+    route.replace({ pathname: route.pathname, query: newQuery }, undefined, { shallow: true });
   };
 
   // Crear una versión de estudiantes sincronizada con la definición global o reconstruida a partir del mapa de respuestas

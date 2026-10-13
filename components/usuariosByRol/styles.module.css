@@ -374,6 +374,18 @@
   font-weight: 600;
 }
 
+.rolBadge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  background-color: #eef2ff;
+  color: #4f46e5;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid #e0e7ff;
+  white-space: nowrap;
+}
+
 .gestionBadge {
   display: inline-block;
   padding: 0.25rem 0.625rem;

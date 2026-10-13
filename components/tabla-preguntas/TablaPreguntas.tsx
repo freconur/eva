@@ -100,23 +100,22 @@ const TablaPreguntas: React.FC<TablaPreguntasProps> = ({
     }
   };
 
-  // Referencia para evitar que el efecto de reset se dispare al montar el componente
-  const isMounted = useRef(false);
+  // Referencia para rastrear cambios reales en el límite de ítems por página
+  const prevLimitRef = useRef(currentItemsPerPage);
 
-  // Resetear a la primera página solo si cambia el límite (después del primer render)
+  // Resetear a la primera página solo si el límite realmente cambió y no estamos ya en la página 1
   useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
-      return;
+    if (prevLimitRef.current !== currentItemsPerPage) {
+      prevLimitRef.current = currentItemsPerPage;
+      if (currentPage !== 1) {
+        if (onPageChange) {
+          onPageChange(1);
+        } else {
+          setInternalPage(1);
+        }
+      }
     }
-
-    if (onPageChange) {
-      onPageChange(1);
-    } else {
-      setInternalPage(1);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentItemsPerPage]);
+  }, [currentItemsPerPage, currentPage, onPageChange]);
 
   // Función para validar respuestas usando la definición global como fuente de verdad
   const handleValidateRespuesta = (data: PreguntasRespuestas) => {

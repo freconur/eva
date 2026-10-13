@@ -6,7 +6,7 @@ import { RiDeleteBinLine, RiSearchLine, RiUserAddLine } from 'react-icons/ri'
 import { MdEditSquare } from 'react-icons/md'
 import DeleteUsuario from '@/modals/deleteUsuario'
 import DocenteModal from '@/components/modals/DocenteModal'
-import { getGradoTexto, getSeccionTexto, regiones, area, getCaracteristicasDirectivoTexto } from '@/fuctions/regiones'
+import { getGradoTexto, getSeccionTexto, regiones, area, getCaracteristicasDirectivoTexto, rolTexto } from '@/fuctions/regiones'
 
 interface Props {
     usuariosByRol: User[]
@@ -48,6 +48,29 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true, onReclamarDocente }: 
         return found ? found.name : '-'
     }
 
+    const getRolText = (user: User) => {
+        if (user.rolDirectivo === 1) return 'Director'
+        if (user.rolDirectivo === 2) return 'Sub-director'
+        if (user.perfil?.nombre) {
+            return user.perfil.nombre.charAt(0).toUpperCase() + user.perfil.nombre.slice(1).toLowerCase()
+        }
+        const rolNum = user.perfil?.rol ?? user.rol
+        if (rolNum !== undefined && rolNum !== null) {
+            const txt = rolTexto(Number(rolNum))
+            if (txt) return txt
+            if (Number(rolNum) === 3) return 'Docente'
+            if (Number(rolNum) === 2) return 'Director'
+            if (Number(rolNum) === 1) return 'Especialista UGEL'
+            if (Number(rolNum) === 4) return 'Especialista DREP'
+            if (Number(rolNum) === 5) return 'Especialista Regional'
+            return `Rol ${rolNum}`
+        }
+        if (user.cargo) {
+            return user.cargo
+        }
+        return 'Docente'
+    }
+
     const handleEdit = (user: User) => {
         setDataDocente(user)
         setShowModalEdit(true)
@@ -86,6 +109,7 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true, onReclamarDocente }: 
                         <tr>
                             <th>Docente</th>
                             <th>DNI</th>
+                            <th>Rol</th>
                             <th>Ugel</th>
                             <th>Provincia</th>
                             <th>Nivel</th>
@@ -115,6 +139,11 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true, onReclamarDocente }: 
                                     <td>
                                         <span className={styles.dniBadge}>
                                             {user.dni}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span className={styles.rolBadge}>
+                                            {getRolText(user)}
                                         </span>
                                     </td>
                                     <td>
@@ -217,7 +246,7 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true, onReclamarDocente }: 
                             )})
                         ) : (
                             <tr>
-                                <td colSpan={12} className={styles.emptyState}>
+                                <td colSpan={13} className={styles.emptyState}>
                                     No se encontraron docentes.
                                 </td>
                             </tr>
@@ -257,6 +286,10 @@ const UsuariosByRol = ({ usuariosByRol, showSearch = true, onReclamarDocente }: 
                             </div>
 
                              <div className={styles.cardBody}>
+                                <div className={styles.cardDataRow}>
+                                    <span className={styles.cardLabel}>Rol:</span>
+                                    <span className={styles.rolBadge}>{getRolText(user)}</span>
+                                </div>
                                 <div className={styles.cardDataRow}>
                                     <span className={styles.cardLabel}>Celular:</span>
                                     <span className={styles.cardValue}>{user.celular || 'Sin celular'}</span>
