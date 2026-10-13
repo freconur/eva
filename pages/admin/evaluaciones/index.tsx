@@ -11,6 +11,7 @@ import PuntuacionYNivel from '@/modals/PuntuacionYNivel/puntuacionYNivel'
 import DuplicateEvaluacionModal from '@/modals/duplicarEvaluacion'
 import BulkDuplicateModal from '@/modals/duplicarEvaluacion/BulkDuplicateModal'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 
 import React, { useEffect, useState, useMemo } from 'react'
 import { MdAdd, MdContentCopy, MdAutoAwesome } from 'react-icons/md'
@@ -36,8 +37,13 @@ import EvaluacionesSidebarView from '@/components/evaluaciones/EvaluacionesSideb
 import EvaluacionesSpotlightTour from '@/components/evaluaciones/EvaluacionesSpotlightTour'
 import EvaluacionesHeroBanner from '@/components/evaluaciones/EvaluacionesHeroBanner'
 import useEvaluacionesBannerConfig from '@/components/evaluaciones/useEvaluacionesBannerConfig'
+import ModalDemoSelector, { DirectorCandidato } from '@/components/evaluaciones/ModalDemoSelector'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/firebase/firebase.config'
+import { isEvaluacionEnMatriz } from '@/components/reportes/director/useEvaluacionesMatriz'
 
 const Evaluaciones = () => {
+  const router = useRouter()
   const { getEvaluaciones, getEvaluacion, updateEvaluacion, getGrades, getCategories, totalPreguntas, validacionSiEvaluacionTienePreguntasYPuntuacion } = useAgregarEvaluaciones()
   const { evaluaciones, currentUserData, loaderPages, evaluacion, grados } = useGlobalContext()
 
@@ -227,6 +233,67 @@ const Evaluaciones = () => {
   const handleCloseDuplicateModal = () => {
     setShowDuplicateModal(false)
     setSelectedEvaForDuplicate(null)
+  }
+
+  // --- Matriz de Resultados config for Demo and Matrix validations ---
+  const [matrizConfigGrados, setMatrizConfigGrados] = useState<Record<string, any>>({})
+
+  useEffect(() => {
+    let isMounted = true
+    const fetchMatrizConfig = async () => {
+      try {
+        const cfgRef = doc(db, 'configuraciones', 'matriz_resultados')
+        const snap = await getDoc(cfgRef)
+        if (snap.exists() && isMounted) {
+          const data = snap.data()
+          if (data?.grados) {
+            setMatrizConfigGrados(data.grados)
+          }
+        }
+      } catch (err) {
+        console.error('Error al cargar configuraciones/matriz_resultados:', err)
+      }
+    }
+    fetchMatrizConfig()
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  // --- Demo Mode state and handlers ---
+  const [showDemoModal, setShowDemoModal] = useState<boolean>(false)
+  const [selectedEvaForDemo, setSelectedEvaForDemo] = useState<any>(null)
+
+  const handleOpenDemoModal = (eva: any) => {
+    setSelectedEvaForDemo(eva)
+    setShowDemoModal(true)
+  }
+
+  const handleCloseDemoModal = () => {
+    setShowDemoModal(false)
+    setSelectedEvaForDemo(null)
+  }
+
+  const handleConfirmDemo = (director: DirectorCandidato) => {
+    if (typeof window !== 'undefined' && selectedEvaForDemo) {
+      const demoPayload = {
+        active: true,
+        dniDirector: director.dniDirector,
+        idEvaluacion: selectedEvaForDemo.id,
+        nombreEvaluacion: selectedEvaForDemo.nombre,
+        totalEstudiantes: director.totalEstudiantes,
+        realDirector: {
+          nombres: director.nombres,
+          apellidos: director.apellidos,
+          institucion: director.institucion,
+        },
+      }
+      sessionStorage.setItem('eva_demo_mode', JSON.stringify(demoPayload))
+      toast.info(`Iniciando demostración institucional con datos de ${director.institucion || director.dniDirector}...`)
+      router.push(
+        `/directores/evaluaciones/evaluacion/reporte?id=${director.dniDirector}&idEvaluacion=${selectedEvaForDemo.id}&demo=true`
+      )
+    }
   }
 
   const handleActivateEvaluacion = async () => {
@@ -437,6 +504,15 @@ const Evaluaciones = () => {
           evaluaciones={selectedEvaluacionesList}
           grados={grados}
           onCompleted={handleBulkDuplicated}
+        />
+      )}
+      {showDemoModal && selectedEvaForDemo && (
+        <ModalDemoSelector
+          showModal={showDemoModal}
+          handleClose={handleCloseDemoModal}
+          evaluacion={selectedEvaForDemo}
+          matrizConfigGrados={matrizConfigGrados}
+          onConfirmDemo={handleConfirmDemo}
         />
       )}
       {/* Tour Interactivo Guiado Spotlight (Señala los botones reales en pantalla) */}
@@ -674,6 +750,7 @@ const Evaluaciones = () => {
                             orderedEvaluaciones.map((eva, index) => {
                               const puedeAcceder = tieneAccesoAEvaluacion(eva)
                               const gradoObj = grados.find(g => g.grado === eva.grado)
+                              const isEnMatriz = isEvaluacionEnMatriz(eva.id, matrizConfigGrados)
 
                               return (
                                 <SortableRow
@@ -703,6 +780,8 @@ const Evaluaciones = () => {
                                   selectedGrado={selectedGrado}
                                   handleOpenPuntuacionModal={handleOpenPuntuacionModal}
                                   handleOpenDuplicateModal={handleOpenDuplicateModal}
+                                  handleOpenDemoModal={handleOpenDemoModal}
+                                  isEnMatriz={isEnMatriz}
                                   isSelected={selectedEvaIds.includes(eva.id)}
                                   onToggleSelect={handleToggleSelect}
                                   searchQuery={searchQuery}
@@ -791,6 +870,8 @@ const Evaluaciones = () => {
                 visibleColumns={visibleColumns}
                 handleOpenPuntuacionModal={handleOpenPuntuacionModal}
                 handleOpenDuplicateModal={handleOpenDuplicateModal}
+                handleOpenDemoModal={handleOpenDemoModal}
+                matrizConfigGrados={matrizConfigGrados}
                 selectedEvaIds={selectedEvaIds}
                 setSelectedEvaIds={setSelectedEvaIds}
                 handleToggleSelect={handleToggleSelect}

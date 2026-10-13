@@ -14,12 +14,14 @@ import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import SortableRow from './SortableRow'
 import { getNivelGrado } from '@/features/hooks/useEvaluacionesFilters'
+import { isEvaluacionEnMatriz } from '@/components/reportes/director/useEvaluacionesMatriz'
 import styles from './evaluacionesSidebar.module.css'
 import tableStyles from '../../pages/admin/evaluaciones/evaluaciones.module.css'
 
 interface EvaluacionesSidebarViewProps {
   evaluaciones: any[]
   orderedEvaluaciones: any[]
+  matrizConfigGrados?: Record<string, any>
   selectedYear: string
   currentYear: string
   selectedGrado: string
@@ -53,6 +55,7 @@ interface EvaluacionesSidebarViewProps {
   visibleColumns: Record<string, boolean>
   handleOpenPuntuacionModal: (eva: any) => void
   handleOpenDuplicateModal: (eva: any) => void
+  handleOpenDemoModal?: (eva: any) => void
   selectedEvaIds: string[]
   setSelectedEvaIds: React.Dispatch<React.SetStateAction<string[]>>
   handleToggleSelect: (id: string) => void
@@ -81,6 +84,7 @@ const getNivelLabel = (nivelId: number | string): string => {
 const EvaluacionesSidebarView: React.FC<EvaluacionesSidebarViewProps> = ({
   evaluaciones,
   orderedEvaluaciones,
+  matrizConfigGrados,
   selectedYear,
   currentYear,
   selectedGrado,
@@ -114,6 +118,7 @@ const EvaluacionesSidebarView: React.FC<EvaluacionesSidebarViewProps> = ({
   visibleColumns,
   handleOpenPuntuacionModal,
   handleOpenDuplicateModal,
+  handleOpenDemoModal,
   selectedEvaIds,
   setSelectedEvaIds,
   handleToggleSelect,
@@ -527,6 +532,7 @@ const EvaluacionesSidebarView: React.FC<EvaluacionesSidebarViewProps> = ({
                     {displayedEvaluaciones.map(eva => {
                       const puedeAcceder = tieneAccesoAEvaluacion(eva)
                       const gradoObj = grados.find(g => g.grado === eva.grado)
+                      const isEnMatriz = isEvaluacionEnMatriz(eva.id, matrizConfigGrados)
 
                       return (
                         <SortableRow
@@ -556,6 +562,8 @@ const EvaluacionesSidebarView: React.FC<EvaluacionesSidebarViewProps> = ({
                           selectedGrado={selectedGrado}
                           handleOpenPuntuacionModal={handleOpenPuntuacionModal}
                           handleOpenDuplicateModal={handleOpenDuplicateModal}
+                          handleOpenDemoModal={handleOpenDemoModal}
+                          isEnMatriz={isEnMatriz}
                           isSelected={selectedEvaIds.includes(eva.id)}
                           onToggleSelect={handleToggleSelect}
                           searchQuery={activeSearchQuery}

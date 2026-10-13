@@ -33,7 +33,7 @@ const PrivateRouteDirectores = ({ children }: Props) => {
       const rolRaw = currentUserData.perfil?.rol !== undefined ? currentUserData.perfil.rol : currentUserData.rol;
       if (rolRaw !== undefined) {
         const rol = Number(rolRaw);
-        if (rol !== 2 && rol !== 4 && rol !== 0) {
+        if (rol !== 2 && rol !== 4 && rol !== 5 && rol !== 0) {
           router.push('/login');
         }
       } else {

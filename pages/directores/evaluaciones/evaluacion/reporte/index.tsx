@@ -83,6 +83,13 @@ import DirectorFiltrosBar, {
   FiltrosState,
 } from '@/components/reportes/director/DirectorFiltrosBar';
 import tabsStyles from '@/components/reportes/director/DirectorTabsNav.module.css';
+import DemoModeFloatingBanner from '@/components/evaluaciones/DemoModeFloatingBanner';
+import {
+  generateRealisticInstitucion,
+  generateRealisticDirectorName,
+  generateRealisticDocenteName,
+  generateRealisticEstudiante,
+} from '@/features/utils/fakeNamesGenerator';
 
 import styles from './Reporte.module.css';
 
@@ -105,6 +112,65 @@ const Reporte = () => {
 
   const dispatch = useGlobalContextDispatch();
   const route = useRouter();
+
+  // --- MODO DEMOSTRACIÓN (DIRECTOR CON DATOS REALES Y PRIVACIDAD ENMASCARADA) ---
+  const [demoSession, setDemoSession] = useState<{
+    active: boolean;
+    dniDirector: string;
+    realDirector?: { nombres?: string; apellidos?: string; institucion?: string };
+  } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('eva_demo_mode');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.active) {
+            setDemoSession(parsed);
+          }
+        }
+      } catch (e) {
+        console.error('Error leyendo eva_demo_mode de sessionStorage:', e);
+      }
+    }
+  }, [route.query]);
+
+  const isDemoMode = useMemo(() => {
+    return route.query.demo === 'true' || Boolean(demoSession?.active);
+  }, [route.query.demo, demoSession]);
+
+  const effectiveDirectorDni = useMemo(() => {
+    if (isDemoMode) {
+      return (route.query.id as string) || demoSession?.dniDirector || '';
+    }
+    return currentUserData?.dni || (route.query.id as string) || '';
+  }, [isDemoMode, route.query.id, demoSession?.dniDirector, currentUserData?.dni]);
+
+  const fakeDirectorInfo = useMemo(() => {
+    if (!isDemoMode || !effectiveDirectorDni) return null;
+    return generateRealisticDirectorName(effectiveDirectorDni);
+  }, [isDemoMode, effectiveDirectorDni]);
+
+  const fakeInstitucionName = useMemo(() => {
+    if (!isDemoMode || !effectiveDirectorDni) return null;
+    return generateRealisticInstitucion(
+      effectiveDirectorDni,
+      demoSession?.realDirector?.institucion
+    );
+  }, [isDemoMode, effectiveDirectorDni, demoSession?.realDirector?.institucion]);
+
+  const effectiveInstitucion = useMemo(() => {
+    if (isDemoMode && fakeInstitucionName) return fakeInstitucionName;
+    return currentUserData?.institucion || '';
+  }, [isDemoMode, fakeInstitucionName, currentUserData?.institucion]);
+
+  const handleExitDemo = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('eva_demo_mode');
+    }
+    route.push('/admin/evaluaciones');
+  }, [route]);
 
   // Pestaña activa del Director
   const [activeTab, setActiveTab] = useState<DirectorTabKey>('grilla');
@@ -525,21 +591,29 @@ const Reporte = () => {
 
   // Docentes mapeados por DNI
   useEffect(() => {
-    if (currentUserData?.dni && currentUserData?.rol === 2) {
-      getDocentesDeDirectores(currentUserData.dni);
+    const targetDirectorDni = isDemoMode
+      ? effectiveDirectorDni
+      : currentUserData?.rol === 2
+      ? currentUserData?.dni
+      : '';
+    if (targetDirectorDni) {
+      getDocentesDeDirectores(targetDirectorDni);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUserData?.dni, currentUserData?.rol]);
+  }, [currentUserData?.dni, currentUserData?.rol, isDemoMode, effectiveDirectorDni]);
 
   const docentesMap = useMemo(() => {
     const map = new Map<string, string>();
     docentesDeDirectores?.forEach((docente) => {
       if (docente.dni) {
-        map.set(String(docente.dni), `${docente.nombres} ${docente.apellidos}`);
+        const name = isDemoMode
+          ? generateRealisticDocenteName(docente.dni)
+          : `${docente.nombres} ${docente.apellidos}`;
+        map.set(String(docente.dni), name);
       }
     });
     return map;
-  }, [docentesDeDirectores]);
+  }, [docentesDeDirectores, isDemoMode]);
 
   // Secciones con datos en la evaluación
   const availableSections = useMemo(() => {
@@ -710,18 +784,20 @@ const Reporte = () => {
   // Reconstrucción en memoria de respuestas
   const estudiantesBase = useMemo(() => {
     if (!estudiantes || !preguntasRespuestas) return [];
-    return estudiantes.map((est) => {
+    return estudiantes.map((est, idx) => {
+      const baseEst = isDemoMode ? generateRealisticEstudiante(est, idx) : est;
+
       let respuestasReconstruidas: PreguntasRespuestas[] = [];
-      if (Array.isArray(est.respuestas)) {
-        respuestasReconstruidas = est.respuestas.map((r) => {
+      if (Array.isArray(baseEst.respuestas)) {
+        respuestasReconstruidas = baseEst.respuestas.map((r) => {
           const globalP = preguntasRespuestas.find(
             (p) => (r.id && p.id === r.id) || (r.order !== undefined && p.order === r.order)
           );
           return { ...r, respuesta: globalP?.respuesta || r.respuesta };
         });
-      } else if (est.respuestas && typeof est.respuestas === 'object') {
+      } else if (baseEst.respuestas && typeof baseEst.respuestas === 'object') {
         respuestasReconstruidas = preguntasRespuestas.map((p) => {
-          const alternativaSeleccionada = (est.respuestas as any)[p.id || ''];
+          const alternativaSeleccionada = (baseEst.respuestas as any)[p.id || ''];
           const alternativasReconstruidas =
             p.alternativas?.map((alt) => ({
               ...alt,
@@ -733,9 +809,9 @@ const Reporte = () => {
           return { ...p, alternativas: alternativasReconstruidas };
         });
       }
-      return { ...est, respuestas: respuestasReconstruidas } as UserEstudiante;
+      return { ...baseEst, respuestas: respuestasReconstruidas } as UserEstudiante;
     });
-  }, [estudiantes, preguntasRespuestas]);
+  }, [estudiantes, preguntasRespuestas, isDemoMode]);
 
   const estudiantesFiltrados = useMemo(() => {
     return filtrosParaReporteDirector(estudiantesBase, filtros);
@@ -759,20 +835,31 @@ const Reporte = () => {
 
   // Carga de estudiantes con guardias vinculados al ciclo de vida
   useEffect(() => {
-    const currentFetchKey = `${route.query.idEvaluacion}-${monthSelected}-${yearSelected}-${evaluacion.id}`;
+    const targetDni = isDemoMode ? effectiveDirectorDni : currentUserData?.dni;
+    const currentFetchKey = `${route.query.idEvaluacion}-${monthSelected}-${yearSelected}-${evaluacion.id}-${targetDni}`;
     if (
-      currentUserData?.dni &&
+      targetDni &&
       evaluacion?.id &&
       String(evaluacion.id) === String(route.query.idEvaluacion) &&
       monthSelected !== undefined
     ) {
       if (lastFetchParamsRef.current === currentFetchKey) return;
       lastFetchParamsRef.current = currentFetchKey;
+
+      const userForFetch = isDemoMode
+        ? {
+            ...currentUserData,
+            dni: targetDni,
+            institucion: fakeInstitucionName || currentUserData?.institucion,
+            rol: 2,
+          }
+        : currentUserData;
+
       reporteDirectorEstudiantes(
         `${route.query.idEvaluacion}`,
         monthSelected,
         yearSelected,
-        currentUserData,
+        userForFetch,
         evaluacion
       )
         .then((res) => {
@@ -791,6 +878,9 @@ const Reporte = () => {
     yearSelected,
     monthSelected,
     evaluacion,
+    isDemoMode,
+    effectiveDirectorDni,
+    fakeInstitucionName,
     obtenerCoberturaDirector,
     reporteDirectorEstudiantes,
   ]);
@@ -865,8 +955,9 @@ const Reporte = () => {
         preguntasRespuestas,
         evaluacion,
         monthSelected,
-        nombreDocente:
-          `${currentUserData.nombres || ''} ${currentUserData.apellidos || ''}`.trim() || 'Director',
+        nombreDocente: isDemoMode
+          ? fakeDirectorInfo?.fullName || 'Director'
+          : `${currentUserData.nombres || ''} ${currentUserData.apellidos || ''}`.trim() || 'Director',
         tipoUsuario: 'Director',
       });
     } catch (error) {
@@ -1017,6 +1108,11 @@ const Reporte = () => {
     </>
   );
 
+  const effectivePendientes = useMemo(() => {
+    if (!isDemoMode || !estudiantesDeEvaluacion) return estudiantesDeEvaluacion;
+    return estudiantesDeEvaluacion.map((est, i) => generateRealisticEstudiante(est, i));
+  }, [isDemoMode, estudiantesDeEvaluacion]);
+
   // Helper de renderizado: TAB 2 (Brechas de Aprendizaje)
   const renderBrechasContent = () => (
     <DirectorBrechasTab
@@ -1029,7 +1125,7 @@ const Reporte = () => {
       isLoadingData={isLoading || loadingMonth}
       availableSections={availableSections}
       docentesMap={docentesMap}
-      dniDirector={currentUserData?.dni}
+      dniDirector={effectiveDirectorDni}
       yearSelected={yearSelected}
       baremo={baremo}
       onOpenQuestionDetail={(order, coords) =>
@@ -1050,17 +1146,17 @@ const Reporte = () => {
       promedioGlobal={promedioGlobal}
       monthSelected={monthSelected}
       yearSelected={yearSelected}
-      estudiantes={estudiantes}
+      estudiantes={estudiantesBase}
       availableSections={availableSections}
       docentesMap={docentesMap}
       promedioPorDocente={promedioPorDocente}
-      evaluados={estudiantes.length}
-      pendientes={estudiantesDeEvaluacion.length}
-      listaPendientes={estudiantesDeEvaluacion}
+      evaluados={estudiantesBase.length}
+      pendientes={effectivePendientes.length}
+      listaPendientes={effectivePendientes}
       estudiantesFiltrados={estudiantesFiltrados}
       evaluacionesDb={evaluacionesDb}
       loadingEvaluaciones={loadingEvaluaciones}
-      dniDirector={currentUserData.dni}
+      dniDirector={effectiveDirectorDni}
       routeEvaluacionId={route.query.idEvaluacion as string}
       initialGrado={filtros.grado || evaluacion?.grado}
       initialSeccion={filtros.seccion}
@@ -1077,7 +1173,7 @@ const Reporte = () => {
       evaluacion={evaluacion}
       evaluacionesDb={evaluacionesDb}
       loadingEvaluaciones={loadingEvaluaciones}
-      dniDirector={currentUserData.dni}
+      dniDirector={effectiveDirectorDni}
       routeEvaluacionId={route.query.idEvaluacion as string}
       monthSelected={monthSelected}
       yearSelected={yearSelected}
@@ -1254,7 +1350,15 @@ const Reporte = () => {
       ) : (
         <div className={styles.mainContainer}>
           <div className={styles.content}>
-            {/* Si está activo el modo Ejecutivo, se muestra el Banner Hero de Alto Impacto */}
+            {/* Aviso de Modo Demostración Integrado */}
+            {isDemoMode && fakeDirectorInfo && (
+              <DemoModeFloatingBanner
+                directorName={fakeDirectorInfo.fullName}
+                institucionName={effectiveInstitucion}
+                onExitDemo={handleExitDemo}
+              />
+            )}
+
             {/* Si está activo el modo Ejecutivo, se muestra el Banner Hero de Alto Impacto con métricas y acciones integradas */}
             {bannerMode === 'ejecutivo' && (
               <DirectorHeroBanner
@@ -1265,7 +1369,7 @@ const Reporte = () => {
                 metricasDirector={metricasDirector}
                 monthSelected={monthSelected}
                 yearSelected={yearSelected}
-                colegio={currentUserData?.institucion}
+                colegio={effectiveInstitucion}
                 totalEstudiantesMatriculados={totalEstudiantesMatriculados}
                 estudiantes={estudiantes}
                 filtros={filtros}
@@ -1307,13 +1411,13 @@ const Reporte = () => {
                     <RiCalendarLine className="w-4 h-4 text-teal-600" />
                     <span>{getMonthName(monthSelected)} {yearSelected}</span>
                   </span>
-                  {currentUserData?.institucion && (
+                  {effectiveInstitucion && (
                     <span
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200/90 text-slate-700 shadow-2xs max-w-[220px] truncate"
-                      title={currentUserData.institucion}
+                      title={effectiveInstitucion}
                     >
                       <RiBuilding4Line className="w-4 h-4 text-purple-600 shrink-0" />
-                      <span className="truncate">{currentUserData.institucion}</span>
+                      <span className="truncate">{effectiveInstitucion}</span>
                     </span>
                   )}
                 </div>
