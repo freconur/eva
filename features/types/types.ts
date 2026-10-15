@@ -371,6 +371,8 @@ export type User = {
   modular?: string;
   dniDirector?: string;
   dniDirectorAnterior?: string;
+  dniDirectorPredecesor?: string;
+  directoresPredecesores?: string[];
   fechaActualizacion?: any;
   rolDirector?: number;
   rol?: number;

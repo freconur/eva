@@ -95,11 +95,33 @@ const useEvaluacionCurricular = () => {
     setDocumentSnapshots([lastVisible])
     setCurrentPage(0) */
   }
+  const getDirectorDnis = (dniDirector?: string) => {
+    const dnis = new Set<string>();
+    if (dniDirector && dniDirector.trim() !== '') {
+      dnis.add(dniDirector.trim());
+    }
+    if (currentUserData?.dni && currentUserData.dni.trim() !== '') {
+      dnis.add(currentUserData.dni.trim());
+    }
+    if (currentUserData?.dniDirectorPredecesor && currentUserData.dniDirectorPredecesor.trim() !== '') {
+      dnis.add(currentUserData.dniDirectorPredecesor.trim());
+    }
+    if (Array.isArray(currentUserData?.directoresPredecesores)) {
+      currentUserData.directoresPredecesores.forEach((d: string) => {
+        if (d && d.trim() !== '') dnis.add(d.trim());
+      });
+    }
+    return Array.from(dnis).slice(0, 30);
+  };
+
   const getDocentesToTable = async (dniDirector: string) => {
     console.log('dniDirector', dniDirector)
     const arrayUsuarios: User[] = []
     const pathRef = collection(db, 'usuarios')
-    const q = query(pathRef, where("dniDirector", "==", dniDirector), limit(5));
+    const dnis = getDirectorDnis(dniDirector);
+    const q = dnis.length > 1
+      ? query(pathRef, where("dniDirector", "in", dnis), limit(5))
+      : query(pathRef, where("dniDirector", "==", dniDirector), limit(5));
     const documentSnapshots = await getDocs(q);
     documentSnapshots.forEach(doc => {
       arrayUsuarios.push({ ...doc.data() })
@@ -117,7 +139,10 @@ const useEvaluacionCurricular = () => {
     console.log('next usuarios')
     const arrayUsuarios: User[] = []
     const pathRef = collection(db, 'usuarios')
-    const nextUsuarios = query(pathRef, where("dniDirector", "==", currentUserData.dni), limit(5), startAfter(lastVisible))
+    const dnis = getDirectorDnis();
+    const nextUsuarios = dnis.length > 1
+      ? query(pathRef, where("dniDirector", "in", dnis), limit(5), startAfter(lastVisible))
+      : query(pathRef, where("dniDirector", "==", currentUserData.dni), limit(5), startAfter(lastVisible));
     const documentSnapshots = await getDocs(nextUsuarios);
 
     if (documentSnapshots.empty) {
@@ -178,12 +203,20 @@ const useEvaluacionCurricular = () => {
     const previousSnapshot = documentSnapshots[currentPage - 1]
 
     // Construimos la consulta para obtener los registros anteriores
-    const previousUsuarios = query(
-      pathRef,
-      where("dniDirector", "==", currentUserData.dni),
-      limit(5),
-      startAfter(previousSnapshot)
-    )
+    const dnis = getDirectorDnis();
+    const previousUsuarios = dnis.length > 1
+      ? query(
+          pathRef,
+          where("dniDirector", "in", dnis),
+          limit(5),
+          startAfter(previousSnapshot)
+        )
+      : query(
+          pathRef,
+          where("dniDirector", "==", currentUserData.dni),
+          limit(5),
+          startAfter(previousSnapshot)
+        );
 
     const newDocumentSnapshots = await getDocs(previousUsuarios)
     newDocumentSnapshots.forEach(doc => {
@@ -303,7 +336,10 @@ const useEvaluacionCurricular = () => {
       console.log('entre a directores')
       const arrayUsuarios: User[] = []
       const pathRef = collection(db, 'usuarios')
-      const q = query(pathRef, where("dniDirector", "==", dniDirector), limit(1));
+      const dnis = getDirectorDnis(dniDirector);
+      const q = dnis.length > 1
+        ? query(pathRef, where("dniDirector", "in", dnis), limit(50))
+        : query(pathRef, where("dniDirector", "==", dniDirector), limit(1));
       await getDocs(q)
         .then(async (response) => {
           console.log(response.size)

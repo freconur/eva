@@ -28,6 +28,11 @@ import {
   updateDoc,
   deleteDoc,
   increment,
+  deleteField,
+  serverTimestamp,
+  limit,
+  arrayUnion,
+  arrayRemove,
 } from 'firebase/firestore';
 import { currentYear } from '@/fuctions/dates';
 const useUsuario = () => {
@@ -646,6 +651,245 @@ const useUsuario = () => {
     }
   };
 
+  const cambiarRolUsuario = async (
+    dni: string,
+    nuevoRol: number,
+    nuevoDniDirector?: string
+  ): Promise<{ success: boolean; message?: string }> => {
+    if (checkAuditReadOnly()) return { success: false, message: 'Modo de Auditoría: No se permite modificar roles.' };
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    try {
+      // 1. Intentar llamar a la Cloud Function oficial
+      const { functions } = await import('@/firebase/firebase.config');
+      const { httpsCallable } = await import('firebase/functions');
+      const cambiarRolFn = httpsCallable(functions, 'cambiarRolUsuario');
+
+      const result = await cambiarRolFn({ dni, nuevoRol, nuevoDniDirector });
+      const resData = result.data as any;
+
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return { success: true, message: resData?.message || 'Rol actualizado exitosamente' };
+    } catch (cfError: any) {
+      console.warn('Cloud Function cambiarRolUsuario no disponible o falló, intentando actualización directa en Firestore:', cfError);
+
+      try {
+        // 2. Fallback de contingencia directa en Firestore
+        const rolNum = Number(nuevoRol);
+        const userDocRef = doc(db, 'usuarios', dni);
+        const userDocSnap = await getDoc(userDocRef);
+        const userData = userDocSnap.data();
+
+        const rolesNombres: Record<number, string> = {
+          1: 'especialista',
+          2: 'director',
+          3: 'docente',
+          4: 'admin',
+          5: 'especialista regional'
+        };
+
+        const updatePayload: any = {
+          rol: rolNum,
+          'perfil.rol': rolNum,
+          'perfil.nombre': rolesNombres[rolNum] || 'usuario',
+          ultimaActualizacion: new Date(),
+        };
+
+        // Regla (Opción A): si el nuevo rol es Director (2) o no-docente, respaldar en dniDirectorAnterior y eliminar dniDirector
+        if (rolNum === 2 || rolNum === 1 || rolNum === 4 || rolNum === 5) {
+          if (userData?.dniDirector) {
+            updatePayload.dniDirectorAnterior = userData.dniDirector;
+          }
+          updatePayload.dniDirector = deleteField();
+        } else if (rolNum === 3) {
+          // Opción B & A: Si pasa a Docente (3), asignar el nuevo dniDirector o restaurar dniDirectorAnterior
+          const effectiveDirectorDni = String(nuevoDniDirector || userData?.dniDirectorAnterior || '').trim();
+          if (effectiveDirectorDni) {
+            updatePayload.dniDirector = effectiveDirectorDni;
+          }
+        }
+
+        await updateDoc(userDocRef, updatePayload);
+
+        dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+        return { success: true, message: `Rol actualizado a ${rolesNombres[rolNum] || rolNum} correctamente en Firestore` };
+      } catch (fsError: any) {
+        console.error('Error al actualizar rol en Firestore:', fsError);
+        dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+        return { success: false, message: fsError?.message || cfError?.message || 'Error al cambiar de rol' };
+      }
+    }
+  };
+
+  const desvincularDirectorPredecesor = async (
+    dniDirectorActual: string,
+    dniPredecesorRemover: string
+  ): Promise<{ success: boolean; message: string; remainingPredecesores?: string[] }> => {
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    try {
+      if (!dniDirectorActual) {
+        throw new Error('El DNI del director actual es requerido');
+      }
+
+      let directorDocRef = doc(db, 'usuarios', dniDirectorActual);
+      let curData: any = null;
+      const curSnap = await getDoc(directorDocRef);
+      if (!curSnap.exists()) {
+        const qCur = query(collection(db, 'usuarios'), where('dni', '==', dniDirectorActual), limit(1));
+        const snapCur = await getDocs(qCur);
+        if (snapCur.empty) {
+          throw new Error(`No se encontró el director con DNI ${dniDirectorActual}`);
+        }
+        directorDocRef = snapCur.docs[0].ref;
+        curData = snapCur.docs[0].data();
+      } else {
+        curData = curSnap.data();
+      }
+
+      let cleanRemover = dniPredecesorRemover?.trim() || '';
+      if (!cleanRemover && curData?.dniDirectorPredecesor) {
+        cleanRemover = curData.dniDirectorPredecesor;
+      }
+      if (!cleanRemover) {
+        throw new Error('El DNI del predecesor a desvincular es requerido');
+      }
+
+      const currentList: string[] = Array.isArray(curData?.directoresPredecesores)
+        ? curData.directoresPredecesores
+        : [];
+      const remaining = currentList.filter(d => d !== cleanRemover);
+
+      const updatePayload: any = {
+        directoresPredecesores: arrayRemove(cleanRemover),
+        ultimaActualizacion: serverTimestamp(),
+      };
+
+      if (curData?.dniDirectorPredecesor === cleanRemover) {
+        if (remaining.length > 0) {
+          updatePayload.dniDirectorPredecesor = remaining[remaining.length - 1];
+        } else {
+          updatePayload.dniDirectorPredecesor = deleteField();
+        }
+      }
+
+      await updateDoc(directorDocRef, updatePayload);
+
+      // Si el director es el usuario en sesión activa, actualizar el contexto
+      if (currentUserData?.dni === dniDirectorActual) {
+        dispatch({
+          type: AppAction.CURRENT_USER_DATA,
+          payload: {
+            ...currentUserData,
+            directoresPredecesores: remaining,
+            dniDirectorPredecesor:
+              currentUserData?.dniDirectorPredecesor === cleanRemover
+                ? (remaining.length > 0 ? remaining[remaining.length - 1] : undefined)
+                : currentUserData?.dniDirectorPredecesor,
+          },
+        });
+      }
+
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return {
+        success: true,
+        message: `Director predecesor (${cleanRemover}) desvinculado correctamente`,
+        remainingPredecesores: remaining,
+      };
+    } catch (err: any) {
+      console.error('Error al desvincular director predecesor:', err);
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return {
+        success: false,
+        message: err?.message || 'Error al desvincular director predecesor',
+      };
+    }
+  };
+
+  const vincularDirectorPredecesor = async (
+    dniDirectorActual: string,
+    dniPredecesor: string | null,
+    dniPredecesorRemover?: string
+  ): Promise<{ success: boolean; message: string; directorPredecesorData?: any }> => {
+    if (!dniPredecesor || !dniPredecesor.trim()) {
+      return await desvincularDirectorPredecesor(
+        dniDirectorActual,
+        dniPredecesorRemover || ''
+      );
+    }
+    dispatch({ type: AppAction.LOADER_PAGES, payload: true });
+    try {
+      if (!dniDirectorActual) {
+        throw new Error('El DNI del director actual es requerido');
+      }
+
+      let predecesorData: any = null;
+      const cleanPredecesorDni = dniPredecesor.trim();
+      if (cleanPredecesorDni === dniDirectorActual) {
+        throw new Error('El director predecesor no puede ser el mismo director actual');
+      }
+
+      const predSnap = await getDoc(doc(db, 'usuarios', cleanPredecesorDni));
+      if (predSnap.exists()) {
+        predecesorData = predSnap.data();
+      } else {
+        const qPred = query(collection(db, 'usuarios'), where('dni', '==', cleanPredecesorDni), limit(1));
+        const snapQ = await getDocs(qPred);
+        if (!snapQ.empty) {
+          predecesorData = snapQ.docs[0].data();
+        } else {
+          throw new Error(`No se encontró ningún usuario con DNI ${cleanPredecesorDni}`);
+        }
+      }
+
+      let directorDocRef = doc(db, 'usuarios', dniDirectorActual);
+      const curSnap = await getDoc(directorDocRef);
+      if (!curSnap.exists()) {
+        const qCur = query(collection(db, 'usuarios'), where('dni', '==', dniDirectorActual), limit(1));
+        const snapCur = await getDocs(qCur);
+        if (snapCur.empty) {
+          throw new Error(`No se encontró el director con DNI ${dniDirectorActual}`);
+        }
+        directorDocRef = snapCur.docs[0].ref;
+      }
+
+      const cleanPred = dniPredecesor.trim();
+      await updateDoc(directorDocRef, {
+        dniDirectorPredecesor: cleanPred,
+        directoresPredecesores: arrayUnion(cleanPred),
+        ultimaActualizacion: serverTimestamp(),
+      });
+
+      // Si el director es el usuario en sesión activa, actualizar el contexto
+      if (currentUserData?.dni === dniDirectorActual) {
+        const currentList = Array.isArray(currentUserData?.directoresPredecesores)
+          ? currentUserData.directoresPredecesores
+          : [];
+        const updatedList = Array.from(new Set([...currentList, cleanPred]));
+        dispatch({
+          type: AppAction.CURRENT_USER_DATA,
+          payload: {
+            ...currentUserData,
+            dniDirectorPredecesor: cleanPred,
+            directoresPredecesores: updatedList,
+          },
+        });
+      }
+
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return {
+        success: true,
+        message: `Director predecesor (${cleanPred}) vinculado correctamente`,
+        directorPredecesorData: predecesorData,
+      };
+    } catch (err: any) {
+      console.error('Error al vincular director predecesor:', err);
+      dispatch({ type: AppAction.LOADER_PAGES, payload: false });
+      return {
+        success: false,
+        message: err?.message || 'Error al vincular director predecesor',
+      };
+    }
+  };
+
   return {
     getDirectorById,
     signIn,
@@ -667,6 +911,9 @@ const useUsuario = () => {
     createMassiveDirectors,
     createMassiveTeachers,
     updateTipoGestion,
+    cambiarRolUsuario,
+    vincularDirectorPredecesor,
+    desvincularDirectorPredecesor,
   };
 };
 

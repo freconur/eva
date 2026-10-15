@@ -32,6 +32,7 @@ export { crearPuntajeEestudiantesProgresiva } from './crearPuntajeEestudiantesPr
 export { traerTodosEstudiantesEvaluados } from './traerTodosEstudiantesEvaluados';
 export { crearUsuario } from './crearUsuario';
 export { actualizarUsuario } from './actualizarUsuario';
+export { cambiarRolUsuario } from './cambiarRolUsuario';
 export { borrarUsuario } from './borrarUsuario';
 export { configurarSeguridad } from './configurarSeguridad';
 export { resetearContrasena } from './resetearContrasena';

@@ -64,6 +64,7 @@ export const useReporteDirectores = () => {
         idEvaluacion: evaluacion.id,
         year: year,
         dniDirector: currentUserData.dni,
+        dniDirectorPredecesor: currentUserData.dniDirectorPredecesor || '',
       });
 
       if (response.data.success) {
@@ -84,7 +85,7 @@ export const useReporteDirectores = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentUserData.dni]);
+  }, [currentUserData.dni, currentUserData.dniDirectorPredecesor]);
 
   const reporteDirectorEstudiantes = useCallback(async (
     idEvaluacion: string,
@@ -103,6 +104,7 @@ export const useReporteDirectores = () => {
         month,
         year,
         dniDirector: currentUserData.dni,
+        dniDirectorPredecesor: currentUserData.dniDirectorPredecesor || '',
       });
 
       console.log("DEBUG-HOOK: Cloud Function getReporteDirector response:", response.data);

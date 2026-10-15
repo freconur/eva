@@ -1,12 +1,13 @@
 import { collection, doc, getDocs, getFirestore, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore"
 import { app } from "@/firebase/firebase.config";
 import { AppAction } from "../actions/appAction";
-import { useGlobalContextDispatch } from "../context/GlolbalContext";
+import { useGlobalContext, useGlobalContextDispatch } from "../context/GlolbalContext";
 import { User } from "../types/types";
 
 export const useDirectores = () => {
   const db = getFirestore(app)
   const dispatch = useGlobalContextDispatch();
+  const { currentUserData } = useGlobalContext();
 
   const fetchEstudiantesDataForDocente = async (docenteDni?: string) => {
     if (!docenteDni) return { total: 0, porGrado: {} };
@@ -30,16 +31,35 @@ export const useDirectores = () => {
     }
   };
 
-  const getDocentesByDniDirector = (dniDirector: string) => {
+  const getDocentesByDniDirector = (dniDirector: string, dniPredecesor?: string) => {
     if (!dniDirector) return () => {};
-    const pathRef = collection(db, "usuarios")
-    const q = query(pathRef, where("dniDirector", "==", dniDirector))
+    const pathRef = collection(db, "usuarios");
+    const effectivePredecesor = dniPredecesor || currentUserData?.dniDirectorPredecesor;
+    const dnis = [String(dniDirector).trim()];
+    if (effectivePredecesor && String(effectivePredecesor).trim() && !dnis.includes(String(effectivePredecesor).trim())) {
+      dnis.push(String(effectivePredecesor).trim());
+    }
+    if (Array.isArray(currentUserData?.directoresPredecesores)) {
+      currentUserData.directoresPredecesores.forEach((d: string) => {
+        const clean = String(d || '').trim();
+        if (clean && !dnis.includes(clean)) dnis.push(clean);
+      });
+    }
+
+    const q = dnis.length === 1
+      ? query(pathRef, where("dniDirector", "==", dnis[0]))
+      : query(pathRef, where("dniDirector", "in", dnis.slice(0, 30)));
 
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
-      const baseDocentes: User[] = []
+      const baseDocentesMap = new Map<string, User>();
       querySnapshot.forEach((doc) => {
-        baseDocentes.push(doc.data())
-      })
+        const data = doc.data() as User;
+        const key = String(data.dni || doc.id);
+        if (!baseDocentesMap.has(key)) {
+          baseDocentesMap.set(key, data);
+        }
+      });
+      const baseDocentes = Array.from(baseDocentesMap.values());
 
       const docentesConEstudiantes: User[] = await Promise.all(
         baseDocentes.map(async (user) => {
@@ -53,11 +73,11 @@ export const useDirectores = () => {
         })
       );
 
-      dispatch({ type: AppAction.USUARIOS_BY_ROL, payload: docentesConEstudiantes })
-    })
+      dispatch({ type: AppAction.USUARIOS_BY_ROL, payload: docentesConEstudiantes });
+    });
 
     return unsubscribe;
-  }
+  };
   const gettAllProfesores = async () => {
     const pathRef = collection(db, 'usuarios')
     const q = query(pathRef, where("perfil.rol", "==", 3))

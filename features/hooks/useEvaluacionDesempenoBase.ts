@@ -710,9 +710,22 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
         let q;
 
         if (role === 'director') {
-          // Director evalúa a sus docentes: rol === 3, dniDirector === dni del director
+          // Director evalúa a sus docentes: rol === 3, dniDirector === dni del director actual o predecesor
           const directorDni = customScopeValue || scopeValue || currentUserData?.dni;
-          q = query(usuariosRef, where('rol', '==', 3), where('dniDirector', '==', String(directorDni)));
+          const predecesorDni = currentUserData?.dniDirectorPredecesor;
+          const dnis = [String(directorDni).trim()];
+          if (predecesorDni && String(predecesorDni).trim() && !dnis.includes(String(predecesorDni).trim())) {
+            dnis.push(String(predecesorDni).trim());
+          }
+          if (Array.isArray(currentUserData?.directoresPredecesores)) {
+            currentUserData.directoresPredecesores.forEach((d: string) => {
+              const clean = String(d || '').trim();
+              if (clean && !dnis.includes(clean)) dnis.push(clean);
+            });
+          }
+          q = dnis.length === 1
+            ? query(usuariosRef, where('rol', '==', 3), where('dniDirector', '==', dnis[0]))
+            : query(usuariosRef, where('rol', '==', 3), where('dniDirector', 'in', dnis.slice(0, 30)));
         } else if (role === 'admin') {
           // Administrador o DREP evalúa a especialistas: rol === 1
           const isRegionalAdmin =
@@ -776,19 +789,26 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
         }
 
         const snap = await getDocs(q);
-        const users: User[] = [];
+        const usersMap = new Map<string, User>();
+        const addDoc = (d: any) => {
+          const data = { ...d.data(), id: d.id } as User;
+          const key = String(data.dni || d.id);
+          if (!usersMap.has(key)) {
+            usersMap.set(key, data);
+          }
+        };
         if (snap?.docs) {
-          snap.docs.forEach((d) => users.push({ ...d.data(), id: d.id } as User));
+          snap.docs.forEach(addDoc);
         } else if (typeof snap?.forEach === 'function') {
-          snap.forEach((d) => users.push({ ...d.data(), id: d.id } as User));
+          snap.forEach(addDoc);
         }
-        return users;
+        return Array.from(usersMap.values());
       } catch (err) {
         console.error('Error al obtener padrón de evaluados:', err);
         return [];
       }
     },
-    [role, scopeValue, currentUserData?.dni, currentUserData?.rol, currentUserData?.region]
+    [role, scopeValue, currentUserData?.dni, currentUserData?.rol, currentUserData?.region, currentUserData?.dniDirectorPredecesor, currentUserData?.directoresPredecesores]
   );
 
   const buscarUsuario = useCallback(async (dni: string): Promise<User | null> => {

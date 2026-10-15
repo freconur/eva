@@ -31,13 +31,16 @@ const AgregarDirectores = () => {
 
   useEffect(() => {
     if (currentUserData?.dni) {
-      const unsubscribe = getDocentesByDniDirector(`${currentUserData.dni}`);
+      const unsubscribe = getDocentesByDniDirector(
+        `${currentUserData.dni}`,
+        currentUserData.dniDirectorPredecesor
+      );
       return () => {
         if (typeof unsubscribe === 'function') unsubscribe();
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUserData?.dni])
+  }, [currentUserData?.dni, currentUserData?.dniDirectorPredecesor])
 
   useEffect(() => {
     getGrades()

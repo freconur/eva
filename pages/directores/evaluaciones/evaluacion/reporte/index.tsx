@@ -616,10 +616,10 @@ const Reporte = () => {
       ? currentUserData?.dni
       : '';
     if (targetDirectorDni) {
-      getDocentesDeDirectores(targetDirectorDni);
+      getDocentesDeDirectores(targetDirectorDni, currentUserData?.dniDirectorPredecesor);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUserData?.dni, currentUserData?.rol, isDemoMode, effectiveDirectorDni]);
+  }, [currentUserData?.dni, currentUserData?.rol, isDemoMode, effectiveDirectorDni, currentUserData?.dniDirectorPredecesor]);
 
   // Normalizador de nombres de docentes para garantizar coherencia en todas las vistas
   const normalizeTeacherKey = useCallback((name: string): string => {

@@ -4,11 +4,12 @@ import { app } from '@/firebase/firebase.config'
 import UsuariosByRol from '@/components/usuariosByRol'
 import { User } from '@/features/types/types'
 import styles from './styles.module.css'
-import { RiSearchLine, RiUserAddLine } from 'react-icons/ri'
+import { RiSearchLine, RiUserAddLine, RiCloseLine } from 'react-icons/ri'
 import PrivateRoutesAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import AdminDocenteModal from '@/components/modals/AdminDocenteModal'
 import { regiones, area, caracteristicasDirectivo } from '@/fuctions/regiones'
 import { distritosPuno } from '@/fuctions/provinciasPuno'
+import SegmentedFilterBar, { FilterItem } from '@/components/common/SegmentedFilterBar'
 
 const DocentesUsuariosPage = () => {
     const [searchTerm, setSearchTerm] = useState('')
@@ -32,14 +33,34 @@ const DocentesUsuariosPage = () => {
 
     const db = getFirestore(app)
 
-    const fetchDocentes = async (pageIndex: number, startCursor: QueryDocumentSnapshot<DocumentData> | null) => {
+    const fetchDocentes = async (
+        pageIndex: number,
+        startCursor: QueryDocumentSnapshot<DocumentData> | null,
+        overrides?: {
+            searchTerm?: string
+            ugel?: string
+            distrito?: string
+            nivel?: string
+            area?: string
+            caracteristica?: string
+            gestion?: string
+        }
+    ) => {
         setLoading(true)
         try {
             const pathRef = collection(db, 'usuarios')
             
+            const currentSearch = overrides?.searchTerm !== undefined ? overrides.searchTerm : searchTerm
+            const currentUgel = overrides?.ugel !== undefined ? overrides.ugel : selectedUgel
+            const currentDistrito = overrides?.distrito !== undefined ? overrides.distrito : selectedDistrito
+            const currentNivel = overrides?.nivel !== undefined ? overrides.nivel : selectedNivel
+            const currentArea = overrides?.area !== undefined ? overrides.area : selectedArea
+            const currentCaracteristica = overrides?.caracteristica !== undefined ? overrides.caracteristica : selectedCaracteristica
+            const currentGestion = overrides?.gestion !== undefined ? overrides.gestion : selectedGestion
+
             // Si el buscador por DNI tiene valor
-            if (searchTerm.trim()) {
-                const searchDni = searchTerm.trim()
+            if (currentSearch.trim()) {
+                const searchDni = currentSearch.trim()
                 let docs: User[] = []
 
                 // Búsqueda por prefijo de DNI (hasta 100 resultados)
@@ -53,7 +74,7 @@ const DocentesUsuariosPage = () => {
                 const prefixSnapshot = await getDocs(qPrefix)
                 prefixSnapshot.forEach((docSnap) => {
                     const data = docSnap.data() as User
-                    if (data.rol === 3) {
+                    if (data.rol === 3 || data.perfil?.rol === 3) {
                         docs.push(data)
                     }
                 })
@@ -68,7 +89,19 @@ const DocentesUsuariosPage = () => {
                         const isDirector = directorData.perfil?.rol === 2 || directorData.rol === 2
 
                         if (isDirector) {
-                            const qDocentesByDirector = query(pathRef, where('dniDirector', '==', searchDni))
+                            const directorDnis = new Set<string>([searchDni]);
+                            if (directorData.dniDirectorPredecesor) {
+                                directorDnis.add(directorData.dniDirectorPredecesor);
+                            }
+                            if (Array.isArray(directorData.directoresPredecesores)) {
+                                directorData.directoresPredecesores.forEach((d: string) => {
+                                    if (d) directorDnis.add(d);
+                                });
+                            }
+                            const dnisList = Array.from(directorDnis).slice(0, 30);
+                            const qDocentesByDirector = dnisList.length > 1
+                                ? query(pathRef, where('dniDirector', 'in', dnisList))
+                                : query(pathRef, where('dniDirector', '==', searchDni));
                             const docentesSnapshot = await getDocs(qDocentesByDirector)
 
                             docentesSnapshot.forEach(docSnap => {
@@ -95,23 +128,23 @@ const DocentesUsuariosPage = () => {
                 where('rol', '==', 3)
             ]
 
-            if (selectedUgel) {
-                constraints.push(where('region', '==', Number(selectedUgel)))
+            if (currentUgel) {
+                constraints.push(where('region', '==', Number(currentUgel)))
             }
-            if (selectedDistrito) {
-                constraints.push(where('distrito', '==', selectedDistrito))
+            if (currentDistrito) {
+                constraints.push(where('distrito', '==', currentDistrito))
             }
-            if (selectedNivel) {
-                constraints.push(where('nivelDeInstitucion', 'array-contains', Number(selectedNivel)))
+            if (currentNivel) {
+                constraints.push(where('nivelDeInstitucion', 'array-contains', Number(currentNivel)))
             }
-            if (selectedArea) {
-                constraints.push(where('area', '==', Number(selectedArea)))
+            if (currentArea) {
+                constraints.push(where('area', '==', Number(currentArea)))
             }
-            if (selectedCaracteristica) {
-                constraints.push(where('caracteristicaCurricular', '==', Number(selectedCaracteristica)))
+            if (currentCaracteristica) {
+                constraints.push(where('caracteristicaCurricular', '==', Number(currentCaracteristica)))
             }
-            if (selectedGestion) {
-                constraints.push(where('tipoGestion', '==', selectedGestion))
+            if (currentGestion) {
+                constraints.push(where('tipoGestion', '==', currentGestion))
             }
 
             // Consultar el total de registros concurrentemente en la base de datos (ahorro de lecturas y óptima velocidad)
@@ -172,6 +205,12 @@ const DocentesUsuariosPage = () => {
         fetchDocentes(1, null)
     }
 
+    const handleClearSearch = () => {
+        setSearchTerm('')
+        setPageCursors([null])
+        fetchDocentes(1, null, { searchTerm: '' })
+    }
+
     const handleLimpiarFiltros = () => {
         setSelectedUgel('')
         setSelectedDistrito('')
@@ -181,11 +220,15 @@ const DocentesUsuariosPage = () => {
         setSelectedGestion('')
         setSearchTerm('')
         setPageCursors([null])
-        // Ejecutar fetch con filtros limpios
-        setLoading(true)
-        setTimeout(() => {
-            fetchDocentes(1, null)
-        }, 100)
+        fetchDocentes(1, null, {
+            searchTerm: '',
+            ugel: '',
+            distrito: '',
+            nivel: '',
+            area: '',
+            caracteristica: '',
+            gestion: '',
+        })
     }
 
     const distritosDisponibles = useMemo(() => {
@@ -201,6 +244,141 @@ const DocentesUsuariosPage = () => {
             setSearchTerm(val)
         }
     }
+
+    const hasActiveFilters = Boolean(
+        searchTerm.trim() !== '' ||
+        selectedUgel !== '' ||
+        selectedDistrito !== '' ||
+        selectedNivel !== '' ||
+        selectedArea !== '' ||
+        selectedCaracteristica !== '' ||
+        selectedGestion !== ''
+    )
+
+    const filtersConfig: FilterItem[] = useMemo(() => [
+        {
+            id: 'ugel',
+            label: 'UGEL',
+            value: selectedUgel,
+            onChange: (val) => {
+                const ugelStr = String(val)
+                setSelectedUgel(ugelStr)
+                setSelectedDistrito('')
+                setSearchTerm('')
+                setPageCursors([null])
+                fetchDocentes(1, null, { ugel: ugelStr, distrito: '', searchTerm: '' })
+            },
+            options: [
+                { value: '', label: 'Todas las UGEL' },
+                ...regiones.map((reg) => ({
+                    value: String(reg.id),
+                    label: reg.region,
+                })),
+            ],
+            showSearch: true,
+            minWidth: 'md:min-w-[150px]',
+        },
+        {
+            id: 'distrito',
+            label: 'Distrito',
+            value: selectedDistrito,
+            onChange: (val) => {
+                const distStr = String(val)
+                setSelectedDistrito(distStr)
+                setSearchTerm('')
+                setPageCursors([null])
+                fetchDocentes(1, null, { distrito: distStr, searchTerm: '' })
+            },
+            options: [
+                { value: '', label: !selectedUgel ? 'Seleccione UGEL primero' : 'Todos los Distritos' },
+                ...distritosDisponibles.map((dist) => ({
+                    value: dist,
+                    label: dist,
+                })),
+            ],
+            disabled: !selectedUgel,
+            showSearch: true,
+            minWidth: 'md:min-w-[150px]',
+        },
+        {
+            id: 'nivel',
+            label: 'Nivel',
+            value: selectedNivel,
+            onChange: (val) => {
+                const nivelStr = String(val)
+                setSelectedNivel(nivelStr)
+                setSearchTerm('')
+                setPageCursors([null])
+                fetchDocentes(1, null, { nivel: nivelStr, searchTerm: '' })
+            },
+            options: [
+                { value: '', label: 'Todos los Niveles' },
+                { value: '0', label: 'Inicial' },
+                { value: '1', label: 'Primaria' },
+                { value: '2', label: 'Secundaria' },
+            ],
+            minWidth: 'md:min-w-[140px]',
+        },
+        {
+            id: 'area',
+            label: 'Área',
+            value: selectedArea,
+            onChange: (val) => {
+                const areaStr = String(val)
+                setSelectedArea(areaStr)
+                setSearchTerm('')
+                setPageCursors([null])
+                fetchDocentes(1, null, { area: areaStr, searchTerm: '' })
+            },
+            options: [
+                { value: '', label: 'Todas las Áreas' },
+                ...area.map((a) => ({
+                    value: String(a.id),
+                    label: a.name.toUpperCase(),
+                })),
+            ],
+            showSearch: true,
+            minWidth: 'md:min-w-[150px]',
+        },
+        {
+            id: 'caracteristica',
+            label: 'Característica',
+            value: selectedCaracteristica,
+            onChange: (val) => {
+                const caracStr = String(val)
+                setSelectedCaracteristica(caracStr)
+                setSearchTerm('')
+                setPageCursors([null])
+                fetchDocentes(1, null, { caracteristica: caracStr, searchTerm: '' })
+            },
+            options: [
+                { value: '', label: 'Todas las Características' },
+                ...caracteristicasDirectivo.map((c) => ({
+                    value: String(c.id),
+                    label: c.name.toUpperCase(),
+                })),
+            ],
+            minWidth: 'md:min-w-[160px]',
+        },
+        {
+            id: 'gestion',
+            label: 'Gestión',
+            value: selectedGestion,
+            onChange: (val) => {
+                const gestStr = String(val)
+                setSelectedGestion(gestStr)
+                setSearchTerm('')
+                setPageCursors([null])
+                fetchDocentes(1, null, { gestion: gestStr, searchTerm: '' })
+            },
+            options: [
+                { value: '', label: 'Todas las Gestiones' },
+                { value: 'publico', label: 'PÚBLICO' },
+                { value: 'privado', label: 'PRIVADO' },
+            ],
+            minWidth: 'md:min-w-[140px]',
+        },
+    ], [selectedUgel, selectedDistrito, distritosDisponibles, selectedNivel, selectedArea, selectedCaracteristica, selectedGestion])
 
     return (
         <div className={styles.container}>
@@ -219,123 +397,61 @@ const DocentesUsuariosPage = () => {
             </div>
 
             <div className={styles.searchSection}>
-                <div className={styles.controlsContainer}>
-
-                    <div className={styles.filterGroup}>
-                        <select
-                            value={selectedUgel}
-                            onChange={(e) => {
-                                setSelectedUgel(e.target.value)
-                                setSelectedDistrito('')
+                {/* Fila superior: Input de búsqueda por DNI + Contador de resultados */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                    <div className="relative flex-1 max-w-md">
+                        <RiSearchLine className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none" />
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={handleInputChange}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    handleFiltrar()
+                                }
                             }}
-                            className={styles.filterSelect}
-                        >
-                            <option value="">Todas las Ugel</option>
-                            {regiones.map((reg) => (
-                                <option key={reg.id} value={reg.id}>
-                                    {reg.region}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className={styles.filterGroup}>
-                        <select
-                            value={selectedDistrito}
-                            onChange={(e) => setSelectedDistrito(e.target.value)}
-                            disabled={!selectedUgel}
-                            className={styles.filterSelect}
-                        >
-                            <option value="">
-                                {!selectedUgel ? 'Seleccione Ugel primero' : 'Todos los Distritos'}
-                            </option>
-                            {distritosDisponibles.map((dist) => (
-                                <option key={dist} value={dist}>
-                                    {dist}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className={styles.filterGroup}>
-                        <select
-                            value={selectedNivel}
-                            onChange={(e) => setSelectedNivel(e.target.value)}
-                            className={styles.filterSelect}
-                        >
-                            <option value="">Todos los Niveles</option>
-                            <option value="0">Inicial</option>
-                            <option value="1">Primaria</option>
-                            <option value="2">Secundaria</option>
-                        </select>
-                    </div>
-
-                    <div className={styles.filterGroup}>
-                        <select
-                            value={selectedArea}
-                            onChange={(e) => setSelectedArea(e.target.value)}
-                            className={styles.filterSelect}
-                        >
-                            <option value="">Todas las Áreas</option>
-                            {area.map((a) => (
-                                <option key={a.id} value={a.id}>
-                                    {a.name.toUpperCase()}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className={styles.filterGroup}>
-                        <select
-                            value={selectedCaracteristica}
-                            onChange={(e) => setSelectedCaracteristica(e.target.value)}
-                            className={styles.filterSelect}
-                        >
-                            <option value="">Todas las Características</option>
-                            {caracteristicasDirectivo.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name.toUpperCase()}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className={styles.filterGroup}>
-                        <select
-                            value={selectedGestion}
-                            onChange={(e) => setSelectedGestion(e.target.value)}
-                            className={styles.filterSelect}
-                        >
-                            <option value="">Todas las Gestiones</option>
-                            <option value="publico">PÚBLICO</option>
-                            <option value="privado">PRIVADO</option>
-                        </select>
-                    </div>
-
-                    <button
-                        onClick={handleFiltrar}
-                        className={styles.filterSubmitButton}
-                    >
-                        Filtrar
-                    </button>
-
-                    {(selectedUgel || selectedDistrito || selectedNivel || selectedArea || selectedCaracteristica || selectedGestion) && (
+                            placeholder="Buscar docente por DNI o DNI Director..."
+                            className="w-full pl-10 pr-24 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                            aria-label="Buscar docente por DNI"
+                        />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={handleClearSearch}
+                                className="absolute right-14 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-md transition-colors cursor-pointer"
+                                title="Limpiar DNI"
+                                aria-label="Limpiar DNI"
+                            >
+                                <RiCloseLine className="text-lg" />
+                            </button>
+                        )}
                         <button
-                            onClick={handleLimpiarFiltros}
-                            className={styles.clearFiltersButton}
+                            type="button"
+                            onClick={handleFiltrar}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-semibold rounded-lg transition-all shadow-xs cursor-pointer"
                         >
-                            Limpiar Filtros
+                            Buscar
                         </button>
-                    )}
+                    </div>
 
-                    <span className={styles.resultsCount}>
+                    <div className="text-xs sm:text-sm font-semibold text-slate-600 whitespace-nowrap">
                         {totalResults !== null ? (
                             `Total: ${totalResults} ${totalResults === 1 ? 'docente' : 'docentes'} (${results.length} en esta página)`
                         ) : (
                             `Mostrando ${results.length} ${results.length === 1 ? 'docente' : 'docentes'}`
                         )}
-                    </span>
+                    </div>
                 </div>
+
+                {/* Barra de Filtros Segmentada Modular (Dropdowns Reutilizables) */}
+                <SegmentedFilterBar
+                    title="Filtrar por"
+                    className="w-full"
+                    filters={filtersConfig}
+                    onReset={handleLimpiarFiltros}
+                    showReset={hasActiveFilters}
+                    resetLabel="Limpiar Filtros"
+                />
             </div>
 
             <div className={styles.resultsSection}>

@@ -33,7 +33,7 @@ const CoberturaCurricular = () => {
     getEvaluacionCurricular()
     getDocentesToTable(`${currentUserData.dni}`)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUserData.dni])
+  }, [currentUserData.dni, currentUserData.dniDirectorPredecesor])
   return (
     <div>
       {

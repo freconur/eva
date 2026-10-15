@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { collection, query, where, getDocs, getFirestore, doc, onSnapshot, deleteDoc, limit } from 'firebase/firestore'
+import { createPortal } from 'react-dom'
+import { collection, query, where, getDocs, getFirestore, doc, getDoc, onSnapshot, deleteDoc, limit, getCountFromServer } from 'firebase/firestore'
 import { app } from '@/firebase/firebase.config'
 import { User } from '@/features/types/types'
-import { RiSearchLine, RiLockPasswordLine, RiUserLine, RiEyeLine, RiBarChartLine, RiDatabase2Line, RiRefreshLine, RiDeleteBin6Line, RiFilterLine, RiFilter3Line, RiArrowLeftSLine, RiArrowRightSLine, RiCloseLine } from 'react-icons/ri'
+import { RiSearchLine, RiLockPasswordLine, RiUserLine, RiEyeLine, RiBarChartLine, RiDatabase2Line, RiRefreshLine, RiDeleteBin6Line, RiFilterLine, RiFilter3Line, RiArrowLeftSLine, RiArrowRightSLine, RiCloseLine, RiShieldUserLine, RiArrowDownSLine, RiCheckLine, RiAlertLine, RiHistoryLine, RiLinkM, RiLinkUnlinkM } from 'react-icons/ri'
 import PrivateRoutesAdmin from '@/components/layouts/PrivateRoutesAdmin'
 import { toast } from 'react-toastify'
 import useUsuario from '@/features/hooks/useUsuario'
@@ -20,7 +21,15 @@ const ROLES_TEXT: Record<number, string> = {
   5: 'Especialista Regional'
 }
 
-
+const formatNombreCapitalize = (nombres?: string, apellidos?: string): string => {
+  const full = `${nombres || ''} ${apellidos || ''}`.trim()
+  if (!full) return 'Sin nombre'
+  return full
+    .toLowerCase()
+    .split(/\s+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
 
 type Filters = {
   region: string
@@ -40,6 +49,182 @@ const INITIAL_FILTERS: Filters = {
   tipoGestion: '',
   area: '',
   nivelDeInstitucion: [],
+}
+
+interface UserActionsDropdownProps {
+  user: User
+  isOpen: boolean
+  isLastRows?: boolean
+  onToggle: () => void
+  onClose?: () => void
+  onAudit: () => void
+  onRoleChange: () => void
+  onResetPassword: () => void
+  onAssignPredecessor?: () => void
+}
+
+const UserActionsDropdown: React.FC<UserActionsDropdownProps> = ({
+  user,
+  isOpen,
+  onToggle,
+  onClose,
+  onAudit,
+  onRoleChange,
+  onResetPassword,
+  onAssignPredecessor,
+}) => {
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const [coords, setCoords] = useState<{ top: number; right: number; openUpwards: boolean } | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setCoords(null)
+      return
+    }
+
+    const updatePosition = () => {
+      if (!triggerRef.current) return
+      const rect = triggerRef.current.getBoundingClientRect()
+      // Si el botón disparador ya no está visible en el viewport, cerramos
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        onCloseRef.current?.()
+        return
+      }
+
+      const spaceBelow = window.innerHeight - rect.bottom
+      const isDirector = Number(user.rol || user.perfil?.rol) === 2
+      const menuEstimatedHeight = isDirector ? 230 : 175
+      const openUpwards = spaceBelow < menuEstimatedHeight && rect.top > menuEstimatedHeight
+
+      setCoords({
+        top: openUpwards ? rect.top - 6 : rect.bottom + 6,
+        right: Math.max(12, window.innerWidth - rect.right),
+        openUpwards,
+      })
+    }
+
+    updatePosition()
+
+    window.addEventListener('scroll', updatePosition, true)
+    window.addEventListener('resize', updatePosition)
+
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true)
+      window.removeEventListener('resize', updatePosition)
+    }
+  }, [isOpen, user.rol, user.perfil?.rol])
+
+  return (
+    <div className="relative inline-block text-left user-action-dropdown-container">
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggle()
+        }}
+        className={`inline-flex items-center justify-between gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+          isOpen
+            ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-sm ring-2 ring-blue-500/20'
+            : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300 shadow-xs'
+        }`}
+        aria-expanded={isOpen}
+        title="Opciones de usuario"
+      >
+        <span>Acciones</span>
+        <RiArrowDownSLine
+          className={`text-sm transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-blue-600' : 'text-slate-400'
+          }`}
+        />
+      </button>
+
+      {isOpen && mounted && coords && typeof document !== 'undefined' && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: `${coords.top}px`,
+            right: `${coords.right}px`,
+            transform: coords.openUpwards ? 'translateY(-100%)' : 'none',
+            zIndex: 99999,
+          }}
+          className="w-52 bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-1.5 text-left user-action-dropdown-menu"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={onAudit}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left hover:bg-blue-50/70 transition-colors group"
+          >
+            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm group-hover:scale-105 group-hover:bg-blue-100 transition-all shrink-0">
+              <RiEyeLine />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Auditar</div>
+              <div className="text-[10px] text-slate-400 truncate">Ver como este usuario</div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={onRoleChange}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left hover:bg-purple-50/70 transition-colors group"
+          >
+            <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-sm group-hover:scale-105 group-hover:bg-purple-100 transition-all shrink-0">
+              <RiShieldUserLine />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-slate-700 group-hover:text-purple-700">Cambiar Rol</div>
+              <div className="text-[10px] text-slate-400 truncate">Modificar rol y accesos</div>
+            </div>
+          </button>
+
+          {Number(user.rol || user.perfil?.rol) === 2 && onAssignPredecessor && (
+            <button
+              type="button"
+              onClick={onAssignPredecessor}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left hover:bg-emerald-50/70 transition-colors group"
+            >
+              <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm group-hover:scale-105 group-hover:bg-emerald-100 transition-all shrink-0">
+                <RiHistoryLine />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-slate-700 group-hover:text-emerald-700">Director Predecesor</div>
+                <div className="text-[10px] text-slate-400 truncate">Heredar evaluaciones EDI/EP1</div>
+              </div>
+            </button>
+          )}
+
+          <div className="my-1 border-t border-slate-100" />
+
+          <button
+            type="button"
+            onClick={onResetPassword}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left hover:bg-amber-50/70 transition-colors group"
+          >
+            <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm group-hover:scale-105 group-hover:bg-amber-100 transition-all shrink-0">
+              <RiLockPasswordLine />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-slate-700 group-hover:text-amber-700">Restablecer</div>
+              <div className="text-[10px] text-slate-400 truncate">Restablecer contraseña</div>
+            </div>
+          </button>
+        </div>,
+        document.body
+      )}
+    </div>
+  )
 }
 
 const GestionUsuariosPage = () => {
@@ -82,8 +267,33 @@ const GestionUsuariosPage = () => {
   const [loadingMetrics, setLoadingMetrics] = useState(false)
   const [metricsError, setMetricsError] = useState<string | null>(null)
 
+  // Estados para cambio de rol de usuario
+  const [userForRoleChange, setUserForRoleChange] = useState<User | null>(null)
+  const [showRoleModal, setShowRoleModal] = useState(false)
+  const [showRoleConfirmDialog, setShowRoleConfirmDialog] = useState(false)
+  const [selectedNewRole, setSelectedNewRole] = useState<number>(2)
+  const [directorDniInput, setDirectorDniInput] = useState<string>('')
+  const [directorInfo, setDirectorInfo] = useState<{ nombres?: string; apellidos?: string; institucion?: string; exists: boolean; notDirector?: boolean } | null>(null)
+  const [isSearchingDirector, setIsSearchingDirector] = useState(false)
+  const [isChangingRole, setIsChangingRole] = useState(false)
+  const [studentCountNotice, setStudentCountNotice] = useState<number | null>(null)
+  const [checkingStudents, setCheckingStudents] = useState(false)
+
+  // Estados para vinculación de Director Predecesor
+  const [directorForPredecessor, setDirectorForPredecessor] = useState<User | null>(null)
+  const [showPredecessorModal, setShowPredecessorModal] = useState(false)
+  const [predecessorDniInput, setPredecessorDniInput] = useState<string>('')
+  const [predecessorInfo, setPredecessorInfo] = useState<{ nombres?: string; apellidos?: string; institucion?: string; exists: boolean; notDirector?: boolean } | null>(null)
+  const [isSearchingPredecessor, setIsSearchingPredecessor] = useState(false)
+  const [isSavingPredecessor, setIsSavingPredecessor] = useState(false)
+  const [showUnlinkConfirmDialog, setShowUnlinkConfirmDialog] = useState(false)
+  const [predecessorDniToUnlink, setPredecessorDniToUnlink] = useState<string>('')
+
+  // Estado para el menú dropdown de acciones de cada fila
+  const [activeActionMenuDni, setActiveActionMenuDni] = useState<string | null>(null)
+
   const db = getFirestore(app)
-  const { getUserData } = useUsuario()
+  const { getUserData, cambiarRolUsuario, vincularDirectorPredecesor, desvincularDirectorPredecesor } = useUsuario()
   const { currentUserData } = useGlobalContext()
   const router = useRouter()
   const dispatch = useGlobalContextDispatch()
@@ -125,6 +335,7 @@ const GestionUsuariosPage = () => {
     setDniResults([])
     setHasSearched(false)
     setCurrentPage(1)
+    setActiveActionMenuDni(null)
   }
 
   const clearDniSearch = () => {
@@ -132,6 +343,7 @@ const GestionUsuariosPage = () => {
     setIsDniActive(false)
     setDniResults([])
     setLocalSearchQuery('')
+    setActiveActionMenuDni(null)
   }
 
   const searchWithFilters = async () => {
@@ -278,11 +490,17 @@ const GestionUsuariosPage = () => {
   const paginatedResults = filteredResults.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(prev => prev + 1)
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1)
+      setActiveActionMenuDni(null)
+    }
   }
 
   const handlePrevPage = () => {
-    if (currentPage > 1) setCurrentPage(prev => prev - 1)
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1)
+      setActiveActionMenuDni(null)
+    }
   }
 
   const handleStartAudit = async (user: User) => {
@@ -423,6 +641,31 @@ const GestionUsuariosPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Cerrar menú de acciones al hacer clic fuera o presionar Escape
+  useEffect(() => {
+    if (!activeActionMenuDni) return
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (
+        !target.closest('.user-action-dropdown-container') &&
+        !target.closest('.user-action-dropdown-menu')
+      ) {
+        setActiveActionMenuDni(null)
+      }
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveActionMenuDni(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [activeActionMenuDni])
+
   const handleOpenResetModal = (user: User) => {
     setSelectedUser(user)
     setShowConfirmModal(true)
@@ -483,6 +726,306 @@ const GestionUsuariosPage = () => {
       toast.error(error.message || "Error al eliminar la solicitud")
     } finally {
       setDeletingRequest(false)
+    }
+  }
+
+  const searchDirectorByDni = async (dni: string) => {
+    const trimmed = dni.trim()
+    if (trimmed.length !== 8) {
+      setDirectorInfo(null)
+      return
+    }
+    setIsSearchingDirector(true)
+    try {
+      const userDocSnap = await getDoc(doc(db, 'usuarios', trimmed))
+      if (userDocSnap.exists()) {
+        const data = userDocSnap.data() as User
+        const isDirector = Number(data.rol || data.perfil?.rol) === 2
+        if (isDirector) {
+          setDirectorInfo({
+            nombres: data.nombres,
+            apellidos: data.apellidos,
+            institucion: data.institucion,
+            exists: true,
+          })
+        } else {
+          setDirectorInfo({ exists: false, notDirector: true })
+        }
+      } else {
+        const qDir = query(collection(db, 'usuarios'), where('dni', '==', trimmed), limit(1))
+        const qSnap = await getDocs(qDir)
+        if (!qSnap.empty) {
+          const data = qSnap.docs[0].data() as User
+          const isDirector = Number(data.rol || data.perfil?.rol) === 2
+          if (isDirector) {
+            setDirectorInfo({
+              nombres: data.nombres,
+              apellidos: data.apellidos,
+              institucion: data.institucion,
+              exists: true,
+            })
+          } else {
+            setDirectorInfo({ exists: false, notDirector: true })
+          }
+        } else {
+          setDirectorInfo({ exists: false })
+        }
+      }
+    } catch (err) {
+      console.error('Error buscando director:', err)
+      setDirectorInfo({ exists: false })
+    } finally {
+      setIsSearchingDirector(false)
+    }
+  }
+
+  const handleOpenRoleModal = async (user: User) => {
+    setUserForRoleChange(user)
+    const currentRol = Number(user.rol || user.perfil?.rol || 3)
+    const targetRol = currentRol === 2 ? 3 : 2
+    setSelectedNewRole(targetRol)
+    setShowRoleConfirmDialog(false)
+    setShowRoleModal(true)
+    setStudentCountNotice(null)
+
+    // Opción A & B: Pre-cargar director anterior o actual si existe
+    const prefillDirectorDni = user.dniDirectorAnterior || user.dniDirector || ''
+    setDirectorDniInput(prefillDirectorDni)
+    setDirectorInfo(null)
+    if (prefillDirectorDni.length === 8) {
+      searchDirectorByDni(prefillDirectorDni)
+    }
+
+    // Consultar estudiantes asociados si el usuario era docente
+    if (currentRol === 3 && user.dni) {
+      setCheckingStudents(true)
+      try {
+        const colRef = collection(db, 'usuarios', user.dni, 'estudiantes-docentes')
+        const countSnap = await getCountFromServer(colRef)
+        setStudentCountNotice(countSnap.data().count)
+      } catch (e) {
+        console.warn('No se pudo verificar estudiantes-docentes:', e)
+        setStudentCountNotice(null)
+      } finally {
+        setCheckingStudents(false)
+      }
+    }
+  }
+
+  const handleConfirmRoleChange = async () => {
+    if (!userForRoleChange || !userForRoleChange.dni) return
+    if (selectedNewRole !== 2 && selectedNewRole !== 3) {
+      toast.warning('Solo está habilitado el cambio de rol a Director o Docente')
+      return
+    }
+
+    if (selectedNewRole === 3) {
+      if (!directorDniInput.trim() || directorDniInput.trim().length !== 8) {
+        toast.warning('Debe ingresar un DNI de Director válido (8 dígitos)')
+        return
+      }
+      if (directorInfo && (!directorInfo.exists || directorInfo.notDirector)) {
+        toast.error('El DNI ingresado no corresponde a un Director registrado')
+        return
+      }
+    }
+
+    setIsChangingRole(true)
+    try {
+      const res = await cambiarRolUsuario(
+        userForRoleChange.dni,
+        selectedNewRole,
+        selectedNewRole === 3 ? directorDniInput.trim() : undefined
+      )
+      if (res.success) {
+        toast.success(res.message || `Rol actualizado exitosamente a ${ROLES_TEXT[selectedNewRole] || selectedNewRole}`)
+        
+        // Actualizar el estado local para reflejar el cambio en las tablas sin recargar
+        const updatedUser: User = {
+          ...userForRoleChange,
+          rol: selectedNewRole,
+          perfil: {
+            ...userForRoleChange.perfil,
+            rol: selectedNewRole,
+            nombre: selectedNewRole === 2 ? 'director' : selectedNewRole === 3 ? 'docente' : (selectedNewRole === 1 ? 'especialista' : selectedNewRole === 4 ? 'admin' : 'especialista regional')
+          }
+        }
+        if (selectedNewRole === 2) {
+          if (userForRoleChange.dniDirector) {
+            updatedUser.dniDirectorAnterior = userForRoleChange.dniDirector
+          }
+          delete (updatedUser as any).dniDirector
+        } else if (selectedNewRole === 3) {
+          updatedUser.dniDirector = directorDniInput.trim()
+          if (directorInfo?.institucion) {
+            updatedUser.institucion = directorInfo.institucion
+          }
+        }
+
+        setDniResults(prev => prev.map(u => u.dni === userForRoleChange.dni ? updatedUser : u))
+        setRawResults(prev => prev.map(u => u.dni === userForRoleChange.dni ? updatedUser : u))
+        
+        setShowRoleConfirmDialog(false)
+        setShowRoleModal(false)
+        setUserForRoleChange(null)
+      } else {
+        toast.error(res.message || 'Error al cambiar de rol')
+      }
+    } catch (error: any) {
+      console.error('Error al cambiar rol:', error)
+      toast.error(error.message || 'Error al procesar el cambio de rol')
+    } finally {
+      setIsChangingRole(false)
+    }
+  }
+
+  const searchPredecessorByDni = async (dniToSearch: string) => {
+    const cleanDni = dniToSearch.trim()
+    if (!cleanDni || cleanDni.length < 8) {
+      setPredecessorInfo(null)
+      return
+    }
+    if (directorForPredecessor && cleanDni === directorForPredecessor.dni) {
+      setPredecessorInfo({ exists: false, notDirector: false })
+      toast.warning('No puedes asignar al mismo director como su propio predecesor.')
+      return
+    }
+    setIsSearchingPredecessor(true)
+    try {
+      let foundUser: any = null
+      const directDocRef = doc(db, 'usuarios', cleanDni)
+      const directSnap = await getDoc(directDocRef)
+      if (directSnap.exists()) {
+        foundUser = directSnap.data()
+      } else {
+        const qDni = query(collection(db, 'usuarios'), where('dni', '==', cleanDni), limit(1))
+        const qSnap = await getDocs(qDni)
+        if (!qSnap.empty) {
+          foundUser = qSnap.docs[0].data()
+        }
+      }
+
+      if (foundUser) {
+        setPredecessorInfo({
+          nombres: foundUser.nombres,
+          apellidos: foundUser.apellidos,
+          institucion: foundUser.institucion,
+          exists: true,
+          notDirector: Number(foundUser.rol || foundUser.perfil?.rol) !== 2 && Number(foundUser.rol || foundUser.perfil?.rol) !== 3
+        })
+      } else {
+        setPredecessorInfo({ exists: false })
+      }
+    } catch (err) {
+      console.error('Error al buscar director predecesor:', err)
+      setPredecessorInfo({ exists: false })
+    } finally {
+      setIsSearchingPredecessor(false)
+    }
+  }
+
+  const handleOpenPredecessorModal = (user: User) => {
+    setDirectorForPredecessor(user)
+    setPredecessorDniInput('')
+    setPredecessorInfo(null)
+    setPredecessorDniToUnlink('')
+    setShowUnlinkConfirmDialog(false)
+    setShowPredecessorModal(true)
+  }
+
+  const handleSavePredecessor = async () => {
+    if (!directorForPredecessor?.dni) return
+    const cleanDni = predecessorDniInput.trim()
+    if (!cleanDni || cleanDni.length !== 8) {
+      toast.warning('Por favor ingresa un DNI válido de 8 dígitos.')
+      return
+    }
+    if (cleanDni === directorForPredecessor.dni) {
+      toast.error('El director predecesor no puede ser el mismo director actual.')
+      return
+    }
+    setIsSavingPredecessor(true)
+    const result = await vincularDirectorPredecesor(directorForPredecessor.dni, cleanDni)
+    setIsSavingPredecessor(false)
+    if (result.success) {
+      toast.success(result.message)
+      const updateList = (list: User[]) =>
+        list.map(u => {
+          if (u.dni === directorForPredecessor.dni) {
+            const currentList = Array.isArray(u.directoresPredecesores) ? u.directoresPredecesores : []
+            const updatedPreds = Array.from(new Set([...currentList, cleanDni]))
+            return {
+              ...u,
+              dniDirectorPredecesor: cleanDni,
+              directoresPredecesores: updatedPreds,
+            }
+          }
+          return u
+        })
+      setRawResults(prev => updateList(prev))
+      setDniResults(prev => updateList(prev))
+      setDirectorForPredecessor(prev => {
+        if (!prev) return null
+        const currentList = Array.isArray(prev.directoresPredecesores) ? prev.directoresPredecesores : []
+        const updatedPreds = Array.from(new Set([...currentList, cleanDni]))
+        return {
+          ...prev,
+          dniDirectorPredecesor: cleanDni,
+          directoresPredecesores: updatedPreds,
+        }
+      })
+      setPredecessorDniInput('')
+      setPredecessorInfo(null)
+    } else {
+      toast.error(result.message)
+    }
+  }
+
+  const handleConfirmUnlinkPredecessor = async () => {
+    if (!directorForPredecessor?.dni) return
+    const targetDni = predecessorDniToUnlink || directorForPredecessor.dniDirectorPredecesor || ''
+    if (!targetDni) {
+      toast.error('No se identificó el DNI del predecesor a desvincular.')
+      return
+    }
+    setIsSavingPredecessor(true)
+    const result = await desvincularDirectorPredecesor(directorForPredecessor.dni, targetDni)
+    setIsSavingPredecessor(false)
+    setShowUnlinkConfirmDialog(false)
+    if (result.success) {
+      toast.success(result.message)
+      const updateList = (list: User[]) =>
+        list.map(u => {
+          if (u.dni === directorForPredecessor.dni) {
+            const updatedPreds = (u.directoresPredecesores || []).filter(d => d !== targetDni)
+            const newActive = u.dniDirectorPredecesor === targetDni
+              ? (updatedPreds.length > 0 ? updatedPreds[updatedPreds.length - 1] : undefined)
+              : u.dniDirectorPredecesor
+            return {
+              ...u,
+              directoresPredecesores: updatedPreds,
+              dniDirectorPredecesor: newActive,
+            }
+          }
+          return u
+        })
+      setRawResults(prev => updateList(prev))
+      setDniResults(prev => updateList(prev))
+      setDirectorForPredecessor(prev => {
+        if (!prev) return null
+        const updatedPreds = (prev.directoresPredecesores || []).filter(d => d !== targetDni)
+        const newActive = prev.dniDirectorPredecesor === targetDni
+          ? (updatedPreds.length > 0 ? updatedPreds[updatedPreds.length - 1] : undefined)
+          : prev.dniDirectorPredecesor
+        return {
+          ...prev,
+          directoresPredecesores: updatedPreds,
+          dniDirectorPredecesor: newActive,
+        }
+      })
+      setPredecessorDniToUnlink('')
+    } else {
+      toast.error(result.message)
     }
   }
 
@@ -617,7 +1160,7 @@ const GestionUsuariosPage = () => {
                       <table className="w-full border-collapse text-left">
                         <thead>
                           <tr className="bg-slate-50 border-b border-slate-100 text-slate-600 font-semibold text-sm">
-                            <th className="p-4 pl-6">Usuario</th>
+                            <th className="p-4 pl-6 min-w-[170px]">Usuario</th>
                             <th className="p-4">DNI</th>
                             <th className="p-4">Rol</th>
                             <th className="p-4">Región</th>
@@ -627,16 +1170,26 @@ const GestionUsuariosPage = () => {
                             <th className="p-4">Área</th>
                             <th className="p-4">Nivel</th>
                             <th className="p-4">Correo Electrónico</th>
-                            <th className="p-4 pr-6 text-center">Acciones</th>
+                            <th className="p-4 pr-6 text-center w-[120px]">Acciones</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-700">
-                          {filteredDniResults.map((user) => (
+                          {filteredDniResults.map((user, index) => (
                             <tr key={user.dni} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="p-4 pl-6">
-                                <div>
-                                  <div className="font-semibold text-slate-800">{user.nombres} {user.apellidos}</div>
-                                  <div className="text-xs text-slate-400">{user.celular || 'Sin celular'}</div>
+                              <td className="p-4 pl-6 min-w-[170px] max-w-[260px]">
+                                <div style={{ containerType: 'inline-size' }} className="w-full">
+                                  <div
+                                    className="font-semibold text-slate-800 capitalize leading-snug break-words text-xs sm:text-xs md:text-sm"
+                                    style={{
+                                      fontSize: 'clamp(0.72rem, 5.5cqi, 0.875rem)',
+                                    }}
+                                    title={formatNombreCapitalize(user.nombres, user.apellidos)}
+                                  >
+                                    {formatNombreCapitalize(user.nombres, user.apellidos)}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 mt-0.5">
+                                    {user.celular || 'Sin celular'}
+                                  </div>
                                 </div>
                               </td>
                               <td className="p-4">
@@ -648,6 +1201,12 @@ const GestionUsuariosPage = () => {
                                 <span className="text-slate-600 text-sm">
                                   {ROLES_TEXT[Number(user.rol || user.perfil?.rol)] || 'Usuario'}
                                 </span>
+                                {Number(user.rol || user.perfil?.rol) === 2 && (user.dniDirectorPredecesor || (Array.isArray(user.directoresPredecesores) && user.directoresPredecesores.length > 0)) && (
+                                  <div className="inline-flex items-center gap-1 text-[11px] bg-emerald-50 text-emerald-700 font-medium px-2 py-0.5 rounded-md mt-1 border border-emerald-200/50" title={`Hereda evaluaciones de DNI: ${user.dniDirectorPredecesor || user.directoresPredecesores?.join(', ')}`}>
+                                    <RiHistoryLine className="text-xs shrink-0" />
+                                    <span>Predecesor: {user.dniDirectorPredecesor || user.directoresPredecesores?.join(', ')}</span>
+                                  </div>
+                                )}
                               </td>
                               <td className="p-4 text-sm text-slate-500">
                                 {user.region ? regionTexto(String(user.region)) : '—'}
@@ -670,25 +1229,29 @@ const GestionUsuariosPage = () => {
                               <td className="p-4 text-sm text-slate-500">
                                 {user.email || `${user.dni}@competencelab.com`}
                               </td>
-                              <td className="p-4 pr-6">
-                                <div className="flex justify-center gap-2">
-                                  <button
-                                    onClick={() => handleStartAudit(user)}
-                                    className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-xs font-bold border border-blue-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                    title="Auditar cuenta del usuario"
-                                  >
-                                    <RiEyeLine className="text-sm" />
-                                    Auditar
-                                  </button>
-                                  <button
-                                    onClick={() => handleOpenResetModal(user)}
-                                    className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold border border-amber-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                    title="Restablecer contraseña"
-                                  >
-                                    <RiLockPasswordLine className="text-sm" />
-                                    Restablecer
-                                  </button>
-                                </div>
+                              <td className="p-4 pr-6 text-center w-[120px]">
+                                <UserActionsDropdown
+                                  user={user}
+                                  isOpen={activeActionMenuDni === user.dni}
+                                  onToggle={() => setActiveActionMenuDni(prev => prev === user.dni ? null : (user.dni || null))}
+                                  onClose={() => setActiveActionMenuDni(null)}
+                                  onAudit={() => {
+                                    setActiveActionMenuDni(null)
+                                    handleStartAudit(user)
+                                  }}
+                                  onRoleChange={() => {
+                                    setActiveActionMenuDni(null)
+                                    handleOpenRoleModal(user)
+                                  }}
+                                  onResetPassword={() => {
+                                    setActiveActionMenuDni(null)
+                                    handleOpenResetModal(user)
+                                  }}
+                                  onAssignPredecessor={() => {
+                                    setActiveActionMenuDni(null)
+                                    handleOpenPredecessorModal(user)
+                                  }}
+                                />
                               </td>
                             </tr>
                           ))}
@@ -933,7 +1496,7 @@ const GestionUsuariosPage = () => {
                       <table className="w-full border-collapse text-left">
                         <thead>
                           <tr className="bg-slate-50 border-b border-slate-100 text-slate-600 font-semibold text-sm">
-                            <th className="p-4 pl-6">Usuario</th>
+                            <th className="p-4 pl-6 min-w-[170px]">Usuario</th>
                             <th className="p-4">DNI</th>
                             <th className="p-4">Rol</th>
                             <th className="p-4">Región</th>
@@ -943,16 +1506,26 @@ const GestionUsuariosPage = () => {
                             <th className="p-4">Área</th>
                             <th className="p-4">Nivel</th>
                             <th className="p-4">Correo Electrónico</th>
-                            <th className="p-4 pr-6 text-center">Acciones</th>
+                            <th className="p-4 pr-6 text-center w-[120px]">Acciones</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-700">
-                          {paginatedResults.map((user) => (
+                          {paginatedResults.map((user, index) => (
                             <tr key={user.dni} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="p-4 pl-6">
-                                <div>
-                                  <div className="font-semibold text-slate-800">{user.nombres} {user.apellidos}</div>
-                                  <div className="text-xs text-slate-400">{user.celular || 'Sin celular'}</div>
+                              <td className="p-4 pl-6 min-w-[170px] max-w-[260px]">
+                                <div style={{ containerType: 'inline-size' }} className="w-full">
+                                  <div
+                                    className="font-semibold text-slate-800 capitalize leading-snug break-words text-xs sm:text-xs md:text-sm"
+                                    style={{
+                                      fontSize: 'clamp(0.72rem, 5.5cqi, 0.875rem)',
+                                    }}
+                                    title={formatNombreCapitalize(user.nombres, user.apellidos)}
+                                  >
+                                    {formatNombreCapitalize(user.nombres, user.apellidos)}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 mt-0.5">
+                                    {user.celular || 'Sin celular'}
+                                  </div>
                                 </div>
                               </td>
                               <td className="p-4">
@@ -964,6 +1537,12 @@ const GestionUsuariosPage = () => {
                                 <span className="text-slate-600 text-sm">
                                   {ROLES_TEXT[Number(user.rol || user.perfil?.rol)] || 'Usuario'}
                                 </span>
+                                {Number(user.rol || user.perfil?.rol) === 2 && (user.dniDirectorPredecesor || (Array.isArray(user.directoresPredecesores) && user.directoresPredecesores.length > 0)) && (
+                                  <div className="inline-flex items-center gap-1 text-[11px] bg-emerald-50 text-emerald-700 font-medium px-2 py-0.5 rounded-md mt-1 border border-emerald-200/50" title={`Hereda evaluaciones de DNI: ${user.dniDirectorPredecesor || user.directoresPredecesores?.join(', ')}`}>
+                                    <RiHistoryLine className="text-xs shrink-0" />
+                                    <span>Predecesor: {user.dniDirectorPredecesor || user.directoresPredecesores?.join(', ')}</span>
+                                  </div>
+                                )}
                               </td>
                               <td className="p-4 text-sm text-slate-500">
                                 {user.region ? regionTexto(String(user.region)) : '—'}
@@ -986,25 +1565,29 @@ const GestionUsuariosPage = () => {
                               <td className="p-4 text-sm text-slate-500">
                                 {user.email || `${user.dni}@competencelab.com`}
                               </td>
-                              <td className="p-4 pr-6">
-                                <div className="flex justify-center gap-2">
-                                  <button
-                                    onClick={() => handleStartAudit(user)}
-                                    className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-xs font-bold border border-blue-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                    title="Auditar cuenta del usuario"
-                                  >
-                                    <RiEyeLine className="text-sm" />
-                                    Auditar
-                                  </button>
-                                  <button
-                                    onClick={() => handleOpenResetModal(user)}
-                                    className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold border border-amber-200/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                    title="Restablecer contraseña"
-                                  >
-                                    <RiLockPasswordLine className="text-sm" />
-                                    Restablecer
-                                  </button>
-                                </div>
+                              <td className="p-4 pr-6 text-center w-[120px]">
+                                <UserActionsDropdown
+                                  user={user}
+                                  isOpen={activeActionMenuDni === user.dni}
+                                  onToggle={() => setActiveActionMenuDni(prev => prev === user.dni ? null : (user.dni || null))}
+                                  onClose={() => setActiveActionMenuDni(null)}
+                                  onAudit={() => {
+                                    setActiveActionMenuDni(null)
+                                    handleStartAudit(user)
+                                  }}
+                                  onRoleChange={() => {
+                                    setActiveActionMenuDni(null)
+                                    handleOpenRoleModal(user)
+                                  }}
+                                  onResetPassword={() => {
+                                    setActiveActionMenuDni(null)
+                                    handleOpenResetModal(user)
+                                  }}
+                                  onAssignPredecessor={() => {
+                                    setActiveActionMenuDni(null)
+                                    handleOpenPredecessorModal(user)
+                                  }}
+                                />
                               </td>
                             </tr>
                           ))}
@@ -1504,7 +2087,7 @@ const GestionUsuariosPage = () => {
 
       {/* Confirm Password Reset Modal */}
       {showConfirmModal && selectedUser && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-6 space-y-4">
               <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-2xl mx-auto">
@@ -1552,7 +2135,7 @@ const GestionUsuariosPage = () => {
 
       {/* Confirm Bulk Password Reset Modal */}
       {showBulkConfirmModal && requests.length > 0 && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-6 space-y-4">
               <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-2xl mx-auto">
@@ -1597,7 +2180,7 @@ const GestionUsuariosPage = () => {
 
       {/* Confirm Delete Support Request Modal */}
       {selectedRequestToDelete && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-6 space-y-4">
               <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-2xl mx-auto">
@@ -1633,6 +2216,602 @@ const GestionUsuariosPage = () => {
                   </>
                 ) : (
                   'Sí, eliminar'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Cambiar Rol de Usuario */}
+      {showRoleModal && userForRoleChange && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-lg w-full max-h-[min(90vh,620px)] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 my-auto">
+            {/* Modal Header */}
+            <div className="p-4 px-6 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-lg shrink-0 shadow-sm shadow-purple-500/10">
+                  <RiShieldUserLine />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-800 leading-tight">Cambiar Rol de Usuario</h3>
+                  <p className="text-xs text-slate-500 truncate max-w-[300px] sm:max-w-[360px]">
+                    {formatNombreCapitalize(userForRoleChange.nombres, userForRoleChange.apellidos)}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setShowRoleModal(false); setShowRoleConfirmDialog(false); setUserForRoleChange(null); }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition-colors"
+                disabled={isChangingRole}
+                title="Cerrar modal"
+              >
+                <RiCloseLine className="text-xl" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="p-5 overflow-y-auto space-y-3.5 flex-1">
+              {/* Ficha Resumen del Usuario */}
+              <div className="bg-slate-50/90 border border-slate-200/70 rounded-xl p-3 text-xs grid grid-cols-2 gap-x-4 gap-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 font-medium">DNI:</span>
+                  <span className="font-mono font-bold text-slate-700">{userForRoleChange.dni}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 font-medium">Rol Actual:</span>
+                  <span className="font-bold px-2 py-0.5 rounded-md bg-slate-200/80 text-slate-700 text-[11px]">
+                    {ROLES_TEXT[Number(userForRoleChange.rol || userForRoleChange.perfil?.rol)] || 'Desconocido'}
+                  </span>
+                </div>
+                {userForRoleChange.institucion && (
+                  <div className="flex items-center justify-between col-span-2 border-t border-slate-200/40 pt-1">
+                    <span className="text-slate-400 font-medium">Institución:</span>
+                    <span className="font-medium text-slate-700 truncate max-w-[280px] sm:max-w-[320px]">{userForRoleChange.institucion}</span>
+                  </div>
+                )}
+                {userForRoleChange.region && (
+                  <div className="flex items-center justify-between col-span-2 border-t border-slate-200/40 pt-1">
+                    <span className="text-slate-400 font-medium">UGEL / Región:</span>
+                    <span className="font-medium text-slate-700">{regionTexto(String(userForRoleChange.region))}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Selector de Nuevo Rol */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Seleccionar Nuevo Rol
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    { id: 2, label: 'Director', desc: 'Gestión institucional y docentes' },
+                    { id: 3, label: 'Docente', desc: 'Aulas, estudiantes y evaluaciones' },
+                    { id: 1, label: 'Especialista', desc: 'Monitoreo de UGEL' },
+                    { id: 4, label: 'Administrador', desc: 'Control global del portal' },
+                  ].map((r) => {
+                    const isSelected = selectedNewRole === r.id
+                    const isCurrent = Number(userForRoleChange.rol || userForRoleChange.perfil?.rol) === r.id
+                    const isAllowed = r.id === 2 || r.id === 3 // Director y Docente habilitados
+
+                    return (
+                      <button
+                        type="button"
+                        key={r.id}
+                        disabled={!isAllowed || isChangingRole}
+                        onClick={() => {
+                          if (isAllowed) setSelectedNewRole(r.id)
+                        }}
+                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                          !isAllowed
+                            ? 'border-slate-200/50 bg-slate-100/60 opacity-40 cursor-not-allowed select-none'
+                            : isSelected
+                            ? 'border-purple-600 bg-purple-50/70 ring-2 ring-purple-500/20 shadow-xs'
+                            : 'border-slate-200/80 hover:border-slate-300 bg-white hover:bg-slate-50/50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs font-bold ${
+                            !isAllowed ? 'text-slate-400' : isSelected ? 'text-purple-700' : 'text-slate-700'
+                          }`}>
+                            {r.label}
+                          </span>
+                          {isCurrent ? (
+                            <span className="text-[9px] bg-slate-200/80 text-slate-500 px-1.5 py-0.5 rounded font-semibold">
+                              Actual
+                            </span>
+                          ) : !isAllowed ? (
+                            <span className="text-[9px] bg-slate-200/50 text-slate-400 px-1.5 py-0.5 rounded font-medium">
+                              Deshabilitado
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className={`text-[10px] mt-0.5 leading-snug line-clamp-1 ${!isAllowed ? 'text-slate-300' : 'text-slate-400'}`}>
+                          {r.desc}
+                        </p>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Opción B: Input de Director Asignado cuando se selecciona Docente */}
+              {selectedNewRole === 3 && (
+                <div className="bg-slate-50/90 border border-slate-200/80 rounded-xl p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>DNI del Director Asignado</span>
+                      <span className="text-red-500">*</span>
+                    </label>
+                    {userForRoleChange.dniDirectorAnterior && userForRoleChange.dniDirectorAnterior !== directorDniInput && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDirectorDniInput(userForRoleChange.dniDirectorAnterior!)
+                          searchDirectorByDni(userForRoleChange.dniDirectorAnterior!)
+                        }}
+                        className="text-[10px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-lg transition-colors flex items-center gap-1"
+                        title="Restaurar el director que tenía antes este docente"
+                      >
+                        <span>Restaurar anterior ({userForRoleChange.dniDirectorAnterior})</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      maxLength={8}
+                      value={directorDniInput}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 8)
+                        setDirectorDniInput(val)
+                        searchDirectorByDni(val)
+                      }}
+                      placeholder="Ingrese el DNI del Director (8 dígitos)"
+                      className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-200 bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                    />
+                    {isSearchingDirector && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="w-3.5 h-3.5 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Feedback en vivo del Director */}
+                  {directorInfo?.exists ? (
+                    <div className="text-[11px] bg-emerald-50/90 border border-emerald-200/80 rounded-lg p-2.5 text-emerald-800 flex items-start gap-2">
+                      <RiCheckLine className="text-base text-emerald-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold leading-tight">
+                          {formatNombreCapitalize(directorInfo.nombres, directorInfo.apellidos)}
+                        </p>
+                        {directorInfo.institucion && (
+                          <p className="text-[10px] text-emerald-700/80 mt-0.5">
+                            I.E. {directorInfo.institucion}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : directorInfo?.notDirector ? (
+                    <div className="text-[11px] bg-amber-50/90 border border-amber-200/80 rounded-lg p-2 text-amber-800 flex items-center gap-2">
+                      <RiAlertLine className="text-base text-amber-600 shrink-0" />
+                      <span>El usuario con DNI {directorDniInput} no tiene rol de Director.</span>
+                    </div>
+                  ) : directorInfo && !directorInfo.exists && directorDniInput.length === 8 ? (
+                    <div className="text-[11px] bg-rose-50/90 border border-rose-200/80 rounded-lg p-2 text-rose-800 flex items-center gap-2">
+                      <RiAlertLine className="text-base text-rose-600 shrink-0" />
+                      <span>No se encontró ningún director registrado con el DNI {directorDniInput}.</span>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-slate-400 leading-snug">
+                      Ingresa el DNI del Director para vincular a este docente con su institución educativa.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Notificaciones / Advertencias del cambio */}
+              <div className="space-y-2">
+                {selectedNewRole === 2 && (
+                  <div className="text-[11px] text-purple-700 font-medium bg-purple-50/80 p-2.5 rounded-xl border border-purple-150 leading-relaxed">
+                    ✨ <strong>Restauración a Director (Opción A):</strong> Se desvinculará la referencia a <code className="font-mono font-bold">dniDirector</code> y se respaldará en <code className="font-mono font-bold">dniDirectorAnterior</code>. Sus docentes y reportes se sincronizarán con sus privilegios directivos.
+                  </div>
+                )}
+
+                {selectedNewRole === 3 && (
+                  <div className="text-[11px] text-blue-700 font-medium bg-blue-50/80 p-2.5 rounded-xl border border-blue-150 leading-relaxed">
+                    📘 <strong>Reversión a Docente (Opción B):</strong> Se vinculará al docente con el Director indicado. Sus aulas, estudiantes y evaluaciones se mantendrán intactos.
+                  </div>
+                )}
+
+                {checkingStudents ? (
+                  <div className="flex items-center gap-2 text-[11px] text-slate-500 p-2 bg-slate-50 rounded-lg border border-slate-150">
+                    <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-purple-600 rounded-full animate-spin"></div>
+                    <span>Verificando historial de estudiantes asociados...</span>
+                  </div>
+                ) : studentCountNotice !== null && studentCountNotice > 0 ? (
+                  <div className="text-[11px] text-blue-700 font-medium bg-blue-50/70 p-2.5 rounded-xl border border-blue-100">
+                    ℹ️ <strong>Historial detectado:</strong> Posee <strong>{studentCountNotice}</strong> estudiante(s) registrado(s). Sus registros no se eliminarán y permanecerán a salvo.
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-slate-50 px-5 py-3 border-t border-slate-100 flex justify-end gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => { setShowRoleModal(false); setShowRoleConfirmDialog(false); setUserForRoleChange(null); }}
+                className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-200/60 text-xs font-semibold transition-colors"
+                disabled={isChangingRole}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowRoleConfirmDialog(true)}
+                disabled={
+                  isChangingRole ||
+                  selectedNewRole === Number(userForRoleChange.rol || userForRoleChange.perfil?.rol) ||
+                  (selectedNewRole === 3 && (!directorDniInput.trim() || directorDniInput.trim().length !== 8 || !directorInfo?.exists))
+                }
+                className={`px-4 py-2 rounded-xl text-white text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  selectedNewRole === Number(userForRoleChange.rol || userForRoleChange.perfil?.rol) ||
+                  (selectedNewRole === 3 && (!directorDniInput.trim() || directorDniInput.trim().length !== 8 || !directorInfo?.exists))
+                    ? 'bg-slate-300 cursor-not-allowed text-slate-500'
+                    : 'bg-purple-600 hover:bg-purple-700 hover:shadow-md hover:shadow-purple-600/20 active:scale-[0.98]'
+                }`}
+              >
+                <RiShieldUserLine className="text-sm" />
+                Confirmar Cambio
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Secundario de Confirmación para Cambio de Rol */}
+      {showRoleConfirmDialog && userForRoleChange && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 space-y-4 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-3xl mx-auto shadow-sm shadow-purple-500/10">
+                <RiShieldUserLine />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-slate-800">
+                  {selectedNewRole === 2 ? '¿Confirmar cambio a Director?' : '¿Confirmar cambio a Docente?'}
+                </h3>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  ¿Estás seguro de que deseas cambiar el rol del usuario{' '}
+                  <strong className="text-slate-800 font-semibold">
+                    {formatNombreCapitalize(userForRoleChange.nombres, userForRoleChange.apellidos)}
+                  </strong>{' '}
+                  (DNI: <span className="font-mono font-bold text-purple-700">{userForRoleChange.dni}</span>) al rol de{' '}
+                  <strong className="text-purple-700 font-bold">{ROLES_TEXT[selectedNewRole]}</strong>?
+                </p>
+
+                {selectedNewRole === 2 ? (
+                  <div className="bg-purple-50/80 border border-purple-100/90 rounded-xl p-3 text-left text-xs text-purple-800 space-y-1">
+                    <p className="font-semibold flex items-center gap-1.5">
+                      <span>✨</span> Modificación de privilegios:
+                    </p>
+                    <ul className="list-disc list-inside text-[11px] text-purple-700/90 pl-1 space-y-0.5">
+                      <li>Se actualizarán sus credenciales y permisos a Director.</li>
+                      <li>Se respaldará el director previo en <code className="font-mono font-bold">dniDirectorAnterior</code>.</li>
+                      <li>Sus estudiantes y evaluaciones permanecerán seguros.</li>
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="bg-blue-50/80 border border-blue-100/90 rounded-xl p-3 text-left text-xs text-blue-800 space-y-1">
+                    <p className="font-semibold flex items-center gap-1.5">
+                      <span>📘</span> Director asignado:
+                    </p>
+                    <div className="text-[11px] text-blue-900 bg-white/70 border border-blue-200/50 rounded-lg p-2 mt-1 space-y-0.5 font-medium">
+                      <p>
+                        <strong>Director:</strong> {formatNombreCapitalize(directorInfo?.nombres, directorInfo?.apellidos)}
+                      </p>
+                      <p>
+                        <strong>DNI:</strong> <span className="font-mono">{directorDniInput}</span>
+                      </p>
+                      {directorInfo?.institucion && (
+                        <p>
+                          <strong>Institución:</strong> I.E. {directorInfo.institucion}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowRoleConfirmDialog(false)}
+                className="px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-200/60 text-xs sm:text-sm font-semibold transition-colors"
+                disabled={isChangingRole}
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRoleChange}
+                disabled={isChangingRole}
+                className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm font-semibold transition-all hover:shadow-lg hover:shadow-purple-600/20 active:scale-[0.98] flex items-center gap-2"
+              >
+                {isChangingRole ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Cambiando rol...
+                  </>
+                ) : (
+                  <>
+                    <RiShieldUserLine className="text-base" />
+                    {selectedNewRole === 2 ? 'Sí, cambiar a Director' : 'Sí, cambiar a Docente'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Vincular Director Predecesor */}
+      {showPredecessorModal && directorForPredecessor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-5 sm:p-6 border-b border-slate-100 bg-gradient-to-r from-emerald-50/50 via-teal-50/30 to-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-xl shrink-0">
+                  <RiHistoryLine />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-base sm:text-lg leading-tight">
+                    Director Predecesor
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Heredar y cerrar ciclo de evaluaciones anuales
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPredecessorModal(false)
+                  setDirectorForPredecessor(null)
+                }}
+                className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors"
+              >
+                <RiCloseLine className="text-xl" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 sm:p-6 space-y-4">
+              {/* Resumen del Director Actual */}
+              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3.5 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  Director Titular (Entrante)
+                </span>
+                <div className="font-semibold text-slate-800 text-sm">
+                  {formatNombreCapitalize(directorForPredecessor.nombres, directorForPredecessor.apellidos)}
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                  <span>DNI: <strong className="font-mono text-slate-700">{directorForPredecessor.dni}</strong></span>
+                  {directorForPredecessor.institucion && (
+                    <>
+                      <span>•</span>
+                      <span>I.E.: <strong className="text-slate-700">{directorForPredecessor.institucion}</strong></span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Explicación didáctica */}
+              <div className="text-[11px] text-emerald-800 bg-emerald-50/70 border border-emerald-200/60 rounded-xl p-3 leading-relaxed">
+                💡 <strong>Cierre de Ciclo Escolar:</strong> Permite que este director unifique bajo su panel los resultados de etapas previas (ej. <strong>EDI</strong> y <strong>EP1</strong>) registrados por el director saliente, complementándolos con los que aplique (ej. <strong>EP2</strong>) para ver los reportes longitudinales completos.
+              </div>
+
+              {/* Predecesores vinculados actualmente */}
+              {(() => {
+                const linkedPredecessors = Array.from(
+                  new Set([
+                    ...(directorForPredecessor.dniDirectorPredecesor ? [directorForPredecessor.dniDirectorPredecesor] : []),
+                    ...(Array.isArray(directorForPredecessor.directoresPredecesores) ? directorForPredecessor.directoresPredecesores : []),
+                  ])
+                ).filter(Boolean)
+
+                if (linkedPredecessors.length === 0) return null
+
+                return (
+                  <div className="space-y-2">
+                    <div className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                      <RiLinkM className="text-sm text-amber-600" />
+                      <span>{linkedPredecessors.length === 1 ? 'Predecesor vinculado actualmente:' : 'Predecesores vinculados actualmente:'}</span>
+                    </div>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {linkedPredecessors.map(predDni => (
+                        <div
+                          key={predDni}
+                          className="bg-amber-50/80 border border-amber-200/70 rounded-xl p-3 flex items-center justify-between gap-3"
+                        >
+                          <div className="space-y-0.5">
+                            <div className="text-xs text-amber-800 font-mono flex items-center gap-2">
+                              <span>DNI: <strong>{predDni}</strong></span>
+                              {predDni === directorForPredecessor.dniDirectorPredecesor && (
+                                <span className="text-[10px] bg-amber-200/70 text-amber-900 font-sans font-medium px-2 py-0.5 rounded-md">
+                                  Activo
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPredecessorDniToUnlink(predDni)
+                              setShowUnlinkConfirmDialog(true)
+                            }}
+                            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 transition-colors flex items-center gap-1 shadow-xs shrink-0"
+                          >
+                            <RiLinkUnlinkM className="text-xs" />
+                            <span>Desvincular</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Input DNI del Predecesor */}
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-700">
+                  DNI del Director Saliente (Predecesor):
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    maxLength={8}
+                    value={predecessorDniInput}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '')
+                      setPredecessorDniInput(val)
+                      if (val.length === 8) {
+                        searchPredecessorByDni(val)
+                      } else {
+                        setPredecessorInfo(null)
+                      }
+                    }}
+                    placeholder="Ej. 12345678"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  />
+                  {isSearchingPredecessor && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="w-4 h-4 border-2 border-slate-300 border-t-emerald-600 rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Previsualización del predecesor encontrado */}
+                {predecessorInfo && predecessorInfo.exists ? (
+                  <div className="text-xs bg-emerald-50/80 border border-emerald-200/70 rounded-xl p-3 text-emerald-900 space-y-1">
+                    <div className="font-bold flex items-center gap-1.5 text-emerald-800">
+                      <RiCheckLine className="text-base text-emerald-600" />
+                      <span>Director Predecesor Identificado:</span>
+                    </div>
+                    <p className="font-semibold text-sm">
+                      {formatNombreCapitalize(predecessorInfo.nombres, predecessorInfo.apellidos)}
+                    </p>
+                    {predecessorInfo.institucion && (
+                      <p className="text-[11px] text-emerald-700">
+                        I.E. {predecessorInfo.institucion}
+                      </p>
+                    )}
+                  </div>
+                ) : predecessorInfo && !predecessorInfo.exists && predecessorDniInput.length === 8 ? (
+                  <div className="text-[11px] bg-rose-50/90 border border-rose-200/80 rounded-lg p-2.5 text-rose-800 flex items-center gap-2">
+                    <RiAlertLine className="text-base text-rose-600 shrink-0" />
+                    <span>No se encontró ningún usuario registrado con el DNI {predecessorDniInput}.</span>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-slate-400">
+                    Ingresa los 8 dígitos del DNI para validar y vincular automáticamente.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-slate-50 p-4 border-t border-slate-100 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPredecessorModal(false)
+                  setDirectorForPredecessor(null)
+                }}
+                className="px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-200/60 text-xs sm:text-sm font-semibold transition-colors"
+                disabled={isSavingPredecessor}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSavePredecessor}
+                disabled={
+                  isSavingPredecessor ||
+                  predecessorDniInput.trim().length !== 8 ||
+                  (predecessorInfo && !predecessorInfo.exists) ||
+                  predecessorDniInput.trim() === directorForPredecessor.dni ||
+                  predecessorDniInput.trim() === directorForPredecessor.dniDirectorPredecesor
+                }
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-semibold transition-all hover:shadow-lg hover:shadow-emerald-600/20 active:scale-[0.98] flex items-center gap-2"
+              >
+                {isSavingPredecessor ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Guardando vinculación...
+                  </>
+                ) : (
+                  <>
+                    <RiLinkM className="text-base" />
+                    Guardar Vinculación
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Diálogo de Confirmación para Desvincular Predecesor */}
+      {showUnlinkConfirmDialog && directorForPredecessor && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 mx-auto flex items-center justify-center text-3xl">
+                <RiAlertLine />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-lg font-bold text-slate-800">
+                  ¿Desvincular Director Predecesor?
+                </h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Se removerá la vinculación con el DNI <strong className="font-mono text-slate-700">{predecessorDniToUnlink || directorForPredecessor.dniDirectorPredecesor}</strong>. El director actual dejará de jalar los resultados previos y docentes de ese predecesor.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUnlinkConfirmDialog(false)
+                  setPredecessorDniToUnlink('')
+                }}
+                className="px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-200/60 text-xs sm:text-sm font-semibold transition-colors"
+                disabled={isSavingPredecessor}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmUnlinkPredecessor}
+                disabled={isSavingPredecessor}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-semibold transition-all hover:shadow-lg hover:shadow-rose-600/20 active:scale-[0.98] flex items-center gap-2"
+              >
+                {isSavingPredecessor ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Desvinculando...
+                  </>
+                ) : (
+                  <>
+                    <RiLinkUnlinkM className="text-base" />
+                    Sí, desvincular
+                  </>
                 )}
               </button>
             </div>
