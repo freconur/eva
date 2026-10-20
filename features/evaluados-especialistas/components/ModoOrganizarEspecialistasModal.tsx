@@ -80,10 +80,48 @@ export const SECCIONES_REPORTE_CONFIG: Record<string, SectionDefinition> = {
   },
 };
 
+export const SECCIONES_REPORTE_DOCENTES_CONFIG: Record<string, SectionDefinition> = {
+  global_consolidado: {
+    id: 'global_consolidado',
+    title: 'Rendimiento Global Consolidado',
+    subtitle: 'Barras y ranking de Institución / UGEL y Docentes de toda la evaluación',
+    icon: <RiBarChartGroupedLine />,
+    color: '#3b82f6',
+  },
+  pie_charts: {
+    id: 'pie_charts',
+    title: 'Consolidado Global y Niveles de Logro',
+    subtitle: 'Gráficos circulares de estado general, distribución por niveles y promedio por dominio',
+    icon: <RiAwardLine />,
+    color: '#10b981',
+  },
+  dimensiones_especialistas: {
+    id: 'dimensiones_especialistas',
+    title: 'Rendimiento por Docente según Dominio',
+    subtitle: 'Ranking y comparativas desagregados por dimensiones para Docentes',
+    icon: <RiGroupLine />,
+    color: '#ec4899',
+  },
+  preguntas_criterios: {
+    id: 'preguntas_criterios',
+    title: 'Resultados Detallados por Criterio',
+    subtitle: 'Desglose individual de respuestas de cada pregunta y criterio evaluado',
+    icon: <RiLayoutGridLine />,
+    color: '#f59e0b',
+  },
+};
+
 export const DEFAULT_SECTIONS_ORDER = [
   'global_consolidado',
   'pie_charts',
   'dimensiones_ugel',
+  'dimensiones_especialistas',
+  'preguntas_criterios',
+];
+
+export const DEFAULT_SECTIONS_DOCENTES_ORDER = [
+  'global_consolidado',
+  'pie_charts',
   'dimensiones_especialistas',
   'preguntas_criterios',
 ];
@@ -192,13 +230,14 @@ const SortableRow: React.FC<SortableRowProps> = ({
   );
 };
 
-interface ModoOrganizarEspecialistasModalProps {
+export interface ModoOrganizarEspecialistasModalProps {
   isOpen: boolean;
   onClose: () => void;
   ordenSecciones: string[];
   onOrderChange: (newOrder: string[]) => void;
   seccionesVisibles: string[];
   onVisibilityChange: (newVisible: string[]) => void;
+  sectionsConfig?: Record<string, SectionDefinition>;
 }
 
 export const ModoOrganizarEspecialistasModal: React.FC<ModoOrganizarEspecialistasModalProps> = ({
@@ -208,7 +247,9 @@ export const ModoOrganizarEspecialistasModal: React.FC<ModoOrganizarEspecialista
   onOrderChange,
   seccionesVisibles,
   onVisibilityChange,
+  sectionsConfig,
 }) => {
+  const activeConfig = sectionsConfig || SECCIONES_REPORTE_CONFIG;
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -255,8 +296,9 @@ export const ModoOrganizarEspecialistasModal: React.FC<ModoOrganizarEspecialista
   };
 
   const handleReset = () => {
-    onOrderChange(DEFAULT_SECTIONS_ORDER);
-    onVisibilityChange(DEFAULT_SECTIONS_ORDER);
+    const defaultOrder = sectionsConfig ? Object.keys(sectionsConfig) : DEFAULT_SECTIONS_ORDER;
+    onOrderChange(defaultOrder);
+    onVisibilityChange(defaultOrder);
   };
 
   const hiddenCount = ordenSecciones.length - seccionesVisibles.length;
@@ -298,7 +340,7 @@ export const ModoOrganizarEspecialistasModal: React.FC<ModoOrganizarEspecialista
             <SortableContext items={ordenSecciones} strategy={verticalListSortingStrategy}>
               <div className={styles.listContainer}>
                 {ordenSecciones.map((secId, index) => {
-                  const sectionDef = SECCIONES_REPORTE_CONFIG[secId] || {
+                  const sectionDef = activeConfig[secId] || {
                     id: secId,
                     title: secId,
                     subtitle: 'Sección del reporte',

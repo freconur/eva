@@ -22,7 +22,7 @@ import {
   ModalAgregarPregunta,
   ModalEditarTituloDescripcion,
 } from '../modals';
-import { DimensionEspecialista, PRDocentes, AlternativasDocente } from '@/features/types/types';
+import { DimensionEspecialista, PRDocentes, AlternativasDocente, NivelYPuntaje } from '@/features/types/types';
 
 export interface EvaluacionConfigMenuProps {
   idEvaluacion: string;
@@ -30,6 +30,7 @@ export interface EvaluacionConfigMenuProps {
   dimensiones?: DimensionEspecialista[];
   preguntas?: PRDocentes[];
   escala?: AlternativasDocente[];
+  niveles?: NivelYPuntaje[];
   activarEvidencias?: boolean;
   titulo?: string;
   descripcion?: string;
@@ -45,6 +46,7 @@ export const EvaluacionConfigMenu: React.FC<EvaluacionConfigMenuProps> = ({
   dimensiones = [],
   preguntas = [],
   escala = [],
+  niveles = [],
   activarEvidencias = false,
   titulo = '',
   descripcion = '',
@@ -271,6 +273,7 @@ export const EvaluacionConfigMenu: React.FC<EvaluacionConfigMenuProps> = ({
         <ModalConfigurarNiveles
           idEvaluacion={idEvaluacion}
           collectionName={collectionName}
+          nivelesActuales={niveles}
           onClose={() => setModalOpen(null)}
           onSuccess={onRefresh}
         />

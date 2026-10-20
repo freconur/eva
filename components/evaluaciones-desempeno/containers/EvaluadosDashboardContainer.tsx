@@ -70,6 +70,8 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 }) => {
 	const router = useRouter();
 	const id = propId || (router.query.id as string);
+	const queryInstitucion = (router.query.institucion as string) || '';
+	const queryDniDirector = (router.query.dniDirector as string) || '';
 	const [showOnboarding, setShowOnboarding] = useState(false);
 
 	useEffect(() => {
@@ -85,22 +87,24 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 	}, []);
 
 	const {
+		currentUserData,
 		evaluadosEspecialista,
 		allEspecialistas,
 		loaderPages,
 		dataEvaluacionDocente,
 		getPreguntaRespuestaDocentes,
-		dimensionesEspecialistas
+		dimensionesEspecialistas,
 	} = useGlobalContext();
 
 	const {
 		getEvaluados,
+		getParrillaEvaluados,
 		getDataEvaluacion,
 		getHistorialEvaluado,
 		getPreguntasRespuestas,
 		getDimensiones,
 		deleteEvaluadoSession,
-		updateNivelesEvaluacion
+		updateNivelesEvaluacion,
 	} = useEvaluacionDesempenoBase({
 		collectionName,
 		role: role as any,
@@ -108,9 +112,78 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 
 	const { getAllEspecialistas } = useUsuario();
 
-	// Escuchar especialistas activos solo cuando la evaluación corresponde al rol de especialistas
+	const isDirectorRole = role === 'director' || currentUserData?.rol === 2;
+	const isMonitorDocente = collectionName === 'evaluaciones-docentes' && !isDirectorRole;
+
+	// Conjunto de DNIs del director autenticado y sus predecesores
+	const directorDnis = useMemo(() => {
+		if (!currentUserData?.dni) return new Set<string>();
+		const dnis = new Set<string>();
+		const cleanDni = String(currentUserData.dni).trim();
+		if (cleanDni) dnis.add(cleanDni);
+		const pred = String((currentUserData as any).directorPredecesor || currentUserData.dniDirectorPredecesor || '').trim();
+		if (pred) dnis.add(pred);
+		if (Array.isArray(currentUserData.directoresPredecesores)) {
+			currentUserData.directoresPredecesores.forEach((d: string) => {
+				const c = String(d || '').trim();
+				if (c) dnis.add(c);
+			});
+		}
+		return dnis;
+	}, [
+		currentUserData?.dni,
+		(currentUserData as any)?.directorPredecesor,
+		currentUserData?.dniDirectorPredecesor,
+		currentUserData?.directoresPredecesores,
+	]);
+
+	// Padrón de docentes oficiales asignados a este director o institución
+	const [docentesPadronDnis, setDocentesPadronDnis] = useState<Set<string>>(new Set());
+
 	useEffect(() => {
-		if (role === 'especialista' || collectionName === 'evaluaciones-especialistas' || collectionName === 'evaluaciones-especialista') {
+		let isMounted = true;
+		const targetDniDirector = isDirectorRole ? currentUserData?.dni : queryDniDirector;
+		const targetInstitucion = !isDirectorRole ? queryInstitucion : undefined;
+
+		if (targetDniDirector) {
+			getParrillaEvaluados('dniDirector', targetDniDirector)
+				.then((docentes) => {
+					if (isMounted && Array.isArray(docentes)) {
+						const dnis = new Set(
+							docentes
+								.map((d) => (d.dni ? String(d.dni).trim() : ''))
+								.filter(Boolean)
+						);
+						setDocentesPadronDnis(dnis);
+					}
+				})
+				.catch((err) => {
+					console.error('Error al cargar padrón de docentes por dniDirector:', err);
+				});
+		} else if (targetInstitucion) {
+			getParrillaEvaluados('institucion', targetInstitucion)
+				.then((docentes) => {
+					if (isMounted && Array.isArray(docentes)) {
+						const dnis = new Set(
+							docentes
+								.map((d) => (d.dni ? String(d.dni).trim() : ''))
+								.filter(Boolean)
+						);
+						setDocentesPadronDnis(dnis);
+					}
+				})
+				.catch((err) => {
+					console.error('Error al cargar padrón de docentes por institucion:', err);
+				});
+		}
+		return () => {
+			isMounted = false;
+		};
+	}, [isDirectorRole, currentUserData?.dni, queryDniDirector, queryInstitucion, getParrillaEvaluados]);
+
+	// Escuchar especialistas activos solo cuando la evaluación corresponde a la colección de especialistas
+	useEffect(() => {
+		if (collectionName === 'evaluaciones-especialistas' || collectionName === 'evaluaciones-especialista') {
 			const unsubscribe = getAllEspecialistas();
 			return () => {
 				if (typeof unsubscribe === 'function') unsubscribe();
@@ -120,7 +193,7 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 	}, [role, collectionName]);
 
 	const activeDnisSet = useMemo(() => {
-		if (role !== 'especialista' && collectionName !== 'evaluaciones-especialistas' && collectionName !== 'evaluaciones-especialista') {
+		if (collectionName !== 'evaluaciones-especialistas' && collectionName !== 'evaluaciones-especialista') {
 			return null;
 		}
 		if (!allEspecialistas || allEspecialistas.length === 0) return null;
@@ -129,24 +202,140 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 				.map((esp) => (esp.dni ? String(esp.dni).trim() : ''))
 				.filter(Boolean)
 		);
-	}, [allEspecialistas, role, collectionName]);
+	}, [allEspecialistas, collectionName]);
 
-	// Evaluaciones válidas: se descartan huérfanas si existe filtro de activos
+	// Evaluaciones válidas: se descartan huérfanas o fuera del alcance del rol
 	const evaluadosValidos = useMemo(() => {
 		if (!evaluadosEspecialista || evaluadosEspecialista.length === 0) return [];
-		if (!activeDnisSet) return evaluadosEspecialista;
 
-		return evaluadosEspecialista.filter((evalu) => {
-			const dni = String(
-				(evalu as any).especialistaDni ||
-				(evalu as any).directorDni ||
-				(evalu as any).docenteDni ||
-				evalu.dni ||
-				''
-			).trim();
-			return activeDnisSet.has(dni);
-		});
-	}, [evaluadosEspecialista, activeDnisSet]);
+		let list = evaluadosEspecialista;
+
+		// 1. Filtro estricto para rol Director:
+		// Únicamente mostrar evaluaciones de docentes vinculados por dniDirector (o padrón oficial de dniDirector)
+		if (isDirectorRole) {
+			// Si aún no han cargado los datos del director autenticado, evitar fuga de registros de otras I.E.
+			if (directorDnis.size === 0) {
+				return [];
+			}
+
+			list = list.filter((evalu) => {
+				const evaluDirectorDni = String(
+					(evalu as any).dniDirector ||
+					(evalu as any).directorDni ||
+					''
+				).trim();
+
+				// Si el registro contiene explícitamente el dniDirector, validar que coincida con este director
+				if (evaluDirectorDni) {
+					return directorDnis.has(evaluDirectorDni);
+				}
+
+				// Si el registro no tiene dniDirector explícito, comprobar si el docente está en el padrón por dniDirector
+				const teacherDni = String(
+					(evalu as any).docenteDni ||
+					(evalu as any).evaluadoDni ||
+					evalu.dni ||
+					''
+				).trim();
+
+				if (teacherDni && docentesPadronDnis.has(teacherDni)) {
+					return true;
+				}
+
+				return false;
+			});
+		}
+
+		// 2. Filtro estricto para Especialistas y Administradores en Evaluaciones Docentes:
+		// Únicamente mostrar docentes evaluados por este especialista o administrador autenticado
+		if (isMonitorDocente) {
+			const userDni = currentUserData?.dni ? String(currentUserData.dni).trim() : '';
+			if (!userDni) {
+				return [];
+			}
+
+			list = list.filter((ev: any) => {
+				// 1. Excluir explícitamente evaluaciones efectuadas por el Director de la institución
+				if (ev.evaluadorRol === 'director') {
+					return false;
+				}
+
+				// 2. Si no tiene evaluadorRol explícito pero carece de identificador de monitor y fue guardada con dniDirector
+				if (
+					!ev.evaluadorRol &&
+					!ev.especialistaDni &&
+					!ev.adminDni &&
+					ev.dniDirector &&
+					(ev.evaluadorDni === ev.dniDirector || !ev.evaluadorDni)
+				) {
+					return false;
+				}
+
+				// 3. Comprobar que la evaluación haya sido realizada por este especialista o administrador
+				const monitorDni = String(
+					ev.evaluadorDni ||
+					ev.especialistaDni ||
+					ev.adminDni ||
+					ev.datosMonitor?.dni ||
+					''
+				).trim();
+
+				if (monitorDni && monitorDni === userDni) {
+					return true;
+				}
+
+				return false;
+			});
+		}
+
+		// 3. Filtro por Institución Educativa o Director (cuando se navega desde la tarjeta de la I.E.)
+		if (queryInstitucion || queryDniDirector) {
+			const targetNorm = queryInstitucion
+				? queryInstitucion.toLowerCase().replace(/^i\.?e\.?\s*/i, '').trim()
+				: '';
+			const targetDni = queryDniDirector.trim();
+
+			list = list.filter((ev: any) => {
+				const evInst = (ev.institucion || ev.info?.institucion || '').toString().trim();
+				const evDniDir = (ev.dniDirector || '').toString().trim();
+
+				if (targetDni && evDniDir && evDniDir === targetDni) {
+					return true;
+				}
+				if (targetNorm && evInst) {
+					const norm = evInst.toLowerCase().replace(/^i\.?e\.?\s*/i, '').trim();
+					return norm === targetNorm || norm.includes(targetNorm) || targetNorm.includes(norm);
+				}
+				return false;
+			});
+		}
+
+		// 4. Filtro para especialistas huérfanos (si aplica)
+		if (activeDnisSet) {
+			list = list.filter((evalu) => {
+				const dni = String(
+					(evalu as any).especialistaDni ||
+					(evalu as any).directorDni ||
+					(evalu as any).docenteDni ||
+					evalu.dni ||
+					''
+				).trim();
+				return activeDnisSet.has(dni);
+			});
+		}
+
+		return list;
+	}, [
+		evaluadosEspecialista,
+		isDirectorRole,
+		isMonitorDocente,
+		currentUserData?.dni,
+		directorDnis,
+		docentesPadronDnis,
+		activeDnisSet,
+		queryInstitucion,
+		queryDniDirector,
+	]);
 
 	// Hooks para lista y métricas
 	const evaluadosList = useEvaluadosList(evaluadosValidos, dataEvaluacionDocente);
@@ -177,7 +366,17 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 
 	useEffect(() => {
 		if (id) {
-			const unsubEval = getEvaluados(`${id}`);
+			const unsubEval = getEvaluados(
+				`${id}`,
+				isDirectorRole
+					? { dniDirector: currentUserData?.dni }
+					: !isMonitorDocente && (queryDniDirector || queryInstitucion)
+					? {
+							dniDirector: queryDniDirector || null,
+							institucion: queryInstitucion || null,
+					  }
+					: undefined
+			);
 			const unsubDoc = getDataEvaluacion(`${id}`);
 			const unsubPreg = getPreguntasRespuestas(`${id}`);
 			const unsubDims = getDimensiones(`${id}`);
@@ -189,7 +388,18 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 				if (typeof unsubDims === 'function') unsubDims();
 			};
 		}
-	}, [id, getEvaluados, getDataEvaluacion, getPreguntasRespuestas, getDimensiones]);
+	}, [
+		id,
+		isDirectorRole,
+		isMonitorDocente,
+		currentUserData?.dni,
+		queryDniDirector,
+		queryInstitucion,
+		getEvaluados,
+		getDataEvaluacion,
+		getPreguntasRespuestas,
+		getDimensiones,
+	]);
 
 	const handleDeleteClick = (e: React.MouseEvent, evalu: User) => {
 		e.stopPropagation();
@@ -206,7 +416,17 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 			setShowConfirmDelete(false);
 			setEvaluacionToDelete(null);
 			if (id) {
-				getEvaluados(`${id}`);
+				getEvaluados(
+					`${id}`,
+					isDirectorRole
+						? { dniDirector: currentUserData?.dni }
+						: !isMonitorDocente && (queryDniDirector || queryInstitucion)
+						? {
+								dniDirector: queryDniDirector || null,
+								institucion: queryInstitucion || null,
+						  }
+						: undefined
+				);
 			}
 			if (historialEvolucion.selectedEspecialista) {
 				const historial = await getHistorialEvaluado(`${id}`, historialEvolucion.selectedEspecialista.dni!);
@@ -274,11 +494,41 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 				onOpenColorConfig={handleOpenColorConfig}
 				onOpenOnboarding={() => setShowOnboarding(true)}
 				backHref={backHref}
-				title={targetTitle}
+				title={
+					queryInstitucion
+						? `${targetTitle} • ${queryInstitucion.startsWith('I.E.') ? queryInstitucion : `I.E. ${queryInstitucion}`}`
+						: targetTitle
+				}
 			/>
 
 			{/* Main content */}
 			<div className={styles.content}>
+				{/* Banner Informativo cuando se filtra por Institución Educativa */}
+				{queryInstitucion && (
+					<div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-4 bg-purple-50/80 border border-purple-200/90 rounded-2xl text-xs sm:text-sm text-purple-900 shadow-2xs">
+						<div className="flex items-center gap-2.5">
+							<span className="w-2.5 h-2.5 rounded-full bg-purple-600 animate-pulse shrink-0" />
+							<span>
+								Resultados y analíticas exclusivos de:{' '}
+								<strong className="font-bold text-purple-800">
+									{queryInstitucion.startsWith('I.E.') ? queryInstitucion : `I.E. ${queryInstitucion}`}
+								</strong>{' '}
+								({evaluadosList.groupedEvaluados.length} {evaluadosList.groupedEvaluados.length === 1 ? 'docente' : 'docentes'})
+							</span>
+						</div>
+						<button
+							type="button"
+							onClick={() => {
+								const { institucion, dniDirector, ...rest } = router.query;
+								router.replace({ pathname: router.pathname, query: rest }, undefined, { shallow: true });
+							}}
+							className="font-bold text-purple-700 hover:text-purple-900 underline cursor-pointer shrink-0"
+						>
+							Ver todas las I.E.
+						</button>
+					</div>
+				)}
+
 				{/* Page-level Navigation Tabs */}
 				<div className={styles.pageNavTabs}>
 					<button

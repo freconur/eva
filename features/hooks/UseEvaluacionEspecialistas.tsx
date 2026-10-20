@@ -226,8 +226,20 @@ const UseEvaluacionEspecialistas = () => {
   const createEvaluacionesEspecialistas = async (data: CrearEvaluacionDocente) => {
     setValueLoader(true);
     try {
+      const defaultFaseNombre = data.faseNombre?.trim() || 'Fase Diagnóstica';
+      const defaultFaseID =
+        data.faseActualID ||
+        `${defaultFaseNombre.toUpperCase().replace(/\s+/g, '_')}_${Date.now()}`;
+      const defaultFases =
+        Array.isArray(data.fases) && data.fases.length > 0
+          ? data.fases
+          : [{ id: defaultFaseID, nombre: defaultFaseNombre }];
+
       await addDoc(collection(db, 'evaluaciones-especialista'), {
         ...data,
+        faseNombre: defaultFaseNombre,
+        faseActualID: defaultFaseID,
+        fases: defaultFases,
         active: false,
       });
     } catch (error) {

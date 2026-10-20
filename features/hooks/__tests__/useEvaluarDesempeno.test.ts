@@ -1,6 +1,16 @@
 import { renderHook, act } from '@testing-library/react';
+import { toast } from 'react-toastify';
 import { useEvaluarDesempeno } from '../useEvaluarDesempeno';
 import { PRDocentes, User } from '@/features/types/types';
+
+jest.mock('react-toastify', () => ({
+  toast: {
+    warning: jest.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+  },
+}));
 
 // Mock router
 let mockQuery: any = { id: 'eval-123', idDirector: '22222222' };
@@ -16,19 +26,23 @@ jest.mock('next/router', () => ({
 
 // Mock Global Context
 let mockGlobalContextState: any = {};
+const defaultDataEvaluacionDocente = { id: 'eval-123', active: true };
+const defaultCurrentUserData = {
+  dni: '10000000',
+  rol: 1,
+  email: 'monitor@test.com',
+  celular: '999888777',
+  cargo: 'ESPECIALISTA',
+};
+const defaultEmptyArray: any[] = [];
+
 jest.mock('@/features/context/GlolbalContext', () => ({
   useGlobalContext: () => ({
-    getPreguntaRespuestaDocentes: mockGlobalContextState.getPreguntaRespuestaDocentes || [],
-    dimensionesEspecialistas: mockGlobalContextState.dimensionesEspecialistas || [],
-    dataEvaluacionDocente: mockGlobalContextState.dataEvaluacionDocente || {},
-    currentUserData: mockGlobalContextState.currentUserData || {
-      dni: '10000000',
-      rol: 1,
-      email: 'monitor@test.com',
-      celular: '999888777',
-      cargo: 'ESPECIALISTA',
-    },
-    evaluadosEspecialista: mockGlobalContextState.evaluadosEspecialista || [],
+    getPreguntaRespuestaDocentes: mockGlobalContextState.getPreguntaRespuestaDocentes || defaultEmptyArray,
+    dimensionesEspecialistas: mockGlobalContextState.dimensionesEspecialistas || defaultEmptyArray,
+    dataEvaluacionDocente: mockGlobalContextState.dataEvaluacionDocente || defaultDataEvaluacionDocente,
+    currentUserData: mockGlobalContextState.currentUserData || defaultCurrentUserData,
+    evaluadosEspecialista: mockGlobalContextState.evaluadosEspecialista || defaultEmptyArray,
     warningDataDocente: '',
     loaderSalvarPregunta: false,
   }),
@@ -98,6 +112,7 @@ describe('useEvaluarDesempeno', () => {
       dimensionesEspecialistas: [{ id: 'dim-1', nombre: 'Dominio 1' }],
       dataEvaluacionDocente: {
         id: 'eval-123',
+        active: true,
         name: 'Monitoreo Directivo 2026',
         faseActualID: 'FASE_1',
         faseNombre: 'Diagnóstico',
@@ -265,5 +280,141 @@ describe('useEvaluarDesempeno', () => {
       undefined,
       { shallow: true }
     );
+  });
+
+  it('bloquea la selección de docentes que pertenecen a otra UGEL para especialistas', async () => {
+    mockQuery = { id: 'eval-123' };
+    mockGlobalContextState = {
+      currentUserData: {
+        dni: '10000000',
+        rol: 1,
+        region: 2, // UGEL San Román
+        cargo: 'ESPECIALISTA',
+      },
+    };
+
+    const docenteOtraUgel: User = {
+      dni: '99887766',
+      nombres: 'PEDRO',
+      apellidos: 'MAMANI',
+      region: 1, // UGEL Puno (distinta a San Román)
+      rol: 3,
+    };
+
+    mockBuscarUsuario.mockResolvedValue(docenteOtraUgel);
+
+    const { result } = renderHook(() =>
+      useEvaluarDesempeno({
+        role: 'especialista',
+        collectionName: 'evaluaciones-docentes',
+        queryParamKeys: ['idDocente', 'dni'],
+      })
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Intentar buscar al docente de otra región por DNI
+    act(() => {
+      result.current.handleChangeDocente({ target: { value: '99887766' } } as any);
+    });
+
+    await act(async () => {
+      await result.current.handleBuscarDocente();
+    });
+
+    // Debe bloquearse y no seleccionarlo
+    expect(result.current.dataDirector.dni).toBeUndefined();
+
+    // Intentar seleccionar directamente desde lista/dropdown
+    await act(async () => {
+      result.current.handleSelectEspecialista(docenteOtraUgel);
+    });
+
+    expect(result.current.dataDirector.dni).toBeUndefined();
+  });
+
+  it('bloquea el guardado de la evaluación si está inactiva y el usuario no es administrador', async () => {
+    mockGlobalContextState = {
+      ...mockGlobalContextState,
+      dataEvaluacionDocente: {
+        ...mockGlobalContextState.dataEvaluacionDocente,
+        active: false,
+      },
+      currentUserData: {
+        dni: '10000000',
+        rol: 1, // Especialista
+      },
+    };
+
+    const { result } = renderHook(() =>
+      useEvaluarDesempeno({
+        role: 'especialista',
+        collectionName: 'evaluaciones-director',
+      })
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.isEvaluacionInactiva).toBe(true);
+
+    // Responder preguntas
+    act(() => {
+      result.current.handleCheckedRespuesta('2', 0);
+      result.current.handleCheckedRespuesta('2', 1);
+    });
+
+    // Intentar guardar
+    await act(async () => {
+      await result.current.handleGuardarClick();
+    });
+
+    expect(toast.warning).toHaveBeenCalledWith(
+      expect.stringContaining('inactiva')
+    );
+    expect(mockGuardarEvaluacion).not.toHaveBeenCalled();
+  });
+
+  it('permite el guardado de la evaluación inactiva si el usuario es administrador', async () => {
+    mockGlobalContextState = {
+      ...mockGlobalContextState,
+      dataEvaluacionDocente: {
+        ...mockGlobalContextState.dataEvaluacionDocente,
+        active: false,
+      },
+      currentUserData: {
+        dni: '99999999',
+        rol: 4, // Administrador
+      },
+    };
+
+    const { result } = renderHook(() =>
+      useEvaluarDesempeno({
+        role: 'admin',
+        collectionName: 'evaluaciones-docentes',
+      })
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.isEvaluacionInactiva).toBe(false);
+
+    // Responder preguntas
+    act(() => {
+      result.current.handleCheckedRespuesta('2', 0);
+      result.current.handleCheckedRespuesta('2', 1);
+    });
+
+    // Guardar
+    await act(async () => {
+      await result.current.handleGuardarClick();
+    });
+
+    expect(mockGuardarEvaluacion).toHaveBeenCalled();
   });
 });

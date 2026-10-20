@@ -82,6 +82,15 @@ const EvaluarEspecialista = () => {
     allQuestionsAnswered,
   } = useEvaluarEspecialista();
 
+  const isAdmin = Boolean(
+    currentUserData?.rol === 4 ||
+    currentUserData?.rol === 0 ||
+    currentUserData?.perfil?.rol === 4 ||
+    currentUserData?.perfil?.rol === 0 ||
+    Number(currentUserData?.rol) === 4 ||
+    Number(currentUserData?.rol) === 0
+  );
+
   return (
     <div className={styles.container}>
       <div className={styles.contentWrapper}>
@@ -163,6 +172,7 @@ const EvaluarEspecialista = () => {
                 <RetroalimentacionSection
                   retroalimentacionDinamica={retroalimentacionDinamica}
                   isAutoreporte={isAutoreporte}
+                  isAdmin={isAdmin}
                   handleAddFeedbackField={handleAddFeedbackField}
                   handleRemoveFeedbackField={handleRemoveFeedbackField}
                   handleChangeFeedbackLabel={handleChangeFeedbackLabel}

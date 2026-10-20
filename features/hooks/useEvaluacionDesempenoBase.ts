@@ -17,6 +17,7 @@ import {
   addDoc,
   query,
   where,
+  or,
   deleteDoc,
   doc,
   collection,
@@ -25,6 +26,7 @@ import {
   updateDoc,
   getDoc,
   orderBy,
+  limit,
   arrayUnion,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -62,8 +64,20 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
   const createEvaluacion = async (data: CrearEvaluacionDocente): Promise<string | undefined> => {
     dispatch({ type: AppAction.LOADER_MODALES, payload: true });
     try {
+      const defaultFaseNombre = data.faseNombre || 'Fase Diagnóstica';
+      const defaultFaseID =
+        data.faseActualID ||
+        `${defaultFaseNombre.toUpperCase().replace(/\s+/g, '_')}_${Date.now()}`;
+      const defaultFases =
+        Array.isArray(data.fases) && data.fases.length > 0
+          ? data.fases
+          : [{ id: defaultFaseID, nombre: defaultFaseNombre }];
+
       const docRef = await addDoc(collection(db, collectionName), {
         ...data,
+        faseNombre: defaultFaseNombre,
+        faseActualID: defaultFaseID,
+        fases: defaultFases,
         active: false,
         fechaCreacion: serverTimestamp(),
       });
@@ -189,16 +203,67 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
   const updateFaseEvaluacion = async (idEvaluacion: string, nombreFase: string) => {
     dispatch({ type: AppAction.LOADER_MODALES, payload: true });
     try {
-      const idFase = `${nombreFase.toUpperCase().replace(/\s+/g, '_')}_${Date.now()}`;
-      const nuevaFase = { id: idFase, nombre: nombreFase };
+      const cleanNombre = nombreFase.trim();
+      const docRef = doc(db, collectionName, idEvaluacion);
+      const snap = await getDoc(docRef);
+      const prevData = snap.exists() ? snap.data() : {};
+
+      const existingFases: Array<{ id: string; nombre: string }> = Array.isArray(prevData.fases)
+        ? [...prevData.fases]
+        : [];
+
+      // Respaldo de fase activa previa si no estaba registrada en el arreglo fases
+      if (prevData.faseNombre && prevData.faseActualID) {
+        const alreadyInFases = existingFases.some(
+          (f) =>
+            f.id === prevData.faseActualID ||
+            f.nombre.toLowerCase() === String(prevData.faseNombre).toLowerCase()
+        );
+        if (!alreadyInFases) {
+          existingFases.push({
+            id: prevData.faseActualID,
+            nombre: prevData.faseNombre,
+          });
+        }
+      }
+
+      // Comprobar si la nueva fase ya existe en el listado (case-insensitive)
+      const foundIndex = existingFases.findIndex(
+        (f) => f.nombre.toLowerCase() === cleanNombre.toLowerCase()
+      );
+
+      let targetIdFase: string;
+      if (foundIndex !== -1) {
+        targetIdFase = existingFases[foundIndex].id;
+        existingFases[foundIndex] = { id: targetIdFase, nombre: cleanNombre };
+      } else {
+        targetIdFase = `${cleanNombre.toUpperCase().replace(/\s+/g, '_')}_${Date.now()}`;
+        existingFases.push({ id: targetIdFase, nombre: cleanNombre });
+      }
+
+      await updateDoc(docRef, {
+        faseActualID: targetIdFase,
+        faseNombre: cleanNombre,
+        fases: existingFases,
+      });
+    } catch (err) {
+      console.error('Error al crear o actualizar fase:', err);
+      throw err;
+    } finally {
+      dispatch({ type: AppAction.LOADER_MODALES, payload: false });
+    }
+  };
+
+  const setFaseActiva = async (idEvaluacion: string, idFase: string, nombreFase: string) => {
+    dispatch({ type: AppAction.LOADER_MODALES, payload: true });
+    try {
       const docRef = doc(db, collectionName, idEvaluacion);
       await updateDoc(docRef, {
         faseActualID: idFase,
         faseNombre: nombreFase,
-        fases: arrayUnion(nuevaFase),
       });
     } catch (err) {
-      console.error('Error al crear fase:', err);
+      console.error('Error al activar fase:', err);
       throw err;
     } finally {
       dispatch({ type: AppAction.LOADER_MODALES, payload: false });
@@ -536,14 +601,46 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
   // ----------------------------------------------------
 
   const getEvaluados = useCallback(
-    (idEvaluacion: string) => {
+    (
+      idEvaluacion: string,
+      filterScope?: {
+        dniDirector?: string | null;
+        institucion?: string | null;
+      }
+    ) => {
       if (!idEvaluacion) return () => {};
       const path = `/${collectionName}/${idEvaluacion}/evaluados`;
+      const colRef = collection(db, path);
+      let q: any = colRef;
+
+      const targetDniDirector = filterScope?.dniDirector
+        ? String(filterScope.dniDirector).trim()
+        : '';
+      const targetInstitucion = filterScope?.institucion
+        ? String(filterScope.institucion).trim()
+        : '';
+
+      if (targetDniDirector) {
+        q = query(
+          colRef,
+          or(
+            where('dniDirector', '==', targetDniDirector),
+            where('directorDni', '==', targetDniDirector)
+          )
+        );
+      } else if (targetInstitucion) {
+        const cleanInst = targetInstitucion.replace(/^i\.?e\.?\s*/i, '').trim();
+        const variants = Array.from(
+          new Set([targetInstitucion, cleanInst, `I.E. ${cleanInst}`, `IE ${cleanInst}`])
+        ).filter(Boolean);
+        q = query(colRef, where('institucion', 'in', variants.slice(0, 10)));
+      }
+
       return onSnapshot(
-        collection(db, path),
-        (snapshot) => {
+        q,
+        (snapshot: any) => {
           const list: User[] = [];
-          snapshot.forEach((docSnap) => {
+          snapshot.forEach((docSnap: any) => {
             list.push({ ...docSnap.data(), id: docSnap.id });
           });
           dispatch({ type: AppAction.EVALUADOS_ESPECIALISTA, payload: list });
@@ -619,7 +716,7 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
       const idFaseAuto = `${nombreMes}_${currentYear}`;
 
       let idFase = selectedFaseOverride?.idFase || dataEvaluacionDocente?.faseActualID || idFaseAuto;
-      let faseNombre = selectedFaseOverride?.faseNombre || dataEvaluacionDocente?.faseNombre || '';
+      let faseNombre = selectedFaseOverride?.faseNombre || dataEvaluacionDocente?.faseNombre || nombreMes;
       let numeroEvaluacion = 1;
 
       if (sessionId) {
@@ -631,7 +728,13 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
           numeroEvaluacion = prev.numeroEvaluacion || 1;
         }
         const targetDniField =
-          role === 'director' ? 'docenteDni' : role === 'especialista' ? 'directorDni' : 'especialistaDni';
+          collectionName === 'evaluaciones-docentes'
+            ? 'docenteDni'
+            : role === 'director'
+            ? 'docenteDni'
+            : role === 'especialista'
+            ? 'directorDni'
+            : 'especialistaDni';
         const evaluadosRef = collection(db, `/${collectionName}/${idEvaluacion}/evaluados`);
         const qCount = query(
           evaluadosRef,
@@ -643,6 +746,7 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
 
       const dataToSave: any = {
         ...evaluado,
+        region: evaluado.region ?? currentUserData?.region ?? null,
         id: finalSessionId,
         idFase,
         faseNombre,
@@ -658,11 +762,45 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
         fechaCreacion: serverTimestamp(),
       };
 
-      // Identificadores de rol según contexto
-      if (role === 'director') {
+      // Identificadores de rol según contexto y colección
+      if (collectionName === 'evaluaciones-docentes') {
+        dataToSave.docenteDni = evaluado.dni || '';
+        dataToSave.evaluadoDni = evaluado.dni || '';
+        dataToSave.region = evaluado.region ?? currentUserData?.region ?? null;
+        if (role === 'director' || currentUserData?.rol === 2 || currentUserData?.perfil?.rol === 2) {
+          const dirDni = currentUserData?.dni || evaluado.dniDirector || '';
+          dataToSave.dniDirector = dirDni;
+          dataToSave.directorDni = dirDni;
+          dataToSave.evaluadorDni = currentUserData?.dni || '';
+          dataToSave.evaluadorRol = 'director';
+        } else if (role === 'especialista' || currentUserData?.rol === 1 || currentUserData?.perfil?.rol === 1) {
+          dataToSave.dniDirector = evaluado.dniDirector || '';
+          dataToSave.directorDni = evaluado.dniDirector || '';
+          dataToSave.especialistaDni = currentUserData?.dni || '';
+          dataToSave.evaluadorDni = currentUserData?.dni || '';
+          dataToSave.evaluadorRol = 'especialista';
+          dataToSave.tipoMonitoreo = 'acompaniamiento_pedagogico';
+        } else if (
+          role === 'admin' ||
+          currentUserData?.rol === 4 ||
+          currentUserData?.rol === 0 ||
+          currentUserData?.perfil?.rol === 4 ||
+          currentUserData?.perfil?.rol === 0 ||
+          Number(currentUserData?.rol) === 4 ||
+          Number(currentUserData?.rol) === 0
+        ) {
+          dataToSave.dniDirector = evaluado.dniDirector || '';
+          dataToSave.directorDni = evaluado.dniDirector || '';
+          dataToSave.adminDni = currentUserData?.dni || '';
+          dataToSave.evaluadorDni = currentUserData?.dni || '';
+          dataToSave.evaluadorRol = 'admin';
+          dataToSave.tipoMonitoreo = 'acompaniamiento_pedagogico';
+        }
+      } else if (role === 'director') {
         dataToSave.docenteDni = evaluado.dni || '';
         dataToSave.evaluadoDni = evaluado.dni || '';
         dataToSave.dniDirector = currentUserData?.dni || '';
+        dataToSave.directorDni = currentUserData?.dni || '';
       } else if (role === 'especialista') {
         dataToSave.directorDni = evaluado.dni || '';
         dataToSave.evaluadoDni = evaluado.dni || '';
@@ -726,6 +864,42 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
           q = dnis.length === 1
             ? query(usuariosRef, where('rol', '==', 3), where('dniDirector', '==', dnis[0]))
             : query(usuariosRef, where('rol', '==', 3), where('dniDirector', 'in', dnis.slice(0, 30)));
+        } else if (collectionName === 'evaluaciones-docentes') {
+          // Evaluación de docentes (especialistas o administradores): rol === 3
+          if (customScopeKey === 'dniDirector' && customScopeValue) {
+            q = query(usuariosRef, where('rol', '==', 3), where('dniDirector', '==', String(customScopeValue).trim()));
+          } else if (customScopeKey === 'institucion' && customScopeValue) {
+            const rawInst = String(customScopeValue).trim();
+            const cleanInst = rawInst.replace(/^i\.?e\.?\s*/i, '').trim();
+            const variants = Array.from(new Set([rawInst, cleanInst, `I.E. ${cleanInst}`, `IE ${cleanInst}`])).filter(Boolean);
+            q = query(usuariosRef, where('rol', '==', 3), where('institucion', 'in', variants.slice(0, 10)));
+          } else {
+            const isRegionalAdmin =
+              currentUserData?.rol === 4 ||
+              currentUserData?.rol === 0 ||
+              currentUserData?.rol === 5 ||
+              currentUserData?.perfil?.rol === 4 ||
+              currentUserData?.perfil?.rol === 0 ||
+              currentUserData?.perfil?.rol === 5;
+            let targetRegion: any =
+              customScopeValue !== undefined
+                ? customScopeValue
+                : !isRegionalAdmin
+                ? scopeValue || currentUserData?.region
+                : undefined;
+
+            if (targetRegion && targetRegion !== 'all' && targetRegion !== '') {
+              const regionNum = Number(targetRegion);
+              q = query(
+                usuariosRef,
+                where('rol', '==', 3),
+                where('region', '==', isNaN(regionNum) ? targetRegion : regionNum),
+                limit(100)
+              );
+            } else {
+              q = query(usuariosRef, where('rol', '==', 3), limit(100));
+            }
+          }
         } else if (role === 'admin') {
           // Administrador o DREP evalúa a especialistas: rol === 1
           const isRegionalAdmin =
@@ -944,6 +1118,7 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
     updateEscalaEvaluacion,
     updateNivelesEvaluacion,
     updateFaseEvaluacion,
+    setFaseActiva,
     updateNombreFaseEvaluacion,
     deleteFaseEvaluacion,
     updateDescripcionEvaluacion,

@@ -423,6 +423,7 @@ const EvaluacionDetalleEspecialista = () => {
       <EvaluacionDetalleHeroBanner
         idEvaluacion={idEvaluacion}
         collectionName="evaluaciones-especialista"
+        variant={(dataEvaluacionDocente as any)?.bannerVariant || (dataEvaluacionDocente as any)?.variant}
         backHref="/admin/especialistas/evaluaciones-especialistas"
         selectedYear={new Date().getFullYear()}
         institucion={
@@ -458,6 +459,7 @@ const EvaluacionDetalleEspecialista = () => {
               dimensiones={dimensionesEspecialistas || []}
               preguntas={getPreguntaRespuestaDocentes || []}
               escala={dataEvaluacionDocente?.escala}
+              niveles={dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje}
               activarEvidencias={dataEvaluacionDocente?.activarEvidencias}
               titulo={dataEvaluacionDocente?.name}
               descripcion={dataEvaluacionDocente?.descripcion}

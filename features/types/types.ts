@@ -587,6 +587,8 @@ export type CampoRetroalimentacionConfig = {
 };
 
 export type DataEvaluacion = {
+  id?: string;
+  active?: boolean;
   name?: string;
   categoria?: string;
   escala?: AlternativasDocente[];

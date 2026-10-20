@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { RiLoader4Line } from 'react-icons/ri';
 import { IoArrowBack } from 'react-icons/io5';
+import { MdWarning } from 'react-icons/md';
 import PrivateRouteDirectores from '@/components/layouts/PrivateRoutesDirectores';
 import { useEvaluarDesempeno } from '@/features/hooks/useEvaluarDesempeno';
 import BusquedaEspecialista from '@/features/components/evaluar-especialista/BusquedaEspecialista';
@@ -69,6 +70,7 @@ const EvaluarDocente = () => {
     allQuestionsAnswered,
     warningDataDocente,
     loaderSalvarPregunta,
+    isEvaluacionInactiva,
     evaluacionId,
   } = useEvaluarDesempeno({
     role: 'director',
@@ -76,6 +78,37 @@ const EvaluarDocente = () => {
     evaluadoRoleLabel: 'Docente',
     queryParamKeys: ['idDocente', 'dniDocente', 'dni'],
   });
+
+  if (isEvaluacionInactiva) {
+    return (
+      <PrivateRouteDirectores>
+        <div className="w-full max-w-4xl mx-auto px-4 py-16 text-center">
+          <div className="bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-amber-200 space-y-6">
+            <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto border border-amber-200">
+              <MdWarning className="text-3xl" />
+            </div>
+            <div className="space-y-2 max-w-md mx-auto">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
+                Evaluación Inactiva o Pausada
+              </h2>
+              <p className="text-sm text-slate-500">
+                La evaluación <strong className="text-slate-700">{dataEvaluacionDocente?.name || ''}</strong> no se encuentra activa en este momento. No está permitido registrar ni modificar evaluaciones de docentes mientras permanezca inactiva.
+              </p>
+            </div>
+            <div>
+              <Link
+                href="/directores/evaluaciones-docentes"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                <IoArrowBack className="text-base" />
+                <span>Volver a Evaluaciones Docentes</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </PrivateRouteDirectores>
+    );
+  }
 
   return (
     <PrivateRouteDirectores>
@@ -180,6 +213,7 @@ const EvaluarDocente = () => {
                   <RetroalimentacionSection
                     retroalimentacionDinamica={retroalimentacionDinamica}
                     isAutoreporte={isAutoreporte}
+                    isAdmin={false}
                     handleAddFeedbackField={handleAddFeedbackField}
                     handleRemoveFeedbackField={handleRemoveFeedbackField}
                     handleChangeFeedbackLabel={handleChangeFeedbackLabel}

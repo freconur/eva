@@ -351,6 +351,17 @@ export const EvaluadosTable: React.FC<EvaluadosTableProps> = ({
 																				{((evalu as any).faseNombre || (evalu as any).idFase || (evalu as any).faseActualID) && (
 																					<span className={styles.evalFaseBadge}>Fase: {getCleanPhaseName((evalu as any).faseNombre, (evalu as any).idFase || (evalu as any).faseActualID)}</span>
 																				)}
+																				{evalu.evaluadorRol && (
+																					<span
+																						className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+																							evalu.evaluadorRol === 'director'
+																								? 'bg-blue-50 text-blue-700 border-blue-200'
+																								: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+																						}`}
+																					>
+																						{evalu.evaluadorRol === 'director' ? 'Monitoreo Director' : 'Acompañamiento UGEL'}
+																					</span>
+																				)}
 																			</div>
 																			<div className={styles.evalScoreGroup}>
 																				{nivelObj && (

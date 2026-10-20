@@ -11,3 +11,5 @@ export { default as ModalEvidencias } from './ModalEvidencias';
 export { default as ModalCrearEvaluacionDesempeno } from './ModalCrearEvaluacionDesempeno';
 export { default as ModalEditarTituloDescripcion } from './ModalEditarTituloDescripcion';
 export * from './ModalEditarTituloDescripcion';
+export { default as ModalAlertaFaseRequerida } from './ModalAlertaFaseRequerida';
+export * from './ModalAlertaFaseRequerida';

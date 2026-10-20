@@ -342,6 +342,7 @@ const EvaluacionDetalleDirector = () => {
       <EvaluacionDetalleHeroBanner
         idEvaluacion={idEvaluacion}
         collectionName="evaluaciones-director"
+        variant={(dataEvaluacionDocente as any)?.bannerVariant || (dataEvaluacionDocente as any)?.variant}
         backHref="/especialistas/evaluaciones-director"
         selectedYear={new Date().getFullYear()}
         institucion={
@@ -370,6 +371,7 @@ const EvaluacionDetalleDirector = () => {
               dimensiones={currentDimensiones}
               preguntas={currentPreguntas}
               escala={dataEvaluacionDocente?.escala}
+              niveles={dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje}
               activarEvidencias={dataEvaluacionDocente?.activarEvidencias}
               titulo={dataEvaluacionDocente?.name}
               descripcion={dataEvaluacionDocente?.descripcion}

@@ -3,8 +3,8 @@ import useUsuario from '../useUsuario';
 import { updateDoc, arrayUnion, arrayRemove, deleteField, getDoc } from 'firebase/firestore';
 
 const mockUpdateDoc = jest.fn().mockResolvedValue(undefined);
-const mockArrayUnion = jest.fn((val) => ({ type: 'arrayUnion', val }));
-const mockArrayRemove = jest.fn((val) => ({ type: 'arrayRemove', val }));
+const mockArrayUnion = jest.fn((...args: any[]) => ({ type: 'arrayUnion', val: args[0], args }));
+const mockArrayRemove = jest.fn((...args: any[]) => ({ type: 'arrayRemove', val: args[0], args }));
 const mockDeleteField = jest.fn(() => ({ type: 'deleteField' }));
 const mockGetDoc = jest.fn();
 

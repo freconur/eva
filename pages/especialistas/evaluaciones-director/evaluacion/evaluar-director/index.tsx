@@ -180,6 +180,7 @@ const EvaluarDirector = () => {
                   <RetroalimentacionSection
                     retroalimentacionDinamica={retroalimentacionDinamica}
                     isAutoreporte={isAutoreporte}
+                    isAdmin={false}
                     handleAddFeedbackField={handleAddFeedbackField}
                     handleRemoveFeedbackField={handleRemoveFeedbackField}
                     handleChangeFeedbackLabel={handleChangeFeedbackLabel}

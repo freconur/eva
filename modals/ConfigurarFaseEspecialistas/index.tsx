@@ -29,11 +29,12 @@ const ConfigurarFaseEspecialistas = ({
     const { 
         updateFaseEvaluacion, 
         updateNombreFaseEvaluacion, 
-        deleteFaseEvaluacion 
+        deleteFaseEvaluacion,
+        setFaseActiva,
     } = useEvaluacionDesempenoBase({ collectionName })
     const closeHandler = onClose || handleShowConfigurarFase;
     
-    const [nombreFase, setNombreFase] = useState(faseActual || "")
+    const [nombreFase, setNombreFase] = useState("")
     const [editingFaseId, setEditingFaseId] = useState<string | null>(null);
     const [editingNombre, setEditingNombre] = useState("");
 
@@ -53,10 +54,21 @@ const ConfigurarFaseEspecialistas = ({
     }, [evaluadosEspecialista, dataEvaluacionDocente]);
 
     const handleSaveNew = async () => {
-        if (nombreFase.trim() === "") return;
-        await updateFaseEvaluacion(idEvaluacion, nombreFase);
+        const clean = nombreFase.trim();
+        if (clean === "") return;
+        await updateFaseEvaluacion(idEvaluacion, clean);
+        setNombreFase("");
         if (onSuccess) onSuccess();
         if (closeHandler) closeHandler();
+    };
+
+    const handleSelectActiveFase = async (fase: { id: string; nombre: string }) => {
+        try {
+            await setFaseActiva(idEvaluacion, fase.id, fase.nombre);
+            if (onSuccess) onSuccess();
+        } catch (error) {
+            alert("Error al activar la etapa");
+        }
     };
 
     const handleEditClick = (fase: { id: string, nombre: string }) => {
@@ -152,8 +164,17 @@ const ConfigurarFaseEspecialistas = ({
                                                         <div className={styles.phaseInfo}>
                                                             <MdHistory className={styles.iconHistory} />
                                                             <span className={styles.phaseName}>{fase.nombre}</span>
-                                                            {fase.id === dataEvaluacionDocente?.faseActualID && (
+                                                            {fase.id === dataEvaluacionDocente?.faseActualID ? (
                                                                 <span className={styles.activeBadge}>Actual</span>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleSelectActiveFase(fase)}
+                                                                    className="text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer px-2 py-0.5 rounded bg-blue-50 border border-blue-200 transition-colors"
+                                                                    title={`Activar etapa "${fase.nombre}"`}
+                                                                >
+                                                                    Activar
+                                                                </button>
                                                             )}
                                                         </div>
                                                         <div className={styles.itemActions}>

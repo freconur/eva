@@ -14,8 +14,21 @@ const UseEvaluacionDocentes = () => {
   const db = getFirestore()
   const router = useRouter()
   const createEvaluacionesDocentes = async (data: CrearEvaluacionDocente) => {
-    
-    await addDoc(collection(db, "evaluaciones-docentes"), data);
+    const defaultFaseNombre = data.faseNombre?.trim() || 'Fase Diagnóstica';
+    const defaultFaseID =
+      data.faseActualID ||
+      `${defaultFaseNombre.toUpperCase().replace(/\s+/g, '_')}_${Date.now()}`;
+    const defaultFases =
+      Array.isArray(data.fases) && data.fases.length > 0
+        ? data.fases
+        : [{ id: defaultFaseID, nombre: defaultFaseNombre }];
+
+    await addDoc(collection(db, "evaluaciones-docentes"), {
+      ...data,
+      faseNombre: defaultFaseNombre,
+      faseActualID: defaultFaseID,
+      fases: defaultFases,
+    });
   }
 
   const getDataEvaluacion = (idEvaluacion: string) => {

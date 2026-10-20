@@ -1,13 +1,16 @@
 import { renderHook, act } from '@testing-library/react';
 import { useEvaluacionDesempenoBase } from '../useEvaluacionDesempenoBase';
-import { addDoc, deleteDoc, doc, updateDoc, collection } from 'firebase/firestore';
+import { addDoc, deleteDoc, doc, updateDoc, collection, setDoc, where } from 'firebase/firestore';
 
 // 1. Mocks de Firebase
 jest.mock('firebase/firestore', () => ({
   addDoc: jest.fn().mockResolvedValue({ id: 'new-eval-123' }),
   deleteDoc: jest.fn().mockResolvedValue(undefined),
   updateDoc: jest.fn().mockResolvedValue(undefined),
-  doc: jest.fn((_db, col, id) => ({ id, path: `${col}/${id}` })),
+  doc: jest.fn((...args: any[]) => ({
+    id: args.length === 1 ? 'mock-generated-session-id' : args[2] || 'mock-doc-id',
+    path: args.length === 1 ? `${args[0]?.path}/mock-generated-session-id` : `${args[1]}/${args[2]}`,
+  })),
   collection: jest.fn((_db, path) => ({ path })),
   getDoc: jest.fn().mockResolvedValue({ exists: () => false, data: () => ({}) }),
   getDocs: jest.fn().mockResolvedValue({ empty: true, size: 0, docs: [] }),
@@ -20,8 +23,10 @@ jest.mock('firebase/firestore', () => ({
     return jest.fn(); // Unsubscribe mock
   }),
   query: jest.fn((col) => col),
-  where: jest.fn(),
+  where: jest.fn((field, op, val) => ({ field, op, val })),
+  or: jest.fn((...conditions) => ({ conditions })),
   orderBy: jest.fn(),
+  limit: jest.fn((n) => n),
   arrayUnion: jest.fn((val) => val),
   serverTimestamp: jest.fn(() => 'TIMESTAMP_MOCK'),
 }));
@@ -38,10 +43,11 @@ jest.mock('@/firebase/firebase.config', () => ({
   storage: {},
 }));
 
+let mockCurrentUser: any = { dni: '12345678', rol: 2, region: 1 };
 const mockDispatch = jest.fn();
 jest.mock('@/features/context/GlolbalContext', () => ({
   useGlobalContext: () => ({
-    currentUserData: { dni: '12345678', rol: 2, region: 1 },
+    currentUserData: mockCurrentUser,
     dataEvaluacionDocente: {
       escala: [
         { value: 0, alternativa: '0', descripcion: 'No evidencia' },
@@ -191,5 +197,331 @@ describe('useEvaluacionDesempenoBase', () => {
     });
 
     expect(collection).toHaveBeenCalledWith({}, 'usuarios');
+  });
+
+  it('guarda evaluación de docente por un especialista con trazabilidad completa para el director', async () => {
+    mockCurrentUser = { dni: '87654321', rol: 1, region: 1, nombres: 'Especialista', apellidos: 'Puno' };
+
+    const { result } = renderHook(() =>
+      useEvaluacionDesempenoBase({
+        role: 'especialista',
+        collectionName: 'evaluaciones-docentes',
+      })
+    );
+
+    const mockEvaluado = {
+      dni: '70000001',
+      nombres: 'Docente Juan',
+      apellidos: 'Pérez',
+      dniDirector: '20000002',
+    };
+
+    await act(async () => {
+      await result.current.guardarEvaluacion(
+        'eval-doc-999',
+        [],
+        mockEvaluado as any,
+        [],
+        '2026-10-18',
+        '08:00',
+        '09:30',
+        { dni: '87654321' },
+        'EVALUACIÓN DE PRUEBA'
+      );
+    });
+
+    expect(setDoc).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        docenteDni: '70000001',
+        dniDirector: '20000002',
+        especialistaDni: '87654321',
+        evaluadorDni: '87654321',
+        evaluadorRol: 'especialista',
+        tipoMonitoreo: 'acompaniamiento_pedagogico',
+      }),
+      expect.anything()
+    );
+  });
+
+  it('guarda evaluación de docente por un administrador con trazabilidad completa', async () => {
+    mockCurrentUser = { dni: '11223344', rol: 4, region: 1 };
+
+    const { result } = renderHook(() =>
+      useEvaluacionDesempenoBase({
+        role: 'admin',
+        collectionName: 'evaluaciones-docentes',
+      })
+    );
+
+    const mockEvaluado = {
+      dni: '70000001',
+      nombres: 'Docente Juan',
+      apellidos: 'Pérez',
+      dniDirector: '20000002',
+    };
+
+    await act(async () => {
+      await result.current.guardarEvaluacion(
+        'eval-doc-999',
+        [],
+        mockEvaluado as any,
+        [],
+        '2026-10-18',
+        '08:00',
+        '09:30',
+        { dni: '11223344' },
+        'EVALUACIÓN DE PRUEBA'
+      );
+    });
+
+    expect(setDoc).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        docenteDni: '70000001',
+        dniDirector: '20000002',
+        adminDni: '11223344',
+        evaluadorDni: '11223344',
+        evaluadorRol: 'admin',
+        tipoMonitoreo: 'acompaniamiento_pedagogico',
+      }),
+      expect.anything()
+    );
+  });
+
+  it('obtiene el padrón de docentes cuando un especialista monitorea evaluaciones-docentes', async () => {
+    mockCurrentUser = { dni: '87654321', rol: 1, region: 1 };
+
+    const { result } = renderHook(() =>
+      useEvaluacionDesempenoBase({
+        role: 'especialista',
+        collectionName: 'evaluaciones-docentes',
+      })
+    );
+
+    await act(async () => {
+      const docentes = await result.current.getParrillaEvaluados();
+      expect(Array.isArray(docentes)).toBe(true);
+    });
+
+    expect(collection).toHaveBeenCalledWith({}, 'usuarios');
+  });
+
+  it('filtra en Firestore las sesiones evaluadas por dniDirector cuando se especifica el scope', () => {
+    const { result } = renderHook(() =>
+      useEvaluacionDesempenoBase({
+        role: 'especialista',
+        collectionName: 'evaluaciones-docentes',
+      })
+    );
+
+    act(() => {
+      result.current.getEvaluados('eval-123', { dniDirector: '99887766' });
+    });
+
+    expect(where).toHaveBeenCalledWith('dniDirector', '==', '99887766');
+    expect(where).toHaveBeenCalledWith('directorDni', '==', '99887766');
+  });
+
+  it('filtra en Firestore las sesiones evaluadas por institucion cuando se especifica el scope', () => {
+    const { result } = renderHook(() =>
+      useEvaluacionDesempenoBase({
+        role: 'especialista',
+        collectionName: 'evaluaciones-docentes',
+      })
+    );
+
+    act(() => {
+      result.current.getEvaluados('eval-123', { institucion: 'I.E. 80001' });
+    });
+
+    expect(where).toHaveBeenCalledWith('institucion', 'in', expect.arrayContaining(['I.E. 80001', '80001']));
+  });
+
+  it('obtiene el padrón de docentes filtrado por institución desde usuarios', async () => {
+    const { result } = renderHook(() =>
+      useEvaluacionDesempenoBase({
+        role: 'especialista',
+        collectionName: 'evaluaciones-docentes',
+      })
+    );
+
+    await act(async () => {
+      await result.current.getParrillaEvaluados('institucion', 'I.E. 80001');
+    });
+
+    expect(where).toHaveBeenCalledWith('rol', '==', 3);
+    expect(where).toHaveBeenCalledWith('institucion', 'in', expect.arrayContaining(['I.E. 80001', '80001']));
+  });
+
+  describe('Gestión de Etapas de Evaluación (Fases)', () => {
+    it('inicializa automáticamente una etapa por defecto (Fase Diagnóstica) al crear una evaluación', async () => {
+      const { result } = renderHook(() =>
+        useEvaluacionDesempenoBase({ role: 'director' })
+      );
+
+      await act(async () => {
+        await result.current.createEvaluacion({
+          name: 'Monitoreo 2026',
+        });
+      });
+
+      expect(addDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          name: 'Monitoreo 2026',
+          faseNombre: 'Fase Diagnóstica',
+          faseActualID: expect.stringContaining('FASE_DIAGNÓSTICA'),
+          fases: expect.arrayContaining([
+            expect.objectContaining({
+              nombre: 'Fase Diagnóstica',
+            }),
+          ]),
+        })
+      );
+    });
+
+    it('utiliza el nombre de fase personalizado ingresado por el usuario al crear una evaluación', async () => {
+      const { result } = renderHook(() =>
+        useEvaluacionDesempenoBase({ role: 'especialista' })
+      );
+
+      await act(async () => {
+        await result.current.createEvaluacion({
+          name: 'Monitoreo Trimestral',
+          faseNombre: 'Ronda Mayo',
+        });
+      });
+
+      expect(addDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          name: 'Monitoreo Trimestral',
+          faseNombre: 'Ronda Mayo',
+          faseActualID: expect.stringContaining('RONDA_MAYO'),
+          fases: expect.arrayContaining([
+            expect.objectContaining({
+              nombre: 'Ronda Mayo',
+            }),
+          ]),
+        })
+      );
+    });
+
+    it('respalda la fase anterior y agrega la nueva fase sin sobreescribir el historial en updateFaseEvaluacion', async () => {
+      const { getDoc } = require('firebase/firestore');
+      (getDoc as jest.Mock).mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({
+          faseNombre: 'OCTUBRE',
+          faseActualID: 'OCTUBRE_100',
+          fases: [{ id: 'OCTUBRE_100', nombre: 'OCTUBRE' }],
+        }),
+      });
+
+      const { result } = renderHook(() =>
+        useEvaluacionDesempenoBase({ collectionName: 'evaluaciones-especialista' })
+      );
+
+      await act(async () => {
+        await result.current.updateFaseEvaluacion('eval-123', 'OCTUBRE II');
+      });
+
+      expect(updateDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          faseNombre: 'OCTUBRE II',
+          faseActualID: expect.stringContaining('OCTUBRE_II'),
+          fases: expect.arrayContaining([
+            expect.objectContaining({ id: 'OCTUBRE_100', nombre: 'OCTUBRE' }),
+            expect.objectContaining({ nombre: 'OCTUBRE II' }),
+          ]),
+        })
+      );
+    });
+
+    it('respalda la fase anterior cuando proviene de formato legacy sin arreglo fases', async () => {
+      const { getDoc } = require('firebase/firestore');
+      (getDoc as jest.Mock).mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({
+          faseNombre: 'OCTUBRE',
+          faseActualID: 'OCTUBRE_100',
+          // fases no existe en el documento
+        }),
+      });
+
+      const { result } = renderHook(() =>
+        useEvaluacionDesempenoBase({ collectionName: 'evaluaciones-especialista' })
+      );
+
+      await act(async () => {
+        await result.current.updateFaseEvaluacion('eval-123', 'OCTUBRE II');
+      });
+
+      expect(updateDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          faseNombre: 'OCTUBRE II',
+          fases: expect.arrayContaining([
+            expect.objectContaining({ id: 'OCTUBRE_100', nombre: 'OCTUBRE' }),
+            expect.objectContaining({ nombre: 'OCTUBRE II' }),
+          ]),
+        })
+      );
+    });
+
+    it('reutiliza y reactiva una etapa si el nombre ya existe (case-insensitive) sin duplicarla', async () => {
+      const { getDoc } = require('firebase/firestore');
+      (getDoc as jest.Mock).mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({
+          faseNombre: 'OCTUBRE II',
+          faseActualID: 'OCTUBRE_II_200',
+          fases: [
+            { id: 'OCTUBRE_100', nombre: 'OCTUBRE' },
+            { id: 'OCTUBRE_II_200', nombre: 'OCTUBRE II' },
+          ],
+        }),
+      });
+
+      const { result } = renderHook(() =>
+        useEvaluacionDesempenoBase({ collectionName: 'evaluaciones-especialista' })
+      );
+
+      await act(async () => {
+        await result.current.updateFaseEvaluacion('eval-123', 'octubre');
+      });
+
+      expect(updateDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          faseActualID: 'OCTUBRE_100',
+          faseNombre: 'octubre',
+          fases: expect.arrayContaining([
+            expect.objectContaining({ id: 'OCTUBRE_100', nombre: 'octubre' }),
+            expect.objectContaining({ id: 'OCTUBRE_II_200', nombre: 'OCTUBRE II' }),
+          ]),
+        })
+      );
+    });
+
+    it('permite cambiar la etapa activa directamente con setFaseActiva', async () => {
+      const { result } = renderHook(() =>
+        useEvaluacionDesempenoBase({ collectionName: 'evaluaciones-especialista' })
+      );
+
+      await act(async () => {
+        await result.current.setFaseActiva('eval-123', 'OCTUBRE_100', 'OCTUBRE');
+      });
+
+      expect(updateDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          faseActualID: 'OCTUBRE_100',
+          faseNombre: 'OCTUBRE',
+        })
+      );
+    });
   });
 });

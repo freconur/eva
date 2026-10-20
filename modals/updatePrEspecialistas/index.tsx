@@ -111,7 +111,7 @@ const UpdatePreguntaRespuestaEspecialistas = ({
                 <div className={styles.modalHeader}>
                   <div onClick={() => closeHandler && closeHandler()} className={styles.closeButton}>cerrar</div>
                 </div>
-                <h3 className={styles.modalTitle}>Editar pregunta</h3>
+                <h3 className={styles.modalTitle}>Editar criterio</h3>
                 <div className={styles.modalContent}>
                   <div className={styles.formGroup}>
                     <p className={styles.label}>Dominio</p>
@@ -162,10 +162,7 @@ const UpdatePreguntaRespuestaEspecialistas = ({
                     </>
                   )}
 
-                  <div className={styles.infoScale}>
-                    <p>Escala: 0=No evidencia, 1=En proceso, 2=Logrado</p>
-                  </div>
-                  <p className={styles.confirmationText}>¿Quieres actualizar esta pregunta y sus alternativas?</p>
+                  <p className={styles.confirmationText}>¿Quieres actualizar este criterio?</p>
                   <div className={styles.buttonContainer}>
                     <button onClick={() => closeHandler && closeHandler()} className={styles.cancelButton}>CANCELAR</button>
                     <button onClick={() => handleUpdatePRDirector()} className={styles.confirmButton}>SI</button>

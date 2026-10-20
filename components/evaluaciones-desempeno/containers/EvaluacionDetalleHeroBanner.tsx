@@ -14,7 +14,7 @@ import {
 } from 'react-icons/ri';
 import { MdArrowBack } from 'react-icons/md';
 import { toast } from 'react-toastify';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase/firebase.config';
 import { compressBannerImage } from '@/features/utils/compressBannerImage';
@@ -59,6 +59,9 @@ export interface EvaluacionDetalleHeroBannerProps {
   idEvaluacion?: string;
   /** Nombre de la colección en Firestore ('evaluaciones-docentes' | 'evaluaciones-director' | etc.) */
   collectionName?: string;
+
+  /** Variante visual controlada o inicial ('compact' | 'expanded') */
+  variant?: BannerVariant;
 
   /** Ruta para el botón Volver */
   backHref?: string;
@@ -162,6 +165,7 @@ const THEME_KEYS: MetricColorTheme[] = ['blue', 'emerald', 'amber', 'purple'];
 export const EvaluacionDetalleHeroBanner: React.FC<EvaluacionDetalleHeroBannerProps> = ({
   idEvaluacion,
   collectionName,
+  variant: propVariant,
   backHref,
   backLabel = 'Volver',
   selectedYear,
@@ -203,31 +207,177 @@ export const EvaluacionDetalleHeroBanner: React.FC<EvaluacionDetalleHeroBannerPr
 
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
 
-  // 1. Variante (Compacta / Grande)
-  const [variant, setVariant] = useState<BannerVariant>(defaultVariant);
+  // 1. Variante (Compacta / Grande) y sincronización con Firestore
+  const [variant, setVariant] = useState<BannerVariant>(propVariant || defaultVariant);
+  const [isSavingVariant, setIsSavingVariant] = useState<boolean>(false);
 
+  // Sincronizar si propVariant cambia externamente
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (propVariant === 'compact' || propVariant === 'expanded') {
+      setVariant(propVariant);
+    }
+  }, [propVariant]);
+
+  // Sincronización en tiempo real desde Firestore y lectura local
+  useEffect(() => {
+    let isMounted = true;
+
+    // A. Respaldo inmediato en localStorage
+    if (typeof window !== 'undefined' && !propVariant) {
       try {
         const saved = localStorage.getItem(storageKey);
         if (saved === 'compact' || saved === 'expanded') {
           setVariant(saved);
         }
       } catch (e) {
-        console.error('Error al leer variante del banner:', e);
+        console.error('Error al leer variante local del banner:', e);
       }
     }
-  }, [storageKey]);
 
-  const handleToggleVariant = (newVariant: BannerVariant) => {
+    const unsubs: Array<() => void> = [];
+
+    try {
+      const db = getFirestore();
+
+      // B. Escuchar el documento específico de la evaluación en Firestore
+      if (idEvaluacion && collectionName) {
+        const evalDocRef = doc(db, collectionName, idEvaluacion);
+        const unsubEval = onSnapshot(
+          evalDocRef,
+          (docSnap) => {
+            if (!isMounted) return;
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              const serverVariant = data?.bannerVariant || data?.variant;
+              if (serverVariant === 'compact' || serverVariant === 'expanded') {
+                setVariant(serverVariant);
+                if (typeof window !== 'undefined') {
+                  try {
+                    localStorage.setItem(storageKey, serverVariant);
+                  } catch (e) {}
+                }
+              }
+            }
+          },
+          (err) => {
+            console.debug('onSnapshot banner evaluación:', err?.message);
+          }
+        );
+        if (typeof unsubEval === 'function') unsubs.push(unsubEval);
+      }
+
+      // C. Escuchar la configuración global en configuraciones/evaluaciones_detalle_banner
+      const configDocRef = doc(db, 'configuraciones', 'evaluaciones_detalle_banner');
+      const unsubConfig = onSnapshot(
+        configDocRef,
+        (docSnap) => {
+          if (!isMounted) return;
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const configVariant =
+              data?.[storageKey]?.variant ||
+              (collectionName ? data?.[collectionName]?.variant : undefined);
+            if (configVariant === 'compact' || configVariant === 'expanded') {
+              setVariant((prev) => {
+                return configVariant;
+              });
+              if (typeof window !== 'undefined') {
+                try {
+                  localStorage.setItem(storageKey, configVariant);
+                } catch (e) {}
+              }
+            }
+          }
+        },
+        (err) => {
+          console.debug('onSnapshot banner detalle configuraciones:', err?.message);
+        }
+      );
+      if (typeof unsubConfig === 'function') unsubs.push(unsubConfig);
+    } catch (err) {
+      console.error('Error al configurar observadores de Firestore para el banner:', err);
+    }
+
+    return () => {
+      isMounted = false;
+      unsubs.forEach((unsub) => {
+        try {
+          unsub();
+        } catch (e) {}
+      });
+    };
+  }, [idEvaluacion, collectionName, storageKey, propVariant]);
+
+  const handleToggleVariant = async (newVariant: BannerVariant) => {
+    if (!isUserAdmin) {
+      toast.warning('Solo los administradores pueden cambiar la vista oficial del banner.');
+      return;
+    }
+
+    const prevVariant = variant;
     setVariant(newVariant);
     if (onVariantChange) onVariantChange(newVariant);
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(storageKey, newVariant);
       } catch (e) {
-        console.error('Error al guardar variante del banner:', e);
+        console.error('Error al guardar variante del banner en localStorage:', e);
       }
+    }
+
+    setIsSavingVariant(true);
+    try {
+      const db = getFirestore();
+
+      // 1. Guardar en el documento específico de la evaluación
+      if (idEvaluacion && collectionName) {
+        const evalDocRef = doc(db, collectionName, idEvaluacion);
+        await setDoc(
+          evalDocRef,
+          {
+            bannerVariant: newVariant,
+            variant: newVariant,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentUserData?.dni || currentUserData?.email || 'admin',
+          },
+          { merge: true }
+        );
+      }
+
+      // 2. Guardar en la configuración global para sincronizar con todos los usuarios y componentes
+      const configDocRef = doc(db, 'configuraciones', 'evaluaciones_detalle_banner');
+      await setDoc(
+        configDocRef,
+        {
+          [storageKey]: {
+            variant: newVariant,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentUserData?.dni || currentUserData?.email || 'admin',
+          },
+          ...(collectionName
+            ? {
+                [collectionName]: {
+                  variant: newVariant,
+                  updatedAt: new Date().toISOString(),
+                  updatedBy: currentUserData?.dni || currentUserData?.email || 'admin',
+                },
+              }
+            : {}),
+        },
+        { merge: true }
+      );
+
+      toast.success(
+        `Vista del banner establecida como "${
+          newVariant === 'expanded' ? 'Grande' : 'Compacta'
+        }" para todos los usuarios.`
+      );
+    } catch (error: any) {
+      console.error('Error al persistir variante del banner en Firestore:', error);
+      setVariant(prevVariant);
+      toast.error('Error al guardar la vista del banner en la base de datos.');
+    } finally {
+      setIsSavingVariant(false);
     }
   };
 
@@ -464,43 +614,61 @@ export const EvaluacionDetalleHeroBanner: React.FC<EvaluacionDetalleHeroBannerPr
     );
   };
 
-  // Selector de variantes Compacta / Grande
-  const renderVariantSwitcher = () => (
-    <div
-      className="inline-flex items-center p-0.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs font-semibold shadow-2xs"
-      role="group"
-      aria-label="Selector de tamaño de banner"
-    >
-      <button
-        type="button"
-        onClick={() => handleToggleVariant('compact')}
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-          variant === 'compact'
-            ? 'bg-white text-slate-900 shadow-xs font-bold'
-            : 'text-blue-100 hover:text-white hover:bg-white/10'
-        }`}
-        title="Vista compacta: horizontal de alta densidad"
-      >
-        <RiLayoutRowLine className="w-3 h-3" />
-        <span className="hidden md:inline">Compacta</span>
-      </button>
-      <button
-        type="button"
-        onClick={() => handleToggleVariant('expanded')}
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-          variant === 'expanded'
-            ? 'bg-white text-slate-900 shadow-xs font-bold'
-            : 'text-blue-100 hover:text-white hover:bg-white/10'
-        }`}
-        title="Vista grande: hero amplio con tarjetas KPI destacadas"
-      >
-        <RiLayoutGridLine className="w-3 h-3" />
-        <span className="hidden md:inline">Grande</span>
-      </button>
+  // Selector de variantes Compacta / Grande (Habilitado exclusivamente para rol Administrador)
+  const renderVariantSwitcher = () => {
+    const showVariantButtons = isUserAdmin;
+    const showBgControls = allowUploadBg;
 
-      {renderBackgroundControls()}
-    </div>
-  );
+    if (!showVariantButtons && !showBgControls) return null;
+
+    return (
+      <div
+        className="inline-flex items-center p-0.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs font-semibold shadow-2xs"
+        role="group"
+        aria-label="Selector de tamaño de banner"
+      >
+        {showVariantButtons && (
+          <>
+            <button
+              type="button"
+              disabled={isSavingVariant || isUploadingImage}
+              onClick={() => handleToggleVariant('compact')}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                variant === 'compact'
+                  ? 'bg-white text-slate-900 shadow-xs font-bold'
+                  : 'text-blue-100 hover:text-white hover:bg-white/10'
+              } ${isSavingVariant ? 'opacity-60 cursor-not-allowed' : ''}`}
+              title="Vista compacta: horizontal de alta densidad"
+              aria-pressed={variant === 'compact'}
+            >
+              <RiLayoutRowLine className="w-3 h-3" />
+              <span className="hidden md:inline">Compacta</span>
+            </button>
+            <button
+              type="button"
+              disabled={isSavingVariant || isUploadingImage}
+              onClick={() => handleToggleVariant('expanded')}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                variant === 'expanded'
+                  ? 'bg-white text-slate-900 shadow-xs font-bold'
+                  : 'text-blue-100 hover:text-white hover:bg-white/10'
+              } ${isSavingVariant ? 'opacity-60 cursor-not-allowed' : ''}`}
+              title="Vista grande: hero amplio con tarjetas KPI destacadas"
+              aria-pressed={variant === 'expanded'}
+            >
+              <RiLayoutGridLine className="w-3 h-3" />
+              <span className="hidden md:inline">Grande</span>
+            </button>
+            {isSavingVariant && (
+              <RiLoader4Line className="w-3.5 h-3.5 animate-spin text-amber-300 ml-0.5 shrink-0" />
+            )}
+          </>
+        )}
+
+        {showBgControls && renderBackgroundControls()}
+      </div>
+    );
+  };
 
   if (variant === 'compact') {
     return (

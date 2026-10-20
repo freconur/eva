@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/router';
+import { toast } from 'react-toastify';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import useEvaluacionDesempenoBase, { RoleType } from '@/features/hooks/useEvaluacionDesempenoBase';
 import { PRDocentes, User } from '@/features/types/types';
 import { useEvidencias } from '@/features/hooks/evaluar-especialista/useEvidencias';
 import { useRetroalimentacionDinamica } from '@/features/hooks/evaluar-especialista/useRetroalimentacionDinamica';
 import { getUniquePhases } from '@/features/utils/phaseUtils';
+import { regionTexto } from '@/fuctions/regiones';
 
 const defaultEscala = [
   { value: 0, alternativa: '0', descripcion: 'No evidencia' },
@@ -37,7 +39,23 @@ export const useEvaluarDesempeno = ({
     evaluadosEspecialista,
     warningDataDocente,
     loaderSalvarPregunta,
+    loaderPages,
   } = useGlobalContext();
+
+  const isAdmin =
+    currentUserData?.rol === 4 ||
+    currentUserData?.rol === 0 ||
+    currentUserData?.perfil?.rol === 4 ||
+    currentUserData?.perfil?.rol === 0 ||
+    Number(currentUserData?.rol) === 4 ||
+    Number(currentUserData?.rol) === 0;
+
+  const isEvaluacionInactiva = Boolean(
+    !loaderPages &&
+      dataEvaluacionDocente?.id &&
+      !dataEvaluacionDocente.active &&
+      !isAdmin
+  );
 
   const {
     getDataEvaluacion,
@@ -260,6 +278,53 @@ export const useEvaluarDesempeno = ({
     }
   }, [dataDirector.dni]);
 
+  // ── Validación de Jurisdicción por UGEL / Región ──────────────────────────
+  const validateDocenteRegion = useCallback(
+    (targetUser: User): boolean => {
+      const isEsp =
+        role === 'especialista' ||
+        currentUserData?.rol === 1 ||
+        currentUserData?.perfil?.rol === 1 ||
+        Number(currentUserData?.rol) === 1 ||
+        Number(currentUserData?.perfil?.rol) === 1;
+
+      const isAdm =
+        role === 'admin' ||
+        currentUserData?.rol === 4 ||
+        currentUserData?.rol === 0 ||
+        currentUserData?.rol === 5 ||
+        Number(currentUserData?.rol) === 4 ||
+        Number(currentUserData?.rol) === 0 ||
+        Number(currentUserData?.rol) === 5;
+
+      // Solo restringir a especialistas (no administradores)
+      if (!isEsp || isAdm) return true;
+
+      const specialistRegion =
+        currentUserData?.region !== undefined &&
+        currentUserData?.region !== null
+          ? Number(currentUserData.region)
+          : null;
+
+      const userRegion =
+        targetUser.region !== undefined &&
+        targetUser.region !== null
+          ? Number(targetUser.region)
+          : null;
+
+      if (specialistRegion !== null && userRegion !== null && specialistRegion !== userRegion) {
+        const specUgel = regionTexto(specialistRegion) || `UGEL ${specialistRegion}`;
+        const userUgel = regionTexto(userRegion) || `UGEL ${userRegion}`;
+        toast.error(
+          `El docente ${targetUser.nombres || ''} ${targetUser.apellidos || ''} (DNI ${targetUser.dni || ''}) pertenece a la ${userUgel} y no a su ${specUgel}. No tiene autorización para evaluarlo.`
+        );
+        return false;
+      }
+      return true;
+    },
+    [role, currentUserData?.rol, currentUserData?.perfil?.rol, currentUserData?.region]
+  );
+
   // ── Auto-Carga desde Parámetros de URL ──────────────────────────────────────
   useEffect(() => {
     let queryDni: string | undefined;
@@ -275,6 +340,10 @@ export const useEvaluarDesempeno = ({
       const loadUserFromUrl = async () => {
         const user = await buscarUsuario(queryDni!);
         if (user) {
+          if (!validateDocenteRegion(user)) {
+            setDataDirector({});
+            return;
+          }
           setDataDirector(user);
           setDniDocente(user.dni || '');
           if (evaluacionId) {
@@ -296,7 +365,7 @@ export const useEvaluarDesempeno = ({
       };
       loadUserFromUrl();
     }
-  }, [router.query, evaluacionId, queryParamKeys, dataDirector.dni, selectedFaseId, dataEvaluacionDocente?.faseActualID]);
+  }, [router.query, evaluacionId, queryParamKeys, dataDirector.dni, selectedFaseId, dataEvaluacionDocente?.faseActualID, validateDocenteRegion]);
 
   // ── Handlers de Búsqueda ───────────────────────────────────────────────────
   const handleChangeDocente = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -371,6 +440,9 @@ export const useEvaluarDesempeno = ({
   };
 
   const handleSelectEspecialista = (esp: User) => {
+    if (!validateDocenteRegion(esp)) {
+      return;
+    }
     selectUserAndLoadHistory(esp);
   };
 
@@ -378,7 +450,12 @@ export const useEvaluarDesempeno = ({
     if (!dniDocente.trim()) return;
     const found = await buscarUsuario(dniDocente.trim());
     if (found) {
+      if (!validateDocenteRegion(found)) {
+        return;
+      }
       selectUserAndLoadHistory(found);
+    } else {
+      toast.warning(`No existen resultados del docente con DNI ${dniDocente.trim()} en su UGEL ni en el sistema.`);
     }
   };
 
@@ -522,6 +599,11 @@ export const useEvaluarDesempeno = ({
   const _guardarEvaluacion = async () => {
     if (!dataDirector.dni || !evaluacionId) return;
 
+    if (!isAdmin && dataEvaluacionDocente?.id && !dataEvaluacionDocente.active) {
+      toast.warning('Esta evaluación se encuentra inactiva o pausada. No se pueden registrar calificaciones.');
+      return;
+    }
+
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     const finalTime = horaFinal || now;
     if (!horaFinal) setHoraFinal(now);
@@ -634,6 +716,9 @@ export const useEvaluarDesempeno = ({
     handleChangeFeedbackValue,
     warningDataDocente,
     loaderSalvarPregunta,
+    loaderPages,
+    isAdmin,
+    isEvaluacionInactiva,
     evaluadoRoleLabel,
     evaluacionId,
   };

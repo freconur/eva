@@ -89,6 +89,16 @@ export const DesempenoHeroBanner: React.FC<DesempenoHeroBannerProps> = ({
   const { currentUserData } = useGlobalContext();
   const bannerConfig = useEvaluacionesBannerConfig({ routeKey, defaultVariant });
 
+  const isUserAdmin =
+    currentUserData?.rol === 4 ||
+    currentUserData?.rol === 0 ||
+    currentUserData?.perfil?.rol === 4 ||
+    currentUserData?.perfil?.rol === 0 ||
+    Number(currentUserData?.rol) === 4 ||
+    Number(currentUserData?.rol) === 0;
+
+  const canShowVariantSwitch = showVariantSwitch && (isUserAdmin || bannerConfig.isAuditing);
+
   const institucionEfectiva =
     colegio ||
     currentUserData?.institucion ||
@@ -113,7 +123,7 @@ export const DesempenoHeroBanner: React.FC<DesempenoHeroBannerProps> = ({
       customTitle={bannerConfig.customTitle}
       customSubtitle={bannerConfig.customSubtitle}
       isAuditing={bannerConfig.isAuditing}
-      showVariantSwitch={showVariantSwitch}
+      showVariantSwitch={canShowVariantSwitch}
       isSavingVariant={bannerConfig.isSaving}
       isSavingTexts={bannerConfig.isSavingTexts}
       isUploadingImage={bannerConfig.isUploadingImage}

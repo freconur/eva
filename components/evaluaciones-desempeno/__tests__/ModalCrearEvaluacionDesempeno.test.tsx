@@ -49,6 +49,12 @@ describe('ModalCrearEvaluacionDesempeno', () => {
       screen.getByPlaceholderText('Ej. Evaluación de Desempeño Q1')
     ).toBeInTheDocument();
 
+    // Campo Etapa / Fase inicial
+    expect(screen.getByText('Nombre de la primera etapa / fase')).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText('Ej. Octubre, Ronda I, Diagnóstica...')
+    ).toBeInTheDocument();
+
     // Campo Categoría
     expect(screen.getByText('Categoría')).toBeInTheDocument();
     expect(screen.getByRole('combobox')).toBeInTheDocument();
@@ -91,6 +97,43 @@ describe('ModalCrearEvaluacionDesempeno', () => {
       expect(mockCreateEvaluacion).toHaveBeenCalledWith({
         name: 'Evaluación Trimestral Docentes',
         categoria: 'SEGUIMIENTO',
+        faseNombre: 'Fase Diagnóstica',
+        active: false,
+      });
+      expect(handleClose).toHaveBeenCalled();
+      expect(handleSuccess).toHaveBeenCalled();
+    });
+  });
+
+  it('permite especificar un nombre de fase personalizado al crear la evaluación', async () => {
+    const handleClose = jest.fn();
+    const handleSuccess = jest.fn();
+
+    render(
+      <ModalCrearEvaluacionDesempeno
+        idEvaluacion=""
+        collectionName="evaluaciones-docentes"
+        title="Crear Evaluación de Docente"
+        onClose={handleClose}
+        onSuccess={handleSuccess}
+      />
+    );
+
+    const inputName = screen.getByPlaceholderText('Ej. Evaluación de Desempeño Q1');
+    const inputFase = screen.getByPlaceholderText('Ej. Octubre, Ronda I, Diagnóstica...');
+    const selectCategoria = screen.getByRole('combobox');
+    const submitBtn = screen.getByRole('button', { name: /guardar/i });
+
+    fireEvent.change(inputName, { target: { value: 'Evaluación Anual 2026' } });
+    fireEvent.change(inputFase, { target: { value: 'Octubre II' } });
+    fireEvent.change(selectCategoria, { target: { value: 'SEGUIMIENTO' } });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(mockCreateEvaluacion).toHaveBeenCalledWith({
+        name: 'Evaluación Anual 2026',
+        categoria: 'SEGUIMIENTO',
+        faseNombre: 'Octubre II',
         active: false,
       });
       expect(handleClose).toHaveBeenCalled();

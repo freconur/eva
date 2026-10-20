@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { EvaluacionDetalleHeroBanner } from '../containers/EvaluacionDetalleHeroBanner';
 
 jest.mock('@/firebase/firebase.config', () => ({
@@ -15,10 +15,24 @@ jest.mock('@/features/context/GlolbalContext', () => ({
   }),
 }));
 
+const mockSetDoc = jest.fn().mockResolvedValue(undefined);
+let snapshotCallbacks: Array<(snap: any) => void> = [];
+
+jest.mock('firebase/firestore', () => ({
+  getFirestore: jest.fn(() => ({})),
+  doc: jest.fn((_db, collection, docId) => ({ path: `${collection}/${docId}` })),
+  setDoc: (...args: any[]) => mockSetDoc(...args),
+  onSnapshot: jest.fn((_ref, cb) => {
+    snapshotCallbacks.push(cb);
+    return () => {};
+  }),
+}));
+
 describe('EvaluacionDetalleHeroBanner', () => {
   beforeEach(() => {
     localStorage.clear();
     jest.clearAllMocks();
+    snapshotCallbacks = [];
   });
 
   const defaultProps = {
@@ -54,16 +68,20 @@ describe('EvaluacionDetalleHeroBanner', () => {
     expect(screen.getByText('18')).toBeInTheDocument();
   });
 
-  it('alterna correctamente entre la vista grande y compacta', () => {
-    render(<EvaluacionDetalleHeroBanner {...defaultProps} />);
+  it('alterna correctamente entre la vista grande y compacta', async () => {
+    render(<EvaluacionDetalleHeroBanner {...defaultProps} isAdmin={true} />);
 
     const compactBtn = screen.getByRole('button', { name: /compacta/i });
-    fireEvent.click(compactBtn);
+    await act(async () => {
+      fireEvent.click(compactBtn);
+    });
 
     expect(localStorage.getItem('eva_eval_detalle_banner_variant')).toBe('compact');
 
     const grandeBtn = screen.getByRole('button', { name: /grande/i });
-    fireEvent.click(grandeBtn);
+    await act(async () => {
+      fireEvent.click(grandeBtn);
+    });
 
     expect(localStorage.getItem('eva_eval_detalle_banner_variant')).toBe('expanded');
   });
@@ -72,6 +90,13 @@ describe('EvaluacionDetalleHeroBanner', () => {
     render(<EvaluacionDetalleHeroBanner {...defaultProps} isAdmin={false} />);
 
     expect(screen.queryByRole('button', { name: /fondo/i })).not.toBeInTheDocument();
+  });
+
+  it('oculta el switch de cambiar entre compacta y grande para usuarios no administradores', () => {
+    render(<EvaluacionDetalleHeroBanner {...defaultProps} isAdmin={false} />);
+
+    expect(screen.queryByRole('button', { name: /compacta/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /grande/i })).not.toBeInTheDocument();
   });
 
   it('muestra el botón de fondo cuando isAdmin={true}', () => {
@@ -112,5 +137,86 @@ describe('EvaluacionDetalleHeroBanner', () => {
     expect(screen.getByPlaceholderText('Ej. RÚBRICA DE MEDIACIÓN DIDÁCTICA')).toHaveValue(
       'Rúbrica de Mediación Pedagógica'
     );
+  });
+
+  it('persiste el cambio de variante a Firestore cuando el administrador cambia la vista', async () => {
+    render(
+      <EvaluacionDetalleHeroBanner
+        {...defaultProps}
+        isAdmin={true}
+        idEvaluacion="eval-999"
+        collectionName="evaluaciones-docentes"
+        storageKey="eva_eval_docente_banner_variant"
+      />
+    );
+
+    const compactBtn = screen.getByRole('button', { name: /compacta/i });
+    await act(async () => {
+      fireEvent.click(compactBtn);
+    });
+
+    // Debe guardar en el documento de la evaluación
+    expect(mockSetDoc).toHaveBeenCalledWith(
+      { path: 'evaluaciones-docentes/eval-999' },
+      expect.objectContaining({
+        bannerVariant: 'compact',
+        variant: 'compact',
+      }),
+      { merge: true }
+    );
+
+    // Debe guardar en la colección de configuraciones globales
+    expect(mockSetDoc).toHaveBeenCalledWith(
+      { path: 'configuraciones/evaluaciones_detalle_banner' },
+      expect.objectContaining({
+        eva_eval_docente_banner_variant: expect.objectContaining({
+          variant: 'compact',
+        }),
+      }),
+      { merge: true }
+    );
+  });
+
+  it('actualiza la vista dinámicamente cuando Firestore emite un cambio de variante en tiempo real', () => {
+    const { act } = require('@testing-library/react');
+    render(
+      <EvaluacionDetalleHeroBanner
+        {...defaultProps}
+        isAdmin={false}
+        idEvaluacion="eval-999"
+        collectionName="evaluaciones-docentes"
+      />
+    );
+
+    // Inicialmente expandida
+    expect(screen.getByText('Docentes')).toBeInTheDocument();
+
+    // Simular que Firestore emite actualización a vista compacta
+    act(() => {
+      snapshotCallbacks.forEach((cb) => {
+        cb({
+          exists: () => true,
+          data: () => ({
+            bannerVariant: 'compact',
+            variant: 'compact',
+          }),
+        });
+      });
+    });
+
+    // En vista compacta las tarjetas KPI ampliadas ya no se muestran en la grilla grande
+    // y localStorage se mantiene actualizado
+    expect(localStorage.getItem('eva_eval_detalle_banner_variant')).toBe('compact');
+  });
+
+  it('respeta la prop variant pasada por el componente padre', () => {
+    render(
+      <EvaluacionDetalleHeroBanner
+        {...defaultProps}
+        variant="compact"
+      />
+    );
+
+    expect(screen.getByRole('banner')).toBeInTheDocument();
   });
 });

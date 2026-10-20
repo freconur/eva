@@ -39,14 +39,16 @@ export const ModalCrearEvaluacionDesempeno: React.FC<ModalCrearEvaluacionDesempe
     defaultValues: {
       name: '',
       categoria: '',
+      faseNombre: 'Fase Diagnóstica',
     },
   });
 
-  const onSubmit = handleSubmit(async (data) => {
+  const onSubmit = handleSubmit(async (data: any) => {
     try {
       await createEvaluacion({
         name: data.name.trim(),
         categoria: String(data.categoria).trim(),
+        faseNombre: String(data.faseNombre || '').trim() || 'Fase Diagnóstica',
         active: false,
       });
       reset();
@@ -101,6 +103,25 @@ export const ModalCrearEvaluacionDesempeno: React.FC<ModalCrearEvaluacionDesempe
             {errors.name && (
               <span className="text-red-500 text-xs mt-1 block">
                 {errors.name.message as string}
+              </span>
+            )}
+          </div>
+
+          <div className="w-full mb-4">
+            <p className="text-sm font-medium text-slate-700 mb-2">Nombre de la primera etapa / fase</p>
+            <input
+              {...register('faseNombre', {
+                required: { value: true, message: 'nombre de la etapa es requerido' },
+                minLength: { value: 2, message: 'debe tener un mínimo de 2 caracteres' },
+                maxLength: { value: 50, message: 'debe tener un máximo de 50 caracteres' },
+              })}
+              className={styles.inputNombresDni}
+              type="text"
+              placeholder="Ej. Octubre, Ronda I, Diagnóstica..."
+            />
+            {errors.faseNombre && (
+              <span className="text-red-500 text-xs mt-1 block">
+                {errors.faseNombre.message as string}
               </span>
             )}
           </div>

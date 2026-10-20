@@ -69,7 +69,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
     } else if (p.includes('/especialistas/agregar-directores') || p.includes('/especialistas/evaluaciones-director') || p.includes('/especialistas/cobertura-curricular') || (p.includes('/admin/conocimientos-pedagogicos') && p.includes('rol=2'))) {
       setPerfilesOpen(true);
       setOpenDropdown('directores');
-    } else if (p.includes('/admin/docentes') || p.includes('/directores/evaluaciones-docentes') || p.includes('/directores/cobertura-curricular') || (p.includes('/admin/conocimientos-pedagogicos') && p.includes('rol=3'))) {
+    } else if (p.includes('/admin/docentes') || p.includes('/admin/evaluaciones-docentes') || p.includes('/directores/evaluaciones-docentes') || p.includes('/directores/cobertura-curricular') || (p.includes('/admin/conocimientos-pedagogicos') && p.includes('rol=3'))) {
       setPerfilesOpen(true);
       setOpenDropdown('docentes');
     } else if (p.includes('/admin/evaluaciones') || p.includes('/admin/matriz-resultados')) {
@@ -367,8 +367,8 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                       </li>
                       <li>
                         <Link
-                          href="/directores/evaluaciones-docentes"
-                          className={`${styles.submenuLink} ${router.pathname.includes('/directores/evaluaciones-docentes') ? styles.activeLink : ''}`}
+                          href="/admin/evaluaciones-docentes"
+                          className={`${styles.submenuLink} ${(router.pathname.includes('/admin/evaluaciones-docentes') || router.pathname.includes('/directores/evaluaciones-docentes')) ? styles.activeLink : ''}`}
                         >
                           {getLabel('admin_docentes_seguimiento', 'Seguimiento y retroalimentacion')}
                         </Link>

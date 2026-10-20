@@ -174,9 +174,9 @@ export const ReporteIndividualContainer: React.FC<ReporteIndividualContainerProp
 				let snap = await getDocs(q);
 
 				if (snap.empty) {
-					// Fallback a campos específicos según rol
+					// Fallback a campos específicos según rol y colección
 					const fallbackField =
-						role === 'director'
+						collectionName === 'evaluaciones-docentes' || role === 'director'
 							? 'docenteDni'
 							: role === 'especialista'
 							? 'directorDni'
@@ -527,10 +527,12 @@ export const ReporteIndividualContainer: React.FC<ReporteIndividualContainerProp
 			return `/especialistas/evaluaciones-director/evaluacion/${idEvaluacion}/evaluados`;
 		}
 		if (collectionName === 'evaluaciones-docentes') {
-			return `/directores/evaluaciones-docentes/evaluacion/${idEvaluacion}/evaluados`;
+			return role === 'especialista'
+				? `/especialistas/evaluaciones-docentes/evaluacion/${idEvaluacion}/evaluados`
+				: `/directores/evaluaciones-docentes/evaluacion/${idEvaluacion}/evaluados`;
 		}
 		return `/admin/especialistas/evaluaciones-especialistas/evaluacion/${idEvaluacion}/evaluados`;
-	}, [backHref, idEvaluacion, collectionName]);
+	}, [backHref, idEvaluacion, collectionName, role]);
 
 	return (
 		<div className={styles.container}>

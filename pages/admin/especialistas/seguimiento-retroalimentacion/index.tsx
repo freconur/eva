@@ -88,7 +88,7 @@ const EvaluacionesDesempeñoDocentes = () => {
                       <tr key={index} className={styles.tableRow}>
                         <td className={styles.tableCell}>
                           <Link
-                            href={`/directores/evaluaciones-docentes/evaluacion/${evaluacion.id}`}
+                            href={`/admin/evaluaciones-docentes/evaluacion/${evaluacion.id}`}
                             className={styles.tableLink}
                           >
                             {index + 1}
@@ -96,7 +96,7 @@ const EvaluacionesDesempeñoDocentes = () => {
                         </td>
                         <td className={styles.tableCell}>
                           <Link
-                            href={`/directores/evaluaciones-docentes/evaluacion/${evaluacion.id}`}
+                            href={`/admin/evaluaciones-docentes/evaluacion/${evaluacion.id}`}
                             className={styles.tableLink}
                           >
                             {evaluacion.name?.toUpperCase()}
@@ -104,7 +104,7 @@ const EvaluacionesDesempeñoDocentes = () => {
                         </td>
                         <td className={styles.tableCell}>
                           <Link
-                            href={`/directores/evaluaciones-docentes/evaluacion/${evaluacion.id}`}
+                            href={`/admin/evaluaciones-docentes/evaluacion/${evaluacion.id}`}
                             className={styles.tableLink}
                           >
                             {evaluacion.categoria}

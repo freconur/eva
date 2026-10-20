@@ -1,7 +1,7 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { DataEstadisticas, PRDocentes } from '@/features/types/types';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import header from '@/assets/evaluacion-docente.jpg';
 import {
@@ -37,6 +37,7 @@ import {
   RiAwardLine,
   RiGroupLine,
   RiGovernmentLine,
+  RiBuilding4Line,
   RiLayoutGridLine,
   RiSlideshowLine,
   RiGridFill,
@@ -58,6 +59,15 @@ import UseEvaluacionEspecialistas from '@/features/hooks/UseEvaluacionEspecialis
 
 import NoHayResultados from '@/components/no-hay-resultados';
 import Loader from '@/components/loader/loader';
+import CardPromedioGlobalDominio from '@/components/evaluaciones-desempeno/containers/reporte-desempeno/CardPromedioGlobalDominio';
+import CardResultadoCriterio from '@/components/evaluaciones-desempeno/containers/reporte-desempeno/CardResultadoCriterio';
+import DesempenoTabsNav, {
+  DesempenoTabItem,
+  DirectorLayoutMode,
+} from '@/components/evaluaciones-desempeno/containers/reporte-desempeno/DesempenoTabsNav';
+import DesempenoFiltrosBar from '@/components/evaluaciones-desempeno/containers/reporte-desempeno/DesempenoFiltrosBar';
+import tabsStyles from '@/components/reportes/director/DirectorTabsNav.module.css';
+import { MdBarChart, MdAssignment } from 'react-icons/md';
 import GenericDropdown from '@/components/common/GenericDropdown';
 import { getCleanPhaseName, getMonitoreoTimestamp, getLocalDateString } from '@/features/evaluados-especialistas/components/utils';
 import {
@@ -66,6 +76,8 @@ import {
 } from '@/features/evaluados-especialistas/components/ModoOrganizarEspecialistasModal';
 import ConfigurarNivelesEspecialistas from '@/modals/ConfigurarNivelesEspecialistas';
 import ConfigurarNivelesPorDominio from '@/modals/ConfigurarNivelesPorDominio';
+import EspecialistasReporteHeroBanner from '@/components/reportes/especialistas/EspecialistasReporteHeroBanner';
+import useReportesBannerConfig from '@/components/reportes/director/useReportesBannerConfig';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -2059,25 +2071,58 @@ const Reportes = () => {
   });
 
   const getLevelsData = () => {
-    const niveles = dataEvaluacionDocente.niveles || [];
-    if (niveles.length === 0 || !dataFiltradaEspecialistaDirectorTabla) return { labels: [], datasets: [] };
+    const rawNiveles = (dataEvaluacionDocente?.niveles && dataEvaluacionDocente.niveles.length > 0)
+      ? dataEvaluacionDocente.niveles
+      : ((dataEvaluacionDocente as any)?.nivelYPuntaje && (dataEvaluacionDocente as any).nivelYPuntaje.length > 0)
+        ? (dataEvaluacionDocente as any).nivelYPuntaje
+        : [];
 
-    const counts = niveles.map(nivel => {
-      return dataFiltradaEspecialistaDirectorTabla.filter(reporte => {
-        const score = reporte.calificacion || 0;
-        const matched = getNivelLogro(score, niveles);
-        return matched?.nivel === nivel.nivel;
-      }).length;
+    if (rawNiveles.length === 0 || !dataFiltradaEspecialistaDirectorTabla) return { labels: [], datasets: [] };
+
+    const scale = dataEvaluacionDocente.escala || [];
+    const dataEspecialistas = dataFiltradaEspecialistaDirectorTabla || [];
+
+    // Agrupar especialistas únicos por DNI para obtener la última evaluación vigente de cada uno
+    const uniqueEspMap = new Map<string, any[]>();
+    dataEspecialistas.forEach((esp: any) => {
+      const dni = (esp.dni || esp.especialistaDni || esp.info?.dni || '').trim();
+      if (!dni) return;
+      if (!uniqueEspMap.has(dni)) {
+        uniqueEspMap.set(dni, []);
+      }
+      uniqueEspMap.get(dni)!.push(esp);
+    });
+
+    const counts: Record<string, number> = {};
+    rawNiveles.forEach((n: any) => {
+      counts[n.nivel] = 0;
+    });
+
+    Array.from(uniqueEspMap.values()).forEach((evalsList) => {
+      const evalsSorted = [...evalsList].sort((a, b) => {
+        const timeA = getMonitoreoTimestamp(a);
+        const timeB = getMonitoreoTimestamp(b);
+        if (timeA !== timeB) return timeA - timeB;
+        return (Number(a.numeroEvaluacion) || 0) - (Number(b.numeroEvaluacion) || 0);
+      });
+      const latestEval = evalsSorted[evalsSorted.length - 1];
+      const calif = getEspecialistaTotalScore(latestEval, scale);
+      if (calif !== null) {
+        const matched = getNivelLogro(calif, rawNiveles);
+        if (matched && matched.nivel && counts[matched.nivel] !== undefined) {
+          counts[matched.nivel] += 1;
+        }
+      }
     });
 
     return {
-      labels: niveles.map(n => n.nivel || ''),
+      labels: rawNiveles.map((n: any) => n.nivel || ''),
       datasets: [
         {
           label: 'Especialistas por Nivel',
-          data: counts,
-          backgroundColor: niveles.map(n => n.color || 'rgba(59, 130, 246, 0.6)'),
-          borderColor: niveles.map(n => n.color || '#2563eb'),
+          data: rawNiveles.map((n: any) => counts[n.nivel] || 0),
+          backgroundColor: rawNiveles.map((n: any) => n.color || 'rgba(59, 130, 246, 0.6)'),
+          borderColor: rawNiveles.map((n: any) => n.color || '#2563eb'),
           borderWidth: 1,
         },
       ],
@@ -3762,6 +3807,118 @@ const Reportes = () => {
 
   console.log('warning', warning);
   console.log('dataEvaluacionDocente', dataEvaluacionDocente);
+
+  // Modo de diseño del reporte: 'tabs' (pestañas independientes) o 'cascade' (cascada vertical continua)
+  const [layoutMode, setLayoutMode] = useState<DirectorLayoutMode>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(`eva_especialistas_report_layout_${route.query.idEvaluacion || 'general'}`);
+        if (saved === 'tabs' || saved === 'cascade') return saved;
+        const globalSaved = localStorage.getItem('eva_especialistas_report_layout');
+        if (globalSaved === 'tabs' || globalSaved === 'cascade') return globalSaved;
+      } catch (e) {
+        console.error('Error al leer layoutMode:', e);
+      }
+    }
+    return 'tabs';
+  });
+
+  const [activeTab, setActiveTab] = useState<string>('general');
+
+  const handleToggleLayoutMode = (mode: DirectorLayoutMode) => {
+    setLayoutMode(mode);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`eva_especialistas_report_layout_${route.query.idEvaluacion || 'general'}`, mode);
+        localStorage.setItem('eva_especialistas_report_layout', mode);
+      } catch (e) {
+        console.error('Error al guardar layoutMode:', e);
+      }
+    }
+    if (mode === 'cascade' && activeTab) {
+      setTimeout(() => {
+        const elem = document.getElementById(`section-${activeTab}`);
+        if (elem) {
+          elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 150);
+    }
+  };
+
+  const handleTabChange = (key: string) => {
+    setActiveTab(key);
+    if (layoutMode === 'cascade') {
+      const elem = document.getElementById(`section-${key}`);
+      if (elem) {
+        elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } else {
+      const navEl = document.getElementById('especialistas-tabs-nav-container');
+      if (navEl && navEl.getBoundingClientRect().top < 0) {
+        navEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
+  const totalEspecialistas = dataFiltradaEspecialistaDirectorTabla?.length || 0;
+  const totalCriterios = getPreguntaRespuestaDocentes?.length || 0;
+
+  // Configuración global del Hero Banner de Especialistas (Variante e Imagen de fondo)
+  const bannerConfig = useReportesBannerConfig({
+    routeKey: 'admin_evaluaciones_especialistas',
+    defaultVariant: 'expanded',
+  });
+
+  const ugelsParticipantesCount = useMemo(() => {
+    const set = new Set<string>();
+    const dataEspecialistas =
+      dataFiltradaEspecialistaDirectorTabla && dataFiltradaEspecialistaDirectorTabla.length > 0
+        ? dataFiltradaEspecialistaDirectorTabla
+        : allEvaluacionesEspecialistas;
+    dataEspecialistas?.forEach((esp: any) => {
+      const ugel = esp.region || esp.info?.region || esp.especialistaRegion;
+      if (ugel) set.add(String(ugel));
+    });
+    return set.size > 0 ? set.size : (allEvaluacionesEspecialistas?.length > 0 ? 14 : 0);
+  }, [dataFiltradaEspecialistaDirectorTabla, allEvaluacionesEspecialistas]);
+
+  const bannerRegionTexto = useMemo(() => {
+    if (filtros.region) {
+      const regObj = regiones.find((r) => r.id.toString() === String(filtros.region));
+      return regObj ? `UGEL ${regObj.region}` : 'UGEL Regional';
+    }
+    return String(currentUserData?.institucion || 'DRE Puno');
+  }, [filtros.region, currentUserData?.institucion]);
+
+  const tabsList = useMemo<DesempenoTabItem[]>(() => {
+    return [
+      {
+        id: 'general',
+        label: 'Panel General',
+        icon: <MdBarChart className="text-blue-600 text-lg" />,
+        badge: totalEspecialistas > 0 ? `${totalEspecialistas} esp.` : undefined,
+      },
+      {
+        id: 'institucional',
+        label: 'UGELs',
+        icon: <RiBuilding4Line className="text-purple-600 text-lg" />,
+        badge: 'UGEL',
+      },
+      {
+        id: 'evaluados',
+        label: 'Especialistas',
+        icon: <RiGroupLine className="text-emerald-600 text-lg" />,
+        badge: totalEspecialistas > 0 ? `${totalEspecialistas}` : undefined,
+      },
+      {
+        id: 'criterios',
+        label: 'Análisis por Criterio',
+        icon: <MdAssignment className="text-cyan-600 text-lg" />,
+        badge: totalCriterios > 0 ? `${totalCriterios} ítems` : undefined,
+      },
+    ];
+  }, [totalEspecialistas, totalCriterios]);
+
   return (
     <>
       {loaderPages ? (
@@ -3772,196 +3929,57 @@ const Reportes = () => {
       ) : (
         <div className={styles.container}>
           <div className={styles.tableContainer}>
+            <EspecialistasReporteHeroBanner
+              tituloEvaluacion={dataEvaluacionDocente?.name || (dataEvaluacionDocente as any)?.nombre || 'EVALUACIÓN DEL DESEMPEÑO DE ESPECIALISTAS UGEL'}
+              subtitulo="Monitoreo y Desempeño • Resultados y Logros de Especialistas UGEL"
+              ambitoTexto="Especialistas UGEL"
+              regionTexto={bannerRegionTexto}
+              mes={(dataEvaluacionDocente as any)?.mesDelExamen}
+              anio={(dataEvaluacionDocente as any)?.añoDelExamen}
+              ugelsParticipantes={ugelsParticipantesCount}
+              totalUgels={regiones.length || 14}
+              totalEspecialistas={totalEspecialistas}
+              totalCriterios={totalCriterios}
+              layoutMode={layoutMode}
+              onChangeLayoutMode={handleToggleLayoutMode}
+              variant={bannerConfig.variant}
+              onVariantChange={bannerConfig.setBannerVariant}
+              isSavingVariant={bannerConfig.isSavingVariant}
+              backgroundImage={bannerConfig.backgroundImage}
+              backgroundImageOpacity={bannerConfig.backgroundImageOpacity}
+              onUploadBackgroundImage={bannerConfig.uploadBannerImage}
+              onRemoveBackgroundImage={bannerConfig.removeBannerImage}
+              isUploadingImage={bannerConfig.isUploadingImage}
+              canConfigureBanner={true}
+              backHref={
+                route.query.idEvaluacion
+                  ? `/admin/especialistas/evaluaciones-especialistas/evaluacion/${route.query.idEvaluacion}`
+                  : '/admin/especialistas/evaluaciones-especialistas'
+              }
+            />
+
             <div className={styles.tableSection}>
               <div>
-                <div className={styles.filtersContainer}>
-                  <div className={styles.filterGroup}>
-                    <label className={styles.filterLabel}>UGEL</label>
-                    <GenericDropdown
-                      options={regiones.map((region) => ({
-                        id: region.id.toString(),
-                        name: region.region,
-                      }))}
-                      value={filtros.region}
-                      onChange={(val) => setFiltros({ ...filtros, region: val })}
-                      placeholder="Todas las UGELs"
-                      allOptionsLabel="Todas las UGELs"
-                      className="min-w-[220px]"
-                    />
-                  </div>
-
-                  <div className={styles.filterGroup}>
-                    <label className={styles.filterLabel}>Género</label>
-                    <GenericDropdown
-                      options={genero.map((gen) => ({
-                        id: gen.id.toString(),
-                        name: gen.name,
-                      }))}
-                      value={filtros.genero}
-                      onChange={(val) => setFiltros({ ...filtros, genero: val })}
-                      placeholder="Todos los géneros"
-                      allOptionsLabel="Todos los géneros"
-                      className="min-w-[200px]"
-                    />
-                  </div>
-
-                  <div className={styles.filterGroup}>
-                    <label className={styles.filterLabel}>Fase de Evaluación</label>
-                    <GenericDropdown
-                      options={fasesUnicas.map((fase) => ({
-                        id: fase.id,
-                        name: fase.nombre,
-                      }))}
-                      value={filtros.idFase}
-                      onChange={(val) => setFiltros({ ...filtros, idFase: val })}
-                      placeholder="Todas las fases"
-                      allOptionsLabel="Todas las fases"
-                      className="min-w-[220px]"
-                    />
-                  </div>
-
-                  {dimensionesEspecialistas && dimensionesEspecialistas.length > 0 && (
-                    <>
-                      <div className={styles.colorModeToggleWrapper}>
-                        <span className={styles.colorModeLabel}>Colorear por:</span>
-                        <div className={styles.segmentedControl}>
-                          <button
-                            type="button"
-                            className={`${styles.segmentedBtn} ${colorMode === 'dominio' ? styles.segmentedBtnActive : ''}`}
-                            onClick={() => setColorMode('dominio')}
-                            title="Colorear gráficos según el color temático configurado para cada dominio"
-                          >
-                            <RiPaletteLine style={{ fontSize: '1rem', color: colorMode === 'dominio' ? '#2563eb' : '#64748b' }} />
-                            <span>Color de Dominio</span>
-                          </button>
-                          <button
-                            type="button"
-                            className={`${styles.segmentedBtn} ${colorMode === 'nivel' ? `${styles.segmentedBtnActive} ${styles.segmentedBtnNivel}` : ''}`}
-                            onClick={() => setColorMode('nivel')}
-                            title="Colorear cada barra según el nivel de logro alcanzado en la evaluación"
-                          >
-                            <RiAwardLine style={{ fontSize: '1rem', color: colorMode === 'nivel' ? '#2563eb' : '#64748b' }} />
-                            <span>Nivel de Logro</span>
-                          </button>
-                        </div>
-                      </div>
-
-                    </>
-                  )}
-
-                  <div className={styles.customDropdownContainer} ref={settingsDropdownRef}>
-                    <button
-                      type="button"
-                      onClick={() => setIsSettingsDropdownOpen(!isSettingsDropdownOpen)}
-                      className={`${styles.customDropdownTrigger} ${isSettingsDropdownOpen ? styles.customDropdownTriggerActive : ''}`}
-                      title="Opciones de personalización y configuración del reporte"
-                    >
-                      <RiEqualizerLine style={{ fontSize: '1.15rem', color: '#2563eb' }} />
-                      <span>Personalizar y Ajustes</span>
-                      {DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length > 0 && (
-                        <span className={styles.hiddenCountBadge}>
-                          {DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length}
-                        </span>
-                      )}
-                      <RiArrowDownSLine
-                        style={{
-                          fontSize: '1.15rem',
-                          color: '#64748b',
-                          transition: 'transform 0.2s ease',
-                          transform: isSettingsDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                        }}
-                      />
-                    </button>
-
-                    {isSettingsDropdownOpen && (
-                      <div className={styles.customDropdownMenu}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsSettingsDropdownOpen(false);
-                            setIsOrganizerModalOpen(true);
-                          }}
-                          className={styles.customDropdownItem}
-                        >
-                          <div className={styles.customDropdownItemLeft}>
-                            <span className={styles.customDropdownItemIcon} style={{ color: '#0284c7' }}>
-                              <RiGridFill />
-                            </span>
-                            <span>Personalizar Gráficos</span>
-                          </div>
-                          {DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length > 0 && (
-                            <span className={styles.hiddenCountBadge}>
-                              {DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length} oculto{DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length > 1 ? 's' : ''}
-                            </span>
-                          )}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsSettingsDropdownOpen(false);
-                            setIsGlobalLevelsModalOpen(true);
-                          }}
-                          className={styles.customDropdownItem}
-                        >
-                          <div className={styles.customDropdownItemLeft}>
-                            <span className={styles.customDropdownItemIcon} style={{ color: '#10b981' }}>
-                              <RiAwardLine />
-                            </span>
-                            <span>Niveles Globales</span>
-                          </div>
-                        </button>
-
-                        {dimensionesEspecialistas && dimensionesEspecialistas.length > 0 && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsSettingsDropdownOpen(false);
-                                setIsDomainLevelsModalOpen(true);
-                              }}
-                              className={styles.customDropdownItem}
-                            >
-                              <div className={styles.customDropdownItemLeft}>
-                                <span className={styles.customDropdownItemIcon} style={{ color: '#8b5cf6' }}>
-                                  <RiAwardLine />
-                                </span>
-                                <span>Niveles por Dominio</span>
-                              </div>
-                            </button>
-
-                            <div className={styles.customDropdownDivider} />
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsSettingsDropdownOpen(false);
-                                setIsColorModalOpen(true);
-                              }}
-                              className={styles.customDropdownItem}
-                            >
-                              <div className={styles.customDropdownItemLeft}>
-                                <span className={styles.customDropdownItemIcon} style={{ color: '#6366f1' }}>
-                                  <RiPaletteLine />
-                                </span>
-                                <span>Colores de Dominios</span>
-                              </div>
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {(filtros.region !== '' || filtros.genero !== '' || filtros.idFase !== '') && (
-                    <button
-                      onClick={handleLimpiarFiltros}
-                      className={styles.clearFilterBtn}
-                    >
-                      Limpiar filtros
-                    </button>
-                  )}
-                </div>
+                <DesempenoFiltrosBar
+                  filtros={filtros}
+                  onChangeFiltros={(newFiltros) => setFiltros(newFiltros as any)}
+                  onResetFiltros={handleLimpiarFiltros}
+                  regiones={regiones}
+                  regionLabel="UGEL"
+                  regionPlaceholder="Todas las UGELs"
+                  generos={genero}
+                  fases={fasesUnicas}
+                  colorMode={colorMode}
+                  onChangeColorMode={setColorMode}
+                  showColorModeToggle={Boolean(dimensionesEspecialistas && dimensionesEspecialistas.length > 0)}
+                  showSettingsMenu={true}
+                  onOpenOrganizerModal={() => setIsOrganizerModalOpen(true)}
+                  onOpenGlobalLevelsModal={() => setIsGlobalLevelsModalOpen(true)}
+                  onOpenDomainLevelsModal={() => setIsDomainLevelsModalOpen(true)}
+                  onOpenColorModal={() => setIsColorModalOpen(true)}
+                  hasDomainLevels={Boolean(dimensionesEspecialistas && dimensionesEspecialistas.length > 0)}
+                  hiddenSectionsCount={DEFAULT_SECTIONS_ORDER.length - seccionesVisibles.length}
+                />
                 {valueLoader === false ? (
                   warning ? (
                     <NoHayResultados />
@@ -3998,23 +4016,53 @@ const Reportes = () => {
                         </div>
                       )}
 
-                      {ordenSecciones.map((secId) => {
-                        if (!seccionesVisibles.includes(secId)) return null;
+                      {/* Barra Ergonómica de Pestañas (Tabs) / Salto Rápido en Cascada (Fija y visible siempre al hacer scroll) */}
+                      <div
+                        id="especialistas-tabs-nav-container"
+                        className={`sticky top-0 z-[300] bg-white/95 backdrop-blur-md pt-2 transition-all duration-200 ${
+                          layoutMode === 'cascade'
+                            ? 'pb-1.5 mb-6 border-b border-slate-200/80 shadow-2xs'
+                            : 'pb-0 mb-0 shadow-2xs'
+                        }`}
+                      >
+                        <DesempenoTabsNav
+                          activeTab={activeTab}
+                          onChangeTab={handleTabChange}
+                          tabs={tabsList}
+                          layoutMode={layoutMode}
+                          onChangeLayoutMode={handleToggleLayoutMode}
+                          showLayoutSwitch={false}
+                        />
+                      </div>
 
-                        // 1. SECCIÓN RENDIMIENTO GLOBAL CONSOLIDADO (UGEL Y ESPECIALISTAS)
-                        if (secId === 'global_consolidado') {
-                          return (
-                            <div key="global_consolidado" className={styles.dimensionSectionWrapper}>
-                              <div className={styles.sectionHeader}>
-                                <h2 className={styles.analyticsTitle}>Rendimiento Global Consolidado</h2>
-                                <p className={styles.analyticsSubtitle}>
-                                  Comparativa general y ranking del puntaje total de toda la evaluación y su evolución a través de las fases
-                                </p>
-                              </div>
+                      <div
+                        className={
+                          layoutMode === 'tabs'
+                            ? 'bg-white border-x-2 border-b-2 border-blue-600 rounded-b-3xl p-4 sm:p-6 shadow-xs -mt-[2px] min-h-[520px]'
+                            : 'flex flex-col gap-8 w-full mt-4'
+                        }
+                      >
+                        {ordenSecciones.map((secId) => {
+                          if (!seccionesVisibles.includes(secId)) return null;
+
+                          // 1. SECCIÓN RENDIMIENTO GLOBAL CONSOLIDADO (UGEL Y ESPECIALISTAS)
+                          if (secId === 'global_consolidado') {
+                            const showUgelCard = layoutMode === 'cascade' || activeTab === 'institucional';
+                            const showEspCard = layoutMode === 'cascade' || activeTab === 'evaluados';
+                            if (!showUgelCard && !showEspCard) return null;
+
+                            return (
+                              <div key="global_consolidado" className={`${styles.dimensionSectionWrapper} ${layoutMode === 'tabs' ? tabsStyles.tabContentPanel : ''}`}>
+                                <div className={styles.sectionHeader}>
+                                  <h2 className={styles.analyticsTitle}>Rendimiento Global Consolidado</h2>
+                                  <p className={styles.analyticsSubtitle}>
+                                    Comparativa general y ranking del puntaje total de toda la evaluación y su evolución a través de las fases
+                                  </p>
+                                </div>
 
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', width: '100%' }}>
                                 {/* Card 1: Rendimiento Global por UGEL */}
-                                {(() => {
+                                {showUgelCard && (() => {
                                   const globalUgelData = getGlobalUGELData(globalUgelColor);
                                   const hasData = globalUgelData.labels.length > 0;
                                   const orient = getCardOrientation('global_ugel');
@@ -4172,7 +4220,7 @@ const Reportes = () => {
                                 })()}
 
                                 {/* Card 2: Rendimiento Global por Especialista */}
-                                {(() => {
+                                {showEspCard && (() => {
                                   const globalEspData = getGlobalEspecialistaData(globalEspColor);
                                   const hasData = globalEspData.labels.length > 0;
                                   const top10Labels = globalEspData.labels.slice(0, 10);
@@ -4352,8 +4400,9 @@ const Reportes = () => {
 
                         // 2. SECCIÓN CONSOLIDADO GLOBAL Y NIVELES (TORTA)
                         if (secId === 'pie_charts') {
+                          if (layoutMode === 'tabs' && activeTab !== 'general') return null;
                           return (
-                            <div key="pie_charts" className={styles.globalChartsGrid}>
+                            <div key="pie_charts" className={`${styles.globalChartsGrid} ${layoutMode === 'tabs' ? tabsStyles.tabContentPanel : ''}`}>
                               <div className={styles.chartContainer}>
                                 <h3 className={styles.sectionTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                   <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -4388,47 +4437,116 @@ const Reportes = () => {
                                 </div>
                               </div>
 
-                              {dataEvaluacionDocente.niveles && dataEvaluacionDocente.niveles.length > 0 && (
-                                <div className={styles.chartContainer}>
-                                  <h3 className={styles.sectionTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center' }}>
-                                      <span className={styles.sectionTitleIndicator}></span>
-                                      <span>Distribución por Niveles de Logro</span>
-                                    </span>
-                                    <GlobalScoreInfoPopup
-                                      type="niveles_logro"
-                                      isOpen={showLevelsInfo}
-                                      onToggle={() => setShowLevelsInfo((prev) => !prev)}
-                                      onClose={() => setShowLevelsInfo(false)}
-                                      anchorRef={levelsInfoRef}
-                                    />
-                                  </h3>
-                                  <div className={styles.pieChartWrapper}>
-                                    <Pie
-                                      options={{
-                                        ...pieOptions,
-                                        plugins: { ...pieOptions.plugins, title: { ...pieOptions.plugins.title, text: 'Especialistas por Nivel de Logro' } }
-                                      }}
-                                      data={getLevelsData()}
-                                    />
+                              {(() => {
+                                const rawNiveles = (dataEvaluacionDocente?.niveles && dataEvaluacionDocente.niveles.length > 0)
+                                  ? dataEvaluacionDocente.niveles
+                                  : ((dataEvaluacionDocente as any)?.nivelYPuntaje && (dataEvaluacionDocente as any).nivelYPuntaje.length > 0)
+                                    ? (dataEvaluacionDocente as any).nivelYPuntaje
+                                    : [];
+
+                                if (rawNiveles.length === 0) return null;
+
+                                const levelsData = getLevelsData();
+                                const dataEspecialistas = dataFiltradaEspecialistaDirectorTabla || [];
+
+                                const uniqueEspMap = new Map<string, any[]>();
+                                dataEspecialistas.forEach((esp: any) => {
+                                  const dni = (esp.dni || esp.especialistaDni || esp.info?.dni || '').trim();
+                                  if (!dni) return;
+                                  if (!uniqueEspMap.has(dni)) {
+                                    uniqueEspMap.set(dni, []);
+                                  }
+                                  uniqueEspMap.get(dni)!.push(esp);
+                                });
+                                const totalUnique = uniqueEspMap.size;
+
+                                return (
+                                  <div className={styles.chartContainer}>
+                                    <h3 className={styles.sectionTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                      <span style={{ display: 'flex', alignItems: 'center' }}>
+                                        <span className={styles.sectionTitleIndicator}></span>
+                                        <span>Distribución por Niveles de Logro</span>
+                                      </span>
+                                      <GlobalScoreInfoPopup
+                                        type="niveles_logro"
+                                        isOpen={showLevelsInfo}
+                                        onToggle={() => setShowLevelsInfo((prev) => !prev)}
+                                        onClose={() => setShowLevelsInfo(false)}
+                                        anchorRef={levelsInfoRef}
+                                      />
+                                    </h3>
+                                    <div className={styles.pieChartWrapper}>
+                                      <Pie
+                                        options={{
+                                          responsive: true,
+                                          maintainAspectRatio: true,
+                                          layout: {
+                                            padding: { top: 10, bottom: 10, left: 10, right: 10 },
+                                          },
+                                          plugins: {
+                                            legend: {
+                                              position: 'bottom' as const,
+                                              labels: {
+                                                boxWidth: 12,
+                                                boxHeight: 12,
+                                                usePointStyle: true,
+                                                pointStyle: 'circle',
+                                                padding: 16,
+                                                font: {
+                                                  family: 'Montserrat, sans-serif',
+                                                  size: 11.5,
+                                                  weight: 500,
+                                                },
+                                                color: '#475569',
+                                              },
+                                            },
+                                            title: {
+                                              display: true,
+                                              text: 'Especialistas por Nivel de Logro',
+                                              font: {
+                                                family: 'Montserrat, sans-serif',
+                                                size: 13,
+                                                weight: 'bold' as const,
+                                              },
+                                              color: '#1e293b',
+                                              padding: { bottom: 12 },
+                                            },
+                                            tooltip: {
+                                              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                              padding: 10,
+                                              cornerRadius: 8,
+                                              callbacks: {
+                                                label: (context: any) => {
+                                                  const val = context.parsed || 0;
+                                                  const tot = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                                                  const pct = tot > 0 ? ((val / tot) * 100).toFixed(1) : '0';
+                                                  return ` ${context.label}: ${val} (${pct}%)`;
+                                                },
+                                              },
+                                            },
+                                          },
+                                        }}
+                                        data={levelsData}
+                                      />
+                                    </div>
+                                    <div className={styles.statsGrid}>
+                                      <div className={styles.statItem}>
+                                        <span className={styles.statLabel}>Total Evaluados</span>
+                                        <span className={styles.statValue}>{totalUnique}</span>
+                                      </div>
+                                      {rawNiveles.map((nivel: any, index: number) => {
+                                        const count = levelsData.datasets[0]?.data[index] || 0;
+                                        return (
+                                          <div key={index} className={styles.statItem}>
+                                            <span className={styles.statLabel} style={{ color: nivel.color }}>{nivel.nivel}</span>
+                                            <span className={styles.statValue}>{count}</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
                                   </div>
-                                  <div className={styles.statsGrid}>
-                                    {dataEvaluacionDocente.niveles.map((nivel, index) => {
-                                      const count = dataFiltradaEspecialistaDirectorTabla.filter(reporte => {
-                                        const score = reporte.calificacion || 0;
-                                        const matched = getNivelLogro(score, dataEvaluacionDocente.niveles);
-                                        return matched?.nivel === nivel.nivel;
-                                      }).length;
-                                      return (
-                                        <div key={index} className={styles.statItem}>
-                                          <span className={styles.statLabel} style={{ color: nivel.color }}>{nivel.nivel}</span>
-                                          <span className={styles.statValue}>{count}</span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
+                                );
+                              })()}
 
                               {dimensionesEspecialistas && dimensionesEspecialistas.length > 0 && (
                                 <div className={styles.chartContainer}>
@@ -4647,149 +4765,27 @@ const Reportes = () => {
                                   </div>
                                 </div>
                               )}
-                              {/* Card: Puntaje Promedio Global por Dominio */}
-                              {(() => {
-                                const dimData = getDimensionData();
-                                const orient = getCardOrientation('global_dim_avg');
-
-                                return (
-                                  <div className={`${styles.chartContainer} ${styles.fullWidthChart}`}>
-                                    <div
-                                      className={styles.dimensionChartHeader}
-                                      style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'flex-start',
-                                        flexWrap: 'wrap',
-                                        gap: '0.5rem',
-                                        marginBottom: '1rem',
-                                      }}
-                                    >
-                                      <div>
-                                        <h3 className={styles.dimensionChartMainTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                          <span style={{ display: 'flex', alignItems: 'center' }}>
-                                            <span
-                                              className={styles.sectionTitleIndicator}
-                                              style={{
-                                                display: 'inline-block',
-                                                verticalAlign: 'middle',
-                                                marginRight: '8px',
-                                                background: '#8b5cf6',
-                                              }}
-                                            ></span>
-                                            Puntaje Promedio Global por Dominio
-                                          </span>
-                                          <GlobalScoreInfoPopup
-                                            type="dominio"
-                                            isOpen={showGlobalDominioInfo}
-                                            onToggle={() => setShowGlobalDominioInfo((prev) => !prev)}
-                                            onClose={() => setShowGlobalDominioInfo(false)}
-                                            anchorRef={globalDominioInfoRef}
-                                          />
-                                        </h3>
-                                        <p className={styles.dimensionChartSubtitle}>
-                                          RENDIMIENTO GLOBAL CONSOLIDADO POR DOMINIO (SUMA DE CRITERIOS)
-                                        </p>
-                                      </div>
-
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        <div className={styles.segmentedControl}>
-                                          <button
-                                            type="button"
-                                            className={`${styles.segmentedBtn} ${orient === 'horizontal' ? styles.segmentedBtnActive : ''}`}
-                                            onClick={() => setCardOrientation('global_dim_avg', 'horizontal')}
-                                            title="Vista Horizontal"
-                                            aria-label="Vista Horizontal"
-                                            style={{ padding: '0.35rem 0.6rem' }}
-                                          >
-                                            <RiBarChartHorizontalLine style={{ fontSize: '1.1rem' }} />
-                                          </button>
-                                          <button
-                                            type="button"
-                                            className={`${styles.segmentedBtn} ${orient === 'vertical' ? styles.segmentedBtnActive : ''}`}
-                                            onClick={() => setCardOrientation('global_dim_avg', 'vertical')}
-                                            title="Vista Vertical"
-                                            aria-label="Vista Vertical"
-                                            style={{ padding: '0.35rem 0.6rem' }}
-                                          >
-                                            <RiBarChart2Line style={{ fontSize: '1.1rem' }} />
-                                          </button>
-                                        </div>
-
-                                        {dimData.labels.length > 0 && (
-                                          <button
-                                            onClick={() => setSelectedDimensionModal({ dim: { nombre: 'Puntaje Promedio Global por Dominio' }, type: 'global_dominio' })}
-                                            className={styles.btnVistaCompleta}
-                                            title="Abrir vista completa de promedios por dominio"
-                                          >
-                                            <RiFullscreenLine />
-                                            <span>Vista completa ({dimData.labels.length})</span>
-                                          </button>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {orient === 'horizontal' ? (
-                                      <div
-                                        className={styles.chartWrapper}
-                                        onMouseLeave={handleDomainRowMouseLeave}
-                                        style={{
-                                          minHeight: `${Math.max(260, (dimensionesEspecialistas?.length || 1) * 85)}px`,
-                                          width: '100%',
-                                          maxWidth: '100%',
-                                          position: 'relative',
-                                        }}
-                                      >
-                                        <Bar
-                                          options={getDimensionBarOptions(dimData.dimList)}
-                                          data={{
-                                            labels: dimData.labels,
-                                            datasets: dimData.datasets,
-                                          }}
-                                          plugins={[barDataLabelPlugin]}
-                                        />
-                                      </div>
-                                    ) : (
-                                      <div
-                                        onMouseLeave={handleDomainRowMouseLeave}
-                                        style={{
-                                          minHeight: '360px',
-                                          width: '100%',
-                                          overflowX: dimData.labels.length > 6 ? 'auto' : 'visible',
-                                          position: 'relative',
-                                        }}
-                                      >
-                                        <div
-                                          style={{
-                                            minWidth: dimData.labels.length > 6 ? `${dimData.labels.length * 90}px` : '100%',
-                                            height: '350px',
-                                          }}
-                                        >
-                                          <Bar
-                                            options={getDimensionVerticalBarOptions(dimData.dimList)}
-                                            data={{
-                                              labels: dimData.labels,
-                                              datasets: dimData.datasets,
-                                            }}
-                                            plugins={[barDataLabelPlugin]}
-                                          />
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {renderGlobalDomainLevelRanges()}
-                                  </div>
-                                );
-                              })()}
+                              {/* Card: Puntaje Promedio Global por Dominio (Modular) */}
+                              <CardPromedioGlobalDominio
+                                className={styles.fullWidthChart}
+                                dimData={getDimensionData()}
+                                maxGlobalDomainScore={maxGlobalDomainScore}
+                                globalNiveles={dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje}
+                                orientation={getCardOrientation('global_dim_avg')}
+                                onOrientationChange={(newOrient) => setCardOrientation('global_dim_avg', newOrient)}
+                                onOpenFullScreen={() => setSelectedDimensionModal({ dim: { nombre: 'Puntaje Promedio Global por Dominio' }, type: 'global_dominio' })}
+                                targetNounSingular="Especialista"
+                              />
                             </div>
                           );
                         }
 
                         // 3. SECCIÓN RENDIMIENTO POR UGEL SEGÚN DOMINIO
                         if (secId === 'dimensiones_ugel') {
+                          if (layoutMode === 'tabs' && activeTab !== 'institucional') return null;
                           if (!dimensionesEspecialistas || dimensionesEspecialistas.length === 0) return null;
                           return (
-                            <div key="dimensiones_ugel" className={styles.dimensionSectionWrapper}>
+                            <div key="dimensiones_ugel" className={`${styles.dimensionSectionWrapper} ${layoutMode === 'tabs' ? tabsStyles.tabContentPanel : ''}`}>
                               <div className={styles.sectionHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                                 <div>
                                   <h2 className={styles.analyticsTitle}>Rendimiento por UGEL según Dominio</h2>
@@ -5060,9 +5056,10 @@ const Reportes = () => {
 
                         // 4. SECCIÓN RENDIMIENTO POR ESPECIALISTA SEGÚN DOMINIO
                         if (secId === 'dimensiones_especialistas') {
+                          if (layoutMode === 'tabs' && activeTab !== 'evaluados') return null;
                           if (!dimensionesEspecialistas || dimensionesEspecialistas.length === 0) return null;
                           return (
-                            <div key="dimensiones_especialistas" className={styles.dimensionSectionWrapper}>
+                            <div key="dimensiones_especialistas" className={`${styles.dimensionSectionWrapper} ${layoutMode === 'tabs' ? tabsStyles.tabContentPanel : ''}`}>
                               <div className={styles.sectionHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                                 <div>
                                   <h2 className={styles.analyticsTitle}>Rendimiento por Especialista según Dominio</h2>
@@ -5351,54 +5348,24 @@ const Reportes = () => {
 
                         // 5. SECCIÓN RESULTADOS DETALLADOS POR CRITERIO
                         if (secId === 'preguntas_criterios') {
+                          if (layoutMode === 'tabs' && activeTab !== 'criterios') return null;
                           return (
-                            <div key="preguntas_criterios" className={styles.perQuestionGrid}>
+                            <div key="preguntas_criterios" className={`${styles.perQuestionGrid} ${layoutMode === 'tabs' ? tabsStyles.tabContentPanel : ''}`}>
                               {getPreguntaRespuestaDocentes.map((pregunta, index) => {
                                 const stats = dataEvaluaciones.find(s => s.id === pregunta.id || s.id === pregunta.order?.toString());
                                 if (!stats) return null;
+                                const dim = dimensionesEspecialistas?.find((d: any) => d.id === pregunta.dimensionId);
 
                                 return (
-                                  <div key={index} className={styles.chartContainer}>
-                                    <h3 className={styles.sectionTitle}>
-                                      <span className={styles.sectionTitleIndicator}></span>
-                                      <span>
-                                        {pregunta.subOrden || pregunta.order}.
-                                      </span>
-                                      <span>{pregunta.criterio}</span>
-                                    </h3>
-                                    <div className={styles.chartWrapper}>
-                                      <Bar
-                                        options={{
-                                          ...options,
-                                          plugins: {
-                                            ...options.plugins,
-                                            title: {
-                                              display: true,
-                                              text: `Resultados: ${pregunta.criterio?.substring(0, 50)}...`,
-                                            }
-                                          }
-                                        }}
-                                        data={iterateData(
-                                          stats,
-                                          dataEvaluacionDocente.escala?.map(e => e.descripcion || '') || []
-                                        )}
-                                      />
-                                    </div>
-                                    <div className={styles.statsGrid}>
-                                      {dataEvaluacionDocente.escala?.map((item, scaleIndex) => {
-                                        const values = [stats.a, stats.b, stats.c, stats.d];
-                                        return (
-                                          <div key={scaleIndex} className={styles.statItem}>
-                                            <span className={styles.statLabel}>{item.descripcion}</span>
-                                            <span className={styles.statValue}>{values[scaleIndex] || 0}</span>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                    <div className={styles.totalBadge}>
-                                      Total: {stats.total} respuestas
-                                    </div>
-                                  </div>
+                                  <CardResultadoCriterio
+                                    key={pregunta.id || index}
+                                    orderNumber={pregunta.subOrden || pregunta.order || index + 1}
+                                    criterio={pregunta.criterio}
+                                    dimensionName={dim?.nombre}
+                                    dimensionColor={dim ? getDomainColor(dim, 0) : undefined}
+                                    stats={stats}
+                                    escala={dataEvaluacionDocente.escala}
+                                  />
                                 );
                               })}
                             </div>
@@ -5407,7 +5374,8 @@ const Reportes = () => {
 
                         return null;
                       })}
-                    </>
+                    </div>
+                  </>
                   )
                 ) : (
                   <Loader size="large" text="buscando resultados..." variant="spinner" />

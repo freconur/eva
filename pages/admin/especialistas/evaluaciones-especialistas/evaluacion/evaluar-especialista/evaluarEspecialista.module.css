@@ -926,6 +926,17 @@
   outline: none;
 }
 
+.readonlyLabel {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #2563eb;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.5rem;
+  display: inline-block;
+  user-select: none;
+}
+
 .removeFieldButton {
   display: flex;
   align-items: center;
@@ -1495,6 +1506,33 @@
   border-color: #3b82f6;
   background-color: #ffffff;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.feedbackGuideBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-left: 3px solid #0284c7;
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  margin-top: -0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.feedbackGuideIcon {
+  font-size: 1.15rem;
+  color: #0284c7;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.feedbackGuideText {
+  font-size: 0.8125rem;
+  color: #0369a1;
+  line-height: 1.45;
+  font-style: italic;
 }
 
 /* Session Selector */

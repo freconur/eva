@@ -218,7 +218,7 @@ export const SIDEBAR_ROLES_METADATA: SidebarRoleMeta[] = [
         items: [
           { key: 'admin_docentes', labelOriginal: 'Docentes', description: 'Título del grupo de docentes' },
           { key: 'admin_docentes_usuarios', labelOriginal: 'Usuarios', description: 'Listado de docentes', route: '/admin/docentes/usuarios' },
-          { key: 'admin_docentes_seguimiento', labelOriginal: 'Seguimiento y retroalimentacion', description: 'Evaluación docente', route: '/directores/evaluaciones-docentes' },
+          { key: 'admin_docentes_seguimiento', labelOriginal: 'Seguimiento y retroalimentacion', description: 'Evaluación docente', route: '/admin/evaluaciones-docentes' },
           { key: 'admin_docentes_cobertura', labelOriginal: 'Cobertura curricular', description: 'Avance curricular de docentes', route: '/directores/cobertura-curricular' },
           { key: 'admin_docentes_autorreporte', labelOriginal: 'Autorreporte', description: 'Autorreporte de docentes', route: '/admin/conocimientos-pedagogicos?rol=3' },
         ],

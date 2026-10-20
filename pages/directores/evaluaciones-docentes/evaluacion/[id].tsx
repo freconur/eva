@@ -13,6 +13,11 @@ import {
   MdBarChart,
   MdArrowBack,
   MdFilePresent,
+  MdSchool,
+  MdExpandMore,
+  MdViewAgenda,
+  MdViewList,
+  MdWarning,
 } from 'react-icons/md';
 import {
   RiLoader4Line,
@@ -77,11 +82,18 @@ const EvaluacionDetalleDirector = () => {
   });
 
   const [activeTab, setActiveTab] = useState<'docentes' | 'rubrica'>('docentes');
+  const [modoVista, setModoVista] = useState<'colegios' | 'lista'>('colegios');
   const [filterEstado, setFilterEstado] = useState<'all' | 'evaluados' | 'pendientes'>('all');
   const [docentesPadron, setDocentesPadron] = useState<User[]>([]);
   const [evaluadosList, setEvaluadosList] = useState<User[]>([]);
   const [loadingDocentes, setLoadingDocentes] = useState<boolean>(true);
   const [searchDocente, setSearchDocente] = useState<string>('');
+
+  // Acordeones para Instituciones Educativas (inician cerrados por defecto)
+  const [expandedColegios, setExpandedColegios] = useState<Set<string>>(new Set());
+
+  // Acordeones para Dominios de Rúbricas (inician cerrados por defecto)
+  const [expandedDominios, setExpandedDominios] = useState<Set<string>>(new Set());
 
   // Si el usuario es administrador u otro rol distinto a director, cambiar por defecto a la pestaña rúbrica
   useEffect(() => {
@@ -194,6 +206,98 @@ const EvaluacionDetalleDirector = () => {
     );
   }, [docentesConEstado, filterEstado, searchDocente]);
 
+  // Agrupación organizada por Institución Educativa para la vista de acordeón
+  const gruposPorInstitucion = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        key: string;
+        institucion: string;
+        docentes: typeof docentesFiltrados;
+        evaluadosCount: number;
+        pendientesCount: number;
+        promedio: number;
+      }
+    >();
+
+    docentesFiltrados.forEach((docente) => {
+      const rawInst = (docente as any).institucion ? String((docente as any).institucion).trim() : '';
+      const nombre = rawInst || 'Institución Educativa Asignada';
+      const key = nombre.toLowerCase().replace(/\s+/g, '-');
+
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          institucion: nombre,
+          docentes: [],
+          evaluadosCount: 0,
+          pendientesCount: 0,
+          promedio: 0,
+        });
+      }
+      const item = map.get(key)!;
+      item.docentes.push(docente);
+      if (docente.isEvaluated) {
+        item.evaluadosCount += 1;
+      } else {
+        item.pendientesCount += 1;
+      }
+    });
+
+    const list = Array.from(map.values()).map((g) => {
+      const evaluadosConNota = g.docentes.filter((d) => d.isEvaluated && d.evaluacion?.calificacion != null);
+      const suma = evaluadosConNota.reduce((acc, d) => acc + (Number(d.evaluacion?.calificacion) || 0), 0);
+      g.promedio = evaluadosConNota.length > 0 ? Math.round((suma / evaluadosConNota.length) * 10) / 10 : 0;
+      g.docentes.sort((a, b) =>
+        (a.apellidos || '').localeCompare(b.apellidos || '', 'es', { sensitivity: 'base' })
+      );
+      return g;
+    });
+
+    list.sort((a, b) => a.institucion.localeCompare(b.institucion, 'es', { sensitivity: 'base' }));
+    return list;
+  }, [docentesFiltrados]);
+
+  const toggleColegio = (key: string) => {
+    setExpandedColegios((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const expandAllColegios = () => {
+    setExpandedColegios(new Set(gruposPorInstitucion.map((g) => g.key)));
+  };
+
+  const collapseAllColegios = () => {
+    setExpandedColegios(new Set());
+  };
+
+  const toggleDominio = (dimId: string) => {
+    setExpandedDominios((prev) => {
+      const next = new Set(prev);
+      if (next.has(dimId)) next.delete(dimId);
+      else next.add(dimId);
+      return next;
+    });
+  };
+
+  const expandAllDominios = () => {
+    setExpandedDominios(
+      new Set(
+        currentDimensiones
+          .map((d) => d.id)
+          .filter((id): id is string => Boolean(id))
+      )
+    );
+  };
+
+  const collapseAllDominios = () => {
+    setExpandedDominios(new Set());
+  };
+
   // Contadores de progreso
   const totalDocentes = docentesPadron.length;
   const evaluadosCount = docentesConEstado.filter((d) => d.isEvaluated).length;
@@ -284,6 +388,36 @@ const EvaluacionDetalleDirector = () => {
     }
   };
 
+  // Protección de acceso: si el usuario no es administrador y la evaluación está inactiva o pausada
+  if (!loaderPages && dataEvaluacionDocente?.id && !dataEvaluacionDocente.active && !isAdmin) {
+    return (
+      <div className="w-full max-w-4xl mx-auto px-4 py-16 text-center">
+        <div className="bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-amber-200 space-y-6">
+          <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto border border-amber-200">
+            <MdWarning className="text-3xl" />
+          </div>
+          <div className="space-y-2 max-w-md mx-auto">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
+              Evaluación Inactiva o Pausada
+            </h2>
+            <p className="text-sm text-slate-500">
+              La evaluación <strong className="text-slate-700">{dataEvaluacionDocente.name}</strong> no se encuentra activa en este momento. Solo los administradores pueden activar evaluaciones para su calificación y monitoreo.
+            </p>
+          </div>
+          <div>
+            <Link
+              href="/directores/evaluaciones-docentes"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+            >
+              <MdArrowBack className="text-base" />
+              <span>Volver a Evaluaciones Docentes</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Modales */}
@@ -329,6 +463,7 @@ const EvaluacionDetalleDirector = () => {
       <EvaluacionDetalleHeroBanner
         idEvaluacion={idEvaluacion}
         collectionName="evaluaciones-docentes"
+        variant={(dataEvaluacionDocente as any)?.bannerVariant || (dataEvaluacionDocente as any)?.variant}
         backHref="/directores/evaluaciones-docentes"
         selectedYear={currentYear}
         institucion={currentUserData?.institucion || 'UGEL'}
@@ -354,6 +489,7 @@ const EvaluacionDetalleDirector = () => {
                 dimensiones={currentDimensiones}
                 preguntas={currentPreguntas}
                 escala={dataEvaluacionDocente?.escala}
+                niveles={dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje}
                 activarEvidencias={dataEvaluacionDocente?.activarEvidencias}
                 titulo={dataEvaluacionDocente?.name}
                 descripcion={dataEvaluacionDocente?.descripcion}
@@ -447,7 +583,7 @@ const EvaluacionDetalleDirector = () => {
               )}
             </div>
 
-            {/* Segmento de Estado (Todos / Evaluados / Pendientes) */}
+            {/* Segmento de Estado (Todos / Evaluados / Pendientes) y Modo de Vista */}
             <div className="flex flex-wrap items-center gap-2.5 sm:border-t lg:border-t-0 lg:border-l border-slate-200 pt-2 lg:pt-0 lg:pl-4">
               <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80">
                 <button
@@ -509,6 +645,47 @@ const EvaluacionDetalleDirector = () => {
                   </span>
                 </button>
               </div>
+
+              {/* Selector de Modo de Vista */}
+              <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setModoVista('colegios')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    modoVista === 'colegios'
+                      ? 'bg-white text-blue-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Ver docentes organizados por Institución / Sede"
+                >
+                  <MdViewAgenda className="text-sm" />
+                  <span>Por Institución</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setModoVista('lista')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    modoVista === 'lista'
+                      ? 'bg-white text-blue-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Ver lista corrida de todos los docentes"
+                >
+                  <MdViewList className="text-sm" />
+                  <span>Lista General</span>
+                </button>
+              </div>
+
+              {/* Botón Acción Evaluar */}
+              <Link
+                href={`/directores/evaluaciones-docentes/evaluacion/evaluar-docente?id=${idEvaluacion}`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
+                title="Evaluar a un docente"
+              >
+                <MdAddCircle className="text-base" />
+                <span>+ Evaluar</span>
+              </Link>
             </div>
           </div>
 
@@ -544,7 +721,200 @@ const EvaluacionDetalleDirector = () => {
                 </button>
               )}
             </div>
+          ) : modoVista === 'colegios' ? (
+            /* VISTA DE ACORDEÓN POR INSTITUCIÓN EDUCATIVA / SEDE */
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-1 text-xs text-slate-500 font-medium">
+                <span>Mostrando {gruposPorInstitucion.length} institución(es) / sede(s)</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={expandAllColegios}
+                    className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                  >
+                    Expandir todos
+                  </button>
+                  <span>•</span>
+                  <button
+                    type="button"
+                    onClick={collapseAllColegios}
+                    className="text-slate-500 hover:text-slate-700 font-semibold cursor-pointer"
+                  >
+                    Contraer todos
+                  </button>
+                </div>
+              </div>
+
+              {gruposPorInstitucion.map((grupo) => {
+                const isExpanded = expandedColegios.has(grupo.key);
+
+                return (
+                  <div
+                    key={grupo.key}
+                    className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-200"
+                  >
+                    {/* Cabecera interactiva del acordeón */}
+                    <div
+                      onClick={() => toggleColegio(grupo.key)}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-50 hover:bg-slate-100/80 transition-colors cursor-pointer select-none"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-xl shrink-0">
+                          <MdSchool />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm text-slate-800">{grupo.institucion}</h4>
+                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                              {grupo.docentes.length} {grupo.docentes.length === 1 ? 'docente' : 'docentes'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                            <span className="text-emerald-600 font-medium">{grupo.evaluadosCount} evaluados</span>
+                            <span>•</span>
+                            <span className="text-amber-600 font-medium">{grupo.pendientesCount} pendientes</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Métricas y Acciones del Acordeón */}
+                      <div className="flex items-center gap-2.5 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
+                        {grupo.evaluadosCount > 0 && (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <MdCheckCircle className="text-emerald-600" />
+                            Promedio: {grupo.promedio} pts
+                          </span>
+                        )}
+
+                        <Link
+                          href={`/directores/evaluaciones-docentes/evaluacion/evaluar-docente?id=${idEvaluacion}`}
+                          className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors cursor-pointer"
+                          title="Evaluar docente de esta institución"
+                        >
+                          <MdAddCircle className="text-emerald-600" />
+                          <span>+ Evaluar</span>
+                        </Link>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleColegio(grupo.key);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer"
+                          title={isExpanded ? 'Contraer institución' : 'Expandir institución'}
+                          aria-expanded={isExpanded}
+                        >
+                          <MdExpandMore
+                            className={`text-2xl text-slate-600 transition-transform duration-300 ease-in-out ${
+                              isExpanded ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Contenido animado con CSS Grid */}
+                    <div
+                      className={`grid transition-all duration-300 ease-in-out ${
+                        isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="overflow-x-auto border-t border-slate-100">
+                          <table className="min-w-full divide-y divide-slate-100">
+                            <thead className="bg-slate-50/70">
+                              <tr>
+                                <th scope="col" className="w-12 px-4 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                  #
+                                </th>
+                                <th scope="col" className="px-4 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                  Docente
+                                </th>
+                                <th scope="col" className="px-4 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                  Detalles Académicos
+                                </th>
+                                <th scope="col" className="w-36 px-4 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                  Estado
+                                </th>
+                                <th scope="col" className="w-44 px-4 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                  Acciones
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 bg-white">
+                              {grupo.docentes.map((docente, idx) => {
+                                const evalUrl = `/directores/evaluaciones-docentes/evaluacion/evaluar-docente?id=${idEvaluacion}&idDocente=${docente.dni}`;
+                                const reporteUrl = `/directores/evaluaciones-docentes/evaluacion/reporte-docente-individual?idDocente=${docente.dni}&idEvaluacion=${idEvaluacion}`;
+
+                                return (
+                                  <tr key={docente.dni || idx} className="hover:bg-slate-50/80 transition-colors">
+                                    <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-slate-400">
+                                      {idx + 1}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <span className="text-xs font-bold text-slate-800 block">
+                                        {docente.nombres} {docente.apellidos}
+                                      </span>
+                                      <span className="text-[11px] text-slate-500">DNI: {docente.dni}</span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <span className="text-xs text-slate-600 block">
+                                        {docente.caracteristicaCurricular || docente.cargo || 'Docente de Aula'}
+                                      </span>
+                                      {docente.celular && (
+                                        <span className="text-[11px] text-slate-400">Cel: {docente.celular}</span>
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                                      {docente.isEvaluated ? (
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                          <MdCheckCircle className="text-emerald-600 text-xs" />
+                                          {docente.evaluacion?.calificacion || 0} pts
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                          <MdPendingActions className="text-amber-500 text-xs" />
+                                          Pendiente
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                                      <div className="flex items-center justify-center gap-1.5">
+                                        <Link
+                                          href={evalUrl}
+                                          className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                                            docente.isEvaluated
+                                              ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                              : 'bg-blue-600 text-white hover:bg-blue-700 shadow-xs'
+                                          }`}
+                                        >
+                                          {docente.isEvaluated ? 'Reevaluar' : 'Evaluar'}
+                                        </Link>
+                                        {docente.isEvaluated && (
+                                          <Link
+                                            href={reporteUrl}
+                                            className="px-2.5 py-1 text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors cursor-pointer"
+                                          >
+                                            Reporte
+                                          </Link>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
+            /* VISTA DE LISTA GENERAL CONTINUA */
             <div className="overflow-hidden bg-white rounded-2xl border border-slate-200 shadow-sm">
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
@@ -644,7 +1014,7 @@ const EvaluacionDetalleDirector = () => {
       {/* PESTAÑA 2: CRITERIOS Y RÚBRICA */}
       {activeTab === 'rubrica' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <div>
               <h3 className="text-base font-bold text-slate-800">Criterios de la Ficha</h3>
               <p className="text-xs text-slate-500">
@@ -653,24 +1023,45 @@ const EvaluacionDetalleDirector = () => {
                   : 'Rúbrica oficial establecida por la UGEL para el monitoreo pedagógico docente.'}
               </p>
             </div>
-            {isAdmin && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAgregarDim(true)}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors"
-                >
-                  <MdAddCircle /> Añadir Dominio
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAgregarPregunta(true)}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors"
-                >
-                  <MdAddCircle /> Añadir Criterio
-                </button>
-              </div>
-            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              {currentDimensiones.length > 0 && (
+                <div className="flex items-center gap-2 mr-2">
+                  <button
+                    type="button"
+                    onClick={expandAllDominios}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                  >
+                    Expandir todos
+                  </button>
+                  <span className="text-slate-300">•</span>
+                  <button
+                    type="button"
+                    onClick={collapseAllDominios}
+                    className="text-xs text-slate-500 hover:text-slate-700 font-semibold cursor-pointer"
+                  >
+                    Contraer todos
+                  </button>
+                </div>
+              )}
+              {isAdmin && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowAgregarDim(true)}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  >
+                    <MdAddCircle /> Añadir Dominio
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAgregarPregunta(true)}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer"
+                  >
+                    <MdAddCircle /> Añadir Criterio
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {currentDimensiones.length === 0 && currentPreguntas.length === 0 ? (
@@ -683,6 +1074,8 @@ const EvaluacionDetalleDirector = () => {
           ) : (
             <div className="space-y-4">
               {currentDimensiones.map((dim) => {
+                const dimKey = dim.id || '';
+                const isExpanded = dimKey ? expandedDominios.has(dimKey) : false;
                 const preguntasDeDim = currentPreguntas.filter(
                   (p) => p.dimensionId === dim.id
                 );
@@ -690,87 +1083,114 @@ const EvaluacionDetalleDirector = () => {
                 return (
                   <div
                     key={dim.id}
-                    className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+                    className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-200"
                   >
-                    <div className="flex items-center justify-between bg-slate-50 p-4 border-b border-slate-200">
-                      <div className="flex items-center gap-2">
+                    <div
+                      onClick={() => dimKey && toggleDominio(dimKey)}
+                      className="flex items-center justify-between bg-slate-50 hover:bg-slate-100/80 p-4 border-b border-slate-200 cursor-pointer transition-colors select-none"
+                    >
+                      <div className="flex items-center gap-2.5">
                         <span
-                          className="w-3 h-3 rounded-full"
+                          className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: dim.color || '#3b82f6' }}
                         />
                         <h4 className="font-bold text-sm text-slate-800">{dim.nombre}</h4>
-                        <span className="text-xs text-slate-400">
-                          ({preguntasDeDim.length} criterios)
+                        <span className="text-xs text-slate-400 font-medium">
+                          ({preguntasDeDim.length} {preguntasDeDim.length === 1 ? 'criterio' : 'criterios'})
                         </span>
                       </div>
-                      {isAdmin && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setDimToUpdate(dim)}
-                            className="p-1 text-slate-500 hover:text-blue-600 rounded transition-colors"
-                            title="Editar dominio"
-                          >
-                            <MdEdit />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteDim(dim.id)}
-                            className="p-1 text-slate-500 hover:text-red-600 rounded transition-colors"
-                            title="Eliminar dominio"
-                          >
-                            <MdDelete />
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        {isAdmin && (
+                          <div className="flex items-center gap-1 mr-1">
+                            <button
+                              type="button"
+                              onClick={() => setDimToUpdate(dim)}
+                              className="p-1 text-slate-500 hover:text-blue-600 rounded transition-colors cursor-pointer"
+                              title="Editar dominio"
+                            >
+                              <MdEdit />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDim(dim.id)}
+                              className="p-1 text-slate-500 hover:text-red-600 rounded transition-colors cursor-pointer"
+                              title="Eliminar dominio"
+                            >
+                              <MdDelete />
+                            </button>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => dimKey && toggleDominio(dimKey)}
+                          className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer"
+                          title={isExpanded ? 'Contraer dominio' : 'Expandir dominio'}
+                          aria-expanded={isExpanded}
+                        >
+                          <MdExpandMore
+                            className={`text-2xl text-slate-600 transition-transform duration-300 ease-in-out ${
+                              isExpanded ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="divide-y divide-slate-100 p-2">
-                      {preguntasDeDim.length === 0 ? (
-                        <p className="text-xs text-slate-400 italic p-3">
-                          No hay criterios asignados a este dominio.
-                        </p>
-                      ) : (
-                        preguntasDeDim.map((pr, idx) => (
-                          <div
-                            key={pr.id || idx}
-                            className="p-3 hover:bg-slate-50 rounded-xl transition-colors flex items-start justify-between gap-4"
-                          >
-                            <div className="space-y-1">
-                              <p className="text-sm font-semibold text-slate-800">
-                                <span className="text-blue-600 mr-2">{pr.order || idx + 1}.</span>
-                                {pr.criterio}
-                              </p>
-                              {pr.requiereEvidencia && (
-                                <span className="inline-flex items-center gap-1 text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-medium">
-                                  <MdFilePresent /> Requiere Evidencias
-                                </span>
-                              )}
-                            </div>
+                    {/* Contenido animado con CSS Grid */}
+                    <div
+                      className={`grid transition-all duration-300 ease-in-out ${
+                        isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="divide-y divide-slate-100 p-2">
+                          {preguntasDeDim.length === 0 ? (
+                            <p className="text-xs text-slate-400 italic p-3">
+                              No hay criterios asignados a este dominio.
+                            </p>
+                          ) : (
+                            preguntasDeDim.map((pr, idx) => (
+                              <div
+                                key={pr.id || idx}
+                                className="p-3 hover:bg-slate-50 rounded-xl transition-colors flex items-start justify-between gap-4"
+                              >
+                                <div className="space-y-1">
+                                  <p className="text-sm font-semibold text-slate-800">
+                                    <span className="text-blue-600 mr-2">{pr.order || idx + 1}.</span>
+                                    {pr.criterio}
+                                  </p>
+                                  {pr.requiereEvidencia && (
+                                    <span className="inline-flex items-center gap-1 text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-medium">
+                                      <MdFilePresent /> Requiere Evidencias
+                                    </span>
+                                  )}
+                                </div>
 
-                            {isAdmin && (
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                <button
-                                  type="button"
-                                  onClick={() => setPreguntaToUpdate(pr)}
-                                  className="p-1 text-slate-400 hover:text-blue-600 rounded transition-colors"
-                                  title="Editar criterio"
-                                >
-                                  <MdEdit />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeletePreg(pr.id)}
-                                  className="p-1 text-slate-400 hover:text-red-600 rounded transition-colors"
-                                  title="Eliminar criterio"
-                                >
-                                  <MdDelete />
-                                </button>
+                                {isAdmin && (
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => setPreguntaToUpdate(pr)}
+                                      className="p-1 text-slate-400 hover:text-blue-600 rounded transition-colors cursor-pointer"
+                                      title="Editar criterio"
+                                    >
+                                      <MdEdit />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeletePreg(pr.id)}
+                                      className="p-1 text-slate-400 hover:text-red-600 rounded transition-colors cursor-pointer"
+                                      title="Eliminar criterio"
+                                    >
+                                      <MdDelete />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        ))
-                      )}
+                            ))
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );

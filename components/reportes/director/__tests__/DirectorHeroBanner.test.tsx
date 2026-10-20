@@ -56,6 +56,7 @@ describe('DirectorHeroBanner Component', () => {
         monthSelected={3}
         yearSelected={2026}
         variant="compact"
+        isAdmin={true}
         onVariantChange={jest.fn()}
         onSwitchToCompact={jest.fn()}
       />
@@ -86,7 +87,7 @@ describe('DirectorHeroBanner Component', () => {
     expect(screen.getByText('Competencias con rezago crítico')).toBeInTheDocument();
   });
 
-  it('permite cambiar entre variante compacta y grande', () => {
+  it('permite cambiar entre variante compacta y grande a administradores', () => {
     const handleVariantChange = jest.fn();
     render(
       <DirectorHeroBanner
@@ -95,6 +96,7 @@ describe('DirectorHeroBanner Component', () => {
         monthSelected={3}
         yearSelected={2026}
         variant="compact"
+        isAdmin={true}
         onVariantChange={handleVariantChange}
         onSwitchToCompact={jest.fn()}
       />
@@ -105,6 +107,26 @@ describe('DirectorHeroBanner Component', () => {
 
     expect(handleVariantChange).toHaveBeenCalledTimes(1);
     expect(handleVariantChange).toHaveBeenCalledWith('expanded');
+  });
+
+  it('oculta el conmutador de variante compacta/grande para usuarios no administradores', () => {
+    const handleVariantChange = jest.fn();
+    render(
+      <DirectorHeroBanner
+        evaluacion={mockEvaluacion}
+        metricasDirector={mockMetricas}
+        monthSelected={3}
+        yearSelected={2026}
+        variant="compact"
+        isAdmin={false}
+        role="director"
+        onVariantChange={handleVariantChange}
+        onSwitchToCompact={jest.fn()}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: /Grande/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Compacta/i })).not.toBeInTheDocument();
   });
 
   it('renderiza la imagen de fondo cuando se proporciona y muestra overlay protector', () => {

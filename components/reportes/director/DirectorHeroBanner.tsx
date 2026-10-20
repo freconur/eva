@@ -24,6 +24,7 @@ import { FiltrosState } from './DirectorFiltrosBar';
 import DirectorExportMenu from './DirectorExportMenu';
 import DirectorLayoutModeSwitch, { DirectorLayoutMode } from './DirectorLayoutModeSwitch';
 import { ReporteBannerVariant } from './useReportesBannerConfig';
+import { useGlobalContext } from '@/features/context/GlolbalContext';
 
 export type { ReporteBannerVariant } from './useReportesBannerConfig';
 
@@ -78,6 +79,7 @@ export interface DirectorHeroBannerProps {
   onRemoveBackgroundImage?: () => Promise<void>;
   isUploadingImage?: boolean;
   canConfigureBanner?: boolean;
+  isAdmin?: boolean;
 }
 
 export const DirectorHeroBanner: React.FC<DirectorHeroBannerProps> = ({
@@ -118,7 +120,23 @@ export const DirectorHeroBanner: React.FC<DirectorHeroBannerProps> = ({
   onRemoveBackgroundImage,
   isUploadingImage = false,
   canConfigureBanner = true,
+  isAdmin: propIsAdmin,
 }) => {
+  const { currentUserData } = useGlobalContext();
+
+  const isUserAdmin = useMemo(() => {
+    if (typeof propIsAdmin === 'boolean') return propIsAdmin;
+    return (
+      role === 'admin' ||
+      currentUserData?.rol === 4 ||
+      currentUserData?.rol === 0 ||
+      currentUserData?.perfil?.rol === 4 ||
+      currentUserData?.perfil?.rol === 0 ||
+      Number(currentUserData?.rol) === 4 ||
+      Number(currentUserData?.rol) === 0
+    );
+  }, [propIsAdmin, role, currentUserData]);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -209,7 +227,11 @@ export const DirectorHeroBanner: React.FC<DirectorHeroBannerProps> = ({
   // Sub-panel de gestión de variante (Grande/Compacta) e Imagen de fondo
   const renderConfigControls = () => {
     if (!canConfigureBanner) return null;
-    if (!onVariantChange && !onUploadBackgroundImage) return null;
+
+    const showVariantSwitch = isUserAdmin && Boolean(onVariantChange);
+    const showBackgroundControls = Boolean(onUploadBackgroundImage);
+
+    if (!showVariantSwitch && !showBackgroundControls) return null;
 
     return (
       <div
@@ -217,13 +239,13 @@ export const DirectorHeroBanner: React.FC<DirectorHeroBannerProps> = ({
         role="group"
         aria-label="Configuración de diseño del banner"
       >
-        {/* Botones de Variante (Compacta / Grande) */}
-        {onVariantChange && (
+        {/* Botones de Variante (Compacta / Grande) - Solo Administrador */}
+        {showVariantSwitch && (
           <div className="inline-flex items-center gap-1">
             <button
               type="button"
               disabled={isSavingVariant || isUploadingImage}
-              onClick={() => onVariantChange('compact')}
+              onClick={() => onVariantChange?.('compact')}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer ${
                 variant === 'compact'
                   ? 'bg-white text-blue-900 shadow-xs font-bold'
@@ -239,7 +261,7 @@ export const DirectorHeroBanner: React.FC<DirectorHeroBannerProps> = ({
             <button
               type="button"
               disabled={isSavingVariant || isUploadingImage}
-              onClick={() => onVariantChange('expanded')}
+              onClick={() => onVariantChange?.('expanded')}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer ${
                 variant === 'expanded'
                   ? 'bg-white text-blue-900 shadow-xs font-bold'
@@ -259,8 +281,8 @@ export const DirectorHeroBanner: React.FC<DirectorHeroBannerProps> = ({
         )}
 
         {/* Controles de Imagen de Fondo (Subir / Eliminar) */}
-        {onUploadBackgroundImage && (
-          <div className="inline-flex items-center gap-1 pl-1 border-l border-white/15">
+        {showBackgroundControls && (
+          <div className={`inline-flex items-center gap-1 ${showVariantSwitch ? 'pl-1 border-l border-white/15' : ''}`}>
             <input
               ref={fileInputRef}
               type="file"
@@ -410,16 +432,18 @@ export const DirectorHeroBanner: React.FC<DirectorHeroBannerProps> = ({
                 />
               )}
 
-              <button
-                type="button"
-                onClick={onSwitchToCompact}
-                className="h-9 sm:h-[38px] px-2.5 sm:px-3 text-xs font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 active:bg-white/25 rounded-xl border border-white/20 transition-all duration-150 shrink-0 inline-flex items-center gap-1.5 shadow-2xs backdrop-blur-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 cursor-pointer"
-                title="Cambiar a vista compacta tradicional"
-                aria-label="Cambiar a vista compacta"
-              >
-                <RiLayoutTopLine className="w-3.5 h-3.5 text-blue-200" />
-                <span className="hidden sm:inline">Compacto</span>
-              </button>
+              {isUserAdmin && onSwitchToCompact && (
+                <button
+                  type="button"
+                  onClick={onSwitchToCompact}
+                  className="h-9 sm:h-[38px] px-2.5 sm:px-3 text-xs font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 active:bg-white/25 rounded-xl border border-white/20 transition-all duration-150 shrink-0 inline-flex items-center gap-1.5 shadow-2xs backdrop-blur-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 cursor-pointer"
+                  title="Cambiar a vista compacta tradicional"
+                  aria-label="Cambiar a vista compacta"
+                >
+                  <RiLayoutTopLine className="w-3.5 h-3.5 text-blue-200" />
+                  <span className="hidden sm:inline">Compacto</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -785,16 +809,18 @@ export const DirectorHeroBanner: React.FC<DirectorHeroBannerProps> = ({
             )}
 
             {/* Botón para contraer a vista compacta */}
-            <button
-              type="button"
-              onClick={onSwitchToCompact}
-              className="h-9 sm:h-[38px] px-2.5 sm:px-3 text-xs font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 active:bg-white/25 rounded-xl border border-white/20 transition-all duration-150 shrink-0 inline-flex items-center gap-1.5 shadow-2xs backdrop-blur-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 cursor-pointer"
-              title="Cambiar a vista compacta tradicional"
-              aria-label="Cambiar a vista compacta"
-            >
-              <RiLayoutTopLine className="w-3.5 h-3.5 text-blue-200" />
-              <span className="hidden sm:inline">Compacto</span>
-            </button>
+            {isUserAdmin && onSwitchToCompact && (
+              <button
+                type="button"
+                onClick={onSwitchToCompact}
+                className="h-9 sm:h-[38px] px-2.5 sm:px-3 text-xs font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 active:bg-white/25 rounded-xl border border-white/20 transition-all duration-150 shrink-0 inline-flex items-center gap-1.5 shadow-2xs backdrop-blur-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 cursor-pointer"
+                title="Cambiar a vista compacta tradicional"
+                aria-label="Cambiar a vista compacta"
+              >
+                <RiLayoutTopLine className="w-3.5 h-3.5 text-blue-200" />
+                <span className="hidden sm:inline">Compacto</span>
+              </button>
+            )}
           </div>
         </div>
 

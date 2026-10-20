@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { toast } from 'react-toastify';
 import {
   MdAddCircle,
   MdDeleteForever,
@@ -20,6 +21,7 @@ import useEvaluacionDesempenoBase from '@/features/hooks/useEvaluacionDesempenoB
 import { CrearEvaluacionDocente } from '@/features/types/types';
 import DesempenoHeroBanner, { HeroBannerMetricItem } from './DesempenoHeroBanner';
 import ModalCrearEvaluacionDesempeno from '../modals/ModalCrearEvaluacionDesempeno';
+import ModalAlertaFaseRequerida from '../modals/ModalAlertaFaseRequerida';
 import DeleteEvaluacionDocente from '@/modals/DeleteEvaluacionDocente';
 import DeleteEvaluacionEspecialista from '@/modals/DeleteEvaluacionEscpecialista';
 import DeleteEvaluacionDirector from '@/modals/DeleteEvaluacionDirector';
@@ -43,15 +45,50 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
     propCollectionName ||
     (role === 'director' ? 'evaluaciones-docentes' : 'evaluaciones-especialista');
 
-  const { evaluacionDesempeñoDocente, loaderPages } = useGlobalContext();
+  const { currentUserData, evaluacionDesempeñoDocente, loaderPages } = useGlobalContext();
   const { getEvaluaciones, updateEstadoEvaluacion } = useEvaluacionDesempenoBase({
     collectionName,
     role,
   });
 
+  const isUserAdmin = useMemo(() => {
+    if (
+      currentUserData?.rol === 4 ||
+      currentUserData?.rol === 0 ||
+      currentUserData?.perfil?.rol === 4 ||
+      currentUserData?.perfil?.rol === 0 ||
+      Number(currentUserData?.rol) === 4 ||
+      Number(currentUserData?.rol) === 0
+    ) {
+      return true;
+    }
+    if (typeof window !== 'undefined') {
+      if (sessionStorage.getItem('audited_user') || sessionStorage.getItem('real_admin_user')) {
+        return true;
+      }
+    }
+    if (
+      currentUserData?.rol === 1 ||
+      currentUserData?.rol === 2 ||
+      currentUserData?.rol === 3
+    ) {
+      return false;
+    }
+    return Boolean(canCreate);
+  }, [currentUserData, canCreate]);
+
   const [search, setSearch] = useState<string>('');
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [deleteEvalId, setDeleteEvalId] = useState<string | null>(null);
+  const [faseRequeridaModal, setFaseRequeridaModal] = useState<{
+    isOpen: boolean;
+    evaluacionTitulo: string;
+    detailUrl: string;
+  }>({
+    isOpen: false,
+    evaluacionTitulo: '',
+    detailUrl: '',
+  });
 
   useEffect(() => {
     const unsubscribe = getEvaluaciones();
@@ -60,10 +97,14 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
     };
   }, [getEvaluaciones]);
 
+  // Solo los administradores pueden ver evaluaciones inactivas; directores y especialistas solo acceden a las activas
   const filteredEvaluaciones = useMemo(() => {
     if (!evaluacionDesempeñoDocente) return [];
     return [...evaluacionDesempeñoDocente]
       .filter((ev) => {
+        if (!isUserAdmin && !ev.active) {
+          return false;
+        }
         const query = search.toLowerCase().trim();
         return (
           (ev.name || '').toLowerCase().includes(query) ||
@@ -73,21 +114,61 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
       .sort((a, b) =>
         (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })
       );
-  }, [evaluacionDesempeñoDocente, search]);
+  }, [evaluacionDesempeñoDocente, search, isUserAdmin]);
 
-  const handleToggleActive = async (id: string, currentStatus?: boolean) => {
+  const handleToggleActive = async (
+    id: string,
+    currentStatus?: boolean,
+    evalObj?: CrearEvaluacionDocente
+  ) => {
+    if (!isUserAdmin) {
+      toast.warning('Solo los administradores pueden activar o desactivar evaluaciones.');
+      return;
+    }
+
+    const isActivating = !currentStatus;
+    if (isActivating) {
+      const targetEval =
+        evalObj ||
+        (evaluacionDesempeñoDocente || []).find((ev) => (ev.id || (ev as any).uid) === id);
+
+      const tieneFase = Boolean(
+        targetEval?.faseNombre?.trim() ||
+        (Array.isArray(targetEval?.fases) &&
+          targetEval.fases.length > 0 &&
+          targetEval.fases.some((f: any) => f?.nombre?.trim()))
+      );
+
+      if (!tieneFase) {
+        setFaseRequeridaModal({
+          isOpen: true,
+          evaluacionTitulo: targetEval?.name || 'Evaluación',
+          detailUrl: `${baseDetailRoute}/${id}`,
+        });
+        return;
+      }
+    }
+
     try {
       await updateEstadoEvaluacion(id, !currentStatus);
+      toast.success(
+        !currentStatus
+          ? 'Evaluación activada exitosamente para todos los usuarios.'
+          : 'Evaluación pausada / desactivada.'
+      );
     } catch (error) {
       console.error('Error al cambiar estado de la evaluación:', error);
+      toast.error('Error al cambiar estado de la evaluación.');
     }
   };
 
   const metricasBanner = useMemo(() => {
-    const list = evaluacionDesempeñoDocente || [];
+    const rawList = evaluacionDesempeñoDocente || [];
+    // Si no es administrador, calcular sobre el universo de evaluaciones accesibles (activas)
+    const list = isUserAdmin ? rawList : rawList.filter((ev) => Boolean(ev.active));
     const total = list.length;
-    const activas = list.filter((ev) => Boolean(ev.active)).length;
-    const inactivas = total - activas;
+    const activas = rawList.filter((ev) => Boolean(ev.active)).length;
+    const inactivas = rawList.length - activas;
     const categoriasSet = new Set<string>();
     list.forEach((ev) => {
       if (ev.categoria) categoriasSet.add(ev.categoria);
@@ -95,9 +176,34 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
     const totalCategorias = categoriasSet.size;
 
     return { total, activas, inactivas, totalCategorias };
-  }, [evaluacionDesempeñoDocente]);
+  }, [evaluacionDesempeñoDocente, isUserAdmin]);
 
   const metricsItems = useMemo<HeroBannerMetricItem[]>(() => {
+    if (!isUserAdmin) {
+      return [
+        {
+          id: 'total',
+          label: 'Evaluaciones Disponibles',
+          value: metricasBanner.total,
+          icon: RiBookOpenLine,
+          colorTheme: 'blue',
+          tooltip: `${metricasBanner.total} instrumentos de evaluación activos y habilitados`,
+          badgeText: 'Disponibles',
+          helperText: 'Evaluaciones habilitadas',
+        },
+        {
+          id: 'categorias',
+          label: 'Categorías',
+          value: metricasBanner.totalCategorias,
+          icon: RiGraduationCapLine,
+          colorTheme: 'amber',
+          tooltip: `${metricasBanner.totalCategorias} categorías de rúbricas activas`,
+          badgeText: 'Áreas',
+          helperText: 'Categorías configuradas',
+        },
+      ];
+    }
+
     return [
       {
         id: 'total',
@@ -107,7 +213,7 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
         colorTheme: 'blue',
         tooltip: `${metricasBanner.total} instrumentos de evaluación registrados`,
         badgeText: 'Total',
-        helperText: 'Instrumentos activos',
+        helperText: 'Instrumentos registrados',
       },
       {
         id: 'activas',
@@ -140,7 +246,7 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
         helperText: 'Categorías configuradas',
       },
     ];
-  }, [metricasBanner]);
+  }, [metricasBanner, isUserAdmin]);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -152,13 +258,21 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
           title={
             collectionName.includes('director')
               ? 'Crear Evaluación de Director'
-              : role === 'director'
+              : collectionName === 'evaluaciones-docentes' || role === 'director'
               ? 'Crear Evaluación de Docente'
               : 'Crear Evaluación de Especialista'
           }
           onClose={() => setShowCreateModal(false)}
         />
       )}
+
+      {/* Modal de Advertencia cuando no hay fase creada */}
+      <ModalAlertaFaseRequerida
+        isOpen={faseRequeridaModal.isOpen}
+        onClose={() => setFaseRequeridaModal((prev) => ({ ...prev, isOpen: false }))}
+        evaluacionTitulo={faseRequeridaModal.evaluacionTitulo}
+        detailUrl={faseRequeridaModal.detailUrl}
+      />
 
       {/* Modal de Eliminación */}
       {deleteEvalId && collectionName.includes('director') && (
@@ -167,36 +281,45 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
           handleShowModalDelete={() => setDeleteEvalId(null)}
         />
       )}
-      {deleteEvalId && !collectionName.includes('director') && role === 'especialista' && (
-        <DeleteEvaluacionEspecialista
-          idEva={deleteEvalId}
-          handleShowModalDelete={() => setDeleteEvalId(null)}
-        />
-      )}
-      {deleteEvalId && role === 'director' && (
+      {deleteEvalId && (collectionName === 'evaluaciones-docentes' || role === 'director') && (
         <DeleteEvaluacionDocente
           idEva={deleteEvalId}
           handleShowModalDelete={() => setDeleteEvalId(null)}
         />
       )}
+      {deleteEvalId &&
+        !collectionName.includes('director') &&
+        collectionName !== 'evaluaciones-docentes' &&
+        role !== 'director' && (
+          <DeleteEvaluacionEspecialista
+            idEva={deleteEvalId}
+            handleShowModalDelete={() => setDeleteEvalId(null)}
+          />
+        )}
 
       {/* Hero Banner Modular Reutilizable para Seguimiento y Retroalimentación */}
       <DesempenoHeroBanner
         routeKey={
           collectionName.includes('director')
             ? 'especialistas_evaluaciones_directores'
-            : 'directores_evaluaciones_docentes'
+            : collectionName === 'evaluaciones-docentes'
+            ? 'directores_evaluaciones_docentes'
+            : 'admin_evaluaciones_especialistas'
         }
         title={title}
         subtitle={
-          role === 'director'
+          collectionName === 'evaluaciones-docentes' || role === 'director'
             ? 'Seguimiento y retroalimentación pedagógica continua al desempeño docente en aula'
             : 'Seguimiento y retroalimentación directiva a la gestión institucional'
         }
-        badgeTema={role === 'director' ? 'Desempeño Docente' : 'Desempeño Directivo'}
+        badgeTema={
+          collectionName === 'evaluaciones-docentes' || role === 'director'
+            ? 'Desempeño Docente'
+            : 'Desempeño Directivo'
+        }
         metrics={metricsItems}
         actions={
-          canCreate ? (
+          isUserAdmin ? (
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -242,7 +365,11 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
         <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
           <p className="text-base font-semibold text-slate-700">No se encontraron evaluaciones</p>
           <p className="text-sm text-slate-400 mt-1">
-            {search ? 'Prueba con otro término de búsqueda.' : 'Crea una evaluación para comenzar.'}
+            {search
+              ? 'Prueba con otro término de búsqueda.'
+              : isUserAdmin
+              ? 'Crea una evaluación para comenzar.'
+              : 'No hay evaluaciones activas disponibles en este momento.'}
           </p>
         </div>
       ) : (
@@ -297,11 +424,11 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
                     </td>
 
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      {canCreate ? (
+                      {isUserAdmin ? (
                         <button
                           type="button"
-                          onClick={() => handleToggleActive(evalId, evaluacion.active)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                          onClick={() => handleToggleActive(evalId, evaluacion.active, evaluacion)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
                             evaluacion.active
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
                               : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
@@ -323,7 +450,7 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
                           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
                             evaluacion.active
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-slate-100 text-slate-500 border border-slate-200'
+                              : 'bg-slate-100 text-slate-600 border border-slate-200'
                           }`}
                         >
                           {evaluacion.active ? (
@@ -343,16 +470,16 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
                       <div className="flex items-center justify-center gap-2">
                         <Link
                           href={detailUrl}
-                          className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title={canCreate ? 'Configurar / Monitorear' : 'Evaluar docentes'}
+                          className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                          title={isUserAdmin ? 'Configurar / Monitorear' : 'Acceder a evaluación'}
                         >
                           <MdEditSquare className="text-lg" />
                         </Link>
-                        {canCreate && (
+                        {isUserAdmin && (
                           <button
                             type="button"
                             onClick={() => setDeleteEvalId(evalId)}
-                            className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                             title="Eliminar evaluación"
                           >
                             <MdDeleteForever className="text-lg" />

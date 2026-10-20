@@ -106,7 +106,7 @@ export const SegmentedFilterBar: React.FC<SegmentedFilterBarProps> = ({
   const hasResetButton = Boolean(showReset && onReset);
 
   return (
-    <div className={`relative z-[200] ${className}`}>
+    <div className={`relative ${openDropdown ? 'z-[400]' : 'z-[310]'} ${className}`}>
       <div
         ref={containerRef}
         className="w-full md:flex md:items-center bg-white border border-slate-200/90 rounded-2xl shadow-xs divide-y md:divide-y-0 md:divide-x divide-slate-200"
@@ -214,7 +214,7 @@ export const SegmentedFilterBar: React.FC<SegmentedFilterBarProps> = ({
                   <div
                     className={`absolute left-2 right-2 ${
                       isRightAligned ? 'md:left-auto md:right-0' : 'md:left-0 md:right-auto'
-                    } top-full mt-1.5 md:mt-2 z-[250] min-w-[calc(100%-16px)] md:min-w-[220px] md:max-w-md bg-white rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-100 p-1.5 focus:outline-none animate-dropdown`}
+                    } top-full mt-1.5 md:mt-2 z-[450] min-w-[calc(100%-16px)] md:min-w-[220px] md:max-w-md bg-white rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-100 p-1.5 focus:outline-none animate-dropdown`}
                   >
                     {filter.showSearch && (
                       <div className="p-1.5 border-b border-slate-100 mb-1">

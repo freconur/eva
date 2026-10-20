@@ -39,6 +39,9 @@ export const useReportesBannerConfig = (options: ReportesBannerConfigOptions = {
       const isUserAdmin =
         currentUserData?.rol === 4 || (currentUserData as any)?.perfil?.rol === 4;
       const isRoleOwner =
+        (routeKey.includes('especialista') && currentUserData?.rol === 1) ||
+        (routeKey.includes('director') && currentUserData?.rol === 2) ||
+        (routeKey.includes('docente') && currentUserData?.rol === 3) ||
         (routeKey === 'especialistas' && currentUserData?.rol === 1) ||
         (routeKey === 'directores' && currentUserData?.rol === 2) ||
         (routeKey === 'docentes' && currentUserData?.rol === 3);

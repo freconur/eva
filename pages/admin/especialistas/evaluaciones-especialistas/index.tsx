@@ -20,6 +20,7 @@ import { CrearEvaluacionDocente } from '@/features/types/types'
 import CrearEvaluacionEspecialista from '@/modals/crearEvaluacionEspecialista'
 import DeleteEvaluacionEspecialista from '@/modals/DeleteEvaluacionEscpecialista'
 import UpdateEvaluacionEspecialista from '@/modals/updateEvaluacionEspecialista'
+import ModalAlertaFaseRequerida from '@/components/evaluaciones-desempeno/modals/ModalAlertaFaseRequerida'
 import {
   DesempenoHeroBanner,
   HeroBannerMetricItem,
@@ -34,6 +35,33 @@ const EvaluacionesDesempeñoDocentes = () => {
   const [evaluacion, setEvaluacion] = useState<CrearEvaluacionDocente>({})
   const [showDelete, setShowDelete] = useState<boolean>(false)
   const [inputUpdate, setInputUpdate] = useState<boolean>(false)
+  const [faseRequeridaModal, setFaseRequeridaModal] = useState<{
+    isOpen: boolean;
+    evaluacionTitulo: string;
+    detailUrl: string;
+  }>({
+    isOpen: false,
+    evaluacionTitulo: '',
+    detailUrl: '',
+  });
+
+  const handleActivarEvaluacion = (ev: CrearEvaluacionDocente) => {
+    const tieneFase = Boolean(
+      ev.faseNombre?.trim() ||
+      (Array.isArray(ev.fases) && ev.fases.length > 0 && ev.fases.some((f: any) => f?.nombre?.trim()))
+    );
+
+    if (!tieneFase) {
+      setFaseRequeridaModal({
+        isOpen: true,
+        evaluacionTitulo: ev.name || 'Evaluación',
+        detailUrl: `/admin/especialistas/evaluaciones-especialistas/evaluacion/${ev.id}`,
+      });
+      return;
+    }
+
+    updateEstadoEvaluacion(ev.id!, true);
+  };
 
   const sortedEvaluaciones = useMemo(() => {
     if (!evaluacionDesempeñoDocente) return []
@@ -124,6 +152,12 @@ const EvaluacionesDesempeñoDocentes = () => {
         {showDelete && <DeleteEvaluacionEspecialista handleShowModalDelete={handleShowModalDelete} idEva={idEva} />}
         {showModalCrearEvaluacion && <CrearEvaluacionEspecialista handleShowModalCrearEvaluacion={handleShowModalCrearEvaluacion} />}
         {inputUpdate && <UpdateEvaluacionEspecialista handleShowInputUpdate={handleShowInputUpdate} evaluacion={evaluacion} />}
+        <ModalAlertaFaseRequerida
+          isOpen={faseRequeridaModal.isOpen}
+          onClose={() => setFaseRequeridaModal((prev) => ({ ...prev, isOpen: false }))}
+          evaluacionTitulo={faseRequeridaModal.evaluacionTitulo}
+          detailUrl={faseRequeridaModal.detailUrl}
+        />
 
         {/* Hero Banner Modular Reutilizable */}
         <div className="mb-6 w-full">
@@ -196,7 +230,7 @@ const EvaluacionesDesempeñoDocentes = () => {
                           />
                         ) : (
                           <MdVisibilityOff
-                            onClick={() => updateEstadoEvaluacion(evaluacion.id!, true)}
+                            onClick={() => handleActivarEvaluacion(evaluacion)}
                             className={`${styles.actionIcon} ${styles.viewOffIcon}`}
                             title="Activar (Visible para especialistas)"
                           />
