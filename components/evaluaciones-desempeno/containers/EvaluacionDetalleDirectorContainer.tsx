@@ -161,20 +161,78 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
     if (!rawEvaluados || rawEvaluados.length === 0) return [];
     if (!currentUserData) return [];
 
-    const userDni = currentUserData.dni ? String(currentUserData.dni).trim() : '';
-    if (!userDni) return [];
+    const userDni = String(
+      currentUserData.dni ?? (currentUserData as any)?.perfil?.dni ?? (currentUserData as any)?.id ?? ''
+    ).trim();
+    const userEmail = String(currentUserData.email || '').trim().toLowerCase();
+    const userId = String(currentUserData.id || '').trim();
+
+    if (!userDni && !userEmail && !userId) return [];
 
     return rawEvaluados.filter((ev) => {
-      const monitorDni = String(
-        ev.evaluadorDni ||
-        ev.especialistaDni ||
-        ev.adminDni ||
-        ev.datosMonitor?.dni ||
-        ev.monitorDni ||
+      const evaluadoDni = String(
+        ev.dni ||
+        ev.directorDni ||
+        ev.evaluadoDni ||
+        ev.dniDirector ||
+        ev.datosDirector?.dni ||
         ''
       ).trim();
 
-      return monitorDni === userDni;
+      // Recopilar posibles identificadores del monitor que realizó la evaluación
+      const possibleMonitorDnis = [
+        ev.evaluadorDni,
+        ev.adminDni,
+        ev.monitorDni,
+        ev.dniMonitor,
+        ev.datosMonitor?.dni,
+        ev.datosMonitor?.id,
+      ]
+        .map((d) => (d ? String(d).trim() : ''))
+        .filter(Boolean);
+
+      // Si especialistaDni existe y no coincide con el DNI del evaluado, es el monitor
+      if (ev.especialistaDni) {
+        const espDni = String(ev.especialistaDni).trim();
+        if (espDni && espDni !== evaluadoDni) {
+          possibleMonitorDnis.push(espDni);
+        }
+      }
+
+      // 1. Coincidencia por DNI
+      if (userDni && possibleMonitorDnis.some((d) => d === userDni)) {
+        return true;
+      }
+
+      // 2. Coincidencia por Email
+      if (userEmail) {
+        const monitorEmails = [
+          ev.datosMonitor?.email,
+          ev.evaluadorEmail,
+          ev.monitorEmail,
+          ev.adminEmail,
+          ev.especialistaEmail,
+        ]
+          .map((e) => (e ? String(e).trim().toLowerCase() : ''))
+          .filter(Boolean);
+
+        if (monitorEmails.some((e) => e === userEmail)) {
+          return true;
+        }
+      }
+
+      // 3. Coincidencia por ID de usuario
+      if (userId) {
+        if (
+          ev.datosMonitor?.id === userId ||
+          ev.evaluadorId === userId ||
+          ev.monitorId === userId
+        ) {
+          return true;
+        }
+      }
+
+      return false;
     });
   }, [rawEvaluados, currentUserData]);
 
@@ -189,6 +247,7 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
         item.dniDirector ||
         item.directorDni ||
         item.evaluadoDni ||
+        item.datosDirector?.dni ||
         ''
       ).trim();
       if (dni) set.add(dni);
@@ -210,13 +269,13 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
     const term = searchDirector.toLowerCase().trim();
 
     return result.filter((item: any) => {
-      const nombres = (item.nombres || item.nombreDirector || '').toLowerCase();
-      const apellidos = (item.apellidos || item.apellidoDirector || '').toLowerCase();
+      const nombres = (item.nombres || item.nombreDirector || item.datosDirector?.nombres || '').toLowerCase();
+      const apellidos = (item.apellidos || item.apellidoDirector || item.datosDirector?.apellidos || '').toLowerCase();
       const fullName = `${nombres} ${apellidos}`.toLowerCase();
       const invFullName = `${apellidos} ${nombres}`.toLowerCase();
-      const dni = String(item.dni || item.dniDirector || item.directorDni || '').toLowerCase();
-      const institucion = (item.institucion || '').toLowerCase();
-      const distrito = (item.distrito || '').toLowerCase();
+      const dni = String(item.dni || item.dniDirector || item.directorDni || item.evaluadoDni || item.datosDirector?.dni || '').toLowerCase();
+      const institucion = (item.institucion || item.datosDirector?.institucion || '').toLowerCase();
+      const distrito = (item.distrito || item.datosDirector?.distrito || '').toLowerCase();
 
       return (
         nombres.includes(term) ||
@@ -534,27 +593,21 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
         canEditTitleDescription={isUserAdmin}
         storageKey={`eva_eval_director_${role}_banner_variant`}
         actions={
-          <div className="flex items-center gap-2 flex-wrap">
-            <EvaluacionConfigMenu
-              idEvaluacion={idEvaluacion}
-              collectionName="evaluaciones-director"
-              dimensiones={currentDimensiones}
-              preguntas={currentPreguntas}
-              escala={dataEvaluacionDocente?.escala}
-              niveles={dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje}
-              activarEvidencias={dataEvaluacionDocente?.activarEvidencias}
-              titulo={dataEvaluacionDocente?.name}
-              descripcion={dataEvaluacionDocente?.descripcion}
-            />
-
-            <Link
-              href={`${effectiveBasePath}/evaluacion/reporte?idEvaluacion=${idEvaluacion}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 shadow-xs transition-all backdrop-blur-sm cursor-pointer"
-            >
-              <MdBarChart className="text-base text-teal-300" />
-              <span>Reporte General</span>
-            </Link>
-          </div>
+          isUserAdmin ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <EvaluacionConfigMenu
+                idEvaluacion={idEvaluacion}
+                collectionName="evaluaciones-director"
+                dimensiones={currentDimensiones}
+                preguntas={currentPreguntas}
+                escala={dataEvaluacionDocente?.escala}
+                niveles={dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje}
+                activarEvidencias={dataEvaluacionDocente?.activarEvidencias}
+                titulo={dataEvaluacionDocente?.name}
+                descripcion={dataEvaluacionDocente?.descripcion}
+              />
+            </div>
+          ) : undefined
         }
       />
 
@@ -847,22 +900,30 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
                         <tbody className="divide-y divide-slate-100 text-sm">
                           {grupo.directores.map((item: any, idx: number) => {
                             const directorDni = String(
-                              item.dni || item.dniDirector || item.directorDni || ''
+                              item.dni || item.dniDirector || item.directorDni || item.evaluadoDni || item.datosDirector?.dni || ''
                             ).trim();
+                            const directorNombre = item.apellidos || item.nombres
+                              ? `${item.apellidos || ''} ${item.nombres || ''}`.trim().toUpperCase()
+                              : item.datosDirector?.apellidos || item.datosDirector?.nombres
+                              ? `${item.datosDirector?.apellidos || ''} ${item.datosDirector?.nombres || ''}`.trim().toUpperCase()
+                              : (item.nombreDirector || 'DIRECTOR EVALUADO').toUpperCase();
+                            const institucionNombre = item.institucion || item.datosDirector?.institucion
+                              ? (String(item.institucion || item.datosDirector?.institucion).startsWith('I.E.')
+                                  ? String(item.institucion || item.datosDirector?.institucion)
+                                  : `I.E. ${item.institucion || item.datosDirector?.institucion}`)
+                              : 'No especificada';
                             const evalUrl = `${effectiveBasePath}/evaluacion/evaluar-director?idEvaluacion=${idEvaluacion}&idDirector=${directorDni}`;
-                            const reporteUrl = `${effectiveBasePath}/evaluacion/reporte-director-individual?idDirector=${directorDni}&idEvaluacion=${idEvaluacion}`;
+                            const reporteUrl = `${effectiveBasePath}/evaluacion/reporte-director-individual?idDirector=${directorDni}&idEvaluacion=${idEvaluacion}${item.id ? `&sessionId=${item.id}` : ''}`;
 
                             return (
                               <tr key={item.id || directorDni || idx} className="hover:bg-slate-50/80 transition-colors">
                                 <td className="py-3 px-4 text-xs font-bold text-slate-400">{idx + 1}</td>
                                 <td className="py-3 px-4 font-semibold text-slate-800">
-                                  {item.apellidos || item.nombres
-                                    ? `${item.apellidos || ''} ${item.nombres || ''}`.trim().toUpperCase()
-                                    : (item.nombreDirector || 'Sin nombre').toUpperCase()}
+                                  {directorNombre}
                                 </td>
                                 <td className="py-3 px-4 text-xs font-mono text-slate-600">{directorDni}</td>
                                 <td className="py-3 px-4 text-xs text-slate-600">
-                                  {item.institucion ? `I.E. ${item.institucion}` : 'No especificada'}
+                                  {institucionNombre}
                                 </td>
                                 <td className="py-3 px-4 text-center text-xs text-slate-500">
                                   {item.fechaMonitoreo || 'Sin registrar'}
@@ -924,22 +985,30 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
               <tbody className="divide-y divide-slate-100 text-sm">
                 {evaluadosFiltrados.map((item: any, idx: number) => {
                   const directorDni = String(
-                    item.dni || item.dniDirector || item.directorDni || ''
+                    item.dni || item.dniDirector || item.directorDni || item.evaluadoDni || item.datosDirector?.dni || ''
                   ).trim();
+                  const directorNombre = item.apellidos || item.nombres
+                    ? `${item.apellidos || ''} ${item.nombres || ''}`.trim().toUpperCase()
+                    : item.datosDirector?.apellidos || item.datosDirector?.nombres
+                    ? `${item.datosDirector?.apellidos || ''} ${item.datosDirector?.nombres || ''}`.trim().toUpperCase()
+                    : (item.nombreDirector || 'DIRECTOR EVALUADO').toUpperCase();
+                  const institucionNombre = item.institucion || item.datosDirector?.institucion
+                    ? (String(item.institucion || item.datosDirector?.institucion).startsWith('I.E.')
+                        ? String(item.institucion || item.datosDirector?.institucion)
+                        : `I.E. ${item.institucion || item.datosDirector?.institucion}`)
+                    : 'No especificada';
                   const evalUrl = `${effectiveBasePath}/evaluacion/evaluar-director?idEvaluacion=${idEvaluacion}&idDirector=${directorDni}`;
-                  const reporteUrl = `${effectiveBasePath}/evaluacion/reporte-director-individual?idDirector=${directorDni}&idEvaluacion=${idEvaluacion}`;
+                  const reporteUrl = `${effectiveBasePath}/evaluacion/reporte-director-individual?idDirector=${directorDni}&idEvaluacion=${idEvaluacion}${item.id ? `&sessionId=${item.id}` : ''}`;
 
                   return (
                     <tr key={item.id || directorDni || idx} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3 px-4 text-xs font-bold text-slate-400">{idx + 1}</td>
                       <td className="py-3 px-4 font-semibold text-slate-800">
-                        {item.apellidos || item.nombres
-                          ? `${item.apellidos || ''} ${item.nombres || ''}`.trim().toUpperCase()
-                          : (item.nombreDirector || 'Sin nombre').toUpperCase()}
+                        {directorNombre}
                       </td>
                       <td className="py-3 px-4 text-xs font-mono text-slate-600">{directorDni}</td>
                       <td className="py-3 px-4 text-xs text-slate-600">
-                        {item.institucion ? `I.E. ${item.institucion}` : 'No especificada'}
+                        {institucionNombre}
                       </td>
                       <td className="py-3 px-4 text-xs text-slate-600">
                         {regionTexto(item.region) || (item.region ? `UGEL ${item.region}` : '-')}

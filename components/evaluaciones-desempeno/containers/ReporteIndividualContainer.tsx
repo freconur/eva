@@ -13,7 +13,6 @@ import {
 	query,
 	where,
 	onSnapshot,
-	writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/firebase/firebase.config';
 import { User, AlternativasDocente } from '@/features/types/types';
@@ -178,7 +177,7 @@ export const ReporteIndividualContainer: React.FC<ReporteIndividualContainerProp
 					const fallbackField =
 						collectionName === 'evaluaciones-docentes' || role === 'director'
 							? 'docenteDni'
-							: role === 'especialista'
+							: collectionName === 'evaluaciones-director' || role === 'especialista'
 							? 'directorDni'
 							: 'especialistaDni';
 					q = query(colRef, where(fallbackField, '==', cleanDni));
@@ -442,53 +441,8 @@ export const ReporteIndividualContainer: React.FC<ReporteIndividualContainerProp
 	};
 
 	const handleUpdateMonitor = async () => {
-		if (!idEvaluacion || !currentUserData) return;
-		const confirmUpdate = window.confirm(
-			'¿Estás seguro de que deseas actualizar masivamente los nombres y apellidos del monitor en TODOS los evaluados de esta evaluación?'
-		);
-		if (!confirmUpdate) return;
-
-		try {
-			const monitorData = {
-				apellidos: currentUserData.apellidos || '',
-				nombres: currentUserData.nombres || '',
-				email: currentUserData.email || '',
-				celular: currentUserData.celular || '',
-				cargo: 'MONITOR',
-			};
-
-			const path = `/${collectionName}/${idEvaluacion}/evaluados`;
-			const colRef = collection(db, path);
-			const snapshot = await getDocs(colRef);
-
-			const batch = writeBatch(db);
-			snapshot.forEach((docSnap) => {
-				batch.update(docSnap.ref, {
-					'datosMonitor.apellidos': monitorData.apellidos,
-					'datosMonitor.nombres': monitorData.nombres,
-					'datosMonitor.email': monitorData.email,
-					'datosMonitor.celular': monitorData.celular,
-					'datosMonitor.cargo': monitorData.cargo,
-				});
-			});
-			await batch.commit();
-
-			if (localData) {
-				setLocalData({
-					...localData,
-					datosMonitor: {
-						...localData.datosMonitor,
-						...monitorData,
-					},
-				});
-				setHasChanges(true);
-			}
-
-			alert('Datos del monitor actualizados masivamente en todos los evaluados.');
-		} catch (error) {
-			console.error('Error al actualizar monitores masivamente:', error);
-			alert('Error al realizar la actualización masiva.');
-		}
+		// Función inhabilitada tanto para el administrador como para el especialista
+		return;
 	};
 
 	const ugelDisplay = useMemo(() => {
@@ -550,7 +504,9 @@ export const ReporteIndividualContainer: React.FC<ReporteIndividualContainerProp
 			return backHref;
 		}
 		if (collectionName === 'evaluaciones-director') {
-			return `/especialistas/evaluaciones-director/evaluacion/${idEvaluacion}/evaluados`;
+			return role === 'admin'
+				? `/admin/evaluaciones-directores/evaluacion/${idEvaluacion}`
+				: `/especialistas/evaluaciones-director/evaluacion/${idEvaluacion}/evaluados`;
 		}
 		if (collectionName === 'evaluaciones-docentes') {
 			return role === 'especialista'
@@ -702,8 +658,9 @@ export const ReporteIndividualContainer: React.FC<ReporteIndividualContainerProp
 										<button
 											onClick={handleUpdateMonitor}
 											className={styles.updateButton}
-											title="Actualizar con mis datos"
+											title="Actualización de monitor inhabilitada tanto para el administrador como para el especialista"
 											type="button"
+											disabled
 										>
 											<MdUpdate style={{ fontSize: '1.1rem' }} /> Actualizar Monitor
 										</button>

@@ -795,11 +795,9 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
           numeroEvaluacion = prev.numeroEvaluacion || 1;
         }
         const targetDniField =
-          collectionName === 'evaluaciones-docentes'
+          collectionName === 'evaluaciones-docentes' || role === 'director'
             ? 'docenteDni'
-            : role === 'director'
-            ? 'docenteDni'
-            : role === 'especialista'
+            : collectionName === 'evaluaciones-director' || role === 'especialista'
             ? 'directorDni'
             : 'especialistaDni';
         const evaluadosRef = collection(db, `/${collectionName}/${idEvaluacion}/evaluados`);
@@ -863,6 +861,26 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
           dataToSave.evaluadorRol = 'admin';
           dataToSave.tipoMonitoreo = 'acompaniamiento_pedagogico';
         }
+      } else if (collectionName === 'evaluaciones-director') {
+        dataToSave.directorDni = evaluado.dni || '';
+        dataToSave.evaluadoDni = evaluado.dni || '';
+        dataToSave.evaluadorDni = currentUserData?.dni || '';
+        dataToSave.monitorDni = currentUserData?.dni || '';
+        if (
+          role === 'admin' ||
+          currentUserData?.rol === 4 ||
+          currentUserData?.rol === 0 ||
+          currentUserData?.perfil?.rol === 4 ||
+          currentUserData?.perfil?.rol === 0 ||
+          Number(currentUserData?.rol) === 4 ||
+          Number(currentUserData?.rol) === 0
+        ) {
+          dataToSave.adminDni = currentUserData?.dni || '';
+          dataToSave.evaluadorRol = 'admin';
+        } else {
+          dataToSave.especialistaDni = currentUserData?.dni || '';
+          dataToSave.evaluadorRol = 'especialista';
+        }
       } else if (role === 'director') {
         dataToSave.docenteDni = evaluado.dni || '';
         dataToSave.evaluadoDni = evaluado.dni || '';
@@ -872,9 +890,10 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
         dataToSave.directorDni = evaluado.dni || '';
         dataToSave.evaluadoDni = evaluado.dni || '';
         dataToSave.especialistaDni = currentUserData?.dni || '';
+        dataToSave.evaluadorDni = currentUserData?.dni || '';
       } else {
-        dataToSave.especialistaDni = evaluado.dni || '';
         dataToSave.evaluadoDni = evaluado.dni || '';
+        dataToSave.evaluadorDni = currentUserData?.dni || '';
       }
 
       await setDoc(docPath, JSON.parse(JSON.stringify(dataToSave)), { merge: true });
