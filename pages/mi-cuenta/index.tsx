@@ -41,7 +41,11 @@ const MiCuenta = () => {
     // Escucha cambios en el DNI de usuario para asegurar datos actualizados
   }, [currentUserData?.dni])
 
+  const rolNum = Number(currentUserData?.perfil?.rol ?? currentUserData?.rol)
   const isClient = currentUserData?.perfil?.rol === 4
+  const isDocenteOrDirector = rolNum === 2 || rolNum === 3
+  const isAdminOrClient = isClient || rolNum === 4 || rolNum === 5 || rolNum === 0
+  const canEdit = isAdminOrClient || isDocenteOrDirector
 
   const handleCopy = (text: string, key: string) => {
     if (!text || text === '—') return
@@ -172,12 +176,12 @@ const MiCuenta = () => {
               </div>
 
               {/* Botón de acción principal */}
-              {isClient && (
+              {canEdit && (
                 <div className="pt-2 sm:pt-0">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 transition-all duration-150 shadow-xs hover:shadow min-h-[44px] w-full sm:w-auto"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 transition-all duration-150 shadow-xs hover:shadow min-h-[44px] w-full sm:w-auto cursor-pointer"
                   >
                     <FiEdit3 className="w-4 h-4 shrink-0" />
                     <span>Editar mis datos</span>
@@ -408,53 +412,79 @@ const MiCuenta = () => {
 
           {/* TARJETA 3: CANALES DE CONTACTO */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 sm:p-6 space-y-4">
-            <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-              <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
-                <FiMail className="w-5 h-5" />
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
+                  <FiMail className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-semibold text-slate-900">
+                    Canales de Contacto
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Medios registrados para comunicaciones institucionales
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-base sm:text-lg font-semibold text-slate-900">
-                  Canales de Contacto
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Medios registrados para comunicaciones institucionales
-                </p>
-              </div>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all cursor-pointer"
+                  title="Editar correo y teléfono"
+                >
+                  <FiEdit3 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Editar</span>
+                </button>
+              )}
             </div>
 
             <dl className="divide-y divide-slate-100 text-sm">
               <div className="py-3 flex justify-between items-center gap-4">
                 <dt className="text-slate-500 font-medium">Correo Electrónico</dt>
                 <dd className="flex items-center gap-2">
-                  <span className="text-slate-800 font-medium text-right truncate max-w-[180px] sm:max-w-[220px]" title={currentUserData?.email || '—'}>
-                    {currentUserData?.email || '—'}
-                  </span>
-                  {currentUserData?.email && (
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(currentUserData.email || '', 'email-row')}
-                        aria-label="Copiar correo electrónico"
-                        className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                        title="Copiar email"
-                      >
-                        {copiedKey === 'email-row' ? (
-                          <span className="flex items-center gap-1 text-xs text-emerald-600 font-semibold">
-                            <FiCheck className="w-3.5 h-3.5" /> Copiado
-                          </span>
-                        ) : (
-                          <FiCopy className="w-4 h-4" />
-                        )}
-                      </button>
-                      <a
-                        href={`mailto:${currentUserData.email}`}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                        title="Enviar correo"
-                        aria-label="Abrir cliente de correo"
-                      >
-                        <FiExternalLink className="w-4 h-4" />
-                      </a>
-                    </div>
+                  {currentUserData?.email ? (
+                    <>
+                      <span className="text-slate-800 font-medium text-right truncate max-w-[180px] sm:max-w-[220px]" title={currentUserData.email}>
+                        {currentUserData.email}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(currentUserData.email || '', 'email-row')}
+                          aria-label="Copiar correo electrónico"
+                          className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                          title="Copiar email"
+                        >
+                          {copiedKey === 'email-row' ? (
+                            <span className="flex items-center gap-1 text-xs text-emerald-600 font-semibold">
+                              <FiCheck className="w-3.5 h-3.5" /> Copiado
+                            </span>
+                          ) : (
+                            <FiCopy className="w-4 h-4" />
+                          )}
+                        </button>
+                        <a
+                          href={`mailto:${currentUserData.email}`}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                          title="Enviar correo"
+                          aria-label="Abrir cliente de correo"
+                        >
+                          <FiExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
+                    </>
+                  ) : canEdit ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsModalOpen(true)}
+                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium cursor-pointer"
+                    >
+                      <FiEdit3 className="w-3 h-3" />
+                      <span>+ Agregar correo</span>
+                    </button>
+                  ) : (
+                    <span className="text-slate-400">—</span>
                   )}
                 </dd>
               </div>
@@ -462,35 +492,48 @@ const MiCuenta = () => {
               <div className="py-3 flex justify-between items-center gap-4">
                 <dt className="text-slate-500 font-medium">Teléfono / Celular</dt>
                 <dd className="flex items-center gap-2">
-                  <span className="font-mono text-slate-800 font-medium">
-                    {currentUserData?.celular || '—'}
-                  </span>
-                  {currentUserData?.celular && (
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(currentUserData.celular || '', 'phone-row')}
-                        aria-label="Copiar número de teléfono"
-                        className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                        title="Copiar teléfono"
-                      >
-                        {copiedKey === 'phone-row' ? (
-                          <span className="flex items-center gap-1 text-xs text-emerald-600 font-semibold">
-                            <FiCheck className="w-3.5 h-3.5" /> Copiado
-                          </span>
-                        ) : (
-                          <FiCopy className="w-4 h-4" />
-                        )}
-                      </button>
-                      <a
-                        href={`tel:${currentUserData.celular}`}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                        title="Llamar"
-                        aria-label="Llamar al número telefónico"
-                      >
-                        <FiPhone className="w-4 h-4" />
-                      </a>
-                    </div>
+                  {currentUserData?.celular ? (
+                    <>
+                      <span className="font-mono text-slate-800 font-medium">
+                        {currentUserData.celular}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(currentUserData.celular || '', 'phone-row')}
+                          aria-label="Copiar número de teléfono"
+                          className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                          title="Copiar teléfono"
+                        >
+                          {copiedKey === 'phone-row' ? (
+                            <span className="flex items-center gap-1 text-xs text-emerald-600 font-semibold">
+                              <FiCheck className="w-3.5 h-3.5" /> Copiado
+                            </span>
+                          ) : (
+                            <FiCopy className="w-4 h-4" />
+                          )}
+                        </button>
+                        <a
+                          href={`tel:${currentUserData.celular}`}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                          title="Llamar"
+                          aria-label="Llamar al número telefónico"
+                        >
+                          <FiPhone className="w-4 h-4" />
+                        </a>
+                      </div>
+                    </>
+                  ) : canEdit ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsModalOpen(true)}
+                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium cursor-pointer"
+                    >
+                      <FiEdit3 className="w-3 h-3" />
+                      <span>+ Agregar teléfono</span>
+                    </button>
+                  ) : (
+                    <span className="text-slate-400">—</span>
                   )}
                 </dd>
               </div>

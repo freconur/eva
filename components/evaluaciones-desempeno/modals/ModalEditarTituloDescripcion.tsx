@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { RiLoader4Line, RiEditLine, RiCloseLine } from 'react-icons/ri';
+import { RiLoader4Line, RiEditLine, RiCloseLine, RiCheckLine } from 'react-icons/ri';
 import { MdTitle, MdDescription } from 'react-icons/md';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/firebase.config';
@@ -38,7 +38,6 @@ export const ModalEditarTituloDescripcion: React.FC<ModalEditarTituloDescripcion
     setDescripcion(descripcionActual);
   }, [tituloActual, descripcionActual]);
 
-  // Manejo de atajos de teclado (Escape para salir, Enter en título para guardar)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !isSaving) {
@@ -91,7 +90,7 @@ export const ModalEditarTituloDescripcion: React.FC<ModalEditarTituloDescripcion
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-sm animate-fade-in"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isSaving) onClose();
       }}
@@ -99,22 +98,22 @@ export const ModalEditarTituloDescripcion: React.FC<ModalEditarTituloDescripcion
       aria-modal="true"
       aria-labelledby="modal-titulo-descripcion-title"
     >
-      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform transition-all">
+      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden transform transition-all animate-scale-up">
         {/* Cabecera del Modal */}
-        <div className="flex items-center justify-between px-6 py-4.5 bg-gradient-to-r from-slate-50 to-blue-50/50 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600/10 border border-blue-600/20 flex items-center justify-center text-blue-600 shadow-2xs">
-              <RiEditLine className="text-xl" />
+        <div className="px-6 py-5 bg-gradient-to-r from-slate-50 via-white to-blue-50/40 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+              <RiEditLine className="text-2xl" />
             </div>
             <div>
               <h3
                 id="modal-titulo-descripcion-title"
-                className="text-base font-bold text-slate-800 leading-tight"
+                className="text-lg font-bold text-slate-900 tracking-tight leading-tight"
               >
                 Editar Título y Descripción
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Personaliza los textos visibles en el banner y los reportes
+                Personaliza los textos principales visibles en el banner y los reportes
               </p>
             </div>
           </div>
@@ -122,7 +121,7 @@ export const ModalEditarTituloDescripcion: React.FC<ModalEditarTituloDescripcion
             type="button"
             disabled={isSaving}
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40 cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-40 cursor-pointer"
             aria-label="Cerrar modal"
           >
             <RiCloseLine className="text-xl" />
@@ -132,69 +131,71 @@ export const ModalEditarTituloDescripcion: React.FC<ModalEditarTituloDescripcion
         {/* Contenido del Formulario */}
         <form onSubmit={handleSave} className="p-6 space-y-5">
           {/* Campo 1: Título de la Evaluación */}
-          <div>
-            <label className="flex items-center justify-between text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              <span className="flex items-center gap-1.5">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                 <MdTitle className="text-base text-blue-600" />
                 <span>Título de la Evaluación</span>
                 <span className="text-rose-500 font-bold">*</span>
-              </span>
-              <span className="text-[11px] font-normal text-slate-400">Requerido</span>
-            </label>
-            <input
-              type="text"
-              autoFocus
-              disabled={isSaving}
-              value={titulo}
-              onChange={(e) => {
-                setTitulo(e.target.value);
-                if (errorValidation) setErrorValidation(null);
-              }}
-              placeholder="Ej. RÚBRICA DE MEDIACIÓN DIDÁCTICA"
-              className={`w-full px-3.5 py-2.5 text-sm bg-slate-50 border rounded-xl text-slate-800 font-medium placeholder-slate-400 focus:bg-white focus:outline-hidden transition-all ${
-                errorValidation
-                  ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200'
-                  : 'border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
-              } disabled:opacity-60`}
-            />
+              </label>
+              <span className="text-[11px] text-slate-400">Visible en encabezado</span>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                autoFocus
+                disabled={isSaving}
+                value={titulo}
+                onChange={(e) => {
+                  setTitulo(e.target.value);
+                  if (errorValidation) setErrorValidation(null);
+                }}
+                placeholder="Ej. RÚBRICA DE MEDIACIÓN DIDÁCTICA"
+                className={`w-full px-4 py-2.5 text-sm bg-slate-50/70 hover:bg-white focus:bg-white border rounded-xl text-slate-800 font-medium placeholder-slate-400 focus:outline-none transition-all shadow-2xs ${
+                  errorValidation
+                    ? 'border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
+                    : 'border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'
+                } disabled:opacity-60`}
+              />
+            </div>
             {errorValidation ? (
-              <p className="text-xs text-rose-500 mt-1 font-medium">{errorValidation}</p>
+              <p className="text-xs text-rose-500 font-medium">{errorValidation}</p>
             ) : (
-              <p className="text-[11px] text-slate-400 mt-1">
+              <p className="text-[11px] text-slate-400">
                 Aparece como título principal en grande en el banner superior.
               </p>
             )}
           </div>
 
           {/* Campo 2: Texto Descriptivo / Subtítulo */}
-          <div>
-            <label className="flex items-center justify-between text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              <span className="flex items-center gap-1.5">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                 <MdDescription className="text-base text-blue-600" />
                 <span>Texto descriptivo (subtítulo)</span>
-              </span>
-              <span className="text-[11px] font-normal text-slate-400">Opcional</span>
-            </label>
+              </label>
+              <span className="text-[11px] text-slate-400">Opcional</span>
+            </div>
             <textarea
               rows={3}
               disabled={isSaving}
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               placeholder="Ej. Supervisión y acompañamiento pedagógico al desempeño docente en aula"
-              className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all resize-none disabled:opacity-60"
+              className="w-full px-4 py-2.5 text-sm bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none shadow-2xs disabled:opacity-60"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-slate-400">
               Este texto se muestra directamente debajo del título principal en la cabecera y en los reportes.
             </p>
           </div>
 
-          {/* Acciones y Botones */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          {/* Acciones */}
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
             <button
               type="button"
               disabled={isSaving}
               onClick={onClose}
-              className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+              className="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
             >
               Cancelar
             </button>
@@ -202,7 +203,7 @@ export const ModalEditarTituloDescripcion: React.FC<ModalEditarTituloDescripcion
             <button
               type="submit"
               disabled={isSaving || !titulo.trim()}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-[0.98] rounded-xl shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               {isSaving ? (
                 <>
@@ -210,7 +211,10 @@ export const ModalEditarTituloDescripcion: React.FC<ModalEditarTituloDescripcion
                   <span>Guardando...</span>
                 </>
               ) : (
-                <span>Guardar cambios</span>
+                <>
+                  <RiCheckLine className="text-base" />
+                  <span>Guardar Cambios</span>
+                </>
               )}
             </button>
           </div>

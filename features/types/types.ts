@@ -603,6 +603,11 @@ export type DataEvaluacion = {
   descripcion?: string;
   backgroundImage?: string | null;
   backgroundImageOpacity?: number;
+  nombresPestanas?: {
+    monitoreos?: string;
+    padron?: string;
+    rubrica?: string;
+  };
 };
 
 export type NivelYPuntaje = {

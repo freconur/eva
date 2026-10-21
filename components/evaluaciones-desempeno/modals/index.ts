@@ -13,3 +13,9 @@ export { default as ModalEditarTituloDescripcion } from './ModalEditarTituloDesc
 export * from './ModalEditarTituloDescripcion';
 export { default as ModalAlertaFaseRequerida } from './ModalAlertaFaseRequerida';
 export * from './ModalAlertaFaseRequerida';
+export { default as ModalAlertaEvaluacionActiva } from './ModalAlertaEvaluacionActiva';
+export * from './ModalAlertaEvaluacionActiva';
+export { default as ModalConfirmarEliminacion } from './ModalConfirmarEliminacion';
+export * from './ModalConfirmarEliminacion';
+export { default as ModalEditarNombresPestanas } from './ModalEditarNombresPestanas';
+export * from './ModalEditarNombresPestanas';

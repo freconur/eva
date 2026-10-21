@@ -286,21 +286,27 @@ export const ReporteGeneralDesempenoContainer: React.FC<ReporteGeneralDesempenoC
 
   // Estado de Filtros
   const [filtros, setFiltros] = useState({
-    region: '',
+    region: (router.query.region as string) || '',
     institucion: (router.query.institucion as string) || '',
     genero: '',
     idFase: '',
   });
 
-  // Sincronizar si el parámetro institucion en la URL cambia dinámicamente
+  // Sincronizar si los parámetros region o institucion en la URL cambian dinámicamente
   useEffect(() => {
+    if (router.query.region && typeof router.query.region === 'string') {
+      setFiltros((prev) => ({
+        ...prev,
+        region: router.query.region as string,
+      }));
+    }
     if (router.query.institucion && typeof router.query.institucion === 'string') {
       setFiltros((prev) => ({
         ...prev,
         institucion: router.query.institucion as string,
       }));
     }
-  }, [router.query.institucion]);
+  }, [router.query.region, router.query.institucion]);
 
   const handleLimpiarFiltros = () => {
     setFiltros({
@@ -1642,10 +1648,18 @@ export const ReporteGeneralDesempenoContainer: React.FC<ReporteGeneralDesempenoC
               subtitulo={
                 isDirectorRole
                   ? 'Monitoreo Directivo • Resultados y Logros de Desempeño Docente'
+                  : collectionName === 'evaluaciones-director'
+                  ? 'Monitoreo de Gestión • Resultados de Evaluación a Directivos de Instituciones Educativas'
                   : 'Monitoreo Pedagógico • Resultados de Evaluación Docente en Instituciones Educativas'
               }
               role={role}
-              ambitoTexto={isDirectorRole ? 'Evaluación Docente' : 'Especialistas UGEL'}
+              ambitoTexto={
+                isDirectorRole
+                  ? 'Evaluación Docente'
+                  : collectionName === 'evaluaciones-director'
+                  ? 'Evaluación a Directivos'
+                  : 'Especialistas UGEL'
+              }
               colegio={
                 filtros.institucion
                   ? filtros.institucion.startsWith('I.E.')

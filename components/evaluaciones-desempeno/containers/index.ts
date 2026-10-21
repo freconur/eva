@@ -27,3 +27,5 @@ export { default as CardRendimientoGlobalInstitucion } from './reporte-desempeno
 export * from './reporte-desempeno/CardRendimientoGlobalInstitucion';
 export { default as DesempenoFiltrosBar } from './reporte-desempeno/DesempenoFiltrosBar';
 export * from './reporte-desempeno/DesempenoFiltrosBar';
+export { default as RubricaSectionHeader } from './RubricaSectionHeader';
+export * from './RubricaSectionHeader';

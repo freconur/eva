@@ -31,8 +31,13 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
     (currentUserData as any)?.documento === '47163626' ||
     (typeof currentUserData?.email === 'string' && currentUserData.email.includes('47163626'));
 
-  // Close sidebar on route change (Mobile only logic)
+  // Auto-open accordion strictly on page load or navigation when expanded
   useEffect(() => {
+    if (isSidebarCollapsed) {
+      setOpenDropdown(null);
+      return;
+    }
+
     const p = router.pathname;
 
     if (p.includes('/directores/evaluaciones')) {
@@ -40,7 +45,7 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
     } else if (p.includes('/directores/evaluaciones-docentes') || p.includes('/directores/agregar-profesores') || p.includes('/directores/cobertura-curricular')) {
       setOpenDropdown('docentes');
     }
-  }, [router.pathname]);
+  }, [router.pathname, isSidebarCollapsed]);
 
   useEffect(() => {
     const handleRouteChange = () => {

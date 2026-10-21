@@ -19,7 +19,10 @@ import {
   MdFilterList,
   MdWarning,
   MdArrowBack,
+  MdVisibility,
+  MdVisibilityOff,
 } from 'react-icons/md';
+import { toast } from 'react-toastify';
 import {
   RiLoader4Line,
   RiTeamLine,
@@ -39,11 +42,15 @@ import EvaluacionDetalleHeroBanner, {
   HeroBannerMetricItem,
 } from './EvaluacionDetalleHeroBanner';
 import PadronDocentesUgelTab from './PadronDocentesUgelTab';
+import RubricaSectionHeader from './RubricaSectionHeader';
 import {
   ModalAgregarDimension,
   ModalUpdateDimension,
   ModalAgregarPregunta,
   ModalUpdatePregunta,
+  ModalEditarNombresPestanas,
+  ModalAlertaEvaluacionActiva,
+  ModalConfirmarEliminacion,
 } from '@/components/evaluaciones-desempeno/modals';
 
 export interface EvaluacionDetalleDocenteContainerProps {
@@ -98,6 +105,7 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
     getEvaluados,
     deleteDimension,
     deletePreguntaRespuesta,
+    updateEstadoEvaluacion,
     buscarUsuario,
   } = useEvaluacionDesempenoBase({
     role: effectiveRole as any,
@@ -141,6 +149,65 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
   const [dimToUpdate, setDimToUpdate] = useState<DimensionEspecialista | null>(null);
   const [showAgregarPregunta, setShowAgregarPregunta] = useState<boolean>(false);
   const [preguntaToUpdate, setPreguntaToUpdate] = useState<PRDocentes | null>(null);
+  const [showModalNombresPestanas, setShowModalNombresPestanas] = useState<boolean>(false);
+  const [isDeletingDimension, setIsDeletingDimension] = useState<string | null>(null);
+  const [isDeletingPregunta, setIsDeletingPregunta] = useState<string | null>(null);
+  const [isUpdatingEstado, setIsUpdatingEstado] = useState<boolean>(false);
+
+  // Estados para modales de advertencia en modo activo y confirmación de eliminación
+  const [modalAlertaActiva, setModalAlertaActiva] = useState<{
+    isOpen: boolean;
+    accion: 'editar' | 'eliminar';
+  }>({
+    isOpen: false,
+    accion: 'editar',
+  });
+
+  const [modalConfirmDelete, setModalConfirmDelete] = useState<{
+    isOpen: boolean;
+    titulo: string;
+    nombreElemento?: string;
+    advertenciaCascada?: string;
+    onConfirm: () => Promise<void>;
+  }>({
+    isOpen: false,
+    titulo: '',
+    onConfirm: async () => {},
+  });
+
+  const verificarSiActivoParaModificar = (accion: 'editar' | 'eliminar'): boolean => {
+    if (dataEvaluacionDocente?.active) {
+      setModalAlertaActiva({ isOpen: true, accion });
+      return true;
+    }
+    return false;
+  };
+
+  const defaultNombresDocente = useMemo(
+    () => ({
+      monitoreos: 'Monitoreos Realizados',
+      padron: isAdmin
+        ? 'Padrón de Docentes por UGEL'
+        : `Padrón de Docentes (${regionTexto(userRegion) || 'Mi UGEL'})`,
+      rubrica: 'Estructura de Rúbricas',
+    }),
+    [isAdmin, userRegion]
+  );
+
+  const tabNombres = useMemo(
+    () => ({
+      monitoreos:
+        dataEvaluacionDocente?.nombresPestanas?.monitoreos?.trim() ||
+        defaultNombresDocente.monitoreos,
+      padron:
+        dataEvaluacionDocente?.nombresPestanas?.padron?.trim() ||
+        defaultNombresDocente.padron,
+      rubrica:
+        dataEvaluacionDocente?.nombresPestanas?.rubrica?.trim() ||
+        defaultNombresDocente.rubrica,
+    }),
+    [dataEvaluacionDocente?.nombresPestanas, defaultNombresDocente]
+  );
 
   // 1. Suscripción en tiempo real a la evaluación y sus subcolecciones
   useEffect(() => {
@@ -539,7 +606,7 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
     () => [
       {
         id: 'evaluados',
-        label: 'Monitoreos Realizados',
+        label: tabNombres.monitoreos,
         value: totalEvaluados,
         icon: RiShieldCheckLine,
         badgeText: 'Concluidos',
@@ -549,7 +616,7 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
       },
       {
         id: 'padron',
-        label: isAdmin ? 'Padrón UGEL' : `Padrón UGEL ${regionTexto(userRegion) || ''}`.trim(),
+        label: tabNombres.padron,
         value: isAdmin ? 'Consultar' : 'Mi UGEL',
         icon: RiTeamLine,
         badgeText: 'Padrón',
@@ -574,7 +641,7 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
       },
       {
         id: 'criterios',
-        label: 'Criterios Pedagógicos',
+        label: tabNombres.rubrica,
         value: currentPreguntas.length,
         icon: RiBookOpenLine,
         badgeText: 'Rúbrica',
@@ -594,11 +661,13 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
       idEvaluacion,
       isAdmin,
       userRegion,
+      tabNombres,
     ]
   );
 
   // Eliminar dimensión y sus criterios asociados
-  const handleDeleteDim = async (dimId?: string) => {
+  const handleDeleteDim = (dimId?: string) => {
+    if (verificarSiActivoParaModificar('eliminar')) return;
     if (!dimId || !idEvaluacion) return;
 
     const dim = currentDimensiones.find((d) => String(d.id) === String(dimId));
@@ -606,25 +675,97 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
       (p) => String(p.dimensionId || (p as any).dimencionId) === String(dimId)
     );
 
-    const mensaje =
+    const advertenciaCascada =
       preguntasDeDim.length > 0
-        ? `¿Está seguro de eliminar el dominio "${dim?.nombre || 'seleccionado'}"?\n\nAdvertencia: Contiene ${preguntasDeDim.length} ${
+        ? `Contiene ${preguntasDeDim.length} ${
             preguntasDeDim.length === 1 ? 'criterio pedagógico' : 'criterios pedagógicos'
           } que también se ${
             preguntasDeDim.length === 1 ? 'eliminará' : 'eliminarán'
           } definitivamente de la evaluación.`
-        : `¿Está seguro de eliminar el dominio "${dim?.nombre || 'seleccionado'}"?`;
+        : undefined;
 
-    if (window.confirm(mensaje)) {
-      await deleteDimension(idEvaluacion, dimId, true);
-    }
+    setModalConfirmDelete({
+      isOpen: true,
+      titulo: '¿Eliminar dominio pedagógico?',
+      nombreElemento: dim?.nombre || (dim as any)?.dimension || 'Dominio seleccionado',
+      advertenciaCascada,
+      onConfirm: async () => {
+        try {
+          setIsDeletingDimension(dimId);
+          await deleteDimension(idEvaluacion, dimId, true);
+          toast.success('Dominio pedagógico eliminado correctamente.');
+        } catch (err) {
+          console.error('Error al eliminar dominio:', err);
+          toast.error('Hubo un error al eliminar el dominio pedagógico. Intente nuevamente.');
+        } finally {
+          setIsDeletingDimension(null);
+        }
+      },
+    });
   };
 
   // Eliminar criterio
-  const handleDeletePreg = async (pregId?: string) => {
-    if (!pregId) return;
-    if (window.confirm('¿Deseas eliminar este criterio de la evaluación?')) {
-      await deletePreguntaRespuesta(idEvaluacion, pregId);
+  const handleDeletePreg = (pregId?: string) => {
+    if (verificarSiActivoParaModificar('eliminar')) return;
+    if (!pregId || !idEvaluacion) return;
+
+    const preg = currentPreguntas.find((p) => String(p.id) === String(pregId));
+
+    setModalConfirmDelete({
+      isOpen: true,
+      titulo: '¿Eliminar criterio pedagógico?',
+      nombreElemento: preg?.criterio || (preg as any)?.pregunta || 'Criterio seleccionado',
+      advertenciaCascada: undefined,
+      onConfirm: async () => {
+        try {
+          setIsDeletingPregunta(pregId);
+          await deletePreguntaRespuesta(idEvaluacion, pregId);
+          toast.success('Criterio pedagógico eliminado correctamente.');
+        } catch (err) {
+          console.error('Error al eliminar criterio:', err);
+          toast.error('Hubo un error al eliminar el criterio pedagógico. Intente nuevamente.');
+        } finally {
+          setIsDeletingPregunta(null);
+        }
+      },
+    });
+  };
+
+  const handleToggleEstadoEvaluacion = async () => {
+    if (!isAdmin) {
+      toast.warning('Solo los administradores pueden activar o desactivar evaluaciones.');
+      return;
+    }
+    const currentStatus = Boolean(dataEvaluacionDocente?.active);
+    const newStatus = !currentStatus;
+
+    if (newStatus) {
+      const tieneFase = Boolean(
+        dataEvaluacionDocente?.faseNombre?.trim() ||
+        (Array.isArray((dataEvaluacionDocente as any)?.fases) &&
+          (dataEvaluacionDocente as any).fases.length > 0 &&
+          (dataEvaluacionDocente as any).fases.some((f: any) => f?.nombre?.trim()))
+      );
+
+      if (!tieneFase) {
+        toast.warn('Para activar la evaluación, debe configurar una fase pedagógica activa en el menú de configuración.');
+        return;
+      }
+    }
+
+    try {
+      setIsUpdatingEstado(true);
+      await updateEstadoEvaluacion(idEvaluacion, newStatus);
+      toast.success(
+        newStatus
+          ? 'Evaluación activada exitosamente para todos los usuarios.'
+          : 'Evaluación pausada / desactivada.'
+      );
+    } catch (err) {
+      console.error('Error al cambiar estado de la evaluación:', err);
+      toast.error('Error al actualizar el estado de la evaluación.');
+    } finally {
+      setIsUpdatingEstado(false);
     }
   };
 
@@ -661,6 +802,16 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Modales */}
+      {showModalNombresPestanas && (
+        <ModalEditarNombresPestanas
+          idEvaluacion={idEvaluacion}
+          collectionName="evaluaciones-docentes"
+          nombresPestanasActuales={dataEvaluacionDocente?.nombresPestanas}
+          defaultNombres={defaultNombresDocente}
+          onClose={() => setShowModalNombresPestanas(false)}
+        />
+      )}
+
       {showAgregarDim && (
         <ModalAgregarDimension
           idEvaluacion={idEvaluacion}
@@ -699,6 +850,26 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
         />
       )}
 
+      {/* Modal Informativo / Advertencia cuando la Evaluación está Activa */}
+      <ModalAlertaEvaluacionActiva
+        isOpen={modalAlertaActiva.isOpen}
+        onClose={() => setModalAlertaActiva((prev) => ({ ...prev, isOpen: false }))}
+        onDesactivar={isAdmin ? handleToggleEstadoEvaluacion : undefined}
+        isDesactivando={isUpdatingEstado}
+        accionIntentada={modalAlertaActiva.accion}
+      />
+
+      {/* Modal Accesible de Confirmación de Eliminación */}
+      <ModalConfirmarEliminacion
+        isOpen={modalConfirmDelete.isOpen}
+        onClose={() => setModalConfirmDelete((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={modalConfirmDelete.onConfirm}
+        isDeleting={Boolean(isDeletingDimension || isDeletingPregunta)}
+        titulo={modalConfirmDelete.titulo}
+        nombreElemento={modalConfirmDelete.nombreElemento}
+        advertenciaCascada={modalConfirmDelete.advertenciaCascada}
+      />
+
       {/* Banner Principal Modular Reutilizable */}
       <EvaluacionDetalleHeroBanner
         idEvaluacion={idEvaluacion}
@@ -713,6 +884,7 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
           dataEvaluacionDocente?.descripcion ||
           'Supervisión y acompañamiento pedagógico al desempeño docente en aula'
         }
+        isProtected={!!dataEvaluacionDocente?.active}
         metricas={metricasDocente}
         backgroundImage={dataEvaluacionDocente?.backgroundImage}
         backgroundImageOpacity={dataEvaluacionDocente?.backgroundImageOpacity ?? 0.25}
@@ -722,6 +894,40 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
         actions={
           isAdmin ? (
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Botón Activar / Pausar Evaluación */}
+              <button
+                type="button"
+                onClick={handleToggleEstadoEvaluacion}
+                disabled={isUpdatingEstado}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer backdrop-blur-sm border shadow-xs ${
+                  dataEvaluacionDocente?.active
+                    ? 'bg-emerald-500/25 hover:bg-emerald-500/35 text-emerald-200 border-emerald-400/40'
+                    : 'bg-amber-500/25 hover:bg-amber-500/35 text-amber-200 border-amber-400/40'
+                } ${isUpdatingEstado ? 'opacity-60 cursor-not-allowed' : ''}`}
+                title={
+                  dataEvaluacionDocente?.active
+                    ? 'Evaluación activa en modo protegido. Haz clic para pausar o desactivar'
+                    : 'Evaluación inactiva. Haz clic para activar'
+                }
+              >
+                {isUpdatingEstado ? (
+                  <RiLoader4Line className="w-3.5 h-3.5 animate-spin" />
+                ) : dataEvaluacionDocente?.active ? (
+                  <MdVisibility className="text-base text-emerald-300" />
+                ) : (
+                  <MdVisibilityOff className="text-base text-amber-300" />
+                )}
+                <span>{dataEvaluacionDocente?.active ? 'Activa' : 'Inactiva'}</span>
+              </button>
+
+              <Link
+                href={`${effectiveBasePath}/evaluacion/reporte?idEvaluacion=${idEvaluacion}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 shadow-xs transition-all backdrop-blur-sm cursor-pointer"
+                title="Ver reporte general y analíticas consolidadas"
+              >
+                <MdBarChart className="text-base text-teal-300" />
+                <span>Reporte General</span>
+              </Link>
               <EvaluacionConfigMenu
                 idEvaluacion={idEvaluacion}
                 collectionName="evaluaciones-docentes"
@@ -733,6 +939,8 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
                 titulo={dataEvaluacionDocente?.name}
                 descripcion={dataEvaluacionDocente?.descripcion}
                 faseActual={dataEvaluacionDocente?.faseNombre}
+                nombresPestanasActuales={dataEvaluacionDocente?.nombresPestanas}
+                defaultNombresPestanas={defaultNombresDocente}
               />
             </div>
           ) : undefined
@@ -740,49 +948,61 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
       />
 
       {/* Navegación por Pestañas */}
-      <div className="flex border-b border-slate-200">
-        <button
-          type="button"
-          onClick={() => setActiveTab('docentes')}
-          className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer ${
-            activeTab === 'docentes'
-              ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <MdAssignmentTurnedIn className="text-lg" />
-          <span>Monitoreos Realizados ({totalEvaluados})</span>
-        </button>
+      <div className="flex items-center justify-between border-b border-slate-200 flex-wrap gap-2">
+        <div className="flex items-center overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab('docentes')}
+            className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'docentes'
+                ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <MdAssignmentTurnedIn className="text-lg" />
+            <span>{tabNombres.monitoreos} ({totalEvaluados})</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('padron')}
-          className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer ${
-            activeTab === 'padron'
-              ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <RiTeamLine className="text-lg" />
-          <span>
-            {isAdmin
-              ? 'Padrón de Docentes por UGEL'
-              : `Padrón de Docentes (${regionTexto(userRegion) || 'Mi UGEL'})`}
-          </span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('padron')}
+            className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'padron'
+                ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <RiTeamLine className="text-lg" />
+            <span>{tabNombres.padron}</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('rubrica')}
-          className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer ${
-            activeTab === 'rubrica'
-              ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <MdAssignment className="text-lg" />
-          <span>Estructura de Rúbricas ({currentPreguntas.length} Criterios)</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('rubrica')}
+            className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'rubrica'
+                ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <MdAssignment className="text-lg" />
+            <span>{tabNombres.rubrica} ({currentPreguntas.length} Criterios)</span>
+          </button>
+        </div>
+
+        {isAdmin && (
+          <div className="pb-1.5 pr-2">
+            <button
+              type="button"
+              onClick={() => setShowModalNombresPestanas(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+              title="Personalizar nombres de las pestañas"
+            >
+              <MdEdit className="text-sm text-blue-500" />
+              <span>Personalizar pestañas</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* PESTAÑA 1: MONITOREOS REALIZADOS (ORGANIZADOS POR COLEGIO) */}
@@ -1396,36 +1616,26 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
       <div className={activeTab === 'rubrica' ? 'block' : 'hidden'}>
         <div className="space-y-6">
           {/* Header de la sección de Rúbricas con acciones */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div>
-              <h3 className="text-base font-bold text-slate-800">Criterios de la Ficha</h3>
-              <p className="text-xs text-slate-500">
-                {isAdmin
-                  ? 'Organiza las dimensiones pedagógicas y los criterios de evaluación.'
-                  : 'Rúbrica oficial establecida por la UGEL para el monitoreo pedagógico docente.'}
-              </p>
-            </div>
-            {isAdmin && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAgregarDim(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-all cursor-pointer"
-                >
-                  <MdAddCircle className="text-base text-blue-600" />
-                  <span>+ Dominio</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAgregarPregunta(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all cursor-pointer"
-                >
-                  <MdAddCircle className="text-base" />
-                  <span>+ Criterio</span>
-                </button>
-              </div>
-            )}
-          </div>
+          <RubricaSectionHeader
+            titulo="Criterios de la Ficha"
+            subtitulo={
+              isAdmin
+                ? 'Organiza las dimensiones pedagógicas y los criterios de evaluación.'
+                : 'Rúbrica oficial establecida por la UGEL para el monitoreo pedagógico docente.'
+            }
+            isAdmin={isAdmin}
+            hasItems={currentDimensiones.length > 0}
+            onExpandAll={expandAllDominios}
+            onCollapseAll={collapseAllDominios}
+            onAgregarDominio={() => {
+              if (verificarSiActivoParaModificar('editar')) return;
+              setShowAgregarDim(true);
+            }}
+            onAgregarCriterio={() => {
+              if (verificarSiActivoParaModificar('editar')) return;
+              setShowAgregarPregunta(true);
+            }}
+          />
 
           {/* Listado de Dominios y Criterios */}
           {currentDimensiones.length === 0 && currentPreguntas.length === 0 ? (
@@ -1440,7 +1650,10 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
               {isAdmin && (
                 <button
                   type="button"
-                  onClick={() => setShowAgregarPregunta(true)}
+                  onClick={() => {
+                    if (verificarSiActivoParaModificar('editar')) return;
+                    setShowAgregarPregunta(true);
+                  }}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all cursor-pointer"
                 >
                   <MdAddCircle className="text-base" />
@@ -1450,27 +1663,6 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Botones para Expandir / Contraer todos los dominios */}
-              {currentDimensiones.length > 0 && (
-                <div className="flex justify-end gap-2 text-xs text-slate-500 px-1">
-                  <button
-                    type="button"
-                    onClick={expandAllDominios}
-                    className="hover:text-blue-600 font-semibold cursor-pointer transition-colors"
-                  >
-                    Expandir todos los dominios
-                  </button>
-                  <span>•</span>
-                  <button
-                    type="button"
-                    onClick={collapseAllDominios}
-                    className="hover:text-blue-600 font-semibold cursor-pointer transition-colors"
-                  >
-                    Contraer todos
-                  </button>
-                </div>
-              )}
-
               {/* Dominios con Acordeón Inteligente */}
               {currentDimensiones.map((dim, dimIdx) => {
                 const preguntasDeDim = currentPreguntas.filter(
@@ -1503,7 +1695,10 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
                         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"
-                            onClick={() => setDimToUpdate(dim)}
+                            onClick={() => {
+                              if (verificarSiActivoParaModificar('editar')) return;
+                              setDimToUpdate(dim);
+                            }}
                             className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
                             title="Editar dominio"
                           >
@@ -1511,11 +1706,16 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
                           </button>
                           <button
                             type="button"
+                            disabled={isDeletingDimension === dim.id}
                             onClick={() => handleDeleteDim(dim.id)}
-                            className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                            className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer disabled:opacity-50"
                             title="Eliminar dominio"
                           >
-                            <MdDelete className="text-base" />
+                            {isDeletingDimension === dim.id ? (
+                              <RiLoader4Line className="text-base animate-spin text-rose-600" />
+                            ) : (
+                              <MdDelete className="text-base" />
+                            )}
                           </button>
                         </div>
                       )}
@@ -1568,7 +1768,10 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                       <button
                                         type="button"
-                                        onClick={() => setPreguntaToUpdate(preg)}
+                                        onClick={() => {
+                                          if (verificarSiActivoParaModificar('editar')) return;
+                                          setPreguntaToUpdate(preg);
+                                        }}
                                         className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
                                         title="Editar criterio"
                                       >
@@ -1576,11 +1779,16 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
                                       </button>
                                       <button
                                         type="button"
+                                        disabled={isDeletingPregunta === preg.id}
                                         onClick={() => handleDeletePreg(preg.id)}
-                                        className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                                        className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer disabled:opacity-50"
                                         title="Eliminar criterio"
                                       >
-                                        <MdDelete className="text-base" />
+                                        {isDeletingPregunta === preg.id ? (
+                                          <RiLoader4Line className="text-base animate-spin text-rose-600" />
+                                        ) : (
+                                          <MdDelete className="text-base" />
+                                        )}
                                       </button>
                                     </div>
                                   )}
@@ -1630,17 +1838,25 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <button
                                   type="button"
-                                  onClick={() => setPreguntaToUpdate(preg)}
+                                  onClick={() => {
+                                    if (verificarSiActivoParaModificar('editar')) return;
+                                    setPreguntaToUpdate(preg);
+                                  }}
                                   className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
                                 >
                                   <MdEdit className="text-base" />
                                 </button>
                                 <button
                                   type="button"
+                                  disabled={isDeletingPregunta === preg.id}
                                   onClick={() => handleDeletePreg(preg.id)}
-                                  className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                                  className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer disabled:opacity-50"
                                 >
-                                  <MdDelete className="text-base" />
+                                  {isDeletingPregunta === preg.id ? (
+                                    <RiLoader4Line className="text-base animate-spin text-rose-600" />
+                                  ) : (
+                                    <MdDelete className="text-base" />
+                                  )}
                                 </button>
                               </div>
                             )}

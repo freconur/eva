@@ -30,8 +30,13 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
     (typeof currentUserData?.email === 'string' && currentUserData.email.includes('47163626'));
 
   // Close sidebar on route change (Mobile only logic)
-  // Auto-open accordion strictly on page load or navigation
+  // Auto-open accordion strictly on page load or navigation when expanded
   useEffect(() => {
+    if (isSidebarCollapsed) {
+      setOpenDropdown(null);
+      return;
+    }
+
     const p = router.pathname;
 
     if (p.includes('/especialistas/evaluaciones-director') || p.includes('/especialistas/cobertura-curricular') || p.includes('/especialistas/agregar-directores')) {
@@ -43,7 +48,7 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
     } else if (p.includes('/especialistas/evaluaciones')) {
       setOpenDropdown('estudiantes');
     }
-  }, [router.pathname]);
+  }, [router.pathname, isSidebarCollapsed]);
 
   useEffect(() => {
     const handleRouteChange = () => {

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import {
   MdAssignment,
   MdAssignmentTurnedIn,
@@ -11,19 +12,21 @@ import {
   MdBarChart,
   MdFilePresent,
   MdLocationOn,
-  MdSchool,
   MdExpandMore,
   MdViewAgenda,
   MdViewList,
+  MdVisibility,
+  MdVisibilityOff,
 } from 'react-icons/md';
+import { toast } from 'react-toastify';
 import {
   RiLoader4Line,
   RiTeamLine,
   RiTimeLine,
   RiPieChartLine,
   RiShieldCheckLine,
-  RiLockLine,
   RiBookOpenLine,
+  RiGovernmentLine,
 } from 'react-icons/ri';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import useEvaluacionDesempenoBase from '@/features/hooks/useEvaluacionDesempenoBase';
@@ -35,25 +38,31 @@ import {
 import EvaluacionConfigMenu from './EvaluacionConfigMenu';
 import EvaluacionDetalleHeroBanner, { HeroBannerMetricItem } from './EvaluacionDetalleHeroBanner';
 import PadronDirectoresUgelTab from './PadronDirectoresUgelTab';
+import RubricaSectionHeader from './RubricaSectionHeader';
 import {
   ModalAgregarDimension,
   ModalUpdateDimension,
   ModalAgregarPregunta,
   ModalUpdatePregunta,
+  ModalAlertaEvaluacionActiva,
+  ModalConfirmarEliminacion,
+  ModalEditarNombresPestanas,
 } from '../modals';
 import { regiones, regionTexto } from '@/fuctions/regiones';
 
 export interface EvaluacionDetalleDirectorContainerProps {
-  id: string;
+  id?: string;
   role: 'admin' | 'especialista';
   basePath?: string;
 }
 
 export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirectorContainerProps> = ({
-  id: idEvaluacion,
+  id: propId,
   role,
   basePath,
 }) => {
+  const router = useRouter();
+  const idEvaluacion = propId || (router.query.id as string) || '';
   const effectiveBasePath =
     basePath ||
     (role === 'admin'
@@ -92,6 +101,7 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
     deleteDimension,
     deletePreguntaRespuesta,
     buscarUsuario,
+    updateEstadoEvaluacion,
   } = useEvaluacionDesempenoBase({
     role,
     collectionName: 'evaluaciones-director',
@@ -129,6 +139,61 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
   const [preguntaToUpdate, setPreguntaToUpdate] = useState<PRDocentes | null>(null);
   const [isDeletingPregunta, setIsDeletingPregunta] = useState<string | null>(null);
   const [isDeletingDimension, setIsDeletingDimension] = useState<string | null>(null);
+
+  // Estados para modales de advertencia en modo activo y confirmación de eliminación
+  const [modalAlertaActiva, setModalAlertaActiva] = useState<{
+    isOpen: boolean;
+    accion: 'editar' | 'eliminar';
+  }>({
+    isOpen: false,
+    accion: 'editar',
+  });
+
+  const [modalConfirmDelete, setModalConfirmDelete] = useState<{
+    isOpen: boolean;
+    titulo: string;
+    nombreElemento?: string;
+    advertenciaCascada?: string;
+    onConfirm: () => Promise<void>;
+  }>({
+    isOpen: false,
+    titulo: '',
+    onConfirm: async () => {},
+  });
+
+  const [showModalNombresPestanas, setShowModalNombresPestanas] = useState<boolean>(false);
+
+  const defaultNombresDirector = useMemo(
+    () => ({
+      monitoreos: 'Monitoreos Realizados',
+      padron: 'Padrón de Directores por UGEL',
+      rubrica: 'Estructura de Rúbricas',
+    }),
+    []
+  );
+
+  const tabNombres = useMemo(
+    () => ({
+      monitoreos:
+        dataEvaluacionDocente?.nombresPestanas?.monitoreos?.trim() ||
+        defaultNombresDirector.monitoreos,
+      padron:
+        dataEvaluacionDocente?.nombresPestanas?.padron?.trim() ||
+        defaultNombresDirector.padron,
+      rubrica:
+        dataEvaluacionDocente?.nombresPestanas?.rubrica?.trim() ||
+        defaultNombresDirector.rubrica,
+    }),
+    [dataEvaluacionDocente?.nombresPestanas, defaultNombresDirector]
+  );
+
+  const verificarSiActivoParaModificar = (accion: 'editar' | 'eliminar'): boolean => {
+    if (dataEvaluacionDocente?.active) {
+      setModalAlertaActiva({ isOpen: true, accion });
+      return true;
+    }
+    return false;
+  };
 
   // 1. Suscripción a datos en tiempo real de la evaluación
   useEffect(() => {
@@ -384,7 +449,7 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
     () => [
       {
         id: 'monitoreos',
-        label: 'Monitoreos Realizados',
+        label: tabNombres.monitoreos,
         value: totalEvaluados,
         icon: MdAssignmentTurnedIn,
         badgeText: 'Concluidos',
@@ -395,7 +460,7 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
       },
       {
         id: 'padron',
-        label: 'Padrón UGEL',
+        label: tabNombres.padron,
         value: 'Consultar',
         icon: RiTeamLine,
         badgeText: 'Padrón',
@@ -406,7 +471,7 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
       },
       {
         id: 'criterios',
-        label: 'Criterios Pedagógicos',
+        label: tabNombres.rubrica,
         value: currentPreguntas.length,
         icon: RiBookOpenLine,
         badgeText: 'Rúbrica',
@@ -416,7 +481,7 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
         onClick: () => setActiveTab('rubrica'),
       },
     ],
-    [totalEvaluados, currentPreguntas.length, activeTab]
+    [totalEvaluados, currentPreguntas.length, activeTab, tabNombres]
   );
 
   const toggleDominio = (dimId: string) => {
@@ -441,7 +506,8 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
 
   const [isDeletingHuerfanos, setIsDeletingHuerfanos] = useState<boolean>(false);
 
-  const handleDeleteDim = async (dimId?: string) => {
+  const handleDeleteDim = (dimId?: string) => {
+    if (verificarSiActivoParaModificar('eliminar')) return;
     if (!dimId || !idEvaluacion) return;
 
     const dim = currentDimensiones.find((d) => String(d.id) === String(dimId));
@@ -449,67 +515,141 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
       (p) => String(p.dimensionId || (p as any).dimencionId) === String(dimId)
     );
 
-    const mensaje =
+    const advertenciaCascada =
       preguntasDeDim.length > 0
-        ? `¿Está seguro de eliminar el dominio "${dim?.nombre || 'seleccionado'}"?\n\nAdvertencia: Contiene ${preguntasDeDim.length} ${
+        ? `Contiene ${preguntasDeDim.length} ${
             preguntasDeDim.length === 1 ? 'criterio pedagógico' : 'criterios pedagógicos'
           } que también se ${
             preguntasDeDim.length === 1 ? 'eliminará' : 'eliminarán'
           } definitivamente de la evaluación.`
-        : `¿Está seguro de eliminar el dominio "${dim?.nombre || 'seleccionado'}"?`;
+        : undefined;
 
-    if (window.confirm(mensaje)) {
-      try {
-        setIsDeletingDimension(dimId);
-        await deleteDimension(idEvaluacion, dimId, true);
-      } catch (err) {
-        console.error('Error al eliminar dominio:', err);
-        alert('Hubo un error al eliminar el dominio pedagógico. Intente nuevamente.');
-      } finally {
-        setIsDeletingDimension(null);
-      }
-    }
+    setModalConfirmDelete({
+      isOpen: true,
+      titulo: '¿Eliminar dominio pedagógico?',
+      nombreElemento: dim?.nombre || 'Dominio seleccionado',
+      advertenciaCascada,
+      onConfirm: async () => {
+        try {
+          setIsDeletingDimension(dimId);
+          await deleteDimension(idEvaluacion, dimId, true);
+          toast.success('Dominio pedagógico eliminado correctamente.');
+        } catch (err) {
+          console.error('Error al eliminar dominio:', err);
+          toast.error('Hubo un error al eliminar el dominio pedagógico. Intente nuevamente.');
+        } finally {
+          setIsDeletingDimension(null);
+        }
+      },
+    });
   };
 
-  const handleDeleteCriteriosSinDominio = async (sinDominio: PRDocentes[]) => {
+  const handleDeleteCriteriosSinDominio = (sinDominio: PRDocentes[]) => {
+    if (verificarSiActivoParaModificar('eliminar')) return;
     if (!idEvaluacion || sinDominio.length === 0) return;
-    if (
-      window.confirm(
-        `¿Está seguro de eliminar los ${sinDominio.length} criterios sin dominio asignado? Esta acción los borrará definitivamente de la evaluación.`
-      )
-    ) {
-      try {
-        setIsDeletingHuerfanos(true);
-        await Promise.all(
-          sinDominio.map((p) => p.id && deletePreguntaRespuesta(idEvaluacion, p.id))
-        );
-      } catch (err) {
-        console.error('Error al purgar criterios huérfanos:', err);
-        alert('Hubo un error al eliminar los criterios sin dominio. Intente nuevamente.');
-      } finally {
-        setIsDeletingHuerfanos(false);
-      }
-    }
+
+    setModalConfirmDelete({
+      isOpen: true,
+      titulo: '¿Eliminar criterios huérfanos?',
+      nombreElemento: `${sinDominio.length} criterios sin dominio asignado`,
+      advertenciaCascada:
+        'Esta acción borrará definitivamente estos criterios sin dominio de la evaluación.',
+      onConfirm: async () => {
+        try {
+          setIsDeletingHuerfanos(true);
+          await Promise.all(
+            sinDominio.map((p) => p.id && deletePreguntaRespuesta(idEvaluacion, p.id))
+          );
+          toast.success(`${sinDominio.length} criterios huérfanos eliminados correctamente.`);
+        } catch (err) {
+          console.error('Error al purgar criterios huérfanos:', err);
+          toast.error('Hubo un error al eliminar los criterios sin dominio. Intente nuevamente.');
+        } finally {
+          setIsDeletingHuerfanos(false);
+        }
+      },
+    });
   };
 
-  const handleDeletePreg = async (prId?: string) => {
+  const handleDeletePreg = (prId?: string) => {
+    if (verificarSiActivoParaModificar('eliminar')) return;
     if (!prId || !idEvaluacion) return;
-    if (window.confirm('¿Está seguro de eliminar este criterio pedagógico?')) {
-      try {
-        setIsDeletingPregunta(prId);
-        await deletePreguntaRespuesta(idEvaluacion, prId);
-      } catch (err) {
-        console.error('Error al eliminar criterio:', err);
-        alert('Hubo un error al eliminar el criterio pedagógico. Intente nuevamente.');
-      } finally {
-        setIsDeletingPregunta(null);
+
+    const preg = currentPreguntas.find((p) => String(p.id) === String(prId));
+
+    setModalConfirmDelete({
+      isOpen: true,
+      titulo: '¿Eliminar criterio pedagógico?',
+      nombreElemento: preg?.criterio || 'Criterio seleccionado',
+      advertenciaCascada: undefined,
+      onConfirm: async () => {
+        try {
+          setIsDeletingPregunta(prId);
+          await deletePreguntaRespuesta(idEvaluacion, prId);
+          toast.success('Criterio pedagógico eliminado correctamente.');
+        } catch (err) {
+          console.error('Error al eliminar criterio:', err);
+          toast.error('Hubo un error al eliminar el criterio pedagógico. Intente nuevamente.');
+        } finally {
+          setIsDeletingPregunta(null);
+        }
+      },
+    });
+  };
+
+  const [isUpdatingEstado, setIsUpdatingEstado] = useState<boolean>(false);
+
+  const handleToggleEstadoEvaluacion = async () => {
+    if (!isUserAdmin) {
+      toast.warning('Solo los administradores pueden activar o desactivar evaluaciones.');
+      return;
+    }
+    const currentStatus = Boolean(dataEvaluacionDocente?.active);
+    const newStatus = !currentStatus;
+
+    if (newStatus) {
+      const tieneFase = Boolean(
+        dataEvaluacionDocente?.faseNombre?.trim() ||
+        (Array.isArray((dataEvaluacionDocente as any)?.fases) &&
+          (dataEvaluacionDocente as any).fases.length > 0 &&
+          (dataEvaluacionDocente as any).fases.some((f: any) => f?.nombre?.trim()))
+      );
+
+      if (!tieneFase) {
+        toast.warn('Para activar la evaluación, debe configurar una fase pedagógica activa en el menú de configuración.');
+        return;
       }
+    }
+
+    try {
+      setIsUpdatingEstado(true);
+      await updateEstadoEvaluacion(idEvaluacion, newStatus);
+      toast.success(
+        newStatus
+          ? 'Evaluación activada exitosamente para todos los usuarios.'
+          : 'Evaluación pausada / desactivada.'
+      );
+    } catch (err) {
+      console.error('Error al cambiar estado de la evaluación:', err);
+      toast.error('Error al actualizar el estado de la evaluación.');
+    } finally {
+      setIsUpdatingEstado(false);
     }
   };
 
   return (
     <div className="w-full min-h-screen bg-slate-50/60 p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Modales de Configuración Rúbrica */}
+      {showModalNombresPestanas && (
+        <ModalEditarNombresPestanas
+          idEvaluacion={idEvaluacion}
+          collectionName="evaluaciones-director"
+          nombresPestanasActuales={dataEvaluacionDocente?.nombresPestanas}
+          defaultNombres={defaultNombresDirector}
+          onClose={() => setShowModalNombresPestanas(false)}
+        />
+      )}
+
       {showAgregarDim && (
         <ModalAgregarDimension
           idEvaluacion={idEvaluacion}
@@ -548,29 +688,25 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
         />
       )}
 
-      {/* Banner de protección cuando la evaluación está activa */}
-      {dataEvaluacionDocente?.active && (
-        <div className="bg-amber-500/10 border border-amber-500/30 text-amber-900 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0">
-              <RiLockLine className="text-xl" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-amber-900">
-                Evaluación en Curso (Modo Protegido)
-              </h4>
-              <p className="text-xs text-amber-700 mt-0.5">
-                La evaluación se encuentra activa. Para salvaguardar la integridad de las
-                calificaciones, la edición y eliminación de dominios y criterios se encuentran
-                deshabilitadas.
-              </p>
-            </div>
-          </div>
-          <span className="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-800">
-            Bloqueado
-          </span>
-        </div>
-      )}
+      {/* Modal Informativo / Advertencia cuando la Evaluación está Activa */}
+      <ModalAlertaEvaluacionActiva
+        isOpen={modalAlertaActiva.isOpen}
+        onClose={() => setModalAlertaActiva((prev) => ({ ...prev, isOpen: false }))}
+        onDesactivar={isUserAdmin ? handleToggleEstadoEvaluacion : undefined}
+        isDesactivando={isUpdatingEstado}
+        accionIntentada={modalAlertaActiva.accion}
+      />
+
+      {/* Modal Accesible de Confirmación de Eliminación */}
+      <ModalConfirmarEliminacion
+        isOpen={modalConfirmDelete.isOpen}
+        onClose={() => setModalConfirmDelete((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={modalConfirmDelete.onConfirm}
+        isDeleting={Boolean(isDeletingDimension || isDeletingPregunta || isDeletingHuerfanos)}
+        titulo={modalConfirmDelete.titulo}
+        nombreElemento={modalConfirmDelete.nombreElemento}
+        advertenciaCascada={modalConfirmDelete.advertenciaCascada}
+      />
 
       {/* Hero Banner Moderno con Métricas */}
       <EvaluacionDetalleHeroBanner
@@ -586,6 +722,7 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
           dataEvaluacionDocente?.descripcion ||
           'Supervisión y acompañamiento pedagógico al desempeño directivo'
         }
+        isProtected={!!dataEvaluacionDocente?.active}
         metricas={metricasDirector}
         backgroundImage={dataEvaluacionDocente?.backgroundImage}
         backgroundImageOpacity={dataEvaluacionDocente?.backgroundImageOpacity ?? 0.25}
@@ -595,6 +732,40 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
         actions={
           isUserAdmin ? (
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Botón Activar / Pausar Evaluación */}
+              <button
+                type="button"
+                onClick={handleToggleEstadoEvaluacion}
+                disabled={isUpdatingEstado}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer backdrop-blur-sm border shadow-xs ${
+                  dataEvaluacionDocente?.active
+                    ? 'bg-emerald-500/25 hover:bg-emerald-500/35 text-emerald-200 border-emerald-400/40'
+                    : 'bg-amber-500/25 hover:bg-amber-500/35 text-amber-200 border-amber-400/40'
+                } ${isUpdatingEstado ? 'opacity-60 cursor-not-allowed' : ''}`}
+                title={
+                  dataEvaluacionDocente?.active
+                    ? 'Evaluación activa en modo protegido. Haz clic para pausar o desactivar'
+                    : 'Evaluación inactiva. Haz clic para activar'
+                }
+              >
+                {isUpdatingEstado ? (
+                  <RiLoader4Line className="w-3.5 h-3.5 animate-spin" />
+                ) : dataEvaluacionDocente?.active ? (
+                  <MdVisibility className="text-base text-emerald-300" />
+                ) : (
+                  <MdVisibilityOff className="text-base text-amber-300" />
+                )}
+                <span>{dataEvaluacionDocente?.active ? 'Activa' : 'Inactiva'}</span>
+              </button>
+
+              <Link
+                href={`${effectiveBasePath}/evaluacion/reporte?idEvaluacion=${idEvaluacion}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 shadow-xs transition-all backdrop-blur-sm cursor-pointer"
+                title="Ver reporte general y analíticas consolidadas"
+              >
+                <MdBarChart className="text-base text-teal-300" />
+                <span>Reporte General</span>
+              </Link>
               <EvaluacionConfigMenu
                 idEvaluacion={idEvaluacion}
                 collectionName="evaluaciones-director"
@@ -605,6 +776,8 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
                 activarEvidencias={dataEvaluacionDocente?.activarEvidencias}
                 titulo={dataEvaluacionDocente?.name}
                 descripcion={dataEvaluacionDocente?.descripcion}
+                nombresPestanasActuales={dataEvaluacionDocente?.nombresPestanas}
+                defaultNombresPestanas={defaultNombresDirector}
               />
             </div>
           ) : undefined
@@ -612,45 +785,61 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
       />
 
       {/* Navegación por Pestañas (3 Pestañas Modernas) */}
-      <div className="flex border-b border-slate-200">
-        <button
-          type="button"
-          onClick={() => setActiveTab('monitoreos')}
-          className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer ${
-            activeTab === 'monitoreos'
-              ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <MdAssignmentTurnedIn className="text-lg" />
-          <span>Monitoreos Realizados ({totalEvaluados})</span>
-        </button>
+      <div className="flex items-center justify-between border-b border-slate-200 flex-wrap gap-2">
+        <div className="flex items-center overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab('monitoreos')}
+            className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'monitoreos'
+                ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <MdAssignmentTurnedIn className="text-lg" />
+            <span>{tabNombres.monitoreos} ({totalEvaluados})</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('padron')}
-          className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer ${
-            activeTab === 'padron'
-              ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <RiTeamLine className="text-lg" />
-          <span>Padrón de Directores por UGEL</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('padron')}
+            className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'padron'
+                ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <RiTeamLine className="text-lg" />
+            <span>{tabNombres.padron}</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('rubrica')}
-          className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer ${
-            activeTab === 'rubrica'
-              ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <MdAssignment className="text-lg" />
-          <span>Estructura de Rúbricas ({currentPreguntas.length} Criterios)</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('rubrica')}
+            className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'rubrica'
+                ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <MdAssignment className="text-lg" />
+            <span>{tabNombres.rubrica} ({currentPreguntas.length} Criterios)</span>
+          </button>
+        </div>
+
+        {isUserAdmin && (
+          <div className="pb-1.5 pr-2">
+            <button
+              type="button"
+              onClick={() => setShowModalNombresPestanas(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+              title="Personalizar nombres de las pestañas"
+            >
+              <MdEdit className="text-sm text-blue-500" />
+              <span>Personalizar pestañas</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* PESTAÑA 1: MONITOREOS REALIZADOS */}
@@ -826,7 +1015,7 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
                   >
                     <div className="flex items-start sm:items-center gap-3.5 min-w-0">
                       <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 shadow-2xs font-bold">
-                        <MdSchool className="text-xl" />
+                        <RiGovernmentLine className="text-xl" />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -850,6 +1039,19 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
                     </div>
 
                     <div className="flex items-center gap-2.5 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
+                      <Link
+                        href={`${effectiveBasePath}/evaluacion/reporte?idEvaluacion=${idEvaluacion}${
+                          grupo.key && grupo.key !== 'SIN_UGEL'
+                            ? `&region=${encodeURIComponent(grupo.key)}`
+                            : ''
+                        }`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                        title={`Ver reporte de ${grupo.nombreUgel}`}
+                      >
+                        <MdBarChart className="text-sm text-blue-600" />
+                        <span>Reporte UGEL</span>
+                      </Link>
+
                       <Link
                         href={`${effectiveBasePath}/evaluacion/${idEvaluacion}/evaluados${
                           grupo.key && grupo.key !== 'SIN_UGEL'
@@ -1071,33 +1273,26 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
       {/* PESTAÑA 3: ESTRUCTURA DE RÚBRICAS (DOMINIOS Y CRITERIOS) */}
       <div className={activeTab === 'rubrica' ? 'space-y-4' : 'hidden'}>
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-            <div>
-              <h3 className="text-sm font-bold text-slate-800">Estructura Pedagógica de la Rúbrica</h3>
-              <p className="text-xs text-slate-500">
-                Dominios y criterios de evaluación configurados para el monitoreo directivo.
-              </p>
-            </div>
-
-            {currentDimensiones.length > 0 && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={expandAllDominios}
-                  className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                >
-                  Expandir todos
-                </button>
-                <button
-                  type="button"
-                  onClick={collapseAllDominios}
-                  className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                >
-                  Contraer todos
-                </button>
-              </div>
-            )}
-          </div>
+          <RubricaSectionHeader
+            titulo="Criterios de la Ficha"
+            subtitulo={
+              isUserAdmin
+                ? 'Organiza las dimensiones pedagógicas y los criterios de evaluación.'
+                : 'Dominios y criterios de evaluación configurados para el monitoreo directivo.'
+            }
+            isAdmin={isUserAdmin}
+            hasItems={currentDimensiones.length > 0}
+            onExpandAll={expandAllDominios}
+            onCollapseAll={collapseAllDominios}
+            onAgregarDominio={() => {
+              if (verificarSiActivoParaModificar('editar')) return;
+              setShowAgregarDim(true);
+            }}
+            onAgregarCriterio={() => {
+              if (verificarSiActivoParaModificar('editar')) return;
+              setShowAgregarPregunta(true);
+            }}
+          />
 
           {currentDimensiones.length === 0 && currentPreguntas.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
@@ -1132,11 +1327,14 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
                           ({preguntasDeDim.length} criterios)
                         </span>
                       </div>
-                      {isUserAdmin && !dataEvaluacionDocente?.active && (
+                      {isUserAdmin && (
                         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"
-                            onClick={() => setDimToUpdate(dim)}
+                            onClick={() => {
+                              if (verificarSiActivoParaModificar('editar')) return;
+                              setDimToUpdate(dim);
+                            }}
                             className="p-1 text-slate-500 hover:text-blue-600 rounded transition-colors cursor-pointer"
                             title="Editar dominio"
                           >
@@ -1188,11 +1386,14 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
                                   </p>
                                 </div>
 
-                                {isUserAdmin && !dataEvaluacionDocente?.active && (
+                                {isUserAdmin && (
                                   <div className="flex items-center gap-2 flex-shrink-0">
                                     <button
                                       type="button"
-                                      onClick={() => setPreguntaToUpdate(pr)}
+                                      onClick={() => {
+                                        if (verificarSiActivoParaModificar('editar')) return;
+                                        setPreguntaToUpdate(pr);
+                                      }}
                                       className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
                                       title="Editar criterio"
                                     >
@@ -1247,7 +1448,7 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
                         <span className="text-xs text-slate-400">({sinDominio.length} criterios)</span>
                       </div>
 
-                      {isUserAdmin && !dataEvaluacionDocente?.active && (
+                      {isUserAdmin && (
                         <button
                           type="button"
                           disabled={isDeletingHuerfanos}
@@ -1287,11 +1488,14 @@ export const EvaluacionDetalleDirectorContainer: React.FC<EvaluacionDetalleDirec
                               </p>
                             </div>
 
-                            {isUserAdmin && !dataEvaluacionDocente?.active && (
+                            {isUserAdmin && (
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <button
                                   type="button"
-                                  onClick={() => setPreguntaToUpdate(pr)}
+                                  onClick={() => {
+                                    if (verificarSiActivoParaModificar('editar')) return;
+                                    setPreguntaToUpdate(pr);
+                                  }}
                                   className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
                                   title="Editar criterio"
                                 >

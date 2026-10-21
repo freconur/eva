@@ -306,11 +306,31 @@ const EvaluacionDetalleDirector = () => {
 
   const currentYear = useMemo(() => new Date().getFullYear(), []);
 
+  const defaultNombresDirector = useMemo(
+    () => ({
+      padron: 'Padrón de Docentes',
+      rubrica: 'Estructura de Rúbricas',
+    }),
+    []
+  );
+
+  const tabNombres = useMemo(
+    () => ({
+      padron:
+        dataEvaluacionDocente?.nombresPestanas?.padron?.trim() ||
+        defaultNombresDirector.padron,
+      rubrica:
+        dataEvaluacionDocente?.nombresPestanas?.rubrica?.trim() ||
+        defaultNombresDirector.rubrica,
+    }),
+    [dataEvaluacionDocente?.nombresPestanas, defaultNombresDirector]
+  );
+
   const metricasDocente = useMemo<HeroBannerMetricItem[]>(
     () => [
       {
         id: 'docentes',
-        label: 'Docentes Asignados',
+        label: tabNombres.padron,
         value: isDirector ? totalDocentes : 'Por I.E.',
         icon: RiTeamLine,
         badgeText: 'Padrón',
@@ -365,6 +385,7 @@ const EvaluacionDetalleDirector = () => {
       activeTab,
       filterEstado,
       idEvaluacion,
+      tabNombres,
     ]
   );
 
@@ -505,6 +526,12 @@ const EvaluacionDetalleDirector = () => {
                 titulo={dataEvaluacionDocente?.name}
                 descripcion={dataEvaluacionDocente?.descripcion}
                 faseActual={dataEvaluacionDocente?.faseNombre}
+                nombresPestanasActuales={dataEvaluacionDocente?.nombresPestanas}
+                defaultNombresPestanas={{
+                  monitoreos: 'Monitoreos Realizados',
+                  padron: 'Padrón de Docentes',
+                  rubrica: 'Estructura de Rúbricas',
+                }}
               />
             )}
 
@@ -524,27 +551,27 @@ const EvaluacionDetalleDirector = () => {
         <button
           type="button"
           onClick={() => setActiveTab('docentes')}
-          className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all ${
+          className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer ${
             activeTab === 'docentes'
               ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
           <MdPeople className="text-lg" />
-          <span>Padrón de Docentes {isDirector ? `(${totalDocentes})` : ''}</span>
+          <span>{tabNombres.padron} {isDirector ? `(${totalDocentes})` : ''}</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('rubrica')}
-          className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all ${
+          className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer ${
             activeTab === 'rubrica'
               ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
           <MdAssignment className="text-lg" />
-          <span>Estructura de Rúbricas ({currentPreguntas.length} Criterios)</span>
+          <span>{tabNombres.rubrica} ({currentPreguntas.length} Criterios)</span>
         </button>
       </div>
 
@@ -563,10 +590,10 @@ const EvaluacionDetalleDirector = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab('rubrica')}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors cursor-pointer"
               >
                 <MdAssignment className="text-base" />
-                <span>Ver Estructura de Rúbricas</span>
+                <span>Ver {tabNombres.rubrica}</span>
               </button>
             </div>
           </div>

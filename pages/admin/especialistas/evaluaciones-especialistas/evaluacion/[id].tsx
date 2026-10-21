@@ -584,6 +584,15 @@ const EvaluacionDetalleEspecialista = () => {
         storageKey="eva_eval_especialista_banner_variant"
         actions={
           <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              href={`/admin/especialistas/evaluaciones-especialistas/evaluacion/reporte?idEvaluacion=${idEvaluacion}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 shadow-xs transition-all backdrop-blur-sm cursor-pointer"
+              title="Ver reporte por UGEL y analíticas consolidadas"
+            >
+              <MdBarChart className="text-base text-teal-300" />
+              <span>Reporte UGEL</span>
+            </Link>
+
             <EvaluacionConfigMenu
               idEvaluacion={idEvaluacion}
               collectionName="evaluaciones-especialista"
@@ -599,14 +608,6 @@ const EvaluacionDetalleEspecialista = () => {
               onAgregarDominio={handleShowModalDimension}
               onAgregarPreguntas={handleShowModalPreguntas}
             />
-
-            <Link
-              href={`/admin/especialistas/evaluaciones-especialistas/evaluacion/reporte?idEvaluacion=${idEvaluacion}`}
-              className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-xs sm:text-sm font-bold rounded-xl border border-white/20 shadow-md shadow-blue-900/30 transition-all cursor-pointer active:scale-95"
-            >
-              <MdBarChart className="text-base sm:text-lg text-teal-200" />
-              <span>Reporte UGEL</span>
-            </Link>
           </div>
         }
       />

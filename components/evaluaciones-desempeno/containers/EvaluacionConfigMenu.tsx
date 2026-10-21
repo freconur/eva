@@ -9,6 +9,7 @@ import {
   MdKeyboardArrowDown,
   MdAddCircle,
   MdEdit,
+  MdTab,
 } from 'react-icons/md';
 import { RiAwardLine } from 'react-icons/ri';
 import useEvaluacionDesempenoBase from '@/features/hooks/useEvaluacionDesempenoBase';
@@ -21,6 +22,7 @@ import {
   ModalAgregarDimension,
   ModalAgregarPregunta,
   ModalEditarTituloDescripcion,
+  ModalEditarNombresPestanas,
 } from '../modals';
 import { DimensionEspecialista, PRDocentes, AlternativasDocente, NivelYPuntaje } from '@/features/types/types';
 
@@ -35,6 +37,16 @@ export interface EvaluacionConfigMenuProps {
   titulo?: string;
   descripcion?: string;
   faseActual?: string;
+  nombresPestanasActuales?: {
+    monitoreos?: string;
+    padron?: string;
+    rubrica?: string;
+  };
+  defaultNombresPestanas?: {
+    monitoreos: string;
+    padron: string;
+    rubrica: string;
+  };
   onRefresh?: () => void;
   onAgregarDominio?: () => void;
   onAgregarPreguntas?: () => void;
@@ -51,6 +63,8 @@ export const EvaluacionConfigMenu: React.FC<EvaluacionConfigMenuProps> = ({
   titulo = '',
   descripcion = '',
   faseActual = '',
+  nombresPestanasActuales,
+  defaultNombresPestanas,
   onRefresh,
   onAgregarDominio,
   onAgregarPreguntas,
@@ -66,6 +80,7 @@ export const EvaluacionConfigMenu: React.FC<EvaluacionConfigMenuProps> = ({
     | 'fase'
     | 'descripcion'
     | 'editarTituloDescripcion'
+    | 'editarNombresPestanas'
     | 'agregarPregunta'
     | null
   >(null);
@@ -97,16 +112,16 @@ export const EvaluacionConfigMenu: React.FC<EvaluacionConfigMenuProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 shadow-xs transition-all backdrop-blur-sm cursor-pointer active:scale-95"
       >
-        <MdSettings className="text-lg text-slate-500" />
+        <MdSettings className="text-base text-slate-200" />
         <span>Configuración</span>
-        <MdKeyboardArrowDown className={`text-lg transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <MdKeyboardArrowDown className={`text-base text-white/80 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Menú Desplegable */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 origin-top-right rounded-2xl bg-white p-2 shadow-xl ring-1 ring-black ring-opacity-5 border border-slate-100 z-50 animate-fadeIn">
+        <div className="absolute right-0 mt-2 w-72 origin-top-right rounded-2xl bg-white p-2 shadow-xl ring-1 ring-black ring-opacity-5 border border-slate-100 z-[100] animate-fadeIn">
           <div className="py-1">
             <button
               type="button"
@@ -182,6 +197,18 @@ export const EvaluacionConfigMenu: React.FC<EvaluacionConfigMenuProps> = ({
             >
               <MdEdit className="text-lg text-blue-500" />
               <span>Editar título y descripción</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                setModalOpen('editarNombresPestanas');
+              }}
+              className="flex items-center gap-3 w-full px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-xl transition-colors font-medium text-left"
+            >
+              <MdTab className="text-lg text-blue-500" />
+              <span>Personalizar nombres de pestañas</span>
             </button>
 
             <button
@@ -297,6 +324,23 @@ export const EvaluacionConfigMenu: React.FC<EvaluacionConfigMenuProps> = ({
           collectionName={collectionName}
           tituloActual={titulo}
           descripcionActual={descripcion}
+          onClose={() => setModalOpen(null)}
+          onSuccess={onRefresh}
+        />
+      )}
+
+      {modalOpen === 'editarNombresPestanas' && (
+        <ModalEditarNombresPestanas
+          idEvaluacion={idEvaluacion}
+          collectionName={collectionName}
+          nombresPestanasActuales={nombresPestanasActuales}
+          defaultNombres={
+            defaultNombresPestanas || {
+              monitoreos: 'Monitoreos Realizados',
+              padron: 'Padrón UGEL',
+              rubrica: 'Estructura de Rúbricas',
+            }
+          }
           onClose={() => setModalOpen(null)}
           onSuccess={onRefresh}
         />

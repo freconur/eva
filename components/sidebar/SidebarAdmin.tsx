@@ -55,8 +55,13 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
     return () => unsubscribe();
   }, [isAdmin]);
 
-  // Auto-open accordion strictly on page load or navigation
+  // Auto-open accordion strictly on page load or navigation when expanded
   useEffect(() => {
+    if (isSidebarCollapsed) {
+      setOpenDropdown(null);
+      return;
+    }
+
     const p = router.pathname;
 
     // Perfiles logic
@@ -76,7 +81,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
       setPerfilesOpen(true);
       setOpenDropdown('estudiantes');
     }
-  }, [router.pathname]);
+  }, [router.pathname, isSidebarCollapsed]);
 
   const sidebarRef = useRef<HTMLDivElement>(null);
 

@@ -19,9 +19,12 @@ export const getPersonDni = (item: any): string => {
   if (!item) return '';
   return String(
     item.docenteDni ||
+    item.directorDni ||
+    item.dniDirector ||
     item.especialistaDni ||
     item.evaluadoDni ||
     item.dni ||
+    item.datosDirector?.dni ||
     item.info?.dni ||
     ''
   ).trim();
@@ -29,8 +32,22 @@ export const getPersonDni = (item: any): string => {
 
 export const getPersonName = (item: any, fallbackNoun: string = 'Evaluado'): string => {
   if (!item) return fallbackNoun;
-  const name = item.docenteNombre || item.nombre || item.nombres || item.info?.nombres || '';
-  const surnames = item.apellidos || item.info?.apellidos || '';
+  const name =
+    item.directorNombre ||
+    item.nombreDirector ||
+    item.docenteNombre ||
+    item.nombre ||
+    item.nombres ||
+    item.datosDirector?.nombres ||
+    item.info?.nombres ||
+    '';
+  const surnames =
+    item.directorApellidos ||
+    item.apellidoDirector ||
+    item.apellidos ||
+    item.datosDirector?.apellidos ||
+    item.info?.apellidos ||
+    '';
   const full = `${name} ${surnames}`.trim();
   if (full) return full;
   const dni = getPersonDni(item);
