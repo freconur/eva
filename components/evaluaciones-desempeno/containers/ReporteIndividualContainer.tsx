@@ -371,6 +371,32 @@ export const ReporteIndividualContainer: React.FC<ReporteIndividualContainerProp
 		);
 	}, [getPreguntaRespuestaDocentes, activeData, currentEscala]);
 
+	// Mapa correlativo visual continuo (1, 2, 3...) para la numeración de criterios
+	const displayIndexMap = useMemo(() => {
+		const map = new Map<string, number>();
+		let count = 0;
+		if (dimensionesEspecialistas && dimensionesEspecialistas.length > 0) {
+			dimensionesEspecialistas.forEach((dim) => {
+				const pregs = preguntasConRespuestas.filter((p) => String(p.dimensionId) === String(dim.id));
+				pregs.forEach((p) => {
+					count += 1;
+					if (p.id) map.set(String(p.id), count);
+				});
+			});
+			const dominiosIds = new Set(dimensionesEspecialistas.map((d: any) => String(d.id)));
+			const sinDominio = preguntasConRespuestas.filter((p) => !p.dimensionId || !dominiosIds.has(String(p.dimensionId)));
+			sinDominio.forEach((p) => {
+				count += 1;
+				if (p.id) map.set(String(p.id), count);
+			});
+		} else {
+			preguntasConRespuestas.forEach((p, idx) => {
+				if (p.id) map.set(String(p.id), idx + 1);
+			});
+		}
+		return map;
+	}, [dimensionesEspecialistas, preguntasConRespuestas]);
+
 	const handleSaveChanges = async () => {
 		if (!localData || !idEvaluacion || !resolvedSessionId) return;
 		try {
@@ -852,7 +878,7 @@ export const ReporteIndividualContainer: React.FC<ReporteIndividualContainerProp
 															{preguntasDimension.map((pregunta) => (
 																<tr key={pregunta.id} className={styles.questionRow}>
 																	<td className={styles.cellNumber}>
-																		{pregunta.order}
+																		{displayIndexMap.get(String(pregunta.id)) || pregunta.order}
 																	</td>
 																	<td className={styles.cellCriterio}>
 																		{pregunta.criterio}

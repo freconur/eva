@@ -38,6 +38,7 @@ import EvaluacionConfigMenu from './EvaluacionConfigMenu';
 import EvaluacionDetalleHeroBanner, {
   HeroBannerMetricItem,
 } from './EvaluacionDetalleHeroBanner';
+import PadronDocentesUgelTab from './PadronDocentesUgelTab';
 import {
   ModalAgregarDimension,
   ModalUpdateDimension,
@@ -84,6 +85,12 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
       ? '/admin/evaluaciones-docentes'
       : '/especialistas/evaluaciones-docentes');
 
+  const rawUserRegion = currentUserData?.region ?? (currentUserData as any)?.perfil?.region;
+  const userRegion =
+    rawUserRegion !== undefined && rawUserRegion !== null && rawUserRegion !== '' && !isNaN(Number(rawUserRegion))
+      ? Number(rawUserRegion)
+      : undefined;
+
   const {
     getDataEvaluacion,
     getDimensiones,
@@ -97,11 +104,30 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
     collectionName: 'evaluaciones-docentes',
   });
 
-  const [activeTab, setActiveTab] = useState<'docentes' | 'rubrica'>('docentes');
+  const [activeTab, setActiveTab] = useState<'docentes' | 'padron' | 'rubrica'>('docentes');
   const [modoVista, setModoVista] = useState<'colegios' | 'lista'>('colegios');
   const [searchDocente, setSearchDocente] = useState<string>('');
   const [selectedInstitucion, setSelectedInstitucion] = useState<string>('all');
   const [expandedColegios, setExpandedColegios] = useState<Set<string>>(new Set());
+
+  // Estado persistente del Padrón de Docentes por UGEL para mantener los docentes al cambiar de pestaña
+  const [selectedPadronUgel, setSelectedPadronUgel] = useState<number | ''>(() => {
+    if (!isAdmin && userRegion !== undefined) {
+      return userRegion;
+    }
+    return '';
+  });
+
+  // Sincronizar automáticamente la UGEL del especialista cuando se cargue currentUserData
+  useEffect(() => {
+    if (!isAdmin && userRegion !== undefined) {
+      if (selectedPadronUgel !== userRegion) {
+        setSelectedPadronUgel(userRegion);
+      }
+    }
+  }, [isAdmin, userRegion, selectedPadronUgel]);
+
+  const [cacheDocentesPorUgel, setCacheDocentesPorUgel] = useState<Record<number, User[]>>({});
 
   // Si el usuario no es especialista ni admin, cambiar por defecto a la pestaña rúbrica
   useEffect(() => {
@@ -187,6 +213,22 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
 
   // Conteo total de docentes monitoreados en esta evaluación
   const totalEvaluados = currentEvaluados.length;
+
+  // Conjunto de DNIs que ya han sido evaluados en esta evaluación por este monitor
+  const evaluatedDnisSet = useMemo(() => {
+    const set = new Set<string>();
+    currentEvaluados.forEach((item: any) => {
+      const dni = String(
+        item.dni ||
+        item.docenteDni ||
+        item.evaluadoDni ||
+        item.idDocente ||
+        ''
+      ).trim();
+      if (dni) set.add(dni);
+    });
+    return set;
+  }, [currentEvaluados]);
 
   // Clave de agrupación única por Director (dniDirector) o fallback a institución
   const getGrupoDirectorKey = (docente: User & { [key: string]: any }) => {
@@ -439,35 +481,50 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
     loading: boolean;
     user: User | null;
     notFound: boolean;
+    wrongRole?: boolean;
+    actualRole?: number | string;
   }>({
     dni: '',
     loading: false,
     user: null,
     notFound: false,
+    wrongRole: false,
   });
 
   useEffect(() => {
     const trimmedDni = searchDocente.trim();
     if (!/^\d{8}$/.test(trimmedDni) || foundExactMatch) {
-      setDniSearchResult({ dni: '', loading: false, user: null, notFound: false });
+      setDniSearchResult({ dni: '', loading: false, user: null, notFound: false, wrongRole: false });
       return;
     }
 
     let isMounted = true;
-    setDniSearchResult((prev) => ({ ...prev, dni: trimmedDni, loading: true }));
+    setDniSearchResult((prev) => ({ ...prev, dni: trimmedDni, loading: true, wrongRole: false }));
 
     buscarUsuario(trimmedDni)
       .then((user) => {
         if (!isMounted) return;
         if (user) {
-          setDniSearchResult({ dni: trimmedDni, loading: false, user, notFound: false });
+          const userRole = Number(user.rol ?? user.perfil?.rol);
+          if (userRole !== 3) {
+            setDniSearchResult({
+              dni: trimmedDni,
+              loading: false,
+              user: null,
+              notFound: false,
+              wrongRole: true,
+              actualRole: user.rol ?? user.perfil?.rol,
+            });
+            return;
+          }
+          setDniSearchResult({ dni: trimmedDni, loading: false, user, notFound: false, wrongRole: false });
         } else {
-          setDniSearchResult({ dni: trimmedDni, loading: false, user: null, notFound: true });
+          setDniSearchResult({ dni: trimmedDni, loading: false, user: null, notFound: true, wrongRole: false });
         }
       })
       .catch(() => {
         if (!isMounted) return;
-        setDniSearchResult({ dni: trimmedDni, loading: false, user: null, notFound: true });
+        setDniSearchResult({ dni: trimmedDni, loading: false, user: null, notFound: true, wrongRole: false });
       });
 
     return () => {
@@ -489,6 +546,17 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
         helperText: 'Ver dashboard de evaluados',
         colorTheme: 'emerald' as const,
         href: `${effectiveBasePath}/evaluacion/${idEvaluacion}/evaluados`,
+      },
+      {
+        id: 'padron',
+        label: isAdmin ? 'Padrón UGEL' : `Padrón UGEL ${regionTexto(userRegion) || ''}`.trim(),
+        value: isAdmin ? 'Consultar' : 'Mi UGEL',
+        icon: RiTeamLine,
+        badgeText: 'Padrón',
+        helperText: isAdmin ? 'Docentes por UGEL' : 'Docentes de mi UGEL',
+        colorTheme: 'blue' as const,
+        active: activeTab === 'padron',
+        onClick: () => setActiveTab('padron'),
       },
       {
         id: 'instituciones',
@@ -524,18 +592,31 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
       modoVista,
       effectiveBasePath,
       idEvaluacion,
+      isAdmin,
+      userRegion,
     ]
   );
 
-  // Eliminar dimensión
+  // Eliminar dimensión y sus criterios asociados
   const handleDeleteDim = async (dimId?: string) => {
-    if (!dimId) return;
-    if (
-      window.confirm(
-        '¿Deseas eliminar este dominio? Los criterios asociados quedarán sin dominio asignado.'
-      )
-    ) {
-      await deleteDimension(idEvaluacion, dimId);
+    if (!dimId || !idEvaluacion) return;
+
+    const dim = currentDimensiones.find((d) => String(d.id) === String(dimId));
+    const preguntasDeDim = currentPreguntas.filter(
+      (p) => String(p.dimensionId || (p as any).dimencionId) === String(dimId)
+    );
+
+    const mensaje =
+      preguntasDeDim.length > 0
+        ? `¿Está seguro de eliminar el dominio "${dim?.nombre || 'seleccionado'}"?\n\nAdvertencia: Contiene ${preguntasDeDim.length} ${
+            preguntasDeDim.length === 1 ? 'criterio pedagógico' : 'criterios pedagógicos'
+          } que también se ${
+            preguntasDeDim.length === 1 ? 'eliminará' : 'eliminarán'
+          } definitivamente de la evaluación.`
+        : `¿Está seguro de eliminar el dominio "${dim?.nombre || 'seleccionado'}"?`;
+
+    if (window.confirm(mensaje)) {
+      await deleteDimension(idEvaluacion, dimId, true);
     }
   };
 
@@ -675,6 +756,23 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
 
         <button
           type="button"
+          onClick={() => setActiveTab('padron')}
+          className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer ${
+            activeTab === 'padron'
+              ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <RiTeamLine className="text-lg" />
+          <span>
+            {isAdmin
+              ? 'Padrón de Docentes por UGEL'
+              : `Padrón de Docentes (${regionTexto(userRegion) || 'Mi UGEL'})`}
+          </span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab('rubrica')}
           className={`flex items-center gap-2 py-3 px-6 font-semibold text-sm border-b-2 transition-all cursor-pointer ${
             activeTab === 'rubrica'
@@ -688,7 +786,7 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
       </div>
 
       {/* PESTAÑA 1: MONITOREOS REALIZADOS (ORGANIZADOS POR COLEGIO) */}
-      {activeTab === 'docentes' && (
+      <div className={activeTab === 'docentes' ? 'block' : 'hidden'}>
         <div className="space-y-4">
           {/* Barra de Filtros, Búsqueda y Selector de Modo de Vista */}
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -829,6 +927,26 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
                   <div>
                     {isDocenteSearching ? (
                       <p className="text-xs text-slate-500">Verificando docente en el sistema...</p>
+                    ) : dniSearchResult.wrongRole ? (
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-amber-800">
+                            El usuario con DNI {searchDocente.trim()} no tiene rol de Docente
+                          </h4>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                            Rol no válido
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-0.5">
+                          El usuario se encuentra registrado pero tiene asignado{' '}
+                          <strong>
+                            {Number(dniSearchResult.actualRole) === 2
+                              ? 'rol de Director (Rol 2)'
+                              : `rol ${dniSearchResult.actualRole ?? 'N/A'}`}
+                          </strong>
+                          . En esta ruta de evaluaciones a docentes solo se permite buscar y evaluar usuarios con rol de Docente (Rol 3).
+                        </p>
+                      </div>
                     ) : isDocenteNotFound ? (
                       <div>
                         <h4 className="text-sm font-bold text-slate-800">
@@ -887,7 +1005,7 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
                   </div>
                 </div>
 
-                {!isDocenteSearching && !isDocenteNotFound && !isDifferentRegion && (
+                {!isDocenteSearching && !isDocenteNotFound && !dniSearchResult.wrongRole && !isDifferentRegion && (
                   <Link
                     href={`${effectiveBasePath}/evaluacion/evaluar-docente?id=${idEvaluacion}&idDocente=${searchDocente.trim()}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-all"
@@ -1256,10 +1374,26 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
             </div>
           )}
         </div>
-      )}
+      </div>
 
-      {/* PESTAÑA 2: ESTRUCTURA DE RÚBRICAS (DOMINIOS Y CRITERIOS) */}
-      {activeTab === 'rubrica' && (
+      {/* PESTAÑA 2: PADRÓN DE DOCENTES POR UGEL */}
+      <div className={activeTab === 'padron' ? 'space-y-4' : 'hidden'}>
+        <PadronDocentesUgelTab
+          idEvaluacion={idEvaluacion}
+          effectiveBasePath={effectiveBasePath}
+          evaluatedDnisSet={evaluatedDnisSet}
+          isAdmin={isAdmin}
+          currentUserRegion={userRegion}
+          selectedUgel={selectedPadronUgel}
+          onSelectedUgelChange={isAdmin ? setSelectedPadronUgel : undefined}
+          cacheDocentesPorUgel={cacheDocentesPorUgel}
+          onCacheChange={setCacheDocentesPorUgel}
+          buscarUsuario={buscarUsuario}
+        />
+      </div>
+
+      {/* PESTAÑA 3: ESTRUCTURA DE RÚBRICAS (DOMINIOS Y CRITERIOS) */}
+      <div className={activeTab === 'rubrica' ? 'block' : 'hidden'}>
         <div className="space-y-6">
           {/* Header de la sección de Rúbricas con acciones */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -1520,7 +1654,7 @@ export const EvaluacionDetalleDocenteContainer: React.FC<EvaluacionDetalleDocent
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

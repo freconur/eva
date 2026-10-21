@@ -1,7 +1,7 @@
 import { createPortal } from "react-dom"
 import styles from './configurarNiveles.module.css'
 import { useGlobalContext } from "@/features/context/GlolbalContext";
-import { NivelYPuntaje } from "@/features/types/types";
+import { NivelYPuntaje, DEFAULT_NIVELES_DIRECTOR } from "@/features/types/types";
 import { RiLoader4Line, RiDeleteBin6Line, RiAddLine } from "react-icons/ri";
 import { useEffect, useState } from "react";
 import useEvaluacionDesempenoBase from "@/features/hooks/useEvaluacionDesempenoBase";
@@ -42,6 +42,8 @@ const ConfigurarNivelesEspecialistas = ({
     useEffect(() => {
         if (nivelesActuales && nivelesActuales.length > 0) {
             setNiveles(nivelesActuales);
+        } else if (collectionName.includes('director')) {
+            setNiveles(DEFAULT_NIVELES_DIRECTOR);
         } else {
             setNiveles([
                 { nivel: "Inicio", min: 0, max: 5, color: "#94a3b8", id: 1 },
@@ -49,7 +51,7 @@ const ConfigurarNivelesEspecialistas = ({
                 { nivel: "Logrado", min: 11, max: 15, color: "#34d399", id: 3 },
             ]);
         }
-    }, [nivelesActuales]);
+    }, [nivelesActuales, collectionName]);
 
     const handleAddLevel = () => {
         const nextId = niveles.length > 0 ? Math.max(...niveles.map(n => n.id || 0)) + 1 : 1;

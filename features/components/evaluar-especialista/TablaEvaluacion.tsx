@@ -1,6 +1,6 @@
 import React from 'react';
 import { MdCloudUpload, MdDelete, MdFilePresent } from 'react-icons/md';
-import { RiLoader4Line } from 'react-icons/ri';
+import { RiLoader4Line, RiInformationLine } from 'react-icons/ri';
 import { PRDocentes } from '@/features/types/types';
 import styles from '@/pages/admin/especialistas/evaluaciones-especialistas/evaluacion/evaluar-especialista/evaluarEspecialista.module.css';
 
@@ -95,6 +95,44 @@ const TablaEvaluacion: React.FC<TablaEvaluacionProps> = ({
 
     return (
         <form onSubmit={handleSalvarPreguntaDocente} className={styles.form}>
+            {/* Leyenda de la Escala de Calificación */}
+            {currentEscala && currentEscala.length > 0 && (
+                <div className="mb-4 bg-white rounded-xl border border-slate-200/90 p-3.5 sm:p-4 shadow-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2.5 mb-2.5 border-b border-slate-100">
+                        <div className="flex items-center gap-2">
+                            <RiInformationLine className="text-base text-blue-600 shrink-0" />
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-800 tracking-wide">
+                                Escala de Valoración / Leyenda de Calificación
+                            </h4>
+                        </div>
+                        <span className="text-[11px] text-slate-500 font-medium">
+                            Correspondencia de las columnas de calificación
+                        </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                        {currentEscala.map((escala: any, idx: number) => {
+                            const val = escala.value !== undefined ? escala.value : (escala.alternativa ?? idx);
+                            const desc = escala.descripcion || escala.alternativa || `Nivel ${val}`;
+                            return (
+                                <div
+                                    key={escala.alternativa ?? idx}
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200/90 text-xs shadow-2xs hover:bg-slate-100/80 transition-colors"
+                                >
+                                    <span className="w-5 h-5 rounded-md bg-blue-600 text-white font-bold flex items-center justify-center text-xs shadow-2xs shrink-0">
+                                        {val}
+                                    </span>
+                                    <span className="text-slate-400 font-bold select-none">=</span>
+                                    <span className="font-semibold text-slate-700">
+                                        {desc}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             <div className={styles.tableContainer}>
                 <table className={styles.evaluationTable}>
                     <thead>
@@ -110,55 +148,117 @@ const TablaEvaluacion: React.FC<TablaEvaluacionProps> = ({
                         </tr>
                     </thead>
                     <tbody>
-                        {dimensionesEspecialistas?.length > 0 ? (
-                            dimensionesEspecialistas.map(dimension => {
-                                const preguntasDimension = copyPR.filter(p => p.dimensionId === dimension.id);
-                                if (preguntasDimension.length === 0) return null;
+                        {(() => {
+                            let questionCounter = 0;
+
+                            if (dimensionesEspecialistas?.length > 0) {
+                                const dominiosIds = new Set(dimensionesEspecialistas.map((d: any) => String(d.id)));
+                                const preguntasSinDominio = copyPR.filter((p) => {
+                                    const pDimId = p.dimensionId || (p as any).dimencionId;
+                                    return !pDimId || !dominiosIds.has(String(pDimId));
+                                });
 
                                 return (
-                                    <React.Fragment key={dimension.id}>
-                                        <tr className={styles.dimensionRow}>
-                                            <td colSpan={colSpanTotal} className={styles.dimensionTitle}>
-                                                {dimension.nombre}
-                                            </td>
-                                        </tr>
-                                        {preguntasDimension.map(pregunta => {
-                                            const realIndex = copyPR.findIndex(
-                                                p => (p.id && pregunta.id && String(p.id) === String(pregunta.id)) ||
-                                                     (p.order !== undefined && pregunta.order !== undefined && String(p.order) === String(pregunta.order))
+                                    <>
+                                        {dimensionesEspecialistas.map(dimension => {
+                                            const preguntasDimension = copyPR.filter(
+                                                p => String(p.dimensionId || (p as any).dimencionId) === String(dimension.id)
                                             );
-                                            const actualIndex = realIndex !== -1 ? realIndex : copyPR.indexOf(pregunta);
+                                            if (preguntasDimension.length === 0) return null;
+
                                             return (
-                                                <tr key={pregunta.id || `q-${pregunta.order}`} id={`question-${actualIndex}`} className={styles.questionRow}>
-                                                    <td className={styles.cellNumber}>{pregunta.order}</td>
-                                                    <td className={styles.cellCriterio}>{pregunta.criterio}</td>
-                                                    {currentEscala.map((escala: any) => {
-                                                        const val = escala.alternativa || '';
-                                                        const alt = pregunta.alternativas?.find(
-                                                            a => (a.alternativa || '').toString() === val.toString()
+                                                <React.Fragment key={dimension.id}>
+                                                    <tr className={styles.dimensionRow}>
+                                                        <td colSpan={colSpanTotal} className={styles.dimensionTitle}>
+                                                            {dimension.nombre}
+                                                        </td>
+                                                    </tr>
+                                                    {preguntasDimension.map(pregunta => {
+                                                        questionCounter += 1;
+                                                        const currentDisplayNumber = questionCounter;
+                                                        const realIndex = copyPR.findIndex(
+                                                            p => (p.id && pregunta.id && String(p.id) === String(pregunta.id)) ||
+                                                                 (p.order !== undefined && pregunta.order !== undefined && String(p.order) === String(pregunta.order))
                                                         );
+                                                        const actualIndex = realIndex !== -1 ? realIndex : copyPR.indexOf(pregunta);
                                                         return (
-                                                            <td key={val} className={styles.cellRadio}>
-                                                                <input
-                                                                    type="radio"
-                                                                    name={`question-${pregunta.id}`}
-                                                                    value={val}
-                                                                    checked={alt?.selected || false}
-                                                                    onChange={() => handleCheckedRespuesta(val, actualIndex)}
-                                                                    className={styles.radioInput}
-                                                                />
-                                                            </td>
+                                                            <tr key={pregunta.id || `q-${pregunta.order || actualIndex}`} id={`question-${actualIndex}`} className={styles.questionRow}>
+                                                                <td className={styles.cellNumber}>{currentDisplayNumber}</td>
+                                                                <td className={styles.cellCriterio}>{pregunta.criterio}</td>
+                                                                {currentEscala.map((escala: any) => {
+                                                                    const val = escala.alternativa || '';
+                                                                    const alt = pregunta.alternativas?.find(
+                                                                        a => (a.alternativa || '').toString() === val.toString()
+                                                                    );
+                                                                    return (
+                                                                        <td key={val} className={styles.cellRadio}>
+                                                                            <input
+                                                                                type="radio"
+                                                                                name={`question-${pregunta.id}`}
+                                                                                value={val}
+                                                                                checked={alt?.selected || false}
+                                                                                onChange={() => handleCheckedRespuesta(val, actualIndex)}
+                                                                                className={styles.radioInput}
+                                                                            />
+                                                                        </td>
+                                                                    );
+                                                                })}
+                                                                {renderEvidenciaCell(pregunta, realIndex)}
+                                                            </tr>
                                                         );
                                                     })}
-                                                    {renderEvidenciaCell(pregunta, realIndex)}
-                                                </tr>
+                                                </React.Fragment>
                                             );
                                         })}
-                                    </React.Fragment>
+
+                                        {preguntasSinDominio.length > 0 && (
+                                            <React.Fragment key="sin-dominio">
+                                                <tr className={styles.dimensionRow}>
+                                                    <td colSpan={colSpanTotal} className={styles.dimensionTitle}>
+                                                        Criterios Generales (Sin Dominio Asignado)
+                                                    </td>
+                                                </tr>
+                                                {preguntasSinDominio.map(pregunta => {
+                                                    questionCounter += 1;
+                                                    const currentDisplayNumber = questionCounter;
+                                                    const realIndex = copyPR.findIndex(
+                                                        p => (p.id && pregunta.id && String(p.id) === String(pregunta.id)) ||
+                                                             (p.order !== undefined && pregunta.order !== undefined && String(p.order) === String(pregunta.order))
+                                                    );
+                                                    const actualIndex = realIndex !== -1 ? realIndex : copyPR.indexOf(pregunta);
+                                                    return (
+                                                        <tr key={pregunta.id || `q-${pregunta.order || actualIndex}`} id={`question-${actualIndex}`} className={styles.questionRow}>
+                                                            <td className={styles.cellNumber}>{currentDisplayNumber}</td>
+                                                            <td className={styles.cellCriterio}>{pregunta.criterio}</td>
+                                                            {currentEscala.map((escala: any) => {
+                                                                const val = escala.alternativa || '';
+                                                                const alt = pregunta.alternativas?.find(
+                                                                    a => (a.alternativa || '').toString() === val.toString()
+                                                                );
+                                                                return (
+                                                                    <td key={val} className={styles.cellRadio}>
+                                                                        <input
+                                                                            type="radio"
+                                                                            name={`question-${pregunta.id}`}
+                                                                            value={val}
+                                                                            checked={alt?.selected || false}
+                                                                            onChange={() => handleCheckedRespuesta(val, actualIndex)}
+                                                                            className={styles.radioInput}
+                                                                        />
+                                                                    </td>
+                                                                );
+                                                            })}
+                                                            {renderEvidenciaCell(pregunta, realIndex)}
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </React.Fragment>
+                                        )}
+                                    </>
                                 );
-                            })
-                        ) : (
-                            copyPR.map((pregunta, index) => (
+                            }
+
+                            return copyPR.map((pregunta, index) => (
                                 <tr key={pregunta.id} id={`question-${index}`} className={styles.questionRow}>
                                     <td className={styles.cellNumber}>{index + 1}</td>
                                     <td className={styles.cellCriterio}>{pregunta.criterio}</td>
@@ -241,8 +341,8 @@ const TablaEvaluacion: React.FC<TablaEvaluacionProps> = ({
                                         </td>
                                     )}
                                 </tr>
-                            ))
-                        )}
+                            ));
+                        })()}
                     </tbody>
                 </table>
             </div>

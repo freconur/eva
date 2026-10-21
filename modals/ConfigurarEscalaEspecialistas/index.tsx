@@ -1,7 +1,7 @@
 import { createPortal } from "react-dom"
 import styles from './configurarEscala.module.css'
 import { useGlobalContext } from "@/features/context/GlolbalContext";
-import { AlternativasDocente } from "@/features/types/types";
+import { AlternativasDocente, DEFAULT_ESCALA_DIRECTOR } from "@/features/types/types";
 import { RiLoader4Line, RiDeleteBin6Line, RiAddLine } from "react-icons/ri";
 import { useEffect, useState } from "react";
 import useEvaluacionDesempenoBase from "@/features/hooks/useEvaluacionDesempenoBase";
@@ -41,6 +41,8 @@ const ConfigurarEscalaEspecialistas = ({
     useEffect(() => {
         if (escalaActual && escalaActual.length > 0) {
             setEscala(escalaActual);
+        } else if (collectionName.includes('director')) {
+            setEscala(DEFAULT_ESCALA_DIRECTOR);
         } else {
             setEscala([
                 { value: 0, descripcion: "No evidencia", alternativa: "0" },
@@ -48,7 +50,7 @@ const ConfigurarEscalaEspecialistas = ({
                 { value: 2, descripcion: "Logrado", alternativa: "2" },
             ]);
         }
-    }, [escalaActual]);
+    }, [escalaActual, collectionName]);
 
     const handleAddOption = () => {
         const nextValue = escala.length > 0 ? Math.max(...escala.map(o => o.value || 0)) + 1 : 0;

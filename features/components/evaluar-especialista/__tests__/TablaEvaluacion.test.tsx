@@ -295,4 +295,57 @@ describe('TablaEvaluacion', () => {
             expect(mockHandleDeleteEvidencia).toHaveBeenCalledWith(0, 0);
         });
     });
+
+    describe('Leyenda de la Escala de Calificación', () => {
+        test('Renderiza la leyenda con los valores y descripciones de la escala', () => {
+            const currentEscala = [
+                { value: 0, alternativa: '0', descripcion: 'Inicio' },
+                { value: 1, alternativa: '1', descripcion: 'En proceso' },
+                { value: 2, alternativa: '2', descripcion: 'Logrado' },
+                { value: 3, alternativa: '3', descripcion: 'Destacado' },
+            ];
+
+            render(
+                <TablaEvaluacion
+                    {...defaultProps}
+                    currentEscala={currentEscala}
+                />
+            );
+
+            expect(screen.getByText('Escala de Valoración / Leyenda de Calificación')).toBeInTheDocument();
+            expect(screen.getByText('Inicio')).toBeInTheDocument();
+            expect(screen.getByText('En proceso')).toBeInTheDocument();
+            expect(screen.getByText('Logrado')).toBeInTheDocument();
+            expect(screen.getByText('Destacado')).toBeInTheDocument();
+        });
+    });
+
+    describe('Numeración correlativa continua (1, 2, 3...)', () => {
+        test('Renderiza números consecutivos 1, 2, 3, 4 aunque los criterios tengan orders históricos 12, 16, 14, 15', () => {
+            const dimensiones = [
+                { id: 'dim1', nombre: 'Reporte de necesidades de aprendizaje de la IE' },
+                { id: 'dim2', nombre: 'Plan de mejora de aprendizajes de la IE' },
+                { id: 'dim3', nombre: 'Unidades didácticas visadas' },
+                { id: 'dim4', nombre: 'Asesorías a docentes en planificación curricular' },
+            ];
+
+            const copyPR: PRDocentes[] = [
+                { id: 'q12', order: 12, dimensionId: 'dim1', criterio: 'Elabora el reporte de necesidades' },
+                { id: 'q16', order: 16, dimensionId: 'dim2', criterio: 'Plan de mejora' },
+                { id: 'q14', order: 14, dimensionId: 'dim3', criterio: 'Presenta unidades didácticas visadas' },
+                { id: 'q15', order: 15, dimensionId: 'dim4', criterio: 'Presenta evidencias de asesorías' },
+            ];
+
+            const { container } = render(
+                <TablaEvaluacion
+                    {...defaultProps}
+                    dimensionesEspecialistas={dimensiones}
+                    copyPR={copyPR}
+                />
+            );
+
+            const questionNumbers = Array.from(container.querySelectorAll('tbody tr:not([class*="dimensionRow"]) td:first-child')).map(td => td.textContent?.trim());
+            expect(questionNumbers).toEqual(['1', '2', '3', '4']);
+        });
+    });
 });

@@ -10,6 +10,8 @@ import {
   RetroalimentacionDinamica,
   DataEvaluacion,
   NivelYPuntaje,
+  DEFAULT_ESCALA_DIRECTOR,
+  DEFAULT_NIVELES_DIRECTOR,
 } from '../types/types';
 import { db, storage } from '@/firebase/firebase.config';
 import {
@@ -73,14 +75,35 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
           ? data.fases
           : [{ id: defaultFaseID, nombre: defaultFaseNombre }];
 
-      const docRef = await addDoc(collection(db, collectionName), {
+      const isDirector =
+        collectionName.includes('director') ||
+        (role as string) === 'director';
+
+      const escalaToSave = data.escala || (isDirector ? DEFAULT_ESCALA_DIRECTOR : undefined);
+      const nivelesToSave = data.niveles || (isDirector ? DEFAULT_NIVELES_DIRECTOR : undefined);
+      const nivelYPuntajeToSave =
+        (data as any).nivelYPuntaje || (isDirector ? DEFAULT_NIVELES_DIRECTOR : undefined);
+
+      const docPayload: any = {
         ...data,
         faseNombre: defaultFaseNombre,
         faseActualID: defaultFaseID,
         fases: defaultFases,
         active: false,
         fechaCreacion: serverTimestamp(),
-      });
+      };
+
+      if (escalaToSave) {
+        docPayload.escala = escalaToSave;
+      }
+      if (nivelesToSave) {
+        docPayload.niveles = nivelesToSave;
+      }
+      if (nivelYPuntajeToSave) {
+        docPayload.nivelYPuntaje = nivelYPuntajeToSave;
+      }
+
+      const docRef = await addDoc(collection(db, collectionName), docPayload);
       return docRef.id;
     } catch (err: any) {
       console.error(`Error al crear evaluación en ${collectionName}:`, err);
@@ -191,7 +214,7 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
     dispatch({ type: AppAction.LOADER_MODALES, payload: true });
     try {
       const docRef = doc(db, collectionName, idEvaluacion);
-      await updateDoc(docRef, { niveles });
+      await updateDoc(docRef, { niveles, nivelYPuntaje: niveles });
     } catch (err) {
       console.error('Error al actualizar niveles globales:', err);
       throw err;
@@ -377,6 +400,12 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
     try {
       const docRef = doc(db, collectionName, idEvaluacion);
       await updateDoc(docRef, { camposRetroalimentacion: campos });
+      if (dataEvaluacionDocente?.id === idEvaluacion) {
+        dispatch({
+          type: AppAction.DATA_EVALUACION_DOCENTE,
+          payload: { ...dataEvaluacionDocente, camposRetroalimentacion: campos },
+        });
+      }
     } catch (err) {
       console.error('Error al actualizar configuración de retroalimentación:', err);
       throw err;
@@ -446,12 +475,41 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
     }
   };
 
-  const deleteDimension = async (idEvaluacion: string, idDimension: string) => {
+  const deleteDimension = async (
+    idEvaluacion: string,
+    idDimension: string,
+    deleteCriterios: boolean = true
+  ) => {
+    if (!idEvaluacion || !idDimension) {
+      console.warn('deleteDimension: faltan parámetros requeridos', { idEvaluacion, idDimension });
+      return;
+    }
     try {
-      const docRef = doc(db, `/${collectionName}/${idEvaluacion}/dominios`, idDimension);
+      const docRef = doc(db, `/${collectionName}/${idEvaluacion}/dominios`, String(idDimension));
       await deleteDoc(docRef);
+
+      // Eliminación en cascada: eliminar criterios que pertenecían a este dominio
+      if (deleteCriterios) {
+        const preguntasCol = collection(db, `/${collectionName}/${idEvaluacion}/preguntasRespuestas`);
+        const snapshot = await getDocs(preguntasCol);
+        const toDelete: Promise<void>[] = [];
+        if (snapshot && typeof snapshot.forEach === 'function') {
+          snapshot.forEach((d) => {
+            const data = d.data();
+            const pDimId = String(data?.dimensionId || data?.dimencionId || '');
+            if (pDimId === String(idDimension)) {
+              toDelete.push(
+                deleteDoc(doc(db, `/${collectionName}/${idEvaluacion}/preguntasRespuestas`, d.id))
+              );
+            }
+          });
+        }
+        if (toDelete.length > 0) {
+          await Promise.all(toDelete);
+        }
+      }
     } catch (err) {
-      console.error('Error al eliminar dimensión:', err);
+      console.error('Error al eliminar dimensión y sus criterios asociados:', err);
       throw err;
     }
   };
@@ -544,11 +602,16 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
       const snapshot = await getDocs(collection(db, path));
       const nextOrder = snapshot.size + 1;
 
-      const arrayAlternativas: AlternativasDocente[] = escalaCustom || [
-        { value: 0, descripcion: 'No evidencia', alternativa: '0' },
-        { value: 1, descripcion: 'En proceso', alternativa: '1' },
-        { value: 2, descripcion: 'Logrado', alternativa: '2' },
-      ];
+      const isDirector = collectionName.includes('director') || (role as string) === 'director';
+      const defaultEscala = isDirector
+        ? DEFAULT_ESCALA_DIRECTOR
+        : [
+            { value: 0, descripcion: 'No evidencia', alternativa: '0' },
+            { value: 1, descripcion: 'En proceso', alternativa: '1' },
+            { value: 2, descripcion: 'Logrado', alternativa: '2' },
+          ];
+
+      const arrayAlternativas: AlternativasDocente[] = escalaCustom || defaultEscala;
 
       await setDoc(doc(db, path, `${nextOrder}`), {
         alternativas: arrayAlternativas,
@@ -587,8 +650,12 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
   };
 
   const deletePreguntaRespuesta = async (idEvaluacion: string, idPregunta: string) => {
+    if (!idEvaluacion || !idPregunta) {
+      console.warn('deletePreguntaRespuesta: faltan parámetros requeridos', { idEvaluacion, idPregunta });
+      return;
+    }
     try {
-      const docRef = doc(db, `/${collectionName}/${idEvaluacion}/preguntasRespuestas`, idPregunta);
+      const docRef = doc(db, `/${collectionName}/${idEvaluacion}/preguntasRespuestas`, String(idPregunta));
       await deleteDoc(docRef);
     } catch (err) {
       console.error('Error al eliminar criterio:', err);
@@ -900,6 +967,37 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
               q = query(usuariosRef, where('rol', '==', 3), limit(100));
             }
           }
+        } else if (collectionName === 'evaluaciones-director') {
+          // Evaluación de directores (por especialistas o administradores): rol === 2
+          const isRegionalAdmin =
+            currentUserData?.rol === 4 ||
+            currentUserData?.rol === 0 ||
+            currentUserData?.rol === 5 ||
+            currentUserData?.perfil?.rol === 4 ||
+            currentUserData?.perfil?.rol === 0 ||
+            currentUserData?.perfil?.rol === 5 ||
+            Number(currentUserData?.rol) === 4 ||
+            Number(currentUserData?.rol) === 0 ||
+            Number(currentUserData?.rol) === 5;
+
+          let targetRegion: any =
+            customScopeValue !== undefined
+              ? customScopeValue
+              : !isRegionalAdmin
+              ? scopeValue || currentUserData?.region
+              : undefined;
+
+          if (targetRegion && targetRegion !== 'all' && targetRegion !== '') {
+            const regionNum = Number(targetRegion);
+            q = query(
+              usuariosRef,
+              where('rol', '==', 2),
+              where('region', '==', isNaN(regionNum) ? targetRegion : regionNum),
+              limit(100)
+            );
+          } else {
+            q = query(usuariosRef, where('rol', '==', 2), limit(100));
+          }
         } else if (role === 'admin') {
           // Administrador o DREP evalúa a especialistas: rol === 1
           const isRegionalAdmin =
@@ -985,20 +1083,33 @@ export const useEvaluacionDesempenoBase = (options?: UseEvaluacionDesempenoBaseO
     [role, scopeValue, currentUserData?.dni, currentUserData?.rol, currentUserData?.region, currentUserData?.dniDirectorPredecesor, currentUserData?.directoresPredecesores]
   );
 
-  const buscarUsuario = useCallback(async (dni: string): Promise<User | null> => {
+  const buscarUsuario = useCallback(async (dni: string, expectedRole?: number | number[]): Promise<User | null> => {
     if (!dni || dni.length < 8) return null;
     const cleanDni = dni.trim();
     try {
+      let foundUser: User | null = null;
       const q = query(collection(db, 'usuarios'), where('dni', '==', cleanDni));
       const snap = await getDocs(q);
       if (!snap.empty) {
-        return { ...snap.docs[0].data(), id: snap.docs[0].id } as User;
+        foundUser = { ...snap.docs[0].data(), id: snap.docs[0].id } as User;
+      } else {
+        const directDoc = await getDoc(doc(db, 'usuarios', cleanDni));
+        if (directDoc.exists()) {
+          foundUser = { ...directDoc.data(), id: directDoc.id } as User;
+        }
       }
-      const directDoc = await getDoc(doc(db, 'usuarios', cleanDni));
-      if (directDoc.exists()) {
-        return { ...directDoc.data(), id: directDoc.id } as User;
+
+      if (!foundUser) return null;
+
+      if (expectedRole !== undefined) {
+        const userRole = Number(foundUser.rol ?? foundUser.perfil?.rol);
+        const roles = Array.isArray(expectedRole) ? expectedRole : [expectedRole];
+        if (!roles.includes(userRole)) {
+          return null;
+        }
       }
-      return null;
+
+      return foundUser;
     } catch (err) {
       console.error('Error al buscar usuario por DNI:', err);
       return null;

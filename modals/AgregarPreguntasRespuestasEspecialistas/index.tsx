@@ -135,6 +135,13 @@ const AgregarPreguntasRespuestasEspecialistas = ({
                     (propEscala || dataEvaluacionDocente?.escala)!.map((opt: any, i: number) => (
                       <li key={i}>{opt.value} = {opt.descripcion}</li>
                     ))
+                  ) : collectionName.includes('director') ? (
+                    <>
+                      <li>0 = En inicio</li>
+                      <li>1 = En Desarrollo</li>
+                      <li>2 = Logro Esperado</li>
+                      <li>4 = Logro destacado</li>
+                    </>
                   ) : (
                     <>
                       <li>0 = No evidencia</li>

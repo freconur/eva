@@ -4,6 +4,12 @@ export { default as EvaluacionDetalleHeroBanner } from './EvaluacionDetalleHeroB
 export * from './EvaluacionDetalleHeroBanner';
 export { default as EvaluacionDetalleDocenteContainer } from './EvaluacionDetalleDocenteContainer';
 export * from './EvaluacionDetalleDocenteContainer';
+export { default as EvaluacionDetalleDirectorContainer } from './EvaluacionDetalleDirectorContainer';
+export * from './EvaluacionDetalleDirectorContainer';
+export { default as PadronDocentesUgelTab } from './PadronDocentesUgelTab';
+export * from './PadronDocentesUgelTab';
+export { default as PadronDirectoresUgelTab } from './PadronDirectoresUgelTab';
+export * from './PadronDirectoresUgelTab';
 export { default as DesempenoHeroBanner } from './DesempenoHeroBanner';
 export type { DesempenoHeroBannerProps } from './DesempenoHeroBanner';
 export { default as EvaluadosDashboardContainer } from './EvaluadosDashboardContainer';

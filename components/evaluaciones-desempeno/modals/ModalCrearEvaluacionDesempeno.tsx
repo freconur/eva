@@ -5,6 +5,7 @@ import { RiLoader4Line } from 'react-icons/ri';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import useEvaluacionDesempenoBase from '@/features/hooks/useEvaluacionDesempenoBase';
 import { ModalBaseProps } from '../types';
+import { DEFAULT_ESCALA_DIRECTOR, DEFAULT_NIVELES_DIRECTOR } from '@/features/types/types';
 import styles from '@/modals/crearEvaluacionEspecialista/crearEvaluacionDocentes.module.css';
 
 export interface ModalCrearEvaluacionDesempenoProps extends ModalBaseProps {
@@ -45,11 +46,19 @@ export const ModalCrearEvaluacionDesempeno: React.FC<ModalCrearEvaluacionDesempe
 
   const onSubmit = handleSubmit(async (data: any) => {
     try {
+      const isDirector = collectionName.includes('director');
       await createEvaluacion({
         name: data.name.trim(),
         categoria: String(data.categoria).trim(),
         faseNombre: String(data.faseNombre || '').trim() || 'Fase Diagnóstica',
         active: false,
+        ...(isDirector
+          ? {
+              escala: DEFAULT_ESCALA_DIRECTOR,
+              niveles: DEFAULT_NIVELES_DIRECTOR,
+              nivelYPuntaje: DEFAULT_NIVELES_DIRECTOR,
+            }
+          : {}),
       });
       reset();
       if (onSuccess) onSuccess();

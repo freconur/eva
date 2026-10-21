@@ -166,6 +166,27 @@ const UseEvaluacionEspecialistas = () => {
 
   const deleteDimensionEspecialista = async (idEvaluacion: string, idDimension: string) => {
     await deleteDoc(doc(db, `/evaluaciones-especialista/${idEvaluacion}/dominios`, idDimension));
+    try {
+      const preguntasCol = collection(db, `/evaluaciones-especialista/${idEvaluacion}/preguntasRespuestas`);
+      const snapshot = await getDocs(preguntasCol);
+      const toDelete: Promise<void>[] = [];
+      if (snapshot && typeof snapshot.forEach === 'function') {
+        snapshot.forEach((d) => {
+          const data = d.data();
+          const pDimId = String(data?.dimensionId || data?.dimencionId || '');
+          if (pDimId === String(idDimension)) {
+            toDelete.push(
+              deleteDoc(doc(db, `/evaluaciones-especialista/${idEvaluacion}/preguntasRespuestas`, d.id))
+            );
+          }
+        });
+      }
+      if (toDelete.length > 0) {
+        await Promise.all(toDelete);
+      }
+    } catch (err) {
+      console.error('Error al eliminar criterios en cascada de la dimensión:', err);
+    }
   };
 
   const updateDimensionEspecialista = async (idEvaluacion: string, idDimension: string, nombre: string) => {

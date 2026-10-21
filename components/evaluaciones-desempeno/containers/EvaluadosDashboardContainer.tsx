@@ -7,6 +7,7 @@ import { useGlobalContext } from '@/features/context/GlolbalContext';
 import useEvaluacionDesempenoBase from '@/features/hooks/useEvaluacionDesempenoBase';
 import useUsuario from '@/features/hooks/useUsuario';
 import { User } from '@/features/types/types';
+import { regionTexto } from '@/fuctions/regiones';
 import {
 	Chart as ChartJS,
 	CategoryScale,
@@ -72,7 +73,18 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 	const id = propId || (router.query.id as string);
 	const queryInstitucion = (router.query.institucion as string) || '';
 	const queryDniDirector = (router.query.dniDirector as string) || '';
+	const queryRegion = (router.query.region as string) || '';
 	const [showOnboarding, setShowOnboarding] = useState(false);
+
+	const ugelDisplayName = useMemo(() => {
+		if (!queryRegion) return '';
+		const regName = regionTexto(queryRegion);
+		if (regName) {
+			return regName.startsWith('UGEL') ? regName : `UGEL ${regName}`;
+		}
+		if (queryRegion === 'SIN_UGEL') return 'UGEL No Asignada';
+		return queryRegion.startsWith('UGEL') ? queryRegion : `UGEL ${queryRegion}`;
+	}, [queryRegion]);
 
 	useEffect(() => {
 		if (typeof window !== 'undefined') {
@@ -310,7 +322,21 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 			});
 		}
 
-		// 4. Filtro para especialistas huérfanos (si aplica)
+		// 4. Filtro por Región / UGEL (cuando se navega desde el acordeón de una UGEL)
+		if (queryRegion) {
+			list = list.filter((ev: any) => {
+				const rawReg =
+					ev.region !== undefined && ev.region !== null
+						? ev.region
+						: ev.datosDirector?.region !== undefined && ev.datosDirector?.region !== null
+						? ev.datosDirector.region
+						: ev.ugel || ev.datosDirector?.ugel || '';
+				const evRegionKey = String(rawReg).trim();
+				return evRegionKey === queryRegion || evRegionKey.toLowerCase() === queryRegion.toLowerCase();
+			});
+		}
+
+		// 5. Filtro para especialistas huérfanos (si aplica)
 		if (activeDnisSet) {
 			list = list.filter((evalu) => {
 				const dni = String(
@@ -335,6 +361,7 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 		activeDnisSet,
 		queryInstitucion,
 		queryDniDirector,
+		queryRegion,
 	]);
 
 	// Hooks para lista y métricas
@@ -497,6 +524,8 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 				title={
 					queryInstitucion
 						? `${targetTitle} • ${queryInstitucion.startsWith('I.E.') ? queryInstitucion : `I.E. ${queryInstitucion}`}`
+						: queryRegion
+						? `${targetTitle} • ${ugelDisplayName}`
 						: targetTitle
 				}
 			/>
@@ -525,6 +554,33 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 							className="font-bold text-purple-700 hover:text-purple-900 underline cursor-pointer shrink-0"
 						>
 							Ver todas las I.E.
+						</button>
+					</div>
+				)}
+
+				{/* Banner Informativo cuando se filtra por UGEL */}
+				{queryRegion && !queryInstitucion && (
+					<div className="flex items-center justify-between gap-3 px-4 py-2.5 mb-4 bg-purple-50/80 border border-purple-200/90 rounded-2xl text-xs sm:text-sm text-purple-900 shadow-2xs">
+						<div className="flex items-center gap-2.5">
+							<span className="w-2.5 h-2.5 rounded-full bg-purple-600 animate-pulse shrink-0" />
+							<span>
+								Resultados y analíticas exclusivos de:{' '}
+								<strong className="font-bold text-purple-800">
+									{ugelDisplayName}
+								</strong>{' '}
+								({evaluadosList.groupedEvaluados.length}{' '}
+								{evaluadosList.groupedEvaluados.length === 1 ? targetNounSingular.toLowerCase() : targetNoun})
+							</span>
+						</div>
+						<button
+							type="button"
+							onClick={() => {
+								const { region, ...rest } = router.query;
+								router.replace({ pathname: router.pathname, query: rest }, undefined, { shallow: true });
+							}}
+							className="font-bold text-purple-700 hover:text-purple-900 underline cursor-pointer shrink-0"
+						>
+							Ver todas las UGELs
 						</button>
 					</div>
 				)}

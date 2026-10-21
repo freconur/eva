@@ -29,7 +29,10 @@ export const useEvaluarDesempeno = ({
   queryParamKeys = ['idDirector', 'dniDirector', 'idDocente', 'dniDocente', 'dni'],
 }: UseEvaluarDesempenoOptions) => {
   const router = useRouter();
-  const evaluacionId = router.query.id ? `${router.query.id}` : '';
+  const rawEvaluacionId = router.query.idEvaluacion || router.query.id || router.query.evaluacionId || '';
+  const evaluacionId = useMemo(() => {
+    return Array.isArray(rawEvaluacionId) ? rawEvaluacionId[0] : `${rawEvaluacionId}`;
+  }, [rawEvaluacionId]);
 
   const {
     getPreguntaRespuestaDocentes,
@@ -174,6 +177,10 @@ export const useEvaluarDesempeno = ({
   const {
     retroalimentacionDinamica,
     setRetroalimentacionDinamica,
+    isTemplateDirty,
+    isSavingTemplateConfig,
+    handleSaveTemplateConfig,
+    handleDiscardTemplateChanges,
     handleAddFeedbackField,
     handleRemoveFeedbackField,
     handleChangeFeedbackLabel,
@@ -340,6 +347,21 @@ export const useEvaluarDesempeno = ({
       const loadUserFromUrl = async () => {
         const user = await buscarUsuario(queryDni!);
         if (user) {
+          const isDirectorEval = collectionName === 'evaluaciones-director';
+          const isDocenteEval = collectionName === 'evaluaciones-docentes';
+          const expectedRole = isDirectorEval ? 2 : isDocenteEval ? 3 : undefined;
+
+          if (expectedRole !== undefined) {
+            const userRole = Number(user.rol ?? user.perfil?.rol);
+            if (userRole !== expectedRole) {
+              toast.warning(
+                `El usuario con DNI ${queryDni} no tiene el rol de ${evaluadoRoleLabel} (Rol ${expectedRole}).`
+              );
+              setDataDirector({});
+              return;
+            }
+          }
+
           if (!validateDocenteRegion(user)) {
             setDataDirector({});
             return;
@@ -440,6 +462,20 @@ export const useEvaluarDesempeno = ({
   };
 
   const handleSelectEspecialista = (esp: User) => {
+    const isDirectorEval = collectionName === 'evaluaciones-director';
+    const isDocenteEval = collectionName === 'evaluaciones-docentes';
+    const expectedRole = isDirectorEval ? 2 : isDocenteEval ? 3 : undefined;
+
+    if (expectedRole !== undefined) {
+      const userRole = Number(esp.rol ?? esp.perfil?.rol);
+      if (userRole !== expectedRole) {
+        toast.warning(
+          `El usuario seleccionado no tiene el rol de ${evaluadoRoleLabel} (Rol ${expectedRole}).`
+        );
+        return;
+      }
+    }
+
     if (!validateDocenteRegion(esp)) {
       return;
     }
@@ -448,14 +484,29 @@ export const useEvaluarDesempeno = ({
 
   const handleBuscarDocente = async () => {
     if (!dniDocente.trim()) return;
+    const isDirectorEval = collectionName === 'evaluaciones-director';
+    const isDocenteEval = collectionName === 'evaluaciones-docentes';
+    const expectedRole = isDirectorEval ? 2 : isDocenteEval ? 3 : undefined;
+
     const found = await buscarUsuario(dniDocente.trim());
     if (found) {
+      if (expectedRole !== undefined) {
+        const userRole = Number(found.rol ?? found.perfil?.rol);
+        if (userRole !== expectedRole) {
+          toast.warning(
+            `El usuario con DNI ${dniDocente.trim()} no tiene el rol de ${evaluadoRoleLabel} (Rol ${expectedRole}).`
+          );
+          return;
+        }
+      }
       if (!validateDocenteRegion(found)) {
         return;
       }
       selectUserAndLoadHistory(found);
     } else {
-      toast.warning(`No existen resultados del docente con DNI ${dniDocente.trim()} en su UGEL ni en el sistema.`);
+      toast.warning(
+        `No existen resultados de ${evaluadoRoleLabel.toLowerCase()} con DNI ${dniDocente.trim()} en su UGEL ni en el sistema.`
+      );
     }
   };
 
@@ -513,7 +564,8 @@ export const useEvaluarDesempeno = ({
 
     // Limpiar query params de la URL sin recargar la página
     if (evaluacionId) {
-      router.replace({ pathname: router.pathname, query: { id: evaluacionId } }, undefined, {
+      const paramKey = router.query.idEvaluacion ? 'idEvaluacion' : 'id';
+      router.replace({ pathname: router.pathname, query: { [paramKey]: evaluacionId } }, undefined, {
         shallow: true,
       });
     }
@@ -618,6 +670,15 @@ export const useEvaluarDesempeno = ({
       cargo: currentUserData?.cargo || (role === 'director' ? 'DIRECTOR' : 'ESPECIALISTA'),
     };
 
+    // Sincronizar plantilla global de retroalimentación si el administrador hizo modificaciones
+    if (isTemplateDirty && evaluacionId && isAdmin) {
+      try {
+        await handleSaveTemplateConfig();
+      } catch (err) {
+        console.warn('Advertencia al sincronizar plantilla durante el guardado:', err);
+      }
+    }
+
     const savedId = await guardarEvaluacion(
       evaluacionId,
       copyPR,
@@ -709,6 +770,10 @@ export const useEvaluarDesempeno = ({
     handleUploadEvidencia,
     handleDeleteEvidencia,
     retroalimentacionDinamica,
+    isTemplateDirty,
+    isSavingTemplateConfig,
+    handleSaveTemplateConfig,
+    handleDiscardTemplateChanges,
     handleAddFeedbackField,
     handleRemoveFeedbackField,
     handleChangeFeedbackLabel,

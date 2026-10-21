@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { RiLoader4Line } from "react-icons/ri";
 import UseEvaluacionDirectores from "@/features/hooks/UseEvaluacionDirectores";
+import { DEFAULT_ESCALA_DIRECTOR, DEFAULT_NIVELES_DIRECTOR } from "@/features/types/types";
 
 interface Props {
   handleShowModalCrearEvaluacion: () => void
@@ -28,6 +29,9 @@ const CrearEvaluacionDirector = ({ handleShowModalCrearEvaluacion }: Props) => {
         name: data.name.trim(),
         categoria: String(data.categoria).trim(),
         active: false,
+        escala: DEFAULT_ESCALA_DIRECTOR,
+        niveles: DEFAULT_NIVELES_DIRECTOR,
+        nivelYPuntaje: DEFAULT_NIVELES_DIRECTOR,
       })
       handleShowModalCrearEvaluacion()
       reset()

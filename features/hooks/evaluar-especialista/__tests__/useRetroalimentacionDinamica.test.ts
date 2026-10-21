@@ -29,9 +29,9 @@ describe('useRetroalimentacionDinamica', () => {
 
             expect(result.current.retroalimentacionDinamica).toHaveLength(3);
             expect(result.current.retroalimentacionDinamica).toEqual([
-                { etiqueta: 'AVANCES', descripcion: '', contenido: '' },
-                { etiqueta: 'DIFICULTADES', descripcion: '', contenido: '' },
-                { etiqueta: 'COMPROMISOS', descripcion: '', contenido: '' },
+                expect.objectContaining({ etiqueta: 'AVANCES', descripcion: '', contenido: '' }),
+                expect.objectContaining({ etiqueta: 'DIFICULTADES', descripcion: '', contenido: '' }),
+                expect.objectContaining({ etiqueta: 'COMPROMISOS', descripcion: '', contenido: '' }),
             ]);
         });
 
@@ -78,16 +78,20 @@ describe('useRetroalimentacionDinamica', () => {
             );
 
             expect(result.current.retroalimentacionDinamica).toHaveLength(2);
-            expect(result.current.retroalimentacionDinamica[0]).toEqual({
-                etiqueta: 'ASPECTOS POSITIVOS',
-                descripcion: '',
-                contenido: '',
-            });
-            expect(result.current.retroalimentacionDinamica[1]).toEqual({
-                etiqueta: 'PLAN DE MEJORA',
-                descripcion: 'Descripción del plan de mejora',
-                contenido: '',
-            });
+            expect(result.current.retroalimentacionDinamica[0]).toEqual(
+                expect.objectContaining({
+                    etiqueta: 'ASPECTOS POSITIVOS',
+                    descripcion: '',
+                    contenido: '',
+                })
+            );
+            expect(result.current.retroalimentacionDinamica[1]).toEqual(
+                expect.objectContaining({
+                    etiqueta: 'PLAN DE MEJORA',
+                    descripcion: 'Descripción del plan de mejora',
+                    contenido: '',
+                })
+            );
         });
     });
 
@@ -221,8 +225,8 @@ describe('useRetroalimentacionDinamica', () => {
         });
     });
 
-    describe('5. Agregar y eliminar campos', () => {
-        test('handleAddFeedbackField agrega una nueva sección "NUEVA SECCIÓN" y llama a updateConfiguracionCamposRetro', async () => {
+    describe('5. Agregar y eliminar campos (Edición local desacoplada)', () => {
+        test('handleAddFeedbackField agrega una nueva sección "NUEVA SECCIÓN" en memoria y se persiste al llamar a handleSaveTemplateConfig', async () => {
             const isDataLoadedRef = { current: false };
             const { result } = renderHook(() =>
                 useRetroalimentacionDinamica({
@@ -237,14 +241,24 @@ describe('useRetroalimentacionDinamica', () => {
             expect(result.current.retroalimentacionDinamica).toHaveLength(3);
 
             await act(async () => {
-                await result.current.handleAddFeedbackField();
+                result.current.handleAddFeedbackField();
             });
 
             expect(result.current.retroalimentacionDinamica).toHaveLength(4);
-            expect(result.current.retroalimentacionDinamica[3]).toEqual({
-                etiqueta: 'NUEVA SECCIÓN',
-                descripcion: '',
-                contenido: '',
+            expect(result.current.retroalimentacionDinamica[3]).toEqual(
+                expect.objectContaining({
+                    etiqueta: 'NUEVA SECCIÓN',
+                    descripcion: '',
+                    contenido: '',
+                })
+            );
+            expect(result.current.isTemplateDirty).toBe(true);
+            // No emite petición directa en cada modificación
+            expect(mockUpdateConfiguracionCamposRetro).not.toHaveBeenCalled();
+
+            // Persiste en Firestore únicamente al llamar a handleSaveTemplateConfig
+            await act(async () => {
+                await result.current.handleSaveTemplateConfig();
             });
 
             expect(mockUpdateConfiguracionCamposRetro).toHaveBeenCalledWith(
@@ -258,7 +272,7 @@ describe('useRetroalimentacionDinamica', () => {
             );
         });
 
-        test('handleRemoveFeedbackField elimina la sección en el índice indicado y llama a updateConfiguracionCamposRetro', async () => {
+        test('handleRemoveFeedbackField elimina la sección en el índice indicado y marca cambios pendientes', async () => {
             const isDataLoadedRef = { current: false };
             const { result } = renderHook(() =>
                 useRetroalimentacionDinamica({
@@ -273,7 +287,7 @@ describe('useRetroalimentacionDinamica', () => {
             expect(result.current.retroalimentacionDinamica).toHaveLength(3);
 
             await act(async () => {
-                await result.current.handleRemoveFeedbackField(1); // Elimina DIFICULTADES
+                result.current.handleRemoveFeedbackField(1); // Elimina DIFICULTADES
             });
 
             expect(result.current.retroalimentacionDinamica).toHaveLength(2);
@@ -281,6 +295,12 @@ describe('useRetroalimentacionDinamica', () => {
                 'AVANCES',
                 'COMPROMISOS',
             ]);
+            expect(result.current.isTemplateDirty).toBe(true);
+            expect(mockUpdateConfiguracionCamposRetro).not.toHaveBeenCalled();
+
+            await act(async () => {
+                await result.current.handleSaveTemplateConfig();
+            });
 
             expect(mockUpdateConfiguracionCamposRetro).toHaveBeenCalledWith(
                 'eval-123',
@@ -291,7 +311,7 @@ describe('useRetroalimentacionDinamica', () => {
             );
         });
 
-        test('no llama a updateConfiguracionCamposRetro al agregar o eliminar si evaluacionId es una cadena vacía', async () => {
+        test('no llama a updateConfiguracionCamposRetro si evaluacionId es una cadena vacía', async () => {
             const isDataLoadedRef = { current: false };
             const { result } = renderHook(() =>
                 useRetroalimentacionDinamica({
@@ -304,13 +324,13 @@ describe('useRetroalimentacionDinamica', () => {
             );
 
             await act(async () => {
-                await result.current.handleAddFeedbackField();
+                result.current.handleAddFeedbackField();
             });
 
             expect(mockUpdateConfiguracionCamposRetro).not.toHaveBeenCalled();
 
             await act(async () => {
-                await result.current.handleRemoveFeedbackField(0);
+                await result.current.handleSaveTemplateConfig();
             });
 
             expect(mockUpdateConfiguracionCamposRetro).not.toHaveBeenCalled();
@@ -318,7 +338,7 @@ describe('useRetroalimentacionDinamica', () => {
     });
 
     describe('Funciones adicionales de modificación de etiqueta y descripción', () => {
-        test('handleChangeFeedbackLabel actualiza la etiqueta en mayúsculas y sincroniza la configuración con silent = true', async () => {
+        test('handleChangeFeedbackLabel actualiza la etiqueta en memoria y se sincroniza al guardar la plantilla', async () => {
             const isDataLoadedRef = { current: false };
             const { result } = renderHook(() =>
                 useRetroalimentacionDinamica({
@@ -331,18 +351,24 @@ describe('useRetroalimentacionDinamica', () => {
             );
 
             await act(async () => {
-                await result.current.handleChangeFeedbackLabel(0, 'Logros Clave');
+                result.current.handleChangeFeedbackLabel(0, 'Logros Clave');
             });
 
             expect(result.current.retroalimentacionDinamica[0].etiqueta).toBe('LOGROS CLAVE');
+            expect(result.current.isTemplateDirty).toBe(true);
+            expect(mockUpdateConfiguracionCamposRetro).not.toHaveBeenCalled();
+
+            await act(async () => {
+                await result.current.handleSaveTemplateConfig();
+            });
+
             expect(mockUpdateConfiguracionCamposRetro).toHaveBeenCalledWith(
                 'eval-123',
-                expect.arrayContaining([{ etiqueta: 'LOGROS CLAVE', descripcion: '' }]),
-                true
+                expect.arrayContaining([{ etiqueta: 'LOGROS CLAVE', descripcion: '' }])
             );
         });
 
-        test('handleChangeFeedbackDescription actualiza la descripción y sincroniza la configuración con silent = true', async () => {
+        test('handleChangeFeedbackDescription actualiza la descripción en memoria y se sincroniza al guardar la plantilla', async () => {
             const isDataLoadedRef = { current: false };
             const { result } = renderHook(() =>
                 useRetroalimentacionDinamica({
@@ -355,14 +381,20 @@ describe('useRetroalimentacionDinamica', () => {
             );
 
             await act(async () => {
-                await result.current.handleChangeFeedbackDescription(0, 'Descripción detallada de avances');
+                result.current.handleChangeFeedbackDescription(0, 'Descripción detallada de avances');
             });
 
             expect(result.current.retroalimentacionDinamica[0].descripcion).toBe('Descripción detallada de avances');
+            expect(result.current.isTemplateDirty).toBe(true);
+            expect(mockUpdateConfiguracionCamposRetro).not.toHaveBeenCalled();
+
+            await act(async () => {
+                await result.current.handleSaveTemplateConfig();
+            });
+
             expect(mockUpdateConfiguracionCamposRetro).toHaveBeenCalledWith(
                 'eval-123',
-                expect.arrayContaining([{ etiqueta: 'AVANCES', descripcion: 'Descripción detallada de avances' }]),
-                true
+                expect.arrayContaining([{ etiqueta: 'AVANCES', descripcion: 'Descripción detallada de avances' }])
             );
         });
     });

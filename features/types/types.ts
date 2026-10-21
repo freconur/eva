@@ -533,6 +533,7 @@ export type CrearEvaluacionDocente = {
   faseActualID?: string;
   fases?: any[];
   niveles?: NivelYPuntaje[];
+  nivelYPuntaje?: NivelYPuntaje[];
   descripcion?: string;
   activarEvidencias?: boolean;
   fechaCreacion?: any;
@@ -576,6 +577,7 @@ export interface AlternativasDocente {
 }
 
 export type RetroalimentacionDinamica = {
+  id?: string;
   etiqueta: string;
   descripcion?: string;
   contenido: string;
@@ -611,6 +613,20 @@ export type NivelYPuntaje = {
   id?: number;
   value?: number;
 };
+
+export const DEFAULT_ESCALA_DIRECTOR: AlternativasDocente[] = [
+  { value: 0, descripcion: 'En inicio', alternativa: '0' },
+  { value: 1, descripcion: 'En Desarrollo', alternativa: '1' },
+  { value: 2, descripcion: 'Logro Esperado', alternativa: '2' },
+  { value: 4, descripcion: 'Logro destacado', alternativa: '4' },
+];
+
+export const DEFAULT_NIVELES_DIRECTOR: NivelYPuntaje[] = [
+  { id: 1, nivel: 'En Inicio', min: 0, max: 5, color: '#94A3B8' },
+  { id: 2, nivel: 'En Proceso', min: 6, max: 10, color: '#60A5FA' },
+  { id: 3, nivel: 'Logro Esperado', min: 11, max: 15, color: '#34D399' },
+  { id: 4, nivel: 'Logro Destacado', min: 16, max: 20, color: '#818CF8' },
+];
 export type TipoDeEvaluacion = {
   name?: string;
   value?: string;

@@ -245,7 +245,7 @@ const DatosEspecialista: React.FC<DatosEspecialistaProps> = ({
                     </div>
                 </div>
                 <div className={styles.infoRowItem}>
-                    <div className={styles.infoLabel}>FECHA FINAL:</div>
+                    <div className={styles.infoLabel}>HORA FINAL:</div>
                     <div className={styles.infoValue}>
                         <input
                             type="time"

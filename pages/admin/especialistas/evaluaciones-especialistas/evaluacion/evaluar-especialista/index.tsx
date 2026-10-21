@@ -74,6 +74,10 @@ const EvaluarEspecialista = () => {
     handleDeleteEvidencia,
     // Retroalimentación
     retroalimentacionDinamica,
+    isTemplateDirty,
+    isSavingTemplateConfig,
+    handleSaveTemplateConfig,
+    handleDiscardTemplateChanges,
     handleAddFeedbackField,
     handleRemoveFeedbackField,
     handleChangeFeedbackLabel,
@@ -173,6 +177,10 @@ const EvaluarEspecialista = () => {
                   retroalimentacionDinamica={retroalimentacionDinamica}
                   isAutoreporte={isAutoreporte}
                   isAdmin={isAdmin}
+                  isTemplateDirty={isTemplateDirty}
+                  isSavingTemplateConfig={isSavingTemplateConfig}
+                  handleSaveTemplateConfig={handleSaveTemplateConfig}
+                  handleDiscardTemplateChanges={handleDiscardTemplateChanges}
                   handleAddFeedbackField={handleAddFeedbackField}
                   handleRemoveFeedbackField={handleRemoveFeedbackField}
                   handleChangeFeedbackLabel={handleChangeFeedbackLabel}

@@ -417,4 +417,56 @@ describe('useEvaluarDesempeno', () => {
 
     expect(mockGuardarEvaluacion).toHaveBeenCalled();
   });
+
+  it('resuelve evaluacionId correctamente cuando la URL pasa idEvaluacion en lugar de id', async () => {
+    mockQuery = { idEvaluacion: 'eval-director-789', idDirector: '22222222' };
+    mockGlobalContextState = {
+      ...mockGlobalContextState,
+      dataEvaluacionDocente: {
+        id: 'eval-director-789',
+        active: true,
+        camposRetroalimentacion: [
+          { etiqueta: 'AVANCES', descripcion: 'hhhhhhhhhh' },
+          { etiqueta: 'DIFICULTADES', descripcion: 'dificultades previas' },
+        ],
+      },
+    };
+
+    const { result } = renderHook(() =>
+      useEvaluarDesempeno({
+        role: 'admin',
+        collectionName: 'evaluaciones-director',
+        queryParamKeys: ['idDirector'],
+      })
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.evaluacionId).toBe('eval-director-789');
+    expect(mockGetDataEvaluacion).toHaveBeenCalledWith('eval-director-789');
+    expect(result.current.retroalimentacionDinamica[0].descripcion).toBe('hhhhhhhhhh');
+
+    // Al editar o borrar la descripción de retroalimentación cualitativa se modifica en memoria
+    await act(async () => {
+      await result.current.handleChangeFeedbackDescription(0, '');
+    });
+
+    expect(result.current.retroalimentacionDinamica[0].descripcion).toBe('');
+    expect(result.current.isTemplateDirty).toBe(true);
+    expect(mockUpdateConfiguracionCamposRetro).not.toHaveBeenCalled();
+
+    // Se persiste al llamar a handleSaveTemplateConfig
+    await act(async () => {
+      await result.current.handleSaveTemplateConfig();
+    });
+
+    expect(mockUpdateConfiguracionCamposRetro).toHaveBeenCalledWith(
+      'eval-director-789',
+      expect.arrayContaining([
+        expect.objectContaining({ etiqueta: 'AVANCES', descripcion: '' }),
+      ])
+    );
+  });
 });

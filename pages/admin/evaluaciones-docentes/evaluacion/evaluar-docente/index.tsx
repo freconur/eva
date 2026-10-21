@@ -61,6 +61,10 @@ const EvaluarDocenteAdmin = () => {
     handleUploadEvidencia,
     handleDeleteEvidencia,
     retroalimentacionDinamica,
+    isTemplateDirty,
+    isSavingTemplateConfig,
+    handleSaveTemplateConfig,
+    handleDiscardTemplateChanges,
     handleAddFeedbackField,
     handleRemoveFeedbackField,
     handleChangeFeedbackLabel,
@@ -182,6 +186,10 @@ const EvaluarDocenteAdmin = () => {
                     retroalimentacionDinamica={retroalimentacionDinamica}
                     isAutoreporte={isAutoreporte}
                     isAdmin={isAdmin}
+                    isTemplateDirty={isTemplateDirty}
+                    isSavingTemplateConfig={isSavingTemplateConfig}
+                    handleSaveTemplateConfig={handleSaveTemplateConfig}
+                    handleDiscardTemplateChanges={handleDiscardTemplateChanges}
                     handleAddFeedbackField={handleAddFeedbackField}
                     handleRemoveFeedbackField={handleRemoveFeedbackField}
                     handleChangeFeedbackLabel={handleChangeFeedbackLabel}

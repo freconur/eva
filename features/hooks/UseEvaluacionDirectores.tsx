@@ -1,5 +1,15 @@
 import React from 'react'
-import { AlternativasDocente, CrearEvaluacionDocente, DataEstadisticas, DataEstadisticasDocente, PRDocentes, PreviewPRDocentes, User } from '../types/types'
+import {
+  AlternativasDocente,
+  CrearEvaluacionDocente,
+  DataEstadisticas,
+  DataEstadisticasDocente,
+  PRDocentes,
+  PreviewPRDocentes,
+  User,
+  DEFAULT_ESCALA_DIRECTOR,
+  DEFAULT_NIVELES_DIRECTOR,
+} from '../types/types'
 import { onSnapshot, addDoc, query, where, deleteDoc, doc, collection, getDocs, getFirestore, setDoc, updateDoc, getDoc, increment, orderBy, connectFirestoreEmulator } from "firebase/firestore";
 import { useGlobalContext, useGlobalContextDispatch } from '../context/GlolbalContext';
 import { AppAction } from '../actions/appAction';
@@ -28,6 +38,9 @@ const UseEvaluacionDirectores = () => {
       faseNombre: defaultFaseNombre,
       faseActualID: defaultFaseID,
       fases: defaultFases,
+      escala: data.escala || DEFAULT_ESCALA_DIRECTOR,
+      niveles: data.niveles || DEFAULT_NIVELES_DIRECTOR,
+      nivelYPuntaje: (data as any).nivelYPuntaje || DEFAULT_NIVELES_DIRECTOR,
     });
   }
 

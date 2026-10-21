@@ -20,6 +20,9 @@ import {
   MdFilterList,
   MdSchool,
   MdBarChart,
+  MdExpandMore,
+  MdViewAgenda,
+  MdViewList,
 } from 'react-icons/md';
 import {
   RiAwardLine,
@@ -182,17 +185,34 @@ const EvaluacionDetalleEspecialista = () => {
     };
   }, [selectedRegion, isAdminOrDrep, currentUserData?.dni, getParrillaEvaluados]);
 
-  // Mapear especialistas con estado de evaluación
+  const userDni = currentUserData?.dni ? String(currentUserData.dni).trim() : '';
+
+  // Evaluaciones de especialistas realizadas exclusivamente por el monitor autenticado
+  const misEvaluacionesEspecialistas = useMemo(() => {
+    if (!evaluadosEspecialista || evaluadosEspecialista.length === 0 || !userDni) return [];
+    return evaluadosEspecialista.filter((ev: any) => {
+      const monitorDni = String(
+        ev.evaluadorDni ||
+        ev.adminDni ||
+        ev.datosMonitor?.dni ||
+        ev.monitorDni ||
+        ''
+      ).trim();
+      return monitorDni === userDni;
+    });
+  }, [evaluadosEspecialista, userDni]);
+
+  // Mapear especialistas con estado de evaluación (aislado al monitor actual)
   const especialistasConEstado = useMemo(() => {
-    const evaluados = evaluadosEspecialista || [];
+    const evaluados = misEvaluacionesEspecialistas;
     return especialistasPadron.map((especialista) => {
       const espDni = String(especialista.dni || '').trim();
-      const evRegistrada = evaluados.find((ev) => {
+      const evRegistrada = evaluados.find((ev: any) => {
         const evDni = String(
           ev.dni ||
-          (ev as any).especialistaDni ||
-          (ev as any).evaluadoDni ||
-          (ev as any).directorDni ||
+          ev.especialistaDni ||
+          ev.evaluadoDni ||
+          ev.directorDni ||
           ''
         ).trim();
         return evDni === espDni;
@@ -204,7 +224,7 @@ const EvaluacionDetalleEspecialista = () => {
         isEvaluated: !!evRegistrada,
       };
     });
-  }, [especialistasPadron, evaluadosEspecialista]);
+  }, [especialistasPadron, misEvaluacionesEspecialistas]);
 
   // Filtrar especialistas por estado (todos / evaluados / pendientes) y búsqueda
   const especialistasFiltrados = useMemo(() => {
@@ -233,6 +253,107 @@ const EvaluacionDetalleEspecialista = () => {
       );
     });
   }, [especialistasConEstado, filterEstado, searchEspecialista]);
+
+  // Estado para alternar entre vista por UGEL (acordeón) y lista general
+  const [modoVista, setModoVista] = useState<'ugel' | 'lista'>('ugel');
+  const [expandedUgels, setExpandedUgels] = useState<Set<string>>(new Set());
+
+  // Agrupación de especialistas por UGEL en acordeones
+  const gruposPorUgel = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        key: string;
+        regionId: number | string;
+        nombreUgel: string;
+        especialistas: typeof especialistasFiltrados;
+        evaluadosCount: number;
+        totalCount: number;
+        promedio: number;
+      }
+    >();
+
+    especialistasFiltrados.forEach((esp) => {
+      const rawReg = esp.region !== undefined && esp.region !== null ? esp.region : 'SIN_UGEL';
+      const key = String(rawReg);
+      const regText = regionTexto(rawReg);
+      const nombreUgel = regText
+        ? regText.startsWith('UGEL')
+          ? regText
+          : `UGEL ${regText}`
+        : rawReg !== 'SIN_UGEL'
+        ? `UGEL ${rawReg}`
+        : 'UGEL No Asignada';
+
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          regionId: rawReg,
+          nombreUgel,
+          especialistas: [],
+          evaluadosCount: 0,
+          totalCount: 0,
+          promedio: 0,
+        });
+      }
+
+      const item = map.get(key)!;
+      item.especialistas.push(esp);
+      item.totalCount += 1;
+      if (esp.isEvaluated) {
+        item.evaluadosCount += 1;
+      }
+    });
+
+    // Calcular promedios para especialistas evaluados en cada UGEL
+    const list = Array.from(map.values()).map((grupo) => {
+      const calificados = grupo.especialistas.filter(
+        (e) => e.isEvaluated && e.evaluacion?.calificacion !== undefined && e.evaluacion?.calificacion !== null
+      );
+      const suma = calificados.reduce((acc, e) => acc + Number(e.evaluacion?.calificacion ?? 0), 0);
+      const promedio = calificados.length > 0 ? Math.round((suma / calificados.length) * 10) / 10 : 0;
+      return {
+        ...grupo,
+        promedio,
+      };
+    });
+
+    return list.sort((a, b) =>
+      a.nombreUgel.localeCompare(b.nombreUgel, 'es', { sensitivity: 'base' })
+    );
+  }, [especialistasFiltrados]);
+
+  // Expandir todas las UGELs inicialmente o cuando cambien los datos
+  useEffect(() => {
+    if (gruposPorUgel.length > 0) {
+      setExpandedUgels((prev) => {
+        if (prev.size === 0) {
+          return new Set(gruposPorUgel.map((g) => g.key));
+        }
+        return prev;
+      });
+    }
+  }, [gruposPorUgel]);
+
+  const toggleUgel = (key: string) => {
+    setExpandedUgels((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const expandAllUgels = () => {
+    setExpandedUgels(new Set(gruposPorUgel.map((g) => g.key)));
+  };
+
+  const collapseAllUgels = () => {
+    setExpandedUgels(new Set());
+  };
 
   // Contadores y métricas de progreso
   const totalEspecialistas = especialistasPadron.length;
@@ -335,11 +456,21 @@ const EvaluacionDetalleEspecialista = () => {
   };
 
   const handleDeleteDimension = async (idDimension: string) => {
-    if (
-      window.confirm(
-        '¿Estás seguro de que deseas eliminar este dominio? Esta acción no eliminará las preguntas, pero quedarán sin dominio asignado.'
-      )
-    ) {
+    const dim = dimensionesEspecialistas?.find((d: any) => String(d.id) === String(idDimension));
+    const preguntasDeDim = getPreguntaRespuestaDocentes?.filter(
+      (p: any) => String(p.dimensionId || p.dimencionId) === String(idDimension)
+    ) || [];
+
+    const mensaje =
+      preguntasDeDim.length > 0
+        ? `¿Está seguro de eliminar el dominio "${dim?.nombre || 'seleccionado'}"?\n\nAdvertencia: Contiene ${preguntasDeDim.length} ${
+            preguntasDeDim.length === 1 ? 'criterio pedagógico' : 'criterios pedagógicos'
+          } que también se ${
+            preguntasDeDim.length === 1 ? 'eliminará' : 'eliminarán'
+          } definitivamente de la evaluación.`
+        : `¿Está seguro de eliminar el dominio "${dim?.nombre || 'seleccionado'}"?`;
+
+    if (window.confirm(mensaje)) {
       await deleteDimensionEspecialista(idEvaluacion, idDimension);
     }
   };
@@ -637,10 +768,47 @@ const EvaluacionDetalleEspecialista = () => {
                     ))}
                   </select>
                 </div>
+
+                {/* Selector de Vista: Por UGEL vs Lista General */}
+                <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+                  <button
+                    type="button"
+                    onClick={() => setModoVista('ugel')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      modoVista === 'ugel'
+                        ? 'bg-white text-blue-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="Organizado en acordeones por UGEL"
+                  >
+                    <MdViewAgenda className="text-sm" />
+                    <span>Por UGEL</span>
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-100 text-blue-800 font-bold">
+                      {gruposPorUgel.length}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setModoVista('lista')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      modoVista === 'lista'
+                        ? 'bg-white text-slate-800 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="Lista general de especialistas"
+                  >
+                    <MdViewList className="text-sm" />
+                    <span>Lista General</span>
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200/80 text-slate-700 font-bold">
+                      {especialistasFiltrados.length}
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Tabla de Especialistas */}
+            {/* Tabla / Acordeones de Especialistas */}
             {loadingEspecialistas ? (
               <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200">
                 <RiLoader4Line className="text-4xl text-blue-600 animate-spin mb-3" />
@@ -650,7 +818,7 @@ const EvaluacionDetalleEspecialista = () => {
               <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
                 <p className="text-base font-semibold text-slate-700">
                   {filterEstado === 'evaluados'
-                    ? 'No hay especialistas evaluados con los filtros seleccionados'
+                    ? 'No hay especialistas evaluados por usted con los filtros seleccionados'
                     : filterEstado === 'pendientes'
                     ? 'No hay especialistas pendientes con los filtros seleccionados'
                     : 'No se encontraron especialistas'}
@@ -673,7 +841,208 @@ const EvaluacionDetalleEspecialista = () => {
                   </button>
                 )}
               </div>
+            ) : modoVista === 'ugel' ? (
+              /* VISTA ORGANIZADA POR ACORDEONES DE UGEL */
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+                  <span>
+                    Mostrando <strong className="text-slate-700">{gruposPorUgel.length}</strong> UGELs (
+                    {especialistasFiltrados.length} especialistas {filterEstado === 'evaluados' ? 'evaluados' : filterEstado === 'pendientes' ? 'pendientes' : 'en total'})
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={expandAllUgels}
+                      className="hover:text-blue-600 font-semibold cursor-pointer transition-colors"
+                    >
+                      Expandir todos
+                    </button>
+                    <span>•</span>
+                    <button
+                      type="button"
+                      onClick={collapseAllUgels}
+                      className="hover:text-blue-600 font-semibold cursor-pointer transition-colors"
+                    >
+                      Contraer todos
+                    </button>
+                  </div>
+                </div>
+
+                {gruposPorUgel.map((grupo) => {
+                  const isExpanded = expandedUgels.has(grupo.key);
+
+                  return (
+                    <div
+                      key={grupo.key}
+                      className="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all overflow-hidden"
+                    >
+                      {/* Header de la UGEL */}
+                      <div
+                        onClick={() => toggleUgel(grupo.key)}
+                        className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer bg-gradient-to-r from-slate-50/60 to-white hover:from-blue-50/30 hover:to-white transition-colors"
+                      >
+                        <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 shadow-2xs font-bold">
+                            <MdSchool className="text-xl" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-sm sm:text-base font-bold text-slate-800">
+                                {grupo.nombreUgel}
+                              </h3>
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200/60">
+                                {grupo.evaluadosCount} {grupo.evaluadosCount === 1 ? 'evaluado' : 'evaluados'}
+                              </span>
+                              {grupo.totalCount - grupo.evaluadosCount > 0 && (
+                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200/60">
+                                  {grupo.totalCount - grupo.evaluadosCount} pendientes
+                                </span>
+                              )}
+                              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
+                                Total: {grupo.totalCount}
+                              </span>
+                              {grupo.promedio > 0 && (
+                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200/60">
+                                  Promedio: {grupo.promedio} pts
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              Especialistas pedagógicos adscritos a esta jurisdicción
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2.5 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleUgel(grupo.key);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                            title={isExpanded ? 'Contraer UGEL' : 'Expandir UGEL'}
+                            aria-expanded={isExpanded}
+                          >
+                            <MdExpandMore
+                              className={`text-2xl text-slate-600 transition-transform duration-300 ease-in-out ${
+                                isExpanded ? 'rotate-180' : ''
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Sub-tabla de Especialistas de la UGEL */}
+                      {isExpanded && (
+                        <div className="border-t border-slate-100 overflow-x-auto">
+                          <table className="min-w-full divide-y divide-slate-100">
+                            <thead className="bg-slate-50/70">
+                              <tr>
+                                <th scope="col" className="w-14 px-4 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                  #
+                                </th>
+                                <th scope="col" className="px-4 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                  Especialista
+                                </th>
+                                <th scope="col" className="px-4 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                  Cargo
+                                </th>
+                                <th scope="col" className="w-44 px-4 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                  Estado
+                                </th>
+                                <th scope="col" className="w-48 px-4 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                  Acciones
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 bg-white text-sm">
+                              {grupo.especialistas.map((especialista, index) => {
+                                const evalUrl = `/admin/especialistas/evaluaciones-especialistas/evaluacion/evaluar-especialista?id=${idEvaluacion}&idDirector=${especialista.dni}`;
+                                const sessionParam = especialista.evaluacion?.id ? `&sessionId=${especialista.evaluacion.id}` : '';
+                                const reporteUrl = `/admin/especialistas/evaluaciones-especialistas/evaluacion/reporte-especialista-individual?idEvaluacion=${idEvaluacion}&idDirector=${especialista.dni}${sessionParam}`;
+                                const nivel = getNivelEvaluado(especialista.evaluacion?.calificacion);
+
+                                return (
+                                  <tr key={especialista.dni || index} className="hover:bg-slate-50/80 transition-colors">
+                                    <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-slate-400">
+                                      {index + 1}
+                                    </td>
+
+                                    <td className="px-4 py-3">
+                                      <span className="text-sm font-bold text-slate-800 block">
+                                        {especialista.nombres} {especialista.apellidos}
+                                      </span>
+                                      <span className="text-xs text-slate-500 font-mono">DNI: {especialista.dni}</span>
+                                    </td>
+
+                                    <td className="px-4 py-3">
+                                      <div className="flex items-center gap-1.5 text-xs text-slate-700 font-medium">
+                                        <MdSchool className="text-slate-400" />
+                                        <span>{especialista.cargo || 'Especialista de UGEL'}</span>
+                                      </div>
+                                      {especialista.celular && (
+                                        <div className="text-xs text-slate-400 mt-0.5">Cel: {especialista.celular}</div>
+                                      )}
+                                    </td>
+
+                                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                                      {especialista.isEvaluated ? (
+                                        <div className="inline-flex flex-col items-center gap-1">
+                                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <MdCheckCircle className="text-emerald-600" />
+                                            Evaluado ({especialista.evaluacion?.calificacion ?? 0} pts)
+                                          </span>
+                                          {nivel?.nivel && (
+                                            <span className="text-[11px] font-semibold text-slate-500">
+                                              {nivel.nivel}
+                                            </span>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                          <MdPendingActions className="text-amber-500" />
+                                          Pendiente
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                                      <div className="flex items-center justify-center gap-2">
+                                        <Link
+                                          href={evalUrl}
+                                          className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors ${
+                                            especialista.isEvaluated
+                                              ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                              : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                                          }`}
+                                        >
+                                          {especialista.isEvaluated ? 'Reevaluar' : 'Evaluar'}
+                                        </Link>
+
+                                        {especialista.isEvaluated && (
+                                          <Link
+                                            href={reporteUrl}
+                                            className="px-2.5 py-1 text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors"
+                                          >
+                                            Reporte
+                                          </Link>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
+              /* VISTA GENERAL / PLANA */
               <div className="overflow-hidden bg-white rounded-2xl border border-slate-200 shadow-sm">
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">

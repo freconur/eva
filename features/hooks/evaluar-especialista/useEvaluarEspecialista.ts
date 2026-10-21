@@ -19,7 +19,8 @@ const defaultEscala = [
 
 export const useEvaluarEspecialista = () => {
     const router = useRouter();
-    const evaluacionId = router.query.id ? `${router.query.id}` : '';
+    const rawEvaluacionId = router.query.idEvaluacion || router.query.id || router.query.evaluacionId || '';
+    const evaluacionId = Array.isArray(rawEvaluacionId) ? rawEvaluacionId[0] : `${rawEvaluacionId}`;
 
     const {
         getPreguntaRespuestaDocentes,
@@ -93,6 +94,10 @@ export const useEvaluarEspecialista = () => {
     const {
         retroalimentacionDinamica,
         setRetroalimentacionDinamica,
+        isTemplateDirty,
+        isSavingTemplateConfig,
+        handleSaveTemplateConfig,
+        handleDiscardTemplateChanges,
         handleAddFeedbackField,
         handleRemoveFeedbackField,
         handleChangeFeedbackLabel,
@@ -583,6 +588,10 @@ export const useEvaluarEspecialista = () => {
         handleDeleteEvidencia,
         // Retroalimentación
         retroalimentacionDinamica,
+        isTemplateDirty,
+        isSavingTemplateConfig,
+        handleSaveTemplateConfig,
+        handleDiscardTemplateChanges,
         handleAddFeedbackField,
         handleRemoveFeedbackField,
         handleChangeFeedbackLabel,

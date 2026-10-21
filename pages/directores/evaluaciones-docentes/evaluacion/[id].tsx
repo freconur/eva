@@ -368,15 +368,26 @@ const EvaluacionDetalleDirector = () => {
     ]
   );
 
-  // Eliminar dimensión
+  // Eliminar dimensión y sus criterios asociados
   const handleDeleteDim = async (dimId?: string) => {
-    if (!dimId) return;
-    if (
-      window.confirm(
-        '¿Deseas eliminar este dominio? Los criterios asociados quedarán sin dominio asignado.'
-      )
-    ) {
-      await deleteDimension(idEvaluacion, dimId);
+    if (!dimId || !idEvaluacion) return;
+
+    const dim = currentDimensiones.find((d) => String(d.id) === String(dimId));
+    const preguntasDeDim = currentPreguntas.filter(
+      (p) => String(p.dimensionId || (p as any).dimencionId) === String(dimId)
+    );
+
+    const mensaje =
+      preguntasDeDim.length > 0
+        ? `¿Está seguro de eliminar el dominio "${dim?.nombre || 'seleccionado'}"?\n\nAdvertencia: Contiene ${preguntasDeDim.length} ${
+            preguntasDeDim.length === 1 ? 'criterio pedagógico' : 'criterios pedagógicos'
+          } que también se ${
+            preguntasDeDim.length === 1 ? 'eliminará' : 'eliminarán'
+          } definitivamente de la evaluación.`
+        : `¿Está seguro de eliminar el dominio "${dim?.nombre || 'seleccionado'}"?`;
+
+    if (window.confirm(mensaje)) {
+      await deleteDimension(idEvaluacion, dimId, true);
     }
   };
 
