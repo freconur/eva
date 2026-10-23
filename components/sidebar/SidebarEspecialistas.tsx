@@ -146,12 +146,8 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                   </div>
                   <ul className={`${styles.submenu} ${openDropdown === 'directivos' ? styles.show : ''}`}>
                     <li className={styles.flyoutHeader}>{getLabel('especialista_directivos', 'Directivos')}</li>
-                    {!currentUserData.nivelDeInstitucion?.includes(2) && (
-                      <>
-                        <li><Link href="/especialistas/evaluaciones-director" className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/evaluaciones-director') ? styles.activeLink : ''}`}>{getLabel('especialista_directivos_seguimiento', 'Seguimiento y retroalimentación')}</Link></li>
-                        <li><Link href="/especialistas/cobertura-curricular" className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/cobertura-curricular') ? styles.activeLink : ''}`}>{getLabel('especialista_directivos_cobertura', 'Cobertura curricular')}</Link></li>
-                      </>
-                    )}
+                    <li><Link href="/especialistas/evaluaciones-director" className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/evaluaciones-director') ? styles.activeLink : ''}`}>{getLabel('especialista_directivos_seguimiento', 'Seguimiento y retroalimentación')}</Link></li>
+                    <li><Link href="/especialistas/cobertura-curricular" className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/cobertura-curricular') ? styles.activeLink : ''}`}>{getLabel('especialista_directivos_cobertura', 'Cobertura curricular')}</Link></li>
                     <li><Link href="/especialistas/agregar-directores" className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/agregar-directores') ? styles.activeLink : ''}`}>{getLabel('especialista_directivos_crear', 'Crear directivo')}</Link></li>
                     <CustomSidebarRenderer role="especialista" parentId="especialista_directivos" customItems={customItems} isSubmenu={true} />
                   </ul>
