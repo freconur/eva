@@ -52,28 +52,18 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
   });
 
   const isUserAdmin = useMemo(() => {
-    if (
-      currentUserData?.rol === 4 ||
-      currentUserData?.rol === 0 ||
-      currentUserData?.perfil?.rol === 4 ||
-      currentUserData?.perfil?.rol === 0 ||
-      Number(currentUserData?.rol) === 4 ||
-      Number(currentUserData?.rol) === 0
-    ) {
-      return true;
-    }
-    if (typeof window !== 'undefined') {
-      if (sessionStorage.getItem('audited_user') || sessionStorage.getItem('real_admin_user')) {
-        return true;
-      }
-    }
-    if (
-      currentUserData?.rol === 1 ||
-      currentUserData?.rol === 2 ||
-      currentUserData?.rol === 3
-    ) {
+    const userRole = Number(currentUserData?.rol ?? currentUserData?.perfil?.rol);
+
+    // Directores (2), Especialistas (1) y Docentes (3) no tienen permisos de administración
+    if (userRole === 1 || userRole === 2 || userRole === 3) {
       return false;
     }
+
+    // Administradores (4 o 0) y Especialistas Regionales (5)
+    if (userRole === 4 || userRole === 0 || userRole === 5) {
+      return true;
+    }
+
     return Boolean(canCreate);
   }, [currentUserData, canCreate]);
 
@@ -389,9 +379,11 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
                 <th scope="col" className="w-40 px-6 py-3.5 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   Tipo / Estado
                 </th>
-                <th scope="col" className="w-32 px-6 py-3.5 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Acciones
-                </th>
+                {isUserAdmin && (
+                  <th scope="col" className="w-32 px-6 py-3.5 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Acciones
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -466,16 +458,16 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
                       )}
                     </td>
 
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <Link
-                          href={detailUrl}
-                          className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                          title={isUserAdmin ? 'Configurar / Monitorear' : 'Acceder a evaluación'}
-                        >
-                          <MdEditSquare className="text-lg" />
-                        </Link>
-                        {isUserAdmin && (
+                    {isUserAdmin && (
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <Link
+                            href={detailUrl}
+                            className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            title="Configurar / Monitorear"
+                          >
+                            <MdEditSquare className="text-lg" />
+                          </Link>
                           <button
                             type="button"
                             onClick={() => setDeleteEvalId(evalId)}
@@ -484,9 +476,9 @@ export const EvaluacionesListContainer: React.FC<EvaluacionesListContainerProps>
                           >
                             <MdDeleteForever className="text-lg" />
                           </button>
-                        )}
-                      </div>
-                    </td>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
