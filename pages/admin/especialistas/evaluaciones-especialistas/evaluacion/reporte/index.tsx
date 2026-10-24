@@ -4403,39 +4403,105 @@ const Reportes = () => {
                           if (layoutMode === 'tabs' && activeTab !== 'general') return null;
                           return (
                             <div key="pie_charts" className={`${styles.globalChartsGrid} ${layoutMode === 'tabs' ? tabsStyles.tabContentPanel : ''}`}>
-                              <div className={styles.chartContainer}>
-                                <h3 className={styles.sectionTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                  <span style={{ display: 'flex', alignItems: 'center' }}>
-                                    <span className={styles.sectionTitleIndicator}></span>
-                                    <span>Consolidado Global de Resultados</span>
-                                  </span>
-                                  <GlobalScoreInfoPopup
-                                    type="consolidado_general"
-                                    isOpen={showConsolidadoInfo}
-                                    onToggle={() => setShowConsolidadoInfo((prev) => !prev)}
-                                    onClose={() => setShowConsolidadoInfo(false)}
-                                    anchorRef={consolidadoInfoRef}
-                                  />
-                                </h3>
-                                <div className={styles.pieChartWrapper}>
-                                  <Pie options={pieOptions} data={getPieData()} />
-                                </div>
-                                <div className={styles.statsGrid}>
-                                  <div className={styles.statItem}>
-                                    <span className={styles.statLabel}>Total Evaluados</span>
-                                    <span className={styles.statValue}>{dataFiltradaEspecialistaDirectorTabla?.length || 0}</span>
-                                  </div>
-                                  {dataEvaluacionDocente.escala?.map((item, index) => {
-                                    const values = [dataConsolidadoGlobal?.a, dataConsolidadoGlobal?.b, dataConsolidadoGlobal?.c, dataConsolidadoGlobal?.d];
-                                    return (
-                                      <div key={index} className={styles.statItem}>
-                                        <span className={styles.statLabel}>{item.descripcion}</span>
-                                        <span className={styles.statValue}>{values[index] || 0}</span>
+                              {(() => {
+                                const pieData = getPieData();
+                                const totalEvaluados = dataFiltradaEspecialistaDirectorTabla?.length || 0;
+                                const scale = dataEvaluacionDocente.escala || [];
+                                const values = [
+                                  dataConsolidadoGlobal?.a || 0,
+                                  dataConsolidadoGlobal?.b || 0,
+                                  dataConsolidadoGlobal?.c || 0,
+                                  dataConsolidadoGlobal?.d || 0,
+                                ];
+                                const totalRespuestas = values.slice(0, scale.length).reduce((acc, v) => acc + v, 0);
+                                const borderColors = [
+                                  '#64748b', // Slate 500
+                                  '#3b82f6', // Blue 500
+                                  '#10b981', // Emerald 500
+                                  '#6366f1', // Indigo 500
+                                ];
+
+                                return (
+                                  <div className={styles.chartContainer}>
+                                    <h3 className={styles.sectionTitle} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                      <span style={{ display: 'flex', alignItems: 'center' }}>
+                                        <span className={styles.sectionTitleIndicator}></span>
+                                        <span>Consolidado Global de Resultados</span>
+                                      </span>
+                                      <GlobalScoreInfoPopup
+                                        type="consolidado_general"
+                                        isOpen={showConsolidadoInfo}
+                                        onToggle={() => setShowConsolidadoInfo((prev) => !prev)}
+                                        onClose={() => setShowConsolidadoInfo(false)}
+                                        anchorRef={consolidadoInfoRef}
+                                      />
+                                    </h3>
+                                    <div className={styles.pieContentRow}>
+                                      <div className={styles.pieChartBox}>
+                                        <Pie
+                                          options={{
+                                            responsive: true,
+                                            maintainAspectRatio: true,
+                                            plugins: {
+                                              legend: { display: false },
+                                              title: { display: false },
+                                              tooltip: {
+                                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                                padding: 10,
+                                                cornerRadius: 8,
+                                                callbacks: {
+                                                  label: (context: any) => {
+                                                    const val = context.parsed || 0;
+                                                    const pct = totalRespuestas > 0 ? ((val / totalRespuestas) * 100).toFixed(1) : '0';
+                                                    return ` ${context.label}: ${val} (${pct}%)`;
+                                                  },
+                                                },
+                                              },
+                                            },
+                                          }}
+                                          data={pieData}
+                                        />
                                       </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
+                                      <div className={styles.pieStatsColumn}>
+                                        <div
+                                          className={styles.pieStatCard}
+                                          style={{ border: '1px solid #2563eb', backgroundColor: '#ffffff' }}
+                                        >
+                                          <div className={styles.pieStatLabelGroup}>
+                                            <span className={styles.pieStatColorDot} style={{ backgroundColor: '#2563eb' }} />
+                                            <span className={styles.pieStatLabel}>TOTAL EVALUADOS</span>
+                                          </div>
+                                          <span className={styles.pieStatValue}>{totalEvaluados}</span>
+                                          <span className={styles.pieStatSub}>100%</span>
+                                        </div>
+                                        {scale.map((item, index) => {
+                                          const count = values[index] || 0;
+                                          const pct = totalRespuestas > 0 ? Math.round((count / totalRespuestas) * 100) : 0;
+                                          const cardColor = borderColors[index % borderColors.length];
+                                          return (
+                                            <div
+                                              key={index}
+                                              className={styles.pieStatCard}
+                                              style={{ border: `1px solid ${cardColor}`, backgroundColor: '#ffffff' }}
+                                            >
+                                              <div className={styles.pieStatTooltip}>
+                                                <span className={styles.pieStatTooltipDot} style={{ backgroundColor: cardColor }} />
+                                                <span>{item.descripcion}</span>
+                                              </div>
+                                              <div className={styles.pieStatLabelGroup} aria-label={item.descripcion}>
+                                                <span className={styles.pieStatColorDot} style={{ backgroundColor: cardColor }} />
+                                                <span className={styles.pieStatLabel}>{item.descripcion}</span>
+                                              </div>
+                                              <span className={styles.pieStatValue}>{count}</span>
+                                              <span className={styles.pieStatSub}>{pct}% ({count}/{totalRespuestas})</span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
 
                               {(() => {
                                 const rawNiveles = (dataEvaluacionDocente?.niveles && dataEvaluacionDocente.niveles.length > 0)
@@ -4475,74 +4541,69 @@ const Reportes = () => {
                                         anchorRef={levelsInfoRef}
                                       />
                                     </h3>
-                                    <div className={styles.pieChartWrapper}>
-                                      <Pie
-                                        options={{
-                                          responsive: true,
-                                          maintainAspectRatio: true,
-                                          layout: {
-                                            padding: { top: 10, bottom: 10, left: 10, right: 10 },
-                                          },
-                                          plugins: {
-                                            legend: {
-                                              position: 'bottom' as const,
-                                              labels: {
-                                                boxWidth: 12,
-                                                boxHeight: 12,
-                                                usePointStyle: true,
-                                                pointStyle: 'circle',
-                                                padding: 16,
-                                                font: {
-                                                  family: 'Montserrat, sans-serif',
-                                                  size: 11.5,
-                                                  weight: 500,
-                                                },
-                                                color: '#475569',
-                                              },
-                                            },
-                                            title: {
-                                              display: true,
-                                              text: 'Especialistas por Nivel de Logro',
-                                              font: {
-                                                family: 'Montserrat, sans-serif',
-                                                size: 13,
-                                                weight: 'bold' as const,
-                                              },
-                                              color: '#1e293b',
-                                              padding: { bottom: 12 },
-                                            },
-                                            tooltip: {
-                                              backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                                              padding: 10,
-                                              cornerRadius: 8,
-                                              callbacks: {
-                                                label: (context: any) => {
-                                                  const val = context.parsed || 0;
-                                                  const tot = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-                                                  const pct = tot > 0 ? ((val / tot) * 100).toFixed(1) : '0';
-                                                  return ` ${context.label}: ${val} (${pct}%)`;
+                                    <div className={styles.pieContentRow}>
+                                      <div className={styles.pieChartBox}>
+                                        <Pie
+                                          options={{
+                                            responsive: true,
+                                            maintainAspectRatio: true,
+                                            plugins: {
+                                              legend: { display: false },
+                                              title: { display: false },
+                                              tooltip: {
+                                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                                padding: 10,
+                                                cornerRadius: 8,
+                                                callbacks: {
+                                                  label: (context: any) => {
+                                                    const val = context.parsed || 0;
+                                                    const tot = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                                                    const pct = tot > 0 ? ((val / tot) * 100).toFixed(1) : '0';
+                                                    return ` ${context.label}: ${val} (${pct}%)`;
+                                                  },
                                                 },
                                               },
                                             },
-                                          },
-                                        }}
-                                        data={levelsData}
-                                      />
-                                    </div>
-                                    <div className={styles.statsGrid}>
-                                      <div className={styles.statItem}>
-                                        <span className={styles.statLabel}>Total Evaluados</span>
-                                        <span className={styles.statValue}>{totalUnique}</span>
+                                          }}
+                                          data={levelsData}
+                                        />
                                       </div>
-                                      {rawNiveles.map((nivel: any, index: number) => {
-                                        const count = levelsData.datasets[0]?.data[index] || 0;
-                                        return (
-                                          <div key={index} className={styles.statItem}>
-                                            <span className={styles.statLabel} style={{ color: nivel.color }}>{nivel.nivel}</span>
-                                            <span className={styles.statValue}>{count}</span>
+                                      <div className={styles.pieStatsColumn}>
+                                        <div
+                                          className={styles.pieStatCard}
+                                          style={{ border: '1px solid #2563eb', backgroundColor: '#ffffff' }}
+                                        >
+                                          <div className={styles.pieStatLabelGroup}>
+                                            <span className={styles.pieStatColorDot} style={{ backgroundColor: '#2563eb' }} />
+                                            <span className={styles.pieStatLabel}>TOTAL EVALUADOS</span>
                                           </div>
-                                        );
-                                      })}
+                                          <span className={styles.pieStatValue}>{totalUnique}</span>
+                                          <span className={styles.pieStatSub}>100%</span>
+                                        </div>
+                                        {rawNiveles.map((nivel: any, index: number) => {
+                                          const count = levelsData.datasets[0]?.data[index] || 0;
+                                          const pct = totalUnique > 0 ? Math.round((count / totalUnique) * 100) : 0;
+                                          const cardColor = nivel.color || '#3b82f6';
+                                          return (
+                                            <div
+                                              key={index}
+                                              className={styles.pieStatCard}
+                                              style={{ border: `1px solid ${cardColor}`, backgroundColor: '#ffffff' }}
+                                            >
+                                              <div className={styles.pieStatTooltip}>
+                                                <span className={styles.pieStatTooltipDot} style={{ backgroundColor: cardColor }} />
+                                                <span>{nivel.nivel}</span>
+                                              </div>
+                                              <div className={styles.pieStatLabelGroup} aria-label={nivel.nivel}>
+                                                <span className={styles.pieStatColorDot} style={{ backgroundColor: cardColor }} />
+                                                <span className={styles.pieStatLabel}>{nivel.nivel}</span>
+                                              </div>
+                                              <span className={styles.pieStatValue}>{count}</span>
+                                              <span className={styles.pieStatSub}>{pct}% ({count}/{totalUnique})</span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
                                     </div>
                                   </div>
                                 );
@@ -4563,205 +4624,93 @@ const Reportes = () => {
                                       anchorRef={proporcionalInfoRef}
                                     />
                                   </h3>
-                                  <div className={styles.pieChartWrapper}>
-                                    <Pie
-                                      options={{
-                                        responsive: true,
-                                        maintainAspectRatio: true,
-                                        plugins: {
-                                          title: {
-                                            display: true,
-                                            text: 'Promedio Comparativo por Dominio',
-                                            font: {
-                                              family: 'Montserrat, sans-serif',
-                                              size: 13,
-                                              weight: 'bold' as const,
+                                  <div className={styles.pieContentRow}>
+                                    <div className={styles.pieChartBox}>
+                                      <Pie
+                                        options={{
+                                          responsive: true,
+                                          maintainAspectRatio: true,
+                                          plugins: {
+                                            title: {
+                                              display: false,
                                             },
-                                            padding: {
-                                              bottom: 12,
+                                            legend: {
+                                              display: false,
                                             },
-                                          },
-                                          legend: {
-                                            display: false,
-                                          },
-                                          tooltip: {
-                                            callbacks: {
-                                              label: (context: any) => {
-                                                const dim = dimensionesEspecialistas[context.dataIndex];
-                                                const score = context.parsed;
-                                                const preguntasDim = getPreguntaRespuestaDocentes.filter((p: any) => p.dimensionId === dim?.id);
-                                                const countQuestions = preguntasDim.length || 1;
-                                                const maxScaleVal = Math.max(1, ...(dataEvaluacionDocente.escala?.map((e: any) => Number(e.value) || 0) || [3]));
-                                                const maxDomainScore = countQuestions * maxScaleVal;
-                                                const nivelObj = (dim?.niveles && dim.niveles.length > 0)
-                                                  ? getNivelLogro(score, dim.niveles)
-                                                  : getNivelLogroDominio(score, maxDomainScore, dim);
-                                                const rangeText = (nivelObj && nivelObj.min !== undefined && nivelObj.max !== undefined)
-                                                  ? ` (${nivelObj.min} - ${nivelObj.max} pts)`
-                                                  : '';
-                                                return ` Puntaje Promedio: ${score} pts ${nivelObj?.nivel ? `[${nivelObj.nivel}${rangeText}]` : ''}`;
+                                            tooltip: {
+                                              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                              padding: 10,
+                                              cornerRadius: 8,
+                                              callbacks: {
+                                                label: (context: any) => {
+                                                  const dim = dimensionesEspecialistas[context.dataIndex];
+                                                  const score = context.parsed;
+                                                  const preguntasDim = getPreguntaRespuestaDocentes.filter((p: any) => p.dimensionId === dim?.id);
+                                                  const countQuestions = preguntasDim.length || 1;
+                                                  const maxScaleVal = Math.max(1, ...(dataEvaluacionDocente.escala?.map((e: any) => Number(e.value) || 0) || [3]));
+                                                  const maxDomainScore = countQuestions * maxScaleVal;
+                                                  const nivelObj = (dim?.niveles && dim.niveles.length > 0)
+                                                    ? getNivelLogro(score, dim.niveles)
+                                                    : getNivelLogroDominio(score, maxDomainScore, dim);
+                                                  const rangeText = (nivelObj && nivelObj.min !== undefined && nivelObj.max !== undefined)
+                                                    ? ` (${nivelObj.min} - ${nivelObj.max} pts)`
+                                                    : '';
+                                                  return ` Puntaje Promedio: ${score} pts ${nivelObj?.nivel ? `[${nivelObj.nivel}${rangeText}]` : ''}`;
+                                                },
                                               },
                                             },
                                           },
-                                        },
-                                      }}
-                                      data={getDimensionPieData()}
-                                    />
-                                  </div>
-                                  <div className={styles.statsGrid}>
-                                    {dimensionesEspecialistas.map((dim: any, index: number) => {
-                                      const pieData = getDimensionPieData();
-                                      const value = pieData.datasets[0]?.data[index] || 0;
-                                      const color = getDomainColor(dim, index);
-
-                                      const preguntasDim = getPreguntaRespuestaDocentes.filter((p) => p.dimensionId === dim.id);
-                                      const countQuestions = preguntasDim.length || 1;
-                                      const maxScaleVal = Math.max(1, ...(dataEvaluacionDocente.escala?.map((e: any) => Number(e.value) || 0) || [3]));
-                                      const maxDomainScore = countQuestions * maxScaleVal;
-                                      const nivelObj = (dim.niveles && dim.niveles.length > 0)
-                                        ? getNivelLogro(value, dim.niveles)
-                                        : getNivelLogroDominio(value, maxDomainScore, dim);
-
-                                      let domainLevels = (dim.niveles && dim.niveles.length > 0) ? dim.niveles : null;
-                                      if (!domainLevels) {
-                                        const globalNiveles = dataEvaluacionDocente?.niveles || (dataEvaluacionDocente as any)?.nivelYPuntaje || [];
-                                        const maxGlobalScale = Math.max(1, ...(globalNiveles.map((n: any) => Number(n.max) || 0) || [maxDomainScore]));
-                                        domainLevels = globalNiveles.map((n: any) => ({
-                                          ...n,
-                                          min: Number(((Number(n.min || 0) / maxGlobalScale) * maxDomainScore).toFixed(0)),
-                                          max: Number(((Number(n.max || 0) / maxGlobalScale) * maxDomainScore).toFixed(0)),
-                                        }));
-                                      }
-
-                                      const currentLevel = domainLevels?.find((lvl: any) => nivelObj?.nivel === lvl.nivel) || nivelObj;
-
-                                      return (
-                                        <div
-                                          key={dim.id || index}
-                                          className={styles.statItem}
-                                          style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            gap: '4px',
-                                          }}
-                                        >
-                                          <span
-                                            className={styles.statLabel}
-                                            style={{
-                                              color,
-                                              fontWeight: 600,
-                                              textAlign: 'center',
-                                              textTransform: 'uppercase',
-                                              lineHeight: 1.3,
-                                              wordBreak: 'break-word',
-                                              whiteSpace: 'normal',
-                                            }}
-                                          >
-                                            {dim.nombre}
-                                          </span>
-                                          <span className={styles.statValue}>{value}</span>
-
-                                          {currentLevel && (
-                                            <div
-                                              style={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '3px',
-                                                marginTop: '3px',
-                                                flexWrap: 'nowrap',
-                                              }}
-                                            >
-                                              <span
-                                                style={{
-                                                  fontSize: '0.58rem',
-                                                  color: currentLevel.color || '#1e293b',
-                                                  fontWeight: 700,
-                                                  background: hexToRgba(currentLevel.color || '#3b82f6', 0.14),
-                                                  padding: '1px 5px',
-                                                  borderRadius: '4px',
-                                                  border: `1px solid ${hexToRgba(currentLevel.color || '#3b82f6', 0.35)}`,
-                                                  display: 'inline-flex',
-                                                  alignItems: 'center',
-                                                  gap: '3px',
-                                                  whiteSpace: 'nowrap',
-                                                }}
-                                              >
-                                                <span
-                                                  style={{
-                                                    width: '4px',
-                                                    height: '4px',
-                                                    borderRadius: '50%',
-                                                    background: currentLevel.color || '#3b82f6',
-                                                    display: 'inline-block',
-                                                    flexShrink: 0,
-                                                  }}
-                                                />
-                                                {currentLevel.min !== undefined && currentLevel.max !== undefined
-                                                  ? `${currentLevel.min} - ${currentLevel.max} `
-                                                  : ''}
-                                                {currentLevel.nivel}
-                                              </span>
-
-                                              {domainLevels && domainLevels.length > 0 && (
-                                                <div className={styles.domainLevelTooltipWrapper}>
-                                                  <button
-                                                    type="button"
-                                                    className={styles.domainLevelInfoBtn}
-                                                    title="Ver escala completa de niveles"
-                                                    aria-label="Ver escala completa de niveles"
-                                                  >
-                                                    <RiInformationLine style={{ fontSize: '0.72rem' }} />
-                                                  </button>
-
-                                                  <div className={styles.domainLevelTooltipContent}>
-                                                    <div className={styles.domainLevelTooltipArrow} />
-                                                    <span className={styles.domainLevelTooltipTitle}>
-                                                      Escala: {dim.nombre}
-                                                    </span>
-                                                    <div className={styles.domainLevelTooltipList}>
-                                                      {domainLevels.map((lvl: any, lIdx: number) => {
-                                                        const isCurrent = nivelObj?.nivel === lvl.nivel;
-                                                        return (
-                                                          <div
-                                                            key={lIdx}
-                                                            className={`${styles.domainLevelTooltipItem} ${isCurrent ? styles.domainLevelTooltipItemActive : ''}`}
-                                                          >
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                              <span
-                                                                style={{
-                                                                  width: '7px',
-                                                                  height: '7px',
-                                                                  borderRadius: '50%',
-                                                                  background: lvl.color || '#3b82f6',
-                                                                  display: 'inline-block',
-                                                                  flexShrink: 0,
-                                                                }}
-                                                              />
-                                                              <span style={{ color: isCurrent ? '#ffffff' : '#cbd5e1' }}>
-                                                                {lvl.nivel}
-                                                              </span>
-                                                              {isCurrent && (
-                                                                <span style={{ fontSize: '0.65rem', color: '#38bdf8', fontWeight: 700 }}>
-                                                                  (Actual)
-                                                                </span>
-                                                              )}
-                                                            </div>
-                                                            <span style={{ color: isCurrent ? '#38bdf8' : '#94a3b8', fontWeight: 600 }}>
-                                                              {lvl.min ?? 0} - {lvl.max ?? 0} pts
-                                                            </span>
-                                                          </div>
-                                                        );
-                                                      })}
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              )}
-                                            </div>
-                                          )}
+                                        }}
+                                        data={getDimensionPieData()}
+                                      />
+                                    </div>
+                                    <div className={styles.pieStatsColumn}>
+                                      <div
+                                        className={styles.pieStatCard}
+                                        style={{ border: '1px solid #8b5cf6', backgroundColor: '#ffffff' }}
+                                      >
+                                        <div className={styles.pieStatLabelGroup}>
+                                          <span className={styles.pieStatColorDot} style={{ backgroundColor: '#8b5cf6' }} />
+                                          <span className={styles.pieStatLabel}>TOTAL DOMINIOS</span>
                                         </div>
-                                      );
-                                    })}
+                                        <span className={styles.pieStatValue}>{dimensionesEspecialistas.length}</span>
+                                        <span className={styles.pieStatSub}>100%</span>
+                                      </div>
+                                      {dimensionesEspecialistas.map((dim: any, index: number) => {
+                                        const pieData = getDimensionPieData();
+                                        const value = pieData.datasets[0]?.data[index] || 0;
+                                        const color = getDomainColor(dim, index);
+
+                                        const preguntasDim = getPreguntaRespuestaDocentes.filter((p) => p.dimensionId === dim.id);
+                                        const countQuestions = preguntasDim.length || 1;
+                                        const maxScaleVal = Math.max(1, ...(dataEvaluacionDocente.escala?.map((e: any) => Number(e.value) || 0) || [3]));
+                                        const maxDomainScore = countQuestions * maxScaleVal;
+                                        const nivelObj = (dim.niveles && dim.niveles.length > 0)
+                                          ? getNivelLogro(value, dim.niveles)
+                                          : getNivelLogroDominio(value, maxDomainScore, dim);
+
+                                        return (
+                                          <div
+                                            key={dim.id || index}
+                                            className={styles.pieStatCard}
+                                            style={{ border: `1px solid ${color}`, backgroundColor: '#ffffff' }}
+                                          >
+                                            <div className={styles.pieStatTooltip}>
+                                              <span className={styles.pieStatTooltipDot} style={{ backgroundColor: color }} />
+                                              <span>{dim.nombre}</span>
+                                            </div>
+                                            <div className={styles.pieStatLabelGroup} aria-label={dim.nombre}>
+                                              <span className={styles.pieStatColorDot} style={{ backgroundColor: color }} />
+                                              <span className={styles.pieStatLabel}>{dim.nombre}</span>
+                                            </div>
+                                            <span className={styles.pieStatValue}>{value} pts</span>
+                                            <span className={styles.pieStatSub} style={{ color: nivelObj?.color || '#64748b', fontWeight: 600 }}>
+                                              {nivelObj?.nivel || 'Promedio'}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
                                   </div>
                                 </div>
                               )}

@@ -32,7 +32,12 @@ export const useRankingAnalytics = (
 			if (selectedRankingFase) {
 				evals = evals.filter(e => {
 					const idF = (e as any).idFase || (e as any).faseActualID || e.faseNombre;
-					return idF === selectedRankingFase;
+					if (idF === selectedRankingFase) return true;
+					if ((e as any).idFase === selectedRankingFase) return true;
+					if ((e as any).faseActualID === selectedRankingFase) return true;
+					if (e.faseNombre === selectedRankingFase) return true;
+					const cleanName = getCleanPhaseName(e.faseNombre, (e as any).idFase || (e as any).faseActualID).toLowerCase().trim();
+					return cleanName === selectedRankingFase.toLowerCase().trim();
 				});
 			}
 

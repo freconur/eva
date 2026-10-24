@@ -15,6 +15,7 @@ const DirectoresEvaluadosPage = () => {
 			targetTitle="Directores Evaluados"
 			targetNoun="directores"
 			targetNounSingular="Director"
+			showUgelFilter={false}
 			backHref={`/especialistas/evaluaciones-director/evaluacion/${id}`}
 			getReporteIndividualHref={(evalId, evalu) => {
 				const directorDni = evalu.dni || (evalu as any).directorDni || '';

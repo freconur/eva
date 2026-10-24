@@ -73,6 +73,76 @@ export const barSegmentScorePlugin = {
 	}
 };
 
+export const linePointScorePlugin = {
+	id: 'linePointScorePlugin',
+	afterDatasetsDraw(chart: any) {
+		if (chart.config.type !== 'line') return;
+		const { ctx } = chart;
+		ctx.save();
+
+		chart.data.datasets.forEach((dataset: any, datasetIndex: number) => {
+			const meta = chart.getDatasetMeta(datasetIndex);
+			if (!meta.hidden) {
+				meta.data.forEach((element: any, index: number) => {
+					const val = dataset.data[index];
+					if (val !== undefined && val !== null) {
+						const { x, y } = element.getProps(['x', 'y'], true);
+						const scoreNum = typeof val === 'number' ? Math.round(val * 10) / 10 : val;
+						const scoreText = `${scoreNum} pts`;
+
+						ctx.font = 'bold 11px Inter, system-ui, -apple-system, sans-serif';
+						ctx.textAlign = 'center';
+						ctx.textBaseline = 'middle';
+
+						const textMetrics = ctx.measureText(scoreText);
+						const textWidth = textMetrics.width;
+						const paddingX = 6;
+						const badgeHeight = 19;
+						const badgeWidth = textWidth + paddingX * 2;
+						const badgeX = x - badgeWidth / 2;
+						const badgeY = y - 9 - badgeHeight; // 9px encima del punto
+
+						// Sombra suave para el badge
+						ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+						ctx.shadowBlur = 4;
+						ctx.shadowOffsetY = 2;
+
+						// Fondo redondeado blanco
+						const r = 5;
+						ctx.fillStyle = '#ffffff';
+						ctx.beginPath();
+						ctx.moveTo(badgeX + r, badgeY);
+						ctx.lineTo(badgeX + badgeWidth - r, badgeY);
+						ctx.quadraticCurveTo(badgeX + badgeWidth, badgeY, badgeX + badgeWidth, badgeY + r);
+						ctx.lineTo(badgeX + badgeWidth, badgeY + badgeHeight - r);
+						ctx.quadraticCurveTo(badgeX + badgeWidth, badgeY + badgeHeight, badgeX + badgeWidth - r, badgeY + badgeHeight);
+						ctx.lineTo(badgeX + r, badgeY + badgeHeight);
+						ctx.quadraticCurveTo(badgeX, badgeY + badgeHeight, badgeX, badgeY + badgeHeight - r);
+						ctx.lineTo(badgeX, badgeY + r);
+						ctx.quadraticCurveTo(badgeX, badgeY, badgeX + r, badgeY);
+						ctx.closePath();
+						ctx.fill();
+
+						// Reset de sombra
+						ctx.shadowColor = 'transparent';
+
+						// Borde azul
+						ctx.strokeStyle = '#2563eb';
+						ctx.lineWidth = 1.5;
+						ctx.stroke();
+
+						// Texto del puntaje
+						ctx.fillStyle = '#1d4ed8';
+						ctx.fillText(scoreText, x, badgeY + badgeHeight / 2 + 0.5);
+					}
+				});
+			}
+		});
+
+		ctx.restore();
+	}
+};
+
 export const pieSegmentLabelPlugin = {
 	id: 'pieSegmentLabelPlugin',
 	afterDatasetsDraw(chart: any) {
@@ -208,4 +278,77 @@ export const getShortDateString = (val: any): string => {
 		return `${day}-${month}-${shortYear}`;
 	}
 	return String(val);
+};
+
+export const copyChartElementToClipboard = async (
+	element: HTMLElement | null,
+	chartTitle = 'Gráfico'
+): Promise<boolean> => {
+	if (!element) {
+		const { toast } = await import('react-toastify');
+		toast.error('No se encontró el elemento del gráfico para capturar.');
+		return false;
+	}
+
+	const { toast } = await import('react-toastify');
+
+	try {
+		let blob: Blob | null = null;
+
+		// 1. Intentar con html2canvas para renderizar estilos, fuentes, leyendas y fondo blanco con alta resolución (2x)
+		try {
+			const html2canvas = (await import('html2canvas')).default;
+			const canvas = await html2canvas(element, {
+				backgroundColor: '#ffffff',
+				scale: 2,
+				useCORS: true,
+				logging: false,
+			});
+			blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+		} catch (html2canvasErr) {
+			console.warn('html2canvas no pudo procesar el elemento, probando captura directa de canvas:', html2canvasErr);
+		}
+
+		// 2. Fallback: Captura directa del <canvas> con fondo blanco garantizado
+		if (!blob) {
+			const targetCanvas = element.querySelector('canvas') || (element instanceof HTMLCanvasElement ? element : null);
+			if (targetCanvas) {
+				const tempCanvas = document.createElement('canvas');
+				tempCanvas.width = targetCanvas.width;
+				tempCanvas.height = targetCanvas.height;
+				const ctx = tempCanvas.getContext('2d');
+				if (ctx) {
+					ctx.fillStyle = '#ffffff';
+					ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+					ctx.drawImage(targetCanvas, 0, 0);
+					blob = await new Promise<Blob | null>((resolve) => tempCanvas.toBlob(resolve, 'image/png'));
+				}
+			}
+		}
+
+		if (!blob) {
+			throw new Error('No se pudo generar la imagen del gráfico.');
+		}
+
+		if (!navigator.clipboard || !navigator.clipboard.write || typeof ClipboardItem === 'undefined') {
+			throw new Error('Tu navegador no admite copiar imágenes directamente al portapapeles.');
+		}
+
+		await navigator.clipboard.write([
+			new ClipboardItem({ 'image/png': blob })
+		]);
+
+		toast.success(`¡Captura de "${chartTitle}" copiada al portapapeles! Ya puedes pegarla (Ctrl + V).`, {
+			position: 'top-right',
+			autoClose: 3500,
+		});
+		return true;
+	} catch (error: any) {
+		console.error('Error al capturar el gráfico:', error);
+		toast.error(error?.message || 'Error al copiar la imagen del gráfico.', {
+			position: 'top-right',
+			autoClose: 4000,
+		});
+		return false;
+	}
 };

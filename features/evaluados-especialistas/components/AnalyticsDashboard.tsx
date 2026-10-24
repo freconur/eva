@@ -27,6 +27,7 @@ interface AnalyticsDashboardProps {
 	onUpdateNivelColor?: (nivelIdx: number, newColor: string) => Promise<void>;
 	targetNoun?: string;
 	targetNounSingular?: string;
+	showUgelTab?: boolean;
 }
 
 export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = (props) => {

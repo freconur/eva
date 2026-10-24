@@ -31,6 +31,7 @@ interface ModalRankingGeneralProps {
 	onUpdateNivelColor?: (nivelIdx: number, newColor: string) => Promise<void>;
 	targetNoun?: string;
 	targetNounSingular?: string;
+	showUgelTab?: boolean;
 }
 
 export const ModalRankingGeneral: React.FC<ModalRankingGeneralProps> = ({
@@ -39,6 +40,7 @@ export const ModalRankingGeneral: React.FC<ModalRankingGeneralProps> = ({
 	onSwitchToFullView,
 	targetNoun = 'especialistas',
 	targetNounSingular = 'Especialista',
+	showUgelTab = true,
 	...rankingProps
 }) => {
 	if (!showModalRanking) return null;
@@ -73,7 +75,12 @@ export const ModalRankingGeneral: React.FC<ModalRankingGeneralProps> = ({
 					</div>
 				</div>
 				<div className={styles.modalBody}>
-					<RankingViews {...rankingProps} />
+					<RankingViews
+						{...rankingProps}
+						targetNoun={targetNoun}
+						targetNounSingular={targetNounSingular}
+						showUgelTab={showUgelTab}
+					/>
 				</div>
 			</div>
 		</div>

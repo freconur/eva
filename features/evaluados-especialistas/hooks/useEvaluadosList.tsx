@@ -3,6 +3,7 @@ import { MdTrendingUp, MdTrendingDown, MdTrendingFlat } from 'react-icons/md';
 import { User } from '@/features/types/types';
 import { regionTexto } from '@/fuctions/regiones';
 import { getMonitoreoTimestamp, getCleanPhaseName } from '../components/utils';
+import { getUniquePhases } from '@/features/utils/phaseUtils';
 import styles from '../styles.module.css';
 
 export const useEvaluadosList = (evaluadosEspecialista: User[] | undefined, dataEvaluacionDocente: any) => {
@@ -51,16 +52,23 @@ export const useEvaluadosList = (evaluadosEspecialista: User[] | undefined, data
 
 	const fasesUnicas = useMemo(() => {
 		if (!evaluadosEspecialista || evaluadosEspecialista.length === 0) return [];
+		const uniquePhases = getUniquePhases(dataEvaluacionDocente, evaluadosEspecialista);
+		if (uniquePhases && uniquePhases.length > 0) {
+			return uniquePhases;
+		}
+
 		const mapFases = new Map<string, string>();
 		evaluadosEspecialista.forEach(e => {
 			const idF = (e as any).idFase || (e as any).faseActualID || e.faseNombre;
 			if (idF) {
 				const nombreLimpio = getCleanPhaseName(e.faseNombre, idF);
-				mapFases.set(idF, nombreLimpio);
+				if (!Array.from(mapFases.values()).some(n => n.toLowerCase() === nombreLimpio.toLowerCase())) {
+					mapFases.set(idF, nombreLimpio);
+				}
 			}
 		});
 		return Array.from(mapFases.entries()).map(([id, nombre]) => ({ id, nombre }));
-	}, [evaluadosEspecialista]);
+	}, [evaluadosEspecialista, dataEvaluacionDocente]);
 
 	const groupedEvaluados = useMemo(() => {
 		if (!evaluadosEspecialista || evaluadosEspecialista.length === 0) return [];
@@ -79,8 +87,11 @@ export const useEvaluadosList = (evaluadosEspecialista: User[] | undefined, data
 		});
 
 		let result = Array.from(mapGroup.values()).map(group => {
-			group.evaluations.sort((a, b) => getMonitoreoTimestamp(b) - getMonitoreoTimestamp(a));
-			return group;
+			const sortedEvals = [...group.evaluations].sort((a, b) => getMonitoreoTimestamp(b) - getMonitoreoTimestamp(a));
+			return {
+				...group,
+				evaluations: sortedEvals
+			};
 		});
 
 		if (searchQuery.trim()) {
@@ -95,12 +106,31 @@ export const useEvaluadosList = (evaluadosEspecialista: User[] | undefined, data
 		}
 
 		if (selectedFase) {
-			result = result.filter(group =>
-				group.evaluations.some(e => {
-					const idF = (e as any).idFase || (e as any).faseActualID || e.faseNombre;
-					return idF === selectedFase;
+			const targetFaseObj = fasesUnicas.find(f => f.id === selectedFase);
+			const targetFaseName = targetFaseObj?.nombre?.toLowerCase().trim();
+
+			result = result
+				.map(group => {
+					const filteredEvals = group.evaluations.filter(e => {
+						const idF = (e as any).idFase || (e as any).faseActualID || e.faseNombre;
+						if (idF === selectedFase) return true;
+						if ((e as any).idFase === selectedFase) return true;
+						if ((e as any).faseActualID === selectedFase) return true;
+						if (e.faseNombre === selectedFase) return true;
+
+						if (targetFaseName) {
+							const cleanName = getCleanPhaseName(e.faseNombre, (e as any).idFase || (e as any).faseActualID).toLowerCase().trim();
+							if (cleanName === targetFaseName) return true;
+						}
+						return false;
+					});
+
+					return {
+						...group,
+						evaluations: filteredEvals
+					};
 				})
-			);
+				.filter(group => group.evaluations.length > 0);
 		}
 
 		if (selectedUgel && selectedUgel !== 'all') {
@@ -126,7 +156,7 @@ export const useEvaluadosList = (evaluadosEspecialista: User[] | undefined, data
 
 		return result;
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [evaluadosEspecialista, searchQuery, selectedFase, selectedUgel, sortOrder, dataEvaluacionDocente]);
+	}, [evaluadosEspecialista, searchQuery, selectedFase, selectedUgel, sortOrder, dataEvaluacionDocente, fasesUnicas]);
 
 	const getTrend = (evaluations: User[]) => {
 		if (evaluations.length < 2) return null;

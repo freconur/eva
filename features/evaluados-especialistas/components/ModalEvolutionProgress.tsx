@@ -1,11 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { RiLoader4Line } from 'react-icons/ri';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+	RiLoader4Line,
+	RiUser3Line,
+	RiBuilding4Line,
+	RiIdCardLine,
+	RiHistoryLine,
+	RiSearchLine,
+	RiCameraLine
+} from 'react-icons/ri';
 import { MdTrendingUp, MdPalette, MdSave, MdCheck } from 'react-icons/md';
 import { Line, Radar, Bar, Pie } from 'react-chartjs-2';
 import { User } from '@/features/types/types';
 import { db } from '@/firebase/firebase.config';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { getCleanPhaseName, getLocalDateString, getShortDateString } from './utils';
+import { regionTexto } from '@/fuctions/regiones';
+import { getCleanPhaseName, getLocalDateString, getShortDateString, copyChartElementToClipboard, linePointScorePlugin } from './utils';
 import { getUniquePhases } from '@/features/utils/phaseUtils';
 import styles from '../styles.module.css';
 
@@ -16,14 +25,22 @@ interface ModalEvolutionProgressProps {
 	setActiveTab: (tab: 'evolucion' | 'radar' | 'analisis' | 'distribucion' | 'configuracion') => void;
 	loadingHistorial: boolean;
 	historialSelected: User[];
+	selectedEspecialista?: User | null;
+	targetNoun?: string;
+	targetNounSingular?: string;
 	chartData: any;
 	chartOptions: any;
 	dimensionesEspecialistas: any[];
 	getRadarData: () => any;
 	getItemAnalysisData: () => any;
 	getDistribucionGlobalData: () => any;
-	selectedModalEvalId: string;
-	setSelectedModalEvalId: (val: string) => void;
+	selectedModalEvalId?: string;
+	setSelectedModalEvalId?: (val: string) => void;
+	selectedModalEvalIds?: string[];
+	setSelectedModalEvalIds?: (val: string[]) => void;
+	togglePhaseSelection?: (phaseId: string) => void;
+	selectAllPhases?: () => void;
+	isAllPhasesSelected?: boolean;
 	latestEvaluation: any;
 	dataEvaluacionDocente: any;
 	evaluadosEspecialista?: any[];
@@ -31,6 +48,8 @@ interface ModalEvolutionProgressProps {
 	evalId?: string;
 	saveConfiguracionColoresEspecialistas?: (idEvaluacion: string, configuracionColores: any) => Promise<void>;
 	savePaletaGlobalColores?: (palette: string[]) => Promise<void>;
+	onOpenSearch?: () => void;
+	isSearchOpen?: boolean;
 }
 
 export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
@@ -40,14 +59,22 @@ export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
 	setActiveTab,
 	loadingHistorial,
 	historialSelected,
+	selectedEspecialista,
+	targetNoun = 'especialistas',
+	targetNounSingular = 'Especialista',
 	chartData,
 	chartOptions,
 	dimensionesEspecialistas,
 	getRadarData,
 	getItemAnalysisData,
 	getDistribucionGlobalData,
-	selectedModalEvalId,
+	selectedModalEvalId = 'all',
 	setSelectedModalEvalId,
+	selectedModalEvalIds = ['all'],
+	setSelectedModalEvalIds,
+	togglePhaseSelection,
+	selectAllPhases,
+	isAllPhasesSelected,
 	latestEvaluation,
 	dataEvaluacionDocente,
 	evaluadosEspecialista,
@@ -55,6 +82,8 @@ export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
 	evalId,
 	saveConfiguracionColoresEspecialistas,
 	savePaletaGlobalColores,
+	onOpenSearch,
+	isSearchOpen,
 }) => {
 	const [palette, setPalette] = useState<string[]>([
 		'#2563eb', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#64748b'
@@ -73,6 +102,25 @@ export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
 	const [saveSuccess, setSaveSuccess] = useState(false);
 	const [openDropdownKey, setOpenDropdownKey] = useState<string | null>(null);
 	const dropdownContainerRef = useRef<HTMLDivElement | null>(null);
+
+	const [isCopying, setIsCopying] = useState<string | null>(null);
+	const [copiedTab, setCopiedTab] = useState<string | null>(null);
+
+	const chartRefEvolucion = useRef<HTMLDivElement | null>(null);
+	const chartRefRadar = useRef<HTMLDivElement | null>(null);
+	const chartRefAnalisis = useRef<HTMLDivElement | null>(null);
+	const chartRefDistribucion = useRef<HTMLDivElement | null>(null);
+
+	const handleCopyChart = async (tabKey: string, ref: React.RefObject<HTMLDivElement | null>, title: string) => {
+		if (!ref.current || isCopying) return;
+		setIsCopying(tabKey);
+		const ok = await copyChartElementToClipboard(ref.current, title);
+		if (ok) {
+			setCopiedTab(tabKey);
+			setTimeout(() => setCopiedTab(null), 2500);
+		}
+		setIsCopying(null);
+	};
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -269,22 +317,256 @@ export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
 		}
 	};
 
+	const especialistaData = selectedEspecialista || (historialSelected && historialSelected.length > 0 ? historialSelected[0] : null);
+
+	const especialistaNombre = useMemo(() => {
+		if (!especialistaData) return targetNounSingular;
+		const nombres = especialistaData.nombres || '';
+		const apellidos = especialistaData.apellidos || '';
+		const full = `${nombres} ${apellidos}`.trim();
+		return full || targetNounSingular;
+	}, [especialistaData, targetNounSingular]);
+
+	const especialistaDni = useMemo(() => {
+		if (!especialistaData) return '';
+		return (
+			especialistaData.dni ||
+			(especialistaData as any).especialistaDni ||
+			(especialistaData as any).directorDni ||
+			(especialistaData as any).docenteDni ||
+			''
+		);
+	}, [especialistaData]);
+
+	const especialistaUgel = useMemo(() => {
+		if (!especialistaData) return '—';
+		const reg = especialistaData.region;
+		if (reg !== undefined && reg !== null && String(reg).trim() !== '') {
+			const ugelNombre = regionTexto(String(reg));
+			if (ugelNombre) return `UGEL ${ugelNombre.replace(/^ugel\s+/i, '')}`;
+		}
+		if ((especialistaData as any).ugel) {
+			const raw = (especialistaData as any).ugel;
+			return `UGEL ${String(raw).replace(/^ugel\s+/i, '')}`;
+		}
+		return '—';
+	}, [especialistaData]);
+
+	const allSelected = useMemo(() => {
+		if (isAllPhasesSelected !== undefined) return isAllPhasesSelected;
+		if (selectedModalEvalIds && selectedModalEvalIds.length > 0) {
+			return (
+				selectedModalEvalIds.includes('all') ||
+				(historialSelected.length > 0 && selectedModalEvalIds.length === historialSelected.length)
+			);
+		}
+		return selectedModalEvalId === 'all';
+	}, [isAllPhasesSelected, selectedModalEvalIds, selectedModalEvalId, historialSelected]);
+
+	const activeIds = useMemo(() => {
+		if (selectedModalEvalIds && selectedModalEvalIds.length > 0) {
+			if (selectedModalEvalIds.includes('all')) {
+				return (historialSelected || []).map(e => e.id).filter(Boolean) as string[];
+			}
+			return selectedModalEvalIds.filter(Boolean);
+		}
+		if (selectedModalEvalId === 'all') {
+			return (historialSelected || []).map(e => e.id).filter(Boolean) as string[];
+		}
+		return selectedModalEvalId ? [selectedModalEvalId] : [];
+	}, [selectedModalEvalIds, selectedModalEvalId, historialSelected]);
+
+	const handleTogglePhase = (id: string) => {
+		if (togglePhaseSelection) {
+			togglePhaseSelection(id);
+		} else if (setSelectedModalEvalId) {
+			setSelectedModalEvalId(id);
+		}
+	};
+
+	const handleSelectAllPhases = () => {
+		if (selectAllPhases) {
+			selectAllPhases();
+		} else if (setSelectedModalEvalId) {
+			setSelectedModalEvalId('all');
+		}
+	};
+
+	const fasesEvaluadas = useMemo(() => {
+		if (!historialSelected || historialSelected.length === 0) return [];
+
+		return historialSelected.map((evalu, idx) => {
+			const faseName = getCleanPhaseName((evalu as any).faseNombre, (evalu as any).idFase || (evalu as any).faseActualID);
+			const dateStr = getShortDateString(evalu.fechaMonitoreo || evalu.fechaCreacion);
+			const score = getDisplayCalificacion(evalu);
+			const isCurrent = !allSelected && Boolean(evalu.id && activeIds.includes(evalu.id));
+
+			return {
+				id: evalu.id || String(idx),
+				faseName,
+				dateStr,
+				score,
+				isCurrent,
+				evalu
+			};
+		});
+	}, [historialSelected, allSelected, activeIds, getDisplayCalificacion]);
+
+	const selectedPhaseNames = useMemo(() => {
+		if (allSelected) return [];
+		const setIds = new Set(activeIds);
+		return (historialSelected || [])
+			.filter(e => e.id && setIds.has(e.id))
+			.map(e => getCleanPhaseName((e as any).faseNombre, (e as any).idFase || (e as any).faseActualID));
+	}, [allSelected, activeIds, historialSelected]);
+
+	const selectedPhasesSubtitle = useMemo(() => {
+		if (allSelected) return '';
+		if (selectedPhaseNames.length === 1) return selectedPhaseNames[0];
+		return selectedPhaseNames.join(' + ');
+	}, [allSelected, selectedPhaseNames]);
+
+	const faseDistribucionTitle = useMemo(() => {
+		if (allSelected) {
+			if (historialSelected && historialSelected.length === 1) {
+				const item = historialSelected[0];
+				return getCleanPhaseName((item as any).faseNombre, (item as any).idFase || (item as any).faseActualID) || 'I TRAMO';
+			}
+			return 'CONSOLIDADO HISTÓRICO';
+		}
+		if (selectedPhaseNames.length === 1) {
+			return selectedPhaseNames[0];
+		}
+		if (selectedPhaseNames.length > 0) {
+			return `CONSOLIDADO (${selectedPhaseNames.join(' + ')})`;
+		}
+		return 'CONSOLIDADO HISTÓRICO';
+	}, [allSelected, selectedPhaseNames, historialSelected]);
+
+	// Cerrar modal con la tecla Escape, abrir buscador con Ctrl+K y bloquear scroll de fondo
+	useEffect(() => {
+		if (!showModalEvolucion) return;
+
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (isSearchOpen) return;
+			if (event.key === 'Escape') {
+				onClose();
+			} else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+				event.preventDefault();
+				onOpenSearch?.();
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyDown);
+		const originalOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown);
+			document.body.style.overflow = originalOverflow;
+		};
+	}, [showModalEvolucion, onClose, onOpenSearch, isSearchOpen]);
+
 	if (!showModalEvolucion) return null;
 
 	return (
-		<div className={styles.modalOverlay} onClick={onClose}>
-			<div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-				<div className={styles.modalHeader}>
-					<h2 className={styles.modalTitle}>Progreso del Especialista</h2>
-					<button className={styles.modalClose} onClick={onClose}>×</button>
+		<div className={`${styles.modalOverlay} ${styles.modalOverlayFullScreen}`} onClick={onClose}>
+			<div className={`${styles.modalContent} ${styles.modalContentFullScreen}`} onClick={e => e.stopPropagation()}>
+				<div className={`${styles.modalHeader} ${styles.modalHeaderFullScreen}`}>
+					<div className={styles.modalHeaderLeftGroup}>
+						<h2 className={styles.modalTitle}>Progreso del {targetNounSingular}</h2>
+						<span className={styles.escBadge} title="Presiona la tecla Escape para cerrar">Esc</span>
+					</div>
+					<div className={styles.modalHeaderActions}>
+						{onOpenSearch && (
+							<button
+								type="button"
+								className={styles.quickSearchTriggerBtn}
+								onClick={onOpenSearch}
+								title={`Buscar otro ${targetNounSingular.toLowerCase()} (Ctrl + K)`}
+							>
+								<RiSearchLine />
+								<span>Buscar {targetNounSingular.toLowerCase()}</span>
+								<kbd className={styles.quickSearchKbd}>Ctrl K</kbd>
+							</button>
+						)}
+						<button
+							type="button"
+							className={styles.modalCloseBtnFull}
+							onClick={onClose}
+							title="Cerrar modal (Esc)"
+						>
+							<span>Cerrar</span>
+							<span className={styles.modalCloseX}>✕</span>
+						</button>
+					</div>
 				</div>
-				<div className={styles.modalBody}>
+				<div className={`${styles.modalBody} ${styles.modalBodyFullScreen}`}>
+					{/* Tarjeta Compacta de Información del Especialista y Fases */}
+					{especialistaData && (
+						<div className={styles.specialistInfoCardCompact}>
+							<div className={styles.specialistTopBar}>
+								<div className={styles.specialistIdentity}>
+									<div className={styles.specialistAvatarSmall}>
+										<RiUser3Line />
+									</div>
+									<span className={styles.specialistFullName}>
+										{especialistaNombre}
+									</span>
+									<div className={styles.specialistBadgesList}>
+										{especialistaDni && (
+											<span className={styles.specialistBadgeDni} title="Documento Nacional de Identidad">
+												<RiIdCardLine /> DNI: <strong>{especialistaDni}</strong>
+											</span>
+										)}
+										<span className={styles.specialistBadgeUgel} title="UGEL a la que pertenece">
+											<RiBuilding4Line /> <strong>{especialistaUgel}</strong>
+										</span>
+										<span className={styles.specialistBadgeCount} title="Total de evaluaciones en su historial">
+											<RiHistoryLine /> {historialSelected.length} {historialSelected.length === 1 ? 'evaluación registrada' : 'evaluaciones registradas'}
+										</span>
+									</div>
+								</div>
+
+								{/* Fases en las que ha sido evaluado */}
+								{fasesEvaluadas.length > 0 && (
+									<div className={styles.fasesInlineGroup}>
+										<span className={styles.fasesInlineLabel}>Fases evaluadas:</span>
+										<div className={styles.fasesChipsList}>
+											{historialSelected.length > 1 && (
+												<button
+													type="button"
+													className={`${styles.faseChipBtn} ${allSelected ? styles.faseChipBtnActive : ''}`}
+													onClick={handleSelectAllPhases}
+													title="Ver comparativo de todas las fases"
+												>
+													Todas las fases
+												</button>
+											)}
+											{fasesEvaluadas.map((f) => (
+												<button
+													key={f.id}
+													type="button"
+													className={`${styles.faseChipBtn} ${f.isCurrent ? styles.faseChipBtnActive : ''}`}
+													onClick={() => handleTogglePhase(f.id)}
+													title={f.isCurrent ? `Deseleccionar ${f.faseName}` : `Seleccionar ${f.faseName}${f.dateStr ? ` (${f.dateStr})` : ''}`}
+												>
+													<span>{f.faseName}</span>
+													<span className={styles.faseChipScore}>{f.score} pts</span>
+												</button>
+											))}
+										</div>
+									</div>
+								)}
+							</div>
+						</div>
+					)}
 					<div className={styles.modalTabs}>
-						<button className={`${styles.tabButton} ${activeTab === 'evolucion' ? styles.activeTab : ''}`} onClick={() => { setActiveTab('evolucion'); setSelectedModalEvalId('all'); }}>Evolución Histórica</button>
-						<button className={`${styles.tabButton} ${activeTab === 'radar' ? styles.activeTab : ''}`} onClick={() => { setActiveTab('radar'); setSelectedModalEvalId('all'); }}>Perfil Reticular</button>
-						<button className={`${styles.tabButton} ${activeTab === 'analisis' ? styles.activeTab : ''}`} onClick={() => { setActiveTab('analisis'); setSelectedModalEvalId('all'); }}>Brechas Críticas</button>
-						<button className={`${styles.tabButton} ${activeTab === 'distribucion' ? styles.activeTab : ''}`} onClick={() => { setActiveTab('distribucion'); setSelectedModalEvalId('all'); }}>Resultados Globales</button>
-						<button className={`${styles.tabButton} ${activeTab === 'configuracion' ? styles.activeTab : ''}`} onClick={() => { setActiveTab('configuracion'); setSelectedModalEvalId('all'); }}>⚙️ Configuración</button>
+						<button className={`${styles.tabButton} ${activeTab === 'evolucion' ? styles.activeTab : ''}`} onClick={() => setActiveTab('evolucion')}>Evolución Histórica</button>
+						<button className={`${styles.tabButton} ${activeTab === 'radar' ? styles.activeTab : ''}`} onClick={() => setActiveTab('radar')}>Perfil Reticular</button>
+						<button className={`${styles.tabButton} ${activeTab === 'analisis' ? styles.activeTab : ''}`} onClick={() => setActiveTab('analisis')}>Brechas Críticas</button>
+						<button className={`${styles.tabButton} ${activeTab === 'distribucion' ? styles.activeTab : ''}`} onClick={() => setActiveTab('distribucion')}>Resultados Globales</button>
+						<button className={`${styles.tabButton} ${activeTab === 'configuracion' ? styles.activeTab : ''}`} onClick={() => setActiveTab('configuracion')}>⚙️ Configuración</button>
 					</div>
 
 					{loadingHistorial ? (
@@ -295,48 +577,97 @@ export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
 					) : historialSelected.length > 0 ? (
 						<div className={styles.tabContent}>
 							{activeTab === 'evolucion' && (
-								<div className={styles.chartContainer} style={{ minHeight: '350px', position: 'relative' }}>
-									{historialSelected.length === 1 && (
-										<div style={{
-											position: 'absolute',
-											top: '10px',
-											left: '50%',
-											transform: 'translateX(-50%)',
-											background: '#eff6ff',
-											color: '#1d4ed8',
-											padding: '0.5rem 1rem',
-											borderRadius: '8px',
-											fontWeight: '600',
-											border: '1px solid #bfdbfe',
-											zIndex: 10
-										}}>
-											Única Evaluación: {historialSelected[0].calificacion} pts
+								<div className={styles.chartConstrainedWrapper}>
+									<div className={styles.chartTabToolbar}>
+										<span className={styles.chartTabToolbarTitle}>Evolución del Puntaje en el Tiempo</span>
+										<button
+											type="button"
+											className={`${styles.copyChartBtn} ${copiedTab === 'evolucion' ? styles.copyChartBtnSuccess : ''}`}
+											onClick={() => handleCopyChart('evolucion', chartRefEvolucion, 'Evolución Histórica')}
+											disabled={isCopying === 'evolucion'}
+											title="Copiar imagen del gráfico al portapapeles para pegar (Ctrl + V)"
+										>
+											{copiedTab === 'evolucion' ? (
+												<>
+													<MdCheck />
+													<span>¡Copiado!</span>
+												</>
+											) : isCopying === 'evolucion' ? (
+												<>
+													<RiLoader4Line className={styles.spinningIcon} />
+													<span>Capturando...</span>
+												</>
+											) : (
+												<>
+													<RiCameraLine />
+													<span>Copiar captura</span>
+												</>
+											)}
+										</button>
+									</div>
+									<div ref={chartRefEvolucion} className={styles.chartCaptureContainer}>
+										<h3 className={styles.chartSpecialistTitle}>
+											Evolución de {especialistaNombre.toUpperCase()}{selectedPhasesSubtitle ? ` — ${selectedPhasesSubtitle.toUpperCase()}` : ''}
+										</h3>
+										<div className={styles.chartContainer} style={{ minHeight: '380px', position: 'relative' }}>
+											{!allSelected && selectedPhasesSubtitle && (
+												<div style={{
+													position: 'absolute',
+													top: '10px',
+													left: '50%',
+													transform: 'translateX(-50%)',
+													background: '#eff6ff',
+													color: '#1d4ed8',
+													padding: '0.35rem 0.85rem',
+													borderRadius: '8px',
+													fontWeight: '600',
+													fontSize: '0.82rem',
+													border: '1px solid #bfdbfe',
+													zIndex: 10,
+													boxShadow: '0 1px 3px rgba(37,99,235,0.08)'
+												}}>
+													{selectedPhaseNames.length > 1 ? `Fases seleccionadas: ${selectedPhasesSubtitle}` : `Fase seleccionada: ${selectedPhasesSubtitle}`}
+												</div>
+											)}
+											<Line data={chartData} options={chartOptions} plugins={[linePointScorePlugin]} />
 										</div>
-									)}
-									<Line data={chartData} options={chartOptions} />
+									</div>
 								</div>
 							)}
 							{activeTab === 'radar' && (
 								<div style={{ width: '100%' }}>
-									{historialSelected.length > 1 && (
-										<div className={styles.filterBar}>
-											<span className={styles.filterBarLabel}>Filtrar por Etapa / Evaluación:</span>
-											<select
-												className={styles.toolbarSelect}
-												value={selectedModalEvalId}
-												onChange={(e) => setSelectedModalEvalId(e.target.value)}
-											>
-												<option value="all">Todas las etapas (Comparativo)</option>
-												<option value="latest">Última Evaluación ({getCleanPhaseName(latestEvaluation?.faseNombre, latestEvaluation?.idFase)}{getShortDateString(latestEvaluation?.fechaMonitoreo || latestEvaluation?.fechaCreacion) ? ` - ${getShortDateString(latestEvaluation?.fechaMonitoreo || latestEvaluation?.fechaCreacion)}` : ''})</option>
-												{historialSelected.map((evalu, idx) => (
-													<option key={evalu.id || idx} value={evalu.id}>
-														{getCleanPhaseName((evalu as any).faseNombre, (evalu as any).idFase || (evalu as any).faseActualID)} ({getShortDateString(evalu.fechaMonitoreo || evalu.fechaCreacion)}) - {getDisplayCalificacion(evalu)} pts
-													</option>
-												))}
-											</select>
-										</div>
-									)}
-									<div className={styles.chartContainer} style={{ minHeight: '350px' }}>
+									<div className={styles.chartTabToolbar}>
+										<span className={styles.chartTabToolbarTitle}>Perfil Reticular</span>
+										<button
+											type="button"
+											className={`${styles.copyChartBtn} ${copiedTab === 'radar' ? styles.copyChartBtnSuccess : ''}`}
+											onClick={() => handleCopyChart('radar', chartRefRadar, 'Perfil Reticular')}
+											disabled={isCopying === 'radar'}
+											title="Copiar imagen del gráfico al portapapeles para pegar (Ctrl + V)"
+										>
+											{copiedTab === 'radar' ? (
+												<>
+													<MdCheck />
+													<span>¡Copiado!</span>
+												</>
+											) : isCopying === 'radar' ? (
+												<>
+													<RiLoader4Line className={styles.spinningIcon} />
+													<span>Capturando...</span>
+												</>
+											) : (
+												<>
+													<RiCameraLine />
+													<span>Copiar captura</span>
+												</>
+											)}
+										</button>
+									</div>
+									<div ref={chartRefRadar} className={styles.chartCaptureContainer}>
+										<h3 className={styles.chartSpecialistTitle}>
+											Perfil Reticular de {especialistaNombre.toUpperCase()}
+										</h3>
+										<div className={styles.chartContainer} style={{ minHeight: '380px' }}>
 										{(() => {
 											const maxScale = (dataEvaluacionDocente?.escala || []).at(-1)?.value || 4;
 											const tooltipOptions = {
@@ -403,139 +734,186 @@ export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
 										})()}
 									</div>
 								</div>
+								</div>
 							)}
 							{activeTab === 'analisis' && (
-								<div style={{ width: '100%' }}>
-									{historialSelected.length > 1 && (
-										<div className={styles.filterBar}>
-											<span className={styles.filterBarLabel}>Filtrar por Etapa / Evaluación:</span>
-											<select
-												className={styles.toolbarSelect}
-												value={selectedModalEvalId}
-												onChange={(e) => setSelectedModalEvalId(e.target.value)}
-											>
-												<option value="all">Todas las etapas (Comparativo)</option>
-												<option value="latest">Última Evaluación ({getCleanPhaseName(latestEvaluation?.faseNombre, latestEvaluation?.idFase)}{getShortDateString(latestEvaluation?.fechaMonitoreo || latestEvaluation?.fechaCreacion) ? ` - ${getShortDateString(latestEvaluation?.fechaMonitoreo || latestEvaluation?.fechaCreacion)}` : ''})</option>
-												{historialSelected.map((evalu, idx) => (
-													<option key={evalu.id || idx} value={evalu.id}>
-														{getCleanPhaseName((evalu as any).faseNombre, (evalu as any).idFase || (evalu as any).faseActualID)} ({getShortDateString(evalu.fechaMonitoreo || evalu.fechaCreacion)}) - {getDisplayCalificacion(evalu)} pts
-													</option>
-												))}
-											</select>
-										</div>
-									)}
-									<div className={styles.chartContainer} style={{ minHeight: '350px' }}>
-										{getItemAnalysisData() ? (
-											<Bar
-												data={getItemAnalysisData()!}
-												options={{
-													responsive: true,
-													maintainAspectRatio: false,
-													indexAxis: 'y' as const,
-													scales: {
-														x: { min: 0, max: (dataEvaluacionDocente?.escala || []).at(-1)?.value || 4 },
-														y: {
-															ticks: {
-																autoSkip: false,
-																font: { size: 12 }
+								<div className={styles.chartConstrainedWrapper}>
+									<div className={styles.chartTabToolbar}>
+										<span className={styles.chartTabToolbarTitle}>Brechas Críticas</span>
+										<button
+											type="button"
+											className={`${styles.copyChartBtn} ${copiedTab === 'analisis' ? styles.copyChartBtnSuccess : ''}`}
+											onClick={() => handleCopyChart('analisis', chartRefAnalisis, 'Brechas Críticas')}
+											disabled={isCopying === 'analisis'}
+											title="Copiar imagen del gráfico al portapapeles para pegar (Ctrl + V)"
+										>
+											{copiedTab === 'analisis' ? (
+												<>
+													<MdCheck />
+													<span>¡Copiado!</span>
+												</>
+											) : isCopying === 'analisis' ? (
+												<>
+													<RiLoader4Line className={styles.spinningIcon} />
+													<span>Capturando...</span>
+												</>
+											) : (
+												<>
+													<RiCameraLine />
+													<span>Copiar captura</span>
+												</>
+											)}
+										</button>
+									</div>
+									<div ref={chartRefAnalisis} className={styles.chartCaptureContainer}>
+										<h3 className={styles.chartSpecialistTitle}>
+											Brechas Críticas de {especialistaNombre.toUpperCase()}
+										</h3>
+										<div className={styles.chartContainer} style={{ minHeight: '380px' }}>
+											{getItemAnalysisData() ? (
+												<Bar
+													data={getItemAnalysisData()!}
+													options={{
+														responsive: true,
+														maintainAspectRatio: false,
+														indexAxis: 'y' as const,
+														scales: {
+															x: { min: 0, max: (dataEvaluacionDocente?.escala || []).at(-1)?.value || 4 },
+															y: {
+																ticks: {
+																	autoSkip: false,
+																	font: { size: 12 }
+																}
 															}
-														}
-													},
-													plugins: {
-														title: { display: true, text: selectedModalEvalId === 'all' && historialSelected.length > 1 ? 'Evolución de Brechas Críticas por Etapa' : 'Top 5 Criterios con Menor Puntaje' },
-														legend: { display: selectedModalEvalId === 'all' && historialSelected.length > 1, position: 'bottom' },
-														tooltip: {
-															callbacks: {
-																title: (context: any) => {
-																	const label = context[0]?.label;
-																	return Array.isArray(label) ? label.join(' ') : label;
+														},
+														plugins: {
+															title: { display: true, text: selectedModalEvalId === 'all' && historialSelected.length > 1 ? 'Evolución de Brechas Críticas por Etapa' : 'Top 5 Criterios con Menor Puntaje' },
+															legend: { display: selectedModalEvalId === 'all' && historialSelected.length > 1, position: 'bottom' },
+															tooltip: {
+																callbacks: {
+																	title: (context: any) => {
+																		const label = context[0]?.label;
+																		return Array.isArray(label) ? label.join(' ') : label;
+																	}
 																}
 															}
 														}
-													}
-												}}
-											/>
-										) : (
-											<div className={styles.perfectScoreBanner}>
-												<MdTrendingUp className={styles.perfectScoreIcon} />
-												<h3 className={styles.perfectScoreTitle}>¡Excelente Desempeño!</h3>
-												<p className={styles.perfectScoreText}>El especialista alcanzó el puntaje máximo en todos los criterios evaluados. No se detectaron brechas críticas.</p>
-											</div>
-										)}
+													}}
+												/>
+											) : (
+												<div className={styles.perfectScoreBanner}>
+													<MdTrendingUp className={styles.perfectScoreIcon} />
+													<h3 className={styles.perfectScoreTitle}>¡Excelente Desempeño!</h3>
+													<p className={styles.perfectScoreText}>El {targetNounSingular.toLowerCase()} alcanzó el puntaje máximo en todos los criterios evaluados. No se detectaron brechas críticas.</p>
+												</div>
+											)}
+										</div>
 									</div>
 								</div>
 							)}
 							{activeTab === 'distribucion' && (
-								<div className={styles.distribucionWrapper}>
-									{historialSelected.length > 1 && (
-										<div className={styles.filterBar}>
-											<span className={styles.filterBarLabel}>Filtrar por Etapa / Evaluación:</span>
-											<select
-												className={styles.toolbarSelect}
-												value={selectedModalEvalId}
-												onChange={(e) => setSelectedModalEvalId(e.target.value)}
-											>
-												<option value="all">Todas las etapas (Comparativo)</option>
-												<option value="latest">Última Evaluación ({getCleanPhaseName(latestEvaluation?.faseNombre, latestEvaluation?.idFase)}{getShortDateString(latestEvaluation?.fechaMonitoreo || latestEvaluation?.fechaCreacion) ? ` - ${getShortDateString(latestEvaluation?.fechaMonitoreo || latestEvaluation?.fechaCreacion)}` : ''})</option>
-												{historialSelected.map((evalu, idx) => (
-													<option key={evalu.id || idx} value={evalu.id}>
-														{getCleanPhaseName((evalu as any).faseNombre, (evalu as any).idFase || (evalu as any).faseActualID)} ({getShortDateString(evalu.fechaMonitoreo || evalu.fechaCreacion)}) - {getDisplayCalificacion(evalu)} pts
-													</option>
-												))}
-											</select>
-										</div>
-									)}
+								<div className={styles.chartConstrainedWrapper}>
+									<div className={styles.chartTabToolbar}>
+										<span className={styles.chartTabToolbarTitle}>Resultados Globales</span>
+										<button
+											type="button"
+											className={`${styles.copyChartBtn} ${copiedTab === 'distribucion' ? styles.copyChartBtnSuccess : ''}`}
+											onClick={() => handleCopyChart('distribucion', chartRefDistribucion, 'Resultados Globales')}
+											disabled={isCopying === 'distribucion'}
+											title="Copiar imagen del consolidado al portapapeles para pegar (Ctrl + V)"
+										>
+											{copiedTab === 'distribucion' ? (
+												<>
+													<MdCheck />
+													<span>¡Copiado!</span>
+												</>
+											) : isCopying === 'distribucion' ? (
+												<>
+													<RiLoader4Line className={styles.spinningIcon} />
+													<span>Capturando...</span>
+												</>
+											) : (
+												<>
+													<RiCameraLine />
+													<span>Copiar captura</span>
+												</>
+											)}
+										</button>
+									</div>
 									{(() => {
 										const distData = getDistribucionGlobalData();
 										if (!distData.pieData) return <p className={styles.emptyText} style={{ textAlign: 'center', marginTop: '2rem' }}>No hay datos suficientes para mostrar.</p>;
 										return (
-											<div className={styles.distribucionCol}>
-												<div className={styles.distribucionSection}>
-													<div className={styles.distribucionHeaderGroup}>
-														<div className={styles.distribucionBarIndicator}></div>
-														<h3 className={styles.distribucionTitle}>Consolidado de Resultados</h3>
-													</div>
+											<div ref={chartRefDistribucion} className={styles.distribucionCol}>
+												<h3 className={styles.distribucionFaseTitle}>
+													{faseDistribucionTitle}
+												</h3>
+												<div className={styles.distribucionContentRow}>
 													<div className={styles.distribucionPieContainer}>
 														<Pie
 															data={distData.pieData}
 															options={{
 																plugins: {
-																	legend: { position: 'bottom' },
+																	legend: { display: false },
 																	title: { display: false }
 																}
 															}}
 														/>
 													</div>
-												</div>
-												<div className={styles.distribucionStatsGrid}>
-													<div className={styles.distribucionStatCard}>
-														<span className={styles.distribucionStatLabel}>
-															TOTAL PREGUNTAS
-														</span>
-														<span className={styles.distribucionStatValue}>
-															{distData.totalPreguntas}
-														</span>
-													</div>
-
-													{distData.stats.map((stat: any, idx: number) => {
-														const percentage = distData.totalPreguntas > 0 ? Math.round((stat.count / distData.totalPreguntas) * 100) : 0;
-														return (
-															<div key={idx} className={styles.distribucionStatCard}>
-																<div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.35rem' }}>
-																	<span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: stat.color || '#94a3b8', display: 'inline-block', flexShrink: 0 }}></span>
-																	<span className={styles.distribucionStatLabel} style={{ marginBottom: 0, lineHeight: 1.2 }}>
-																		{stat.label}
-																	</span>
-																</div>
-																<span className={styles.distribucionStatValue}>
-																	{stat.count}
-																</span>
-																<span className={styles.distribucionStatSub}>
-																	{percentage}% ({stat.count}/{distData.totalPreguntas})
+													<div className={styles.distribucionStatsGrid}>
+														<div
+															className={styles.distribucionStatCard}
+															style={{
+																border: '1px solid #2563eb',
+																backgroundColor: '#ffffff'
+															}}
+														>
+															<div className={styles.statLabelGroup}>
+																<span className={styles.statColorDot} style={{ backgroundColor: '#2563eb' }} />
+																<span className={styles.distribucionStatLabel}>
+																	TOTAL PREGUNTAS
 																</span>
 															</div>
-														);
-													})}
+															<span className={styles.distribucionStatValue}>
+																{distData.totalPreguntas}
+															</span>
+															<span className={styles.distribucionStatSub}>
+																100%
+															</span>
+														</div>
+
+														{distData.stats.map((stat: any, idx: number) => {
+															const percentage = distData.totalPreguntas > 0 ? Math.round((stat.count / distData.totalPreguntas) * 100) : 0;
+															const cardColor = stat.color || '#94a3b8';
+
+															return (
+																<div
+																	key={idx}
+																	className={styles.distribucionStatCard}
+																	style={{
+																		border: `1px solid ${cardColor}`,
+																		backgroundColor: '#ffffff'
+																	}}
+																>
+																	<div
+																		className={styles.statLabelGroup}
+																		title={stat.label}
+																	>
+																		<span className={styles.statColorDot} style={{ backgroundColor: cardColor }} />
+																		<span className={styles.distribucionStatLabel}>
+																			{stat.label}
+																		</span>
+																	</div>
+																	<span className={styles.distribucionStatValue}>
+																		{stat.count}
+																	</span>
+																	<span className={styles.distribucionStatSub}>
+																		{percentage}% ({stat.count}/{distData.totalPreguntas})
+																	</span>
+																</div>
+															);
+														})}
+													</div>
 												</div>
 											</div>
 										);

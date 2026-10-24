@@ -38,7 +38,81 @@ export const useHistorialEvolucion = (
 	const [historialSelected, setHistorialSelected] = useState<User[]>([]);
 	const [loadingHistorial, setLoadingHistorial] = useState(false);
 	const [activeTab, setActiveTab] = useState<'evolucion' | 'radar' | 'analisis' | 'distribucion' | 'configuracion'>('evolucion');
-	const [selectedModalEvalId, setSelectedModalEvalId] = useState<string>('all');
+	const [selectedModalEvalIds, setSelectedModalEvalIds] = useState<string[]>(['all']);
+
+	const latestEvaluation = useMemo(() => {
+		if (!historialSelected || historialSelected.length === 0) return null;
+		return historialSelected[historialSelected.length - 1];
+	}, [historialSelected]);
+
+	const isAllPhasesSelected = useMemo(() => {
+		return (
+			selectedModalEvalIds.includes('all') ||
+			selectedModalEvalIds.length === 0 ||
+			(historialSelected.length > 0 && selectedModalEvalIds.length === historialSelected.length)
+		);
+	}, [selectedModalEvalIds, historialSelected]);
+
+	const activeEvaluations = useMemo(() => {
+		if (!historialSelected || historialSelected.length === 0) return [];
+		if (isAllPhasesSelected) return historialSelected;
+
+		const setIds = new Set(selectedModalEvalIds);
+		const filtered = historialSelected.filter(e =>
+			(e.id && setIds.has(e.id)) || (setIds.has('latest') && e.id === latestEvaluation?.id)
+		);
+		return filtered.length > 0 ? filtered : historialSelected;
+	}, [historialSelected, selectedModalEvalIds, isAllPhasesSelected, latestEvaluation]);
+
+	const selectAllPhases = () => {
+		setSelectedModalEvalIds(['all']);
+	};
+
+	const togglePhaseSelection = (phaseId: string) => {
+		if (phaseId === 'all') {
+			setSelectedModalEvalIds(['all']);
+			return;
+		}
+
+		if (isAllPhasesSelected) {
+			setSelectedModalEvalIds([phaseId]);
+			return;
+		}
+
+		const currentList = selectedModalEvalIds.filter(id => id !== 'all');
+		const exists = currentList.includes(phaseId);
+		let nextList: string[];
+
+		if (exists) {
+			nextList = currentList.filter(id => id !== phaseId);
+			if (nextList.length === 0) {
+				nextList = ['all'];
+			}
+		} else {
+			nextList = [...currentList, phaseId];
+			if (nextList.length === historialSelected.length) {
+				nextList = ['all'];
+			}
+		}
+
+		setSelectedModalEvalIds(nextList);
+	};
+
+	const selectedModalEvalId = useMemo(() => {
+		if (isAllPhasesSelected) return 'all';
+		if (selectedModalEvalIds.length === 1) return selectedModalEvalIds[0];
+		return selectedModalEvalIds.join(',');
+	}, [isAllPhasesSelected, selectedModalEvalIds]);
+
+	const setSelectedModalEvalId = (val: string | string[]) => {
+		if (Array.isArray(val)) {
+			setSelectedModalEvalIds(val.length === 0 ? ['all'] : val);
+		} else if (val === 'all') {
+			setSelectedModalEvalIds(['all']);
+		} else {
+			setSelectedModalEvalIds([val]);
+		}
+	};
 
 	const handleOpenEvolucion = async (especialista: User, evaluacionEspecifica?: User) => {
 		setSelectedEspecialista(especialista);
@@ -57,7 +131,7 @@ export const useHistorialEvolucion = (
 
 			const listSorted = listFiltered.sort((a, b) => getMonitoreoTimestamp(a) - getMonitoreoTimestamp(b));
 			setHistorialSelected(listSorted);
-			setSelectedModalEvalId('all');
+			setSelectedModalEvalIds(['all']);
 		} catch (error) {
 			console.error("Error al cargar historial:", error);
 			setHistorialSelected([]);
@@ -71,13 +145,15 @@ export const useHistorialEvolucion = (
 			return { labels: [], datasets: [] };
 		}
 
-		const labels = historialSelected.map((item) => {
+		const evalsToUse = activeEvaluations;
+
+		const labels = evalsToUse.map((item) => {
 			const faseName = getCleanPhaseName((item as any).faseNombre, (item as any).idFase || (item as any).faseActualID);
 			const dateStr = getShortDateString(item.fechaMonitoreo || item.fechaCreacion);
 			return dateStr ? `${faseName} (${dateStr})` : faseName;
 		});
 
-		const dataPoints = historialSelected.map((item) => getDisplayCalificacion(item));
+		const dataPoints = evalsToUse.map((item) => getDisplayCalificacion(item));
 
 		return {
 			labels,
@@ -91,15 +167,14 @@ export const useHistorialEvolucion = (
 					pointBackgroundColor: '#2563eb',
 					pointBorderColor: '#ffffff',
 					pointBorderWidth: 2,
-					pointRadius: 6,
-					pointHoverRadius: 8,
+					pointRadius: evalsToUse.length === 1 ? 8 : 6,
+					pointHoverRadius: evalsToUse.length === 1 ? 10 : 8,
 					fill: true,
 					tension: 0.3,
 				},
 			],
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [historialSelected, dataEvaluacionDocente]);
+	}, [historialSelected, activeEvaluations, dataEvaluacionDocente, getDisplayCalificacion]);
 
 	const maxScaleValue = useMemo(() => {
 		let maxVal = 20;
@@ -117,20 +192,24 @@ export const useHistorialEvolucion = (
 			if (highestScore > maxVal) maxVal = highestScore;
 		}
 
-		// Margen dinámico superior (+8% redondeado) para evitar que el punto toque el borde superior
-		const buffer = Math.max(2, Math.ceil(maxVal * 0.08));
+		// Margen dinámico superior (+12% redondeado, mínimo 3 pts) para que el badge del punto no toque el borde superior
+		const buffer = Math.max(3, Math.ceil(maxVal * 0.12));
 		return maxVal + buffer;
 	}, [dataEvaluacionDocente, historialSelected, getDisplayCalificacion]);
 
 	const chartOptions = {
 		responsive: true,
 		maintainAspectRatio: false,
+		interaction: {
+			mode: 'index' as const,
+			intersect: false,
+		},
 		layout: {
 			padding: {
-				top: 16,
-				right: 16,
-				bottom: 8,
-				left: 8,
+				top: 32,
+				right: 28,
+				bottom: 12,
+				left: 16,
 			},
 		},
 		scales: {
@@ -146,14 +225,17 @@ export const useHistorialEvolucion = (
 			},
 			x: {
 				grid: { display: false },
+				offset: true,
 			},
 		},
 		plugins: {
 			legend: { display: false },
 			tooltip: {
-				backgroundColor: 'rgba(15, 23, 42, 0.9)',
+				backgroundColor: 'rgba(15, 23, 42, 0.95)',
 				padding: 12,
 				cornerRadius: 8,
+				titleFont: { size: 13, weight: 'bold' as const },
+				bodyFont: { size: 12 },
 				callbacks: {
 					label: (context: any) => ` Calificación: ${context.parsed.y} pts`,
 				},
@@ -165,9 +247,7 @@ export const useHistorialEvolucion = (
 		if (dimensionesEspecialistas.length === 0 || historialSelected.length === 0) return { labels: [], datasets: [] };
 
 		const labels = dimensionesEspecialistas.map(d => d.nombre);
-		const evalDataList = selectedModalEvalId === 'all'
-			? historialSelected
-			: historialSelected.filter(e => e.id === selectedModalEvalId || (selectedModalEvalId === 'latest' && e.id === historialSelected[historialSelected.length - 1]?.id));
+		const evalDataList = activeEvaluations;
 
 		const activeScale = dataEvaluacionDocente?.escala || [];
 
@@ -324,20 +404,13 @@ export const useHistorialEvolucion = (
 		return { labels, datasets };
 	};
 
-	const latestEvaluation = useMemo(() => {
-		if (!historialSelected || historialSelected.length === 0) return null;
-		return historialSelected[historialSelected.length - 1];
-	}, [historialSelected]);
-
 	const getItemAnalysisData = () => {
 		if (!getPreguntaRespuestaDocentes || getPreguntaRespuestaDocentes.length === 0 || historialSelected.length === 0) return null;
 
 		const activeScale = dataEvaluacionDocente?.escala || [];
 		const maxScore = activeScale.length > 0 ? Math.max(...activeScale.map((s: any) => s.value || 0)) : 4;
 
-		const selectedEvals = selectedModalEvalId === 'all'
-			? historialSelected
-			: historialSelected.filter(e => e.id === selectedModalEvalId || (selectedModalEvalId === 'latest' && e.id === latestEvaluation?.id));
+		const selectedEvals = activeEvaluations;
 
 		if (selectedEvals.length === 0) return null;
 
@@ -360,7 +433,7 @@ export const useHistorialEvolucion = (
 		const activePreguntas = Array.from(activePreguntasMap.values()).sort((a, b) => a.orden - b.orden);
 		if (activePreguntas.length === 0) return null;
 
-		if (selectedModalEvalId === 'all' && historialSelected.length > 1) {
+		if (selectedEvals.length > 1) {
 			const itemScoresMap = new Map<string, { preguntaObj: any; scores: number[] }>();
 
 			activePreguntas.forEach(preg => {
@@ -503,9 +576,7 @@ export const useHistorialEvolucion = (
 	const getDistribucionGlobalData = () => {
 		if (historialSelected.length === 0 || !dataEvaluacionDocente?.niveles) return { pieData: null, stats: [], totalPreguntas: 0 };
 
-		const selectedEvals = selectedModalEvalId === 'all'
-			? historialSelected
-			: historialSelected.filter(e => e.id === selectedModalEvalId || (selectedModalEvalId === 'latest' && e.id === latestEvaluation?.id));
+		const selectedEvals = activeEvaluations;
 
 		if (selectedEvals.length === 0) return { pieData: null, stats: [], totalPreguntas: 0 };
 
@@ -589,6 +660,12 @@ export const useHistorialEvolucion = (
 		setActiveTab,
 		selectedModalEvalId,
 		setSelectedModalEvalId,
+		selectedModalEvalIds,
+		setSelectedModalEvalIds,
+		togglePhaseSelection,
+		selectAllPhases,
+		isAllPhasesSelected,
+		activeEvaluations,
 		handleOpenEvolucion,
 		chartData,
 		chartOptions,

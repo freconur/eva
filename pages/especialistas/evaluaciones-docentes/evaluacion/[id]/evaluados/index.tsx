@@ -15,6 +15,7 @@ const DocentesEvaluadosEspecialistaPage = () => {
 			targetTitle="Docentes Evaluados"
 			targetNoun="docentes"
 			targetNounSingular="Docente"
+			showUgelFilter={false}
 			backHref={`/especialistas/evaluaciones-docentes/evaluacion/${id}`}
 			getReporteIndividualHref={(evalId, evalu) => {
 				const docenteDni = evalu.dni || (evalu as any).docenteDni || '';

@@ -15,6 +15,7 @@ interface EvaluadosTableProps {
 	setSelectedFase: (val: string) => void;
 	selectedUgel?: string;
 	setSelectedUgel?: (val: string) => void;
+	showUgelFilter?: boolean;
 	fasesUnicas: any[];
 	sortOrder: 'default' | 'score-desc' | 'score-asc';
 	setSortOrder: (val: 'default' | 'score-desc' | 'score-asc') => void;
@@ -44,6 +45,7 @@ export const EvaluadosTable: React.FC<EvaluadosTableProps> = ({
 	setSelectedFase,
 	selectedUgel,
 	setSelectedUgel,
+	showUgelFilter = true,
 	fasesUnicas,
 	sortOrder,
 	setSortOrder,
@@ -140,7 +142,7 @@ export const EvaluadosTable: React.FC<EvaluadosTableProps> = ({
 				)}
 
 				{/* Custom UGEL Filter Dropdown */}
-				{setSelectedUgel && (
+				{showUgelFilter && setSelectedUgel && (
 					<div className={styles.customDropdownContainer} ref={tableUgelDropdownRef}>
 						<button
 							type="button"
@@ -335,7 +337,14 @@ export const EvaluadosTable: React.FC<EvaluadosTableProps> = ({
 											<tr className={styles.detailRow}>
 												<td colSpan={7}>
 													<div className={styles.detailContent}>
-														<h4 className={styles.detailTitle}>Historial de Evaluaciones</h4>
+														<h4 className={styles.detailTitle}>
+															Historial de Evaluaciones
+															{selectedFase && (
+																<span className="text-xs font-semibold text-blue-600 ml-2">
+																	• Fase: {fasesUnicas.find(f => f.id === selectedFase)?.nombre || selectedFase}
+																</span>
+															)}
+														</h4>
 														<div className={styles.detailGrid}>
 															{group.evaluations.map((evalu: any, idx: number) => {
 																const displayScore = getDisplayCalificacion(evalu);

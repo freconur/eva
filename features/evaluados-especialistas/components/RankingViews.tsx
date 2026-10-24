@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MdBarChart, MdEqualizer, MdEmojiEvents, MdLocationOn, MdInfo, MdPieChart, MdFilterList, MdCheck, MdExpandMore, MdTrendingUp, MdAnalytics, MdWarningAmber, MdVerified, MdHistory } from 'react-icons/md';
+import { RiCameraLine, RiLoader4Line } from 'react-icons/ri';
 import { Bar, Pie } from 'react-chartjs-2';
-import { barSegmentScorePlugin, pieSegmentLabelPlugin, getCleanPhaseName, getLocalDateString } from './utils';
+import { barSegmentScorePlugin, pieSegmentLabelPlugin, getCleanPhaseName, getLocalDateString, copyChartElementToClipboard } from './utils';
 import styles from '../styles.module.css';
 
 interface RankingViewsProps {
@@ -29,6 +30,7 @@ interface RankingViewsProps {
 	onUpdateNivelColor?: (nivelIdx: number, newColor: string) => Promise<void>;
 	targetNoun?: string;
 	targetNounSingular?: string;
+	showUgelTab?: boolean;
 }
 
 export const RankingViews: React.FC<RankingViewsProps> = ({
@@ -56,6 +58,7 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 	onUpdateNivelColor,
 	targetNoun = 'especialistas',
 	targetNounSingular = 'Especialista',
+	showUgelTab = true,
 }) => {
 	const [ugelChartType, setUgelChartType] = useState<'bar' | 'pieUgel' | 'pieNivel'>('bar');
 	const [isPhaseDropdownOpen, setIsPhaseDropdownOpen] = useState(false);
@@ -63,6 +66,25 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 	const [legendHexInput, setLegendHexInput] = useState<string>('');
 	const phaseDropdownRef = useRef<HTMLDivElement>(null);
 	const legendPopoverRef = useRef<HTMLDivElement>(null);
+
+	const [isCopying, setIsCopying] = useState<string | null>(null);
+	const [copiedTab, setCopiedTab] = useState<string | null>(null);
+
+	const chartRefHorizontal = useRef<HTMLDivElement | null>(null);
+	const chartRefVertical = useRef<HTMLDivElement | null>(null);
+	const chartRefPodio = useRef<HTMLDivElement | null>(null);
+	const chartRefUgel = useRef<HTMLDivElement | null>(null);
+
+	const handleCopyChart = async (tabKey: string, ref: React.RefObject<HTMLDivElement | null>, title: string) => {
+		if (!ref.current || isCopying) return;
+		setIsCopying(tabKey);
+		const ok = await copyChartElementToClipboard(ref.current, title);
+		if (ok) {
+			setCopiedTab(tabKey);
+			setTimeout(() => setCopiedTab(null), 2500);
+		}
+		setIsCopying(null);
+	};
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -76,6 +98,13 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 		document.addEventListener('mousedown', handleClickOutside);
 		return () => document.removeEventListener('mousedown', handleClickOutside);
 	}, []);
+
+	// Si se deshabilita la pestaña de UGEL y el usuario estaba en ella, cambiar a horizontal
+	useEffect(() => {
+		if (!showUgelTab && rankingTab === 'ugel') {
+			setRankingTab('horizontal');
+		}
+	}, [showUgelTab, rankingTab, setRankingTab]);
 
 	return (
 		<>
@@ -99,12 +128,14 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 				>
 					<MdTrendingUp /> Resumen Ejecutivo & KPIs
 				</button>
-				<button
-					className={`${styles.subtabButton} ${rankingTab === 'ugel' ? styles.activeSubtabButton : ''}`}
-					onClick={() => setRankingTab('ugel')}
-				>
-					<MdLocationOn /> Ranking por UGEL
-				</button>
+				{showUgelTab && (
+					<button
+						className={`${styles.subtabButton} ${rankingTab === 'ugel' ? styles.activeSubtabButton : ''}`}
+						onClick={() => setRankingTab('ugel')}
+					>
+						<MdLocationOn /> Ranking por UGEL
+					</button>
+				)}
 			</div>
 
 			{/* Toolbar bar with Phase Dropdown & Level Legend */}
@@ -270,11 +301,48 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 						})}
 					</div>
 				)}
+
+				{/* Botón de captura de imagen del gráfico activo */}
+				<div style={{ marginLeft: 'auto' }}>
+					<button
+						type="button"
+						className={`${styles.copyChartBtn} ${copiedTab === rankingTab ? styles.copyChartBtnSuccess : ''}`}
+						onClick={() => {
+							const refMap: Record<string, { ref: React.RefObject<HTMLDivElement | null>; title: string }> = {
+								horizontal: { ref: chartRefHorizontal, title: 'Ranking Horizontal' },
+								vertical: { ref: chartRefVertical, title: 'Ranking Vertical' },
+								podio: { ref: chartRefPodio, title: 'Resumen Ejecutivo & KPIs' },
+								ugel: { ref: chartRefUgel, title: 'Ranking por UGEL' },
+							};
+							const current = refMap[rankingTab];
+							if (current) handleCopyChart(rankingTab, current.ref, current.title);
+						}}
+						disabled={isCopying === rankingTab}
+						title="Copiar captura de este gráfico para pegarla (Ctrl + V)"
+					>
+						{copiedTab === rankingTab ? (
+							<>
+								<MdCheck />
+								<span>¡Copiado!</span>
+							</>
+						) : isCopying === rankingTab ? (
+							<>
+								<RiLoader4Line className={styles.spinningIcon} />
+								<span>Capturando...</span>
+							</>
+						) : (
+							<>
+								<RiCameraLine />
+								<span>Copiar captura</span>
+							</>
+						)}
+					</button>
+				</div>
 			</div>
 
 			<div key={rankingTab} className={`${styles.tabContent} ${styles.tabFadeContainer}`}>
 				{rankingTab === 'horizontal' && (
-					<div className={styles.chartContainer} style={{ minHeight: `${Math.max(400, rankingEspecialistas.length * 40)}px`, position: 'relative' }}>
+					<div ref={chartRefHorizontal} className={styles.chartContainer} style={{ minHeight: `${Math.max(400, rankingEspecialistas.length * 40)}px`, position: 'relative' }}>
 						<Bar
 							data={getHorizontalRankingData()}
 							plugins={[barSegmentScorePlugin]}
@@ -341,7 +409,7 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 				)}
 
 				{rankingTab === 'vertical' && (
-					<div className={styles.chartContainer} style={{ minHeight: '480px' }}>
+					<div ref={chartRefVertical} className={styles.chartContainer} style={{ minHeight: '480px' }}>
 						<Bar
 							data={getVerticalRankingData()}
 							plugins={[barSegmentScorePlugin]}
@@ -408,7 +476,7 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 				)}
 
 				{rankingTab === 'podio' && (
-					<div className={styles.podiumTabContainer}>
+					<div ref={chartRefPodio} className={styles.podiumTabContainer}>
 						{/* Grid de KPIs Ejecutivos */}
 						<div className={styles.kpiGrid}>
 							{/* Card 1: Promedio General */}
@@ -423,7 +491,7 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 									{executiveMetrics?.promedioGeneral ?? 0} pts
 								</div>
 								<span className={styles.kpiSubtext}>
-									Calificación media de especialistas evaluados
+									Calificación media de {targetNoun} evaluados
 								</span>
 							</div>
 
@@ -440,7 +508,7 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 								</div>
 								<span className={styles.kpiSubtext}>
 									{executiveMetrics?.topPerformer
-										? `${executiveMetrics.topPerformer.score} pts (${executiveMetrics.topPerformer.ugel})`
+										? `${executiveMetrics.topPerformer.score} pts${showUgelTab && executiveMetrics.topPerformer.ugel ? ` (${executiveMetrics.topPerformer.ugel})` : ''}`
 										: 'Sin datos'
 									}
 								</span>
@@ -471,7 +539,7 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 									</span>
 								</div>
 								<div className={styles.kpiValue}>
-									{executiveMetrics?.atencionPrioritariaList?.length ?? 0} esp.
+									{executiveMetrics?.atencionPrioritariaList?.length ?? 0} {targetNoun}
 								</div>
 								<span className={styles.kpiSubtext}>
 									Requieren soporte pedagógico urgente
@@ -490,7 +558,7 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 									<thead>
 										<tr>
 											<th>{targetNounSingular}</th>
-											<th>UGEL</th>
+											{showUgelTab && <th>UGEL</th>}
 											<th style={{ textAlign: 'center' }}>Fases Evaluadas</th>
 											<th style={{ textAlign: 'right' }}>Última Eval.</th>
 											<th style={{ textAlign: 'center' }}>Promedio Histórico</th>
@@ -507,7 +575,7 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 														<span className={styles.specialistDni}>DNI: {item.dni}</span>
 													</div>
 												</td>
-												<td style={{ fontWeight: 600, color: '#475569' }}>{item.ugel}</td>
+												{showUgelTab && <td style={{ fontWeight: 600, color: '#475569' }}>{item.ugel}</td>}
 												<td style={{ textAlign: 'center' }}>
 													<div className={styles.phasePillsWrapper} style={{ justifyContent: 'center' }}>
 														{item.fasesList && item.fasesList.length > 0 ? (
@@ -569,7 +637,7 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 									<tr>
 										<th style={{ width: '50px', textAlign: 'center' }}>Pos.</th>
 										<th>{targetNounSingular}</th>
-										<th>UGEL</th>
+										{showUgelTab && <th>UGEL</th>}
 										<th style={{ textAlign: 'center' }}>Fases Evaluadas</th>
 										<th style={{ textAlign: 'right' }}>Última Eval.</th>
 										<th style={{ textAlign: 'center' }}>Promedio Histórico</th>
@@ -591,7 +659,7 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 													<span className={styles.specialistDni}>DNI: {item.dni}</span>
 												</div>
 											</td>
-											<td style={{ fontWeight: 600, color: '#475569' }}>{item.ugel}</td>
+											{showUgelTab && <td style={{ fontWeight: 600, color: '#475569' }}>{item.ugel}</td>}
 											<td style={{ textAlign: 'center' }}>
 												<div className={styles.phasePillsWrapper} style={{ justifyContent: 'center' }}>
 													{item.fasesList && item.fasesList.length > 0 ? (
@@ -646,8 +714,8 @@ export const RankingViews: React.FC<RankingViewsProps> = ({
 					</div>
 				)}
 
-				{rankingTab === 'ugel' && (
-					<div className={styles.ugelTabWrapper}>
+				{showUgelTab && rankingTab === 'ugel' && (
+					<div ref={chartRefUgel} className={styles.ugelTabWrapper}>
 						{/* Banner explicativo de metodología del promedio */}
 						<div className={styles.ugelMethodologyBanner}>
 							<MdInfo className={styles.ugelBannerIcon} />

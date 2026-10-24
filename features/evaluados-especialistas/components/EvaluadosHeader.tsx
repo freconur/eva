@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { MdArrowBack, MdPeople, MdPalette, MdHelpOutline } from 'react-icons/md';
+import { RiSearchLine } from 'react-icons/ri';
 import styles from '../styles.module.css';
 
 interface EvaluadosHeaderProps {
@@ -9,6 +10,7 @@ interface EvaluadosHeaderProps {
 	evaluadosCount: number;
 	onOpenColorConfig?: () => void;
 	onOpenOnboarding?: () => void;
+	onOpenSearch?: () => void;
 	backHref?: string;
 	title?: string;
 }
@@ -19,6 +21,7 @@ export const EvaluadosHeader: React.FC<EvaluadosHeaderProps> = ({
 	evaluadosCount,
 	onOpenColorConfig,
 	onOpenOnboarding,
+	onOpenSearch,
 	backHref,
 	title,
 }) => {
@@ -33,6 +36,19 @@ export const EvaluadosHeader: React.FC<EvaluadosHeaderProps> = ({
 				</Link>
 
 				<div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+					{onOpenSearch && (
+						<button
+							type="button"
+							className={styles.quickSearchTriggerBtn}
+							onClick={onOpenSearch}
+							title="Buscador inteligente de especialistas (Ctrl + K)"
+						>
+							<RiSearchLine style={{ fontSize: '1rem', color: '#2563eb' }} />
+							<span>Buscar especialista</span>
+							<kbd className={styles.quickSearchKbd}>Ctrl K</kbd>
+						</button>
+					)}
+
 					{onOpenOnboarding && (
 						<button
 							type="button"

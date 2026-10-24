@@ -26,6 +26,7 @@ import { AnalyticsDashboard } from '@/features/evaluados-especialistas/component
 import { ModalDeleteConfirm } from '@/features/evaluados-especialistas/components/ModalDeleteConfirm';
 import { ModalRankingGeneral } from '@/features/evaluados-especialistas/components/ModalRankingGeneral';
 import { ModalEvolutionProgress } from '@/features/evaluados-especialistas/components/ModalEvolutionProgress';
+import { ModalBuscadorEspecialistas } from '@/features/evaluados-especialistas/components/ModalBuscadorEspecialistas';
 import { InteractiveSpotlightTour } from '@/features/evaluados-especialistas/components/InteractiveSpotlightTour';
 
 import { useEvaluadosList } from '@/features/evaluados-especialistas/hooks/useEvaluadosList';
@@ -138,8 +139,21 @@ const EvaluadosPage = () => {
 	const [mainPageTab, setMainPageTab] = useState<'evaluados' | 'graficos'>('evaluados');
 	const [showModalRanking, setShowModalRanking] = useState(false);
 	const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+	const [showBuscador, setShowBuscador] = useState(false);
 	const [evaluacionToDelete, setEvaluacionToDelete] = useState<{ id: string; name: string } | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
+
+	// Atajo global Ctrl+K / Cmd+K para abrir buscador inteligente
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+				e.preventDefault();
+				setShowBuscador(prev => !prev);
+			}
+		};
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, []);
 
 	useEffect(() => {
 		if (id) {
@@ -219,6 +233,7 @@ const EvaluadosPage = () => {
 				evaluadosCount={evaluadosValidos.length}
 				onOpenColorConfig={handleOpenColorConfig}
 				onOpenOnboarding={() => setShowOnboarding(true)}
+				onOpenSearch={() => setShowBuscador(true)}
 			/>
 
 			{/* Main content */}
@@ -352,6 +367,7 @@ const EvaluadosPage = () => {
 				setActiveTab={historialEvolucion.setActiveTab}
 				loadingHistorial={historialEvolucion.loadingHistorial}
 				historialSelected={historialEvolucion.historialSelected}
+				selectedEspecialista={historialEvolucion.selectedEspecialista}
 				chartData={historialEvolucion.chartData}
 				chartOptions={historialEvolucion.chartOptions}
 				dimensionesEspecialistas={dimensionesEspecialistas}
@@ -360,6 +376,11 @@ const EvaluadosPage = () => {
 				getDistribucionGlobalData={historialEvolucion.getDistribucionGlobalData}
 				selectedModalEvalId={historialEvolucion.selectedModalEvalId}
 				setSelectedModalEvalId={historialEvolucion.setSelectedModalEvalId}
+				selectedModalEvalIds={historialEvolucion.selectedModalEvalIds}
+				setSelectedModalEvalIds={historialEvolucion.setSelectedModalEvalIds}
+				togglePhaseSelection={historialEvolucion.togglePhaseSelection}
+				selectAllPhases={historialEvolucion.selectAllPhases}
+				isAllPhasesSelected={historialEvolucion.isAllPhasesSelected}
 				latestEvaluation={historialEvolucion.latestEvaluation}
 				dataEvaluacionDocente={dataEvaluacionDocente}
 				evaluadosEspecialista={evaluadosValidos}
@@ -367,6 +388,20 @@ const EvaluadosPage = () => {
 				evalId={`${id}`}
 				saveConfiguracionColoresEspecialistas={saveConfiguracionColoresEspecialistas}
 				savePaletaGlobalColores={savePaletaGlobalColores}
+				onOpenSearch={() => setShowBuscador(true)}
+				isSearchOpen={showBuscador}
+			/>
+
+			{/* Buscador Inteligente Command Palette (Ctrl+K) */}
+			<ModalBuscadorEspecialistas
+				isOpen={showBuscador}
+				onClose={() => setShowBuscador(false)}
+				groupedEvaluados={evaluadosList.groupedEvaluados}
+				onSelectEspecialista={(especialista) => {
+					historialEvolucion.handleOpenEvolucion(especialista);
+					setShowBuscador(false);
+				}}
+				getDisplayCalificacion={evaluadosList.getDisplayCalificacion}
 			/>
 
 			{/* Interactive Spotlight Tour */}

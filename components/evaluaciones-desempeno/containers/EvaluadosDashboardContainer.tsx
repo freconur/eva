@@ -29,6 +29,7 @@ import { AnalyticsDashboard } from '@/features/evaluados-especialistas/component
 import { ModalDeleteConfirm } from '@/features/evaluados-especialistas/components/ModalDeleteConfirm';
 import { ModalRankingGeneral } from '@/features/evaluados-especialistas/components/ModalRankingGeneral';
 import { ModalEvolutionProgress } from '@/features/evaluados-especialistas/components/ModalEvolutionProgress';
+import { ModalBuscadorEspecialistas } from '@/features/evaluados-especialistas/components/ModalBuscadorEspecialistas';
 import { InteractiveSpotlightTour } from '@/features/evaluados-especialistas/components/InteractiveSpotlightTour';
 
 import { useEvaluadosList } from '@/features/evaluados-especialistas/hooks/useEvaluadosList';
@@ -57,6 +58,8 @@ export interface EvaluadosDashboardContainerProps {
 	targetNounSingular: string;
 	backHref: string;
 	getReporteIndividualHref?: (id: string, evalu: User) => string;
+	showUgelFilter?: boolean;
+	showUgelRanking?: boolean;
 }
 
 export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerProps> = ({
@@ -68,6 +71,8 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 	targetNounSingular,
 	backHref,
 	getReporteIndividualHref,
+	showUgelFilter,
+	showUgelRanking,
 }) => {
 	const router = useRouter();
 	const id = propId || (router.query.id as string);
@@ -85,6 +90,16 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 		if (queryRegion === 'SIN_UGEL') return 'UGEL No Asignada';
 		return queryRegion.startsWith('UGEL') ? queryRegion : `UGEL ${queryRegion}`;
 	}, [queryRegion]);
+
+	const shouldShowUgelFilter = useMemo(() => {
+		if (showUgelFilter !== undefined) return showUgelFilter;
+		return role !== 'director' && role !== 'especialista' && !queryRegion;
+	}, [showUgelFilter, role, queryRegion]);
+
+	const shouldShowUgelRanking = useMemo(() => {
+		if (showUgelRanking !== undefined) return showUgelRanking;
+		return role !== 'director';
+	}, [showUgelRanking, role]);
 
 	useEffect(() => {
 		if (typeof window !== 'undefined') {
@@ -388,8 +403,21 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 	const [mainPageTab, setMainPageTab] = useState<'evaluados' | 'graficos'>('evaluados');
 	const [showModalRanking, setShowModalRanking] = useState(false);
 	const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+	const [showBuscador, setShowBuscador] = useState(false);
 	const [evaluacionToDelete, setEvaluacionToDelete] = useState<{ id: string; name: string } | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
+
+	// Atajo global Ctrl+K / Cmd+K para abrir buscador inteligente
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+				e.preventDefault();
+				setShowBuscador(prev => !prev);
+			}
+		};
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, []);
 
 	useEffect(() => {
 		if (id) {
@@ -612,8 +640,9 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 							setSearchQuery={evaluadosList.setSearchQuery}
 							selectedFase={evaluadosList.selectedFase}
 							setSelectedFase={evaluadosList.setSelectedFase}
-							selectedUgel={evaluadosList.selectedUgel}
-							setSelectedUgel={evaluadosList.setSelectedUgel}
+							selectedUgel={shouldShowUgelFilter ? evaluadosList.selectedUgel : undefined}
+							setSelectedUgel={shouldShowUgelFilter ? evaluadosList.setSelectedUgel : undefined}
+							showUgelFilter={shouldShowUgelFilter}
 							fasesUnicas={evaluadosList.fasesUnicas}
 							sortOrder={evaluadosList.sortOrder}
 							setSortOrder={evaluadosList.setSortOrder}
@@ -665,6 +694,7 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 							onUpdateNivelColor={handleUpdateNivelColor}
 							targetNoun={targetNoun}
 							targetNounSingular={targetNounSingular}
+							showUgelTab={shouldShowUgelRanking}
 						/>
 					</div>
 				)}
@@ -711,6 +741,7 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 				onUpdateNivelColor={handleUpdateNivelColor}
 				targetNoun={targetNoun}
 				targetNounSingular={targetNounSingular}
+				showUgelTab={shouldShowUgelRanking}
 			/>
 
 			{/* Evolution Modal */}
@@ -721,6 +752,9 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 				setActiveTab={historialEvolucion.setActiveTab}
 				loadingHistorial={historialEvolucion.loadingHistorial}
 				historialSelected={historialEvolucion.historialSelected}
+				selectedEspecialista={historialEvolucion.selectedEspecialista}
+				targetNounSingular={targetNounSingular}
+				targetNoun={targetNoun}
 				chartData={historialEvolucion.chartData}
 				chartOptions={historialEvolucion.chartOptions}
 				dimensionesEspecialistas={dimensionesEspecialistas}
@@ -729,6 +763,11 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 				getDistribucionGlobalData={historialEvolucion.getDistribucionGlobalData}
 				selectedModalEvalId={historialEvolucion.selectedModalEvalId}
 				setSelectedModalEvalId={historialEvolucion.setSelectedModalEvalId}
+				selectedModalEvalIds={historialEvolucion.selectedModalEvalIds}
+				setSelectedModalEvalIds={historialEvolucion.setSelectedModalEvalIds}
+				togglePhaseSelection={historialEvolucion.togglePhaseSelection}
+				selectAllPhases={historialEvolucion.selectAllPhases}
+				isAllPhasesSelected={historialEvolucion.isAllPhasesSelected}
 				latestEvaluation={historialEvolucion.latestEvaluation}
 				dataEvaluacionDocente={dataEvaluacionDocente}
 				evaluadosEspecialista={evaluadosValidos}
@@ -736,6 +775,22 @@ export const EvaluadosDashboardContainer: React.FC<EvaluadosDashboardContainerPr
 				evalId={`${id}`}
 				saveConfiguracionColoresEspecialistas={saveConfiguracionColores}
 				savePaletaGlobalColores={savePaletaGlobalColores}
+				onOpenSearch={() => setShowBuscador(true)}
+				isSearchOpen={showBuscador}
+			/>
+
+			{/* Buscador Inteligente Command Palette (Ctrl+K) */}
+			<ModalBuscadorEspecialistas
+				isOpen={showBuscador}
+				onClose={() => setShowBuscador(false)}
+				groupedEvaluados={evaluadosList.groupedEvaluados}
+				onSelectEspecialista={(evaluado) => {
+					historialEvolucion.handleOpenEvolucion(evaluado);
+					setShowBuscador(false);
+				}}
+				getDisplayCalificacion={evaluadosList.getDisplayCalificacion}
+				targetNoun={targetNoun}
+				targetNounSingular={targetNounSingular}
 			/>
 
 			{/* Interactive Spotlight Tour */}

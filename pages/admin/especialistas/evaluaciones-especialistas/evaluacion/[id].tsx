@@ -202,21 +202,38 @@ const EvaluacionDetalleEspecialista = () => {
     });
   }, [evaluadosEspecialista, userDni]);
 
-  // Mapear especialistas con estado de evaluación (aislado al monitor actual)
+  // Evaluaciones aplicables: si es Administrador o DREP se visualizan todas las evaluaciones globales
+  const evaluadosAplicables = useMemo(() => {
+    return isAdminOrDrep
+      ? (evaluadosEspecialista || [])
+      : misEvaluacionesEspecialistas;
+  }, [isAdminOrDrep, evaluadosEspecialista, misEvaluacionesEspecialistas]);
+
+  // Mapear especialistas con estado de evaluación
   const especialistasConEstado = useMemo(() => {
-    const evaluados = misEvaluacionesEspecialistas;
+    const evaluados = evaluadosAplicables;
     return especialistasPadron.map((especialista) => {
       const espDni = String(especialista.dni || '').trim();
-      const evRegistrada = evaluados.find((ev: any) => {
+      const evalsRegistradas = evaluados.filter((ev: any) => {
         const evDni = String(
           ev.dni ||
           ev.especialistaDni ||
           ev.evaluadoDni ||
           ev.directorDni ||
+          ev.info?.dni ||
           ''
         ).trim();
-        return evDni === espDni;
+        return evDni && evDni === espDni;
       });
+
+      // Tomar la evaluación más reciente si existen múltiples
+      const evRegistrada = evalsRegistradas.length > 0
+        ? [...evalsRegistradas].sort((a: any, b: any) => {
+            const timeA = a.fechaCreacion?.seconds || (a.fechaMonitoreo ? new Date(a.fechaMonitoreo).getTime() : 0);
+            const timeB = b.fechaCreacion?.seconds || (b.fechaMonitoreo ? new Date(b.fechaMonitoreo).getTime() : 0);
+            return timeB - timeA;
+          })[0]
+        : null;
 
       return {
         ...especialista,
@@ -224,7 +241,7 @@ const EvaluacionDetalleEspecialista = () => {
         isEvaluated: !!evRegistrada,
       };
     });
-  }, [especialistasPadron, misEvaluacionesEspecialistas]);
+  }, [especialistasPadron, evaluadosAplicables]);
 
   // Filtrar especialistas por estado (todos / evaluados / pendientes) y búsqueda
   const especialistasFiltrados = useMemo(() => {
@@ -357,8 +374,28 @@ const EvaluacionDetalleEspecialista = () => {
 
   // Contadores y métricas de progreso
   const totalEspecialistas = especialistasPadron.length;
-  const evaluadosCount = especialistasConEstado.filter((d) => d.isEvaluated).length;
-  const pendientesCount = totalEspecialistas - evaluadosCount;
+
+  const uniqueEvaluadosDnis = useMemo(() => {
+    const set = new Set<string>();
+    evaluadosAplicables.forEach((ev: any) => {
+      const dni = String(
+        ev.dni ||
+        ev.especialistaDni ||
+        ev.evaluadoDni ||
+        ev.directorDni ||
+        ev.info?.dni ||
+        ''
+      ).trim();
+      if (dni) set.add(dni);
+    });
+    return set;
+  }, [evaluadosAplicables]);
+
+  const evaluadosPadronCount = especialistasConEstado.filter((d) => d.isEvaluated).length;
+  const evaluadosCount = totalEspecialistas > 0
+    ? (selectedRegion && selectedRegion !== 'all' ? evaluadosPadronCount : Math.max(evaluadosPadronCount, uniqueEvaluadosDnis.size))
+    : uniqueEvaluadosDnis.size;
+  const pendientesCount = Math.max(0, totalEspecialistas - evaluadosCount);
   const porcentajeAvance =
     totalEspecialistas > 0 ? Math.round((evaluadosCount / totalEspecialistas) * 100) : 0;
 
