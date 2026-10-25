@@ -5,6 +5,7 @@ import { useRolUsers } from '@/features/hooks/useRolUsers';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useSidebarLabels } from '@/features/context/SidebarLabelsContext';
 import CustomSidebarRenderer from './CustomSidebarRenderer';
+import { useSidebarFlyoutPosition } from '@/features/hooks/useSidebarFlyoutPosition';
 import styles from './sidebar.module.css'
 import { MdAccountBalance, MdAccountCircle } from 'react-icons/md';
 import { FaUserGraduate, FaUserTie } from 'react-icons/fa';
@@ -22,6 +23,7 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
   const { getLabel, customItems } = useSidebarLabels()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  useSidebarFlyoutPosition(sidebarRef, isSidebarCollapsed);
 
   const isDevUser =
     currentUserData?.dni === '47163626' ||
@@ -100,20 +102,6 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
         className={`${styles.sidebar} ${showSidebar ? styles.show : styles.hide} ${isSidebarCollapsed ? styles.collapsed : ''}`}
       >
 
-        {/* Toggle Collapse Button for Desktop */}
-        <div
-          className={styles.collapseToggleBtn}
-          onClick={() => {
-            if (!isSidebarCollapsed) {
-              setOpenDropdown(null);
-            }
-            toggleSidebarCollapsed(isSidebarCollapsed);
-          }}
-          title={isSidebarCollapsed ? "Expandir" : "Contraer"}
-        >
-          {isSidebarCollapsed ? <IoIosArrowForward /> : <IoIosArrowBack />}
-        </div>
-
         <div onClick={() => showSidebarValue(showSidebar)} className={styles.closeButton}>x</div>
 
         <div className={styles.sidebarContent}>
@@ -122,13 +110,17 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
           <div>
             <div className={styles.sectionHeader}>{getLabel('sidebar_seccionPrincipal', 'Principal')}</div>
 
-            <div className={`${styles.dashboardMenuItem} ${router.pathname === '/mi-cuenta' ? styles.activeLink : ''}`}>
+            <Link
+              href="/mi-cuenta"
+              className={`${styles.dashboardMenuItem} ${router.pathname === '/mi-cuenta' ? styles.activeLink : ''}`}
+              title={getLabel('especialista_miCuenta', 'Mi cuenta')}
+            >
               <MdAccountCircle className={styles.dashboardIcon} />
-              <Link className={styles.dashboardLink} href="/mi-cuenta" aria-haspopup="true">
+              <span className={styles.dashboardLink}>
                 {getLabel('especialista_miCuenta', 'Mi cuenta')}
-              </Link>
+              </span>
               <span className={styles.tooltip}>{getLabel('especialista_miCuenta', 'Mi cuenta')}</span>
-            </div>
+            </Link>
 
             <div className={styles.sectionHeader}>{getLabel('sidebar_seccionGestion', 'Gestión')}</div>
 
@@ -136,10 +128,14 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
               <ul className={styles.menuList}>
                 {/* Directivos */}
                 <li className={`${styles.menuItem} ${openDropdown === 'directivos' ? styles.itemOpen : ''}`}>
-                  <div className={styles.menuHeader} onClick={(e) => {
-                    e.stopPropagation();
-                    toggleDropdown('directivos');
-                  }}>
+                  <div
+                    className={styles.menuHeader}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleDropdown('directivos');
+                    }}
+                    title={getLabel('especialista_directivos', 'Directivos')}
+                  >
                     <MdAccountBalance className={styles.icon} />
                     <span className={styles.link}>{getLabel('especialista_directivos', 'Directivos')}</span>
                     <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'directivos' ? styles.arrowRotate : ''}`} />
@@ -148,46 +144,102 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
                     <li className={styles.flyoutHeader}>{getLabel('especialista_directivos', 'Directivos')}</li>
                     {!currentUserData.nivelDeInstitucion?.includes(2) && (
                       <>
-                        <li><Link href="/especialistas/evaluaciones-director" className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/evaluaciones-director') ? styles.activeLink : ''}`}>{getLabel('especialista_directivos_seguimiento', 'Seguimiento y retroalimentación')}</Link></li>
-                        <li><Link href="/especialistas/cobertura-curricular" className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/cobertura-curricular') ? styles.activeLink : ''}`}>{getLabel('especialista_directivos_cobertura', 'Cobertura curricular')}</Link></li>
+                        <li>
+                          <Link
+                            href="/especialistas/evaluaciones-director"
+                            className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/evaluaciones-director') ? styles.activeLink : ''}`}
+                            title={getLabel('especialista_directivos_seguimiento', 'Seguimiento y retroalimentación')}
+                          >
+                            {getLabel('especialista_directivos_seguimiento', 'Seguimiento y retroalimentación')}
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            href="/especialistas/cobertura-curricular"
+                            className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/cobertura-curricular') ? styles.activeLink : ''}`}
+                            title={getLabel('especialista_directivos_cobertura', 'Cobertura curricular')}
+                          >
+                            {getLabel('especialista_directivos_cobertura', 'Cobertura curricular')}
+                          </Link>
+                        </li>
                       </>
                     )}
-                    <li><Link href="/especialistas/agregar-directores" className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/agregar-directores') ? styles.activeLink : ''}`}>{getLabel('especialista_directivos_crear', 'Crear directivo')}</Link></li>
+                    <li>
+                      <Link
+                        href="/especialistas/agregar-directores"
+                        className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/agregar-directores') ? styles.activeLink : ''}`}
+                        title={getLabel('especialista_directivos_crear', 'Crear directivo')}
+                      >
+                        {getLabel('especialista_directivos_crear', 'Crear directivo')}
+                      </Link>
+                    </li>
                     <CustomSidebarRenderer role="especialista" parentId="especialista_directivos" customItems={customItems} isSubmenu={true} />
                   </ul>
                 </li>
 
                 {/* Docentes (Usuarios) */}
                 <li className={`${styles.menuItem} ${openDropdown === 'docentes-usuarios' ? styles.itemOpen : ''}`}>
-                  <div className={styles.menuHeader} onClick={(e) => {
-                    e.stopPropagation();
-                    toggleDropdown('docentes-usuarios');
-                  }}>
+                  <div
+                    className={styles.menuHeader}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleDropdown('docentes-usuarios');
+                    }}
+                    title={getLabel('especialista_docentes', 'Docentes')}
+                  >
                     <FaUserGraduate className={styles.icon} />
                     <span className={styles.link}>{getLabel('especialista_docentes', 'Docentes')}</span>
                     <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'docentes-usuarios' ? styles.arrowRotate : ''}`} />
                   </div>
                   <ul className={`${styles.submenu} ${openDropdown === 'docentes-usuarios' ? styles.show : ''}`}>
                     <li className={styles.flyoutHeader}>{getLabel('especialista_docentes', 'Docentes')}</li>
-                    <li><Link href="/admin/docentes/usuarios" className={`${styles.submenuLink} ${router.pathname.includes('/admin/docentes/usuarios') ? styles.activeLink : ''}`}>{getLabel('especialista_docentes_usuarios', 'Usuarios')}</Link></li>
-                    <li><Link href="/especialistas/autoreporte" className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/autoreporte') ? styles.activeLink : ''}`}>{getLabel('especialista_autorreporte', 'Autorreporte')}</Link></li>
+                    <li>
+                      <Link
+                        href="/admin/docentes/usuarios"
+                        className={`${styles.submenuLink} ${router.pathname.includes('/admin/docentes/usuarios') ? styles.activeLink : ''}`}
+                        title={getLabel('especialista_docentes_usuarios', 'Usuarios')}
+                      >
+                        {getLabel('especialista_docentes_usuarios', 'Usuarios')}
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        href="/especialistas/autoreporte"
+                        className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/autoreporte') ? styles.activeLink : ''}`}
+                        title={getLabel('especialista_autorreporte', 'Autorreporte')}
+                      >
+                        {getLabel('especialista_autorreporte', 'Autorreporte')}
+                      </Link>
+                    </li>
                     <CustomSidebarRenderer role="especialista" parentId="especialista_docentes" customItems={customItems} isSubmenu={true} />
                   </ul>
                 </li>
 
                 {/* Estudiantes */}
                 <li className={`${styles.menuItem} ${openDropdown === 'estudiantes' ? styles.itemOpen : ''}`}>
-                  <div className={styles.menuHeader} onClick={(e) => {
-                    e.stopPropagation();
-                    toggleDropdown('estudiantes');
-                  }}>
+                  <div
+                    className={styles.menuHeader}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleDropdown('estudiantes');
+                    }}
+                    title={getLabel('especialista_estudiantes', 'Estudiantes')}
+                  >
                     <FaUserGraduate className={styles.icon} />
                     <span className={styles.link}>{getLabel('especialista_estudiantes', 'Estudiantes')}</span>
                     <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'estudiantes' ? styles.arrowRotate : ''}`} />
                   </div>
                   <ul className={`${styles.submenu} ${openDropdown === 'estudiantes' ? styles.show : ''}`}>
                     <li className={styles.flyoutHeader}>{getLabel('especialista_estudiantes', 'Estudiantes')}</li>
-                    <li><Link href="/especialistas/evaluaciones" className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/evaluaciones') ? styles.activeLink : ''}`}>{getLabel('especialista_estudiantes_seguimiento', 'Seguimiento de aprendizaje')}</Link></li>
+                    <li>
+                      <Link
+                        href="/especialistas/evaluaciones"
+                        className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/evaluaciones') ? styles.activeLink : ''}`}
+                        title={getLabel('especialista_estudiantes_seguimiento', 'Seguimiento de aprendizaje')}
+                      >
+                        {getLabel('especialista_estudiantes_seguimiento', 'Seguimiento de aprendizaje')}
+                      </Link>
+                    </li>
                     <CustomSidebarRenderer role="especialista" parentId="especialista_estudiantes" customItems={customItems} isSubmenu={true} />
                   </ul>
                 </li>
@@ -197,6 +249,24 @@ const SidebarEspecialistas = ({ showSidebar }: Props) => {
               </ul>
             </div>
           </div>
+        </div>
+
+        {/* Toggle Collapse Button for Desktop (Firebase Style - Bottom Circular) */}
+        <div className={styles.sidebarFooter}>
+          <button
+            type="button"
+            className={styles.collapseToggleBtn}
+            onClick={() => {
+              if (!isSidebarCollapsed) {
+                setOpenDropdown(null);
+              }
+              toggleSidebarCollapsed(isSidebarCollapsed);
+            }}
+            title={isSidebarCollapsed ? "Expandir" : "Contraer"}
+            aria-label={isSidebarCollapsed ? "Expandir" : "Contraer"}
+          >
+            {isSidebarCollapsed ? <IoIosArrowForward /> : <IoIosArrowBack />}
+          </button>
         </div>
       </div>
     </>

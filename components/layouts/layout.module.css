@@ -8,14 +8,14 @@
 
 @media (min-width: 1024px) {
   .container.withSidebar {
-    /* En desktop el sidebar ocupa 280px fijos estructurales */
-    grid-template-columns: 280px minmax(0, 1fr);
+    /* En desktop el sidebar ocupa 250px fijos estructurales */
+    grid-template-columns: 250px minmax(0, 1fr);
     gap: 0;
   }
 
   .container.withSidebar.collapsedSidebar {
-    /* En desktop cuando esta colapsado ocupa 80px */
-    grid-template-columns: 80px minmax(0, 1fr);
+    /* En desktop cuando esta colapsado ocupa 64px */
+    grid-template-columns: 64px minmax(0, 1fr);
   }
 }
 

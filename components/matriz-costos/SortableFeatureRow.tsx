@@ -10,9 +10,16 @@ import {
   MdEdit,
   MdDeleteOutline,
   MdAdd,
-  MdCheck
+  MdCheck,
+  MdCalendarMonth,
+  MdLock
 } from 'react-icons/md';
 import { FeatureCostoItem, SubItemDetallado } from '@/features/utils/exportarMatrizCostosPDF';
+import {
+  formatPeriodoNombre,
+  normalizeFeaturePeriodo,
+  getAdjacentPeriodoId
+} from '@/features/utils/matrizPeriodosUtils';
 
 interface SortableFeatureRowProps {
   feature: FeatureCostoItem;
@@ -37,6 +44,10 @@ interface SortableFeatureRowProps {
   ) => void;
   onAddSubItem: (f: FeatureCostoItem, featureIndex: number) => void;
   onDeleteSubItem: (f: FeatureCostoItem, subItemIndex: number) => void;
+  showPeriodBadge?: boolean;
+  isPeriodoCerrado?: boolean;
+  onMoveFeaturePeriodo?: (f: FeatureCostoItem, targetPeriodoId: string) => void;
+  availablePeriodos?: string[];
 }
 
 const TIPO_CLIENTE_MAP: Record<string, string> = {
@@ -65,7 +76,11 @@ const SortableFeatureRow: React.FC<SortableFeatureRowProps> = ({
   onUpdateDescription,
   onUpdateSubItem,
   onAddSubItem,
-  onDeleteSubItem
+  onDeleteSubItem,
+  showPeriodBadge = false,
+  isPeriodoCerrado = false,
+  onMoveFeaturePeriodo,
+  availablePeriodos = []
 }) => {
   const {
     attributes,
@@ -83,6 +98,8 @@ const SortableFeatureRow: React.FC<SortableFeatureRowProps> = ({
     zIndex: isDragging ? 50 : 'auto',
     position: isDragging ? 'relative' : 'initial'
   };
+
+  const [isMovePeriodOpen, setIsMovePeriodOpen] = useState(false);
 
   // Código dinámico autocorrector: F-001, F-002... F-008, etc.
   const dynamicCode = `F-${String(index + 1).padStart(3, '0')}`;
@@ -174,6 +191,25 @@ const SortableFeatureRow: React.FC<SortableFeatureRowProps> = ({
                 <span className="px-1.5 py-0.5 text-[10px] font-mono font-bold rounded bg-blue-100 text-blue-800 border border-blue-200">
                   {dynamicCode}
                 </span>
+
+                {showPeriodBadge && (
+                  <span
+                    className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1"
+                    title="Periodo asignado"
+                  >
+                    <MdCalendarMonth size={11} />
+                    {formatPeriodoNombre(feature.periodoId || normalizeFeaturePeriodo(feature))}
+                  </span>
+                )}
+
+                {isPeriodoCerrado && (
+                  <span
+                    className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-0.5"
+                    title="Periodo cerrado para facturación"
+                  >
+                    <MdLock size={11} /> Cerrado
+                  </span>
+                )}
 
                 <span className="font-bold text-slate-900 text-sm">
                   {modoVista === 'cliente'
@@ -305,6 +341,58 @@ const SortableFeatureRow: React.FC<SortableFeatureRowProps> = ({
         {/* Columna 9: Acciones */}
         <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-center gap-1">
+            {onMoveFeaturePeriodo && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsMovePeriodOpen(!isMovePeriodOpen)}
+                  className="p-1 text-slate-400 hover:text-indigo-600 rounded-md hover:bg-slate-100 transition"
+                  title="Mover o reasignar mes / periodo"
+                >
+                  <MdCalendarMonth size={16} />
+                </button>
+                {isMovePeriodOpen && (
+                  <div
+                    className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 z-50 p-2 text-left space-y-1 animate-in fade-in zoom-in-95 duration-100"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-0.5">
+                      Mover a Mes:
+                    </p>
+                    {availablePeriodos && availablePeriodos.length > 0
+                      ? availablePeriodos
+                          .filter((p) => p !== 'TODOS' && p !== (feature.periodoId || normalizeFeaturePeriodo(feature)))
+                          .map((pId) => (
+                            <button
+                              key={pId}
+                              type="button"
+                              onClick={() => {
+                                onMoveFeaturePeriodo(feature, pId);
+                                setIsMovePeriodOpen(false);
+                              }}
+                              className="w-full text-left px-2 py-1 text-xs text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg transition font-medium flex items-center gap-1.5"
+                            >
+                              <MdCalendarMonth size={12} className="text-indigo-500" />
+                              {formatPeriodoNombre(pId)}
+                            </button>
+                          ))
+                      : null}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentP = feature.periodoId || normalizeFeaturePeriodo(feature);
+                        const nextP = getAdjacentPeriodoId(currentP, 1);
+                        onMoveFeaturePeriodo(feature, nextP);
+                        setIsMovePeriodOpen(false);
+                      }}
+                      className="w-full text-left px-2 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded-lg transition font-bold border-t border-slate-100 pt-1 mt-1"
+                    >
+                      + Mes Siguiente ({formatPeriodoNombre(getAdjacentPeriodoId(feature.periodoId || normalizeFeaturePeriodo(feature), 1))})
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
             <button
               onClick={() => onHumanizeSingle(feature)}
               disabled={humanizingId === feature.id}

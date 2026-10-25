@@ -26,6 +26,8 @@ export interface FeatureCostoItem {
   estado: 'Planificado' | 'En Desarrollo' | 'Completado' | 'Entregado' | 'Facturado';
   orden?: number;
   fecha?: string;
+  periodoId?: string; // ej. "2026-10" o "2026-09"
+  estadoCobro?: 'pendiente' | 'incluido_en_corte' | 'facturado' | 'pagado';
   prioridad?: 'Baja' | 'Media' | 'Alta' | 'Crítica';
   notas?: string;
 }
@@ -71,9 +73,15 @@ interface ExportarMatrizProps {
   features: FeatureCostoItem[];
   config: MatrizConfig;
   modoVista?: 'tecnico' | 'cliente';
+  periodoNombre?: string;
 }
 
-export const exportarMatrizCostosPDF = ({ features, config, modoVista = 'tecnico' }: ExportarMatrizProps) => {
+export const exportarMatrizCostosPDF = ({
+  features,
+  config,
+  modoVista = 'tecnico',
+  periodoNombre
+}: ExportarMatrizProps) => {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
@@ -114,10 +122,11 @@ export const exportarMatrizCostosPDF = ({ features, config, modoVista = 'tecnico
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(203, 213, 225); // slate-300
+  const subtituloPeriodo = periodoNombre ? `Periodo: ${periodoNombre}` : 'Histórico Consolidado';
   doc.text(
     isCliente
-      ? `${config.projectName || 'Sistema EVA'} — Entregables y Soluciones para la Institución`
-      : `${config.projectName || 'Sistema EVA'} — Registro y Liquidación de Features`,
+      ? `${config.projectName || 'Sistema EVA'} — ${subtituloPeriodo} | Entregables y Soluciones`
+      : `${config.projectName || 'Sistema EVA'} — ${subtituloPeriodo} | Registro y Liquidación`,
     14,
     21
   );
@@ -136,9 +145,9 @@ export const exportarMatrizCostosPDF = ({ features, config, modoVista = 'tecnico
 
   // Caja de Información Izquierda
   doc.setFillColor(248, 250, 252); // slate-50
-  doc.roundedRect(14, currentY, 130, 26, 2, 2, 'F');
+  doc.roundedRect(14, currentY, 130, 28, 2, 2, 'F');
   doc.setDrawColor(226, 232, 240); // slate-200
-  doc.roundedRect(14, currentY, 130, 26, 2, 2, 'S');
+  doc.roundedRect(14, currentY, 130, 28, 2, 2, 'S');
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(30, 41, 59);
@@ -146,31 +155,34 @@ export const exportarMatrizCostosPDF = ({ features, config, modoVista = 'tecnico
 
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(71, 85, 105);
-  doc.text(`Desarrollador: ${config.developerName || 'Desarrollador Principal'}`, 18, currentY + 12);
-  doc.text(`DNI / Identificador: ${config.developerDni || '47163626'}`, 18, currentY + 17);
-  doc.text(`Cliente / Proyecto: ${config.clientName || 'UGEL 13 - Yauyos / EVA'}`, 18, currentY + 22);
+  doc.text(`Desarrollador: ${config.developerName || 'Desarrollador Principal'} (DNI: ${config.developerDni || '47163626'})`, 18, currentY + 12);
+  doc.text(`Cliente / Proyecto: ${config.clientName || 'UGEL 13 - Yauyos / EVA'}`, 18, currentY + 17);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(isCliente ? 16 : 37, isCliente ? 185 : 99, isCliente ? 129 : 235);
+  doc.text(`Periodo Liquidado: ${periodoNombre || 'Histórico Consolidado'}`, 18, currentY + 23);
 
   // Caja de Métricas Resumen Derecha
   const metricsWidth = pageWidth - 14 - 150;
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(150, currentY, metricsWidth, 26, 2, 2, 'F');
+  doc.roundedRect(150, currentY, metricsWidth, 28, 2, 2, 'F');
   doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(150, currentY, metricsWidth, 26, 2, 2, 'S');
+  doc.roundedRect(150, currentY, metricsWidth, 28, 2, 2, 'S');
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(30, 41, 59);
-  doc.text('RESUMEN GENERAL', 154, currentY + 6);
+  doc.text('RESUMEN DE ESTE PERIODO', 154, currentY + 6);
 
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(71, 85, 105);
-  doc.text(`Total Features: ${features.length}  (${completadas} completadas - ${porcentajeAvance}%)`, 154, currentY + 12);
+  doc.text(`Features en Periodo: ${features.length}  (${completadas} completadas - ${porcentajeAvance}%)`, 154, currentY + 12);
   doc.text(`Horas Invertidas: ${totalHoras.toFixed(1)} hrs`, 154, currentY + 17);
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(22, 101, 52); // green-800
-  doc.text(`Costo Total Acumulado: ${currencySymbol} ${totalCosto.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 154, currentY + 22);
+  doc.text(`Inversión del Periodo: ${currencySymbol} ${totalCosto.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 154, currentY + 23);
 
-  currentY += 32;
+  currentY += 34;
 
   // 3. Tabla Principal de Features
   const tipoClienteMap: Record<string, string> = {
@@ -469,9 +481,10 @@ export const exportarMatrizCostosPDF = ({ features, config, modoVista = 'tecnico
 
   // Descarga
   const sanitizeName = (config.projectName || 'EVA').replace(/[^a-zA-Z0-9]/g, '_');
+  const sanitizedPeriod = (periodoNombre || 'Consolidado').replace(/[^a-zA-Z0-9]/g, '_');
   const dateStr = new Date().toISOString().split('T')[0];
   const filename = isCliente
-    ? `Propuesta_Funcionalidades_${sanitizeName}_${dateStr}.pdf`
-    : `Matriz_Costos_${sanitizeName}_${dateStr}.pdf`;
+    ? `Propuesta_Funcionalidades_${sanitizeName}_${sanitizedPeriod}_${dateStr}.pdf`
+    : `Matriz_Costos_${sanitizeName}_${sanitizedPeriod}_${dateStr}.pdf`;
   doc.save(filename);
 };

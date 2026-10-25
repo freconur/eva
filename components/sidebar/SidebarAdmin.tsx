@@ -7,11 +7,11 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/firebase/firebase.config';
 import { useSidebarLabels } from '@/features/context/SidebarLabelsContext';
 import CustomSidebarRenderer from './CustomSidebarRenderer';
+import { useSidebarFlyoutPosition } from '@/features/hooks/useSidebarFlyoutPosition';
 
 import styles from './sidebar.module.css'
 import { MdAccountBalance, MdAccountCircle, MdDashboard, MdPeople, MdSettings, MdAssignment, MdAttachMoney } from 'react-icons/md';
-import { FaUserGraduate, FaUserNinja, FaUserTie } from 'react-icons/fa';
-import { LuListTodo } from "react-icons/lu";
+import { FaUserGraduate, FaUserNinja, FaUserTie, FaGlobeAmericas, FaChalkboardTeacher } from 'react-icons/fa';
 import { IoIosArrowDown } from "react-icons/io";
 import { useRouter } from 'next/router';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
@@ -84,6 +84,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
   }, [router.pathname, isSidebarCollapsed]);
 
   const sidebarRef = useRef<HTMLDivElement>(null);
+  useSidebarFlyoutPosition(sidebarRef, isSidebarCollapsed);
 
   // Close sidebar on mobile route change and close flyouts when collapsed
   useEffect(() => {
@@ -145,20 +146,6 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
         className={`${styles.sidebar} ${showSidebar ? styles.show : styles.hide} ${isSidebarCollapsed ? styles.collapsed : ''}`}
       >
 
-        {/* Toggle Collapse Button for Desktop */}
-        <div
-          className={styles.collapseToggleBtn}
-          onClick={() => {
-            if (!isSidebarCollapsed) {
-              setOpenDropdown(null);
-            }
-            toggleSidebarCollapsed(isSidebarCollapsed);
-          }}
-          title={isSidebarCollapsed ? "Expandir" : "Contraer"}
-        >
-          {isSidebarCollapsed ? <IoIosArrowForward /> : <IoIosArrowBack />}
-        </div>
-
         <div onClick={() => showSidebarValue(showSidebar)} className={styles.closeButton}>x</div>
         <div className={styles.sidebarContent}>
           <SidebarRegional />
@@ -166,60 +153,80 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
           <div>
             <div className={styles.sectionHeader}>{getLabel('sidebar_seccionPrincipal', 'Principal')}</div>
 
-            <div className={`${styles.dashboardMenuItem} ${router.pathname === '/mi-cuenta' ? styles.activeLink : ''}`}>
+            <Link
+              href="/mi-cuenta"
+              className={`${styles.dashboardMenuItem} ${router.pathname === '/mi-cuenta' ? styles.activeLink : ''}`}
+              title={getLabel('admin_miCuenta', 'Mi cuenta')}
+            >
               <MdAccountCircle className={styles.dashboardIcon} />
-              <Link className={styles.dashboardLink} href="/mi-cuenta" aria-haspopup="true">
+              <span className={styles.dashboardLink}>
                 {getLabel('admin_miCuenta', 'Mi cuenta')}
-              </Link>
+              </span>
               <span className={styles.tooltip}>{getLabel('admin_miCuenta', 'Mi cuenta')}</span>
-            </div>
+            </Link>
 
-            <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/gestion-usuarios') ? styles.activeLink : ''}`}>
+            <Link
+              href="/admin/gestion-usuarios"
+              className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/gestion-usuarios') ? styles.activeLink : ''}`}
+              title={getLabel('admin_gestionUsuarios', 'Gestión de Usuarios')}
+            >
               <div className="relative flex items-center">
                 <MdPeople className={styles.dashboardIcon} />
                 {isAdmin && requestCount > 0 && isSidebarCollapsed && (
                   <span className={styles.badgeDot}></span>
                 )}
               </div>
-              <Link className={styles.dashboardLink} href="/admin/gestion-usuarios" aria-haspopup="true">
+              <span className={styles.dashboardLink}>
                 {getLabel('admin_gestionUsuarios', 'Gestión de Usuarios')}
-              </Link>
+              </span>
               {isAdmin && requestCount > 0 && !isSidebarCollapsed && (
                 <span className={styles.badge}>
                   {requestCount}
                 </span>
               )}
               <span className={styles.tooltip}>{getLabel('admin_gestionUsuarios', 'Gestión de Usuarios')}</span>
-            </div>
+            </Link>
 
             {isAdmin && (
-              <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/configuracion') ? styles.activeLink : ''}`}>
+              <Link
+                href="/admin/configuracion"
+                className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/configuracion') ? styles.activeLink : ''}`}
+                title={getLabel('admin_configuracion', 'Configuración')}
+              >
                 <MdSettings className={styles.dashboardIcon} />
-                <Link className={styles.dashboardLink} href="/admin/configuracion" aria-haspopup="true">
+                <span className={styles.dashboardLink}>
                   {getLabel('admin_configuracion', 'Configuración')}
-                </Link>
+                </span>
                 <span className={styles.tooltip}>{getLabel('admin_configuracion', 'Configuración')}</span>
-              </div>
+              </Link>
             )}
 
             {isAdmin && (
-              <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/pruebas') ? styles.activeLink : ''}`}>
+              <Link
+                href="/admin/pruebas"
+                className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/pruebas') ? styles.activeLink : ''}`}
+                title={getLabel('admin_pizarra', 'Pizarra')}
+              >
                 <MdAssignment className={styles.dashboardIcon} />
-                <Link className={styles.dashboardLink} href="/admin/pruebas" aria-haspopup="true">
+                <span className={styles.dashboardLink}>
                   {getLabel('admin_pizarra', 'Pizarra')}
-                </Link>
+                </span>
                 <span className={styles.tooltip}>{getLabel('admin_pizarra', 'Pizarra')}</span>
-              </div>
+              </Link>
             )}
 
             {isAdmin && isDevUser && (
-              <div className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/matriz-costos') ? styles.activeLink : ''}`}>
+              <Link
+                href="/admin/matriz-costos"
+                className={`${styles.dashboardMenuItem} ${router.pathname.includes('/admin/matriz-costos') ? styles.activeLink : ''}`}
+                title={getLabel('admin_matrizCostos', 'Matriz de Costos')}
+              >
                 <MdAttachMoney className={styles.dashboardIcon} />
-                <Link className={styles.dashboardLink} href="/admin/matriz-costos" aria-haspopup="true">
+                <span className={styles.dashboardLink}>
                   {getLabel('admin_matrizCostos', 'Matriz de Costos')}
-                </Link>
+                </span>
                 <span className={styles.tooltip}>{getLabel('admin_matrizCostos', 'Matriz de Costos')}</span>
-              </div>
+              </Link>
             )}
 
             <div className={styles.sectionHeader}>{getLabel('admin_perfiles', 'Perfiles')}</div>
@@ -228,11 +235,15 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
               <ul className={styles.menuList}>
                 {currentUserData.rol !== 5 && (
                   <li className={`${styles.menuItem} ${openDropdown === 'especialistas-regional' ? styles.itemOpen : ''}`}>
-                    <div className={styles.menuHeader} onClick={(e) => {
-                      e.stopPropagation();
-                      toggleDropdown('especialistas-regional');
-                    }}>
-                      <LuListTodo className={styles.icon} />
+                    <div
+                      className={styles.menuHeader}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleDropdown('especialistas-regional');
+                      }}
+                      title={getLabel('admin_especialistaRegional', 'Especialista Regional')}
+                    >
+                      <FaGlobeAmericas className={styles.icon} />
                       <span className={styles.link}>{getLabel('admin_especialistaRegional', 'Especialista Regional')}</span>
                       <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'especialistas-regional' ? styles.arrowRotate : ''}`} />
                     </div>
@@ -242,6 +253,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                         <Link
                           href="/admin/especialista-regional/usuarios-especialistas-regional"
                           className={`${styles.submenuLink} ${router.pathname.includes('/admin/especialista-regional/usuarios-especialistas-regional') ? styles.activeLink : ''}`}
+                          title={getLabel('admin_especialistaRegional_crearUsuario', 'Crear usuario')}
                         >
                           {getLabel('admin_especialistaRegional_crearUsuario', 'Crear usuario')}
                         </Link>
@@ -251,11 +263,15 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 )}
 
                 <li className={`${styles.menuItem} ${openDropdown === 'especialistas' ? styles.itemOpen : ''}`}>
-                  <div className={styles.menuHeader} onClick={(e) => {
-                    e.stopPropagation();
-                    toggleDropdown('especialistas');
-                  }}>
-                    <LuListTodo className={styles.icon} />
+                  <div
+                    className={styles.menuHeader}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleDropdown('especialistas');
+                    }}
+                    title={getLabel('admin_especialistas', 'Especialistas')}
+                  >
+                    <FaChalkboardTeacher className={styles.icon} />
                     <span className={styles.link}>{getLabel('admin_especialistas', 'Especialistas')}</span>
                     <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'especialistas' ? styles.arrowRotate : ''}`} />
                   </div>
@@ -265,6 +281,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                       <Link
                         href="/admin/especialistas/agregar-especialista"
                         className={`${styles.submenuLink} ${router.pathname.includes('/admin/especialistas/agregar-especialista') ? styles.activeLink : ''}`}
+                        title={getLabel('admin_especialistas_crearUsuario', 'Crear usuario')}
                       >
                         {getLabel('admin_especialistas_crearUsuario', 'Crear usuario')}
                       </Link>
@@ -275,6 +292,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                           <Link
                             href="/admin/especialistas/evaluaciones-especialistas"
                             className={`${styles.submenuLink} ${router.pathname.includes('/admin/especialistas/evaluaciones-especialistas') ? styles.activeLink : ''}`}
+                            title={getLabel('admin_especialistas_seguimiento', 'Seguimiento y retroalimentacion')}
                           >
                             {getLabel('admin_especialistas_seguimiento', 'Seguimiento y retroalimentacion')}
                           </Link>
@@ -283,6 +301,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                           <Link
                             href="/admin/especialistas/cobertura-curricular"
                             className={`${styles.submenuLink} ${router.pathname.includes('/admin/especialistas/cobertura-curricular') ? styles.activeLink : ''}`}
+                            title={getLabel('admin_especialistas_cobertura', 'Cobertura curricular')}
                           >
                             {getLabel('admin_especialistas_cobertura', 'Cobertura curricular')}
                           </Link>
@@ -291,6 +310,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                           <Link
                             href="/admin/conocimientos-pedagogicos?rol=1"
                             className={`${styles.submenuLink} ${router.pathname.includes('/admin/conocimientos-pedagogicos') && router.query.rol === '1' ? styles.activeLink : ''}`}
+                            title={getLabel('admin_especialistas_autorreporte', 'Autorreporte')}
                           >
                             {getLabel('admin_especialistas_autorreporte', 'Autorreporte')}
                           </Link>
@@ -303,10 +323,14 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
 
                 {currentUserData.rol !== 5 && (
                   <li className={`${styles.menuItem} ${openDropdown === 'directores' ? styles.itemOpen : ''}`}>
-                    <div className={styles.menuHeader} onClick={(e) => {
-                      e.stopPropagation();
-                      toggleDropdown('directores');
-                    }}>
+                    <div
+                      className={styles.menuHeader}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleDropdown('directores');
+                      }}
+                      title={getLabel('admin_directores', 'Directores')}
+                    >
                       <MdAccountBalance className={styles.icon} />
                       <span className={styles.link}>{getLabel('admin_directores', 'Directores')}</span>
                       <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'directores' ? styles.arrowRotate : ''}`} />
@@ -317,6 +341,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                         <Link
                           href="/especialistas/agregar-directores"
                           className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/agregar-directores') ? styles.activeLink : ''}`}
+                          title={getLabel('admin_directores_crearUsuario', 'Crear usuario')}
                         >
                           {getLabel('admin_directores_crearUsuario', 'Crear usuario')}
                         </Link>
@@ -325,6 +350,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                         <Link
                           href="/admin/evaluaciones-directores"
                           className={`${styles.submenuLink} ${(router.pathname.includes('/admin/evaluaciones-directores') || router.pathname.includes('/especialistas/evaluaciones-director')) ? styles.activeLink : ''}`}
+                          title={getLabel('admin_directores_seguimiento', 'Seguimiento y retroalimentacion')}
                         >
                           {getLabel('admin_directores_seguimiento', 'Seguimiento y retroalimentacion')}
                         </Link>
@@ -333,6 +359,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                         <Link
                           href="/especialistas/cobertura-curricular"
                           className={`${styles.submenuLink} ${router.pathname.includes('/especialistas/cobertura-curricular') ? styles.activeLink : ''}`}
+                          title={getLabel('admin_directores_cobertura', 'Cobertura curricular')}
                         >
                           {getLabel('admin_directores_cobertura', 'Cobertura curricular')}
                         </Link>
@@ -341,6 +368,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                         <Link
                           href="/admin/conocimientos-pedagogicos?rol=2"
                           className={`${styles.submenuLink} ${router.pathname.includes('/admin/conocimientos-pedagogicos') && router.query.rol === '2' ? styles.activeLink : ''}`}
+                          title={getLabel('admin_directores_autorreporte', 'Autorreporte')}
                         >
                           {getLabel('admin_directores_autorreporte', 'Autorreporte')}
                         </Link>
@@ -352,10 +380,14 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
 
                 {currentUserData.rol !== 5 && (
                   <li className={`${styles.menuItem} ${openDropdown === 'docentes' ? styles.itemOpen : ''}`}>
-                    <div className={styles.menuHeader} onClick={(e) => {
-                      e.stopPropagation();
-                      toggleDropdown('docentes');
-                    }}>
+                    <div
+                      className={styles.menuHeader}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleDropdown('docentes');
+                      }}
+                      title={getLabel('admin_docentes', 'Docentes')}
+                    >
                       <FaUserTie className={styles.icon} />
                       <span className={styles.link}>{getLabel('admin_docentes', 'Docentes')}</span>
                       <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'docentes' ? styles.arrowRotate : ''}`} />
@@ -366,6 +398,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                         <Link
                           href="/admin/docentes/usuarios"
                           className={`${styles.submenuLink} ${router.pathname.includes('/admin/docentes/usuarios') ? styles.activeLink : ''}`}
+                          title={getLabel('admin_docentes_usuarios', 'Usuarios')}
                         >
                           {getLabel('admin_docentes_usuarios', 'Usuarios')}
                         </Link>
@@ -374,6 +407,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                         <Link
                           href="/admin/evaluaciones-docentes"
                           className={`${styles.submenuLink} ${(router.pathname.includes('/admin/evaluaciones-docentes') || router.pathname.includes('/directores/evaluaciones-docentes')) ? styles.activeLink : ''}`}
+                          title={getLabel('admin_docentes_seguimiento', 'Seguimiento y retroalimentacion')}
                         >
                           {getLabel('admin_docentes_seguimiento', 'Seguimiento y retroalimentacion')}
                         </Link>
@@ -382,6 +416,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                         <Link
                           href="/directores/cobertura-curricular"
                           className={`${styles.submenuLink} ${router.pathname.includes('/directores/cobertura-curricular') ? styles.activeLink : ''}`}
+                          title={getLabel('admin_docentes_cobertura', 'Cobertura curricular')}
                         >
                           {getLabel('admin_docentes_cobertura', 'Cobertura curricular')}
                         </Link>
@@ -390,6 +425,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                         <Link
                           href="/admin/conocimientos-pedagogicos?rol=3"
                           className={`${styles.submenuLink} ${router.pathname.includes('/admin/conocimientos-pedagogicos') && router.query.rol === '3' ? styles.activeLink : ''}`}
+                          title={getLabel('admin_docentes_autorreporte', 'Autorreporte')}
                         >
                           {getLabel('admin_docentes_autorreporte', 'Autorreporte')}
                         </Link>
@@ -400,10 +436,14 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                 )}
 
                 <li className={`${styles.menuItem} ${openDropdown === 'estudiantes' ? styles.itemOpen : ''}`}>
-                  <div className={styles.menuHeader} onClick={(e) => {
-                    e.stopPropagation();
-                    toggleDropdown('estudiantes');
-                  }}>
+                  <div
+                    className={styles.menuHeader}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleDropdown('estudiantes');
+                    }}
+                    title={getLabel('admin_estudiantes', 'Estudiantes')}
+                  >
                     <FaUserGraduate className={styles.icon} />
                     <span className={styles.link}>{getLabel('admin_estudiantes', 'Estudiantes')}</span>
                     <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'estudiantes' ? styles.arrowRotate : ''}`} />
@@ -414,6 +454,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                       <Link
                         href="/admin/evaluaciones"
                         className={`${styles.submenuLink} ${router.pathname.includes('/admin/evaluaciones') ? styles.activeLink : ''}`}
+                        title={getLabel('admin_estudiantes_seguimiento', 'Seguimiento de Aprendizaje')}
                       >
                         {getLabel('admin_estudiantes_seguimiento', 'Seguimiento de Aprendizaje')}
                       </Link>
@@ -422,6 +463,7 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
                       <Link
                         href="/admin/matriz-resultados"
                         className={`${styles.submenuLink} ${router.pathname.includes('/admin/matriz-resultados') ? styles.activeLink : ''}`}
+                        title={getLabel('admin_estudiantes_matriz', 'Matriz de Resultados')}
                       >
                         {getLabel('admin_estudiantes_matriz', 'Matriz de Resultados')}
                       </Link>
@@ -435,6 +477,24 @@ const SidebarAdmin = ({ showSidebar }: Props) => {
               </ul>
             </div>
           </div>
+        </div>
+
+        {/* Toggle Collapse Button for Desktop (Firebase Style - Bottom Circular) */}
+        <div className={styles.sidebarFooter}>
+          <button
+            type="button"
+            className={styles.collapseToggleBtn}
+            onClick={() => {
+              if (!isSidebarCollapsed) {
+                setOpenDropdown(null);
+              }
+              toggleSidebarCollapsed(isSidebarCollapsed);
+            }}
+            title={isSidebarCollapsed ? "Expandir" : "Contraer"}
+            aria-label={isSidebarCollapsed ? "Expandir" : "Contraer"}
+          >
+            {isSidebarCollapsed ? <IoIosArrowForward /> : <IoIosArrowBack />}
+          </button>
         </div>
       </div>
     </>

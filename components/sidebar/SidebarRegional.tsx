@@ -21,8 +21,8 @@ const SidebarRegional = () => {
         <Image
           alt="Logo Competence-Lab"
           src={logo}
-          width={isSidebarCollapsed ? 44 : 68}
-          height={isSidebarCollapsed ? 44 : 68}
+          width={isSidebarCollapsed ? 38 : 68}
+          height={isSidebarCollapsed ? 38 : 68}
           priority
         />
       </div>

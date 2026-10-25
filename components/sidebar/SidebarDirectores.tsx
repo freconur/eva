@@ -9,6 +9,7 @@ import { IoIosArrowDown, IoIosArrowForward, IoIosArrowBack } from "react-icons/i
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useSidebarLabels } from '@/features/context/SidebarLabelsContext';
 import CustomSidebarRenderer from './CustomSidebarRenderer';
+import { useSidebarFlyoutPosition } from '@/features/hooks/useSidebarFlyoutPosition';
 import PermissionGate from '@/components/permissions/PermissionGate';
 import { PERMISSIONS } from '@/features/utils/permissions';
 import { useRouter } from 'next/router';
@@ -24,6 +25,7 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
   const { getLabel, customItems } = useSidebarLabels()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  useSidebarFlyoutPosition(sidebarRef, isSidebarCollapsed);
 
   const isDevUser =
     currentUserData?.dni === '47163626' ||
@@ -95,20 +97,6 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
         className={`${styles.sidebar} ${showSidebar ? styles.show : styles.hide} ${isSidebarCollapsed ? styles.collapsed : ''}`}
       >
 
-        {/* Toggle Collapse Button for Desktop */}
-        <div
-          className={styles.collapseToggleBtn}
-          onClick={() => {
-            if (!isSidebarCollapsed) {
-              setOpenDropdown(null);
-            }
-            toggleSidebarCollapsed(isSidebarCollapsed);
-          }}
-          title={isSidebarCollapsed ? "Expandir" : "Contraer"}
-        >
-          {isSidebarCollapsed ? <IoIosArrowForward /> : <IoIosArrowBack />}
-        </div>
-
         <div onClick={() => showSidebarValue(showSidebar)} className={styles.closeButton}>x</div>
 
         <div className={styles.sidebarContent}>
@@ -117,13 +105,17 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
           <div>
             <div className={styles.sectionHeader}>{getLabel('sidebar_seccionPrincipal', 'Principal')}</div>
 
-            <div className={`${styles.dashboardMenuItem} ${router.pathname === '/mi-cuenta' ? styles.activeLink : ''}`}>
+            <Link
+              href="/mi-cuenta"
+              className={`${styles.dashboardMenuItem} ${router.pathname === '/mi-cuenta' ? styles.activeLink : ''}`}
+              title={getLabel('director_miCuenta', 'Mi cuenta')}
+            >
               <MdAccountCircle className={styles.dashboardIcon} />
-              <Link className={styles.dashboardLink} href="/mi-cuenta" aria-haspopup="true">
+              <span className={styles.dashboardLink}>
                 {getLabel('director_miCuenta', 'Mi cuenta')}
-              </Link>
+              </span>
               <span className={styles.tooltip}>{getLabel('director_miCuenta', 'Mi cuenta')}</span>
-            </div>
+            </Link>
 
             <div className={styles.sectionHeader}>{getLabel('sidebar_seccionGestion', 'Gestión')}</div>
 
@@ -131,10 +123,14 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
               <ul className={styles.menuList}>
                 {/* Estudiantes */}
                 <li className={`${styles.menuItem} ${openDropdown === 'estudiantes' ? styles.itemOpen : ''}`}>
-                  <div className={styles.menuHeader} onClick={(e) => {
-                    e.stopPropagation();
-                    toggleDropdown('estudiantes');
-                  }}>
+                  <div
+                    className={styles.menuHeader}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleDropdown('estudiantes');
+                    }}
+                    title={getLabel('director_estudiantes', 'Estudiantes')}
+                  >
                     <FaUserGraduate className={styles.icon} />
                     <span className={styles.link}>{getLabel('director_estudiantes', 'Estudiantes')}</span>
                     <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'estudiantes' ? styles.arrowRotate : ''}`} />
@@ -142,7 +138,11 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
                   <ul className={`${styles.submenu} ${openDropdown === 'estudiantes' ? styles.show : ''}`}>
                     <li className={styles.flyoutHeader}>{getLabel('director_estudiantes', 'Estudiantes')}</li>
                     <li>
-                      <Link href="/directores/evaluaciones" className={`${styles.submenuLink} ${router.pathname.includes('/directores/evaluaciones') && !router.pathname.includes('docentes') ? styles.activeLink : ''}`}>
+                      <Link
+                        href="/directores/evaluaciones"
+                        className={`${styles.submenuLink} ${router.pathname.includes('/directores/evaluaciones') && !router.pathname.includes('docentes') ? styles.activeLink : ''}`}
+                        title={getLabel('director_estudiantes_seguimiento', 'Seguimiento de aprendizaje')}
+                      >
                         {getLabel('director_estudiantes_seguimiento', 'Seguimiento de aprendizaje')}
                       </Link>
                     </li>
@@ -152,10 +152,14 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
 
                 {/* Docentes */}
                 <li className={`${styles.menuItem} ${openDropdown === 'docentes' ? styles.itemOpen : ''}`}>
-                  <div className={styles.menuHeader} onClick={(e) => {
-                    e.stopPropagation();
-                    toggleDropdown('docentes');
-                  }}>
+                  <div
+                    className={styles.menuHeader}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleDropdown('docentes');
+                    }}
+                    title={getLabel('director_docentes', 'Docentes')}
+                  >
                     <FaUserTie className={styles.icon} />
                     <span className={styles.link}>{getLabel('director_docentes', 'Docentes')}</span>
                     <IoIosArrowDown className={`${styles.arrowIcon} ${openDropdown === 'docentes' ? styles.arrowRotate : ''}`} />
@@ -164,28 +168,44 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
                     <li className={styles.flyoutHeader}>{getLabel('director_docentes', 'Docentes')}</li>
                     <PermissionGate permission={PERMISSIONS.VIEW_MEDIACION_DIDACTICA}>
                       <li>
-                        <Link href="/directores/evaluaciones-docentes" className={`${styles.submenuLink} ${router.pathname.includes('/directores/evaluaciones-docentes') ? styles.activeLink : ''}`}>
+                        <Link
+                          href="/directores/evaluaciones-docentes"
+                          className={`${styles.submenuLink} ${router.pathname.includes('/directores/evaluaciones-docentes') ? styles.activeLink : ''}`}
+                          title={getLabel('director_docentes_mediacion', 'Mediación didáctica')}
+                        >
                           {getLabel('director_docentes_mediacion', 'Mediación didáctica')}
                         </Link>
                       </li>
                     </PermissionGate>
 
                     <li>
-                      <Link href="/directores/agregar-profesores" className={`${styles.submenuLink} ${router.pathname.includes('/directores/agregar-profesores') ? styles.activeLink : ''}`}>
+                      <Link
+                        href="/directores/agregar-profesores"
+                        className={`${styles.submenuLink} ${router.pathname.includes('/directores/agregar-profesores') ? styles.activeLink : ''}`}
+                        title={getLabel('director_docentes_crearUsuario', 'Crear usuario')}
+                      >
                         {getLabel('director_docentes_crearUsuario', 'Crear usuario')}
                       </Link>
                     </li>
 
                     <PermissionGate permission={PERMISSIONS.VIEW_COBERTURA_CURRICULAR}>
                       <li>
-                        <Link href="/directores/cobertura-curricular" className={`${styles.submenuLink} ${router.pathname.includes('/directores/cobertura-curricular') ? styles.activeLink : ''}`}>
+                        <Link
+                          href="/directores/cobertura-curricular"
+                          className={`${styles.submenuLink} ${router.pathname.includes('/directores/cobertura-curricular') ? styles.activeLink : ''}`}
+                          title={getLabel('director_docentes_cobertura', 'Cobertura curricular')}
+                        >
                           {getLabel('director_docentes_cobertura', 'Cobertura curricular')}
                         </Link>
                       </li>
                     </PermissionGate>
 
                     <li>
-                      <Link href="/directores/reporte" className={`${styles.submenuLink} ${router.pathname.includes('/directores/reporte') ? styles.activeLink : ''}`}>
+                      <Link
+                        href="/directores/reporte"
+                        className={`${styles.submenuLink} ${router.pathname.includes('/directores/reporte') ? styles.activeLink : ''}`}
+                        title={getLabel('director_docentes_reporte', 'Reporte')}
+                      >
                         {getLabel('director_docentes_reporte', 'Reporte')}
                       </Link>
                     </li>
@@ -198,6 +218,24 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
               </ul>
             </div>
           </div>
+        </div>
+
+        {/* Toggle Collapse Button for Desktop (Firebase Style - Bottom Circular) */}
+        <div className={styles.sidebarFooter}>
+          <button
+            type="button"
+            className={styles.collapseToggleBtn}
+            onClick={() => {
+              if (!isSidebarCollapsed) {
+                setOpenDropdown(null);
+              }
+              toggleSidebarCollapsed(isSidebarCollapsed);
+            }}
+            title={isSidebarCollapsed ? "Expandir" : "Contraer"}
+            aria-label={isSidebarCollapsed ? "Expandir" : "Contraer"}
+          >
+            {isSidebarCollapsed ? <IoIosArrowForward /> : <IoIosArrowBack />}
+          </button>
         </div>
       </div>
     </>

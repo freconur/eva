@@ -11,7 +11,15 @@ export const useRolUsers = () => {
   }
 
   const toggleSidebarCollapsed = (value: boolean) => {
-    dispatch({ type: AppAction.TOGGLE_SIDEBAR_COLLAPSED, payload: !value })
+    const nextCollapsed = !value;
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('eva_sidebar_collapsed', String(nextCollapsed));
+      }
+    } catch (e) {
+      console.warn("No se pudo guardar eva_sidebar_collapsed en localStorage", e);
+    }
+    dispatch({ type: AppAction.TOGGLE_SIDEBAR_COLLAPSED, payload: nextCollapsed })
   }
 
   return {

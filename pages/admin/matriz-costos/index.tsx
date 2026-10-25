@@ -64,8 +64,21 @@ import {
   MdWorkOutline,
   MdCode,
   MdFormatListNumbered,
-  MdDragIndicator
+  MdDragIndicator,
+  MdCalendarMonth,
+  MdChevronLeft,
+  MdChevronRight,
+  MdLock,
+  MdLockOpen
 } from 'react-icons/md';
+import {
+  PeriodoCostos,
+  getCurrentPeriodoId,
+  formatPeriodoNombre,
+  getAdjacentPeriodoId,
+  normalizeFeaturePeriodo,
+  getPeriodoEstadoBadge
+} from '@/features/utils/matrizPeriodosUtils';
 import { toast } from 'react-toastify';
 
 const DEFAULT_CONFIG: MatrizConfig = {
@@ -100,6 +113,11 @@ export default function MatrizCostosPage() {
   const [modoVista, setModoVista] = useState<'tecnico' | 'cliente'>('tecnico');
   const [isHumanizingAll, setIsHumanizingAll] = useState(false);
   const [humanizingId, setHumanizingId] = useState<string | null>(null);
+
+  // Gestión de Periodos / Meses
+  const [selectedPeriodo, setSelectedPeriodo] = useState<string>(getCurrentPeriodoId());
+  const [periodosDb, setPeriodosDb] = useState<Record<string, PeriodoCostos>>({});
+  const [isUpdatingPeriodo, setIsUpdatingPeriodo] = useState(false);
 
   // Modals
   const [isFeatureModalOpen, setIsFeatureModalOpen] = useState(false);
@@ -194,6 +212,106 @@ export default function MatrizCostosPage() {
 
     return () => unsubFeatures();
   }, []);
+
+  // Cargar periodos desde Firestore en tiempo real
+  useEffect(() => {
+    const unsubPeriodos = onSnapshot(
+      collection(db, 'dev_costos_periodos'),
+      (snapshot) => {
+        const pMap: Record<string, PeriodoCostos> = {};
+        snapshot.forEach((docSnap) => {
+          pMap[docSnap.id] = { id: docSnap.id, ...(docSnap.data() as any) };
+        });
+        setPeriodosDb(pMap);
+      },
+      (error) => {
+        console.error('Error al escuchar dev_costos_periodos:', error);
+      }
+    );
+
+    return () => unsubPeriodos();
+  }, []);
+
+  // Lista unificada de periodos disponibles ordenados descendente
+  const availablePeriodos = useMemo(() => {
+    const pSet = new Set<string>();
+    pSet.add(getCurrentPeriodoId());
+    Object.keys(periodosDb).forEach((p) => pSet.add(p));
+    features.forEach((f) => {
+      pSet.add(normalizeFeaturePeriodo(f));
+    });
+    return Array.from(pSet).sort((a, b) => b.localeCompare(a));
+  }, [periodosDb, features]);
+
+  // Info del periodo actual seleccionado
+  const currentPeriodoInfo = useMemo(() => {
+    if (selectedPeriodo === 'TODOS') return null;
+    return (
+      periodosDb[selectedPeriodo] || {
+        id: selectedPeriodo,
+        nombre: formatPeriodoNombre(selectedPeriodo),
+        anio: parseInt(selectedPeriodo.split('-')[0], 10) || new Date().getFullYear(),
+        mes: parseInt(selectedPeriodo.split('-')[1], 10) || new Date().getMonth() + 1,
+        estado: 'abierto' as const
+      }
+    );
+  }, [periodosDb, selectedPeriodo]);
+
+  const isPeriodoCerrado = useMemo(() => {
+    if (selectedPeriodo === 'TODOS') return false;
+    return currentPeriodoInfo?.estado === 'cerrado' || currentPeriodoInfo?.estado === 'pagado';
+  }, [currentPeriodoInfo, selectedPeriodo]);
+
+  // Cambiar estado del periodo (abierto, cerrado, pagado)
+  const handleTogglePeriodoEstado = async (
+    targetPeriodoId: string,
+    nuevoEstado: 'abierto' | 'cerrado' | 'pagado'
+  ) => {
+    if (targetPeriodoId === 'TODOS') return;
+    setIsUpdatingPeriodo(true);
+    try {
+      const ref = doc(db, 'dev_costos_periodos', targetPeriodoId);
+      const existing = periodosDb[targetPeriodoId];
+      const payload: Partial<PeriodoCostos> = {
+        id: targetPeriodoId,
+        nombre: formatPeriodoNombre(targetPeriodoId),
+        anio: parseInt(targetPeriodoId.split('-')[0], 10) || new Date().getFullYear(),
+        mes: parseInt(targetPeriodoId.split('-')[1], 10) || new Date().getMonth() + 1,
+        estado: nuevoEstado,
+        tarifaHoraBase: existing?.tarifaHoraBase || Number(config.defaultHourlyRate) || 50,
+        updatedAt: serverTimestamp()
+      };
+      await setDoc(ref, sanitizeForFirestore(payload), { merge: true });
+      toast.success(
+        nuevoEstado === 'cerrado'
+          ? `Mes ${formatPeriodoNombre(targetPeriodoId)} cerrado exitosamente 🔒`
+          : nuevoEstado === 'pagado'
+          ? `Mes ${formatPeriodoNombre(targetPeriodoId)} marcado como pagado 💰`
+          : `Mes ${formatPeriodoNombre(targetPeriodoId)} reabierto para edición 🟢`
+      );
+    } catch (err) {
+      console.error('Error al actualizar estado del periodo:', err);
+      toast.error('No se pudo actualizar el estado del mes.');
+    } finally {
+      setIsUpdatingPeriodo(false);
+    }
+  };
+
+  // Mover una funcionalidad a otro periodo
+  const handleMoveFeaturePeriodo = async (f: FeatureCostoItem, targetPeriodoId: string) => {
+    if (!f.id) return;
+    try {
+      const ref = doc(db, 'dev_features_costos', f.id);
+      await updateDoc(ref, {
+        periodoId: targetPeriodoId,
+        updatedAt: serverTimestamp()
+      });
+      toast.success(`"${f.titulo}" movida a ${formatPeriodoNombre(targetPeriodoId)}`);
+    } catch (err) {
+      console.error('Error al mover feature de periodo:', err);
+      toast.error('No se pudo mover la funcionalidad.');
+    }
+  };
 
   // Sensores de Dnd-kit configurados con margen de 5px para no interferir con clicks
   const sensors = useSensors(
@@ -442,17 +560,26 @@ export default function MatrizCostosPage() {
 
   // Guardar o Actualizar Feature
   const handleSaveFeature = async (item: FeatureCostoItem) => {
+    const activePeriod = selectedPeriodo !== 'TODOS' ? selectedPeriodo : getCurrentPeriodoId();
     if (item.id) {
       // Actualizar
       const ref = doc(db, 'dev_features_costos', item.id);
-      const updateData = { ...item, updatedAt: serverTimestamp() };
+      const updateData = {
+        ...item,
+        periodoId: item.periodoId || activePeriod,
+        updatedAt: serverTimestamp()
+      };
       delete updateData.id;
       const cleanData = sanitizeForFirestore(updateData);
       await setDoc(ref, cleanData, { merge: true });
     } else {
       // Crear nueva con orden al final de la lista
       const maxOrder = features.reduce((max, feat) => Math.max(max, feat.orden || 0), 0);
-      const copy = { ...item, orden: maxOrder + 1 };
+      const copy = {
+        ...item,
+        periodoId: item.periodoId || activePeriod,
+        orden: maxOrder + 1
+      };
       delete copy.id;
       const cleanItem = sanitizeForFirestore({
         ...copy,
@@ -465,6 +592,7 @@ export default function MatrizCostosPage() {
 
   // Importar features detectadas del código
   const handleImportDetectedFeatures = async (detected: DetectedFeature[]) => {
+    const activePeriod = selectedPeriodo !== 'TODOS' ? selectedPeriodo : getCurrentPeriodoId();
     let currentMaxOrder = features.reduce((max, f) => Math.max(max, f.orden || 0), 0);
     for (const item of detected) {
       currentMaxOrder += 1;
@@ -474,6 +602,7 @@ export default function MatrizCostosPage() {
       delete (itemToSave as any).id;
       const cleanItem = sanitizeForFirestore({
         ...itemToSave,
+        periodoId: (itemToSave as any).periodoId || activePeriod,
         orden: currentMaxOrder,
         notas: item.notas || (item.archivos && item.archivos.length > 0 ? `Archivos: ${item.archivos.join(', ')}` : ''),
         creadoPor: currentUserData?.dni || '47163626',
@@ -485,6 +614,7 @@ export default function MatrizCostosPage() {
 
   // Importar sub-features desglosadas por componente
   const handleImportSubFeatures = async (subFeaturesToImport: FeatureCostoItem[]) => {
+    const activePeriod = selectedPeriodo !== 'TODOS' ? selectedPeriodo : getCurrentPeriodoId();
     let currentMaxOrder = features.reduce((max, f) => Math.max(max, f.orden || 0), 0);
     for (const item of subFeaturesToImport) {
       currentMaxOrder += 1;
@@ -492,6 +622,7 @@ export default function MatrizCostosPage() {
       delete copy.id;
       const cleanItem = sanitizeForFirestore({
         ...copy,
+        periodoId: copy.periodoId || activePeriod,
         orden: currentMaxOrder,
         creadoPor: currentUserData?.dni || '47163626',
         createdAt: serverTimestamp()
@@ -751,17 +882,23 @@ export default function MatrizCostosPage() {
     });
   }, [features, config.defaultHourlyRate]);
 
-  // Filtrado de la lista
+  // Features por periodo seleccionado
+  const featuresPorPeriodo = useMemo(() => {
+    if (selectedPeriodo === 'TODOS') return computedFeatures;
+    return computedFeatures.filter((f) => normalizeFeaturePeriodo(f) === selectedPeriodo);
+  }, [computedFeatures, selectedPeriodo]);
+
+  // Filtrado de módulos disponibles para el periodo
   const modulosDisponibles = useMemo(() => {
     const setMod = new Set<string>();
-    computedFeatures.forEach((f) => {
+    featuresPorPeriodo.forEach((f) => {
       if (f.modulo) setMod.add(f.modulo);
     });
     return Array.from(setMod);
-  }, [computedFeatures]);
+  }, [featuresPorPeriodo]);
 
   const filteredFeatures = useMemo(() => {
-    return computedFeatures.filter((f) => {
+    return featuresPorPeriodo.filter((f) => {
       const matchSearch =
         searchTerm === '' ||
         f.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -783,9 +920,9 @@ export default function MatrizCostosPage() {
 
       return matchSearch && matchModulo && matchEstado && matchTipo;
     });
-  }, [computedFeatures, searchTerm, selectedModulo, selectedEstado, selectedTipo]);
+  }, [featuresPorPeriodo, searchTerm, selectedModulo, selectedEstado, selectedTipo]);
 
-  // Cálculos estadísticos
+  // Cálculos estadísticos para el periodo actual
   const stats = useMemo(() => {
     const totalHoras = filteredFeatures.reduce(
       (acc, f) => acc + (Number(f.horasReales) || Number(f.horasEstimadas) || 0),
@@ -810,6 +947,33 @@ export default function MatrizCostosPage() {
           : 0
     };
   }, [filteredFeatures]);
+
+  // Estadísticas históricas consolidadas (todos los meses)
+  const statsGlobal = useMemo(() => {
+    const totalHoras = computedFeatures.reduce(
+      (acc, f) => acc + (Number(f.horasReales) || Number(f.horasEstimadas) || 0),
+      0
+    );
+    const totalCosto = computedFeatures.reduce((acc, f) => acc + (Number(f.costoTotal) || 0), 0);
+    return {
+      totalHoras,
+      totalCosto,
+      totalCount: computedFeatures.length
+    };
+  }, [computedFeatures]);
+
+  // Resumen acumulado por cada periodo (para el selector)
+  const periodosStatsMap = useMemo(() => {
+    const map: Record<string, { count: number; costo: number; horas: number }> = {};
+    computedFeatures.forEach((f) => {
+      const p = normalizeFeaturePeriodo(f);
+      if (!map[p]) map[p] = { count: 0, costo: 0, horas: 0 };
+      map[p].count += 1;
+      map[p].costo += Number(f.costoTotal) || 0;
+      map[p].horas += Number(f.horasReales) || Number(f.horasEstimadas) || 0;
+    });
+    return map;
+  }, [computedFeatures]);
 
   const currencySymbol = config.currency === 'USD' ? '$' : 'S/';
 
@@ -980,7 +1144,8 @@ export default function MatrizCostosPage() {
                 exportarMatrizCostosPDF({
                   features: filteredFeatures,
                   config,
-                  modoVista
+                  modoVista,
+                  periodoNombre: formatPeriodoNombre(selectedPeriodo)
                 })
               }
               disabled={filteredFeatures.length === 0}
@@ -1012,13 +1177,180 @@ export default function MatrizCostosPage() {
           </div>
         </div>
 
+        {/* Barra de Navegación por Periodos / Meses */}
+        <div className="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Botón Mes Anterior */}
+            <button
+              type="button"
+              onClick={() => {
+                const prev = getAdjacentPeriodoId(selectedPeriodo === 'TODOS' ? getCurrentPeriodoId() : selectedPeriodo, -1);
+                setSelectedPeriodo(prev);
+              }}
+              className="p-2 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition shadow-2xs"
+              title="Ir al mes anterior"
+            >
+              <MdChevronLeft size={20} />
+            </button>
+
+            {/* Selector Desplegable de Meses */}
+            <div className="relative min-w-[220px]">
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 shadow-2xs">
+                <MdCalendarMonth className="text-indigo-600 text-lg shrink-0" />
+                <select
+                  value={selectedPeriodo}
+                  onChange={(e) => setSelectedPeriodo(e.target.value)}
+                  className="bg-transparent text-xs md:text-sm font-bold text-slate-800 outline-none w-full cursor-pointer"
+                >
+                  <optgroup label="Periodos Mensuales">
+                    {availablePeriodos.map((pId) => {
+                      const pStat = periodosStatsMap[pId];
+                      const pInfo = periodosDb[pId];
+                      const statusIcon = pInfo?.estado === 'cerrado' ? '🔒' : pInfo?.estado === 'pagado' ? '💰' : '🟢';
+                      const countText = pStat ? `${pStat.count} features` : '0 features';
+                      return (
+                        <option key={pId} value={pId}>
+                          {statusIcon} {formatPeriodoNombre(pId)} ({countText})
+                        </option>
+                      );
+                    })}
+                  </optgroup>
+                  <optgroup label="Histórico">
+                    <option value="TODOS">🌐 Todos los Meses (Histórico Consolidado)</option>
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+
+            {/* Botón Mes Siguiente */}
+            <button
+              type="button"
+              onClick={() => {
+                const next = getAdjacentPeriodoId(selectedPeriodo === 'TODOS' ? getCurrentPeriodoId() : selectedPeriodo, 1);
+                setSelectedPeriodo(next);
+              }}
+              className="p-2 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition shadow-2xs"
+              title="Ir al mes siguiente"
+            >
+              <MdChevronRight size={20} />
+            </button>
+
+            {/* Botón rápido para volver al Mes Actual si no está seleccionado */}
+            {selectedPeriodo !== getCurrentPeriodoId() && (
+              <button
+                type="button"
+                onClick={() => setSelectedPeriodo(getCurrentPeriodoId())}
+                className="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition"
+                title="Volver al mes en curso actual"
+              >
+                Mes Actual
+              </button>
+            )}
+
+            {/* Badge de Estado del Periodo */}
+            {selectedPeriodo !== 'TODOS' && (
+              <div className="flex items-center gap-1.5 ml-1">
+                {(() => {
+                  const badge = getPeriodoEstadoBadge(currentPeriodoInfo?.estado);
+                  return (
+                    <span
+                      className={`px-2.5 py-1 text-xs font-bold rounded-lg border flex items-center gap-1.5 shadow-2xs ${badge.badgeClass}`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${badge.dotClass}`} />
+                      {badge.label}
+                    </span>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+
+          {/* Acciones de Gestión del Periodo */}
+          {selectedPeriodo !== 'TODOS' && (
+            <div className="flex flex-wrap items-center gap-2">
+              {currentPeriodoInfo?.estado === 'abierto' && (
+                <button
+                  type="button"
+                  disabled={isUpdatingPeriodo}
+                  onClick={() => handleTogglePeriodoEstado(selectedPeriodo, 'cerrado')}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-xl transition shadow-2xs"
+                  title="Cerrar este mes para proteger los costos y congelar la liquidación"
+                >
+                  <MdLock size={15} />
+                  Cerrar Mes 🔒
+                </button>
+              )}
+
+              {currentPeriodoInfo?.estado === 'cerrado' && (
+                <>
+                  <button
+                    type="button"
+                    disabled={isUpdatingPeriodo}
+                    onClick={() => handleTogglePeriodoEstado(selectedPeriodo, 'abierto')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition shadow-2xs"
+                    title="Reabrir mes para permitir ediciones o agregar nuevas features"
+                  >
+                    <MdLockOpen size={15} />
+                    Reabrir Mes 🟢
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isUpdatingPeriodo}
+                    onClick={() => handleTogglePeriodoEstado(selectedPeriodo, 'pagado')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 rounded-xl transition shadow-2xs"
+                    title="Marcar periodo como pagado por el cliente"
+                  >
+                    <MdCheckCircle size={15} />
+                    Marcar Pagado 💰
+                  </button>
+                </>
+              )}
+
+              {currentPeriodoInfo?.estado === 'pagado' && (
+                <button
+                  type="button"
+                  disabled={isUpdatingPeriodo}
+                  onClick={() => handleTogglePeriodoEstado(selectedPeriodo, 'cerrado')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition shadow-2xs"
+                  title="Regresar a estado cerrado"
+                >
+                  Revertir a Cerrado
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Banner de Advertencia si el Periodo está Cerrado */}
+        {isPeriodoCerrado && (
+          <div className="bg-amber-50/90 border-l-4 border-amber-500 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900 text-xs shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <MdLock size={22} className="text-amber-600 shrink-0" />
+              <div>
+                <p className="font-bold text-sm text-amber-950">
+                  Mes {formatPeriodoNombre(selectedPeriodo)} {currentPeriodoInfo?.estado === 'pagado' ? 'Pagado' : 'Cerrado'}
+                </p>
+                <p className="text-amber-800 mt-0.5">
+                  Este periodo se encuentra bloqueado para proteger la liquidación de horas y cobros entregados. Puedes presionar &quot;Reabrir Mes&quot; si necesitas hacer ajustes.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleTogglePeriodoEstado(selectedPeriodo, 'abierto')}
+              className="px-3.5 py-1.5 text-xs font-bold text-amber-950 bg-amber-200 hover:bg-amber-300 rounded-lg shrink-0 transition"
+            >
+              Reabrir Mes
+            </button>
+          </div>
+        )}
+
         {/* Métricas / KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Costo Total */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Inversión Total
+                {selectedPeriodo !== 'TODOS' ? `Inversión ${formatPeriodoNombre(selectedPeriodo)}` : 'Inversión Total'}
               </p>
               <h3 className="text-2xl font-black text-emerald-700 mt-1">
                 {currencySymbol}{' '}
@@ -1028,7 +1360,9 @@ export default function MatrizCostosPage() {
                 })}
               </h3>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                {filteredFeatures.length} feature(s) listada(s)
+                {selectedPeriodo !== 'TODOS'
+                  ? `Histórico acumulado: ${currencySymbol} ${statsGlobal.totalCosto.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  : `${filteredFeatures.length} feature(s) listada(s)`}
               </p>
             </div>
             <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
@@ -1040,16 +1374,22 @@ export default function MatrizCostosPage() {
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Horas Registradas
+                {selectedPeriodo !== 'TODOS' ? 'Horas del Mes' : 'Horas Registradas'}
               </p>
               <h3 className="text-2xl font-black text-slate-800 mt-1">
                 {stats.totalHoras.toFixed(1)} <span className="text-sm font-medium text-slate-500">hrs</span>
               </h3>
               <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
-                <span>Tarifa global:</span>
-                <span className="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                  {currencySymbol} {config.defaultHourlyRate}/hr
-                </span>
+                {selectedPeriodo !== 'TODOS' ? (
+                  <span>Histórico acumulado: <strong className="text-slate-700">{statsGlobal.totalHoras.toFixed(1)} hrs</strong></span>
+                ) : (
+                  <>
+                    <span>Tarifa global:</span>
+                    <span className="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                      {currencySymbol} {config.defaultHourlyRate}/hr
+                    </span>
+                  </>
+                )}
               </div>
             </div>
             <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
@@ -1061,7 +1401,7 @@ export default function MatrizCostosPage() {
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Completadas
+                {selectedPeriodo !== 'TODOS' ? 'Completadas en Mes' : 'Completadas'}
               </p>
               <h3 className="text-2xl font-black text-slate-800 mt-1">
                 {stats.completadas}{' '}
@@ -1070,7 +1410,7 @@ export default function MatrizCostosPage() {
                 </span>
               </h3>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Listo para entrega o cobro
+                {filteredFeatures.length} features en este periodo
               </p>
             </div>
             <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
@@ -1082,7 +1422,7 @@ export default function MatrizCostosPage() {
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                En Progreso / Plan
+                {selectedPeriodo !== 'TODOS' ? 'En Curso en Mes' : 'En Progreso / Plan'}
               </p>
               <h3 className="text-2xl font-black text-amber-600 mt-1">
                 {stats.enDesarrollo + stats.planificadas}
@@ -1265,6 +1605,10 @@ export default function MatrizCostosPage() {
                             onUpdateSubItem={handleInlineUpdateSubItem}
                             onAddSubItem={handleInlineAddSubItem}
                             onDeleteSubItem={handleInlineDeleteSubItem}
+                            showPeriodBadge={selectedPeriodo === 'TODOS'}
+                            isPeriodoCerrado={isPeriodoCerrado}
+                            onMoveFeaturePeriodo={handleMoveFeaturePeriodo}
+                            availablePeriodos={availablePeriodos}
                           />
                         );
                       })}
@@ -1308,6 +1652,8 @@ export default function MatrizCostosPage() {
         onSave={handleSaveFeature}
         editingFeature={editingFeature}
         config={config}
+        currentPeriodoId={selectedPeriodo !== 'TODOS' ? selectedPeriodo : getCurrentPeriodoId()}
+        availablePeriodos={availablePeriodos}
       />
 
       {/* Modal Ajustes / Configuración */}
