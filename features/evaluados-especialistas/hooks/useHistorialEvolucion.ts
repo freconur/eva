@@ -3,7 +3,7 @@ import { User } from '@/features/types/types';
 import { getMonitoreoTimestamp, getCleanPhaseName, getShortDateString, stackedColors } from '../components/utils';
 
 const formatQuestionLabel = (orden: number | string, text: string, maxLen = 45): string | string[] => {
-	const cleanText = text ? text.trim() : '';
+	const cleanText = text ? text.replace(/^\d+[\.\-\)]\s*/, '').trim() : '';
 	const fullText = orden ? `${orden}. ${cleanText}` : cleanText;
 	if (fullText.length <= maxLen) return fullText;
 
@@ -468,7 +468,7 @@ export const useHistorialEvolucion = (
 			const topCritical = criticalItems.slice(0, 5);
 			topCritical.sort((a, b) => Number(a.preguntaObj.orden || 0) - Number(b.preguntaObj.orden || 0));
 
-			const labels = topCritical.map(item => formatQuestionLabel(item.preguntaObj.orden, item.preguntaObj.pregunta));
+			const labels = topCritical.map((item, index) => formatQuestionLabel(index + 1, item.preguntaObj.pregunta));
 
 			const customBrechas = dataEvaluacionDocente?.configuracionColores?.brechas;
 			const customBarColor = customBrechas?.barColor;
@@ -536,7 +536,7 @@ export const useHistorialEvolucion = (
 			const topCritical = criticalItems.slice(0, 5);
 			topCritical.sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0));
 
-			const labels = topCritical.map(item => formatQuestionLabel(item.orden, item.preguntaText));
+			const labels = topCritical.map((item, index) => formatQuestionLabel(index + 1, item.preguntaText));
 			const dataPoints = topCritical.map(item => item.score);
 
 			const targetFaseName = getCleanPhaseName((targetEval as any).faseNombre, (targetEval as any).idFase || (targetEval as any).faseActualID);
