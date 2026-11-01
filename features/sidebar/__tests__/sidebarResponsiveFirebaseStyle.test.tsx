@@ -80,7 +80,7 @@ describe('Sidebar Firebase Style & Width Reduction (250px)', () => {
   it('renderiza el botón de colapso como elemento <button> accesible dentro de sidebarFooter', () => {
     render(
       <GlobalContextProvider>
-        <SidebarDocentes />
+        <SidebarDocentes showSidebar={true} />
       </GlobalContextProvider>
     );
 
