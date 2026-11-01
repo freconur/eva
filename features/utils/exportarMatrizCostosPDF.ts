@@ -26,8 +26,25 @@ export interface FeatureCostoItem {
   estado: 'Planificado' | 'En Desarrollo' | 'Completado' | 'Entregado' | 'Facturado';
   orden?: number;
   fecha?: string;
+  periodo?: string; // ej. "2024-10", "2024-11"
+  mesNombre?: string; // ej. "Octubre 2024"
   prioridad?: 'Baja' | 'Media' | 'Alta' | 'Crítica';
   notas?: string;
+}
+
+export interface PeriodoCostoItem {
+  id: string; // ej. "2024-10", "2024-11"
+  nombre: string; // ej. "Noviembre 2024"
+  estado: 'abierto' | 'cerrado' | 'facturado';
+  montoAbono?: number;
+  horasBolsa?: number;
+  tarifaHoraExcedente?: number;
+  horasConsumidas?: number;
+  totalPagar?: number;
+  fechaCierre?: any;
+  notas?: string;
+  createdAt?: any;
+  updatedAt?: any;
 }
 
 export interface MatrizConfig {
@@ -37,6 +54,9 @@ export interface MatrizConfig {
   projectName: string;
   currency: string;
   defaultHourlyRate: number;
+  montoAbonoMensual?: number;
+  horasBolsaMensual?: number;
+  tarifaHoraExcedente?: number;
 }
 
 /**
@@ -71,9 +91,15 @@ interface ExportarMatrizProps {
   features: FeatureCostoItem[];
   config: MatrizConfig;
   modoVista?: 'tecnico' | 'cliente';
+  periodoActual?: PeriodoCostoItem | null;
 }
 
-export const exportarMatrizCostosPDF = ({ features, config, modoVista = 'tecnico' }: ExportarMatrizProps) => {
+export const exportarMatrizCostosPDF = ({
+  features,
+  config,
+  modoVista = 'tecnico',
+  periodoActual = null
+}: ExportarMatrizProps) => {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
@@ -95,32 +121,50 @@ export const exportarMatrizCostosPDF = ({ features, config, modoVista = 'tecnico
   doc.setFillColor(15, 23, 42); // slate-900
   doc.rect(0, 0, pageWidth, 28, 'F');
 
-  // Acento de color primario (azul/cian)
+  // Acento de color primario (azul/cian o esmeralda)
   doc.setFillColor(isCliente ? 16 : 37, isCliente ? 185 : 99, isCliente ? 129 : 235); // emerald o blue
   doc.rect(0, 28, pageWidth, 2, 'F');
 
   // Título
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
+  doc.setFontSize(14);
   doc.setTextColor(255, 255, 255);
-  doc.text(
-    isCliente
-      ? 'PROPUESTA EJECUTIVA Y VALOR DE FUNCIONALIDADES DESARROLLADAS'
-      : 'MATRIZ DE FUNCIONALIDADES Y COSTOS DE DESARROLLO',
-    14,
-    13
-  );
+  if (periodoActual) {
+    doc.text(
+      isCliente
+        ? `PROPUESTA Y ENTREGABLES MENSUALES — ${periodoActual.nombre.toUpperCase()}`
+        : `INFORME MENSUAL DE ENTREGABLES Y CIERRE DE SERVICIOS — ${periodoActual.nombre.toUpperCase()}`,
+      14,
+      13
+    );
+  } else {
+    doc.text(
+      isCliente
+        ? 'PROPUESTA EJECUTIVA Y VALOR DE FUNCIONALIDADES DESARROLLADAS'
+        : 'MATRIZ DE FUNCIONALIDADES Y COSTOS DE DESARROLLO',
+      14,
+      13
+    );
+  }
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(203, 213, 225); // slate-300
-  doc.text(
-    isCliente
-      ? `${config.projectName || 'Sistema EVA'} — Entregables y Soluciones para la Institución`
-      : `${config.projectName || 'Sistema EVA'} — Registro y Liquidación de Features`,
-    14,
-    21
-  );
+  if (periodoActual) {
+    doc.text(
+      `${config.projectName || 'Sistema EVA'} — ${config.clientName || 'UGEL 13 - Yauyos'} | Estado: ${periodoActual.estado.toUpperCase()}`,
+      14,
+      21
+    );
+  } else {
+    doc.text(
+      isCliente
+        ? `${config.projectName || 'Sistema EVA'} — Entregables y Soluciones para la Institución`
+        : `${config.projectName || 'Sistema EVA'} — Registro y Liquidación de Features`,
+      14,
+      21
+    );
+  }
 
   const fechaHoy = new Date().toLocaleDateString('es-PE', {
     day: '2-digit',
@@ -142,13 +186,17 @@ export const exportarMatrizCostosPDF = ({ features, config, modoVista = 'tecnico
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(30, 41, 59);
-  doc.text('INFORMACIÓN DE DESARROLLO', 18, currentY + 6);
+  doc.text(periodoActual ? 'INFORMACIÓN DEL SERVICIO Y PERÍODO' : 'INFORMACIÓN DE DESARROLLO', 18, currentY + 6);
 
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(71, 85, 105);
   doc.text(`Desarrollador: ${config.developerName || 'Desarrollador Principal'}`, 18, currentY + 12);
   doc.text(`DNI / Identificador: ${config.developerDni || '47163626'}`, 18, currentY + 17);
-  doc.text(`Cliente / Proyecto: ${config.clientName || 'UGEL 13 - Yauyos / EVA'}`, 18, currentY + 22);
+  if (periodoActual) {
+    doc.text(`Período: ${periodoActual.nombre}  (Cierre: ${periodoActual.estado.toUpperCase()})`, 18, currentY + 22);
+  } else {
+    doc.text(`Cliente / Proyecto: ${config.clientName || 'UGEL 13 - Yauyos / EVA'}`, 18, currentY + 22);
+  }
 
   // Caja de Métricas Resumen Derecha
   const metricsWidth = pageWidth - 14 - 150;
@@ -159,16 +207,16 @@ export const exportarMatrizCostosPDF = ({ features, config, modoVista = 'tecnico
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(30, 41, 59);
-  doc.text('RESUMEN GENERAL', 154, currentY + 6);
+  doc.text(periodoActual ? 'LIQUIDACIÓN DEL PERÍODO' : 'RESUMEN GENERAL', 154, currentY + 6);
 
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(71, 85, 105);
-  doc.text(`Total Features: ${features.length}  (${completadas} completadas - ${porcentajeAvance}%)`, 154, currentY + 12);
-  doc.text(`Horas Invertidas: ${totalHoras.toFixed(1)} hrs`, 154, currentY + 17);
+  doc.text(`Total Entregables: ${features.length} funcionalidad(es)  (${completadas} completadas - ${porcentajeAvance}%)`, 154, currentY + 12);
+  doc.text(`Horas Totales Invertidas: ${totalHoras.toFixed(1)} hrs`, 154, currentY + 17);
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(22, 101, 52); // green-800
-  doc.text(`Costo Total Acumulado: ${currencySymbol} ${totalCosto.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 154, currentY + 22);
+  doc.text(`Total Liquidación del Período: ${currencySymbol} ${totalCosto.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 154, currentY + 22);
 
   currentY += 32;
 
@@ -435,7 +483,7 @@ export const exportarMatrizCostosPDF = ({ features, config, modoVista = 'tecnico
         `${totalHoras.toFixed(1)} h`,
         '',
         `${currencySymbol} ${totalCosto.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-        `${porcentajeAvance}% completado`
+        periodoActual ? `Cierre: ${periodoActual.estado.toUpperCase()}` : `${porcentajeAvance}% completado`
       ]
     ],
     footStyles: {
@@ -457,7 +505,9 @@ export const exportarMatrizCostosPDF = ({ features, config, modoVista = 'tecnico
     doc.setTextColor(148, 163, 184); // slate-400
     doc.text(
       `Página ${i} de ${totalPages}  |  ${
-        isCliente
+        periodoActual
+          ? `Informe de Cierre de Servicios — ${periodoActual.nombre} (${config.projectName || 'EVA'})`
+          : isCliente
           ? 'Propuesta de Funcionalidades y Entregables para el Cliente - EVA'
           : 'Documento de Control y Costeo Técnico - EVA'
       }`,
@@ -470,7 +520,9 @@ export const exportarMatrizCostosPDF = ({ features, config, modoVista = 'tecnico
   // Descarga
   const sanitizeName = (config.projectName || 'EVA').replace(/[^a-zA-Z0-9]/g, '_');
   const dateStr = new Date().toISOString().split('T')[0];
-  const filename = isCliente
+  const filename = periodoActual
+    ? `Liquidacion_${periodoActual.id}_${sanitizeName}_${isCliente ? 'Cliente' : 'Tecnico'}.pdf`
+    : isCliente
     ? `Propuesta_Funcionalidades_${sanitizeName}_${dateStr}.pdf`
     : `Matriz_Costos_${sanitizeName}_${dateStr}.pdf`;
   doc.save(filename);

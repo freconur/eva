@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { IoClose } from 'react-icons/io5';
 import { MdAutoAwesome, MdFormatListNumbered, MdAdd, MdDeleteOutline } from 'react-icons/md';
-import { FeatureCostoItem, MatrizConfig, SubItemDetallado } from '@/features/utils/exportarMatrizCostosPDF';
+import { FeatureCostoItem, MatrizConfig, SubItemDetallado, PeriodoCostoItem } from '@/features/utils/exportarMatrizCostosPDF';
 import { toast } from 'react-toastify';
 
 interface Props {
@@ -10,6 +10,8 @@ interface Props {
   onSave: (feature: FeatureCostoItem) => Promise<void>;
   editingFeature: FeatureCostoItem | null;
   config: MatrizConfig;
+  periodosDisponibles?: PeriodoCostoItem[];
+  defaultPeriodoId?: string;
 }
 
 const MODULOS_PREDEFINIDOS = [
@@ -41,10 +43,13 @@ export default function ModalFeatureCosto({
   onClose,
   onSave,
   editingFeature,
-  config
+  config,
+  periodosDisponibles = [],
+  defaultPeriodoId = ''
 }: Props) {
   const [codigo, setCodigo] = useState('');
   const [titulo, setTitulo] = useState('');
+  const [periodo, setPeriodo] = useState(defaultPeriodoId || '');
   const [modulo, setModulo] = useState(MODULOS_PREDEFINIDOS[0]);
   const [moduloPersonalizado, setModuloPersonalizado] = useState('');
   const [tipo, setTipo] = useState(TIPOS_TRABAJO[0]);
@@ -67,6 +72,7 @@ export default function ModalFeatureCosto({
     if (editingFeature) {
       setCodigo(editingFeature.codigo || '');
       setTitulo(editingFeature.titulo || '');
+      setPeriodo(editingFeature.periodo || defaultPeriodoId || '');
       setTituloCliente(editingFeature.tituloCliente || '');
       setDescripcionCliente(editingFeature.descripcionCliente || '');
       setSubItems(editingFeature.subItems ? [...editingFeature.subItems] : []);
@@ -90,6 +96,7 @@ export default function ModalFeatureCosto({
     } else {
       setCodigo('');
       setTitulo('');
+      setPeriodo(defaultPeriodoId || '');
       setTituloCliente('');
       setDescripcionCliente('');
       setSubItems([]);
@@ -107,7 +114,7 @@ export default function ModalFeatureCosto({
       setDescripcion('');
       setNotas('');
     }
-  }, [editingFeature, isOpen, config.defaultHourlyRate]);
+  }, [editingFeature, isOpen, config.defaultHourlyRate, defaultPeriodoId]);
 
   const handleAddSubItem = () => {
     const parentCode = codigo.trim() ? codigo.replace(/[^0-9]/g, '') : '1';
@@ -213,11 +220,14 @@ export default function ModalFeatureCosto({
 
     setIsSaving(true);
     try {
+      const selectedPeriodObj = periodosDisponibles.find((p) => p.id === periodo);
       const dataToSave: FeatureCostoItem = {
         ...(editingFeature?.id ? { id: editingFeature.id } : {}),
         codigo: codigo.trim() || undefined,
         titulo: titulo.trim(),
         tituloCliente: tituloCliente.trim() || undefined,
+        periodo: periodo.trim() || undefined,
+        mesNombre: selectedPeriodObj?.nombre || undefined,
         modulo: moduloFinal,
         tipo,
         modalidad,
@@ -300,8 +310,8 @@ export default function ModalFeatureCosto({
             </div>
           </div>
 
-          {/* Módulo y Tipo */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Módulo, Tipo y Período */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                 Módulo Afectado
@@ -338,6 +348,29 @@ export default function ModalFeatureCosto({
                 {TIPOS_TRABAJO.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Período / Mes
+              </label>
+              <select
+                value={periodo}
+                onChange={(e) => setPeriodo(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium text-slate-800"
+              >
+                {periodosDisponibles.length > 0 ? (
+                  periodosDisponibles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre} {p.estado === 'cerrado' ? '(Cerrado)' : ''}
+                    </option>
+                  ))
+                ) : (
+                  <option value={new Date().toISOString().substring(0, 7)}>
+                    Mes Actual
+                  </option>
+                )}
               </select>
             </div>
           </div>

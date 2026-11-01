@@ -18,6 +18,7 @@ import {
 import {
   FeatureCostoItem,
   MatrizConfig,
+  PeriodoCostoItem,
   exportarMatrizCostosPDF,
   sanitizeForFirestore,
   SubItemDetallado
@@ -64,8 +65,13 @@ import {
   MdWorkOutline,
   MdCode,
   MdFormatListNumbered,
-  MdDragIndicator
+  MdDragIndicator,
+  MdCalendarToday,
+  MdLock,
+  MdLockOpen,
+  MdDoneAll
 } from 'react-icons/md';
+import { IoClose } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 
 const DEFAULT_CONFIG: MatrizConfig = {
@@ -75,6 +81,26 @@ const DEFAULT_CONFIG: MatrizConfig = {
   projectName: 'Sistema EVA',
   currency: 'PEN',
   defaultHourlyRate: 50
+};
+
+// Formatea "YYYY-MM" a "Noviembre 2024"
+const formatPeriodoNombre = (yearMonth: string) => {
+  try {
+    const [y, m] = yearMonth.split('-');
+    const d = new Date(Number(y), Number(m) - 1, 1);
+    const monthName = d.toLocaleDateString('es-PE', { month: 'long' });
+    return `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${y}`;
+  } catch {
+    return yearMonth;
+  }
+};
+
+// Retorna "YYYY-MM" del mes actual
+const getCurrentPeriodoId = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
 };
 
 const TIPO_CLIENTE_MAP: Record<string, string> = {
@@ -100,6 +126,14 @@ export default function MatrizCostosPage() {
   const [modoVista, setModoVista] = useState<'tecnico' | 'cliente'>('tecnico');
   const [isHumanizingAll, setIsHumanizingAll] = useState(false);
   const [humanizingId, setHumanizingId] = useState<string | null>(null);
+
+  // Períodos y Cierres Mensuales
+  const [periodos, setPeriodos] = useState<PeriodoCostoItem[]>([]);
+  const [selectedPeriodo, setSelectedPeriodo] = useState<string>('TODOS');
+  const [isNewPeriodoModalOpen, setIsNewPeriodoModalOpen] = useState(false);
+  const [newPeriodoMes, setNewPeriodoMes] = useState(getCurrentPeriodoId());
+  const [periodoToClose, setPeriodoToClose] = useState<PeriodoCostoItem | null>(null);
+  const [isClosingPeriod, setIsClosingPeriod] = useState(false);
 
   // Modals
   const [isFeatureModalOpen, setIsFeatureModalOpen] = useState(false);
@@ -194,6 +228,56 @@ export default function MatrizCostosPage() {
 
     return () => unsubFeatures();
   }, []);
+
+  // Cargar períodos y cierres mensuales en tiempo real desde Firestore
+  useEffect(() => {
+    const qPeriodos = query(collection(db, 'dev_periodos_costos'), orderBy('id', 'desc'));
+    const unsubPeriodos = onSnapshot(
+      qPeriodos,
+      async (snapshot) => {
+        const items: PeriodoCostoItem[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push({
+            id: docSnap.id,
+            ...(docSnap.data() as any)
+          });
+        });
+
+        // Si no existen períodos en Firestore aún, inicializar mes actual y anterior
+        if (items.length === 0) {
+          const currentId = getCurrentPeriodoId();
+          const prevDate = new Date();
+          prevDate.setMonth(prevDate.getMonth() - 1);
+          const prevId = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+          try {
+            await setDoc(doc(db, 'dev_periodos_costos', currentId), {
+              id: currentId,
+              nombre: formatPeriodoNombre(currentId),
+              estado: 'abierto',
+              createdAt: serverTimestamp()
+            });
+            await setDoc(doc(db, 'dev_periodos_costos', prevId), {
+              id: prevId,
+              nombre: formatPeriodoNombre(prevId),
+              estado: 'cerrado',
+              fechaCierre: new Date().toISOString(),
+              createdAt: serverTimestamp()
+            });
+          } catch (e) {
+            console.error('Error auto-inicializando períodos:', e);
+          }
+        } else {
+          setPeriodos(items);
+        }
+      },
+      (error) => {
+        console.error('Error al escuchar dev_periodos_costos:', error);
+      }
+    );
+
+    return () => unsubPeriodos();
+  }, [config.montoAbonoMensual, config.horasBolsaMensual, config.tarifaHoraExcedente]);
 
   // Sensores de Dnd-kit configurados con margen de 5px para no interferir con clicks
   const sensors = useSensors(
@@ -442,17 +526,32 @@ export default function MatrizCostosPage() {
 
   // Guardar o Actualizar Feature
   const handleSaveFeature = async (item: FeatureCostoItem) => {
+    const defaultPeriodo = selectedPeriodo !== 'TODOS' ? selectedPeriodo : getCurrentPeriodoId();
+    const finalPeriodo = item.periodo || defaultPeriodo;
+    const matchedP = periodos.find((p) => p.id === finalPeriodo);
+    const finalMesNombre = item.mesNombre || (matchedP ? matchedP.nombre : formatPeriodoNombre(finalPeriodo));
+
     if (item.id) {
       // Actualizar
       const ref = doc(db, 'dev_features_costos', item.id);
-      const updateData = { ...item, updatedAt: serverTimestamp() };
+      const updateData = {
+        ...item,
+        periodo: finalPeriodo,
+        mesNombre: finalMesNombre,
+        updatedAt: serverTimestamp()
+      };
       delete updateData.id;
       const cleanData = sanitizeForFirestore(updateData);
       await setDoc(ref, cleanData, { merge: true });
     } else {
       // Crear nueva con orden al final de la lista
       const maxOrder = features.reduce((max, feat) => Math.max(max, feat.orden || 0), 0);
-      const copy = { ...item, orden: maxOrder + 1 };
+      const copy = {
+        ...item,
+        orden: maxOrder + 1,
+        periodo: finalPeriodo,
+        mesNombre: finalMesNombre
+      };
       delete copy.id;
       const cleanItem = sanitizeForFirestore({
         ...copy,
@@ -465,6 +564,10 @@ export default function MatrizCostosPage() {
 
   // Importar features detectadas del código
   const handleImportDetectedFeatures = async (detected: DetectedFeature[]) => {
+    const defaultPeriodo = selectedPeriodo !== 'TODOS' ? selectedPeriodo : getCurrentPeriodoId();
+    const matchedP = periodos.find((p) => p.id === defaultPeriodo);
+    const mesNombreAssigned = matchedP ? matchedP.nombre : formatPeriodoNombre(defaultPeriodo);
+
     let currentMaxOrder = features.reduce((max, f) => Math.max(max, f.orden || 0), 0);
     for (const item of detected) {
       currentMaxOrder += 1;
@@ -475,6 +578,8 @@ export default function MatrizCostosPage() {
       const cleanItem = sanitizeForFirestore({
         ...itemToSave,
         orden: currentMaxOrder,
+        periodo: defaultPeriodo,
+        mesNombre: mesNombreAssigned,
         notas: item.notas || (item.archivos && item.archivos.length > 0 ? `Archivos: ${item.archivos.join(', ')}` : ''),
         creadoPor: currentUserData?.dni || '47163626',
         createdAt: serverTimestamp()
@@ -485,6 +590,10 @@ export default function MatrizCostosPage() {
 
   // Importar sub-features desglosadas por componente
   const handleImportSubFeatures = async (subFeaturesToImport: FeatureCostoItem[]) => {
+    const defaultPeriodo = selectedPeriodo !== 'TODOS' ? selectedPeriodo : getCurrentPeriodoId();
+    const matchedP = periodos.find((p) => p.id === defaultPeriodo);
+    const mesNombreAssigned = matchedP ? matchedP.nombre : formatPeriodoNombre(defaultPeriodo);
+
     let currentMaxOrder = features.reduce((max, f) => Math.max(max, f.orden || 0), 0);
     for (const item of subFeaturesToImport) {
       currentMaxOrder += 1;
@@ -493,10 +602,78 @@ export default function MatrizCostosPage() {
       const cleanItem = sanitizeForFirestore({
         ...copy,
         orden: currentMaxOrder,
+        periodo: defaultPeriodo,
+        mesNombre: mesNombreAssigned,
         creadoPor: currentUserData?.dni || '47163626',
         createdAt: serverTimestamp()
       });
       await addDoc(collection(db, 'dev_features_costos'), cleanItem);
+    }
+  };
+
+  // Aperturar un nuevo mes / período
+  const handleCrearNuevoPeriodo = async () => {
+    if (!newPeriodoMes || !/^\d{4}-\d{2}$/.test(newPeriodoMes)) {
+      toast.warning('Ingresa un período válido en formato AAAA-MM (ej. 2026-11)');
+      return;
+    }
+    const id = newPeriodoMes.trim();
+    try {
+      const ref = doc(db, 'dev_periodos_costos', id);
+      await setDoc(
+        ref,
+        {
+          id,
+          nombre: formatPeriodoNombre(id),
+          estado: 'abierto',
+          createdAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+      toast.success(`Período "${formatPeriodoNombre(id)}" aperturado con éxito.`);
+      setSelectedPeriodo(id);
+      setIsNewPeriodoModalOpen(false);
+    } catch (err) {
+      console.error('Error al aperturar período:', err);
+      toast.error('No se pudo aperturar el período.');
+    }
+  };
+
+  // Cambiar estado de período (Cerrar / Reabrir / Marcar Facturado)
+  const handleToggleEstadoPeriodo = async (
+    periodoItem: PeriodoCostoItem,
+    nuevoEstado: 'abierto' | 'cerrado' | 'facturado'
+  ) => {
+    setIsClosingPeriod(true);
+    try {
+      const ref = doc(db, 'dev_periodos_costos', periodoItem.id);
+      const updatePayload: Record<string, any> = {
+        estado: nuevoEstado,
+        updatedAt: serverTimestamp()
+      };
+
+      if (nuevoEstado === 'cerrado') {
+        updatePayload.fechaCierre = new Date().toISOString();
+        updatePayload.horasConsumidas = stats.totalHoras;
+        updatePayload.totalPagar = stats.totalCosto;
+      } else if (nuevoEstado === 'abierto') {
+        updatePayload.fechaCierre = null;
+      }
+
+      await updateDoc(ref, updatePayload);
+      toast.success(
+        nuevoEstado === 'cerrado'
+          ? `Período "${periodoItem.nombre}" cerrado con éxito. Listo para cobro.`
+          : nuevoEstado === 'facturado'
+          ? `Período marcado como Facturado / Cobrado.`
+          : `Período "${periodoItem.nombre}" reabierto para edición.`
+      );
+      setPeriodoToClose(null);
+    } catch (err) {
+      console.error('Error al actualizar estado del período:', err);
+      toast.error('No se pudo cambiar el estado del período.');
+    } finally {
+      setIsClosingPeriod(false);
     }
   };
 
@@ -735,21 +912,37 @@ export default function MatrizCostosPage() {
     }
   };
 
-  // Features con costos y tarifas sincronizadas dinámicamente con la tarifa global
+  // Features con costos, tarifas y períodos sincronizados
   const computedFeatures = useMemo(() => {
     const globalRate = Number(config.defaultHourlyRate) || 50;
     return features.map((f) => {
+      let per = f.periodo;
+      if (!per) {
+        if (f.fecha && /^\d{4}-\d{2}/.test(f.fecha)) {
+          per = f.fecha.substring(0, 7);
+        } else {
+          per = '2024-10';
+        }
+      }
+      const matchedP = periodos.find((p) => p.id === per);
+
       if (f.modalidad === 'fijo') {
-        return f;
+        return {
+          ...f,
+          periodo: per,
+          mesNombre: f.mesNombre || (matchedP ? matchedP.nombre : formatPeriodoNombre(per))
+        };
       }
       const horas = Number(f.horasReales) || Number(f.horasEstimadas) || 0;
       return {
         ...f,
+        periodo: per,
+        mesNombre: f.mesNombre || (matchedP ? matchedP.nombre : formatPeriodoNombre(per)),
         tarifaPorHora: globalRate,
         costoTotal: Math.round(horas * globalRate * 100) / 100
       };
     });
-  }, [features, config.defaultHourlyRate]);
+  }, [features, config.defaultHourlyRate, periodos]);
 
   // Filtrado de la lista
   const modulosDisponibles = useMemo(() => {
@@ -762,6 +955,9 @@ export default function MatrizCostosPage() {
 
   const filteredFeatures = useMemo(() => {
     return computedFeatures.filter((f) => {
+      const matchPeriodo = selectedPeriodo === 'TODOS' || f.periodo === selectedPeriodo;
+      if (!matchPeriodo) return false;
+
       const matchSearch =
         searchTerm === '' ||
         f.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -783,7 +979,7 @@ export default function MatrizCostosPage() {
 
       return matchSearch && matchModulo && matchEstado && matchTipo;
     });
-  }, [computedFeatures, searchTerm, selectedModulo, selectedEstado, selectedTipo]);
+  }, [computedFeatures, selectedPeriodo, searchTerm, selectedModulo, selectedEstado, selectedTipo]);
 
   // Cálculos estadísticos
   const stats = useMemo(() => {
@@ -810,6 +1006,23 @@ export default function MatrizCostosPage() {
           : 0
     };
   }, [filteredFeatures]);
+
+  // Período actualmente seleccionado y estadísticas del Abono Mensual (Retainer)
+  const currentPeriodoObj = useMemo(() => {
+    if (selectedPeriodo === 'TODOS') return null;
+    return periodos.find((p) => p.id === selectedPeriodo) || null;
+  }, [selectedPeriodo, periodos]);
+
+  const periodoStats = useMemo(() => {
+    if (!currentPeriodoObj) return null;
+    return {
+      horasTotales: stats.totalHoras,
+      totalLiquidacion: stats.totalCosto,
+      completadas: stats.completadas,
+      totalFeatures: filteredFeatures.length,
+      porcentajeCompletado: stats.porcentajeCompletado
+    };
+  }, [currentPeriodoObj, stats, filteredFeatures.length]);
 
   const currencySymbol = config.currency === 'USD' ? '$' : 'S/';
 
@@ -980,7 +1193,8 @@ export default function MatrizCostosPage() {
                 exportarMatrizCostosPDF({
                   features: filteredFeatures,
                   config,
-                  modoVista
+                  modoVista,
+                  periodoActual: currentPeriodoObj
                 })
               }
               disabled={filteredFeatures.length === 0}
@@ -990,13 +1204,15 @@ export default function MatrizCostosPage() {
                   : 'bg-slate-800 hover:bg-slate-900'
               }`}
               title={
-                modoVista === 'cliente'
-                  ? 'Descargar documento ejecutivo en PDF para presentación al cliente sin tecnicismos'
-                  : 'Descargar informe técnico detallado en PDF'
+                currentPeriodoObj
+                  ? (modoVista === 'cliente' ? 'Descargar informe formal de conformidad mensual para la UGEL' : 'Descargar informe técnico del período en PDF')
+                  : (modoVista === 'cliente' ? 'Descargar propuesta ejecutiva en PDF' : 'Descargar informe técnico general en PDF')
               }
             >
               <MdPictureAsPdf size={16} />
-              {modoVista === 'cliente' ? 'Exportar Propuesta PDF' : 'Exportar Matriz PDF'}
+              {currentPeriodoObj
+                ? (modoVista === 'cliente' ? `Exportar Cierre ${currentPeriodoObj.nombre}` : `Exportar Liquidación ${currentPeriodoObj.id}`)
+                : (modoVista === 'cliente' ? 'Exportar Propuesta PDF' : 'Exportar Matriz PDF')}
             </button>
 
             <button
@@ -1011,6 +1227,286 @@ export default function MatrizCostosPage() {
             </button>
           </div>
         </div>
+
+        {/* Barra de Períodos y Cierres Mensuales */}
+        <div className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-thin">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mr-1 whitespace-nowrap">
+              <MdCalendarToday className="text-indigo-600" size={15} />
+              Período:
+            </span>
+
+            {/* Tab: Todos los Tiempos */}
+            <button
+              type="button"
+              onClick={() => setSelectedPeriodo('TODOS')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition whitespace-nowrap flex items-center gap-1.5 ${
+                selectedPeriodo === 'TODOS'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Todos los Tiempos
+              <span className={`px-1.5 py-0.2 text-[10px] rounded-full ${
+                selectedPeriodo === 'TODOS' ? 'bg-slate-700 text-slate-200' : 'bg-slate-200 text-slate-600'
+              }`}>
+                {computedFeatures.length}
+              </span>
+            </button>
+
+            {/* Tabs de Meses */}
+            {periodos.map((p) => {
+              const countInP = computedFeatures.filter((f) => f.periodo === p.id).length;
+              const isSelected = selectedPeriodo === p.id;
+              const isCerrado = p.estado === 'cerrado' || p.estado === 'facturado';
+
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setSelectedPeriodo(p.id)}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-xl transition whitespace-nowrap flex items-center gap-1.5 border ${
+                    isSelected
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                      : isCerrado
+                      ? 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      : 'bg-emerald-50 text-emerald-900 border-emerald-200 hover:bg-emerald-100'
+                  }`}
+                >
+                  {isCerrado ? (
+                    <MdLock size={13} className={isSelected ? 'text-white' : 'text-slate-400'} />
+                  ) : (
+                    <MdLockOpen size={13} className={isSelected ? 'text-white' : 'text-emerald-600'} />
+                  )}
+                  {p.nombre}
+                  <span
+                    className={`px-1.5 py-0.2 text-[10px] rounded-full font-bold ${
+                      isSelected
+                        ? 'bg-blue-800 text-white'
+                        : isCerrado
+                        ? 'bg-slate-200 text-slate-700'
+                        : 'bg-emerald-200 text-emerald-950'
+                    }`}
+                  >
+                    {countInP}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setNewPeriodoMes(getCurrentPeriodoId());
+              setIsNewPeriodoModalOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition whitespace-nowrap shadow-2xs self-start md:self-auto"
+          >
+            <MdAdd size={15} />
+            + Aperturar Mes
+          </button>
+        </div>
+
+        {/* Panel Destacado de Liquidación Mensual (Cuando hay un mes seleccionado) */}
+        {selectedPeriodo !== 'TODOS' && currentPeriodoObj && (
+          <div className={`p-5 rounded-2xl border shadow-sm transition space-y-4 ${
+            currentPeriodoObj.estado === 'cerrado' || currentPeriodoObj.estado === 'facturado'
+              ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white border-slate-800'
+              : 'bg-gradient-to-br from-white via-slate-50 to-emerald-50/40 text-slate-900 border-emerald-200'
+          }`}>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b pb-3 border-slate-200/40">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl ${
+                  currentPeriodoObj.estado === 'cerrado' || currentPeriodoObj.estado === 'facturado'
+                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                    : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                }`}>
+                  <MdCalendarToday size={22} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-black tracking-tight">
+                      Cierre Mensual: {currentPeriodoObj.nombre}
+                    </h3>
+                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider ${
+                      currentPeriodoObj.estado === 'cerrado'
+                        ? 'bg-blue-500/30 text-blue-200 border border-blue-400/40'
+                        : currentPeriodoObj.estado === 'facturado'
+                        ? 'bg-emerald-500/30 text-emerald-200 border border-emerald-400/40'
+                        : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    }`}>
+                      {currentPeriodoObj.estado === 'cerrado'
+                        ? '🔒 Cerrado / Para Cobro'
+                        : currentPeriodoObj.estado === 'facturado'
+                        ? '✓ Facturado / Pagado'
+                        : '🟢 Abierto / En Curso'}
+                    </span>
+                  </div>
+                  <p className={`text-xs ${
+                    currentPeriodoObj.estado === 'cerrado' || currentPeriodoObj.estado === 'facturado'
+                      ? 'text-slate-300'
+                      : 'text-slate-500'
+                  }`}>
+                    {currentPeriodoObj.estado === 'cerrado'
+                      ? 'Período cerrado formalmente. Horas y liquidación calculadas según las tareas realizadas.'
+                      : 'Liquidación mensual calculada según las horas y tarifas de las tareas realizadas en este ciclo.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Botones de Acción del Período */}
+              <div className="flex flex-wrap items-center gap-2">
+                {currentPeriodoObj.estado === 'abierto' ? (
+                  <button
+                    type="button"
+                    onClick={() => setPeriodoToClose(currentPeriodoObj)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition shadow-xs"
+                    title="Cerrar el período del mes y congelar las horas para la UGEL"
+                  >
+                    <MdLock size={15} />
+                    Cerrar Mes para Cobro
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleEstadoPeriodo(currentPeriodoObj, 'abierto')}
+                      disabled={isClosingPeriod}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-300 bg-white/10 hover:bg-white/20 rounded-xl transition border border-white/20"
+                      title="Reabrir mes para permitir registrar o corregir funcionalidades"
+                    >
+                      <MdLockOpen size={14} />
+                      Reabrir Mes
+                    </button>
+                    {currentPeriodoObj.estado !== 'facturado' && (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleEstadoPeriodo(currentPeriodoObj, 'facturado')}
+                        disabled={isClosingPeriod}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-xs"
+                      >
+                        <MdDoneAll size={15} />
+                        Marcar como Pagado
+                      </button>
+                    )}
+                  </>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    exportarMatrizCostosPDF({
+                      features: filteredFeatures,
+                      config,
+                      modoVista,
+                      periodoActual: currentPeriodoObj
+                    })
+                  }
+                  disabled={filteredFeatures.length === 0}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-xs"
+                  title="Exportar informe oficial de conformidad mensual en PDF con firmas"
+                >
+                  <MdPictureAsPdf size={15} />
+                  Descargar Informe del Mes
+                </button>
+              </div>
+            </div>
+
+            {/* Barra de Progreso de Tareas */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs font-semibold">
+                <span className={currentPeriodoObj.estado === 'cerrado' || currentPeriodoObj.estado === 'facturado' ? 'text-slate-300' : 'text-slate-600'}>
+                  Avance de Funcionalidades: <strong>{stats.completadas} de {filteredFeatures.length} completadas</strong>
+                </span>
+                <span className="font-bold text-emerald-500">
+                  {stats.porcentajeCompletado}%
+                </span>
+              </div>
+              <div className="w-full h-2.5 bg-slate-200/50 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500 bg-emerald-500"
+                  style={{ width: `${stats.porcentajeCompletado}%` }}
+                />
+              </div>
+            </div>
+
+            {/* 4 Métricas Clave de las Tareas Realizadas */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+              {/* Horas Totales Realizadas */}
+              <div className={`p-3 rounded-xl border ${
+                currentPeriodoObj.estado === 'cerrado' || currentPeriodoObj.estado === 'facturado'
+                  ? 'bg-white/5 border-white/10'
+                  : 'bg-white border-slate-200'
+              }`}>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  Horas Totales Invertidas
+                </p>
+                <p className={`text-lg font-black mt-0.5 ${
+                  currentPeriodoObj.estado === 'cerrado' || currentPeriodoObj.estado === 'facturado'
+                    ? 'text-white'
+                    : 'text-slate-800'
+                }`}>
+                  {stats.totalHoras.toFixed(1)} <span className="text-xs font-normal text-slate-400">hrs</span>
+                </p>
+                <p className="text-[10px] text-slate-400">En {filteredFeatures.length} funcionalidades</p>
+              </div>
+
+              {/* Entregables */}
+              <div className={`p-3 rounded-xl border ${
+                currentPeriodoObj.estado === 'cerrado' || currentPeriodoObj.estado === 'facturado'
+                  ? 'bg-white/5 border-white/10'
+                  : 'bg-white border-slate-200'
+              }`}>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  Entregables / Features
+                </p>
+                <p className={`text-lg font-black mt-0.5 ${
+                  currentPeriodoObj.estado === 'cerrado' || currentPeriodoObj.estado === 'facturado'
+                    ? 'text-white'
+                    : 'text-slate-800'
+                }`}>
+                  {stats.completadas} / {filteredFeatures.length}
+                </p>
+                <p className="text-[10px] text-slate-400">{stats.porcentajeCompletado}% finalizado</p>
+              </div>
+
+              {/* Tarifa / Hora */}
+              <div className={`p-3 rounded-xl border ${
+                currentPeriodoObj.estado === 'cerrado' || currentPeriodoObj.estado === 'facturado'
+                  ? 'bg-white/5 border-white/10'
+                  : 'bg-white border-slate-200'
+              }`}>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  Tarifa de Desarrollo
+                </p>
+                <p className={`text-lg font-black mt-0.5 ${
+                  currentPeriodoObj.estado === 'cerrado' || currentPeriodoObj.estado === 'facturado'
+                    ? 'text-white'
+                    : 'text-slate-800'
+                }`}>
+                  {currencySymbol} {config.defaultHourlyRate || 50}/hr
+                </p>
+                <p className="text-[10px] text-slate-400">Tarifa horaria pactada</p>
+              </div>
+
+              {/* Total a Liquidar (Costo Real de las Tareas) */}
+              <div className={`p-3 rounded-xl border ${
+                currentPeriodoObj.estado === 'cerrado' || currentPeriodoObj.estado === 'facturado'
+                  ? 'bg-emerald-950/60 border-emerald-500/40'
+                  : 'bg-emerald-50 border-emerald-300'
+              }`}>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">
+                  Total Liquidación del Mes
+                </p>
+                <p className="text-xl font-black mt-0.5 text-emerald-500">
+                  {currencySymbol} {stats.totalCosto.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-[10px] text-emerald-600/80 font-medium">Monto según tareas realizadas</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Métricas / KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1308,6 +1804,8 @@ export default function MatrizCostosPage() {
         onSave={handleSaveFeature}
         editingFeature={editingFeature}
         config={config}
+        periodosDisponibles={periodos}
+        defaultPeriodoId={selectedPeriodo !== 'TODOS' ? selectedPeriodo : getCurrentPeriodoId()}
       />
 
       {/* Modal Ajustes / Configuración */}
@@ -1333,6 +1831,125 @@ export default function MatrizCostosPage() {
         onImport={handleImportSubFeatures}
         config={config}
       />
+
+      {/* Modal Aperturar Nuevo Mes / Período */}
+      {isNewPeriodoModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+            <div className="flex items-center justify-between px-6 py-4 bg-slate-900 text-white">
+              <div>
+                <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                  <MdCalendarToday className="text-indigo-400" size={18} />
+                  Aperturar Nuevo Período Mensual
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Inicia un nuevo ciclo de liquidación y seguimiento de features
+                </p>
+              </div>
+              <button
+                onClick={() => setIsNewPeriodoModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+              >
+                <IoClose size={22} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                  Mes / Período (Formato AAAA-MM)
+                </label>
+                <input
+                  type="month"
+                  value={newPeriodoMes}
+                  onChange={(e) => setNewPeriodoMes(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-800 bg-white"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Nombre visible: <strong>{formatPeriodoNombre(newPeriodoMes)}</strong>
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsNewPeriodoModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCrearNuevoPeriodo}
+                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition"
+                >
+                  Aperturar Período
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmación Cierre de Mes */}
+      {periodoToClose && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 border border-slate-200">
+            <div className="flex items-center gap-3 text-amber-600 bg-amber-50 p-3 rounded-xl border border-amber-200">
+              <MdLock size={28} className="shrink-0" />
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  ¿Cerrar Período {periodoToClose.nombre}?
+                </h3>
+                <p className="text-xs text-slate-600">
+                  Al cerrar el mes se congelarán las horas y el total liquidado según las tareas realizadas.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Horas Trabajadas:</span>
+                <strong className="text-slate-800">{stats.totalHoras.toFixed(1)} hrs</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Funcionalidades:</span>
+                <strong className="text-slate-800">{filteredFeatures.length} entregables ({stats.completadas} completadas)</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Tarifa / Hora:</span>
+                <strong className="text-slate-800">{currencySymbol} {config.defaultHourlyRate || 50}/hr</strong>
+              </div>
+              <div className="flex justify-between border-t border-slate-200 pt-2 text-sm font-black text-emerald-700">
+                <span>Total Liquidación del Mes:</span>
+                <span>{currencySymbol} {stats.totalCosto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-500">
+              * Podrás reabrir el período en cualquier momento si necesitas agregar o corregir tareas.
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setPeriodoToClose(null)}
+                className="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleEstadoPeriodo(periodoToClose, 'cerrado')}
+                disabled={isClosingPeriod}
+                className="px-4 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition shadow-xs disabled:opacity-50"
+              >
+                {isClosingPeriod ? 'Cerrando...' : 'Confirmar Cierre de Mes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Confirmación de Eliminación */}
       {featureToDelete && (

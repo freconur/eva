@@ -234,8 +234,16 @@ const SortableFeatureRow: React.FC<SortableFeatureRowProps> = ({
                 />
               </div>
 
-              <div className="text-[11px] text-slate-400 font-medium mt-0.5">
-                {feature.modulo}
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium mt-0.5">
+                <span>{feature.modulo}</span>
+                {(feature.mesNombre || feature.periodo) && (
+                  <>
+                    <span className="text-slate-300">•</span>
+                    <span className="text-emerald-800 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.2 rounded text-[10px] font-semibold">
+                      {feature.mesNombre || feature.periodo}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
