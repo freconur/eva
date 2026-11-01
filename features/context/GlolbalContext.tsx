@@ -1,6 +1,7 @@
-import { createContext, useContext, useReducer, ReactNode, Dispatch } from "react";
+import { createContext, useContext, useReducer, useEffect, ReactNode, Dispatch } from "react";
 import { AppReducerValues, AppActions } from "../types/types";
 import { appReducer } from "../reducer/appReducer"
+import { AppAction } from "../actions/appAction";
 interface Props {
   children: ReactNode
 }
@@ -102,9 +103,26 @@ export const useGlobalContext = () => useContext(GlobalContext)[0]
 export const useGlobalContextDispatch = () => useContext(GlobalContext)[1]
 
 export const GlobalContextProvider = ({ children }: Props) => {
+  const [state, dispatch] = useReducer(appReducer, initialState);
+
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('eva_sidebar_collapsed');
+        if (stored !== null) {
+          dispatch({
+            type: AppAction.TOGGLE_SIDEBAR_COLLAPSED,
+            payload: stored === 'true'
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("No se pudo leer eva_sidebar_collapsed de localStorage", e);
+    }
+  }, []);
 
   return (
-    <GlobalContext.Provider value={useReducer(appReducer, initialState)}>
+    <GlobalContext.Provider value={[state, dispatch]}>
       {children}
     </GlobalContext.Provider>
   )

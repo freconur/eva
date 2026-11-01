@@ -9,7 +9,7 @@
   top: 0;
   bottom: 0;
   left: 0;
-  width: 280px;
+  width: 250px;
   border-radius: 0;
   background: linear-gradient(175deg, 
     var(--color-sidebar-bg, #141d2b) 0%, 
@@ -90,64 +90,85 @@
     opacity: 1 !important;
     pointer-events: auto !important;
     height: 100vh;
-    width: 280px;
+    width: 250px;
   }
 
   .sidebar.collapsed {
-    width: 80px;
+    width: 64px;
     overflow: visible !important;
   }
 }
 
-/* ── Collapse Toggle Button ───────────────────────────── */
+/* ── Sidebar Footer & Collapse Toggle Button (Firebase Style) ─ */
+.sidebarFooter {
+  display: none;
+}
+
 .collapseToggleBtn {
   display: none;
 }
 
 @media (min-width: 1024px) {
-  .collapseToggleBtn {
+  .sidebarFooter {
     display: flex;
     position: absolute;
-    top: 14px;
-    right: 14px;
-    width: 32px;
-    height: 32px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 54px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: color-mix(in srgb, var(--color-sidebar-bg, #141d2b) 95%, #000000);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 14px;
+    z-index: 2001;
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .collapsed .sidebarFooter {
+    justify-content: center;
+    padding: 0;
+    width: 64px;
+  }
+
+  .collapseToggleBtn {
+    display: flex;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 50%;
     align-items: center;
     justify-content: center;
     color: #e2e8f0;
     cursor: pointer;
-    z-index: 2001;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    outline: none;
+    padding: 0;
   }
 
   .collapseToggleBtn svg {
-    font-size: 0.95rem;
+    font-size: 1.15rem;
     transition: transform 0.25s ease;
   }
 
   .collapseToggleBtn:hover {
-    background: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 15%, transparent);
+    background: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 18%, rgba(255, 255, 255, 0.15));
     color: var(--color-sidebar-accent, #f5c518);
-    border-color: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 40%, transparent);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 25%, transparent);
+    border-color: color-mix(in srgb, var(--color-sidebar-accent, #f5c518) 40%, rgba(255, 255, 255, 0.3));
+    transform: scale(1.08);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   }
 
   .collapseToggleBtn:active {
-    transform: translateY(0) scale(0.96);
+    transform: scale(0.95);
   }
 
-  .collapsed .collapseToggleBtn {
-    right: 50%;
-    transform: translateX(50%);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
+  .collapseToggleBtn:focus-visible {
+    box-shadow: 0 0 0 2px var(--color-sidebar-accent, #f5c518);
   }
 }
 
@@ -215,7 +236,7 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 42px 0 20px 0;
+  padding: 18px 0 68px 0;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
   position: relative;
@@ -225,7 +246,8 @@
 @media (min-width: 1024px) {
   .collapsed .sidebarContent {
     overflow: visible !important;
-    padding-top: 48px;
+    padding-top: 18px;
+    padding-bottom: 68px;
   }
 }
 
@@ -268,13 +290,16 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
-  margin: 3px 12px;
-  border-radius: 12px;
+  padding: 9px 12px;
+  margin: 3px 8px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   background: transparent;
   border: 1px solid transparent;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
 }
 
 .dashboardMenuItem:hover {
@@ -314,10 +339,11 @@
 .dashboardLink {
   color: #f1f5f9;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 500;
   letter-spacing: 0.01em;
   flex: 1;
+  min-width: 0;
   transition: color 0.2s ease;
   z-index: 1;
   white-space: nowrap;
@@ -355,15 +381,16 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
-  margin: 3px 12px;
-  border-radius: 12px;
+  padding: 9px 12px;
+  margin: 3px 8px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
   background: transparent;
   border: 1px solid transparent;
   position: relative;
+  min-width: 0;
 }
 
 .menuHeader:hover {
@@ -393,10 +420,11 @@
 
 .link {
   color: #f1f5f9;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 500;
   letter-spacing: 0.01em;
   flex: 1;
+  min-width: 0;
   transition: color 0.2s ease;
   z-index: 1;
   white-space: nowrap;
@@ -434,8 +462,8 @@
 .submenu {
   position: relative;
   list-style: none;
-  margin: 3px 12px 6px 32px;
-  padding: 0 0 0 14px;
+  margin: 3px 8px 6px 24px;
+  padding: 0 0 0 12px;
   max-height: 0;
   opacity: 0;
   overflow: hidden;
@@ -483,18 +511,28 @@
 /* Link inside tree submenu */
 .submenuLink {
   position: relative;
-  display: flex;
-  align-items: center;
-  padding: 6px 12px;
+  display: block;
+  padding: 6px 10px;
   color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
-  font-size: 0.83rem;
+  font-size: 0.825rem;
   font-weight: 400;
   border-radius: 8px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.submenuLink span {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .submenuLink:hover {
@@ -523,9 +561,9 @@
     justify-content: center;
     padding: 0;
     margin: 4px auto;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
   }
 
   .collapsed .dashboardMenuItem:hover,
@@ -600,8 +638,8 @@
   .collapsed .menuItem::after {
     content: "";
     position: absolute;
-    top: -4px;
-    bottom: -4px;
+    top: -8px;
+    bottom: -8px;
     right: -16px;
     width: 24px;
     z-index: 9998;
@@ -618,7 +656,8 @@
     left: calc(100% + 8px);
     top: -4px;
     min-width: 210px;
-    max-width: 290px;
+    max-width: 320px;
+    width: max-content;
     background: linear-gradient(160deg, #182232 0%, #0f172a 100%);
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 12px;
@@ -633,9 +672,48 @@
     transition: opacity 0.08s ease 0s,
                 transform 0.08s ease 0s,
                 visibility 0.08s ease 0s;
-    max-height: 80vh;
+    max-height: calc(100vh - 24px);
     overflow-y: auto;
     margin: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  }
+
+  .collapsed .submenu::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .collapsed .submenu::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .collapsed .submenu::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 99px;
+  }
+
+  .collapsed .submenu::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Posicionamiento dinámico: apertura hacia arriba si está cerca del borde inferior */
+  .collapsed .menuItem[data-flyout-placement="top"] .submenu,
+  .collapsed .flyoutUp .submenu {
+    top: auto !important;
+    bottom: -4px !important;
+  }
+
+  .collapsed .menuItem[data-flyout-placement="bottom"] .submenu,
+  .collapsed .flyoutDown .submenu {
+    top: -4px !important;
+    bottom: auto !important;
+  }
+
+  /* Fallback CSS: los últimos dos elementos en cualquier lista del menú abren por defecto hacia arriba */
+  .collapsed .menuList > .menuItem:last-child .submenu,
+  .collapsed .menuList > .menuItem:nth-last-child(2) .submenu {
+    top: auto;
+    bottom: -4px;
   }
 
   /* Hide tree branch lines when collapsed into the flyout card */
@@ -655,8 +733,9 @@
     pointer-events: auto;
   }
 
-  /* Show flyout strictly on hover when collapsed */
-  .collapsed .menuItem:hover .submenu {
+  /* Show flyout strictly on hover when collapsed or when opened */
+  .collapsed .menuItem:hover .submenu,
+  .collapsed .itemOpen > .submenu {
     opacity: 1 !important;
     visibility: visible !important;
     transform: translateX(0) !important;
@@ -749,9 +828,9 @@
     justify-content: center;
     padding: 0;
     margin: 8px auto;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
   }
 }
 

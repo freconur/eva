@@ -28,6 +28,8 @@ export interface FeatureCostoItem {
   fecha?: string;
   periodo?: string; // ej. "2024-10", "2024-11"
   mesNombre?: string; // ej. "Octubre 2024"
+  periodoId?: string; // ej. "2026-10" o "2026-09"
+  estadoCobro?: 'pendiente' | 'incluido_en_corte' | 'facturado' | 'pagado';
   prioridad?: 'Baja' | 'Media' | 'Alta' | 'Crítica';
   notas?: string;
 }
@@ -92,13 +94,15 @@ interface ExportarMatrizProps {
   config: MatrizConfig;
   modoVista?: 'tecnico' | 'cliente';
   periodoActual?: PeriodoCostoItem | null;
+  periodoNombre?: string;
 }
 
 export const exportarMatrizCostosPDF = ({
   features,
   config,
   modoVista = 'tecnico',
-  periodoActual = null
+  periodoActual = null,
+  periodoNombre
 }: ExportarMatrizProps) => {
   const doc = new jsPDF({
     orientation: 'landscape',
@@ -157,10 +161,11 @@ export const exportarMatrizCostosPDF = ({
       21
     );
   } else {
+    const subtituloPeriodo = periodoNombre ? `Periodo: ${periodoNombre}` : 'Histórico Consolidado';
     doc.text(
       isCliente
-        ? `${config.projectName || 'Sistema EVA'} — Entregables y Soluciones para la Institución`
-        : `${config.projectName || 'Sistema EVA'} — Registro y Liquidación de Features`,
+        ? `${config.projectName || 'Sistema EVA'} — ${subtituloPeriodo} | Entregables y Soluciones`
+        : `${config.projectName || 'Sistema EVA'} — ${subtituloPeriodo} | Registro y Liquidación`,
       14,
       21
     );
@@ -180,9 +185,9 @@ export const exportarMatrizCostosPDF = ({
 
   // Caja de Información Izquierda
   doc.setFillColor(248, 250, 252); // slate-50
-  doc.roundedRect(14, currentY, 130, 26, 2, 2, 'F');
+  doc.roundedRect(14, currentY, 130, 28, 2, 2, 'F');
   doc.setDrawColor(226, 232, 240); // slate-200
-  doc.roundedRect(14, currentY, 130, 26, 2, 2, 'S');
+  doc.roundedRect(14, currentY, 130, 28, 2, 2, 'S');
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(30, 41, 59);
@@ -190,20 +195,22 @@ export const exportarMatrizCostosPDF = ({
 
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(71, 85, 105);
-  doc.text(`Desarrollador: ${config.developerName || 'Desarrollador Principal'}`, 18, currentY + 12);
-  doc.text(`DNI / Identificador: ${config.developerDni || '47163626'}`, 18, currentY + 17);
+  doc.text(`Desarrollador: ${config.developerName || 'Desarrollador Principal'} (DNI: ${config.developerDni || '47163626'})`, 18, currentY + 12);
+  doc.text(`Cliente / Proyecto: ${config.clientName || 'UGEL 13 - Yauyos / EVA'}`, 18, currentY + 17);
   if (periodoActual) {
     doc.text(`Período: ${periodoActual.nombre}  (Cierre: ${periodoActual.estado.toUpperCase()})`, 18, currentY + 22);
   } else {
-    doc.text(`Cliente / Proyecto: ${config.clientName || 'UGEL 13 - Yauyos / EVA'}`, 18, currentY + 22);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(isCliente ? 16 : 37, isCliente ? 185 : 99, isCliente ? 129 : 235);
+    doc.text(`Periodo Liquidado: ${periodoNombre || 'Histórico Consolidado'}`, 18, currentY + 23);
   }
 
   // Caja de Métricas Resumen Derecha
   const metricsWidth = pageWidth - 14 - 150;
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(150, currentY, metricsWidth, 26, 2, 2, 'F');
+  doc.roundedRect(150, currentY, metricsWidth, 28, 2, 2, 'F');
   doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(150, currentY, metricsWidth, 26, 2, 2, 'S');
+  doc.roundedRect(150, currentY, metricsWidth, 28, 2, 2, 'S');
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(30, 41, 59);
@@ -218,7 +225,7 @@ export const exportarMatrizCostosPDF = ({
   doc.setTextColor(22, 101, 52); // green-800
   doc.text(`Total Liquidación del Período: ${currencySymbol} ${totalCosto.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 154, currentY + 22);
 
-  currentY += 32;
+  currentY += 34;
 
   // 3. Tabla Principal de Features
   const tipoClienteMap: Record<string, string> = {
@@ -519,11 +526,12 @@ export const exportarMatrizCostosPDF = ({
 
   // Descarga
   const sanitizeName = (config.projectName || 'EVA').replace(/[^a-zA-Z0-9]/g, '_');
+  const sanitizedPeriod = (periodoNombre || 'Consolidado').replace(/[^a-zA-Z0-9]/g, '_');
   const dateStr = new Date().toISOString().split('T')[0];
   const filename = periodoActual
     ? `Liquidacion_${periodoActual.id}_${sanitizeName}_${isCliente ? 'Cliente' : 'Tecnico'}.pdf`
     : isCliente
-    ? `Propuesta_Funcionalidades_${sanitizeName}_${dateStr}.pdf`
-    : `Matriz_Costos_${sanitizeName}_${dateStr}.pdf`;
+    ? `Propuesta_Funcionalidades_${sanitizeName}_${sanitizedPeriod}_${dateStr}.pdf`
+    : `Matriz_Costos_${sanitizeName}_${sanitizedPeriod}_${dateStr}.pdf`;
   doc.save(filename);
 };
