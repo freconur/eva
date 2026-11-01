@@ -259,34 +259,37 @@ export const CustomSidebarRenderer: React.FC<Props> = ({
 
         if (isInternal) {
           return (
-            <div
+            <Link
               key={item.id}
+              href={item.route}
               className={`${styles.dashboardMenuItem} ${isActive ? styles.activeLink : ''}`}
+              aria-haspopup="true"
             >
               {renderCustomSidebarIcon(item.iconName, `${styles.dashboardIcon}`)}
-              <Link className={styles.dashboardLink} href={item.route} aria-haspopup="true">
+              <span className={styles.dashboardLink}>
                 {item.label}
-              </Link>
+              </span>
               <span className={styles.tooltip}>{item.label}</span>
-            </div>
+            </Link>
           );
         }
 
         return (
-          <div key={item.id} className={styles.dashboardMenuItem}>
+          <a
+            key={item.id}
+            className={`${styles.dashboardMenuItem} flex items-center justify-between`}
+            href={item.route}
+            target={item.openInNewTab !== false ? '_blank' : '_self'}
+            rel="noopener noreferrer"
+            aria-haspopup="true"
+          >
             {renderCustomSidebarIcon(item.iconName, `${styles.dashboardIcon}`)}
-            <a
-              className={`${styles.dashboardLink} flex items-center justify-between w-full`}
-              href={item.route}
-              target={item.openInNewTab !== false ? '_blank' : '_self'}
-              rel="noopener noreferrer"
-              aria-haspopup="true"
-            >
+            <span className={`${styles.dashboardLink} flex items-center justify-between w-full`}>
               <span className="truncate">{item.label}</span>
               <RiExternalLinkLine className="text-xs opacity-60 shrink-0 ml-1.5" />
-            </a>
+            </span>
             <span className={styles.tooltip}>{item.label}</span>
-          </div>
+          </a>
         );
       })}
     </>

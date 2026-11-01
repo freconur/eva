@@ -31,7 +31,8 @@ import {
   FaGraduationCap, 
   FaChalkboardTeacher, 
   FaBook, 
-  FaGlobe 
+  FaGlobe,
+  FaGlobeAmericas
 } from 'react-icons/fa';
 import { 
   LuListTodo, 
@@ -295,6 +296,8 @@ export const AVAILABLE_ICONS: AvailableIconOption[] = [
   { name: 'MdDescription', label: 'Documento', component: MdDescription },
   { name: 'MdBarChart', label: 'Estadísticas', component: MdBarChart },
   { name: 'MdTableChart', label: 'Tabla de Datos', component: MdTableChart },
+  { name: 'FaGlobeAmericas', label: 'Regional / Global', component: FaGlobeAmericas },
+  { name: 'FaChalkboardTeacher', label: 'Especialista / Formador', component: FaChalkboardTeacher },
   { name: 'MdPublic', label: 'Web Pública', component: MdPublic },
   { name: 'LuSparkles', label: 'Especial', component: LuSparkles },
 ];
@@ -307,6 +310,8 @@ const ICONS_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   FaUserGraduate,
   FaUserTie,
   FaUsers,
+  FaGlobeAmericas,
+  FaChalkboardTeacher,
   MdAccountBalance,
   MdFolder,
   MdSchool,

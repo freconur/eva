@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { IoClose } from 'react-icons/io5';
 import { MdAutoAwesome, MdFormatListNumbered, MdAdd, MdDeleteOutline } from 'react-icons/md';
-import { FeatureCostoItem, MatrizConfig, SubItemDetallado } from '@/features/utils/exportarMatrizCostosPDF';
+import { FeatureCostoItem, MatrizConfig, SubItemDetallado, PeriodoCostoItem } from '@/features/utils/exportarMatrizCostosPDF';
+import {
+  getCurrentPeriodoId,
+  formatPeriodoNombre,
+  normalizeFeaturePeriodo,
+  getAdjacentPeriodoId
+} from '@/features/utils/matrizPeriodosUtils';
 import { toast } from 'react-toastify';
 
 interface Props {
@@ -10,6 +16,10 @@ interface Props {
   onSave: (feature: FeatureCostoItem) => Promise<void>;
   editingFeature: FeatureCostoItem | null;
   config: MatrizConfig;
+  periodosDisponibles?: PeriodoCostoItem[];
+  defaultPeriodoId?: string;
+  currentPeriodoId?: string;
+  availablePeriodos?: string[];
 }
 
 const MODULOS_PREDEFINIDOS = [
@@ -41,10 +51,15 @@ export default function ModalFeatureCosto({
   onClose,
   onSave,
   editingFeature,
-  config
+  config,
+  periodosDisponibles = [],
+  defaultPeriodoId = '',
+  currentPeriodoId,
+  availablePeriodos = []
 }: Props) {
   const [codigo, setCodigo] = useState('');
   const [titulo, setTitulo] = useState('');
+  const [periodo, setPeriodo] = useState(defaultPeriodoId || '');
   const [modulo, setModulo] = useState(MODULOS_PREDEFINIDOS[0]);
   const [moduloPersonalizado, setModuloPersonalizado] = useState('');
   const [tipo, setTipo] = useState(TIPOS_TRABAJO[0]);
@@ -55,6 +70,9 @@ export default function ModalFeatureCosto({
   const [costoTotal, setCostoTotal] = useState<number | ''>(200);
   const [estado, setEstado] = useState<'Planificado' | 'En Desarrollo' | 'Completado' | 'Entregado' | 'Facturado'>('Completado');
   const [prioridad, setPrioridad] = useState<'Baja' | 'Media' | 'Alta' | 'Crítica'>('Media');
+  const [periodoId, setPeriodoId] = useState(currentPeriodoId || getCurrentPeriodoId());
+  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [estadoCobro, setEstadoCobro] = useState<'pendiente' | 'incluido_en_corte' | 'facturado' | 'pagado'>('pendiente');
   const [descripcion, setDescripcion] = useState('');
   const [tituloCliente, setTituloCliente] = useState('');
   const [descripcionCliente, setDescripcionCliente] = useState('');
@@ -67,6 +85,7 @@ export default function ModalFeatureCosto({
     if (editingFeature) {
       setCodigo(editingFeature.codigo || '');
       setTitulo(editingFeature.titulo || '');
+      setPeriodo(editingFeature.periodo || defaultPeriodoId || '');
       setTituloCliente(editingFeature.tituloCliente || '');
       setDescripcionCliente(editingFeature.descripcionCliente || '');
       setSubItems(editingFeature.subItems ? [...editingFeature.subItems] : []);
@@ -85,11 +104,15 @@ export default function ModalFeatureCosto({
       setCostoTotal(editingFeature.costoTotal ?? 0);
       setEstado(editingFeature.estado || 'Completado');
       setPrioridad(editingFeature.prioridad || 'Media');
+      setPeriodoId(editingFeature.periodoId || normalizeFeaturePeriodo(editingFeature));
+      setFecha(editingFeature.fecha || new Date().toISOString().split('T')[0]);
+      setEstadoCobro(editingFeature.estadoCobro || 'pendiente');
       setDescripcion(editingFeature.descripcion || '');
       setNotas(editingFeature.notas || '');
     } else {
       setCodigo('');
       setTitulo('');
+      setPeriodo(defaultPeriodoId || '');
       setTituloCliente('');
       setDescripcionCliente('');
       setSubItems([]);
@@ -104,10 +127,14 @@ export default function ModalFeatureCosto({
       setCostoTotal(4 * tarifa);
       setEstado('Completado');
       setPrioridad('Media');
+      const activePeriod = (currentPeriodoId && currentPeriodoId !== 'TODOS') ? currentPeriodoId : getCurrentPeriodoId();
+      setPeriodoId(activePeriod);
+      setFecha(new Date().toISOString().split('T')[0]);
+      setEstadoCobro('pendiente');
       setDescripcion('');
       setNotas('');
     }
-  }, [editingFeature, isOpen, config.defaultHourlyRate]);
+  }, [editingFeature, isOpen, config.defaultHourlyRate, defaultPeriodoId, currentPeriodoId]);
 
   const handleAddSubItem = () => {
     const parentCode = codigo.trim() ? codigo.replace(/[^0-9]/g, '') : '1';
@@ -213,11 +240,14 @@ export default function ModalFeatureCosto({
 
     setIsSaving(true);
     try {
+      const selectedPeriodObj = periodosDisponibles.find((p) => p.id === periodo);
       const dataToSave: FeatureCostoItem = {
         ...(editingFeature?.id ? { id: editingFeature.id } : {}),
         codigo: codigo.trim() || undefined,
         titulo: titulo.trim(),
         tituloCliente: tituloCliente.trim() || undefined,
+        periodo: periodo.trim() || undefined,
+        mesNombre: selectedPeriodObj?.nombre || undefined,
         modulo: moduloFinal,
         tipo,
         modalidad,
@@ -228,10 +258,12 @@ export default function ModalFeatureCosto({
         costoTotal: Number(costoTotal) || 0,
         estado,
         prioridad,
+        periodoId: periodoId.trim() || currentPeriodoId || getCurrentPeriodoId(),
+        fecha: fecha || new Date().toISOString().split('T')[0],
+        estadoCobro,
         descripcion: descripcion.trim(),
         descripcionCliente: descripcionCliente.trim() || undefined,
-        notas: notas.trim(),
-        fecha: editingFeature?.fecha || new Date().toISOString().split('T')[0]
+        notas: notas.trim()
       };
 
       await onSave(dataToSave);
@@ -300,8 +332,8 @@ export default function ModalFeatureCosto({
             </div>
           </div>
 
-          {/* Módulo y Tipo */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Módulo, Tipo y Período */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                 Módulo Afectado
@@ -339,6 +371,85 @@ export default function ModalFeatureCosto({
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Período / Mes
+              </label>
+              <select
+                value={periodo}
+                onChange={(e) => setPeriodo(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium text-slate-800"
+              >
+                {periodosDisponibles.length > 0 ? (
+                  periodosDisponibles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre} {p.estado === 'cerrado' ? '(Cerrado)' : ''}
+                    </option>
+                  ))
+                ) : (
+                  <option value={new Date().toISOString().substring(0, 7)}>
+                    Mes Actual
+                  </option>
+                )}
+              </select>
+            </div>
+          </div>
+
+          {/* Periodo de Facturación, Fecha y Cobro */}
+          <div className="bg-blue-50/70 p-3.5 rounded-xl border border-blue-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1">
+                  📅 Mes de Facturación *
+                </label>
+                <input
+                  type="month"
+                  value={periodoId}
+                  onChange={(e) => setPeriodoId(e.target.value)}
+                  required
+                  className="w-full px-3 py-1.5 text-xs font-bold text-blue-900 bg-white border border-blue-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-[10px] text-blue-700 font-semibold mt-1">
+                  Asignado a: {formatPeriodoNombre(periodoId)}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                  Fecha de Realización
+                </label>
+                <input
+                  type="date"
+                  value={fecha}
+                  onChange={(e) => {
+                    const newF = e.target.value;
+                    setFecha(newF);
+                    // Si el usuario cambia la fecha, auto-sugerir periodoId si no se ha configurado
+                    if (newF && newF.length >= 7) {
+                      setPeriodoId(newF.slice(0, 7));
+                    }
+                  }}
+                  className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                  Estado de Liquidación
+                </label>
+                <select
+                  value={estadoCobro}
+                  onChange={(e) => setEstadoCobro(e.target.value as any)}
+                  className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                >
+                  <option value="pendiente">Pendiente de cobro</option>
+                  <option value="incluido_en_corte">Incluido en corte / acta</option>
+                  <option value="facturado">Facturado / Emitido</option>
+                  <option value="pagado">Pagado / Conforme</option>
+                </select>
+              </div>
             </div>
           </div>
 
