@@ -6,7 +6,8 @@ import {
 	RiIdCardLine,
 	RiHistoryLine,
 	RiSearchLine,
-	RiCameraLine
+	RiCameraLine,
+	RiArrowUpDownLine
 } from 'react-icons/ri';
 import { MdTrendingUp, MdPalette, MdSave, MdCheck } from 'react-icons/md';
 import { Line, Radar, Bar, Pie } from 'react-chartjs-2';
@@ -32,7 +33,7 @@ interface ModalEvolutionProgressProps {
 	chartOptions: any;
 	dimensionesEspecialistas: any[];
 	getRadarData: () => any;
-	getItemAnalysisData: () => any;
+	getItemAnalysisData: (order?: 'asc' | 'desc') => any;
 	getDistribucionGlobalData: () => any;
 	selectedModalEvalId?: string;
 	setSelectedModalEvalId?: (val: string) => void;
@@ -105,6 +106,7 @@ export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
 
 	const [isCopying, setIsCopying] = useState<string | null>(null);
 	const [copiedTab, setCopiedTab] = useState<string | null>(null);
+	const [brechasOrder, setBrechasOrder] = useState<'asc' | 'desc'>('asc');
 
 	const chartRefEvolucion = useRef<HTMLDivElement | null>(null);
 	const chartRefRadar = useRef<HTMLDivElement | null>(null);
@@ -740,74 +742,105 @@ export const ModalEvolutionProgress: React.FC<ModalEvolutionProgressProps> = ({
 								<div className={styles.chartConstrainedWrapper}>
 									<div className={styles.chartTabToolbar}>
 										<span className={styles.chartTabToolbarTitle}>Brechas Críticas</span>
-										<button
-											type="button"
-											className={`${styles.copyChartBtn} ${copiedTab === 'analisis' ? styles.copyChartBtnSuccess : ''}`}
-											onClick={() => handleCopyChart('analisis', chartRefAnalisis, 'Brechas Críticas')}
-											disabled={isCopying === 'analisis'}
-											title="Copiar imagen del gráfico al portapapeles para pegar (Ctrl + V)"
-										>
-											{copiedTab === 'analisis' ? (
-												<>
-													<MdCheck />
-													<span>¡Copiado!</span>
-												</>
-											) : isCopying === 'analisis' ? (
-												<>
-													<RiLoader4Line className={styles.spinningIcon} />
-													<span>Capturando...</span>
-												</>
-											) : (
-												<>
-													<RiCameraLine />
-													<span>Copiar captura</span>
-												</>
-											)}
-										</button>
+										<div className={styles.filterBarInline}>
+											<button
+												type="button"
+												className={styles.copyChartBtn}
+												onClick={() => setBrechasOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+												title="Invertir el orden de los criterios en el gráfico"
+											>
+												<RiArrowUpDownLine />
+												<span>{brechasOrder === 'asc' ? 'Más críticos primero' : 'Menos críticos primero'}</span>
+											</button>
+											<button
+												type="button"
+												className={`${styles.copyChartBtn} ${copiedTab === 'analisis' ? styles.copyChartBtnSuccess : ''}`}
+												onClick={() => handleCopyChart('analisis', chartRefAnalisis, 'Brechas Críticas')}
+												disabled={isCopying === 'analisis'}
+												title="Copiar imagen del gráfico al portapapeles para pegar (Ctrl + V)"
+											>
+												{copiedTab === 'analisis' ? (
+													<>
+														<MdCheck />
+														<span>¡Copiado!</span>
+													</>
+												) : isCopying === 'analisis' ? (
+													<>
+														<RiLoader4Line className={styles.spinningIcon} />
+														<span>Capturando...</span>
+													</>
+												) : (
+													<>
+														<RiCameraLine />
+														<span>Copiar captura</span>
+													</>
+												)}
+											</button>
+										</div>
 									</div>
 									<div ref={chartRefAnalisis} className={styles.chartCaptureContainer}>
 										<h3 className={styles.chartSpecialistTitle}>
 											Brechas Críticas de {especialistaNombre.toUpperCase()}
 										</h3>
-										<div className={styles.chartContainer} style={{ minHeight: '380px' }}>
-											{getItemAnalysisData() ? (
-												<Bar
-													data={getItemAnalysisData()!}
-													options={{
-														responsive: true,
-														maintainAspectRatio: false,
-														indexAxis: 'y' as const,
-														scales: {
-															x: { min: 0, max: (dataEvaluacionDocente?.escala || []).at(-1)?.value || 4 },
-															y: {
-																ticks: {
-																	autoSkip: false,
-																	font: { size: 12 }
+										{(() => {
+											const analysisData = getItemAnalysisData(brechasOrder);
+											if (!analysisData || !analysisData.labels || analysisData.labels.length === 0) {
+												return (
+													<div className={styles.chartContainer} style={{ minHeight: '380px' }}>
+														<div className={styles.perfectScoreBanner}>
+															<MdTrendingUp className={styles.perfectScoreIcon} />
+															<h3 className={styles.perfectScoreTitle}>Sin Criterios</h3>
+															<p className={styles.perfectScoreText}>No se encontraron criterios evaluados para este {targetNounSingular.toLowerCase()}.</p>
+														</div>
+													</div>
+												);
+											}
+
+											const dynamicAnalysisHeight = Math.max(380, analysisData.labels.length * 48);
+
+											return (
+												<div className={styles.chartContainer} style={{ minHeight: `${dynamicAnalysisHeight}px`, height: `${dynamicAnalysisHeight}px` }}>
+													<Bar
+														data={analysisData}
+														options={{
+															responsive: true,
+															maintainAspectRatio: false,
+															indexAxis: 'y' as const,
+															scales: {
+																x: { min: 0, max: (dataEvaluacionDocente?.escala || []).at(-1)?.value || 4 },
+																y: {
+																	ticks: {
+																		autoSkip: false,
+																		font: { size: 12 }
+																	}
 																}
-															}
-														},
-														plugins: {
-															title: { display: true, text: selectedModalEvalId === 'all' && historialSelected.length > 1 ? 'Evolución de Brechas Críticas por Etapa' : 'Top 5 Criterios con Menor Puntaje' },
-															legend: { display: selectedModalEvalId === 'all' && historialSelected.length > 1, position: 'bottom' },
-															tooltip: {
-																callbacks: {
-																	title: (context: any) => {
-																		const label = context[0]?.label;
-																		return Array.isArray(label) ? label.join(' ') : label;
+															},
+															plugins: {
+																title: {
+																	display: true,
+																	text: selectedModalEvalId === 'all' && historialSelected.length > 1
+																		? (brechasOrder === 'asc'
+																			? 'Evolución de Criterios por Etapa (Más Críticos a Menos Críticos)'
+																			: 'Evolución de Criterios por Etapa (Menos Críticos a Más Críticos)')
+																		: (brechasOrder === 'asc'
+																			? 'Criterios Ordenados de Más Críticos a Menos Críticos'
+																			: 'Criterios Ordenados de Menos Críticos a Más Críticos')
+																},
+																legend: { display: selectedModalEvalId === 'all' && historialSelected.length > 1, position: 'bottom' },
+																tooltip: {
+																	callbacks: {
+																		title: (context: any) => {
+																			const label = context[0]?.label;
+																			return Array.isArray(label) ? label.join(' ') : label;
+																		}
 																	}
 																}
 															}
-														}
-													}}
-												/>
-											) : (
-												<div className={styles.perfectScoreBanner}>
-													<MdTrendingUp className={styles.perfectScoreIcon} />
-													<h3 className={styles.perfectScoreTitle}>¡Excelente Desempeño!</h3>
-													<p className={styles.perfectScoreText}>El {targetNounSingular.toLowerCase()} alcanzó el puntaje máximo en todos los criterios evaluados. No se detectaron brechas críticas.</p>
+														}}
+													/>
 												</div>
-											)}
-										</div>
+											);
+										})()}
 									</div>
 								</div>
 							)}

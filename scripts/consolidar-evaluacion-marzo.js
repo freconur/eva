@@ -60,17 +60,26 @@ const db = admin.firestore();
 // si no las pasas por línea de comandos.
 // ============================================================================
 const IDS_EVALUACIONES = [
-  "2mdtmKI4xquimBSTaGMe",
-  "mMpJKnswFC3YdifhjdnI",
-  "AR0UBtIlU1ZRLzVjvlcb",
-  "k2XH0tSditRkvSZ7Vn7m",
-  "lblmQ9BOLpRq6gvtEem2",
-  "XCH9Pn836i7JrGQoXDFI",
-  "c0G65cNiYTeOAND63oPI",
-  "77M91Lt7mlJrVNzeL6hN",
-  "d5U7UqMHIT0nd3WXfO75",
-  "evgRfHCELqggo9NZHh6H",
+  "CPezmqMkuP3ltwqv4sOC", // 1ero Lectura Primaria MARZO
+  "VJsHgAJEWCwLJ4tZtq2h", // 1ero Matemática Primaria Marzo
+  "2mdtmKI4xquimBSTaGMe", // 2do Matemática Primaria Marzo
+  "mMpJKnswFC3YdifhjdnI", // 2do Lectura Primaria Marzo
+  "AR0UBtIlU1ZRLzVjvlcb", // 3ero Matemática Primaria Marzo
+  "k2XH0tSditRkvSZ7Vn7m", // 3ero Lectura Primaria Marzo
+  "lblmQ9BOLpRq6gvtEem2", // 4to Matemática Primaria Marzo
+  "XCH9Pn836i7JrGQoXDFI", // 4to Lectura Primaria Marzo
+  "c0G65cNiYTeOAND63oPI", // 5to Lectura Primaria Marzo
+  "77M91Lt7mlJrVNzeL6hN", // 5to Matemática Primaria Marzo
+  "d5U7UqMHIT0nd3WXfO75", // 6to Lectura Primaria Marzo
+  "evgRfHCELqggo9NZHh6H", // 6to Matemática Primaria Marzo
 ];
+
+// Mapeos históricos verificados (docentes unidocentes sin cuenta creada en marzo)
+const HISTORICAL_IE_MAPPINGS = {
+  '01332465': { institucion: '70160' },
+  '01845664': { institucion: '70140 Sullcacatura II' },
+  '02554836': { institucion: '72155 Uyuni' },
+};
 
 const DEFAULT_ANIO = 2026;
 const DEFAULT_MES = 2;
@@ -285,6 +294,35 @@ async function consolidarEvaluacion(idEval, explicitYear, explicitMonth, isDryRu
     let dniDir = st.dniDirector ? String(st.dniDirector).trim() : '';
     let dirProfile = dniDir ? directorProfileMap.get(dniDir) : null;
 
+    // Si no está en el mapa, intentar resolver mediante mapeo histórico o consulta on-demand
+    if (dniDir && !dirProfile) {
+      if (HISTORICAL_IE_MAPPINGS[dniDir]) {
+        dirProfile = HISTORICAL_IE_MAPPINGS[dniDir];
+        directorProfileMap.set(dniDir, dirProfile);
+      } else {
+        try {
+          const uSnap = await db.doc(`usuarios/${dniDir}`).get();
+          if (uSnap.exists) {
+            dirProfile = uSnap.data();
+            directorProfileMap.set(dniDir, dirProfile);
+          } else if (st.dniDocente) {
+            const docSnap = await db.doc(`usuarios/${st.dniDocente}`).get();
+            if (docSnap.exists) {
+              const dData = docSnap.data();
+              dirProfile = {
+                institucion: dData.institucion,
+                region: dData.region,
+                distrito: dData.distrito,
+              };
+              directorProfileMap.set(dniDir, dirProfile);
+            }
+          }
+        } catch (e) {
+          // Fallback silencioso
+        }
+      }
+    }
+
     let regId = null;
     if (st.region !== undefined && st.region !== null && !isNaN(Number(st.region))) {
       regId = Number(st.region);
@@ -346,7 +384,7 @@ async function consolidarEvaluacion(idEval, explicitYear, explicitMonth, isDryRu
         region: regId,
         nombres: dirProfile?.nombres || (dniDir ? 'Director' : `Directores UGEL ${regId}`),
         apellidos: dirProfile?.apellidos || (dniDir ? 'N/A' : ''),
-        institucion: dirProfile?.institucion || st.institucion || 'I.E. Consolidada',
+        institucion: dirProfile?.institucion || st.institucion || (dniDir ? `IE ${dniDir}` : `I.E. Sin Asignar (UGEL ${REGIONES_CATALOGO.find(r => r.id === regId)?.nombre || regId})`),
         distrito: dirProfile?.distrito || st.distrito || '',
         totalEstudiantes: 0,
         sumaPuntajes: 0,

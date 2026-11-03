@@ -104,6 +104,22 @@ const formatGradoDisplay = (gradoId: number): { label: string } => {
 };
 
 /**
+ * Normaliza y estandariza el nombre de la Institución Educativa para visualización,
+ * evitando duplicaciones de prefijos como "IE I.E." o "IE IE".
+ */
+export const formatNombreIe = (raw?: string, fallbackId?: string): string => {
+  if (!raw || !raw.trim()) {
+    return fallbackId ? `IE ${fallbackId}` : 'I.E. Sin Nombre';
+  }
+  const cleaned = raw.trim();
+  // Si ya empieza con IE, I.E., I.E o I. E., se preserva sin duplicar el prefijo
+  if (/^I\.?\s*E\.?/i.test(cleaned)) {
+    return cleaned.toUpperCase();
+  }
+  return `IE ${cleaned.toUpperCase()}`;
+};
+
+/**
  * Procesa la data consolidada de directores por UGEL para generar las métricas de la matriz
  */
 function calculateMetricasUgel(
@@ -222,9 +238,7 @@ function calculateMetricasUgel(
     const nivelRiesgo = getNivelRiesgo(avgPrev, criticas, baremo);
 
     const rawInstitucion = d.institucion || d.nombreInstitucion || d.nombreIE;
-    const nombreIe = rawInstitucion
-      ? (rawInstitucion.toUpperCase().startsWith('IE') ? rawInstitucion.toUpperCase() : `IE ${rawInstitucion.toUpperCase()}`)
-      : (d.id ? `IE ${d.id}` : 'I.E. Sin Nombre');
+    const nombreIe = formatNombreIe(rawInstitucion, d.id || d.dniDirector);
 
     return {
       id: String(d.id || d.dniDirector || Math.random()),
@@ -787,11 +801,7 @@ export const UgelBrechasTab: React.FC<UgelBrechasTabProps> = ({
       (d) => String(d.id || d.dniDirector) === String(selectedInstitucion)
     );
     const rawName = dirDoc?.institucion || dirDoc?.nombreInstitucion || dirDoc?.nombreIE;
-    const name = rawName
-      ? rawName.toUpperCase().startsWith('IE')
-        ? rawName.toUpperCase()
-        : `IE ${rawName.toUpperCase()}`
-      : `IE ${selectedInstitucion}`;
+    const name = formatNombreIe(rawName, selectedInstitucion);
     const director =
       dirDoc?.nombresDirector || dirDoc?.nombreDirector || dirDoc?.directorNombre || undefined;
     return { name, director };
@@ -934,11 +944,7 @@ export const UgelBrechasTab: React.FC<UgelBrechasTabProps> = ({
           selectedDirectorDoc?.institucion ||
           selectedDirectorDoc?.nombreInstitucion ||
           selectedDirectorDoc?.nombreIE;
-        const schoolDisplayName = rawSchool
-          ? rawSchool.toUpperCase().startsWith('IE')
-            ? rawSchool.toUpperCase()
-            : `IE ${rawSchool.toUpperCase()}`
-          : `IE ${effectiveDirectorDni}`;
+        const schoolDisplayName = formatNombreIe(rawSchool, effectiveDirectorDni);
 
         if (computedSchoolMetricas.totalIe) {
           computedSchoolMetricas.totalIe.nombre = `CONSOLIDADO ${schoolDisplayName}`;

@@ -404,7 +404,7 @@ export const useHistorialEvolucion = (
 		return { labels, datasets };
 	};
 
-	const getItemAnalysisData = () => {
+	const getItemAnalysisData = (order: 'asc' | 'desc' = 'asc') => {
 		if (!getPreguntaRespuestaDocentes || getPreguntaRespuestaDocentes.length === 0 || historialSelected.length === 0) return null;
 
 		const activeScale = dataEvaluacionDocente?.escala || [];
@@ -461,14 +461,19 @@ export const useHistorialEvolucion = (
 				return { ...item, avg };
 			});
 
-			const criticalItems = arrayItems.filter(item => item.avg < maxScore);
-			if (criticalItems.length === 0) return null;
+			if (arrayItems.length === 0) return null;
 
-			criticalItems.sort((a, b) => a.avg - b.avg);
-			const topCritical = criticalItems.slice(0, 5);
-			topCritical.sort((a, b) => Number(a.preguntaObj.orden || 0) - Number(b.preguntaObj.orden || 0));
+			// Top de criterios ordenados según 'order':
+			// 'asc': más críticos a menos críticos (menor puntaje promedio primero)
+			// 'desc': menos críticos a más críticos (mayor puntaje promedio primero)
+			const sortedItems = [...arrayItems].sort((a, b) => {
+				if (a.avg !== b.avg) {
+					return order === 'asc' ? a.avg - b.avg : b.avg - a.avg;
+				}
+				return Number(a.preguntaObj.orden || 0) - Number(b.preguntaObj.orden || 0);
+			});
 
-			const labels = topCritical.map((item, index) => formatQuestionLabel(index + 1, item.preguntaObj.pregunta));
+			const labels = sortedItems.map((item, index) => formatQuestionLabel(index + 1, item.preguntaObj.pregunta));
 
 			const customBrechas = dataEvaluacionDocente?.configuracionColores?.brechas;
 			const customBarColor = customBrechas?.barColor;
@@ -481,7 +486,7 @@ export const useHistorialEvolucion = (
 				const phaseKey = (evalu as any).idFase || (evalu as any).faseActualID || faseName || `${index}`;
 				const dateStr = getShortDateString(evalu.fechaMonitoreo || evalu.fechaCreacion);
 				const labelText = dateStr ? `${faseName} (${dateStr})` : faseName;
-				const data = topCritical.map(item => item.scores[index]);
+				const data = sortedItems.map(item => item.scores[index]);
 
 				const customPhaseColor = dataEvaluacionDocente?.configuracionColores?.coloresPorFase?.[phaseKey] ||
 				                         dataEvaluacionDocente?.configuracionColores?.coloresPorFase?.[faseName] ||
@@ -529,15 +534,20 @@ export const useHistorialEvolucion = (
 				};
 			});
 
-			const criticalItems = itemScores.filter(item => item.score < maxScore);
-			if (criticalItems.length === 0) return null;
+			if (itemScores.length === 0) return null;
 
-			criticalItems.sort((a, b) => a.score - b.score);
-			const topCritical = criticalItems.slice(0, 5);
-			topCritical.sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0));
+			// Top de criterios ordenados según 'order':
+			// 'asc': más críticos a menos críticos (menor puntaje primero)
+			// 'desc': menos críticos a más críticos (mayor puntaje primero)
+			const sortedItems = [...itemScores].sort((a, b) => {
+				if (a.score !== b.score) {
+					return order === 'asc' ? a.score - b.score : b.score - a.score;
+				}
+				return Number(a.orden || 0) - Number(b.orden || 0);
+			});
 
-			const labels = topCritical.map((item, index) => formatQuestionLabel(index + 1, item.preguntaText));
-			const dataPoints = topCritical.map(item => item.score);
+			const labels = sortedItems.map((item, index) => formatQuestionLabel(index + 1, item.preguntaText));
+			const dataPoints = sortedItems.map(item => item.score);
 
 			const targetFaseName = getCleanPhaseName((targetEval as any).faseNombre, (targetEval as any).idFase || (targetEval as any).faseActualID);
 			const targetPhaseKey = (targetEval as any).idFase || (targetEval as any).faseActualID || targetFaseName || '0';
@@ -553,7 +563,7 @@ export const useHistorialEvolucion = (
 
 			const customZeroColor = customBrechas?.zeroColor || '#ef4444';
 			const customWarningColor = customBrechas?.warningColor || '#f59e0b';
-			const backgroundColors = topCritical.map(item => item.score === 0 ? customZeroColor : (customPhaseColor || customWarningColor));
+			const backgroundColors = sortedItems.map(item => item.score === 0 ? customZeroColor : (customPhaseColor || customWarningColor));
 
 			const faseName = getCleanPhaseName((targetEval as any).faseNombre, (targetEval as any).idFase || (targetEval as any).faseActualID);
 			const dateStr = getShortDateString(targetEval.fechaMonitoreo || targetEval.fechaCreacion);
