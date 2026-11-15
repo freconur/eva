@@ -331,4 +331,106 @@ describe('AdminTendenciasTab Component', () => {
       screen.getByText(/Evaluación fuera del flujo longitudinal de etapas/i)
     ).toBeInTheDocument();
   });
+
+  it('permite filtrar etapas para comparar solo 2 o ver 1 sola evaluación individualmente', async () => {
+    await act(async () => {
+      render(<AdminTendenciasTab {...defaultProps} />);
+    });
+
+    // 1. Verificar estado inicial: Tríada completa (3 evaluaciones)
+    expect(screen.getByText(/Tríada completa \(3 evaluaciones\)/i)).toBeInTheDocument();
+    const btnEdi = screen.getByRole('button', { name: /EDI \(Diagnóstica\)/i });
+    const btnEp1 = screen.getByRole('button', { name: /EP1 \(Progresiva 1\)/i });
+    const btnEp2 = screen.getByRole('button', { name: /EP2 \(Progresiva 2\)/i });
+
+    expect(btnEdi).toHaveAttribute('aria-pressed', 'true');
+    expect(btnEp1).toHaveAttribute('aria-pressed', 'true');
+    expect(btnEp2).toHaveAttribute('aria-pressed', 'true');
+
+    // 2. Desactivar EP2 para comparar solo 2 evaluaciones (EDI y EP1)
+    await act(async () => {
+      fireEvent.click(btnEp2);
+    });
+
+    expect(btnEp2).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByText(/Comparativa directa \(2 evaluaciones\)/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Ver todas \(3\)/i })).toBeInTheDocument();
+
+    // 3. Desactivar EP1 para ver solo 1 evaluación (EDI)
+    await act(async () => {
+      fireEvent.click(btnEp1);
+    });
+
+    expect(btnEp1).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByText(/Vista individual \(1 evaluación\)/i)).toBeInTheDocument();
+
+    // 4. Asegurar que no se pueda desmarcar la última etapa activa
+    expect(btnEdi).toBeDisabled();
+    await act(async () => {
+      fireEvent.click(btnEdi);
+    });
+    expect(btnEdi).toHaveAttribute('aria-pressed', 'true');
+
+    // 5. Restaurar las 3 etapas con el botón rápido "Ver todas (3)"
+    const btnVerTodas = screen.getByRole('button', { name: /Ver todas \(3\)/i });
+    await act(async () => {
+      fireEvent.click(btnVerTodas);
+    });
+
+    expect(screen.getByText(/Tríada completa \(3 evaluaciones\)/i)).toBeInTheDocument();
+    expect(btnEdi).toHaveAttribute('aria-pressed', 'true');
+    expect(btnEp1).toHaveAttribute('aria-pressed', 'true');
+    expect(btnEp2).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('permite alternar entre Líneas y Barras agrupadas, activar Auto Zoom y alternar Deltas en el gráfico de niveles', async () => {
+    await act(async () => {
+      render(<AdminTendenciasTab {...defaultProps} />);
+    });
+
+    // 1. Alternar Líneas vs Barras
+    const btnLineas = screen.getByRole('button', { name: /Líneas/i });
+    const btnBarras = screen.getByRole('button', { name: /Barras/i });
+
+    expect(btnLineas).toHaveAttribute('aria-pressed', 'true');
+    expect(btnBarras).toHaveAttribute('aria-pressed', 'false');
+
+    await act(async () => {
+      fireEvent.click(btnBarras);
+    });
+
+    expect(btnBarras).toHaveAttribute('aria-pressed', 'true');
+    expect(btnLineas).toHaveAttribute('aria-pressed', 'false');
+
+    // 2. Toggle Auto Zoom
+    const btnZoom = screen.getByRole('button', { name: /Auto Zoom/i });
+    expect(btnZoom).toHaveAttribute('aria-pressed', 'false');
+
+    await act(async () => {
+      fireEvent.click(btnZoom);
+    });
+
+    expect(screen.getByRole('button', { name: /Zoom Activo/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/Escala amplificada a max/i)).toBeInTheDocument();
+
+    // 3. Toggle Deltas en Tooltip
+    const btnDeltas = screen.getByRole('button', { name: /Δ Deltas On/i });
+    expect(btnDeltas).toHaveAttribute('aria-pressed', 'true');
+
+    await act(async () => {
+      fireEvent.click(btnDeltas);
+    });
+
+    expect(screen.getByRole('button', { name: /Δ Deltas Off/i })).toHaveAttribute('aria-pressed', 'false');
+
+    // 4. Toggle Valores Permanentes en Puntos y Barras
+    const btnValores = screen.getByRole('button', { name: /Valores On/i });
+    expect(btnValores).toHaveAttribute('aria-pressed', 'true');
+
+    await act(async () => {
+      fireEvent.click(btnValores);
+    });
+
+    expect(screen.getByRole('button', { name: /Valores Off/i })).toHaveAttribute('aria-pressed', 'false');
+  });
 });
