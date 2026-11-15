@@ -415,8 +415,8 @@ describe('DirectorTendenciasTab Component', () => {
       render(<DirectorTendenciasTab {...defaultProps} />);
     });
 
-    expect(screen.getByText(/EP1 \(Progresiva 1\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/EP2 \(Progresiva 2\)/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/EP1 \(Progresiva 1\)/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/EP2 \(Progresiva 2\)/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText(/EP1 \(Proceso 1\)/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/EP2 \(Proceso 2\)/i)).not.toBeInTheDocument();
   });
@@ -438,5 +438,98 @@ describe('DirectorTendenciasTab Component', () => {
     expect(firestore.collection).toHaveBeenCalled();
     expect(firestore.where).toHaveBeenCalledWith('dniDocente', '==', '87654321');
     expect(screen.getByText(/Tendencia Longitudinal por Etapas/i)).toBeInTheDocument();
+  });
+
+  it('permite filtrar etapas para comparar solo 2 o ver 1 sola evaluación individualmente', async () => {
+    await React.act(async () => {
+      render(<DirectorTendenciasTab {...defaultProps} />);
+    });
+
+    // Estado inicial: Tríada completa (3 evaluaciones)
+    expect(screen.getByText(/Tríada completa \(3 evaluaciones\)/i)).toBeInTheDocument();
+    const btnEDI = screen.getByRole('button', { name: /EDI \(Diagnóstica\)/i });
+    const btnEP1 = screen.getByRole('button', { name: /EP1 \(Progresiva 1\)/i });
+    const btnEP2 = screen.getByRole('button', { name: /EP2 \(Progresiva 2\)/i });
+
+    expect(btnEDI).toHaveAttribute('aria-pressed', 'true');
+    expect(btnEP1).toHaveAttribute('aria-pressed', 'true');
+    expect(btnEP2).toHaveAttribute('aria-pressed', 'true');
+
+    // Deseleccionar EP2
+    await React.act(async () => {
+      fireEvent.click(btnEP2);
+    });
+
+    expect(btnEP2).toHaveAttribute('aria-pressed', 'false');
+    // Ahora estamos en modo Comparativa directa (2 evaluaciones)
+    expect(screen.getByText(/Comparativa directa \(2 evaluaciones\)/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Ver todas \(3\)/i })).toBeInTheDocument();
+
+    // Deseleccionar EP1 -> Vista individual (1 evaluación)
+    await React.act(async () => {
+      fireEvent.click(btnEP1);
+    });
+    expect(btnEP1).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByText(/Vista individual \(1 evaluación\)/i)).toBeInTheDocument();
+
+    // Intentar deseleccionar la última etapa (EDI) no debe permitir vaciar todas
+    await React.act(async () => {
+      fireEvent.click(btnEDI);
+    });
+    // Debe permanecer al menos 1 etapa seleccionada
+    expect(btnEDI).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/Vista individual \(1 evaluación\)/i)).toBeInTheDocument();
+
+    // Restaurar todas con el botón "Ver todas (3)"
+    const btnVerTodas = screen.getByRole('button', { name: /Ver todas \(3\)/i });
+    await React.act(async () => {
+      fireEvent.click(btnVerTodas);
+    });
+    expect(screen.getByText(/Tríada completa \(3 evaluaciones\)/i)).toBeInTheDocument();
+  });
+
+  it('permite alternar entre Líneas y Barras agrupadas, activar Auto Zoom y alternar Deltas y Valores en el gráfico de niveles', async () => {
+    await React.act(async () => {
+      render(<DirectorTendenciasTab {...defaultProps} />);
+    });
+
+    // 1. Alternar entre Líneas y Barras
+    const btnBarras = screen.getByRole('button', { name: /Barras/i });
+    const btnLineas = screen.getByRole('button', { name: /Líneas/i });
+    expect(btnLineas).toHaveAttribute('aria-pressed', 'true');
+
+    await React.act(async () => {
+      fireEvent.click(btnBarras);
+    });
+    expect(btnBarras).toHaveAttribute('aria-pressed', 'true');
+    expect(btnLineas).toHaveAttribute('aria-pressed', 'false');
+
+    // 2. Alternar Auto Zoom / Escala Dinámica
+    const btnZoom = screen.getByRole('button', { name: /Auto Zoom/i });
+    expect(btnZoom).toHaveAttribute('aria-pressed', 'false');
+
+    await React.act(async () => {
+      fireEvent.click(btnZoom);
+    });
+    expect(btnZoom).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/Zoom Activo/i)).toBeInTheDocument();
+
+    // 3. Alternar Deltas en Tooltip
+    const btnDeltas = screen.getByRole('button', { name: /Δ Deltas On/i });
+    expect(btnDeltas).toHaveAttribute('aria-pressed', 'true');
+
+    await React.act(async () => {
+      fireEvent.click(btnDeltas);
+    });
+    expect(screen.getByRole('button', { name: /Δ Deltas Off/i })).toHaveAttribute('aria-pressed', 'false');
+
+    // 4. Alternar Valores Permanentes
+    const btnValores = screen.getByRole('button', { name: /Valores On/i });
+    expect(btnValores).toHaveAttribute('aria-pressed', 'true');
+
+    await React.act(async () => {
+      fireEvent.click(btnValores);
+    });
+    expect(screen.getByRole('button', { name: /Valores Off/i })).toHaveAttribute('aria-pressed', 'false');
   });
 });
