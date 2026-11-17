@@ -334,9 +334,13 @@ const Reporte = () => {
     }
   }, [isConfigLoaded, isEtapaConfigurada, activeTab]);
 
-  // Pestañas visibles según si Brechas está habilitada
+  // Pestañas visibles según si Brechas está habilitada (evolución es exclusiva de docentes)
   const visibleTabOrder = useMemo(() => {
-    return tabOrder.filter((id) => (id === 'brechas' ? isEtapaConfigurada : true));
+    return tabOrder.filter((id) => {
+      if (id === 'brechas') return isEtapaConfigurada;
+      if (id === 'evolucion') return false;
+      return true;
+    });
   }, [tabOrder, isEtapaConfigurada]);
 
   // Filtros de tabla
@@ -1432,6 +1436,15 @@ const Reporte = () => {
             </span>
           ),
         };
+      case 'evolucion':
+      default:
+        return {
+          icon: MdShowChart,
+          iconColor: 'text-blue-600',
+          iconBg: 'bg-blue-50 border-blue-200/80',
+          description: 'Seguimiento y progreso evolutivo.',
+          badge: null,
+        };
     }
   };
 
@@ -1682,6 +1695,7 @@ const Reporte = () => {
                 totalPreguntas={preguntasRespuestas.length}
                 isAuditing={canEditTabNames}
                 hideBrechas={isConfigLoaded && !isEtapaConfigurada}
+                hiddenTabs={['evolucion']}
               />
             </div>
 

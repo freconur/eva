@@ -156,3 +156,20 @@ img {
   animation: dropdownPopoverIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform, opacity;
 }
+
+/* --- ANIMACIÓN FLUIDA PARA COMMAND PALETTE / SPOTLIGHT SEARCH (CENTRO DE PANTALLA) --- */
+@keyframes spotlightIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-spotlight {
+  animation: spotlightIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}

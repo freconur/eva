@@ -23,7 +23,7 @@ import {
 } from 'chart.js';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import { RiLoader4Line, RiErrorWarningLine, RiCalendarLine, RiGraduationCapLine, RiBuilding4Line, RiSparklingLine } from 'react-icons/ri';
-import { MdTableChart, MdTrackChanges, MdTrendingUp, MdShowChart, MdAssignment, MdKeyboardArrowUp } from 'react-icons/md';
+import { MdTableChart, MdTrackChanges, MdTrendingUp, MdShowChart, MdAssignment, MdTimeline, MdKeyboardArrowUp } from 'react-icons/md';
 import DeleteEstudiante from '@/modals/deleteEstudiante';
 import styles from './reporte.module.css';
 import { currentMonth, getMonthName } from '@/fuctions/dates';
@@ -52,6 +52,7 @@ import DirectorTabsNav, { DirectorTabKey } from '@/components/reportes/director/
 import DirectorBrechasTab from '@/components/reportes/director/DirectorBrechasTab';
 import DirectorTendenciasTab from '@/components/reportes/director/DirectorTendenciasTab';
 import DirectorComparativaTab from '@/components/reportes/director/DirectorComparativaTab';
+import { DocenteEvolucionEstudiantesTab } from '@/components/reportes/estudiante/DocenteEvolucionEstudiantesTab';
 import DirectorExportMenu from '@/components/reportes/director/DirectorExportMenu';
 import DirectorHeroBanner from '@/components/reportes/director/DirectorHeroBanner';
 import useReportesBannerConfig from '@/components/reportes/director/useReportesBannerConfig';
@@ -1259,6 +1260,24 @@ const Reportes = () => {
     />
   );
 
+  // RENDERIZADO TAB 6: Evolución Individual del Estudiante
+  const renderEvolucionContent = () => (
+    <DocenteEvolucionEstudiantesTab
+      evaluacion={evaluacion}
+      matrizConfigGrados={matrizConfigGrados}
+      evaluacionesDb={evaluacionesDb}
+      dniDocente={effectiveDocenteDni}
+      nombreDocente={effectiveDocenteName}
+      nombreColegio={effectiveInstitucion}
+      currentEstudiantes={estudiantesBase}
+      yearSelected={Number(yearSelected)}
+      monthSelected={monthSelected}
+      isDemoMode={isDemoMode}
+      availableSections={availableSections}
+      preguntasRespuestas={preguntasRespuestas}
+    />
+  );
+
   // Metadatos de diseño por sección para el Modo Cascada
   const getSectionMeta = (tabId: DirectorTabKey) => {
     switch (tabId) {
@@ -1327,6 +1346,19 @@ const Reportes = () => {
             </span>
           ),
         };
+      case 'evolucion':
+      default:
+        return {
+          icon: MdTimeline,
+          iconColor: 'text-blue-600',
+          iconBg: 'bg-blue-50 border-blue-200/80',
+          description: 'Seguimiento nominal de la trayectoria y progreso pedagógico de cada estudiante.',
+          badge: (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
+              {estudiantesBase.length} estudiantes
+            </span>
+          ),
+        };
     }
   };
 
@@ -1383,6 +1415,7 @@ const Reportes = () => {
                 {tabId === 'tendencia' && renderTendenciaContent()}
                 {tabId === 'comparativa' && renderComparativaContent()}
                 {tabId === 'preguntas' && renderPreguntasContent()}
+                {tabId === 'evolucion' && renderEvolucionContent()}
               </div>
             </section>
           );
@@ -1681,6 +1714,18 @@ const Reportes = () => {
                     tabIndex={0}
                   >
                     {renderPreguntasContent()}
+                  </div>
+                )}
+
+                {/* TAB 6: EVOLUCIÓN INDIVIDUAL DE ESTUDIANTES */}
+                {activeTab === 'evolucion' && (
+                  <div
+                    key="evolucion"
+                    className={tabsStyles.tabContentPanel}
+                    role="tabpanel"
+                    tabIndex={0}
+                  >
+                    {renderEvolucionContent()}
                   </div>
                 )}
               </div>

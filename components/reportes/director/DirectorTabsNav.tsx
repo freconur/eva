@@ -5,6 +5,7 @@ import {
   MdTrendingUp,
   MdShowChart,
   MdAssignment,
+  MdTimeline,
   MdEdit,
   MdCheck,
   MdClose,
@@ -325,6 +326,12 @@ export const DirectorTabsNav: React.FC<DirectorTabsNavProps> = ({
         defaultLabel: 'Análisis por Ítem',
         icon: <MdAssignment className={styles.tabIcon} />,
         badge: totalPreguntas !== undefined ? `${totalPreguntas} ítems` : undefined,
+      },
+      evolucion: {
+        id: 'evolucion',
+        defaultLabel: 'Evolución de Estudiantes',
+        icon: <MdTimeline className={styles.tabIcon} />,
+        badge: totalEstudiantes !== undefined ? `${totalEstudiantes}` : undefined,
       },
     }),
     [totalEstudiantes, totalCritico, totalPreguntas]

@@ -8,7 +8,8 @@ export type DirectorTabKey =
   | 'brechas'
   | 'tendencia'
   | 'comparativa'
-  | 'preguntas';
+  | 'preguntas'
+  | 'evolucion';
 
 export const DEFAULT_DIRECTOR_TAB_LABELS: Record<DirectorTabKey, string> = {
   grilla: 'Estudiantes y Grilla',
@@ -16,6 +17,7 @@ export const DEFAULT_DIRECTOR_TAB_LABELS: Record<DirectorTabKey, string> = {
   tendencia: 'Tendencias y Cobertura',
   comparativa: 'Comparativa Histórica',
   preguntas: 'Análisis por Ítem',
+  evolucion: 'Evolución de Estudiantes',
 };
 
 export const DEFAULT_DIRECTOR_TAB_ORDER: DirectorTabKey[] = [
@@ -24,6 +26,7 @@ export const DEFAULT_DIRECTOR_TAB_ORDER: DirectorTabKey[] = [
   'tendencia',
   'comparativa',
   'preguntas',
+  'evolucion',
 ];
 
 export interface DirectorTabsConfig {
