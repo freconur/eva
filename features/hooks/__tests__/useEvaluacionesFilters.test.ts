@@ -89,6 +89,22 @@ describe('useEvaluacionesFilters - availableMonths', () => {
 
     expect(result.current.availableMonths).toEqual([])
   })
+
+  test('para especialista regional (rol 5) debe listar todos los meses con evaluaciones para lectura de reportes aun sin permisos de configuracion', () => {
+    // Usuario especialista regional que no figura en usuariosConPermisos
+    mockCurrentUser = { dni: '01225920', perfil: { rol: 5 } } as any
+
+    const { result } = renderHook(() => useEvaluacionesFilters())
+
+    // Grado 1 tiene evaluaciones en Marzo (2) y Julio (6)
+    expect(result.current.availableMonths).toEqual([
+      { id: '2', name: 'Marzo', count: 1 },
+      { id: '6', name: 'Julio', count: 1 },
+    ])
+
+    // Restaurar usuario mock
+    mockCurrentUser = { dni: '76543210', perfil: { rol: 4 } } as any
+  })
 })
 
 describe('useEvaluacionesFilters - availableCategories y filtrado por categoría', () => {
@@ -141,6 +157,19 @@ describe('useEvaluacionesFilters - availableCategories y filtrado por categoría
 
     // Debe resetearse a 'all'
     expect(result.current.selectedCategoria).toBe('all')
+  })
+
+  test('para especialista regional (rol 5) debe listar todas las categorías disponibles aun sin permisos de configuracion', () => {
+    mockCurrentUser = { dni: '01225920', perfil: { rol: 5 } } as any
+
+    const { result } = renderHook(() => useEvaluacionesFilters())
+
+    expect(result.current.availableCategories).toEqual([
+      { id: '1', name: 'lee', count: 1 },
+      { id: '2', name: 'resuelve problemas', count: 1 },
+    ])
+
+    mockCurrentUser = { dni: '76543210', perfil: { rol: 4 } } as any
   })
 })
 

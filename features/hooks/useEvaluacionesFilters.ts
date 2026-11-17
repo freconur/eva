@@ -125,15 +125,13 @@ export const useEvaluacionesFilters = () => {
     localStorage.setItem('eva_visible_columns', JSON.stringify(updated))
   }
 
-  // --- MESES DISPONIBLES EN BASE AL AÑO, GRADO Y ACCESO (SOLO MESES CON EVALUACIONES) ---
+  // --- MESES DISPONIBLES EN BASE AL AÑO Y GRADO (SOLO MESES CON EVALUACIONES REGISTRADAS) ---
   const availableMonths = useMemo(() => {
     const monthsMap = new Map<number, number>()
 
     evaluaciones.forEach(eva => {
       const yr = eva.añoDelExamen || currentYear
       if (yr !== selectedYear) return
-
-      if (!tieneAccesoAEvaluacion(eva)) return
 
       if (selectedGrado !== 'all') {
         if (Number(eva.grado) !== Number(selectedGrado)) return
@@ -165,7 +163,7 @@ export const useEvaluacionesFilters = () => {
       name: getMonthName(id),
       count: monthsMap.get(id) || 0,
     }))
-  }, [evaluaciones, selectedYear, selectedGrado, selectedCategoria, gradosFiltrados, currentYear, currentUserData])
+  }, [evaluaciones, selectedYear, selectedGrado, selectedCategoria, gradosFiltrados, currentYear])
 
   // --- CATEGORÍAS DISPONIBLES EN BASE A EVALUACIONES EXISTENTES ---
   const availableCategories = useMemo(() => {
@@ -174,8 +172,6 @@ export const useEvaluacionesFilters = () => {
     evaluaciones.forEach(eva => {
       const yr = eva.añoDelExamen || currentYear
       if (yr !== selectedYear) return
-
-      if (!tieneAccesoAEvaluacion(eva)) return
 
       if (selectedGrado !== 'all') {
         if (Number(eva.grado) !== Number(selectedGrado)) return
@@ -210,7 +206,7 @@ export const useEvaluacionesFilters = () => {
         count: catMap.get(id) || 0,
       }
     })
-  }, [evaluaciones, selectedYear, selectedGrado, selectedMonth, gradosFiltrados, currentYear, currentUserData, categorias])
+  }, [evaluaciones, selectedYear, selectedGrado, selectedMonth, gradosFiltrados, currentYear, categorias])
 
   // --- SINCRONIZACIÓN INICIAL CON URL (QUERY PARAMS) ---
   const [isUrlInitialized, setIsUrlInitialized] = useState<boolean>(false)
