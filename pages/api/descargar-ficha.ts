@@ -10,17 +10,90 @@ import {
 
 /**
  * Obtiene la instancia de Firestore autenticada de Firebase Admin
+ * Soporta credenciales desde archivo físico (local) y variables de entorno (Vercel / Prod)
  */
 function getAdminFirestore(): admin.firestore.Firestore {
   if (!admin.apps.length) {
     const serviceAccountPath = path.resolve(process.cwd(), 'eva-ugel.json');
+    let initialized = false;
+
+    // 1. Archivo físico local (desarrollo local)
     if (fs.existsSync(serviceAccountPath)) {
-      const serviceAccount = require(serviceAccountPath);
+      try {
+        const serviceAccount = require(serviceAccountPath);
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
+        initialized = true;
+      } catch (err) {
+        console.warn('No se pudo inicializar Firebase Admin desde eva-ugel.json:', err);
+      }
+    }
+
+    // 2. Variable con JSON completo o Base64 (Vercel / Producción)
+    if (!initialized) {
+      const serviceAccountJson =
+        process.env.FIREBASE_SERVICE_ACCOUNT_KEY ||
+        process.env.FIREBASE_SERVICE_ACCOUNT ||
+        process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+
+      if (serviceAccountJson) {
+        try {
+          const raw = serviceAccountJson.trim();
+          const parsed = raw.startsWith('{')
+            ? JSON.parse(raw)
+            : JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
+
+          admin.initializeApp({
+            credential: admin.credential.cert(parsed),
+          });
+          initialized = true;
+        } catch (err) {
+          console.warn('Error al parsear JSON de cuenta de servicio desde variable de entorno:', err);
+        }
+      }
+    }
+
+    // 3. Variables de entorno individuales (FIREBASE_* o GA_*)
+    if (!initialized) {
+      const clientEmail =
+        process.env.FIREBASE_CLIENT_EMAIL ||
+        process.env.FIREBASE_ADMIN_CLIENT_EMAIL ||
+        process.env.GA_CLIENT_EMAIL;
+
+      const rawPrivateKey =
+        process.env.FIREBASE_PRIVATE_KEY ||
+        process.env.FIREBASE_ADMIN_PRIVATE_KEY ||
+        process.env.GA_PRIVATE_KEY;
+
+      const projectId =
+        process.env.FIREBASE_PROJECT_ID ||
+        process.env.FIREBASE_ADMIN_PROJECT_ID ||
+        process.env.GA_PROJECT_ID ||
+        'evaluaciones-ugel';
+
+      if (clientEmail && rawPrivateKey) {
+        try {
+          const privateKey = rawPrivateKey.replace(/\\n/g, '\n');
+          admin.initializeApp({
+            credential: admin.credential.cert({
+              projectId,
+              clientEmail,
+              privateKey,
+            }),
+          });
+          initialized = true;
+        } catch (err) {
+          console.warn('Error al inicializar Firebase Admin con credenciales individuales:', err);
+        }
+      }
+    }
+
+    // 4. Fallback por defecto (ej. Google Cloud ADC con projectId)
+    if (!initialized) {
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+        projectId: process.env.FIREBASE_PROJECT_ID || 'evaluaciones-ugel',
       });
-    } else {
-      admin.initializeApp();
     }
   }
   return admin.firestore();

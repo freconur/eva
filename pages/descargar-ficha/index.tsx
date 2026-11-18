@@ -53,9 +53,10 @@ export default function DescargarFichaPublicPage() {
         const data = await res.json();
 
         if (!res.ok || !data.ok) {
-          throw new Error(
-            data?.error || 'No se pudo obtener la información de la ficha del estudiante.'
-          );
+          const baseMsg =
+            data?.error || 'No se pudo obtener la información de la ficha del estudiante.';
+          const detailMsg = data?.detalles ? `\n\nDetalle técnico: ${data.detalles}` : '';
+          throw new Error(`${baseMsg}${detailMsg}`);
         }
 
         setPropsEstudiante(data.props);
@@ -155,7 +156,7 @@ export default function DescargarFichaPublicPage() {
               <h2 className="text-sm font-bold text-rose-900 mb-1">
                 No se pudo validar el enlace
               </h2>
-              <p className="text-xs text-rose-700 leading-relaxed mb-4">{error}</p>
+              <p className="text-xs text-rose-700 leading-relaxed mb-4 whitespace-pre-line">{error}</p>
               <button
                 type="button"
                 onClick={() => window.location.reload()}
