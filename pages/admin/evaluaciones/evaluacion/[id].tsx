@@ -1,5 +1,6 @@
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin'
-import { useGlobalContext } from '@/features/context/GlolbalContext'
+import { useGlobalContext, useGlobalContextDispatch } from '@/features/context/GlolbalContext'
+import { AppAction } from '@/features/actions/appAction'
 import { writeBatch, doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from '@/firebase/firebase.config'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
@@ -43,8 +44,11 @@ const useScrollPosition = () => {
 const Evaluacion = () => {
   const route = useRouter()
   const { evaluacion, preguntasRespuestas, currentUserData, loaderPages } = useGlobalContext()
+  const dispatch = useGlobalContextDispatch()
   const { getEvaluacion, getPreguntasRespuestas, updatePreguntaRespuesta, updatePreguntaPuntaje, updatePreguntasOrder, deletePreguntaRespuesta, updateEvaluacion } = useAgregarEvaluaciones()
   const [isAuditing, setIsAuditing] = useState(false)
+
+  const evalId = route.query.id ? String(route.query.id) : undefined
 
   // Detectar modo auditoría
   useEffect(() => {
@@ -61,23 +65,38 @@ const Evaluacion = () => {
     (currentUserData as any)?.perfil?.rol === 4
   )
 
-  // Bloqueo y protección de acceso para usuarios no administradores
+  const isCurrentEvaluacionLoaded = Boolean(evalId && evaluacion?.id === evalId)
+
+  const isAssignedRegional = Boolean(
+    currentUserData?.dni && evaluacion?.usuariosConPermisos?.includes(currentUserData.dni)
+  )
+  const isAssignedUgel = Boolean(
+    currentUserData?.dni && evaluacion?.usuariosConPermisosUgel?.includes(currentUserData.dni)
+  )
+
+  // Acceso para administrar/configurar preguntas: Administrador general o especialista asignado (Regional/UGEL)
+  const canManageEvaluation = Boolean(isAdmin || isAssignedRegional || isAssignedUgel)
+  const canEditQuestions = Boolean(canManageEvaluation && !evaluacion?.active)
+  const isOwnerOrAdmin = canManageEvaluation
+
+  // Bloqueo y protección de acceso para usuarios no autorizados
   useEffect(() => {
     if (!route.isReady) return
+    if (!currentUserData || (!currentUserData.dni && !currentUserData.id)) return
 
-    // Cuando el usuario esté disponible, verificar permiso de administrador
-    if (currentUserData && (currentUserData.dni || currentUserData.id)) {
-      if (!isAdmin) {
-        toast.error('Acceso denegado: Solo los administradores tienen permiso para configurar evaluaciones.')
-        const evalId = route.query.id
-        if (evalId) {
-          route.replace(`/admin/evaluaciones/evaluacion/reporte?idEvaluacion=${evalId}`)
-        } else {
-          route.replace('/mi-cuenta')
-        }
+    // Administradores siempre tienen acceso directo
+    if (isAdmin) return
+
+    // Para especialistas y otros usuarios: esperar a que la evaluación cargue para evaluar sus permisos
+    if (isCurrentEvaluacionLoaded && !canManageEvaluation) {
+      toast.error('Acceso denegado: No tienes permisos para configurar esta evaluación.')
+      if (evalId) {
+        route.replace(`/admin/evaluaciones/evaluacion/reporte?idEvaluacion=${evalId}`)
+      } else {
+        route.replace('/mi-cuenta')
       }
     }
-  }, [currentUserData, isAdmin, route.isReady, route.query.id])
+  }, [currentUserData, isAdmin, isCurrentEvaluacionLoaded, canManageEvaluation, route.isReady, evalId, route])
 
   const [showModal, setShowModal] = useState(false)
   const [preguntasLocales, setPreguntasLocales] = useState<any[]>([])
@@ -373,14 +392,6 @@ const Evaluacion = () => {
   // Verificar si alguna pregunta tiene la propiedad puntaje
   const hayPuntajes = preguntasRespuestas.some(pregunta => pregunta.puntaje !== undefined && pregunta.puntaje !== null)
 
-  // Lógica de permisos centralizada: restringido exclusivamente a administradores
-  const isOwnerOrAdmin = isAdmin
-  const isAssignedRegional = evaluacion.usuariosConPermisos?.includes(currentUserData.dni || '')
-  const isAssignedUgel = evaluacion.usuariosConPermisosUgel?.includes(currentUserData.dni || '')
-
-  const canManageEvaluation = isAdmin
-  const canEditQuestions = canManageEvaluation && !evaluacion.active
-
   const handleshowModal = () => {
     setShowModal(!showModal)
   }
@@ -489,7 +500,7 @@ const Evaluacion = () => {
 
   useEffect(() => {
     const evalId = route.query.id;
-    if (!evalId || !isAdmin) return;
+    if (!evalId || !currentUserData || (!currentUserData.dni && !currentUserData.id)) return;
 
     const unsubscribeEvaluacion = getEvaluacion(`${evalId}`);
     const unsubscribePreguntas = getPreguntasRespuestas(`${evalId}`);
@@ -497,9 +508,11 @@ const Evaluacion = () => {
     return () => {
       if (unsubscribeEvaluacion) unsubscribeEvaluacion();
       if (unsubscribePreguntas) unsubscribePreguntas();
+      dispatch({ type: AppAction.EVALUACION, payload: {} as any });
+      dispatch({ type: AppAction.PREGUNTAS_RESPUESTAS, payload: [] });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route.query.id, isAdmin]);
+  }, [route.query.id, currentUserData?.dni, currentUserData?.id]);
 
   // Sincronizar estado local al recibir las preguntas de Firestore
   useEffect(() => {
@@ -519,7 +532,7 @@ const Evaluacion = () => {
     }
   }, [preguntasRespuestas, restoreScrollPosition])
 
-  // Guarda de acceso: Si el usuario aún no cargó o no es administrador, no renderizar la configuración
+  // Guarda de acceso 1: Si los datos del usuario aún no cargan
   if (!currentUserData || (!currentUserData.dni && !currentUserData.id)) {
     return (
       <div className={styles.loaderContainer} style={{ minHeight: '60vh' }}>
@@ -529,7 +542,18 @@ const Evaluacion = () => {
     )
   }
 
-  if (!isAdmin) {
+  // Guarda de acceso 2: Si no es admin y la evaluación aún no ha terminado de cargar en memoria
+  if (!isAdmin && !isCurrentEvaluacionLoaded) {
+    return (
+      <div className={styles.loaderContainer} style={{ minHeight: '60vh' }}>
+        <RiLoader4Line className={styles.spinner} />
+        <span>Cargando evaluación y validando permisos...</span>
+      </div>
+    )
+  }
+
+  // Guarda de acceso 3: Si la evaluación ya cargó y el usuario no tiene permisos asignados
+  if (!isAdmin && isCurrentEvaluacionLoaded && !canManageEvaluation) {
     return (
       <div className={styles.loaderContainer} style={{ minHeight: '60vh' }}>
         <RiLoader4Line className={styles.spinner} style={{ color: '#ef4444' }} />
@@ -676,7 +700,7 @@ const Evaluacion = () => {
                           <span>Agregar Preguntas</span>
                         </button>
                       )}
-                      {currentUserData.rol === 4 && !evaluacion.active && (
+                      {(currentUserData.rol === 4 || canManageEvaluation) && !evaluacion.active && (
                         <button
                           type="button"
                           className={styles.dropdownItem}
@@ -800,7 +824,7 @@ const Evaluacion = () => {
               </div>
 
               {/* Score Badge */}
-              {hayPuntajes && currentUserData.rol === 4 && (
+              {hayPuntajes && (currentUserData.rol === 4 || canManageEvaluation) && (
                 <div className={styles.totalScore}>
                   <span className={styles.scoreLabel}>Puntaje Total</span>
                   <span className={styles.scoreValue}>{totalPuntaje}</span>
@@ -834,7 +858,7 @@ const Evaluacion = () => {
                       </div>
 
                       <div className={styles.compactRightSide}>
-                        {currentUserData.rol === 4 && (
+                        {(currentUserData.rol === 4 || canManageEvaluation) && (
                           canEditQuestions ? (
                             <div className={styles.compactScoreEdit}>
                               <input
@@ -998,7 +1022,7 @@ const Evaluacion = () => {
                           <strong>{pr.respuesta}</strong>
                         </div>
 
-                         {currentUserData.rol === 4 && (
+                         {(currentUserData.rol === 4 || canManageEvaluation) && (
                           canEditQuestions ? (
                             <div className={styles.inlineScoreWrapper}>
                               {index === 0 && showScoreCallout && (
