@@ -10,11 +10,12 @@ import AlertModal from '@/modals/alertModal/AlertModal'
 import PuntuacionYNivel from '@/modals/PuntuacionYNivel/puntuacionYNivel'
 import DuplicateEvaluacionModal from '@/modals/duplicarEvaluacion'
 import BulkDuplicateModal from '@/modals/duplicarEvaluacion/BulkDuplicateModal'
+import ConfigurarNivelesActuacionModal from '@/modals/ConfigurarNivelesActuacion'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 
 import React, { useEffect, useState, useMemo } from 'react'
-import { MdAdd, MdContentCopy, MdAutoAwesome } from 'react-icons/md'
+import { MdAdd, MdContentCopy, MdAutoAwesome, MdDonutLarge } from 'react-icons/md'
 import { RiLoader4Line } from 'react-icons/ri'
 import { toast } from 'react-toastify'
 import {
@@ -160,6 +161,9 @@ const Evaluaciones = () => {
   // --- Duplicate modal state ---
   const [showDuplicateModal, setShowDuplicateModal] = useState<boolean>(false)
   const [selectedEvaForDuplicate, setSelectedEvaForDuplicate] = useState<any>(null)
+
+  // --- Configurar Niveles por Actuación modal state ---
+  const [showNivelesActuacionModal, setShowNivelesActuacionModal] = useState<boolean>(false)
 
   // --- Onboarding state for new features (clonación y vista de panel) ---
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false)
@@ -460,6 +464,12 @@ const Evaluaciones = () => {
           nivelNombre={getNivelGrado(selectedEvaForDuplicate.grado || 0)}
         />
       )}
+      {showNivelesActuacionModal && (
+        <ConfigurarNivelesActuacionModal
+          showModal={showNivelesActuacionModal}
+          handleClose={() => setShowNivelesActuacionModal(false)}
+        />
+      )}
       {showBulkModal && selectedEvaluacionesList.length > 0 && (
         <BulkDuplicateModal
           showModal={showBulkModal}
@@ -557,6 +567,18 @@ const Evaluaciones = () => {
             onResetTexts={bannerConfig.resetBannerTexts}
             actions={
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  data-testid="btn-configurar-niveles-actuacion"
+                  onClick={() => setShowNivelesActuacionModal(true)}
+                  className={styles.onboardingHeaderButton}
+                  title="Configurar escala global de niveles por actuación para evaluaciones progresivas"
+                  aria-label="Configurar Niveles por Actuación"
+                >
+                  <MdDonutLarge className="text-blue-600 w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Niveles por Actuación</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setShowOnboarding(true)}

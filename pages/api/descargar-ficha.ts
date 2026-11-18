@@ -199,25 +199,60 @@ export default async function handler(
         .orderBy('order', 'asc')
         .get();
 
-      prSnap.forEach((pDoc) => {
-        const pData = pDoc.data();
-        const ord = Number(pData.order) || catalogoActuaciones.length + 1;
-        const desc =
-          pData.actuaciones ||
-          pData.textoActuacion ||
-          pData.enunciado ||
-          pData.pregunta ||
-          `Actuación Pedagógica N° ${ord}`;
+      if (!prSnap.empty) {
+        prSnap.forEach((pDoc) => {
+          const pData = pDoc.data();
+          const ord = Number(pData.order) || catalogoActuaciones.length + 1;
+          const desc =
+            String(
+              pData.preguntaDocente ||
+              pData.actuacion ||
+              pData.actuaciones ||
+              pData.textoActuacion ||
+              pData.enunciado ||
+              pData.pregunta ||
+              ''
+            ).trim() || `Actuación Pedagógica N° ${ord}`;
 
-        catalogoActuaciones.push({
-          order: ord,
-          pregunta: pData.pregunta || '',
-          respuestaCorrecta: pData.respuestaCorrecta || '',
-          actuaciones: desc,
-          opciones: pData.opciones || [],
-          textoActuacion: desc,
+          catalogoActuaciones.push({
+            order: ord,
+            actuacion: desc,
+            preguntaDocente: desc,
+            actuaciones: desc,
+            textoActuacion: desc,
+            pregunta: pData.pregunta || '',
+            respuestaCorrecta: pData.respuesta || pData.respuestaCorrecta || '',
+            opciones: pData.opciones || pData.alternativas || [],
+            id: pDoc.id,
+          });
         });
-      });
+      } else if (Array.isArray(evalData.preguntasRespuestas)) {
+        evalData.preguntasRespuestas.forEach((pData: any, idx: number) => {
+          const ord = Number(pData.order) || idx + 1;
+          const desc =
+            String(
+              pData.preguntaDocente ||
+              pData.actuacion ||
+              pData.actuaciones ||
+              pData.textoActuacion ||
+              pData.enunciado ||
+              pData.pregunta ||
+              ''
+            ).trim() || `Actuación Pedagógica N° ${ord}`;
+
+          catalogoActuaciones.push({
+            order: ord,
+            actuacion: desc,
+            preguntaDocente: desc,
+            actuaciones: desc,
+            textoActuacion: desc,
+            pregunta: pData.pregunta || '',
+            respuestaCorrecta: pData.respuesta || pData.respuestaCorrecta || '',
+            opciones: pData.opciones || pData.alternativas || [],
+            id: pData.id || `p_${ord}`,
+          });
+        });
+      }
     } catch (errPr) {
       console.warn('Advertencia al cargar preguntasRespuestas:', errPr);
     }

@@ -3,6 +3,10 @@ import { render, screen, fireEvent, within, waitFor } from '@testing-library/rea
 import { DocenteEvolucionEstudiantesTab } from '../DocenteEvolucionEstudiantesTab';
 import { Evaluaciones } from '@/features/types/types';
 
+jest.mock('@/firebase/firebase.config', () => ({
+  db: {},
+}));
+
 // Mock de Chart.js y react-chartjs-2
 jest.mock('react-chartjs-2', () => ({
   Line: ({ data, options }: any) => (
@@ -291,15 +295,16 @@ describe('DocenteEvolucionEstudiantesTab Component', () => {
     expect(screen.queryByText('Trayectoria (Línea)')).not.toBeInTheDocument();
     expect(screen.queryByText('Actuaciones (Radar)')).not.toBeInTheDocument();
 
-    // Por defecto muestra el gráfico lineal
-    expect(screen.getByTestId('mock-line-chart')).toBeInTheDocument();
-
-    // El conmutador permite alternar al gráfico Radar mediante su botón de solo icono
-    const radarBtn = screen.getByRole('button', { name: /Actuaciones \(Radar\)/i });
-    fireEvent.click(radarBtn);
-
-    // Ahora muestra el gráfico de radar reticular
+    // Por defecto muestra el gráfico Radar en modo Diana Polar
     expect(screen.getByTestId('mock-radar-chart')).toBeInTheDocument();
+    expect(screen.getByTestId('toggle-mode-diana')).toHaveClass('bg-blue-600');
+
+    // El conmutador permite alternar al gráfico Lineal mediante su botón de solo icono
+    const lineBtn = screen.getByRole('button', { name: /Trayectoria \(Línea\)/i });
+    fireEvent.click(lineBtn);
+
+    // Ahora muestra el gráfico lineal
+    expect(screen.getByTestId('mock-line-chart')).toBeInTheDocument();
 
     // Cerrar con Escape
     fireEvent.keyDown(window, { key: 'Escape' });
@@ -411,6 +416,30 @@ describe('DocenteEvolucionEstudiantesTab Component', () => {
     expect(screen.getAllByText('87654321').length).toBeGreaterThanOrEqual(1);
   });
 
+  it('al abrir el modal de evolución, inicia siempre con el gráfico radar en modo Diana Polar', () => {
+    render(
+      <DocenteEvolucionEstudiantesTab
+        evaluacion={mockEvaluacion}
+        dniDocente="12345678"
+        currentEstudiantes={[]}
+        yearSelected={2026}
+        monthSelected={6}
+      />
+    );
+
+    // Abrir modal de evolución de estudiante
+    const studentCell = screen.getByText('Pérez Ramos Juan Carlos');
+    fireEvent.click(studentCell);
+
+    // 1. Debe estar activo el botón de radar en el conmutador de representación
+    const radarBtn = screen.getByTitle('Actuaciones (Radar)');
+    expect(radarBtn).toHaveClass('bg-blue-600');
+
+    // 2. Debe estar seleccionado por defecto el botón de diseño "Diana Polar"
+    const dianaBtn = screen.getByTestId('toggle-mode-diana');
+    expect(dianaBtn).toHaveClass('bg-blue-600');
+  });
+
   it('configura spanGaps: true en datasets y opciones del gráfico lineal para completar la línea cuando hay etapas sin evaluación', () => {
     render(
       <DocenteEvolucionEstudiantesTab
@@ -425,6 +454,10 @@ describe('DocenteEvolucionEstudiantesTab Component', () => {
     // Abrir modal de evolución de estudiante
     const studentCell = screen.getByText('Pérez Ramos Juan Carlos');
     fireEvent.click(studentCell);
+
+    // Conmutar a vista de gráfico lineal
+    const lineButton = screen.getByTitle('Trayectoria (Línea)');
+    fireEvent.click(lineButton);
 
     // El gráfico lineal del modal debe tener spanGaps activado en opciones y datasets
     const lineCharts = screen.getAllByTestId('mock-line-chart');

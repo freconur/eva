@@ -155,10 +155,10 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
 
   // Estado del Modal a Pantalla Completa del estudiante (Solo un gráfico a la vez: línea o radar)
   const [modalStudent, setModalStudent] = useState<EstudianteEvolutivo | null>(null);
-  const [modalVisualMode, setModalVisualMode] = useState<'line' | 'radar'>('line');
+  const [modalVisualMode, setModalVisualMode] = useState<'line' | 'radar'>('radar');
 
-  // Diseño seleccionado del gráfico radar para pantalla y exportación PDF ('columnas' o 'flotante')
-  const [radarLayoutMode, setRadarLayoutMode] = useState<'columnas' | 'flotante'>('columnas');
+  // Diseño seleccionado del gráfico radar para pantalla y exportación PDF ('columnas', 'flotante' o 'diana')
+  const [radarLayoutMode, setRadarLayoutMode] = useState<'columnas' | 'flotante' | 'diana'>('diana');
   // Feature para dividir el gráfico radar en 2 mitades (2 páginas en PDF)
   const [radarSplitInTwo, setRadarSplitInTwo] = useState<boolean>(false);
   // Sentido de giro del gráfico radar en modo columnas ('horario' o 'antihorario')
@@ -274,6 +274,8 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
   const handleOpenModal = (student: EstudianteEvolutivo) => {
     setModalStudent(student);
     setSelectedStudentDni(student.dni);
+    setModalVisualMode('radar');
+    setRadarLayoutMode('diana');
     setIsSpotlightOpen(false);
   };
 
@@ -2423,9 +2425,7 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
                     <div
                       key={est.dni}
                       onClick={() => {
-                        setModalStudent(est);
-                        setSelectedStudentDni(est.dni);
-                        setIsSpotlightOpen(false);
+                        handleOpenModal(est);
                       }}
                       className={`group px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                         isSelected

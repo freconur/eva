@@ -260,8 +260,8 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
     setMounted(true);
   }, []);
 
-  // Modos de visualización del Gráfico Radar Individual
-  const [radarLayoutMode, setRadarLayoutMode] = useState<'columnas' | 'flotante'>('flotante');
+  // Modos de visualización del Gráfico Radar Individual ('columnas', 'flotante' o 'diana')
+  const [radarLayoutMode, setRadarLayoutMode] = useState<'columnas' | 'flotante' | 'diana'>('diana');
   const [radarSplitInTwo, setRadarSplitInTwo] = useState<boolean>(false);
   const [radarOrderDirection, setRadarOrderDirection] = useState<'horario' | 'antihorario'>('horario');
   const [radarTextScale, setRadarTextScale] = useState<number>(1);

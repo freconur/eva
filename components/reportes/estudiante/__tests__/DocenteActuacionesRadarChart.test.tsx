@@ -14,6 +14,10 @@ import {
 } from '../DocenteActuacionesRadarChart';
 import { EstudianteEvolutivo, ActuacionCatalogoItem } from '../useDocenteEvolucionEstudiantes';
 
+jest.mock('@/firebase/firebase.config', () => ({
+  db: {},
+}));
+
 // Mock de react-chartjs-2 Radar
 jest.mock('react-chartjs-2', () => ({
   Radar: ({ data, options }: any) => (
@@ -1080,6 +1084,185 @@ describe('DocenteActuacionesRadarChart Component', () => {
       expect(screen.getByText('No evaluado')).toBeInTheDocument();
       expect(screen.getAllByText(/EDI \(Diagnóstica\)/i).length).toBeGreaterThan(0);
       expect(screen.getAllByText(/EP2 \(Progresiva 2\)/i).length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Diseño 3 - Diana Polar de Progresión Continua', () => {
+    it('renderiza la vista Diana Polar con la rueda SVG, badges perimetrales y tabla lateral', () => {
+      render(
+        <DocenteActuacionesRadarChart
+          student={mockStudent}
+          etapasConfiguradas={mockEtapas}
+          catalogoActuaciones={mockCatalogo}
+          layoutMode="diana"
+        />
+      );
+
+      // 1. Debe existir el contenedor de la Diana Polar
+      expect(screen.getByTestId('diana-progression-view')).toBeInTheDocument();
+
+      // 2. Debe renderizar el conmutador de diseño con el botón de Diana seleccionado
+      const dianaToggle = screen.getByTestId('toggle-mode-diana');
+      expect(dianaToggle).toBeInTheDocument();
+      expect(dianaToggle).toHaveClass('bg-blue-600');
+
+      // 3. Debe renderizar los badges circulares perimetrales para las actuaciones
+      expect(screen.getByTestId('diana-badge-1')).toBeInTheDocument();
+      expect(screen.getByTestId('diana-badge-2')).toBeInTheDocument();
+
+      // 4. Debe renderizar el buscador de habilidades
+      expect(screen.getByTestId('diana-search-input')).toBeInTheDocument();
+
+      // 5. Debe renderizar el botón de reproducción de la evolución
+      expect(screen.getByTestId('toggle-evolution-play')).toBeInTheDocument();
+    });
+
+    it('permite conmutar al modo Diana desde el selector de controles', () => {
+      const handleModeChange = jest.fn();
+      render(
+        <DocenteActuacionesRadarChart
+          student={mockStudent}
+          etapasConfiguradas={mockEtapas}
+          catalogoActuaciones={mockCatalogo}
+          layoutMode="columnas"
+          onLayoutModeChange={handleModeChange}
+        />
+      );
+
+      const dianaBtn = screen.getByTestId('toggle-mode-diana');
+      fireEvent.click(dianaBtn);
+      expect(handleModeChange).toHaveBeenCalledWith('diana');
+    });
+
+    it('filtra habilidades al escribir en el buscador y selecciona actuaciones al hacer clic', () => {
+      render(
+        <DocenteActuacionesRadarChart
+          student={mockStudent}
+          etapasConfiguradas={mockEtapas}
+          catalogoActuaciones={mockCatalogo}
+          layoutMode="diana"
+        />
+      );
+
+      const searchInput = screen.getByTestId('diana-search-input');
+      // Buscar una palabra que solo esté en la primera actuación
+      fireEvent.change(searchInput, { target: { value: 'información' } });
+
+      // Debe seguir visible la fila 1 y el badge 1
+      expect(screen.getByTestId('diana-row-1')).toBeInTheDocument();
+
+      // Al hacer clic en la fila 1, la tarjeta superior debe mostrar los detalles de la actuación 1
+      fireEvent.click(screen.getByTestId('diana-row-1'));
+      expect(screen.getByText(/ACTUACIÓN 1 DE/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Trayectoria:/i).length).toBeGreaterThan(0);
+    });
+
+    it('reproduce la animación paso a paso al hacer clic en el botón de reproducción', () => {
+      render(
+        <DocenteActuacionesRadarChart
+          student={mockStudent}
+          etapasConfiguradas={mockEtapas}
+          catalogoActuaciones={mockCatalogo}
+          layoutMode="diana"
+        />
+      );
+
+      const playBtn = screen.getByTestId('toggle-evolution-play');
+      expect(screen.getByText(/Reproducir evolución/i)).toBeInTheDocument();
+
+      // Iniciar reproducción
+      fireEvent.click(playBtn);
+      expect(screen.getByText(/Pausar/i)).toBeInTheDocument();
+
+      // Pausar reproducción
+      fireEvent.click(playBtn);
+      expect(screen.getByText(/Reproducir evolución/i)).toBeInTheDocument();
+    });
+
+    it('muestra la columna Nivel en la tabla interactiva y los badges con el color del nivel', () => {
+      render(
+        <DocenteActuacionesRadarChart
+          student={mockStudent}
+          etapasConfiguradas={mockEtapas}
+          catalogoActuaciones={mockCatalogo}
+          layoutMode="diana"
+        />
+      );
+
+      // 1. Debe existir la cabecera de la columna Nivel en la tabla (Opción A)
+      expect(screen.getByRole('columnheader', { name: /^Nivel$/i })).toBeInTheDocument();
+
+      // 2. Las filas deben mostrar la píldora del nivel correspondiente
+      expect(screen.getByTestId('diana-table-nivel-1')).toBeInTheDocument();
+      expect(screen.getByTestId('diana-table-nivel-2')).toBeInTheDocument();
+
+      // 3. Al seleccionar una actuación, el badge de nivel formativo debe estar presente
+      fireEvent.click(screen.getByTestId('diana-row-1'));
+      expect(screen.getByTestId('badge-nivel-actuacion-global')).toBeInTheDocument();
+    });
+
+    it('no preselecciona ninguna actuación al inicio, muestra aciertos globales (X/N) antes del gráfico y cambia a 1/1 o 0/1 sin la palabra Logrado al seleccionar', () => {
+      render(
+        <DocenteActuacionesRadarChart
+          student={mockStudent}
+          etapasConfiguradas={mockEtapas}
+          catalogoActuaciones={mockCatalogo}
+          layoutMode="diana"
+        />
+      );
+
+      // 1. Estado Inicial: Debe mostrar el card de resumen global, NO el detalle de la actuación 1
+      const globalCard = screen.getByTestId('diana-card-global-resumen');
+      expect(globalCard).toBeInTheDocument();
+      expect(screen.queryByTestId('diana-card-actuacion-detalle')).not.toBeInTheDocument();
+
+      // 2. Las cards iniciales deben mostrar los aciertos totales por evaluación:
+      // En mockStudent:
+      // EDI: acertó 1 de 3 -> '1/3'
+      // EP1: acertó 2 de 3 -> '2/3'
+      // EP2: acertó 3 de 3 -> '3/3'
+      expect(screen.getByText('1/3')).toBeInTheDocument();
+      expect(screen.getByText('2/3')).toBeInTheDocument();
+      expect(screen.getByText('3/3')).toBeInTheDocument();
+
+      // 3. En el hub central de la Diana SVG debe decir '3 HABILIDADES'
+      expect(screen.getByText('HABILIDADES')).toBeInTheDocument();
+      expect(screen.getAllByText('3').length).toBeGreaterThan(0);
+
+      // 4. Ubicación de las cards: el contenedor de cards globales debe estar antes de la tabla en el DOM
+      const searchInput = screen.getByTestId('diana-search-input');
+      expect(globalCard.compareDocumentPosition(searchInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+      // 5. Al seleccionar una actuación (haciendo clic en la actuación 2)
+      fireEvent.click(screen.getByTestId('diana-row-2'));
+
+      // Ahora debe aparecer la tarjeta de detalle individual y desaparecer el resumen global
+      expect(screen.getByTestId('diana-card-actuacion-detalle')).toBeInTheDocument();
+      expect(screen.queryByTestId('diana-card-global-resumen')).not.toBeInTheDocument();
+      expect(screen.getByText(/ACTUACIÓN 2 DE 3/i)).toBeInTheDocument();
+
+      // Para la actuación 2:
+      // EDI: falló (val 1) -> 0/1
+      // EP1: acertó (val 2) -> 1/1
+      // EP2: acertó (val 2) -> 1/1
+      expect(screen.getByText('0/1')).toBeInTheDocument();
+      expect(screen.getAllByText('1/1').length).toBe(2);
+
+      // 6. Verificar que NO aparezca la palabra "Logrado" en las tarjetas
+      expect(screen.queryByText(/^Logrado$/i)).not.toBeInTheDocument();
+
+      // 7. En su lugar debe mostrar la trayectoria acumulada (ej. 'Trayectoria: 1/2', 'Trayectoria: 2/3')
+      expect(screen.getAllByText(/Trayectoria: \d+\/\d+/i).length).toBeGreaterThanOrEqual(3);
+
+      // 8. Botón para volver al resumen global
+      const returnBtn = screen.getByText(/✕ Ver resumen global/i);
+      expect(returnBtn).toBeInTheDocument();
+
+      // Al hacer clic en '✕ Ver resumen global', regresa al estado global inicial
+      fireEvent.click(returnBtn);
+      expect(screen.getByTestId('diana-card-global-resumen')).toBeInTheDocument();
+      expect(screen.queryByTestId('diana-card-actuacion-detalle')).not.toBeInTheDocument();
+      expect(screen.getByText('1/3')).toBeInTheDocument();
     });
   });
 });

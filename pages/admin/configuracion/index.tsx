@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import PrivateRoutesAdmin from '@/components/layouts/PrivateRoutesAdmin';
 import { 
@@ -7,10 +7,20 @@ import {
   RiShieldUserLine,
   RiRocketLine
 } from 'react-icons/ri';
+import { MdDonutLarge } from 'react-icons/md';
+import ConfigurarNivelesActuacionModal from '@/modals/ConfigurarNivelesActuacion';
 
 const ConfiguracionPage = () => {
+  const [showNivelesModal, setShowNivelesModal] = useState(false);
+
   return (
     <div className="p-6 max-w-7xl mx-auto min-h-screen">
+      {showNivelesModal && (
+        <ConfigurarNivelesActuacionModal
+          showModal={showNivelesModal}
+          handleClose={() => setShowNivelesModal(false)}
+        />
+      )}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 pb-4 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-800 flex items-center gap-2">
@@ -18,7 +28,7 @@ const ConfiguracionPage = () => {
             Configuración del Sistema
           </h1>
           <p className="text-slate-500 mt-1 text-sm">
-            Gestiona la apariencia visual del portal, colores, permisos de acciones y actualizaciones de la plataforma.
+            Gestiona la apariencia visual del portal, colores, permisos de acciones, niveles pedagógicos y actualizaciones.
           </p>
         </div>
       </div>
@@ -40,10 +50,30 @@ const ConfiguracionPage = () => {
           </Link>
         </div>
 
-        {/* Card: Permisos de Acciones de Reportes */}
+        {/* Card: Niveles por Actuación (Evaluaciones Progresivas) */}
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group w-full flex flex-col justify-between">
           <div>
             <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+              <MdDonutLarge className="text-2xl" />
+            </div>
+            <h2 className="text-lg font-bold text-slate-800 mb-1">Niveles por Actuación</h2>
+            <p className="text-slate-500 text-sm mb-4">
+              Configura globalmente la escala de 4 niveles formativos (Por desarrollo, Iniciándose, Consolidación, Autonomía) para la Diana Polar y reportes progresivos.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowNivelesModal(true)}
+            className="text-left text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+          >
+            Configurar Niveles Globales →
+          </button>
+        </div>
+
+        {/* Card: Permisos de Acciones de Reportes */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group w-full flex flex-col justify-between">
+          <div>
+            <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 group-hover:bg-amber-600 group-hover:text-white transition-all duration-300">
               <RiShieldUserLine className="text-2xl" />
             </div>
             <h2 className="text-lg font-bold text-slate-800 mb-1">Permisos de Reportes (Acciones)</h2>
@@ -51,7 +81,7 @@ const ConfiguracionPage = () => {
               Configura globalmente los permisos de exportación (Excel, PDF) y descargas visibles para Directores y Especialistas.
             </p>
           </div>
-          <Link href="/admin/configuracion/personalizacion?section=acciones" className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+          <Link href="/admin/configuracion/personalizacion?section=acciones" className="text-sm font-semibold text-amber-600 hover:text-amber-700 transition-colors">
             Configurar Permisos →
           </Link>
         </div>

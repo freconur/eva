@@ -10,13 +10,23 @@ import {
   Line,
   Rect,
   Path,
+  G,
   Image,
   StyleSheet,
   pdf,
 } from '@react-pdf/renderer';
 import { converSeccion, getGradoTexto } from '../../fuctions/regiones';
 import { ActuacionCatalogoItem } from '../../components/reportes/estudiante/useDocenteEvolucionEstudiantes';
-import { loadStoredCardAdjustments, getCoincidentRadiusOffset } from '../../components/reportes/estudiante/DocenteActuacionesRadarChart';
+import {
+  loadStoredCardAdjustments,
+  getCoincidentRadiusOffset,
+  describeAnnularSector,
+  getEtapaColorConfig,
+} from '../../components/reportes/estudiante/DocenteActuacionesRadarChart';
+import {
+  determinarNivelActuacion,
+  DEFAULT_NIVELES_ACTUACIONES,
+} from '../hooks/useNivelesActuacionesConfig';
 
 export interface EtapaHistorialEstudiante {
   etapaKey: string;
@@ -75,7 +85,7 @@ export interface EstudianteEvolutivoPDFProps {
     }
   >;
   activeStages?: Record<string, boolean>;
-  chartLayoutMode?: 'columnas' | 'flotante' | 'dividido';
+  chartLayoutMode?: 'columnas' | 'flotante' | 'dividido' | 'diana';
   splitInTwo?: boolean;
   orderDirection?: 'horario' | 'antihorario';
   cardAdjustments?: Record<
@@ -653,6 +663,143 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Estilos dedicados para el Diseño Diana Polar en PDF
+  dianaContainer: {
+    backgroundColor: '#ffffff',
+    width: '100%',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  dianaSummaryBlock: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderWidth: 0.6,
+    borderColor: '#e2e8f0',
+    borderRadius: 3,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    marginBottom: 3.5,
+    width: '100%',
+  },
+  dianaSummaryCardsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dianaStageCard: {
+    backgroundColor: '#ffffff',
+    borderWidth: 0.6,
+    borderColor: '#cbd5e1',
+    borderRadius: 2.5,
+    paddingVertical: 1.5,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    minWidth: 48,
+    marginRight: 4,
+    borderTopWidth: 2.2,
+  },
+  dianaStageTitle: {
+    fontSize: 5.2,
+    fontFamily: 'Helvetica-Bold',
+    color: '#475569',
+  },
+  dianaStageScore: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#0f172a',
+    marginVertical: 0.5,
+  },
+  dianaStagePct: {
+    fontSize: 4.8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#2563eb',
+  },
+  dianaTrayectoriaText: {
+    fontSize: 6,
+    fontFamily: 'Helvetica',
+    color: '#475569',
+  },
+  dianaColumnsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  dianaLeftColumn: {
+    width: 335,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  dianaRightColumn: {
+    flex: 1,
+    marginLeft: 8,
+    borderWidth: 0.6,
+    borderColor: '#cbd5e1',
+    borderRadius: 2.5,
+    backgroundColor: '#ffffff',
+    overflow: 'hidden',
+  },
+  dianaTableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#f1f5f9',
+    borderBottomWidth: 0.6,
+    borderBottomColor: '#cbd5e1',
+    paddingVertical: 2.5,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+  },
+  dianaTableHeaderText: {
+    fontSize: 6.5,
+    fontFamily: 'Helvetica-Bold',
+    color: '#475569',
+    textAlign: 'center',
+  },
+  dianaTableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 0.4,
+    borderBottomColor: '#f1f5f9',
+    paddingHorizontal: 3,
+    alignItems: 'center',
+  },
+  dianaBadgeCircle: {
+    borderRadius: 5,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dianaPillNivel: {
+    borderRadius: 2.5,
+    paddingVertical: 0.8,
+    paddingHorizontal: 3,
+    borderWidth: 0.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dianaLegendRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1.5,
+  },
+  dianaLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 3.5,
+    marginVertical: 0.8,
+  },
+  dianaLegendDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    marginRight: 2.5,
+  },
+  dianaLegendText: {
+    fontSize: 5.5,
+    fontFamily: 'Helvetica-Bold',
+    color: '#475569',
+  },
 });
 
 /**
@@ -671,6 +818,8 @@ const HeaderIdentificacionPDF: React.FC<{
   studentEtapas?: Record<string, any>;
   qrCodeDataUrl?: string;
   qrVerificationUrl?: string;
+  catalogoActuaciones?: ActuacionCatalogoItem[];
+  chartLayoutMode?: string;
 }> = ({
   estudiante,
   evaluacionActual,
@@ -682,6 +831,8 @@ const HeaderIdentificacionPDF: React.FC<{
   etapasConfiguradas = [],
   studentEtapas = {},
   qrCodeDataUrl,
+  catalogoActuaciones,
+  chartLayoutMode,
 }) => {
   const gradoTexto = evaluacionActual?.grado
     ? getGradoTexto(evaluacionActual.grado)
@@ -713,12 +864,72 @@ const HeaderIdentificacionPDF: React.FC<{
     return (cfgKey || 'ETAPA').toUpperCase();
   };
 
+  // Helper para contar aciertos de una etapa dada (para mostrar en la tabla de estudiante)
+  const getEtapaAciertos = (
+    etapaKey: string,
+    etapaObj?: {
+      actuacionesResultados?: Record<number, 1 | 2>;
+      respuestasCorrectas?: number;
+      totalPreguntas?: number;
+      porcentaje?: number;
+    }
+  ) => {
+    // 1. Si tenemos catálogo de actuaciones y resultados de actuaciones por número de orden:
+    if (catalogoActuaciones && catalogoActuaciones.length > 0) {
+      const actResults =
+        etapaObj?.actuacionesResultados ||
+        studentEtapas?.[etapaKey]?.actuacionesResultados;
+      if (actResults && Object.keys(actResults).length > 0) {
+        let aciertos = 0;
+        catalogoActuaciones.forEach((act) => {
+          if (actResults[act.order] === 2) {
+            aciertos++;
+          }
+        });
+        const total = catalogoActuaciones.length;
+        const pct = Math.round((aciertos / total) * 100);
+        return {
+          aciertos,
+          total,
+          pct,
+          texto: `${aciertos}/${total}`,
+          subtexto: `${pct}% aciertos`,
+        };
+      }
+    }
+
+    // 2. Si el historial o el objeto tiene respuestasCorrectas y totalPreguntas:
+    if (
+      etapaObj?.respuestasCorrectas !== undefined &&
+      etapaObj?.totalPreguntas !== undefined &&
+      etapaObj.totalPreguntas > 0
+    ) {
+      const aciertos = etapaObj.respuestasCorrectas;
+      const total = etapaObj.totalPreguntas;
+      const pct =
+        etapaObj.porcentaje !== undefined
+          ? Math.round(etapaObj.porcentaje)
+          : Math.round((aciertos / total) * 100);
+      return {
+        aciertos,
+        total,
+        pct,
+        texto: `${aciertos}/${total}`,
+        subtexto: `${pct}% aciertos`,
+      };
+    }
+
+    return null;
+  };
+
   // Construir columnas de la mini-tabla con todas las evaluaciones
   interface ColumnaEtapaTabla {
     key: string;
     label: string;
     nivel: string;
     puntajeTexto: string;
+    aciertosTexto?: string;
+    aciertosSubtexto?: string;
   }
 
   let etapasTabla: ColumnaEtapaTabla[] = [];
@@ -742,15 +953,20 @@ const HeaderIdentificacionPDF: React.FC<{
         nivelRaw.toLowerCase() !== 'sin clasificar' &&
         nivelRaw !== '-';
 
+      const aciertosInfo = getEtapaAciertos(cfg.key, etapaData || studentEtapas?.[cfg.key]);
+
       return {
         key: cfg.key,
         label: getEtapaHeaderLabel(cfg.key, cfg.label),
         nivel: nivelValido ? nivelRaw : '—',
         puntajeTexto: tienePuntajeEtapa ? `${rawPuntaje} pts` : '—',
+        aciertosTexto: aciertosInfo?.texto,
+        aciertosSubtexto: aciertosInfo?.subtexto,
       };
     });
   } else if (historialEtapas && historialEtapas.length > 0) {
     etapasTabla = historialEtapas.map((hist) => {
+      const histKey = hist?.etapaKey || '';
       const nivelRaw = (hist.nivel || '').trim();
       const nivelValido =
         nivelRaw &&
@@ -761,11 +977,18 @@ const HeaderIdentificacionPDF: React.FC<{
         hist.puntaje !== null &&
         !isNaN(Number(hist.puntaje));
 
+      const aciertosInfo = getEtapaAciertos(
+        histKey,
+        studentEtapas?.[histKey] || hist
+      );
+
       return {
-        key: hist.etapaKey,
-        label: getEtapaHeaderLabel(hist.etapaKey, hist.label),
+        key: histKey,
+        label: getEtapaHeaderLabel(histKey, hist.label),
         nivel: nivelValido ? nivelRaw : '—',
         puntajeTexto: tienePuntajeEtapa ? `${hist.puntaje} pts` : '—',
+        aciertosTexto: aciertosInfo?.texto,
+        aciertosSubtexto: aciertosInfo?.subtexto,
       };
     });
   } else if (estudiante?.puntaje !== undefined || estudiante?.nivel) {
@@ -779,6 +1002,12 @@ const HeaderIdentificacionPDF: React.FC<{
       estudiante.puntaje !== null &&
       !isNaN(Number(estudiante.puntaje));
 
+    const aciertosInfo = getEtapaAciertos('actual', {
+      actuacionesResultados: (estudiante as any)?.actuacionesResultados || studentEtapas?.['actual']?.actuacionesResultados,
+      respuestasCorrectas: (estudiante as any)?.respuestasCorrectas,
+      totalPreguntas: (estudiante as any)?.totalPreguntas,
+    });
+
     etapasTabla = [
       {
         key: 'actual',
@@ -789,6 +1018,8 @@ const HeaderIdentificacionPDF: React.FC<{
           : 'Evaluación',
         nivel: nivelValido ? nivelRaw : '—',
         puntajeTexto: tienePuntajeEtapa ? `${estudiante.puntaje} pts` : '—',
+        aciertosTexto: aciertosInfo?.texto,
+        aciertosSubtexto: aciertosInfo?.subtexto,
       },
     ];
   }
@@ -906,7 +1137,7 @@ const HeaderIdentificacionPDF: React.FC<{
                   ))}
                 </View>
 
-                {/* Fila 2: Puntaje obtenido */}
+                {/* Fila 2: Puntaje obtenido o Aciertos */}
                 <View style={styles.miniTablePuntajeRow}>
                   {etapasTabla.map((col, idx) => (
                     <View
@@ -917,9 +1148,27 @@ const HeaderIdentificacionPDF: React.FC<{
                           : styles.miniTableCell
                       }
                     >
-                      <Text style={styles.miniTablePuntajeText}>
-                        {col.puntajeTexto}
-                      </Text>
+                      {col.aciertosTexto ? (
+                        <View style={{ alignItems: 'center' }}>
+                          <Text style={styles.miniTablePuntajeText}>
+                            {col.aciertosTexto}
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: 5.2,
+                              fontFamily: 'Helvetica-Bold',
+                              color: '#2563eb',
+                              marginTop: 0.5,
+                            }}
+                          >
+                            {col.aciertosSubtexto || ''}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text style={styles.miniTablePuntajeText}>
+                          {col.puntajeTexto}
+                        </Text>
+                      )}
                     </View>
                   ))}
                 </View>
@@ -2110,7 +2359,12 @@ const VectorRadarChartPDFColumnas: React.FC<{
           },
         ]}
       >
-        {act.actuacion}
+        {act.actuacion ||
+          (act as any).preguntaDocente ||
+          (act as any).actuaciones ||
+          (act as any).textoActuacion ||
+          (act as any).pregunta ||
+          `Actuación Pedagógica N° ${act.order}`}
       </Text>
     </View>
   );
@@ -2303,6 +2557,330 @@ const VectorRadarChartPDFColumnas: React.FC<{
 };
 
 /**
+ * Componente Vectorial Nativo de Alta Fidelidad para el Diseño Diana Polar de Progresión Continua en PDF
+ */
+const VectorRadarChartPDFDiana: React.FC<{
+  orderedActuaciones: ActuacionCatalogoItem[];
+  sortedEtapas: { key: string; label: string; order?: number }[];
+  studentEtapas: Record<
+    string,
+    {
+      etapaKey?: string;
+      label?: string;
+      puntaje?: number;
+      actuacionesResultados?: Record<number, 1 | 2>;
+    }
+  >;
+  historialEtapas?: EtapaHistorialEstudiante[];
+  evaluacionActual?: EstudianteEvolutivoPDFProps['evaluacionActual'];
+  activeStages?: Record<string, boolean>;
+  orderDirection?: 'horario' | 'antihorario';
+  textScale?: number;
+}> = ({
+  orderedActuaciones,
+  sortedEtapas,
+  studentEtapas,
+  activeStages,
+  orderDirection = 'horario',
+  textScale = 1.0,
+}) => {
+  const isAntihorario = orderDirection === 'antihorario';
+  const M = orderedActuaciones.length;
+
+  // Filtrar etapas activas y evaluadas respetando el orden cronológico
+  const activeEtapasList = sortedEtapas.filter(
+    (et) => activeStages?.[et.key] !== false
+  );
+
+  // Geometría polar SVG de la Diana
+  const cx = 290;
+  const cy = 290;
+  const rHub = 62;
+  const rMax = 224;
+  const rBadges = 254;
+
+  const ringThickness = (rMax - rHub) / Math.max(1, activeEtapasList.length);
+  const sliceAngle = 360 / Math.max(M, 1);
+
+  // Cálculo angular por actuación
+  const actsGeometry = orderedActuaciones.map((act, i) => {
+    const startDeg = isAntihorario ? -90 - (i + 1) * sliceAngle : -90 + i * sliceAngle;
+    const endDeg = isAntihorario ? -90 - i * sliceAngle : -90 + (i + 1) * sliceAngle;
+    const midDeg = isAntihorario ? -90 - (i + 0.5) * sliceAngle : -90 + (i + 0.5) * sliceAngle;
+    return { act, i, startDeg, endDeg, midDeg };
+  });
+
+  // Calibración adaptativa de altura de fila para aprovechar al máximo el espacio vertical y garantizar que los textos se muestren completos
+  const availableTableH = 360;
+  const tableRowH = Math.min(22, Math.max(12, Math.floor(availableTableH / Math.max(M, 1))));
+  const tableFontSize =
+    Math.round((M > 22 ? 5.5 : M > 16 ? 6.2 : 6.8) * Math.min(textScale, 1.15) * 10) / 10;
+
+  return (
+    <View style={styles.dianaContainer} wrap={false}>
+      {/* Cuerpo en 2 Columnas: Diana Polar SVG a la izquierda y Tabla Limpia de Habilidades a la derecha */}
+      <View style={styles.dianaColumnsGrid}>
+        {/* Columna Izquierda: Rueda Diana Polar SVG con leyendas */}
+        <View style={styles.dianaLeftColumn}>
+          <Svg width={335} height={325} viewBox="0 0 580 580">
+            {/* Círculo guía exterior */}
+            <Circle
+              cx={cx}
+              cy={cy}
+              r={rMax}
+              fill="none"
+              stroke="#e2e8f0"
+              strokeWidth={1}
+              strokeDasharray="3 3"
+            />
+
+            {/* Celdas anulares concéntricas por evaluación y actuación */}
+            {activeEtapasList.map((etapa, k) => {
+              const innerR = rHub + k * ringThickness;
+              const outerR = innerR + ringThickness;
+              const etapaColor = getEtapaColorConfig(etapa.key, k);
+
+              return (
+                <G key={`pdf-diana-ring-${etapa.key}-${k}`}>
+                  {actsGeometry.map(({ act, startDeg, endDeg }) => {
+                    const val =
+                      studentEtapas[etapa.key]?.actuacionesResultados?.[act.order];
+                    let fillColor = '#f1f5f9';
+                    if (val === 2) {
+                      fillColor = etapaColor.border;
+                    } else if (val === 1) {
+                      fillColor = '#f43f5e';
+                    }
+
+                    const d = describeAnnularSector(
+                      cx,
+                      cy,
+                      innerR,
+                      outerR,
+                      startDeg,
+                      endDeg
+                    );
+                    return (
+                      <Path
+                        key={`pdf-sector-${etapa.key}-${act.order}`}
+                        d={d}
+                        fill={fillColor}
+                        stroke="#ffffff"
+                        strokeWidth={1.2}
+                      />
+                    );
+                  })}
+                </G>
+              );
+            })}
+
+            {/* Centro / Hub de la Diana Polar */}
+            <Circle cx={cx} cy={cy} r={rHub - 2} fill="#3b82f6" />
+            <Circle
+              cx={cx}
+              cy={cy}
+              r={rHub - 5}
+              fill="none"
+              stroke="rgba(255,255,255,0.4)"
+              strokeWidth={1.5}
+            />
+            <Text
+              x={cx}
+              y={cy - 4}
+              style={{
+                fill: '#ffffff',
+                fontSize: 26,
+                fontFamily: 'Helvetica-Bold',
+                textAnchor: 'middle',
+              }}
+            >
+              {M}
+            </Text>
+            <Text
+              x={cx}
+              y={cy + 15}
+              style={{
+                fill: '#ffffff',
+                fontSize: 8.5,
+                fontFamily: 'Helvetica-Bold',
+                textAnchor: 'middle',
+              }}
+            >
+              HABILIDADES
+            </Text>
+
+            {/* Badges perimetrales con números 1..N */}
+            {actsGeometry.map(({ act, midDeg }) => {
+              const rad = (midDeg * Math.PI) / 180;
+              const bx = cx + rBadges * Math.cos(rad);
+              const by = cy + rBadges * Math.sin(rad);
+
+              const superadasAct = activeEtapasList.filter(
+                (et) =>
+                  studentEtapas[et.key]?.actuacionesResultados?.[act.order] === 2
+              ).length;
+              const nivelBadge = determinarNivelActuacion(
+                superadasAct,
+                activeEtapasList.length,
+                DEFAULT_NIVELES_ACTUACIONES
+              );
+
+              return (
+                <G key={`pdf-diana-badge-${act.order}`}>
+                  <Circle
+                    cx={bx}
+                    cy={by}
+                    r={10.5}
+                    fill="#ffffff"
+                    stroke={nivelBadge.color}
+                    strokeWidth={2}
+                  />
+                  <Text
+                    x={bx}
+                    y={by + 3.2}
+                    style={{
+                      fill: '#0f172a',
+                      fontSize: 8.5,
+                      fontFamily: 'Helvetica-Bold',
+                      textAnchor: 'middle',
+                    }}
+                  >
+                    {act.order}
+                  </Text>
+                </G>
+              );
+            })}
+          </Svg>
+
+          {/* Leyenda de Anillos (Evaluaciones) */}
+          <View style={styles.dianaLegendRow}>
+            {activeEtapasList.map((et, idx) => {
+              const colorCfg = getEtapaColorConfig(et.key, idx);
+              return (
+                <View key={`pdf-leg-stage-${et.key}`} style={styles.dianaLegendItem}>
+                  <View
+                    style={[
+                      styles.dianaLegendDot,
+                      { backgroundColor: colorCfg.border },
+                    ]}
+                  />
+                  <Text style={styles.dianaLegendText}>
+                    Anillo {idx + 1}: {et.label || et.key.toUpperCase()}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Leyenda de Niveles de Actuación */}
+          <View style={styles.dianaLegendRow}>
+            {DEFAULT_NIVELES_ACTUACIONES.map((nv) => (
+              <View key={`pdf-leg-nv-${nv.id}`} style={styles.dianaLegendItem}>
+                <View
+                  style={[
+                    styles.dianaLegendDot,
+                    { backgroundColor: nv.color },
+                  ]}
+                />
+                <Text style={styles.dianaLegendText}>{nv.nombre}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Columna Derecha: Tabla Institucional Limpia de Habilidades (Sin cabecera para máximo espacio vertical y círculo de color para nivel) */}
+        <View style={styles.dianaRightColumn}>
+          {/* Filas de la tabla */}
+          {orderedActuaciones.map((act, rIdx) => {
+            const superadasRow = activeEtapasList.filter(
+              (et) =>
+                studentEtapas[et.key]?.actuacionesResultados?.[act.order] === 2
+            ).length;
+            const nivelRow = determinarNivelActuacion(
+              superadasRow,
+              activeEtapasList.length,
+              DEFAULT_NIVELES_ACTUACIONES
+            );
+
+            const fullText =
+              String(act.actuacion || act.pregunta || '').trim() ||
+              `Actuación Pedagógica N° ${act.order}`;
+
+            const isLast = rIdx === orderedActuaciones.length - 1;
+
+            return (
+              <View
+                key={`pdf-diana-row-${act.order}`}
+                style={[
+                  styles.dianaTableRow,
+                  {
+                    height: tableRowH,
+                    backgroundColor:
+                      rIdx % 2 === 0 ? '#ffffff' : '#f8fafc',
+                    borderBottomWidth: isLast ? 0 : 0.4,
+                  },
+                ]}
+              >
+                {/* N.° */}
+                <View style={{ width: 22, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text
+                    style={{
+                      fontSize: tableFontSize,
+                      fontFamily: 'Helvetica-Bold',
+                      color: '#475569',
+                    }}
+                  >
+                    {act.order}
+                  </Text>
+                </View>
+
+                {/* Actuación evaluada (Texto completo con máximo ancho horizontal disponible) */}
+                <View
+                  style={{
+                    flex: 1,
+                    paddingLeft: 6,
+                    paddingRight: 6,
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: tableFontSize,
+                      fontFamily: 'Helvetica',
+                      color: '#1e293b',
+                    }}
+                  >
+                    {fullText}
+                  </Text>
+                </View>
+
+                {/* Nivel formativo representado por círculo de color según la leyenda */}
+                <View
+                  style={{
+                    width: 22,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 8.5,
+                      height: 8.5,
+                      borderRadius: 4.25,
+                      backgroundColor: nivelRow.color,
+                    }}
+                  />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    </View>
+  );
+};
+
+/**
  * Genera la(s) página(s) A4 en orientación horizontal para un estudiante individual
  * (1 página estándar o 2 páginas si está configurado para dividir en dos hemisferios)
  */
@@ -2330,10 +2908,23 @@ export const FichaEvolutivaEstudiantePages: React.FC<
   // Factor de escala de tipografía efectivo para el PDF
   const effectiveTextScale = parsePdfTextScale(textScale);
 
-  // Catálogo ordenado de actuaciones
-  const orderedActuaciones = [...(catalogoActuaciones || [])].sort(
-    (a, b) => a.order - b.order
-  );
+  // Catálogo ordenado y normalizado de actuaciones pedagógicas
+  const orderedActuaciones = [...(catalogoActuaciones || [])]
+    .map((item: any, idx) => ({
+      ...item,
+      order: item.order !== undefined ? Number(item.order) : idx + 1,
+      actuacion:
+        String(
+          item.actuacion ||
+          item.preguntaDocente ||
+          item.actuaciones ||
+          item.textoActuacion ||
+          item.enunciado ||
+          item.pregunta ||
+          ''
+        ).trim() || `Actuación Pedagógica N° ${item.order !== undefined ? item.order : idx + 1}`,
+    }))
+    .sort((a, b) => a.order - b.order);
 
   // Orden cronológico de las etapas configuradas
   const sortedEtapas = [...(etapasConfiguradas || [])].sort(
@@ -2361,6 +2952,20 @@ export const FichaEvolutivaEstudiantePages: React.FC<
     const labelMitad2 = `Parte 2 de 2: Actuaciones ${segundaMitad[0]?.order} - ${segundaMitad[segundaMitad.length - 1]?.order}`;
 
     const renderChartForSubset = (subset: ActuacionCatalogoItem[]) => {
+      if (chartLayoutMode === 'diana') {
+        return (
+          <VectorRadarChartPDFDiana
+            orderedActuaciones={subset}
+            sortedEtapas={sortedEtapas}
+            studentEtapas={studentEtapas}
+            historialEtapas={historialEtapas}
+            evaluacionActual={evaluacionActual}
+            activeStages={activeStages}
+            orderDirection={orderDirection}
+            textScale={effectiveTextScale}
+          />
+        );
+      }
       if (chartLayoutMode === 'flotante') {
         return (
           <VectorRadarChartPDFFlotante
@@ -2406,6 +3011,8 @@ export const FichaEvolutivaEstudiantePages: React.FC<
             studentEtapas={studentEtapas}
             qrCodeDataUrl={qrCodeDataUrl}
             qrVerificationUrl={qrVerificationUrl}
+            catalogoActuaciones={orderedActuaciones}
+            chartLayoutMode={chartLayoutMode}
           />
           {renderChartForSubset(primeraMitad)}
         </Page>
@@ -2424,6 +3031,8 @@ export const FichaEvolutivaEstudiantePages: React.FC<
             studentEtapas={studentEtapas}
             qrCodeDataUrl={qrCodeDataUrl}
             qrVerificationUrl={qrVerificationUrl}
+            catalogoActuaciones={orderedActuaciones}
+            chartLayoutMode={chartLayoutMode}
           />
           {renderChartForSubset(segundaMitad)}
         </Page>
@@ -2450,11 +3059,24 @@ export const FichaEvolutivaEstudiantePages: React.FC<
         studentEtapas={studentEtapas}
         qrCodeDataUrl={qrCodeDataUrl}
         qrVerificationUrl={qrVerificationUrl}
+        catalogoActuaciones={orderedActuaciones}
+        chartLayoutMode={chartLayoutMode}
       />
 
       {/* Gráfico Radar Vectorial de Actuaciones Pedagógicas */}
       {orderedActuaciones.length > 0 ? (
-        chartLayoutMode === 'flotante' ? (
+        chartLayoutMode === 'diana' ? (
+          <VectorRadarChartPDFDiana
+            orderedActuaciones={orderedActuaciones}
+            sortedEtapas={sortedEtapas}
+            studentEtapas={studentEtapas}
+            historialEtapas={historialEtapas}
+            evaluacionActual={evaluacionActual}
+            activeStages={activeStages}
+            orderDirection={orderDirection}
+            textScale={effectiveTextScale}
+          />
+        ) : chartLayoutMode === 'flotante' ? (
           <VectorRadarChartPDFFlotante
             orderedActuaciones={orderedActuaciones}
             sortedEtapas={sortedEtapas}
