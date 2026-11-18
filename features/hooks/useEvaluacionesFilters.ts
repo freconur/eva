@@ -9,7 +9,8 @@ import {
 import { arrayMove } from '@dnd-kit/sortable'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { getMonthName } from '@/fuctions/dates'
-import { categoriaTransform } from '@/fuctions/categorias'
+import { categoriaTransform, getNivelFromGrado } from '@/fuctions/categorias'
+import { tieneAccesoPorUgel } from '@/fuctions/regiones'
 import {
   matchesEvaluationSearch,
   calculateEvaluationRelevance,
@@ -76,17 +77,33 @@ export const useEvaluacionesFilters = () => {
   // --- GRADOS FILTRADOS ---
   const gradosFiltrados = useMemo(() => {
     let list = grados
-    if (currentUserData?.perfil?.rol === 5 && Array.isArray(currentUserData?.nivelesInstitucion)) {
-      const niveles = currentUserData.nivelesInstitucion
-      list = grados.filter(grado => grado.nivel !== undefined && niveles.includes(grado.nivel))
+    const rol = currentUserData?.perfil?.rol
+
+    // Rol 1: Especialista UGEL usa 'nivelDeInstitucion'
+    // Rol 5: Especialista Regional usa 'nivelesInstitucion'
+    let rawNiveles: any = null
+    if (rol === 1) {
+      rawNiveles = currentUserData?.nivelDeInstitucion
+    } else if (rol === 5) {
+      rawNiveles = currentUserData?.nivelesInstitucion
     }
+
+    if (rawNiveles !== null && rawNiveles !== undefined) {
+      const nivelesArray = Array.isArray(rawNiveles) ? rawNiveles : [rawNiveles]
+      const nivelesNumericos = nivelesArray.map(n => Number(n)).filter(n => !isNaN(n))
+      list = grados.filter(grado => {
+        const nivel = grado.nivel !== undefined ? Number(grado.nivel) : getNivelFromGrado(grado.grado ?? 1)
+        return nivelesNumericos.includes(nivel)
+      })
+    }
+
     return [...list].sort((a, b) => {
       const nivelA = a.nivel ?? 0
       const nivelB = b.nivel ?? 0
       if (nivelA !== nivelB) return nivelA - nivelB
       return (a.grado ?? 0) - (b.grado ?? 0)
     })
-  }, [grados, currentUserData?.perfil?.rol, currentUserData?.nivelesInstitucion])
+  }, [grados, currentUserData?.perfil?.rol, currentUserData?.nivelDeInstitucion, currentUserData?.nivelesInstitucion])
 
   // --- ACCESO A EVALUACIÓN ---
   const tieneAccesoAEvaluacion = (evaluacion: any) => {
@@ -100,6 +117,7 @@ export const useEvaluacionesFilters = () => {
     }
 
     if (rol === 1) {
+      if (!tieneAccesoPorUgel(evaluacion, currentUserData?.region)) return false
       return evaluacion.usuariosConPermisosUgel?.includes(dni || '') || false
     }
 
@@ -268,6 +286,21 @@ export const useEvaluacionesFilters = () => {
     }
   }, [availableCategories, selectedCategoria, selectedYear, selectedGrado, selectedMonth, searchQuery, evaluaciones.length])
 
+  // --- AJUSTE AUTOMÁTICO DE GRADO INICIAL SI EL DEFAULT '1' NO ESTÁ PERMITIDO PARA EL USUARIO ---
+  useEffect(() => {
+    if (gradosFiltrados.length === 0) return
+
+    // Si el grado seleccionado es el default '1', pero '1' no está en los grados permitidos del usuario
+    // (por ejemplo, especialista UGEL de Secundaria cuyos grados son 7-11), ajustar al primer grado permitido.
+    if (selectedGrado === '1' && !gradosFiltrados.some(g => String(g.grado) === '1')) {
+      const defaultGrado = String(gradosFiltrados[0]?.grado || 'all')
+      setSelectedGrado(defaultGrado)
+      if (isUrlInitialized) {
+        updateQueryParams(selectedYear, defaultGrado, selectedMonth, selectedCategoria, searchQuery)
+      }
+    }
+  }, [gradosFiltrados, selectedGrado, isUrlInitialized, selectedYear, selectedMonth, selectedCategoria, searchQuery])
+
   const updateQueryParams = (
     newYear: string,
     newGrado: string,
@@ -330,7 +363,13 @@ export const useEvaluacionesFilters = () => {
 
   // --- FILTRADO + ORDENAMIENTO LOCAL ---
   useEffect(() => {
+    const rol = currentUserData?.perfil?.rol
     const filtered = evaluaciones.filter(eva => {
+      // Especialista UGEL: filtrar según alcance de su UGEL
+      if (rol === 1 && !tieneAccesoPorUgel(eva, currentUserData?.region)) {
+        return false
+      }
+
       const matchesYear = (eva.añoDelExamen || currentYear) === selectedYear
       
       let matchesMonth = true
@@ -385,7 +424,7 @@ export const useEvaluacionesFilters = () => {
     }
 
     setOrderedEvaluaciones(filtered)
-  }, [evaluaciones, selectedYear, selectedMonth, selectedGrado, selectedCategoria, searchQuery, gradosFiltrados, currentYear])
+  }, [evaluaciones, selectedYear, selectedMonth, selectedGrado, selectedCategoria, searchQuery, gradosFiltrados, currentYear, currentUserData?.perfil?.rol, currentUserData?.region])
 
   // --- DRAG & DROP ---
   const handleDragEnd = (event: DragEndEvent) => {

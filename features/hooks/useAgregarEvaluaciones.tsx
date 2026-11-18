@@ -42,6 +42,7 @@ import { EstudianteImportado } from '@/features/types/estudiante';
 import { toast } from 'react-toastify';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/firebase/firebase.config';
+import { getStorage, ref as storageRef, deleteObject } from 'firebase/storage';
 
 export const useAgregarEvaluaciones = () => {
   const dispatch = useGlobalContextDispatch();
@@ -136,7 +137,7 @@ export const useAgregarEvaluaciones = () => {
   }
 
   // Función para crear un estudiante individual
-  const crearEstudianteIndividual = async (estudiante: EstudianteImportado) => {
+  const crearEstudianteIndividual = async (estudiante: EstudianteImportado, dniDocenteOverride?: string) => {
     if (checkAuditReadOnly()) return;
     // Validar parámetros
     if (!estudiante.dni || !estudiante.nombresApellidos || !estudiante.grado || !estudiante.seccion || !estudiante.genero) {
@@ -146,7 +147,8 @@ export const useAgregarEvaluaciones = () => {
     setLoaderCrearEstudiantes(true);
 
     try {
-      const rutaColeccion = `usuarios/${currentUserData.dni}/estudiantes-docentes`;
+      const targetDocenteDni = dniDocenteOverride || currentUserData?.dni;
+      const rutaColeccion = `usuarios/${targetDocenteDni}/estudiantes-docentes`;
       const docRef = doc(db, rutaColeccion, estudiante.dni);
 
       // Verificar si el estudiante ya existe
@@ -162,6 +164,7 @@ export const useAgregarEvaluaciones = () => {
         grado: estudiante.grado,
         seccion: estudiante.seccion,
         genero: estudiante.genero,
+        ...(estudiante.fotoUrl ? { fotoUrl: estudiante.fotoUrl } : {}),
         fechaCreacion: serverTimestamp(),
       });
 
@@ -175,7 +178,7 @@ export const useAgregarEvaluaciones = () => {
   }
 
   // Función para actualizar un estudiante individual
-  const actualizarEstudiante = async (estudiante: EstudianteImportado) => {
+  const actualizarEstudiante = async (estudiante: EstudianteImportado, dniDocenteOverride?: string) => {
     if (checkAuditReadOnly()) return;
     // Validar parámetros
     if (!estudiante.dni || !estudiante.nombresApellidos || !estudiante.grado || !estudiante.seccion || !estudiante.genero) {
@@ -185,7 +188,8 @@ export const useAgregarEvaluaciones = () => {
     setLoaderCrearEstudiantes(true);
 
     try {
-      const rutaColeccion = `usuarios/${currentUserData.dni}/estudiantes-docentes`;
+      const targetDocenteDni = dniDocenteOverride || currentUserData?.dni;
+      const rutaColeccion = `usuarios/${targetDocenteDni}/estudiantes-docentes`;
       const docRef = doc(db, rutaColeccion, estudiante.dni);
 
       // Verificar si el estudiante existe
@@ -200,6 +204,7 @@ export const useAgregarEvaluaciones = () => {
         grado: estudiante.grado,
         seccion: estudiante.seccion,
         genero: estudiante.genero,
+        ...(estudiante.fotoUrl !== undefined ? { fotoUrl: estudiante.fotoUrl } : {}),
         fechaActualizacion: serverTimestamp(),
       });
 
@@ -212,8 +217,30 @@ export const useAgregarEvaluaciones = () => {
     }
   }
 
+  // Función para actualizar únicamente la foto de un estudiante
+  const actualizarFotoEstudiante = async (dni: string, fotoUrl: string | null, dniDocenteOverride?: string) => {
+    if (checkAuditReadOnly()) return;
+    const targetDocenteDni = dniDocenteOverride || currentUserData?.dni;
+    if (!dni || !targetDocenteDni) {
+      throw new Error('DNI requerido para actualizar la foto del estudiante');
+    }
+
+    try {
+      const rutaColeccion = `usuarios/${targetDocenteDni}/estudiantes-docentes`;
+      const docRef = doc(db, rutaColeccion, dni);
+      await updateDoc(docRef, {
+        fotoUrl: fotoUrl || null,
+        fechaActualizacion: serverTimestamp(),
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error al actualizar foto del estudiante:', error);
+      throw error;
+    }
+  }
+
   // Función para eliminar un estudiante individual
-  const eliminarEstudiante = async (dni: string) => {
+  const eliminarEstudiante = async (dni: string, dniDocenteOverride?: string) => {
     if (checkAuditReadOnly()) return;
     // Validar parámetro
     if (!dni) {
@@ -223,7 +250,8 @@ export const useAgregarEvaluaciones = () => {
     setLoaderCrearEstudiantes(true);
 
     try {
-      const rutaColeccion = `usuarios/${currentUserData.dni}/estudiantes-docentes`;
+      const targetDocenteDni = dniDocenteOverride || currentUserData?.dni;
+      const rutaColeccion = `usuarios/${targetDocenteDni}/estudiantes-docentes`;
       const docRef = doc(db, rutaColeccion, dni);
 
       // Verificar si el estudiante existe
@@ -234,6 +262,15 @@ export const useAgregarEvaluaciones = () => {
 
       // Eliminar el documento del estudiante
       await deleteDoc(docRef);
+
+      // Limpiar foto en Storage de forma no bloqueante si existe
+      try {
+        const storage = getStorage();
+        const sRef = storageRef(storage, `estudiantes/${dni}/foto.jpg`);
+        await deleteObject(sRef);
+      } catch (storageErr) {
+        // Silencioso si no tenía foto o ya fue eliminada
+      }
 
       return { success: true, message: 'Estudiante eliminado exitosamente' };
     } catch (error: any) {
@@ -560,7 +597,7 @@ export const useAgregarEvaluaciones = () => {
 
     const nuevoProductoId: string = nuevoProductoRef.id;
     try {
-      await setDoc(nuevoProductoRef, {
+      const nuevaEvalDoc: any = {
         id: nuevoProductoId,
         idDocente: currentUserData.dni,
         nombre: value.nombreEvaluacion,
@@ -573,7 +610,11 @@ export const useAgregarEvaluaciones = () => {
         active: false,
         nivel: Number(value.nivel),
         realtimeEnabled: true,
-      });
+      };
+      if (Array.isArray(value.ugels) && value.ugels.length > 0) {
+        nuevaEvalDoc.ugels = value.ugels.map(Number);
+      }
+      await setDoc(nuevoProductoRef, nuevaEvalDoc);
       await updateEvaluacionesSentinel();
     } catch (error) {
     } finally {
@@ -657,6 +698,9 @@ export const useAgregarEvaluaciones = () => {
       }
       if (dataOrigen.accionesEspecialista) {
         nuevaEvaluacionData.accionesEspecialista = dataOrigen.accionesEspecialista;
+      }
+      if (dataOrigen.ugels) {
+        nuevaEvaluacionData.ugels = dataOrigen.ugels;
       }
 
       // 4. Obtener las preguntas originales de la subcolección
@@ -1400,6 +1444,7 @@ export const useAgregarEvaluaciones = () => {
     crearEstudiantesImportados,
     crearEstudianteIndividual,
     actualizarEstudiante,
+    actualizarFotoEstudiante,
     eliminarEstudiante,
     loaderCrearEstudiantes
   };

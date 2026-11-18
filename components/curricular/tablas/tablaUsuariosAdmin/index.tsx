@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react'
 import styles from './tablasUsuarios.module.css'
 import Link from 'next/link'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
-import { convertRolToPath, convertRolToTitle, regionTexto } from '@/fuctions/regiones'
+import { convertRolToPath, convertRolToTitle, regionTexto, nivelInstitucion } from '@/fuctions/regiones'
 import UpdateDataDocente from '@/modals/updateDocente'
 import DeleteUsuario from '@/modals/deleteUsuario'
 import { MdEditSquare } from 'react-icons/md'
@@ -21,6 +21,49 @@ const normalizeText = (text: string = ''): string =>
 		.replace(/[\u0300-\u036f]/g, '')
 		.trim()
 
+/**
+ * Obtiene la lista unificada de niveles asociados al especialista,
+ * evaluando tanto 'nivelDeInstitucion' como 'nivelesInstitucion' o 'nivel'.
+ */
+const getNivelesEspecialista = (user: User): number[] => {
+	const set = new Set<number>()
+	const agregar = (val: any) => {
+		if (Array.isArray(val)) {
+			val.forEach((v) => {
+				if (v !== undefined && v !== null && v !== '' && !isNaN(Number(v))) {
+					set.add(Number(v))
+				}
+			})
+		} else if (val !== undefined && val !== null && val !== '' && !isNaN(Number(val))) {
+			set.add(Number(val))
+		}
+	}
+
+	agregar(user.nivelDeInstitucion)
+	agregar(user.nivelesInstitucion)
+	if ((user as any).nivel !== undefined) {
+		agregar((user as any).nivel)
+	}
+
+	return Array.from(set).sort((a, b) => a - b)
+}
+
+/**
+ * Formatea el ID de nivel con su nombre legible y su clase de badge semántico.
+ */
+const getNivelInfo = (id: number) => {
+	const found = nivelInstitucion.find((n) => n.id === id)
+	if (found) {
+		const nombre = found.name.charAt(0).toUpperCase() + found.name.slice(1)
+		let badgeClass = styles.nivelBadgeDefault
+		if (id === 0) badgeClass = styles.nivelBadgeInicial
+		else if (id === 1) badgeClass = styles.nivelBadgePrimaria
+		else if (id === 2) badgeClass = styles.nivelBadgeSecundaria
+		return { nombre, badgeClass }
+	}
+	return { nombre: `Nivel ${id}`, badgeClass: styles.nivelBadgeDefault }
+}
+
 const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores = [], rol }: TablaUsuariosProps) => {
 	const { currentUserData } = useGlobalContext()
 	const [searchQuery, setSearchQuery] = useState<string>('')
@@ -28,7 +71,7 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores = [], rol }: Tab
 	const [showUpdateDataDocente, setShowUpdateDataDocente] = useState(false)
 	const [showDeleteUsuario, setShowDeleteUsuario] = useState(false)
 
-	// Filtrado reactivo en memoria por DNI, nombres y apellidos
+	// Filtrado reactivo en memoria por DNI, nombres, apellidos, UGEL y nivel
 	const filteredUsuarios = useMemo(() => {
 		const query = normalizeText(searchQuery)
 		if (!query) {
@@ -40,12 +83,19 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores = [], rol }: Tab
 			const nombres = normalizeText(user.nombres)
 			const apellidos = normalizeText(user.apellidos)
 			const nombreCompleto = `${nombres} ${apellidos}`
+			const ugel = normalizeText(regionTexto(String(user.region)) || '')
+			const niveles = getNivelesEspecialista(user)
+			const nivelesTexto = normalizeText(
+				niveles.map((id) => getNivelInfo(id).nombre).join(' ')
+			)
 
 			return (
 				dni.includes(query) ||
 				nombres.includes(query) ||
 				apellidos.includes(query) ||
-				nombreCompleto.includes(query)
+				nombreCompleto.includes(query) ||
+				ugel.includes(query) ||
+				nivelesTexto.includes(query)
 			)
 		})
 	}, [docentesDeDirectores, searchQuery])
@@ -76,7 +126,7 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores = [], rol }: Tab
 					<input
 						className={styles.input}
 						type="text"
-						placeholder="Buscar por DNI, nombres o apellidos..."
+						placeholder="Buscar por DNI, nombres, apellidos, UGEL o nivel..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 					/>
@@ -103,15 +153,16 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores = [], rol }: Tab
 					<tr>
 						<th>#</th>
 						<th>Dni</th>
-						<th>{convertRolToTitle(currentUserData.rol || 0)}</th>
+						<th>{convertRolToTitle(rol) || 'Especialista'}</th>
 						<th>UGEL</th>
+						<th>Nivel</th>
 						<th className={styles.tableHeaderActions}>Acciones</th>
 					</tr>
 				</thead>
 				<tbody className={styles.tableBody}>
 					{filteredUsuarios.length === 0 ? (
 						<tr>
-							<td colSpan={5} className={styles.emptyCell}>
+							<td colSpan={6} className={styles.emptyCell}>
 								{searchQuery.trim()
 									? `No se encontraron especialistas que coincidan con "${searchQuery}"`
 									: 'No hay especialistas registrados'}
@@ -119,6 +170,7 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores = [], rol }: Tab
 						</tr>
 					) : (
 						filteredUsuarios.map((director, index) => {
+							const niveles = getNivelesEspecialista(director)
 							return (
 								<tr key={director.dni || index} className={styles.tableRow}>
 									<td className={styles.tableCell}>
@@ -147,6 +199,25 @@ const TablaUsuariosAdminEspecialistas = ({ docentesDeDirectores = [], rol }: Tab
 									</td>
 									<td className={styles.tableCell}>
 										{regionTexto(String(director.region))}
+									</td>
+									<td className={styles.tableCell}>
+										{niveles.length > 0 ? (
+											<div className={styles.nivelesContainer}>
+												{niveles.map((nivelId) => {
+													const info = getNivelInfo(nivelId)
+													return (
+														<span
+															key={nivelId}
+															className={`${styles.nivelBadge} ${info.badgeClass}`}
+														>
+															{info.nombre}
+														</span>
+													)
+												})}
+											</div>
+										) : (
+											<span className={styles.nivelSinAsignar}>Sin asignar</span>
+										)}
 									</td>
 									<td className={styles.tableCellActions}>
 										<div className={styles.actions}>

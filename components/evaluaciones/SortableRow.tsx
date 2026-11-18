@@ -11,7 +11,7 @@ import {
   MdLock,
   MdCheck,
 } from 'react-icons/md'
-import { RiLoader4Line } from 'react-icons/ri'
+import { RiLoader4Line, RiMapPin2Line } from 'react-icons/ri'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
@@ -20,6 +20,7 @@ import { DesktopDatePicker } from "@mui/x-date-pickers"
 import dayjs from "dayjs"
 import "dayjs/locale/es"
 import { getMonthName } from '@/fuctions/dates'
+import { regionTexto, getUgelsTexto } from '@/fuctions/regiones'
 import styles from '../../pages/admin/evaluaciones/evaluaciones.module.css'
 import ConsolidationAction from './ConsolidationAction'
 import { HighlightMatch } from './HighlightMatch'
@@ -197,15 +198,38 @@ const SortableRow = ({
       )}
       {visibleColumns.nombre && (
         <td className={styles.tableCell}>
-          {puedeAcceder ? (
-            <Link href={`/admin/evaluaciones/evaluacion/${eva.id}`}>
-              <HighlightMatch text={eva.nombre || ''} query={searchQuery} />
-            </Link>
-          ) : (
-            <span>
-              <HighlightMatch text={eva.nombre || ''} query={searchQuery} />
-            </span>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+            {puedeAcceder ? (
+              <Link href={`/admin/evaluaciones/evaluacion/${eva.id}`}>
+                <HighlightMatch text={eva.nombre || ''} query={searchQuery} />
+              </Link>
+            ) : (
+              <span>
+                <HighlightMatch text={eva.nombre || ''} query={searchQuery} />
+              </span>
+            )}
+            {eva.ugels && Array.isArray(eva.ugels) && eva.ugels.length > 0 && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                  padding: '2px 7px',
+                  borderRadius: '6px',
+                  fontSize: '0.675rem',
+                  fontWeight: 600,
+                  backgroundColor: '#f1f5f9',
+                  color: '#475569',
+                  border: '1px solid #cbd5e1',
+                  whiteSpace: 'nowrap',
+                }}
+                title={`Exclusiva para: ${getUgelsTexto(eva.ugels)}`}
+              >
+                <RiMapPin2Line style={{ width: '11px', height: '11px', color: '#64748b' }} />
+                <span>{eva.ugels.length === 1 ? regionTexto(eva.ugels[0]) : `${eva.ugels.length} UGELs`}</span>
+              </span>
+            )}
+          </div>
         </td>
       )}
       {visibleColumns.grado && (

@@ -1,6 +1,24 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Permitir fotos de perfil de usuarios (docentes, directores, especialistas)
+    match /usuarios/{dni}/{fileName} {
+      allow read: if true;
+      allow write: if request.resource.size < 500 * 1024 && request.resource.contentType.matches('image/.*');
+    }
+
+    // Permitir fotos carnet de estudiantes en el storage central
+    match /estudiantes/{dni}/{fileName} {
+      allow read: if true;
+      allow write: if request.resource.size < 500 * 1024 && request.resource.contentType.matches('image/.*');
+    }
+
+    // Permitir fotos carnet de estudiantes asociadas a la nómina de un docente
+    match /usuarios/{dniDocente}/estudiantes/{dniEstudiante}/{fileName} {
+      allow read: if true;
+      allow write: if request.resource.size < 500 * 1024 && request.resource.contentType.matches('image/.*');
+    }
+
     // Permitir a usuarios autenticados subir y leer archivos en excel-exports/
     match /excel-exports/{fileName} {
       allow read, write: if request.auth != null;
@@ -28,4 +46,5 @@ service firebase.storage {
     }
   }
 }
+
 

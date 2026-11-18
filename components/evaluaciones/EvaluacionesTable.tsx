@@ -1,9 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
-import { RiLoader4Line, RiFilter3Line, RiRestartLine } from 'react-icons/ri';
+import { RiLoader4Line, RiFilter3Line, RiRestartLine, RiMapPin2Line } from 'react-icons/ri';
 import { MdAnalytics } from 'react-icons/md';
 import { getMonthName } from '@/fuctions/dates';
 import { getNivelGrado } from '@/features/hooks/useEvaluacionesFilters';
+import { regionTexto, getUgelsTexto } from '@/fuctions/regiones';
 
 export interface EvaluacionItem {
   id?: string;
@@ -123,19 +124,41 @@ export const EvaluacionesTable: React.FC<EvaluacionesTableProps> = ({
                     {/* Nombre de Evaluación */}
                     <td className="py-4 px-6">
                       {evaluacionHref ? (
-                        <Link
-                          href={evaluacionHref}
-                          className="inline-flex items-center gap-2 text-slate-800 font-semibold hover:text-colorSegundo transition-colors text-sm group/link"
-                        >
-                          <span>{eva.nombre}</span>
-                          <span className="text-slate-400 group-hover/link:text-colorSegundo group-hover/link:translate-x-1 transition-all text-xs">
-                            →
-                          </span>
-                        </Link>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Link
+                            href={evaluacionHref}
+                            className="inline-flex items-center gap-2 text-slate-800 font-semibold hover:text-colorSegundo transition-colors text-sm group/link"
+                          >
+                            <span>{eva.nombre}</span>
+                            <span className="text-slate-400 group-hover/link:text-colorSegundo group-hover/link:translate-x-1 transition-all text-xs">
+                              →
+                            </span>
+                          </Link>
+                          {eva.ugels && Array.isArray(eva.ugels) && eva.ugels.length > 0 && (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300"
+                              title={`Exclusiva para: ${getUgelsTexto(eva.ugels)}`}
+                            >
+                              <RiMapPin2Line className="w-3 h-3 text-slate-500" />
+                              <span>{eva.ugels.length === 1 ? regionTexto(eva.ugels[0]) : `${eva.ugels.length} UGELs`}</span>
+                            </span>
+                          )}
+                        </div>
                       ) : (
-                        <span className="text-slate-800 font-semibold text-sm">
-                          {eva.nombre}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-slate-800 font-semibold text-sm">
+                            {eva.nombre}
+                          </span>
+                          {eva.ugels && Array.isArray(eva.ugels) && eva.ugels.length > 0 && (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300"
+                              title={`Exclusiva para: ${getUgelsTexto(eva.ugels)}`}
+                            >
+                              <RiMapPin2Line className="w-3 h-3 text-slate-500" />
+                              <span>{eva.ugels.length === 1 ? regionTexto(eva.ugels[0]) : `${eva.ugels.length} UGELs`}</span>
+                            </span>
+                          )}
+                        </div>
                       )}
                     </td>
 

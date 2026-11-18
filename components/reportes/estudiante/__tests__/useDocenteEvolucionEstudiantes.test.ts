@@ -8,6 +8,7 @@ jest.mock('firebase/firestore', () => ({
   collection: jest.fn(),
   query: jest.fn(),
   where: jest.fn(),
+  orderBy: jest.fn(),
   getDocs: jest.fn(() =>
     Promise.resolve({
       empty: false,
@@ -47,6 +48,26 @@ jest.mock('firebase/firestore', () => ({
             nivel: 'Satisfactorio',
             totalPreguntas: 20,
             respuestasCorrectas: 7, // Simulación de data en base de datos con aciertos incongruentes
+          }),
+        });
+        // Caso de prueba real: Estudiante con 418 pts en escala de 900 pts y 28 preguntas
+        cb({
+          id: '78697318',
+          data: () => ({
+            dni: '78697318',
+            nombresApellidos: 'AMANQUI ARIZACA, LUIS FERNANDO FAUSTINO',
+            seccion: 'g',
+            grado: '6',
+            puntaje: 418,
+            nivel: 'En Inicio',
+            totalPreguntas: 28,
+            respuestas: {
+              '12': 'b', '13': 'b', '14': 'a', '15': 'd', '16': 'd', '17': 'c',
+              '18': 'a', '19': 'a', '20': 'c', '21': 'a', '22': 'a', '23': 'c',
+              '24': 'c', '25': 'd', '26': 'c', '27': 'c', '28': 'b', '29': 'a',
+              '30': 'd', '31': 'a', '32': 'd', '33': 'a', '34': 'a', '35': 'c',
+              '36': 'c', '37': 'a', '38': 'b', '39': 'a',
+            },
           }),
         });
       },
@@ -90,7 +111,7 @@ describe('useDocenteEvolucionEstudiantes Hook', () => {
     });
 
     const estudiantes = result.current.estudiantesEvolutivos;
-    expect(estudiantes.length).toBe(3);
+    expect(estudiantes.length).toBe(4);
 
     const quispe = estudiantes.find((e) => e.dni === '91280388');
     expect(quispe).toBeDefined();
@@ -111,5 +132,52 @@ describe('useDocenteEvolucionEstudiantes Hook', () => {
     expect(etapaActual?.puntaje).toBe(200);
     expect(etapaActual?.respuestasCorrectas).toBe(20);
     expect(etapaActual?.porcentaje).toBe(100);
+  });
+
+  it('calcula con precisión los aciertos en EDI con escala 900 (13 aciertos / 418 pts) y maneja etapas no evaluadas', async () => {
+    const mockEvaluacionEscala900: Evaluaciones = {
+      ...mockEvaluacion,
+      id: 'eval-edi-900',
+      nombre: 'Evaluación EDI Primaria',
+      nivelYPuntaje: [
+        { id: 1, nivel: 'satisfactorio', min: 526, max: 900, color: 'nivelSatisfactorio' },
+        { id: 2, nivel: 'en proceso', min: 422, max: 525, color: 'nivelEnProceso' },
+        { id: 3, nivel: 'en inicio', min: 352, max: 421, color: 'nivelEnInicio' },
+        { id: 4, nivel: 'previo al inicio', min: 0, max: 351, color: 'nivelPrevioInicio' },
+      ],
+    };
+
+    const { result } = renderHook(() =>
+      useDocenteEvolucionEstudiantes({
+        evaluacion: mockEvaluacionEscala900,
+        dniDocente: '10203040',
+        currentEstudiantes: [],
+        yearSelected: 2026,
+        monthSelected: 6,
+        isDemoMode: false,
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    const estudiantes = result.current.estudiantesEvolutivos;
+    const amanqui = estudiantes.find((e) => e.dni === '78697318');
+    expect(amanqui).toBeDefined();
+    expect(amanqui?.nombreCompleto).toBe('AMANQUI ARIZACA, LUIS FERNANDO FAUSTINO');
+
+    const etapaAmanqui = Object.values(amanqui?.etapas || {})[0];
+    expect(etapaAmanqui).toBeDefined();
+    expect(etapaAmanqui?.puntaje).toBe(418);
+    // 418 pts de 900 con 28 preguntas debe calcular exactamente 13 aciertos (y jamás 1 acierto)
+    expect(etapaAmanqui?.respuestasCorrectas).toBe(13);
+    expect(etapaAmanqui?.porcentaje).toBe(46);
+
+    // Las actuaciones pedagógicas deben registrar 13 aciertos con valor 2 (SÍ)
+    const aciertosCount = Object.values(etapaAmanqui?.actuacionesResultados || {}).filter(
+      (v) => v === 2
+    ).length;
+    expect(aciertosCount).toBe(13);
   });
 });

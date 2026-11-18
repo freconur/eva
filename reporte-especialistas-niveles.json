@@ -1,0 +1,2365 @@
+{
+  "fechaGeneracion": "2026-11-17T23:12:35.242Z",
+  "totalEspecialistas": 151,
+  "totalesGeneralesPorPropiedad": {
+    "conNivelDeInstitucion": 151,
+    "conNivelesInstitucion": 0,
+    "conNivel": 17,
+    "conVariasPropiedades": 17,
+    "conSoloUnaPropiedad": 134,
+    "sinNingunaPropiedad": 0
+  },
+  "combinaciones": {
+    "conLasTres": 0,
+    "conNivelDeYNiveles": 0,
+    "conNivelDeYNivel": 17,
+    "conNivelesYNivel": 0,
+    "soloNivelDeInstitucion": 134,
+    "soloNivelesInstitucion": 0,
+    "soloNivel": 0,
+    "ningunaPropiedad": 0
+  },
+  "distribucionValores": {
+    "nivelDeInstitucion": {
+      "[1, 2]": 37,
+      "[0]": 25,
+      "[]": 1,
+      "[2]": 56,
+      "[1]": 32
+    },
+    "nivelesInstitucion": {},
+    "nivel": {
+      "1": 2,
+      "2": 15
+    }
+  },
+  "detalles": {
+    "conLasTres": [],
+    "conNivelDeYNiveles": [],
+    "conNivelDeYNivel": [
+      {
+        "dni": "00515855",
+        "nombre": "MABEL VICTORIA COHAILA QUISPE",
+        "region": "Carabaya",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2,
+          1
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2, 1] -> Secundaria, Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": false
+      },
+      {
+        "dni": "01314782",
+        "nombre": "JESÚS WILFREDO ZAPANA CHOQUE",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      },
+      {
+        "dni": "01324036",
+        "nombre": "Vladimir Chou Kou Laura Mamani",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      },
+      {
+        "dni": "01328070",
+        "nombre": "Albert Chata Mamani",
+        "region": "Chucuito-juli",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      },
+      {
+        "dni": "01340780",
+        "nombre": "Alex Suaquita Castillo",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      },
+      {
+        "dni": "01546958",
+        "nombre": "Rodolfo Montesinos Aguilar",
+        "region": "Azángaro",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      },
+      {
+        "dni": "01683986",
+        "nombre": "Edward Rodriguez Mendoza",
+        "region": "Carabaya",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      },
+      {
+        "dni": "01844584",
+        "nombre": "Buenaventura Coronel Del Valle",
+        "region": "Chucuito-juli",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "nivel": 1,
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "1 -> Primaria",
+        "coinciden": true
+      },
+      {
+        "dni": "02147574",
+        "nombre": "Wilbert Juan Cuela Humpire",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      },
+      {
+        "dni": "02417186",
+        "nombre": "JORGE  MEDINA ROQUE",
+        "region": "Moho",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      },
+      {
+        "dni": "02432130",
+        "nombre": "ERNESTO CHUQUIMAMANI LUQUE",
+        "region": "Lampa",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      },
+      {
+        "dni": "02433410",
+        "nombre": "Luis Wrober  Cuela Humpire",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "nivel": 1,
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "1 -> Primaria",
+        "coinciden": false
+      },
+      {
+        "dni": "40574212",
+        "nombre": "Ederd Quentasi Mamani",
+        "region": "Melgar",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      },
+      {
+        "dni": "42063537",
+        "nombre": "LIDIA LORENZO SAMO",
+        "region": "Yunguyo",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      },
+      {
+        "dni": "42929282",
+        "nombre": "NELLY  CCOILLO PINTO",
+        "region": "Moho",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      },
+      {
+        "dni": "70370187",
+        "nombre": "Beatriz Apaza Supo",
+        "region": "Crucero",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      },
+      {
+        "dni": "80255660",
+        "nombre": "Yugen Hector Mayta Zapana",
+        "region": "Huancané",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": true,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "nivel": 2,
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "2 -> Secundaria",
+        "coinciden": true
+      }
+    ],
+    "conNivelesYNivel": [],
+    "soloNivelDe": [
+      {
+        "dni": "01209187",
+        "nombre": "Nancy Quispe Velasquez",
+        "region": "Azángaro",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01209830",
+        "nombre": "JOSE LUIS RODRIGUEZ ORTEGA",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01213312",
+        "nombre": "David  Quispe Blanco_Privadas",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [],
+        "interpretacionNivelDe": "[] (array vacío)",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01216327",
+        "nombre": "MARLENY AURELIA CALLOHUANCA SÁNCHEZ",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01216459",
+        "nombre": "LEON SEVERO SUCAPUCA CHINOAPAZA",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01223002",
+        "nombre": "Hilda Paredes Arias",
+        "region": "Carabaya",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01236991",
+        "nombre": "RÓMULO RAUL FIGUEROA ALARCON",
+        "region": "Putina",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01258944",
+        "nombre": "VIDAL MOISÉS CHOQUE ALEJO",
+        "region": "Lampa",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01262808",
+        "nombre": "Nestor  Astete Barrientos",
+        "region": "Crucero",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01296539",
+        "nombre": "EDWIN LEONET FIGUEROA QUISPE",
+        "region": "Lampa",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01296595",
+        "nombre": "Marisela Romero Herrera",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01297863",
+        "nombre": "RICARDO PAUL ALVARO ORTEGA",
+        "region": "Moho",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01304545",
+        "nombre": "Blanca Claudia Ruelas Hinojosa",
+        "region": "Carabaya",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01305668",
+        "nombre": "Margarita Sonia PEREZ MAYHUA",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01306868",
+        "nombre": "Fatima Isabel Tumialan Paniagua",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01308041",
+        "nombre": "Elby Marlene Castillo Prado",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01308430",
+        "nombre": "ANGEL BALCONA CUNO",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01308713",
+        "nombre": "Edwin Máximo Zaira Apaza",
+        "region": "Yunguyo",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01308854",
+        "nombre": "OSCAR HUMBERTO ANDRADE CATACORA",
+        "region": "Chucuito-juli",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01311202",
+        "nombre": "NELLY ZAVALA BANEGAS",
+        "region": "Carabaya",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01311270",
+        "nombre": "MARTIN RICARDO PAREDES RAMOS",
+        "region": "Chucuito-juli",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01316160",
+        "nombre": "Marino Agustin HUANCA MAMANI",
+        "region": "Huancané",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01317990",
+        "nombre": "HILDA NICOLASA APAZA CASTILLO",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01319299",
+        "nombre": "Ricardo  Melo Quispe",
+        "region": "Putina",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01319331",
+        "nombre": "CARMEN ROSA PEREZ PARI",
+        "region": "Carabaya",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01320096",
+        "nombre": "JUAN CARLOS JALLO CHAIÑA",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01320866",
+        "nombre": "ROXANA BENITO LOPEZ",
+        "region": "Carabaya",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01321702",
+        "nombre": "JESUS AMADEO PERAZA CORNEJO",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01322032",
+        "nombre": "Edwin Martín Bohorquez Barriga",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01322130",
+        "nombre": "LUZ MARINA POMA MAMANI",
+        "region": "Yunguyo",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01323799",
+        "nombre": "Magaly Carmela Mamani Roque",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01324584",
+        "nombre": "Juana Venegas Gómez",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01325619",
+        "nombre": "Rene Edgar Checalla Tisnado",
+        "region": "Yunguyo",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01327256",
+        "nombre": "Sonia  Onofre Ttito",
+        "region": "Huancané",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01335738",
+        "nombre": "Nancy Quispe Maquera",
+        "region": "Putina",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01342982",
+        "nombre": "ESTEFANIA BARRANTES MOROCCO",
+        "region": "Azángaro",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01480726",
+        "nombre": "ERNESTO PASTOR  LIVISI PERALTA",
+        "region": "Crucero",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01529560",
+        "nombre": "Victoria Choque Valer",
+        "region": "Azángaro",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01543558",
+        "nombre": "MAGALY ITUSACA MAYTA",
+        "region": "Azángaro",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01545149",
+        "nombre": "Olga Mercedes Huaraya  Quispe",
+        "region": "Lampa",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01546119",
+        "nombre": "RUTH JENNY AYAMAMANI CORDOVA",
+        "region": "Azángaro",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01546877",
+        "nombre": "VIDALIA JUSTA CUEVAS CCAMA",
+        "region": "Sandia",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01555333",
+        "nombre": "RUBÉN MANGO TAPARA",
+        "region": "Crucero",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01692061",
+        "nombre": "Tecla Maclovia Miranda Uribe",
+        "region": "Crucero",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01771244",
+        "nombre": "GENARO SANIZO MAMANI",
+        "region": "Azángaro",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01843669",
+        "nombre": "NOLBERTO JULI LAQUI",
+        "region": "Crucero",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01843798",
+        "nombre": "Dina Margarita Ponce Huaylla",
+        "region": "Chucuito-juli",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01863108",
+        "nombre": "OCTAVIA CRUZ QUENTA",
+        "region": "Chucuito-juli",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01863263",
+        "nombre": "EDWIN LAQUI LAIME",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01870428",
+        "nombre": "Amalia Olivera Quenta",
+        "region": "Chucuito-juli",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "01870670",
+        "nombre": "FLORENCIO BALBINO MAYTA ESCOBAR",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02040678",
+        "nombre": "NORMA UTURUNCO PACCO",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02045304",
+        "nombre": "Pedro Quispe Cari",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02046038",
+        "nombre": "RUBEN EDWARD  CONDORI CONDORI",
+        "region": "Putina",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02046396",
+        "nombre": "ROZELA LUQUE LUQUE",
+        "region": "Putina",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02046639",
+        "nombre": "FIDEL CARITA PINTO",
+        "region": "Huancané",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02146588",
+        "nombre": "Abrahan  Idme Mamani",
+        "region": "Moho",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02147175",
+        "nombre": "EDUARDO ARESTEGUI APAZA",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02150800",
+        "nombre": "QUINTIN TICONA FLORES",
+        "region": "Lampa",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02167912",
+        "nombre": "JESUS QUISPE VILCA",
+        "region": "Lampa",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02171886",
+        "nombre": "Paulino   CHOQUE QUISPE",
+        "region": "Melgar",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02260007",
+        "nombre": "BERNARDO BAUTISTA GUTIERREZ",
+        "region": "Melgar",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02266080",
+        "nombre": "Maximiliano Chalco Ugarte",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02297137",
+        "nombre": "David  Callo Cahuana",
+        "region": "Melgar",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02299494",
+        "nombre": "José Lizardo Fernandez Gamarra",
+        "region": "Melgar",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02299703",
+        "nombre": "walter mauro quispe apaza",
+        "region": "Melgar",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02362139",
+        "nombre": "Rigoberto Vasquez Huaraya",
+        "region": "Moho",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02392792",
+        "nombre": "Juana Corimayhua Carcasi",
+        "region": "Sandia",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02400618",
+        "nombre": "JULIAN CHOQUE CASTILLO",
+        "region": "Huancané",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02406578",
+        "nombre": "Vilma Justina Huayhua  Calla",
+        "region": "Melgar",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02414206",
+        "nombre": "ASUNCIÓN DORIS QUISPE CONZA",
+        "region": "Sandia",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02416492",
+        "nombre": "Violeta Ramos Achahuanco",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02424369",
+        "nombre": "CEFERINO GODOFREDO SUPO MAMANI",
+        "region": "Crucero",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02428444",
+        "nombre": "FRANCISCA YANQUI TRAVERSO",
+        "region": "Huancané",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02428454",
+        "nombre": "PERCY FROILAN SOLORZANO MAMANI",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02430689",
+        "nombre": "RITA MARLENE AGUILAR LARICO",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02433427",
+        "nombre": "Petronila Huanca Chata",
+        "region": "Melgar",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02433619",
+        "nombre": "WALTER JERONIMO TICONA ROMAN",
+        "region": "Crucero",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02434058",
+        "nombre": "OMAR EDWIN DE LA CRUZ CALSIN",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02438591",
+        "nombre": "FELICITAS YRENE COILA PARICAHUA",
+        "region": "Huancané",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02442750",
+        "nombre": "Verónica Mamani Poma",
+        "region": "Moho",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02444536",
+        "nombre": "Gregoria  Laura Flores",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02445278",
+        "nombre": "ELIANA JARA PACHARI",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02447099",
+        "nombre": "ARTEMIO YANARICO LÓPEZ",
+        "region": "Yunguyo",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02447660",
+        "nombre": "MARISA ROQUE COARITA",
+        "region": "Moho",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02535472",
+        "nombre": "SELMIRA SIMONA  CRUZ GÓMEZ",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "02546670",
+        "nombre": "OLGA VARGAS CARITA",
+        "region": "Sandia",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "04431012",
+        "nombre": "YVET YOVANA CANAZA ARAJA",
+        "region": "Chucuito-juli",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "20260001",
+        "nombre": "Juan Carlos  Jallo Jallo",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "20260002",
+        "nombre": "Florencio  Mayta Mayta",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "22222222",
+        "nombre": "test test test",
+        "region": "Carabaya",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "29268882",
+        "nombre": "Ggiovana Villafuerte Medina",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "29416193",
+        "nombre": "Tania Salomé  Zevallos Canqui",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "29531449",
+        "nombre": "Manuel Guido Herencia Villasante",
+        "region": "Moho",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "29560307",
+        "nombre": "GODOFREDO MAMANI QUISPE",
+        "region": "Lampa",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "29595412",
+        "nombre": "PABLO RAÚL LÁZARO LÁZARO",
+        "region": "Yunguyo",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "30842766",
+        "nombre": "PEDRO SANTOS PEREZ CONDORI",
+        "region": "Putina",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "40068866",
+        "nombre": "WILFREDO AQUINO VILCA",
+        "region": "Sandia",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "40196884",
+        "nombre": "Paulina Aguilar Cujno",
+        "region": "Carabaya",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "40412029",
+        "nombre": "Maria Jacho Condori",
+        "region": "Carabaya",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "40704217",
+        "nombre": "FANY DEL PILAR CHOQUE ATENCIO",
+        "region": "Azángaro",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "41478173",
+        "nombre": "Elva Rosa  Maquera Condori",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "41538328",
+        "nombre": "Elizabeth  MENDOZA QUISPE",
+        "region": "Sandia",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "41648428",
+        "nombre": "YESSICA ROCIO GUTIERREZ MAMANI",
+        "region": "Chucuito-juli",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "41795141",
+        "nombre": "Adolfo Marcial Campos Huarilloclla",
+        "region": "Chucuito-juli",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "41825237",
+        "nombre": "Virgilio Chambi Sacaca",
+        "region": "Putina",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "41878146",
+        "nombre": "Rene Juan Mamani Vizcarra",
+        "region": "Chucuito-juli",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "41982219",
+        "nombre": "ELOY CELSO AQUISE LERMA",
+        "region": "Azángaro",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "42041101",
+        "nombre": "ORLANDO CALCINA TITO",
+        "region": "Sandia",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "42418590",
+        "nombre": "Jesús Gilberto Acero Paxi",
+        "region": "Azángaro",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "42680178",
+        "nombre": "Kattya Melgar Condori",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "42686776",
+        "nombre": "Sandra  Chipana Cota",
+        "region": "Putina",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "42759247",
+        "nombre": "Juan Quimber Chambi",
+        "region": "Huancané",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "43043670",
+        "nombre": "YURGUIN RODY PUMA QUISPE",
+        "region": "Azángaro",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "43124796",
+        "nombre": "Sonia Judith Muchica Muñiz",
+        "region": "Crucero",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "43139018",
+        "nombre": "Napoleon Huanca",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "43139023",
+        "nombre": "Jesus Huanca",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "43139026",
+        "nombre": "Jesus Apaza",
+        "region": "El Collao",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "43360977",
+        "nombre": "ALAN QUISPE PARI",
+        "region": "Huancané",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "43401124",
+        "nombre": "MARY ELENA BACA RAMOS",
+        "region": "Chucuito-juli",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "43415830",
+        "nombre": "Angel Román Catunta Luquequispe",
+        "region": "Crucero",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "44669927",
+        "nombre": "Criss Anyela Castro Curasi",
+        "region": "Yunguyo",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          0
+        ],
+        "interpretacionNivelDe": "[0] -> Inicial",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "45475533",
+        "nombre": "HAROLD FRANCO MONTOYA CUNO",
+        "region": "Lampa",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "46422874",
+        "nombre": "ELVIS VARGAS MAMANI",
+        "region": "Moho",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1,
+          2
+        ],
+        "interpretacionNivelDe": "[1, 2] -> Primaria, Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "49001947",
+        "nombre": "test test test",
+        "region": "Carabaya",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "68995049",
+        "nombre": "usuario de prueba usuario de prueba",
+        "region": "Melgar",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "77389450",
+        "nombre": "Gladys Ochin  Quispe Quispe",
+        "region": "Melgar",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "80013063",
+        "nombre": "Wilfredo  Barrientos Quispe",
+        "region": "Yunguyo",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "80024228",
+        "nombre": "David  Paricahua Condori",
+        "region": "San Román",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "80028065",
+        "nombre": "GHERVER OLGER VARGAS APANCHO",
+        "region": "Azángaro",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "80056650",
+        "nombre": "Wilber Raul  Chayña Gallegos",
+        "region": "Sandia",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "80157677",
+        "nombre": "WILVER DUEÑAS GUTIERREZ",
+        "region": "Lampa",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          1
+        ],
+        "interpretacionNivelDe": "[1] -> Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "80442523",
+        "nombre": "UBALDO QUISPE MAYTA",
+        "region": "Moho",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2
+        ],
+        "interpretacionNivelDe": "[2] -> Secundaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      },
+      {
+        "dni": "99998880",
+        "nombre": "test test test test",
+        "region": "Puno",
+        "tieneNivelDeInstitucion": true,
+        "tieneNivelesInstitucion": false,
+        "tieneNivel": false,
+        "nivelDeInstitucion": [
+          2,
+          1
+        ],
+        "interpretacionNivelDe": "[2, 1] -> Secundaria, Primaria",
+        "interpretacionNiveles": "(no existe / undefined)",
+        "interpretacionNivel": "(no existe / undefined)",
+        "coinciden": null
+      }
+    ],
+    "soloNiveles": [],
+    "soloNivel": [],
+    "conNinguna": []
+  }
+}

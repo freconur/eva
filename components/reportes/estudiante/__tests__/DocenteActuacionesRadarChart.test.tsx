@@ -10,6 +10,7 @@ import {
   clearStoredCardAdjustments,
   getRadarCardAdjustmentsStorageKey,
   RADAR_DIRECTION_STORAGE_KEY,
+  getCoincidentRadiusOffset,
 } from '../DocenteActuacionesRadarChart';
 import { EstudianteEvolutivo, ActuacionCatalogoItem } from '../useDocenteEvolucionEstudiantes';
 
@@ -907,6 +908,178 @@ describe('DocenteActuacionesRadarChart Component', () => {
       act(() => {
         clearStoredCardAdjustments(4);
       });
+    });
+  });
+
+  describe('Evaluaciones con Puntajes Idénticos y Carriles Paralelos', () => {
+    test('getCoincidentRadiusOffset distribuye en carriles simétricos cuando hay coincidencia', () => {
+      const activeList = [{ key: 'edi' }, { key: 'ep1' }, { key: 'ep2' }];
+      const etapasSame = {
+        edi: { actuacionesResultados: { 1: 2 } },
+        ep1: { actuacionesResultados: { 1: 2 } },
+        ep2: { actuacionesResultados: { 1: 2 } },
+      };
+
+      const offsetEdi = getCoincidentRadiusOffset('edi', 1, activeList, etapasSame);
+      const offsetEp1 = getCoincidentRadiusOffset('ep1', 1, activeList, etapasSame);
+      const offsetEp2 = getCoincidentRadiusOffset('ep2', 1, activeList, etapasSame);
+
+      expect(offsetEdi).toBeCloseTo(-1.8, 1);
+      expect(offsetEp1).toBeCloseTo(0, 1);
+      expect(offsetEp2).toBeCloseTo(1.8, 1);
+    });
+
+    test('getCoincidentRadiusOffset retorna 0 si no coinciden en el valor', () => {
+      const activeList = [{ key: 'edi' }, { key: 'ep1' }];
+      const etapasDiff = {
+        edi: { actuacionesResultados: { 1: 1 } },
+        ep1: { actuacionesResultados: { 1: 2 } },
+      };
+
+      const offsetEdi = getCoincidentRadiusOffset('edi', 1, activeList, etapasDiff);
+      const offsetEp1 = getCoincidentRadiusOffset('ep1', 1, activeList, etapasDiff);
+
+      expect(offsetEdi).toBe(0);
+      expect(offsetEp1).toBe(0);
+    });
+
+    test('Muestra el indicador de evaluaciones idénticas cuando el estudiante tiene el mismo puntaje en todas', () => {
+      const mockStudentSame: EstudianteEvolutivo = {
+        ...mockStudent,
+        dni: '12345678',
+        nombres: 'Estudiante',
+        apellidos: 'Idéntico',
+        deltaPuntaje: 0,
+        estadoTrayectoria: 'estable',
+        diferenciaConAula: 0,
+        etapas: {
+          edi: {
+            etapaKey: 'edi',
+            label: 'EDI (Diagnóstica)',
+            nombreEvaluacion: 'Evaluación EDI',
+            evaluacionId: 'eva-edi',
+            porcentaje: 100,
+            puntaje: 20,
+            maxPuntaje: 20,
+            nivel: 'Logrado',
+            respuestasCorrectas: 2,
+            totalPreguntas: 2,
+            actuacionesResultados: { 1: 2, 2: 2 },
+          },
+          ep1: {
+            etapaKey: 'ep1',
+            label: 'EP1 (Progresiva 1)',
+            nombreEvaluacion: 'Evaluación EP1',
+            evaluacionId: 'eva-ep1',
+            porcentaje: 100,
+            puntaje: 20,
+            maxPuntaje: 20,
+            nivel: 'Logrado',
+            respuestasCorrectas: 2,
+            totalPreguntas: 2,
+            actuacionesResultados: { 1: 2, 2: 2 },
+          },
+          ep2: {
+            etapaKey: 'ep2',
+            label: 'EP2 (Progresiva 2)',
+            nombreEvaluacion: 'Evaluación EP2',
+            evaluacionId: 'eva-ep2',
+            porcentaje: 100,
+            puntaje: 20,
+            maxPuntaje: 20,
+            nivel: 'Logrado',
+            respuestasCorrectas: 2,
+            totalPreguntas: 2,
+            actuacionesResultados: { 1: 2, 2: 2 },
+          },
+        },
+      };
+
+      const mockCatalogo: ActuacionCatalogoItem[] = [
+        { order: 1, actuacion: 'Actuación 1' },
+        { order: 2, actuacion: 'Actuación 2' },
+      ];
+
+      const mockEtapasList = [
+        { key: 'edi', id: 'edi', label: 'EDI (Diagnóstica)', order: 1 },
+        { key: 'ep1', id: 'ep1', label: 'EP1 (Progresiva 1)', order: 2 },
+        { key: 'ep2', id: 'ep2', label: 'EP2 (Progresiva 2)', order: 3 },
+      ];
+
+      render(
+        <DocenteActuacionesRadarChart
+          student={mockStudentSame}
+          etapasConfiguradas={mockEtapasList}
+          catalogoActuaciones={mockCatalogo}
+          layoutMode="columnas"
+        />
+      );
+
+      // Debe aparecer el aviso de evaluaciones con resultados idénticos
+      expect(screen.getByText(/Sin variación/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/registran el mismo puntaje en todas las actuaciones/i)
+      ).toBeInTheDocument();
+    });
+
+    it('maneja limpiamente a estudiantes no evaluados en una etapa (ej. tiene EDI y EP2 pero no EP1)', () => {
+      const mockStudentMissingEp1: EstudianteEvolutivo = {
+        ...mockStudent,
+        etapas: {
+          edi: {
+            etapaKey: 'edi',
+            label: 'EDI (Diagnóstica)',
+            nombreEvaluacion: 'EDI',
+            evaluacionId: 'eval-edi',
+            puntaje: 418,
+            maxPuntaje: 900,
+            nivel: 'En Inicio',
+            respuestasCorrectas: 13,
+            totalPreguntas: 28,
+            porcentaje: 46,
+            actuacionesResultados: { 1: 2, 2: 1 },
+          },
+          // ep1 NO está presente (no fue evaluado)
+          ep2: {
+            etapaKey: 'ep2',
+            label: 'EP2 (Progresiva 2)',
+            nombreEvaluacion: 'EP2',
+            evaluacionId: 'eval-ep2',
+            puntaje: 450,
+            maxPuntaje: 900,
+            nivel: 'En Proceso',
+            respuestasCorrectas: 14,
+            totalPreguntas: 28,
+            porcentaje: 50,
+            actuacionesResultados: { 1: 2, 2: 2 },
+          },
+        },
+      };
+
+      const mockCatalogo: ActuacionCatalogoItem[] = [
+        { order: 1, actuacion: 'Actuación 1' },
+        { order: 2, actuacion: 'Actuación 2' },
+      ];
+
+      const mockEtapasList = [
+        { key: 'edi', id: 'edi', label: 'EDI (Diagnóstica)', order: 1 },
+        { key: 'ep1', id: 'ep1', label: 'EP1 (Progresiva 1)', order: 2 },
+        { key: 'ep2', id: 'ep2', label: 'EP2 (Progresiva 2)', order: 3 },
+      ];
+
+      render(
+        <DocenteActuacionesRadarChart
+          student={mockStudentMissingEp1}
+          etapasConfiguradas={mockEtapasList}
+          catalogoActuaciones={mockCatalogo}
+          layoutMode="columnas"
+        />
+      );
+
+      // En el card de estadísticas debe mostrar "No evaluado" y "—" para EP1
+      expect(screen.getByText('No evaluado')).toBeInTheDocument();
+      expect(screen.getAllByText(/EDI \(Diagnóstica\)/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/EP2 \(Progresiva 2\)/i).length).toBeGreaterThan(0);
     });
   });
 });

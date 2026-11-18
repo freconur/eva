@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { getFirestore, collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, doc, getDoc, orderBy } from 'firebase/firestore';
 import { Evaluaciones, Estudiante } from '@/features/types/types';
 import { generateRealisticStudentName } from '@/features/utils/fakeNamesGenerator';
 import { getMonthName } from '@/fuctions/dates';
@@ -38,6 +38,9 @@ export interface EstudianteEvolutivo {
   genero?: string;
   seccion: string;
   grado?: string | number;
+  dniDocente?: string;
+  fotoUrl?: string;
+  foto?: string;
   etapas: Record<string, EstudianteEtapaData>;
   historial: EstudianteEtapaData[];
   puntajeInicial: number;
@@ -65,7 +68,8 @@ interface UseDocenteEvolucionEstudiantesProps {
   evaluacion: Evaluaciones;
   matrizConfigGrados?: Record<string, any>;
   evaluacionesDb?: any[];
-  dniDocente: string | number;
+  dniDocente?: string | number;
+  dniDirector?: string | number;
   currentEstudiantes: Estudiante[];
   yearSelected: number | string;
   monthSelected: number;
@@ -78,6 +82,7 @@ export const useDocenteEvolucionEstudiantes = ({
   matrizConfigGrados = {},
   evaluacionesDb = [],
   dniDocente,
+  dniDirector,
   currentEstudiantes = [],
   yearSelected,
   monthSelected,
@@ -192,9 +197,9 @@ export const useDocenteEvolucionEstudiantes = ({
     [etapasConfiguradas]
   );
 
-  // 2. Cargar datos de etapas y el padrón oficial del docente desde Firestore
+  // 2. Cargar datos de etapas y el padrón oficial del docente o director desde Firestore
   const fetchEtapasData = useCallback(async () => {
-    if (!evaluacion?.id || !dniDocente) return;
+    if (!evaluacion?.id || (!dniDocente && !dniDirector)) return;
     setLoading(true);
     setError(null);
 
@@ -203,20 +208,31 @@ export const useDocenteEvolucionEstudiantes = ({
     const localMasterRoster: Record<string, any> = {};
 
     try {
-      // 2.1 Cargar lista oficial de estudiantes registrados para este docente (estudiantes-docentes)
-      try {
-        const rosterColl = collection(db, 'usuarios', String(dniDocente), 'estudiantes-docentes');
-        const rosterSnap = await getDocs(rosterColl);
-        rosterSnap.forEach((d) => {
-          const dat = d.data();
-          const key = String(dat.dni || d.id || '').trim();
+      // 2.1 Cargar lista oficial de estudiantes registrados
+      if (dniDocente) {
+        try {
+          const rosterColl = collection(db, 'usuarios', String(dniDocente), 'estudiantes-docentes');
+          const rosterSnap = await getDocs(rosterColl);
+          rosterSnap.forEach((d) => {
+            const dat = d.data();
+            const key = String(dat.dni || d.id || '').trim();
+            if (key) {
+              localMasterRoster[key] = { id: d.id, ...dat };
+            }
+          });
+          setMasterRosterMap(localMasterRoster);
+        } catch (errRoster) {
+          console.warn('Advertencia al consultar estudiantes-docentes:', errRoster);
+        }
+      } else if (dniDirector) {
+        // Para directores, construir el master roster a partir de los estudiantes de la I.E. en memoria
+        currentEstudiantesRef.current.forEach((est: any) => {
+          const key = String(est.dni || est.id || '').trim();
           if (key) {
-            localMasterRoster[key] = { id: d.id, ...dat };
+            localMasterRoster[key] = { ...est };
           }
         });
         setMasterRosterMap(localMasterRoster);
-      } catch (errRoster) {
-        console.warn('Advertencia al consultar estudiantes-docentes:', errRoster);
       }
 
       // 2.2 Cargar las evaluaciones de cada etapa
@@ -225,8 +241,15 @@ export const useDocenteEvolucionEstudiantes = ({
           // Si es la evaluación actual y ya tenemos los estudiantes en memoria
           const memStudents = currentEstudiantesRef.current;
           if (etapa.id === evaluacion.id && memStudents.length > 0) {
+            const currentEvalWithQuestions = {
+              ...evaluacion,
+              preguntasRespuestas:
+                preguntasRespuestas && preguntasRespuestas.length > 0
+                  ? preguntasRespuestas
+                  : evaluacion.preguntasRespuestas,
+            };
             resultEtapas[etapa.key] = {
-              evalObj: evaluacion,
+              evalObj: currentEvalWithQuestions,
               estudiantes: memStudents,
             };
             return;
@@ -245,6 +268,51 @@ export const useDocenteEvolucionEstudiantes = ({
             }
           }
 
+          // Cargar banco de preguntas de la etapa (preguntasRespuestas) si no vienen embebidas
+          let preguntasEtapa =
+            etapa.id === evaluacion.id && preguntasRespuestas && preguntasRespuestas.length > 0
+              ? preguntasRespuestas
+              : targetEvalObj?.preguntasRespuestas || (targetEvalObj as any)?.preguntas;
+
+          if (!preguntasEtapa || !Array.isArray(preguntasEtapa) || preguntasEtapa.length === 0) {
+            try {
+              const prColl = collection(db, 'evaluaciones', etapa.id, 'preguntasRespuestas');
+              const prSnap = await getDocs(query(prColl, orderBy('order', 'asc')));
+              if (!prSnap.empty) {
+                const loadedP: any[] = [];
+                prSnap.forEach((pDoc) => {
+                  loadedP.push({ id: pDoc.id, ...pDoc.data() });
+                });
+                preguntasEtapa = loadedP;
+              }
+            } catch (errPr) {
+              try {
+                const prColl = collection(db, 'evaluaciones', etapa.id, 'preguntasRespuestas');
+                const prSnap = await getDocs(prColl);
+                if (!prSnap.empty) {
+                  const loadedP: any[] = [];
+                  prSnap.forEach((pDoc) => {
+                    loadedP.push({ id: pDoc.id, ...pDoc.data() });
+                  });
+                  loadedP.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+                  preguntasEtapa = loadedP;
+                }
+              } catch (eFallback) {
+                console.warn(`No se pudieron cargar preguntas de la etapa ${etapa.id}:`, eFallback);
+              }
+            }
+          }
+
+          const baseEval = targetEvalObj || (etapa.id === evaluacion.id ? evaluacion : null);
+          if (preguntasEtapa && preguntasEtapa.length > 0) {
+            targetEvalObj = {
+              ...(baseEval || { id: etapa.id }),
+              preguntasRespuestas: preguntasEtapa,
+            };
+          } else if (!targetEvalObj && etapa.id === evaluacion.id) {
+            targetEvalObj = evaluacion;
+          }
+
           const targetYear = targetEvalObj?.añoDelExamen || yearSelected || new Date().getFullYear();
           const targetMonth =
             targetEvalObj?.mesDelExamen !== undefined && targetEvalObj.mesDelExamen !== ''
@@ -256,11 +324,19 @@ export const useDocenteEvolucionEstudiantes = ({
             `/evaluaciones/${etapa.id}/estudiantes-evaluados/${targetYear}/${targetMonth}`
           );
 
-          let q = query(coll, where('dniDocente', '==', String(dniDocente)));
+          let q = dniDirector
+            ? query(coll, where('dniDirector', '==', String(dniDirector)))
+            : query(coll, where('dniDocente', '==', String(dniDocente)));
           let snap = await getDocs(q);
-          if (snap.empty && !isNaN(Number(dniDocente))) {
-            const snapNum = await getDocs(query(coll, where('dniDocente', '==', Number(dniDocente))));
-            if (!snapNum.empty) snap = snapNum;
+
+          if (snap.empty) {
+            if (dniDirector && !isNaN(Number(dniDirector))) {
+              const snapNum = await getDocs(query(coll, where('dniDirector', '==', Number(dniDirector))));
+              if (!snapNum.empty) snap = snapNum;
+            } else if (dniDocente && !isNaN(Number(dniDocente))) {
+              const snapNum = await getDocs(query(coll, where('dniDocente', '==', Number(dniDocente))));
+              if (!snapNum.empty) snap = snapNum;
+            }
           }
 
           const alumnos: Estudiante[] = [];
@@ -282,7 +358,7 @@ export const useDocenteEvolucionEstudiantes = ({
     } finally {
       setLoading(false);
     }
-  }, [evaluacion?.id, dniDocente, etapasIdsKey, yearSelected, monthSelected]);
+  }, [evaluacion?.id, dniDocente, dniDirector, etapasIdsKey, yearSelected, monthSelected]);
 
   useEffect(() => {
     fetchEtapasData();
@@ -389,6 +465,7 @@ export const useDocenteEvolucionEstudiantes = ({
         const seccionVal = String(alumno.seccion || fromRoster?.seccion || '');
         const generoVal = alumno.genero || fromRoster?.genero;
         const gradoVal = alumno.grado || fromRoster?.grado || evaluacion.grado;
+        const fotoVal = fromRoster?.fotoUrl || fromRoster?.foto || alumno?.fotoUrl || alumno?.foto || undefined;
 
         let entry = studentMap.get(dniKey);
         if (!entry) {
@@ -401,6 +478,9 @@ export const useDocenteEvolucionEstudiantes = ({
             genero: generoVal,
             seccion: seccionVal,
             grado: gradoVal,
+            dniDocente: String(alumno.dniDocente || fromRoster?.dniDocente || ''),
+            fotoUrl: fotoVal,
+            foto: fotoVal,
             etapas: {},
             historial: [],
             puntajeInicial: 0,
@@ -433,8 +513,15 @@ export const useDocenteEvolucionEstudiantes = ({
           if ((!entry.seccion || entry.seccion === '') && seccionVal) {
             entry.seccion = seccionVal;
           }
+          if (!entry.dniDocente && (alumno.dniDocente || fromRoster?.dniDocente)) {
+            entry.dniDocente = String(alumno.dniDocente || fromRoster?.dniDocente);
+          }
           if (!entry.genero && generoVal) {
             entry.genero = generoVal;
+          }
+          if (!entry.fotoUrl && fotoVal) {
+            entry.fotoUrl = fotoVal;
+            entry.foto = fotoVal;
           }
         }
 
@@ -447,20 +534,30 @@ export const useDocenteEvolucionEstudiantes = ({
         } else if (evalObj?.puntajeMaximo && Number(evalObj.puntajeMaximo) > 0) {
           maxP = Number(evalObj.puntajeMaximo);
         } else if (pts > 20) {
-          // Si el puntaje obtenido supera 20, inferir escala proporcional (ej. 100 o 200)
-          maxP = pts > 100 ? 200 : 100;
+          // Si el puntaje obtenido supera 20, inferir escala proporcional (ej. 100, 200, 500 o 900)
+          if (pts > 800) maxP = 1000;
+          else if (pts > 200) maxP = 900;
+          else if (pts > 100) maxP = 200;
+          else maxP = 100;
         }
 
         // Banco de preguntas de la evaluación para verificación de respuestas correctas
         const evalPreguntas: any[] =
           evalObj?.preguntasRespuestas || evalObj?.preguntas || [];
+        const evalPreguntasSorted: any[] = Array.isArray(evalPreguntas)
+          ? [...evalPreguntas].sort(
+              (a: any, b: any) => (Number(a.order) || 0) - (Number(b.order) || 0)
+            )
+          : [];
 
         // Determinar total de preguntas de la etapa evaluativa
         let totalP = 20;
         if (alumno.totalPreguntas && Number(alumno.totalPreguntas) > 0) {
           totalP = Number(alumno.totalPreguntas);
-        } else if (Array.isArray(evalPreguntas) && evalPreguntas.length > 0) {
-          totalP = evalPreguntas.length;
+        } else if (evalPreguntasSorted.length > 0) {
+          totalP = evalPreguntasSorted.length;
+        } else if (catalogoActuaciones.length > 0) {
+          totalP = catalogoActuaciones.length;
         } else if (Array.isArray(alumno.respuestas) && alumno.respuestas.length > 0) {
           totalP = alumno.respuestas.length;
         } else if (alumno.respuestas && typeof alumno.respuestas === 'object') {
@@ -471,6 +568,66 @@ export const useDocenteEvolucionEstudiantes = ({
         const ptsRatio = maxP > 0 ? Math.min(1, Math.max(0, pts / maxP)) : 0;
         const expectedFromScore = Math.round(ptsRatio * totalP);
 
+        // Helper para resolver la alternativa marcada por el estudiante para una pregunta dada
+        const obtenerRespuestaMarcada = (p: any, idx: number): string | undefined => {
+          if (!alumno.respuestas) return undefined;
+
+          if (Array.isArray(alumno.respuestas)) {
+            const respItem =
+              alumno.respuestas.find(
+                (r: any) =>
+                  (p.id && (r.id === p.id || r.idPregunta === p.id)) ||
+                  (p.order !== undefined && r.order !== undefined && Number(r.order) === Number(p.order))
+              ) || alumno.respuestas[idx];
+
+            if (respItem) {
+              if (respItem.alternativas && Array.isArray(respItem.alternativas)) {
+                const sel = respItem.alternativas.find((a: any) => a.selected);
+                if (sel?.alternativa) return String(sel.alternativa);
+              }
+              if (respItem.alternativaSeleccionada) return String(respItem.alternativaSeleccionada);
+              if (respItem.alternativa) return String(respItem.alternativa);
+              if (respItem.respuestaMarcada) return String(respItem.respuestaMarcada);
+              if (respItem.respuesta && !p.respuesta) return String(respItem.respuesta);
+            }
+            return undefined;
+          }
+
+          if (typeof alumno.respuestas === 'object') {
+            const map = alumno.respuestas as Record<string, any>;
+            if (p.id && map[p.id] !== undefined) return String(map[p.id]);
+            if (p.order !== undefined && map[String(p.order)] !== undefined) return String(map[String(p.order)]);
+            if (map[String(idx + 1)] !== undefined) return String(map[String(idx + 1)]);
+            if (map[String(idx)] !== undefined) return String(map[String(idx)]);
+            return undefined;
+          }
+
+          return undefined;
+        };
+
+        // Evaluar las respuestas del estudiante contra las preguntas oficiales de ESTA etapa
+        let aciertosEvaluados = 0;
+        let preguntasCotejadas = 0;
+        const aciertosPorPreguntaEtapa: boolean[] = [];
+
+        if (evalPreguntasSorted.length > 0 && alumno.respuestas) {
+          evalPreguntasSorted.forEach((p: any, idx: number) => {
+            const marcada = obtenerRespuestaMarcada(p, idx);
+            const respCorrecta = p.respuesta || p.respuestaCorrecta;
+
+            if (marcada && respCorrecta) {
+              preguntasCotejadas++;
+              const cleanMarcada = String(marcada).toLowerCase().replace(/\s+/g, '');
+              const cleanCorrecta = String(respCorrecta).toLowerCase().replace(/\s+/g, '');
+              const esCorrecta = cleanMarcada === cleanCorrecta;
+              aciertosPorPreguntaEtapa.push(esCorrecta);
+              if (esCorrecta) aciertosEvaluados++;
+            } else {
+              aciertosPorPreguntaEtapa.push(false);
+            }
+          });
+        }
+
         let correctas: number | undefined = undefined;
 
         // 1. Caso puntaje perfecto (100% de la evaluación)
@@ -478,41 +635,11 @@ export const useDocenteEvolucionEstudiantes = ({
           correctas = totalP;
         } else if (pts <= 0) {
           correctas = 0;
-        } else if (Array.isArray(alumno.respuestas) && alumno.respuestas.length > 0) {
-          // 2. Si tiene array de respuestas con alternativas marcadas, cotejar con las respuestas correctas
-          let count = 0;
-          let matchedQuestions = 0;
-
-          alumno.respuestas.forEach((p: any) => {
-            // Resolver respuesta oficial de la evaluación si no viene embebida en la respuesta del estudiante
-            const matchingDef = evalPreguntas.find(
-              (ep: any) =>
-                (p.id && (ep.id === p.id || ep.idPregunta === p.id)) ||
-                (p.order !== undefined && ep.order === p.order)
-            );
-            const respCorrecta = p.respuesta || matchingDef?.respuesta;
-
-            if (p.alternativas && Array.isArray(p.alternativas)) {
-              const selectedAlt = p.alternativas.find((a: any) => a.selected);
-              if (selectedAlt && respCorrecta) {
-                matchedQuestions++;
-                const altClean = String(selectedAlt.alternativa || '')
-                  .toLowerCase()
-                  .replace(/\s+/g, '');
-                const respClean = String(respCorrecta || '')
-                  .toLowerCase()
-                  .replace(/\s+/g, '');
-                if (altClean === respClean) {
-                  count++;
-                }
-              }
-            }
-          });
-
-          // Solo confiar en count si pudimos cotejar un porcentaje representativo de preguntas
-          const countRatio = totalP > 0 ? count / totalP : 0;
-          if (matchedQuestions >= totalP * 0.7 && Math.abs(countRatio - ptsRatio) <= 0.25) {
-            correctas = count;
+        } else if (preguntasCotejadas >= Math.min(totalP, evalPreguntasSorted.length) * 0.7) {
+          // 2. Si se cotejó la gran mayoría de preguntas con las claves oficiales de esta evaluación
+          const countRatio = totalP > 0 ? aciertosEvaluados / totalP : 0;
+          if (Math.abs(countRatio - ptsRatio) <= 0.25 || maxP <= 20) {
+            correctas = aciertosEvaluados;
           }
         }
 
@@ -562,45 +689,39 @@ export const useDocenteEvolucionEstudiantes = ({
           });
         } else {
           let assignedCount = 0;
-          catalogoActuaciones.forEach((act) => {
-            let acerto = false;
-            if (Array.isArray(alumno.respuestas)) {
-              const respEst = alumno.respuestas.find(
-                (r: any) =>
-                  (r.id && (r.id === act.id || r.idPregunta === act.id)) ||
-                  (r.order !== undefined && Number(r.order) === act.order)
-              );
-              if (respEst && respEst.alternativas && Array.isArray(respEst.alternativas)) {
-                const selectedAlt = respEst.alternativas.find((a: any) => a.selected);
-                const respCorrecta = respEst.respuesta || act.respuesta;
-                if (selectedAlt && respCorrecta) {
-                  const altClean = String(selectedAlt.alternativa || '').toLowerCase().replace(/\s+/g, '');
-                  const respClean = String(respCorrecta || '').toLowerCase().replace(/\s+/g, '');
-                  if (altClean === respClean) {
-                    acerto = true;
-                  }
-                }
-              }
-            } else if (alumno.respuestas && typeof alumno.respuestas === 'object' && act.id) {
-              const selected = (alumno.respuestas as any)[act.id];
-              const respCorrecta = act.respuesta;
-              if (selected && respCorrecta) {
-                const altClean = String(selected).toLowerCase().replace(/\s+/g, '');
-                const respClean = String(respCorrecta).toLowerCase().replace(/\s+/g, '');
-                if (altClean === respClean) acerto = true;
-              }
-            }
 
-            if (acerto) {
-              actuacionesResultados[act.order] = 2;
-              assignedCount++;
-            } else {
-              actuacionesResultados[act.order] = 1;
-            }
-          });
+          // Si pudimos evaluar pregunta a pregunta con el banco oficial de esta etapa:
+          if (evalPreguntasSorted.length > 0 && preguntasCotejadas >= evalPreguntasSorted.length * 0.5) {
+            catalogoActuaciones.forEach((act, actIdx) => {
+              // Buscar la pregunta correspondiente en esta etapa
+              let targetIdx = act.id ? evalPreguntasSorted.findIndex((ep: any) => ep.id === act.id) : -1;
+              if (targetIdx === -1) {
+                targetIdx = evalPreguntasSorted.findIndex(
+                  (ep: any) => ep.order !== undefined && Number(ep.order) === act.order
+                );
+              }
+              if (targetIdx === -1 && actIdx < evalPreguntasSorted.length) {
+                targetIdx = actIdx;
+              }
 
-          // Si no vinieron respuestas desglosadas por pregunta pero sabemos cuántas correctas tuvo:
-          if (assignedCount === 0 && correctas > 0) {
+              const acerto = targetIdx !== -1 ? !!aciertosPorPreguntaEtapa[targetIdx] : false;
+              if (acerto) {
+                actuacionesResultados[act.order] = 2;
+                assignedCount++;
+              } else {
+                actuacionesResultados[act.order] = 1;
+              }
+            });
+          }
+
+          // Salvaguarda: si no se pudo asignar pregunta por pregunta o si la cantidad de aciertos asignados
+          // discrepa severamente de los aciertos reales calculados por el puntaje (ej. 1 acierto asignado vs 13 reales):
+          const discrepa =
+            assignedCount === 0 ||
+            (correctas > 2 && assignedCount < Math.floor(correctas * 0.6)) ||
+            (correctas > 0 && Math.abs(assignedCount - correctas) > 4);
+
+          if (discrepa && correctas > 0) {
             catalogoActuaciones.forEach((act, idx) => {
               actuacionesResultados[act.order] = idx < correctas ? 2 : 1;
             });

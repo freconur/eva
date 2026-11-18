@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom'
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import { especialidad } from '@/fuctions/categorias'
+import { regiones } from '@/fuctions/regiones'
 import { MdClose, MdEdit } from 'react-icons/md'
-import { RiLoader4Line } from 'react-icons/ri'
+import { RiLoader4Line, RiGlobalLine, RiMapPin2Line, RiCheckLine, RiAlertLine } from 'react-icons/ri'
 import styles from './createEvaluacionModal.module.css'
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -38,7 +39,7 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
     }
 
     const [selectValues, setSelectValues] = useState(initialValuesForData)
-    const { grados, categorias, loaderPages, tiposDeEvaluacion } = useGlobalContext()
+    const { grados, categorias, loaderPages, tiposDeEvaluacion, currentUserData } = useGlobalContext()
     const { crearEvaluacion, getGrades, getCategories, crearCategoria, actualizarCategoria, getTipoDeEvaluacion } = useAgregarEvaluaciones()
 
     const [showNewCategory, setShowNewCategory] = useState(false)
@@ -48,6 +49,10 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
     const [showEditCategory, setShowEditCategory] = useState(false)
     const [editCategoryName, setEditCategoryName] = useState("")
     const [editCategoryLevels, setEditCategoryLevels] = useState<number[]>([])
+
+    // Scope / UGELs restriction state
+    const [scopeMode, setScopeMode] = useState<'todas' | 'especificas'>('todas')
+    const [selectedUgels, setSelectedUgels] = useState<number[]>([])
 
     // Get currently selected category
     const selectedCategory = (categorias && categorias.length > 0 ? categorias : especialidad)
@@ -99,15 +104,54 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
         }
     }
 
+    const getNivelGrado = (grado: number) => {
+        if (grado === 12) return 0 // Inicial
+        if (grado >= 1 && grado <= 6) return 1 // Primaria
+        if (grado >= 7 && grado <= 11) return 2 // Secundaria
+        return 0 // Inicial
+    }
+
     const sortedGrados = React.useMemo(() => {
         if (!grados) return []
-        return [...grados].sort((a, b) => {
+        let list = grados
+        const rol = currentUserData?.perfil?.rol
+
+        // Rol 1: Especialista UGEL usa 'nivelDeInstitucion'
+        // Rol 5: Especialista Regional usa 'nivelesInstitucion'
+        let rawNiveles: any = null
+        if (rol === 1) {
+            rawNiveles = currentUserData?.nivelDeInstitucion
+        } else if (rol === 5) {
+            rawNiveles = currentUserData?.nivelesInstitucion
+        }
+
+        if (rawNiveles !== null && rawNiveles !== undefined) {
+            const nivelesArray = Array.isArray(rawNiveles) ? rawNiveles : [rawNiveles]
+            const nivelesNumericos = nivelesArray.map(n => Number(n)).filter(n => !isNaN(n))
+            list = grados.filter(grado => {
+                const nivel = grado.nivel !== undefined ? Number(grado.nivel) : getNivelGrado(Number(grado.grado))
+                return nivelesNumericos.includes(nivel)
+            })
+        }
+
+        return [...list].sort((a, b) => {
             const nivelA = a.nivel ?? 0
             const nivelB = b.nivel ?? 0
             if (nivelA !== nivelB) return nivelA - nivelB
             return (a.grado ?? 0) - (b.grado ?? 0)
         })
-    }, [grados])
+    }, [grados, currentUserData?.perfil?.rol, currentUserData?.nivelDeInstitucion, currentUserData?.nivelesInstitucion])
+
+    const tieneAccesoAInicial = React.useMemo(() => {
+        const rol = currentUserData?.perfil?.rol
+        if (rol === 4) return true // Administrador general
+        let rawNiveles: any = null
+        if (rol === 1) rawNiveles = currentUserData?.nivelDeInstitucion
+        else if (rol === 5) rawNiveles = currentUserData?.nivelesInstitucion
+        if (rawNiveles === null || rawNiveles === undefined) return true
+        const nivelesArray = Array.isArray(rawNiveles) ? rawNiveles : [rawNiveles]
+        return nivelesArray.map(Number).includes(0)
+    }, [currentUserData?.perfil?.rol, currentUserData?.nivelDeInstitucion, currentUserData?.nivelesInstitucion])
 
     const [selectedDate, setSelectedDate] = useState(dayjs());
 
@@ -117,13 +161,6 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
         getTipoDeEvaluacion()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-
-    const getNivelGrado = (grado: number) => {
-        if (grado === 12) return 0 // Inicial
-        if (grado >= 1 && grado <= 6) return 1 // Primaria
-        if (grado >= 7 && grado <= 11) return 2 // Secundaria
-        return 0 // Inicial
-    }
 
     const handleChangeValues = (e: React.ChangeEvent<HTMLSelectElement> | React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
@@ -162,12 +199,23 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
         }
     };
 
+    const handleCloseModal = () => {
+        setScopeMode('todas')
+        setSelectedUgels([])
+        handleShowModal()
+    }
+
     const handleAgregarEvaluacion = async (e: React.FormEvent) => {
         e.preventDefault()
         try {
-            await crearEvaluacion(selectValues)
+            await crearEvaluacion({
+                ...selectValues,
+                ugels: scopeMode === 'especificas' ? selectedUgels : []
+            })
             setSelectValues(initialValuesForData)
             setSelectedDate(dayjs())
+            setScopeMode('todas')
+            setSelectedUgels([])
             handleShowModal() // Cerrar modal tras éxito
         } catch (error) {
             console.error('Error al crear evaluación:', error)
@@ -180,14 +228,15 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
         selectValues.grado > 0 &&
         selectValues.categoria.length > 0 &&
         selectValues.nombreEvaluacion.length > 3 &&
-        selectValues.tipoDeEvaluacion.length > 0
+        selectValues.tipoDeEvaluacion.length > 0 &&
+        (scopeMode === 'todas' || selectedUgels.length > 0)
 
     const modalJSX = (
         <div className={styles.modalOverlay}>
             <div className={styles.modalContent}>
                 <div className={styles.modalHeader}>
                     <h2 className={styles.modalTitle}>Crear Nueva Evaluación</h2>
-                    <button onClick={handleShowModal} className={styles.closeButton}>
+                    <button onClick={handleCloseModal} className={styles.closeButton}>
                         <MdClose />
                     </button>
                 </div>
@@ -206,53 +255,72 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
                         />
                     </div>
 
-                    <div className={styles.inputGroup}>
-                        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-                            <label className={styles.label}>Mes y Año</label>
-                            <DesktopDatePicker
-                                views={['year', 'month']}
-                                value={selectedDate}
-                                onChange={handleDateChange}
-                                slotProps={{
-                                    textField: {
-                                        size: 'small',
-                                        fullWidth: true,
-                                        sx: {
-                                            backgroundColor: '#ffffff',
-                                            borderRadius: '8px',
-                                            '& .MuiOutlinedInput-root': {
-                                                height: '44px',
-                                                '& fieldset': {
-                                                    borderColor: '#e2e8f0',
+                    <div className={styles.formRow}>
+                        <div className={styles.inputGroup}>
+                            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+                                <label className={styles.label}>Mes y Año</label>
+                                <DesktopDatePicker
+                                    views={['year', 'month']}
+                                    value={selectedDate}
+                                    onChange={handleDateChange}
+                                    slotProps={{
+                                        textField: {
+                                            size: 'small',
+                                            fullWidth: true,
+                                            sx: {
+                                                backgroundColor: '#ffffff',
+                                                borderRadius: '8px',
+                                                '& .MuiOutlinedInput-root': {
+                                                    height: '38px',
+                                                    '& fieldset': {
+                                                        borderColor: '#e2e8f0',
+                                                    },
+                                                    '&:hover fieldset': {
+                                                        borderColor: '#94a3b8',
+                                                    },
+                                                    '&.Mui-focused fieldset': {
+                                                        borderColor: '#0f172a',
+                                                        borderWidth: '1px',
+                                                    },
                                                 },
-                                                '&:hover fieldset': {
-                                                    borderColor: '#4f46e5',
-                                                },
-                                                '&.Mui-focused fieldset': {
-                                                    borderColor: '#4f46e5',
-                                                    borderWidth: '1px',
-                                                },
-                                            },
-                                            '& .MuiInputBase-input': {
-                                                padding: '0 1rem',
-                                                height: '44px',
-                                                boxSizing: 'border-box',
-                                                textTransform: 'uppercase',
-                                                color: '#0f172a',
-                                                fontSize: '0.925rem',
+                                                '& .MuiInputBase-input': {
+                                                    padding: '0 0.75rem',
+                                                    height: '38px',
+                                                    boxSizing: 'border-box',
+                                                    textTransform: 'uppercase',
+                                                    color: '#0f172a',
+                                                    fontSize: '0.85rem',
+                                                }
+                                            }
+                                        },
+                                        popper: {
+                                            sx: {
+                                                zIndex: 99999
                                             }
                                         }
-                                    },
-                                    popper: {
-                                        sx: {
-                                            zIndex: 99999
-                                        }
-                                    }
-                                }}
-                            />
-                        </LocalizationProvider>
+                                    }}
+                                />
+                            </LocalizationProvider>
+                        </div>
+
+                        <div className={styles.inputGroup}>
+                            <label className={styles.label}>Tipo de Evaluación</label>
+                            <select
+                                name="tipoDeEvaluacion"
+                                onChange={handleChangeValues}
+                                className={styles.select}
+                                value={selectValues.tipoDeEvaluacion}
+                                required
+                            >
+                                <option value="">Seleccionar Tipo</option>
+                                {tiposDeEvaluacion?.map((tipo) => (
+                                    <option key={tipo.value} value={tipo.value}>{tipo.name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
+                    {/* Grado */}
                     <div className={styles.inputGroup}>
                         <label className={styles.label}>Grado</label>
                         <select
@@ -263,7 +331,7 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
                             required
                         >
                             <option value="0">Seleccionar Grado</option>
-                            {!sortedGrados?.some(g => Number(g.grado) === 12) && (
+                            {tieneAccesoAInicial && !sortedGrados?.some(g => Number(g.grado) === 12) && (
                                 <option value="12">5 años</option>
                             )}
                             {sortedGrados?.map((gr, index) => (
@@ -272,6 +340,7 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
                         </select>
                     </div>
 
+                    {/* Categoría / Especialidad */}
                     <div className={styles.inputGroup}>
                         <label className={styles.label}>Categoría / Especialidad</label>
                         {!showNewCategory ? (
@@ -437,19 +506,90 @@ const CreateEvaluacionModal: React.FC<CreateEvaluacionModalProps> = ({
                     </div>
 
                     <div className={styles.inputGroup}>
-                        <label className={styles.label}>Tipo de Evaluación</label>
-                        <select
-                            name="tipoDeEvaluacion"
-                            onChange={handleChangeValues}
-                            className={styles.select}
-                            value={selectValues.tipoDeEvaluacion}
-                            required
-                        >
-                            <option value="">Seleccionar Tipo</option>
-                            {tiposDeEvaluacion?.map((tipo) => (
-                                <option key={tipo.value} value={tipo.value}>{tipo.name}</option>
-                            ))}
-                        </select>
+                        <label className={styles.label}>Alcance de la Evaluación</label>
+                        <div className={styles.scopeSegmentedControl}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setScopeMode('todas')
+                                    setSelectedUgels([])
+                                }}
+                                className={`${styles.scopeSegmentBtn} ${scopeMode === 'todas' ? styles.scopeSegmentBtnActive : ''}`}
+                            >
+                                <RiGlobalLine className={styles.scopeIcon} />
+                                <span>Todas las UGELs</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setScopeMode('especificas')}
+                                className={`${styles.scopeSegmentBtn} ${scopeMode === 'especificas' ? styles.scopeSegmentBtnActive : ''}`}
+                            >
+                                <RiMapPin2Line className={styles.scopeIcon} />
+                                <span>UGELs Específicas</span>
+                                {selectedUgels.length > 0 && (
+                                    <span className={styles.scopeBadgeCount}>{selectedUgels.length}</span>
+                                )}
+                            </button>
+                        </div>
+
+                        {scopeMode === 'especificas' && (
+                            <div className={styles.ugelsContainer}>
+                                <div className={styles.ugelsHeaderBar}>
+                                    <span className={styles.ugelsCountText}>
+                                        {selectedUgels.length} de {regiones.length} seleccionadas
+                                    </span>
+                                    <div className={styles.ugelsActionsGroup}>
+                                        <button
+                                            type="button"
+                                            className={styles.ugelsActionLink}
+                                            onClick={() => setSelectedUgels(regiones.map(r => r.id))}
+                                        >
+                                            Marcar todas
+                                        </button>
+                                        <span className={styles.ugelsActionDivider}>|</span>
+                                        <button
+                                            type="button"
+                                            className={styles.ugelsActionLink}
+                                            onClick={() => setSelectedUgels([])}
+                                        >
+                                            Limpiar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className={styles.ugelsGrid}>
+                                    {regiones.map((reg) => {
+                                        const isChecked = selectedUgels.includes(reg.id)
+                                        return (
+                                            <button
+                                                key={reg.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    if (isChecked) {
+                                                        setSelectedUgels(prev => prev.filter(id => id !== reg.id))
+                                                    } else {
+                                                        setSelectedUgels(prev => [...prev, reg.id])
+                                                    }
+                                                }}
+                                                className={`${styles.ugelChip} ${isChecked ? styles.ugelChipSelected : ''}`}
+                                            >
+                                                <span className={styles.ugelCheckboxIndicator}>
+                                                    {isChecked && <RiCheckLine className={styles.ugelCheckIcon} />}
+                                                </span>
+                                                <span className={styles.ugelName}>{reg.region}</span>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+
+                                {selectedUgels.length === 0 && (
+                                    <div className={styles.validationMessage}>
+                                        <RiAlertLine className={styles.validationIcon} />
+                                        <span>Seleccione al menos una UGEL para la opción específica.</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <button

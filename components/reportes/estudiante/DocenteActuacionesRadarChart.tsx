@@ -15,7 +15,7 @@ import {
   MdRotateRight,
   MdSplitscreen,
 } from 'react-icons/md';
-import { RiRadarLine } from 'react-icons/ri';
+import { TbChartRadar } from 'react-icons/tb';
 
 export interface CustomCardAdjustment {
   dx: number;
@@ -238,7 +238,7 @@ export const ETAPA_COLORS: Record<
 > = {
   edi: {
     border: '#2563eb', // Azul oficial EVA (EDI - Diagnóstica)
-    bg: 'rgba(37, 99, 235, 0.22)',
+    bg: 'rgba(37, 99, 235, 0.10)',
     dot: '#2563eb',
     label: 'EDI (Diagnóstica)',
     lightBadgeBg: 'bg-blue-50',
@@ -249,7 +249,7 @@ export const ETAPA_COLORS: Record<
   },
   ep1: {
     border: '#f59e0b', // Ámbar oficial EVA (EP1 - Progresiva 1)
-    bg: 'rgba(245, 158, 11, 0.22)',
+    bg: 'rgba(245, 158, 11, 0.10)',
     dot: '#f59e0b',
     label: 'EP1 (Progresiva 1)',
     lightBadgeBg: 'bg-amber-50',
@@ -260,7 +260,7 @@ export const ETAPA_COLORS: Record<
   },
   ep2: {
     border: '#10b981', // Verde / Esmeralda oficial EVA (EP2 - Progresiva 2)
-    bg: 'rgba(16, 185, 129, 0.25)',
+    bg: 'rgba(16, 185, 129, 0.12)',
     dot: '#10b981',
     label: 'EP2 (Progresiva 2)',
     lightBadgeBg: 'bg-emerald-50',
@@ -269,6 +269,39 @@ export const ETAPA_COLORS: Record<
     lightCardBg: 'bg-emerald-50/50',
     lightCardBorder: 'border-emerald-200/80',
   },
+};
+
+/**
+ * Calcula un micro-desplazamiento radial para etapas que coinciden en el mismo puntaje (1 o 2)
+ * en una actuación específica, generando carriles paralelos visibles para evitar que se solapen.
+ */
+export const getCoincidentRadiusOffset = (
+  stageKey: string,
+  actOrder: number,
+  activeEtapasList: { key: string }[],
+  studentEtapas: Record<string, any>
+): number => {
+  if (!studentEtapas || !activeEtapasList || activeEtapasList.length <= 1) return 0;
+
+  const thisVal = studentEtapas[stageKey]?.actuacionesResultados?.[actOrder] ?? 1;
+
+  // Filtrar las etapas activas que tienen exactamente este mismo valor en esta actuación
+  const coincidentKeys = activeEtapasList
+    .map((e) => e.key)
+    .filter((k) => {
+      const v = studentEtapas[k]?.actuacionesResultados?.[actOrder] ?? 1;
+      return v === thisVal;
+    });
+
+  if (coincidentKeys.length <= 1) return 0;
+
+  const idx = coincidentKeys.indexOf(stageKey);
+  if (idx === -1) return 0;
+
+  // Espaciado sutil entre carriles (1.8px) centrado en 0
+  const step = 1.8;
+  const count = coincidentKeys.length;
+  return (idx - (count - 1) / 2) * step;
 };
 
 /**
@@ -650,7 +683,7 @@ export const DocenteRadarControls: React.FC<DocenteRadarControlsProps> = ({
           title="Diseño 1: Red Conectada"
           aria-label="Diseño 1: Red Conectada"
         >
-          <RiRadarLine className="w-3.5 h-3.5 shrink-0" />
+          <TbChartRadar className="w-3.5 h-3.5 shrink-0" />
           <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:max-w-[110px] group-hover:opacity-100 transition-all duration-200 ease-in-out">
             Red Conectada
           </span>
@@ -762,6 +795,7 @@ interface HoveredPointInfo {
   valor: number;
   x: number;
   y: number;
+  allStages?: { key: string; label: string; valor: number; color: string }[];
 }
 
 export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChartProps> = ({
@@ -962,10 +996,21 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
 
   // 2. Filtrado de etapas activas respetando el orden cronológico
   const activeEtapasList = useMemo(() => {
-    return sortedEtapas.filter(
-      (etapa) => effectiveActiveStages[etapa.key] ?? true
+    const list = sortedEtapas.filter(
+      (etapa) =>
+        (effectiveActiveStages[etapa.key] ?? true) &&
+        !!student.etapas[etapa.key] &&
+        (typeof student.etapas[etapa.key]?.puntaje === 'number' ||
+          !!student.etapas[etapa.key]?.actuacionesResultados)
     );
-  }, [sortedEtapas, effectiveActiveStages]);
+    // Si el estudiante no registra evaluaciones en ninguna etapa, mantener el listado base para evitar errores
+    if (list.length === 0) {
+      return sortedEtapas.filter(
+        (etapa) => effectiveActiveStages[etapa.key] ?? true
+      );
+    }
+    return list;
+  }, [sortedEtapas, effectiveActiveStages, student.etapas]);
 
   const totalActive = activeEtapasList.length;
 
@@ -990,7 +1035,9 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
           ? -Math.PI / 2 - (2 * Math.PI * i) / N
           : -Math.PI / 2 + (2 * Math.PI * i) / N;
         const val = values[i];
-        const r = val === 2 ? r2Col : r1Col;
+        const offset = getCoincidentRadiusOffset(etapa.key, act.order, activeEtapasList, student.etapas);
+        const baseR = val === 2 ? r2Col : r1Col;
+        const r = baseR + offset;
         const x = cxCol + r * Math.cos(angle);
         const y = cyCol + r * Math.sin(angle);
         return { x, y, val, act, order: act.order };
@@ -1012,12 +1059,12 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
   // 3. Geometría polar del Radar SVG Vectorial a Todo el Ancho y Autoajuste
   // ViewBox dinámico: ancho 1680px y altura escalable según N para desplegarse holgadamente ocupando todo el ancho
   const svgWidth = 1680;
-  const svgHeight = Math.max(760, 520 + N * 18);
+  const svgHeight = Math.max(800, 540 + N * 18);
   const cx = svgWidth / 2;
   const cy = svgHeight / 2;
-  const R = N > 16 ? 135 : 125; // Radio exterior del radar web (compacto en el centro)
-  const r1 = R / 2; // Radio intermedio (Anillo 1: NO acertó)
-  const r2 = R; // Radio exterior (Anillo 2: SÍ acertó)
+  const R = 240; // Radio exterior del radar web (mismo tamaño que en diseño de columnas: RCol = 240)
+  const r1 = R / 2; // Radio intermedio (Anillo 1: NO acertó) = 120
+  const r2 = R; // Radio exterior (Anillo 2: SÍ acertó) = 240
 
   // Referencia al callback onAdjustmentsChange para evitar dependencias inestables en efectos
   const onAdjustmentsChangeRef = useRef(onAdjustmentsChange);
@@ -1462,7 +1509,7 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
         if (col === 2) {
           boxX = svgWidth - spoke.boxW - 15; // Ocupa todo el ancho hasta el extremo derecho
         } else if (col === 1) {
-          boxX = 1270 - spoke.boxW / 2;
+          boxX = 1380 - spoke.boxW / 2;
         } else {
           boxX = cx + R + 40;
         }
@@ -1497,7 +1544,7 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
         if (col === 2) {
           boxX = 15; // Ocupa todo el ancho hasta el extremo izquierdo
         } else if (col === 1) {
-          boxX = 410 - spoke.boxW / 2;
+          boxX = 300 - spoke.boxW / 2;
         } else {
           boxX = (cx - R - 40) - spoke.boxW;
         }
@@ -1613,15 +1660,18 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
 
       // Coordenadas cartesianas de cada vértice
       const points = dataValues.map((val, i) => {
-        const rVal = (val * R) / 2;
+        const act = orderedActuaciones[i];
+        const actOrder = act?.order ?? i + 1;
+        const offset = getCoincidentRadiusOffset(etapa.key, actOrder, activeEtapasList, student.etapas);
+        const rVal = (val * R) / 2 + offset;
         const geom = spokeGeometry[i];
         const angle = geom ? geom.angle : -Math.PI / 2 + (2 * Math.PI * i) / N;
         return {
           x: cx + rVal * Math.cos(angle),
           y: cy + rVal * Math.sin(angle),
           val,
-          act: orderedActuaciones[i],
-          order: orderedActuaciones[i]?.order ?? i + 1,
+          act,
+          order: actOrder,
         };
       });
 
@@ -1644,9 +1694,12 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
     return list;
   }, [student, activeEtapasList, orderedActuaciones, spokeGeometry, totalActive, N]);
 
-  // 4. Estadísticas resumidas por etapa
+  // 4. Estadísticas resumidas por etapa (todas las etapas visibles o configuradas)
   const statsPorEtapa = useMemo(() => {
-    return activeEtapasList.map((et, idx) => {
+    const stagesToDisplay = sortedEtapas.filter(
+      (etapa) => effectiveActiveStages[etapa.key] ?? true
+    );
+    return stagesToDisplay.map((et, idx) => {
       const etapaData = student.etapas[et.key];
       const colorConfig =
         ETAPA_COLORS[et.key] ||
@@ -1656,7 +1709,10 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
           ? ETAPA_COLORS.ep1
           : ETAPA_COLORS.ep2);
 
-      if (!etapaData) {
+      if (
+        !etapaData ||
+        (typeof etapaData.puntaje !== 'number' && !etapaData.actuacionesResultados)
+      ) {
         return {
           key: et.key,
           label: et.label,
@@ -1688,7 +1744,7 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
         colorConfig,
       };
     });
-  }, [student, activeEtapasList, orderedActuaciones]);
+  }, [student, sortedEtapas, effectiveActiveStages, orderedActuaciones]);
 
   // Renderizado de tarjeta individual compacta para las columnas laterales (Diseño 2)
   const renderColumnCard = (act: ActuacionCatalogoItem) => {
@@ -1802,7 +1858,8 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
 
       const points = actuacionesList.map((act, i) => {
         const val = etapaData?.actuacionesResultados?.[act.order] ?? 1;
-        const rVal = (val * RCol) / 2;
+        const offset = getCoincidentRadiusOffset(etapa.key, act.order, activeEtapasList, student.etapas);
+        const rVal = (val * RCol) / 2 + offset;
         const angle = spokes[i].angle;
         return {
           x: cxCol + rVal * Math.cos(angle),
@@ -1894,21 +1951,40 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                       {activeTooltip.act.pregunta}
                     </div>
                   )}
-                <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between gap-3">
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    Resultado:
-                  </span>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      activeTooltip.valor === 2
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                    }`}
-                  >
-                    {activeTooltip.valor === 2
-                      ? 'SÍ (Acertó actuación)'
-                      : 'NO (No acertó)'}
-                  </span>
+                <div className="mt-2 pt-1.5 border-t border-slate-800 space-y-1">
+                  <div className="text-[10px] text-slate-400 font-medium flex items-center justify-between">
+                    <span>Resultado:</span>
+                    {activeTooltip.allStages && activeTooltip.allStages.length > 1 &&
+                      activeTooltip.allStages.every(s => s.valor === activeTooltip.allStages![0].valor) && (
+                        <span className="text-[9px] font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.2 rounded border border-amber-500/30">
+                          Sin variación
+                        </span>
+                      )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {(activeTooltip.allStages || [{
+                      key: activeTooltip.etapaKey,
+                      label: activeTooltip.etapaLabel,
+                      valor: activeTooltip.valor,
+                      color: ETAPA_COLORS[activeTooltip.etapaKey]?.border || '#3b82f6'
+                    }]).map((st) => (
+                      <div key={st.key} className="flex items-center justify-between gap-2 text-[10px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: st.color }} />
+                          <span className="text-slate-300 font-medium">{st.label}:</span>
+                        </div>
+                        <span
+                          className={`font-bold px-1.5 py-0.2 rounded ${
+                            st.valor === 2
+                              ? 'text-emerald-400 font-semibold'
+                              : 'text-rose-400 font-semibold'
+                          }`}
+                        >
+                          {st.valor === 2 ? 'SÍ (Acertó)' : 'NO (No acertó)'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -1996,14 +2072,14 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                       points={ds.pointsString}
                       fill={ds.colorConfig.bg}
                       stroke={ds.colorConfig.border}
-                      strokeWidth={ds.isMostRecent ? (isHovered ? 4 : 3) : isHovered ? 3 : 2}
+                      strokeWidth={ds.isMostRecent ? (isHovered ? 3.5 : 2.5) : isHovered ? 2.8 : 1.8}
                       className="cursor-pointer transition-all duration-200"
                       style={{
                         fillOpacity: isHovered
-                          ? 0.45
+                          ? 0.22
                           : ds.isMostRecent
-                          ? 0.28
-                          : 0.18,
+                          ? 0.12
+                          : 0.07,
                       }}
                       onMouseEnter={() => setHoveredStageKey(ds.key)}
                       onMouseLeave={() => setHoveredStageKey(null)}
@@ -2022,7 +2098,7 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                           r={isPtActive ? 8 : ds.isMostRecent ? 5.5 : 4.5}
                           fill={ds.colorConfig.border}
                           stroke="#ffffff"
-                          strokeWidth={isPtActive ? 2.5 : ds.isMostRecent ? 2 : 1.5}
+                          strokeWidth={isPtActive ? 2.5 : 1.5}
                           className="cursor-pointer transition-all duration-150 hover:opacity-100"
                           onMouseEnter={() => {
                             setHoveredStageKey(ds.key);
@@ -2035,6 +2111,17 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                               valor: pt.val,
                               x: pt.x,
                               y: pt.y,
+                              allStages: activeEtapasList.map((et) => {
+                                const stData = student.etapas[et.key];
+                                const v = stData?.actuacionesResultados?.[pt.order] ?? 1;
+                                const cfg = ETAPA_COLORS[et.key] || ds.colorConfig;
+                                return {
+                                  key: et.key,
+                                  label: et.label,
+                                  valor: v,
+                                  color: cfg.border,
+                                };
+                              }),
                             });
                           }}
                           onMouseLeave={() => {
@@ -2148,12 +2235,12 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
     // Si no está dividido, usa los ajustes de vista completa (cardAdjustments).
     const activeAdjustments = isSplitBlock ? splitCardAdjustments : cardAdjustments;
 
-    const subSvgHeight = Math.max(760, 520 + M * 18);
+    const subSvgHeight = Math.max(800, 540 + M * 18);
     const subCx = svgWidth / 2;
     const subCy = subSvgHeight / 2;
-    const subR = M > 16 ? 135 : 125;
-    const subR1 = subR / 2;
-    const subR2 = subR;
+    const subR = 240; // Radio exterior del radar web (mismo tamaño que en diseño de columnas: RCol = 240)
+    const subR1 = subR / 2; // Radio intermedio (Anillo 1: NO acertó) = 120
+    const subR2 = subR; // Radio exterior (Anillo 2: SÍ acertó) = 240
 
     const rawSpokes = actuacionesList.map((act, i) => {
       const angle = -Math.PI / 2 + (2 * Math.PI * i) / M;
@@ -2214,7 +2301,7 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
         const colPattern = [1, 2, 0];
         const col = colPattern[idx % 3];
         if (col === 2) boxX = svgWidth - spoke.boxW - 15;
-        else if (col === 1) boxX = 1270 - spoke.boxW / 2;
+        else if (col === 1) boxX = 1380 - spoke.boxW / 2;
         else boxX = subCx + subR + 40;
       } else if (rightGroup.length >= 4) {
         const isOuterCol = idx % 2 === 1;
@@ -2237,7 +2324,7 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
         const colPattern = [1, 2, 0];
         const col = colPattern[idx % 3];
         if (col === 2) boxX = 15;
-        else if (col === 1) boxX = 410 - spoke.boxW / 2;
+        else if (col === 1) boxX = 300 - spoke.boxW / 2;
         else boxX = (subCx - subR - 40) - spoke.boxW;
       } else if (leftGroup.length >= 4) {
         const isOuterCol = idx % 2 === 1;
@@ -2286,7 +2373,8 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
 
       const points = rawSpokes.map((spoke) => {
         const val = etapaData?.actuacionesResultados?.[spoke.act.order] ?? 1;
-        const rVal = (val * subR) / 2;
+        const offset = getCoincidentRadiusOffset(etapa.key, spoke.act.order, activeEtapasList, student.etapas);
+        const rVal = (val * subR) / 2 + offset;
         return {
           x: subCx + rVal * Math.cos(spoke.angle),
           y: subCy + rVal * Math.sin(spoke.angle),
@@ -2352,17 +2440,40 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                   {activeTooltip.act.pregunta}
                 </div>
               )}
-            <div className="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between gap-3">
-              <span className="text-[10px] text-slate-400 font-medium">Resultado:</span>
-              <span
-                className={"text-[10px] font-bold px-2 py-0.5 rounded-full " + (
-                  activeTooltip.valor === 2
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                    : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                )}
-              >
-                {activeTooltip.valor === 2 ? "SÍ (Acertó actuación)" : "NO (No acertó)"}
-              </span>
+            <div className="mt-2 pt-1.5 border-t border-slate-800 space-y-1">
+              <div className="text-[10px] text-slate-400 font-medium flex items-center justify-between">
+                <span>Resultado:</span>
+                {activeTooltip.allStages && activeTooltip.allStages.length > 1 &&
+                  activeTooltip.allStages.every(s => s.valor === activeTooltip.allStages![0].valor) && (
+                    <span className="text-[9px] font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.2 rounded border border-amber-500/30">
+                      Sin variación
+                    </span>
+                  )}
+              </div>
+              <div className="flex flex-col gap-1">
+                {(activeTooltip.allStages || [{
+                  key: activeTooltip.etapaKey,
+                  label: activeTooltip.etapaLabel,
+                  valor: activeTooltip.valor,
+                  color: ETAPA_COLORS[activeTooltip.etapaKey]?.border || "#3b82f6"
+                }]).map((st) => (
+                  <div key={st.key} className="flex items-center justify-between gap-2 text-[10px]">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: st.color }} />
+                      <span className="text-slate-300 font-medium">{st.label}:</span>
+                    </div>
+                    <span
+                      className={`font-bold px-1.5 py-0.2 rounded ${
+                        st.valor === 2
+                          ? "text-emerald-400 font-semibold"
+                          : "text-rose-400 font-semibold"
+                      }`}
+                    >
+                      {st.valor === 2 ? "SÍ (Acertó)" : "NO (No acertó)"}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -2446,10 +2557,10 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                   points={ds.pointsString}
                   fill={ds.colorConfig.bg}
                   stroke={ds.colorConfig.border}
-                  strokeWidth={ds.isMostRecent ? (isHovered ? 4 : 3) : isHovered ? 3 : 2}
+                  strokeWidth={ds.isMostRecent ? (isHovered ? 3.5 : 2.5) : isHovered ? 2.8 : 1.8}
                   className="cursor-pointer transition-all duration-200"
                   style={{
-                    fillOpacity: isHovered ? 0.45 : ds.isMostRecent ? 0.28 : 0.18,
+                    fillOpacity: isHovered ? 0.22 : ds.isMostRecent ? 0.12 : 0.07,
                   }}
                   onMouseEnter={() => setHoveredStageKey(ds.key)}
                   onMouseLeave={() => setHoveredStageKey(null)}
@@ -2467,7 +2578,7 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                       r={isPtActive ? 8 : ds.isMostRecent ? 5.5 : 4.5}
                       fill={ds.colorConfig.border}
                       stroke="#ffffff"
-                      strokeWidth={isPtActive ? 2.5 : ds.isMostRecent ? 2 : 1.5}
+                      strokeWidth={isPtActive ? 2.5 : 1.5}
                       className="cursor-pointer transition-all duration-150 hover:opacity-100"
                       onMouseEnter={() => {
                         setHoveredStageKey(ds.key);
@@ -2480,6 +2591,17 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                           valor: pt.val,
                           x: pt.x,
                           y: pt.y,
+                          allStages: activeEtapasList.map((et) => {
+                            const stData = student.etapas[et.key];
+                            const v = stData?.actuacionesResultados?.[pt.order] ?? 1;
+                            const cfg = ETAPA_COLORS[et.key] || ds.colorConfig;
+                            return {
+                              key: et.key,
+                              label: et.label,
+                              valor: v,
+                              color: cfg.border,
+                            };
+                          }),
                         });
                       }}
                       onMouseLeave={() => {
@@ -2736,6 +2858,31 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
 
       {/* 3. Card Unificado de Resumen de Evaluaciones */}
       <div className="px-4 sm:px-6 py-3.5 border-t border-slate-100 bg-slate-50/50">
+        {activeEtapasList.length > 1 && (() => {
+          const allIdentical = orderedActuaciones.every((act) => {
+            const firstVal = student.etapas[activeEtapasList[0].key]?.actuacionesResultados?.[act.order] ?? 1;
+            return activeEtapasList.every((et) => {
+              const v = student.etapas[et.key]?.actuacionesResultados?.[act.order] ?? 1;
+              return v === firstVal;
+            });
+          });
+          if (allIdentical) {
+            return (
+              <div className="mb-2.5 px-3 py-1.5 rounded-xl bg-blue-50/80 border border-blue-200/70 text-blue-800 text-[11px] font-medium flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                  <span>
+                    Las {activeEtapasList.length} evaluaciones activas registran el mismo puntaje en todas las actuaciones (representadas en carriles paralelos visibles).
+                  </span>
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 shrink-0">
+                  Sin variación
+                </span>
+              </div>
+            );
+          }
+          return null;
+        })()}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-3 sm:px-5 sm:py-3 shadow-2xs flex flex-wrap items-center justify-around gap-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
           {statsPorEtapa.map((st) => (
             <div
@@ -2749,25 +2896,35 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
               <div className="flex items-center gap-2">
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: st.colorConfig.border }}
+                  style={{ backgroundColor: st.activa ? st.colorConfig.border : '#cbd5e1' }}
                 />
                 <div className="min-w-0">
                   <span
                     className="text-xs font-bold block truncate"
-                    style={{ color: st.colorConfig.border }}
+                    style={{ color: st.activa ? st.colorConfig.border : '#94a3b8' }}
                   >
                     {st.label}
                   </span>
                   <span className="text-[11px] text-slate-500 font-medium">
-                    <strong className="text-slate-800 font-bold">{st.totalLogradas}</strong> / {st.total} SÍ
+                    {st.activa ? (
+                      <>
+                        <strong className="text-slate-800 font-bold">{st.totalLogradas}</strong> / {st.total} SÍ
+                      </>
+                    ) : (
+                      <span className="text-slate-400 italic">No evaluado</span>
+                    )}
                   </span>
                 </div>
               </div>
 
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${st.colorConfig.lightBadgeBg} ${st.colorConfig.lightBadgeText} ${st.colorConfig.lightBadgeBorder} shrink-0 ml-auto`}
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  st.activa
+                    ? `${st.colorConfig.lightBadgeBg} ${st.colorConfig.lightBadgeText} ${st.colorConfig.lightBadgeBorder}`
+                    : 'bg-slate-100 text-slate-400 border-slate-200'
+                } shrink-0 ml-auto`}
               >
-                {st.porcentaje}%
+                {st.activa ? `${st.porcentaje}%` : '—'}
               </span>
             </div>
           ))}

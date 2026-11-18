@@ -16,7 +16,7 @@ let mockGrados: any[] = [
   { id: 'g1', grado: 1, nombre: '1° de Primaria', nivel: 1 },
   { id: 'g2', grado: 2, nombre: '2° de Primaria', nivel: 1 },
 ]
-let mockCurrentUser = { dni: '76543210', perfil: { rol: 4 } }
+let mockCurrentUser: any = { dni: '76543210', perfil: { rol: 4 } }
 
 jest.mock('@/features/context/GlolbalContext', () => ({
   useGlobalContext: () => ({
@@ -225,4 +225,79 @@ describe('useEvaluacionesFilters - búsqueda por texto inteligente (searchQuery)
     expect(result.current.searchQuery).toBe('mate')
   })
 })
+
+describe('useEvaluacionesFilters - filtrado de grados por rol y nivel de institución', () => {
+  const originalGrados = mockGrados
+  const originalUser = mockCurrentUser
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGrados = [
+      { id: 'g0', grado: 12, nombre: '5 años', nivel: 0 },
+      { id: 'g1', grado: 1, nombre: '1° de Primaria', nivel: 1 },
+      { id: 'g2', grado: 2, nombre: '2° de Primaria', nivel: 1 },
+      { id: 'g7', grado: 7, nombre: '1° de Secundaria', nivel: 2 },
+      { id: 'g8', grado: 8, nombre: '2° de Secundaria', nivel: 2 },
+    ]
+  })
+
+  afterAll(() => {
+    mockGrados = originalGrados
+    mockCurrentUser = originalUser
+  })
+
+  test('Especialista UGEL (rol 1) con nivelDeInstitucion=[2] solo ve grados de Secundaria y ajusta grado inicial a 7', () => {
+    mockCurrentUser = {
+      dni: '12345678',
+      perfil: { rol: 1 },
+      nivelDeInstitucion: [2],
+    }
+
+    const { result } = renderHook(() => useEvaluacionesFilters())
+
+    // Solo debe incluir grados con nivel 2 (grados 7 y 8)
+    expect(result.current.gradosFiltrados.map(g => g.grado)).toEqual([7, 8])
+    // El grado seleccionado por defecto ('1') no está en secundaria, se debe ajustar automáticamente al primer grado de secundaria ('7')
+    expect(result.current.selectedGrado).toBe('7')
+  })
+
+  test('Especialista UGEL (rol 1) con nivelDeInstitucion=[1] solo ve grados de Primaria', () => {
+    mockCurrentUser = {
+      dni: '12345678',
+      perfil: { rol: 1 },
+      nivelDeInstitucion: [1],
+    }
+
+    const { result } = renderHook(() => useEvaluacionesFilters())
+
+    expect(result.current.gradosFiltrados.map(g => g.grado)).toEqual([1, 2])
+    expect(result.current.selectedGrado).toBe('1')
+  })
+
+  test('Especialista Regional (rol 5) con nivelesInstitucion=[2] solo ve grados de Secundaria', () => {
+    mockCurrentUser = {
+      dni: '87654321',
+      perfil: { rol: 5 },
+      nivelesInstitucion: [2],
+    }
+
+    const { result } = renderHook(() => useEvaluacionesFilters())
+
+    expect(result.current.gradosFiltrados.map(g => g.grado)).toEqual([7, 8])
+    expect(result.current.selectedGrado).toBe('7')
+  })
+
+  test('Administrador general (rol 4) ve todos los grados sin restricción', () => {
+    mockCurrentUser = {
+      dni: '99999999',
+      perfil: { rol: 4 },
+    }
+
+    const { result } = renderHook(() => useEvaluacionesFilters())
+
+    expect(result.current.gradosFiltrados.map(g => g.grado)).toEqual([12, 1, 2, 7, 8])
+    expect(result.current.selectedGrado).toBe('1')
+  })
+})
+
 

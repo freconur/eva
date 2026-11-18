@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { DocenteEvolucionEstudiantesTab } from '../DocenteEvolucionEstudiantesTab';
 import { Evaluaciones } from '@/features/types/types';
 
@@ -17,9 +17,10 @@ jest.mock('react-chartjs-2', () => ({
   Radar: () => <div data-testid="mock-radar-chart">Radar Chart</div>,
 }));
 
-// Mock de exportarFichaEvolutivaEstudiantePDF
+// Mock de exportarFichaEvolutivaEstudiantePDF y exportarFichaEvolutivaConsolidadoPDF
 jest.mock('@/features/utils/exportarFichaEvolutivaEstudiantePDF', () => ({
   exportarFichaEvolutivaEstudiantePDF: jest.fn(),
+  exportarFichaEvolutivaConsolidadoPDF: jest.fn(),
 }));
 
 // Mock del hook useDocenteEvolucionEstudiantes
@@ -432,5 +433,52 @@ describe('DocenteEvolucionEstudiantesTab Component', () => {
 
     expect(modalLineChart).toHaveAttribute('data-spangaps-options', 'true');
     expect(modalLineChart).toHaveAttribute('data-spangaps-datasets', 'true');
+  });
+
+  it('despliega el dropdown de PDF con opciones de descargar estudiante y descargar todas', async () => {
+    const { exportarFichaEvolutivaEstudiantePDF, exportarFichaEvolutivaConsolidadoPDF } = await import(
+      '@/features/utils/exportarFichaEvolutivaEstudiantePDF'
+    );
+
+    render(
+      <DocenteEvolucionEstudiantesTab
+        evaluacion={mockEvaluacion}
+        dniDocente="12345678"
+        currentEstudiantes={[]}
+        yearSelected={2026}
+        monthSelected={6}
+      />
+    );
+
+    // Cambiar a la vista de ficha detallada (Split View)
+    const splitViewBtn = screen.getByTitle('Vista de Ficha Detallada individual con gráfico');
+    fireEvent.click(splitViewBtn);
+
+    // Botón principal de descarga en la ficha detallada
+    const downloadDropdownBtn = screen.getByTitle('Opciones de descarga de fichas en PDF');
+    expect(downloadDropdownBtn).toBeInTheDocument();
+
+    // Al hacer clic se abre el menú desplegable
+    fireEvent.click(downloadDropdownBtn);
+
+    // Las 2 opciones solicitadas deben ser visibles
+    const opcionEstudiante = screen.getByText('Descargar estudiante');
+    const opcionTodas = screen.getByText('Descargar todas');
+    expect(opcionEstudiante).toBeInTheDocument();
+    expect(opcionTodas).toBeInTheDocument();
+
+    // 1. Clic en "Descargar estudiante"
+    fireEvent.click(opcionEstudiante);
+    await waitFor(() => {
+      expect(exportarFichaEvolutivaEstudiantePDF).toHaveBeenCalled();
+    });
+
+    // 2. Abrir nuevamente y hacer clic en "Descargar todas"
+    fireEvent.click(downloadDropdownBtn);
+    const opcionTodasReabierta = screen.getByText('Descargar todas');
+    fireEvent.click(opcionTodasReabierta);
+    await waitFor(() => {
+      expect(exportarFichaEvolutivaConsolidadoPDF).toHaveBeenCalled();
+    });
   });
 });

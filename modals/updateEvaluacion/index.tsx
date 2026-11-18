@@ -3,12 +3,12 @@ import styles from '../updateEvaluacion/updateEvaluacion.module.css'
 import { useForm } from "react-hook-form";
 import { useGlobalContext } from "@/features/context/GlolbalContext";
 import { Evaluaciones, Psicolinguistica } from "@/features/types/types";
-import { RiLoader4Line } from "react-icons/ri";
+import { RiLoader4Line, RiGlobalLine, RiMapPin2Line, RiCheckLine, RiAlertLine } from "react-icons/ri";
 import { usePsicolinguistica } from "@/features/hooks/usePsicolinguistica";
 import { useAgregarEvaluaciones } from "@/features/hooks/useAgregarEvaluaciones";
 import { useEffect, useState } from "react";
 import { getAllMonths } from "@/fuctions/dates";
-import { get } from "http";
+import { regiones } from "@/fuctions/regiones";
 interface Props {
   handleShowInputUpdate: () => void,
   evaluacion: Evaluaciones,
@@ -25,6 +25,8 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
   const [selectedMonth, setSelectedMonth] = useState<string>(evaluacion.mesDelExamen || "0")
   const [isActive, setIsActive] = useState<boolean>(evaluacion.active || false)
   const [updating, setUpdating] = useState<boolean>(false)
+  const [scopeMode, setScopeMode] = useState<'todas' | 'especificas'>('todas')
+  const [selectedUgels, setSelectedUgels] = useState<number[]>([])
   let container;
   if (typeof window !== "undefined") {
     container = document.getElementById("portal-modal");
@@ -53,8 +55,7 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
   }
 
   const handleActualizar = async () => {
-    // console.log('nameUpdate', nameUpdate)
-    // console.log('valueInput', valueInput)
+    if (scopeMode === 'especificas' && selectedUgels.length === 0) return
     setUpdating(true)
     try {
       await updateEvaluacion({
@@ -62,7 +63,8 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
         nombre: valueInput.nombre,
         mesDelExamen: valueInput.mesDelExamen,
         tipoDeEvaluacion: valueInput.tipoDeEvaluacion,
-        active: valueInput.active
+        active: valueInput.active,
+        ugels: scopeMode === 'especificas' ? selectedUgels.map(Number) : []
       }, idEva)
       setValueInput(initialValue)
     } finally {
@@ -74,22 +76,6 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
     getTipoDeEvaluacion()
     getEvaluacion(idEva)
   }, [])
-  useEffect(() => {
-    if (evaluacion.id && evaluacion.id !== valueInput.id) {
-      setValueInput({
-        idDocente: evaluacion.idDocente || "",
-        grado: evaluacion.grado || 0,
-        nombre: evaluacion.nombre || "",
-        categoria: evaluacion.categoria || 0,
-        mesDelExamen: evaluacion.mesDelExamen || "0",
-        tipoDeEvaluacion: evaluacion.tipoDeEvaluacion || "",
-        active: evaluacion.active || false,
-      })
-      setIsActive(evaluacion.active || false)
-    }
-  }, [evaluacion.id, evaluacion.nombre, evaluacion.mesDelExamen, evaluacion.tipoDeEvaluacion, evaluacion.active])
-
-  // Sincronizar cuando se carga una nueva evaluación
   useEffect(() => {
     if (evaluacion.id) {
       setValueInput({
@@ -104,8 +90,15 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
       setNameUpdate(evaluacion.nombre || nameEva)
       setSelectedMonth(evaluacion.mesDelExamen || "0")
       setIsActive(evaluacion.active || false)
+      if (evaluacion.ugels && Array.isArray(evaluacion.ugels) && evaluacion.ugels.length > 0) {
+        setScopeMode('especificas')
+        setSelectedUgels(evaluacion.ugels.map(Number))
+      } else {
+        setScopeMode('todas')
+        setSelectedUgels([])
+      }
     }
-  }, [evaluacion.id])
+  }, [evaluacion.id, evaluacion.nombre, evaluacion.mesDelExamen, evaluacion.tipoDeEvaluacion, evaluacion.active, evaluacion.ugels])
 
   return container
     ? createPortal(
@@ -170,6 +163,93 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
                     </select>
                   </div>
 
+                  <div className={styles.inputContainer}>
+                    <label className={styles.label}>Alcance de la Evaluación:</label>
+                    <div className={styles.scopeSegmentedControl}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setScopeMode('todas')
+                          setSelectedUgels([])
+                        }}
+                        className={`${styles.scopeSegmentBtn} ${scopeMode === 'todas' ? styles.scopeSegmentBtnActive : ''}`}
+                      >
+                        <RiGlobalLine className={styles.scopeIcon} />
+                        <span>Todas las UGELs</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setScopeMode('especificas')}
+                        className={`${styles.scopeSegmentBtn} ${scopeMode === 'especificas' ? styles.scopeSegmentBtnActive : ''}`}
+                      >
+                        <RiMapPin2Line className={styles.scopeIcon} />
+                        <span>UGELs Específicas</span>
+                        {selectedUgels.length > 0 && (
+                          <span className={styles.scopeBadgeCount}>{selectedUgels.length}</span>
+                        )}
+                      </button>
+                    </div>
+
+                    {scopeMode === 'especificas' && (
+                      <div className={styles.ugelsContainer}>
+                        <div className={styles.ugelsHeaderBar}>
+                          <span className={styles.ugelsCountText}>
+                            {selectedUgels.length} de {regiones.length} seleccionadas
+                          </span>
+                          <div className={styles.ugelsActionsGroup}>
+                            <button
+                              type="button"
+                              className={styles.ugelsActionLink}
+                              onClick={() => setSelectedUgels(regiones.map(r => r.id))}
+                            >
+                              Marcar todas
+                            </button>
+                            <span className={styles.ugelsActionDivider}>|</span>
+                            <button
+                              type="button"
+                              className={styles.ugelsActionLink}
+                              onClick={() => setSelectedUgels([])}
+                            >
+                              Limpiar
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className={styles.ugelsGrid}>
+                          {regiones.map((reg) => {
+                            const isChecked = selectedUgels.includes(reg.id)
+                            return (
+                              <button
+                                key={reg.id}
+                                type="button"
+                                onClick={() => {
+                                  if (isChecked) {
+                                    setSelectedUgels(prev => prev.filter(id => id !== reg.id))
+                                  } else {
+                                    setSelectedUgels(prev => [...prev, reg.id])
+                                  }
+                                }}
+                                className={`${styles.ugelChip} ${isChecked ? styles.ugelChipSelected : ''}`}
+                              >
+                                <span className={styles.ugelCheckboxIndicator}>
+                                  {isChecked && <RiCheckLine className={styles.ugelCheckIcon} />}
+                                </span>
+                                <span className={styles.ugelName}>{reg.region}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+
+                        {selectedUgels.length === 0 && (
+                          <div className={styles.validationMessage}>
+                            <RiAlertLine className={styles.validationIcon} />
+                            <span>Seleccione al menos una UGEL para la opción específica.</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   <p className={styles.tituloBotones}>¿Quieres actualizar esta evaluación?</p>
                   <div className={styles.buttonGroup}>
 
@@ -177,7 +257,7 @@ const UpdateEvaluacion = ({ idEva, handleShowInputUpdate, nameEva }: Props) => {
                     <button
                       onClick={() => { handleActualizar(); handleShowInputUpdate(); setValueInput(initialValue) }}
                       className={styles.buttonDelete}
-                      disabled={updating}
+                      disabled={updating || (scopeMode === 'especificas' && selectedUgels.length === 0)}
                     >
                       {updating ? (
                         <div className={styles.loaderContainer}>

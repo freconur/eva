@@ -273,6 +273,7 @@ export type Evaluaciones = {
   metaSatisfactorio?: number;
   realtimeEnabled?: boolean;
   labelActuacion?: string;
+  ugels?: number[];
   accionesEspecialista?: {
     exportarEstudiantes?: boolean;
     exportarExcel?: boolean;
@@ -299,6 +300,7 @@ export type Evaluacion = {
   activarEvidencias?: boolean;
   metaSatisfactorio?: number;
   realtimeEnabled?: boolean;
+  ugels?: number[];
 };
 export type UserEstudiante = {
   id?: string;
@@ -307,6 +309,7 @@ export type UserEstudiante = {
   nombresApellidos?: string;
   dni?: string;
   dniDocente?: string;
+  docenteNombre?: string;
   institucion?: string;
   respuestasCorrectas?: number;
   totalPreguntas?: number;
@@ -319,6 +322,8 @@ export type UserEstudiante = {
   respuestas?: PreguntasRespuestas[];
   respuestasIncorrectas?: number;
   dniDirector?: string;
+  fotoUrl?: string;
+  foto?: string;
 };
 
 export type Estudiante = {
@@ -346,6 +351,8 @@ export type Estudiante = {
   caracteristicaCurricular?: string;
   tipoGestion?: string;
   nivelDeInstitucion?: number[];
+  fotoUrl?: string;
+  foto?: string;
 };
 
 export type AsignacionGradoSeccion = {
@@ -365,6 +372,7 @@ export type User = {
   calificacion?: number;
   nombres?: string;
   apellidos?: string;
+  nombresApellidos?: string;
   dni?: string;
   institucion?: string;
   perfil?: UserPerfil;
@@ -512,6 +520,7 @@ export type CreaEvaluacion = {
   nivel?: number;
   mesDelExamen?: string;
   añoDelExamen?: string;
+  ugels?: number[];
 };
 
 export type respuestaPsicolinguistica = {

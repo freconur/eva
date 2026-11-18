@@ -845,9 +845,8 @@ const useEvaluacionCurricular = () => {
     }
   }
   const updateDocenteParaCoberturaCurricular = async (dataDocente: string, data: User, docente: User) => {
-    console.log('data', data)
-    await updateUsuarioById(dataDocente, {
-      nivel: data.nivel,
+    console.log('data', data);
+    const updatePayload: any = {
       nombres: data.nombres,
       apellidos: data.apellidos,
       dni: data.dni,
@@ -866,7 +865,17 @@ const useEvaluacionCurricular = () => {
       genero: data.genero || '',
       nivelDeInstitucion: data.nivelDeInstitucion || [],
       dniEspecialistaRegional: currentUserData.dni || '',
-    })
+    };
+
+    if (data.tipoEspecialista !== undefined) {
+      updatePayload.tipoEspecialista = Number(data.tipoEspecialista);
+    }
+
+    if (Number(docente.rol || docente.perfil?.rol) === 3 && data.nivel !== undefined) {
+      updatePayload.nivel = data.nivel;
+    }
+
+    await updateUsuarioById(dataDocente, updatePayload);
   }
 
   const guardarAnexosCurricular = async (dataDocente: User, data: AnexosCurricularType) => {

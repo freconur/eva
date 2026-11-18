@@ -43,6 +43,35 @@ export const regionTexto = (id: any): string | undefined => {
   })
   return rta
 }
+
+/**
+ * Determina si un usuario (por su región/UGEL) tiene acceso a una evaluación según su campo `ugels`.
+ * - Si `evaluacion.ugels` no existe, es null o está vacío: es una evaluación abierta a TODAS las UGELs.
+ * - Si `evaluacion.ugels` tiene elementos: solo usuarios con `region` perteneciente a ese array tienen acceso.
+ */
+export const tieneAccesoPorUgel = (evaluacion: any, userRegion?: number | string | null): boolean => {
+  if (!evaluacion?.ugels || !Array.isArray(evaluacion.ugels) || evaluacion.ugels.length === 0) {
+    return true
+  }
+  if (userRegion === undefined || userRegion === null || String(userRegion).trim() === '') {
+    return false
+  }
+  return evaluacion.ugels.map(Number).includes(Number(userRegion))
+}
+
+/**
+ * Devuelve un texto descriptivo del alcance de UGELs de una evaluación.
+ */
+export const getUgelsTexto = (ugels?: number[]): string => {
+  if (!ugels || !Array.isArray(ugels) || ugels.length === 0) {
+    return "Todas las UGELs"
+  }
+  if (ugels.length === regiones.length) {
+    return "Todas las UGELs"
+  }
+  const nombres = ugels.map(u => regionTexto(u)).filter(Boolean)
+  return nombres.join(", ")
+}
 export const nivelInstitucion = [
   { id: 0, name: "inicial" },
   { id: 1, name: "primaria" },

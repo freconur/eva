@@ -1,7 +1,7 @@
 import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import { categoriaTransform } from '@/fuctions/categorias'
-import { convertGrade } from '@/fuctions/regiones'
+import { convertGrade, tieneAccesoPorUgel } from '@/fuctions/regiones'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useMemo } from 'react'
@@ -10,7 +10,7 @@ import { RiCalendarCheckLine } from 'react-icons/ri'
 import styles from './pruebas.module.css'
 
 const Pruebas = () => {
-  const { evaluacionesGradoYCategoria, loaderPages, categorias } = useGlobalContext()
+  const { evaluacionesGradoYCategoria, loaderPages, categorias, currentUserData } = useGlobalContext()
   const { getEvaluacionesGradoYCategoria, getCategories } = useAgregarEvaluaciones()
   const route = useRouter()
   
@@ -20,11 +20,11 @@ const Pruebas = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.query.grado, route.query.categoria])
   
-  // Filtrar estrictamente solo evaluaciones activas para el docente
+  // Filtrar estrictamente solo evaluaciones activas para el docente de acuerdo a su UGEL
   const evaluacionesActivas = useMemo(() => {
     if (!Array.isArray(evaluacionesGradoYCategoria)) return []
-    return evaluacionesGradoYCategoria.filter((eva) => eva.active === true)
-  }, [evaluacionesGradoYCategoria])
+    return evaluacionesGradoYCategoria.filter((eva) => eva.active === true && tieneAccesoPorUgel(eva, currentUserData?.region))
+  }, [evaluacionesGradoYCategoria, currentUserData?.region])
 
   // Algoritmo para ordenar evaluaciones alfabéticamente
   const evaluacionesOrdenadas = useMemo(() => {

@@ -61,13 +61,14 @@
   background: rgba(255, 255, 255, 0.95);
   width: calc(100% - 80px);
   max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
   border-radius: 16px;
   padding: 32px;
   margin: 0 40px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(226, 232, 240, 0.8);
   position: relative;
-  overflow: hidden;
 }
 
 @media (max-width: 640px) {
@@ -467,4 +468,211 @@
   50% {
     opacity: 0.5;
   }
+}
+
+/* --- Scope / UGELs Selector --- */
+.scopeSegmentedControl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.scopeSegmentBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  height: 36px;
+  padding: 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #64748b;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.scopeSegmentBtn:hover:not(.scopeSegmentBtnActive) {
+  color: #0f172a;
+}
+
+.scopeSegmentBtnActive {
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.scopeIcon {
+  width: 15px;
+  height: 15px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.scopeSegmentBtnActive .scopeIcon {
+  color: #0f172a;
+}
+
+.scopeBadgeCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 0.675rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ugelsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  margin-top: 0.25rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.ugelsHeaderBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ugelsCountText {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ugelsActionsGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ugelsActionLink {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #3572EF;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ugelsActionLink:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.ugelsActionDivider {
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  user-select: none;
+}
+
+.ugelsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.35rem;
+  max-height: 140px;
+  overflow-y: auto;
+  padding-right: 0.15rem;
+}
+
+.ugelChip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  width: 100%;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.ugelChip:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.ugelChipSelected {
+  background: #f1f5f9;
+  border-color: #0f172a;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.ugelCheckboxIndicator {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.ugelChipSelected .ugelCheckboxIndicator {
+  background: #0f172a;
+  border-color: #0f172a;
+}
+
+.ugelCheckIcon {
+  width: 11px;
+  height: 11px;
+  color: #ffffff;
+}
+
+.ugelName {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.validationMessage {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 0.2rem;
+}
+
+.validationIcon {
+  width: 14px;
+  height: 14px;
+  color: #64748b;
+  flex-shrink: 0;
 }

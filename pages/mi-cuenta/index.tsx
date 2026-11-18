@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import PrivateRoute from '@/components/layouts/PrivateRoutesAdmin'
-import { useGlobalContext } from '@/features/context/GlolbalContext'
+import { useGlobalContext, useGlobalContextDispatch } from '@/features/context/GlolbalContext'
+import { AppAction } from '@/features/actions/appAction'
 import useUsuario from '@/features/hooks/useUsuario'
 import ModalUpdateCliente from '@/modals/ModalUpdateCliente'
+import { compressCarnetImage } from '@/features/utils/compressCarnetImage'
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
+import { getFirestore, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { toast } from 'react-toastify'
 import {
   regionTexto,
   rolTexto,
@@ -23,7 +28,10 @@ import {
   FiLock,
   FiCheckCircle,
   FiAlertCircle,
+  FiCamera,
+  FiTrash2,
 } from 'react-icons/fi'
+import { RiLoader4Line } from 'react-icons/ri'
 import {
   HiOutlineAcademicCap,
   HiOutlineBuildingOffice2,
@@ -33,9 +41,140 @@ import {
 
 const MiCuenta = () => {
   const { currentUserData } = useGlobalContext()
+  const dispatch = useGlobalContextDispatch()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const { getUserData } = useUsuario()
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !currentUserData?.dni) return
+
+    try {
+      setIsUploadingPhoto(true)
+      const toastId = toast.loading('Optimizando y encuadrando foto carnet...')
+
+      // 1. Compresión estricta a carnet (5:6, max 45 KB)
+      const { blob, dataUrl, sizeInKb } = await compressCarnetImage(file)
+
+      toast.update(toastId, {
+        render: `Subiendo foto de perfil (${sizeInKb} KB)...`,
+        isLoading: true,
+      })
+
+      // 2. Subida a Firebase Storage con fallback a Base64 optimizado
+      let finalImageUrl = dataUrl || '';
+      try {
+        const storage = getStorage()
+        const sRef = storageRef(storage, `usuarios/${currentUserData.dni}/foto.jpg`)
+        const snapshot = await uploadBytes(sRef, blob, {
+          contentType: 'image/jpeg',
+        })
+        finalImageUrl = await getDownloadURL(snapshot.ref)
+      } catch (storageErr) {
+        console.warn('Advertencia al subir a Storage, guardando en Firestore:', storageErr)
+        if (!finalImageUrl) {
+          throw storageErr
+        }
+      }
+
+      // 3. Actualizar Firestore
+      const db = getFirestore()
+      await updateDoc(doc(db, 'usuarios', currentUserData.dni), {
+        foto: finalImageUrl,
+        fechaActualizacion: serverTimestamp(),
+      })
+
+      // 4. Actualizar estado global y sessionStorage si está en modo auditoría
+      const updatedUserPayload = { ...currentUserData, foto: finalImageUrl }
+      if (typeof window !== 'undefined' && sessionStorage.getItem('audited_user')) {
+        try {
+          const currentAudited = JSON.parse(sessionStorage.getItem('audited_user') || '{}')
+          sessionStorage.setItem('audited_user', JSON.stringify({ ...currentAudited, foto: finalImageUrl }))
+        } catch (e) {
+          console.error('Error al actualizar audited_user en sessionStorage:', e)
+        }
+      }
+
+      dispatch({
+        type: AppAction.CURRENT_USER_DATA,
+        payload: updatedUserPayload,
+      })
+
+      toast.update(toastId, {
+        render: `Foto de perfil actualizada exitosamente (${sizeInKb} KB).`,
+        type: 'success',
+        isLoading: false,
+        autoClose: 3500,
+      })
+    } catch (error: any) {
+      console.error('Error al subir foto de perfil:', error)
+      toast.error(error?.message || 'Error al actualizar la foto de perfil')
+    } finally {
+      setIsUploadingPhoto(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleRemovePhoto = async () => {
+    if (!currentUserData?.dni || !currentUserData?.foto) return
+    const confirmed = window.confirm('¿Estás seguro de que deseas eliminar tu foto de perfil?')
+    if (!confirmed) return
+
+    try {
+      setIsUploadingPhoto(true)
+      const toastId = toast.loading('Eliminando foto de perfil...')
+
+      // 1. Intentar borrar del Storage si es posible
+      try {
+        const storage = getStorage()
+        const sRef = storageRef(storage, `usuarios/${currentUserData.dni}/foto.jpg`)
+        await deleteObject(sRef)
+      } catch (errStorage) {
+        console.warn('No se pudo borrar el archivo en Storage o ya no existe:', errStorage)
+      }
+
+      // 2. Actualizar Firestore
+      const db = getFirestore()
+      await updateDoc(doc(db, 'usuarios', currentUserData.dni), {
+        foto: null,
+        fechaActualizacion: serverTimestamp(),
+      })
+
+      // 3. Actualizar estado global y sessionStorage si está en modo auditoría
+      const updatedUserPayload = { ...currentUserData, foto: undefined }
+      if (typeof window !== 'undefined' && sessionStorage.getItem('audited_user')) {
+        try {
+          const currentAudited = JSON.parse(sessionStorage.getItem('audited_user') || '{}')
+          delete currentAudited.foto
+          sessionStorage.setItem('audited_user', JSON.stringify(currentAudited))
+        } catch (e) {
+          console.error('Error al actualizar audited_user en sessionStorage:', e)
+        }
+      }
+
+      dispatch({
+        type: AppAction.CURRENT_USER_DATA,
+        payload: updatedUserPayload,
+      })
+
+      toast.update(toastId, {
+        render: 'Foto de perfil eliminada correctamente.',
+        type: 'info',
+        isLoading: false,
+        autoClose: 3000,
+      })
+    } catch (error: any) {
+      console.error('Error al eliminar foto de perfil:', error)
+      toast.error(error?.message || 'Error al eliminar la foto de perfil')
+    } finally {
+      setIsUploadingPhoto(false)
+    }
+  }
 
   useEffect(() => {
     // Escucha cambios en el DNI de usuario para asegurar datos actualizados
@@ -130,15 +269,15 @@ const MiCuenta = () => {
           {/* Contenido principal del Hero */}
           <div className="px-5 sm:px-8 pb-6 sm:pb-8 pt-0 relative">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-12 sm:-mt-14 mb-6">
-              {/* Avatar con anillo */}
+              {/* Avatar con anillo y controles de foto */}
               <div className="flex items-end gap-4">
-                <div className="relative">
+                <div className="relative group">
                   {currentUserData?.foto ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={currentUserData.foto}
                       alt={`Foto de ${currentUserData?.nombres || 'Usuario'}`}
-                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover ring-4 ring-white shadow-md bg-white"
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover ring-4 ring-white shadow-md bg-white transition-opacity group-hover:opacity-90"
                     />
                   ) : (
                     <div
@@ -148,10 +287,65 @@ const MiCuenta = () => {
                       {getInitials(currentUserData?.nombres, currentUserData?.apellidos)}
                     </div>
                   )}
+
+                  {/* Overlay táctil/hover para actualizar foto */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingPhoto}
+                    aria-label="Cambiar foto de perfil"
+                    title="Cambiar foto carnet"
+                    className="absolute inset-0 rounded-2xl bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-xs font-semibold gap-1 cursor-pointer focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {isUploadingPhoto ? (
+                      <RiLoader4Line className="w-6 h-6 animate-spin text-white" />
+                    ) : (
+                      <>
+                        <FiCamera className="w-5 h-5 text-white" />
+                        <span className="text-[10px] text-white font-medium">Cambiar</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Botón flotante accesible en la esquina */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingPhoto}
+                    aria-label="Subir foto de carnet"
+                    title="Subir foto carnet"
+                    className="absolute -bottom-1 -left-1 p-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md ring-2 ring-white transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  >
+                    <FiCamera className="w-3.5 h-3.5" />
+                  </button>
+
+                  {/* Botón para eliminar foto si existe */}
+                  {currentUserData?.foto && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      disabled={isUploadingPhoto}
+                      aria-label="Eliminar foto de perfil"
+                      title="Eliminar foto"
+                      className="absolute -top-1 -right-1 p-1.5 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-md ring-2 ring-white transition-all cursor-pointer hover:scale-105 active:scale-95"
+                    >
+                      <FiTrash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
                   {/* Indicador de estado en línea */}
                   <span
-                    className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white shadow-xs"
+                    className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white shadow-xs pointer-events-none"
                     title="Usuario autenticado"
+                  />
+
+                  {/* Input de archivo oculto */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
                   />
                 </div>
 

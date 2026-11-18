@@ -42,7 +42,7 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
 
     const p = router.pathname;
 
-    if (p.includes('/directores/evaluaciones')) {
+    if (p.includes('/directores/evaluaciones') || p.includes('/directores/estudiantes')) {
       setOpenDropdown('estudiantes');
     } else if (p.includes('/directores/evaluaciones-docentes') || p.includes('/directores/agregar-profesores') || p.includes('/directores/cobertura-curricular')) {
       setOpenDropdown('docentes');
@@ -137,6 +137,15 @@ const SidebarDirectores = ({ showSidebar }: Props) => {
                   </div>
                   <ul className={`${styles.submenu} ${openDropdown === 'estudiantes' ? styles.show : ''}`}>
                     <li className={styles.flyoutHeader}>{getLabel('director_estudiantes', 'Estudiantes')}</li>
+                    <li>
+                      <Link
+                        href="/directores/estudiantes"
+                        className={`${styles.submenuLink} ${router.pathname.includes('/directores/estudiantes') ? styles.activeLink : ''}`}
+                        title={getLabel('director_estudiantes_nomina', 'Padrón de estudiantes')}
+                      >
+                        {getLabel('director_estudiantes_nomina', 'Padrón de estudiantes')}
+                      </Link>
+                    </li>
                     <li>
                       <Link
                         href="/directores/evaluaciones"

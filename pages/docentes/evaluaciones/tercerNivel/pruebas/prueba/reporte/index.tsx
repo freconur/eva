@@ -805,7 +805,7 @@ const Reportes = () => {
   }, [preguntasRespuestas]);
 
   const dataEstadisticasOrdenadas = useMemo(() => {
-    if (!dataEstadisticas || !preguntasRespuestas.length) return dataEstadisticas;
+    if (!dataEstadisticas || !Array.isArray(dataEstadisticas) || !preguntasRespuestas.length) return dataEstadisticas;
 
     return [...dataEstadisticas].sort((a, b) => {
       const preguntaA = preguntasMap.get(a.id || '');
@@ -1268,6 +1268,7 @@ const Reportes = () => {
       evaluacionesDb={evaluacionesDb}
       dniDocente={effectiveDocenteDni}
       nombreDocente={effectiveDocenteName}
+      fotoDocenteUrl={currentUserDataEffective?.foto || currentUserData?.foto || (evaluacion as any)?.fotoDocenteUrl}
       nombreColegio={effectiveInstitucion}
       currentEstudiantes={estudiantesBase}
       yearSelected={Number(yearSelected)}

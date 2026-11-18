@@ -30,7 +30,7 @@ import { FaGraduationCap, FaChalkboardTeacher, FaChild } from "react-icons/fa";
 import { MdAutoAwesome } from "react-icons/md";
 import styles from "./evaluaciones.module.css";
 import { categoriaTransform, getNivelFromGrado } from "@/fuctions/categorias";
-import { getGradoTexto } from "@/fuctions/regiones";
+import { getGradoTexto, tieneAccesoPorUgel } from "@/fuctions/regiones";
 import { getMonthName, currentYear } from "@/fuctions/dates";
 import CustomFilterDropdown, { FilterOption } from "@/components/reportes/CustomFilterDropdown";
 import DocentesExploracionNiveles from "@/components/evaluaciones/DocentesExploracionNiveles";
@@ -107,9 +107,9 @@ const Evaluaciones = () => {
   const { evaluaciones, currentUserData, loaderPages, categorias } = useGlobalContext();
 
   const [activeTab, setActiveTab] = useState<'rapido' | 'niveles'>('niveles');
-  // Siempre iniciar por defecto en 'clasica' (Vista Clásica tradicional)
-  const [nivelesViewMode, setNivelesViewMode] = useState<'flujo' | 'clasica'>('clasica');
-  const previousModeRef = useRef<'flujo' | 'clasica'>('clasica');
+  // Siempre iniciar por defecto en 'flujo' (Modo Asistido)
+  const [nivelesViewMode, setNivelesViewMode] = useState<'flujo' | 'clasica'>('flujo');
+  const previousModeRef = useRef<'flujo' | 'clasica'>('flujo');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'activas' | 'inactivas'>('all');
   const [selectedYear, setSelectedYear] = useState<string>(String(currentYear));
@@ -281,11 +281,14 @@ const Evaluaciones = () => {
   }, [currentUserData?.nivelDeInstitucion, (currentUserData as any)?.nivelesInstitucion, currentUserData?.nivel, teacherGrados]);
 
   // Evaluaciones de tipo estudiante (tipoDeEvaluacion === "1" o sin especificar con rol 4)
+  // Filtradas por alcance de UGEL de acuerdo a la región del docente
   const studentEvaluaciones = useMemo(() => {
     return (evaluaciones || []).filter(
-      (eva) => !eva.tipoDeEvaluacion || eva.tipoDeEvaluacion === '1'
+      (eva) =>
+        (!eva.tipoDeEvaluacion || eva.tipoDeEvaluacion === '1') &&
+        tieneAccesoPorUgel(eva, currentUserData?.region)
     );
-  }, [evaluaciones]);
+  }, [evaluaciones, currentUserData?.region]);
 
   // Filtrado según ámbito (mis grados asignados vs todas)
   const scopeEvaluaciones = useMemo(() => {
@@ -1236,7 +1239,7 @@ const Evaluaciones = () => {
         onClose={() => {
           setShowSpotlightTour(false);
           setHasSeenAsistidoOnboarding(true);
-          setNivelesViewMode(previousModeRef.current || 'clasica');
+          setNivelesViewMode(previousModeRef.current || 'flujo');
         }}
         nivelesViewMode={nivelesViewMode}
         setNivelesViewMode={handleSetNivelesViewMode}

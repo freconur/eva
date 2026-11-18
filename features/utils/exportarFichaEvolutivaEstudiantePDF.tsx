@@ -16,7 +16,7 @@ import {
 } from '@react-pdf/renderer';
 import { converSeccion, getGradoTexto } from '../../fuctions/regiones';
 import { ActuacionCatalogoItem } from '../../components/reportes/estudiante/useDocenteEvolucionEstudiantes';
-import { loadStoredCardAdjustments } from '../../components/reportes/estudiante/DocenteActuacionesRadarChart';
+import { loadStoredCardAdjustments, getCoincidentRadiusOffset } from '../../components/reportes/estudiante/DocenteActuacionesRadarChart';
 
 export interface EtapaHistorialEstudiante {
   etapaKey: string;
@@ -40,8 +40,12 @@ export interface EstudianteEvolutivoPDFProps {
     seccion?: string | number;
     genero?: string;
     fotoUrl?: string;
+    puntaje?: number;
+    maxPuntaje?: number;
+    nivel?: string;
   };
   evaluacionActual: {
+    id?: string;
     nombre?: string;
     grado?: number | string;
     añoDelExamen?: number | string;
@@ -55,6 +59,9 @@ export interface EstudianteEvolutivoPDFProps {
   estadoTrayectoria: 'superacion' | 'estable' | 'alerta';
   promedioAula: number;
   diferenciaConAula: number;
+  // Código QR para descarga digital de la ficha por el estudiante o padre
+  qrCodeDataUrl?: string;
+  qrVerificationUrl?: string;
   // Propiedades para el gráfico Radar Vectorial
   catalogoActuaciones?: ActuacionCatalogoItem[];
   etapasConfiguradas?: { key: string; id: string; label: string; order: number }[];
@@ -124,19 +131,19 @@ export const PDF_ETAPA_COLORS: Record<
   edi: {
     border: '#2563eb', // Azul oficial EVA
     bg: '#2563eb',
-    fillOpacity: 0.22,
+    fillOpacity: 0.07,
     label: 'EDI (Diagnóstica)',
   },
   ep1: {
     border: '#f59e0b', // Ámbar oficial EVA
     bg: '#f59e0b',
-    fillOpacity: 0.22,
+    fillOpacity: 0.07,
     label: 'EP1 (Progresiva 1)',
   },
   ep2: {
     border: '#10b981', // Verde esmeralda oficial EVA
     bg: '#10b981',
-    fillOpacity: 0.25,
+    fillOpacity: 0.12,
     label: 'EP2 (Progresiva 2)',
   },
 };
@@ -331,20 +338,47 @@ export function fitTextInPdfBox(
 // Estilos del documento PDF en orientación Horizontal (Landscape)
 const styles = StyleSheet.create({
   page: {
-    paddingVertical: 6,
+    paddingVertical: 5,
     paddingHorizontal: 16,
     fontFamily: 'Helvetica',
     fontSize: 8,
     color: '#1e293b',
     backgroundColor: '#ffffff',
   },
+  headerContainer: {
+    width: '100%',
+    marginBottom: 2,
+  },
+  titleContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 2,
+    marginBottom: 2,
+    borderBottomWidth: 0.6,
+    borderBottomColor: '#cbd5e1',
+  },
+  titleMain: {
+    fontSize: 10.5,
+    fontFamily: 'Helvetica-Bold',
+    color: '#0f172a',
+    letterSpacing: 0.4,
+    textAlign: 'center',
+  },
+  titleSub: {
+    fontSize: 6.5,
+    fontFamily: 'Helvetica',
+    color: '#475569',
+    marginTop: 1,
+    textAlign: 'center',
+  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    paddingBottom: 4,
-    marginBottom: 4,
+    paddingBottom: 2,
+    marginBottom: 2,
     borderBottomWidth: 0.8,
     borderBottomColor: '#e2e8f0',
   },
@@ -387,6 +421,37 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: 'center',
   },
+  qrContainer: {
+    width: 58,
+    borderWidth: 0.6,
+    borderColor: '#cbd5e1',
+    borderRadius: 3,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 2.5,
+    paddingHorizontal: 2,
+    marginLeft: 6,
+    flexShrink: 0,
+  },
+  qrImage: {
+    width: 46,
+    height: 46,
+  },
+  qrTitle: {
+    fontSize: 5.5,
+    fontFamily: 'Helvetica-Bold',
+    color: '#0f172a',
+    marginTop: 1.5,
+    textAlign: 'center',
+  },
+  qrSubtitle: {
+    fontSize: 4.8,
+    fontFamily: 'Helvetica',
+    color: '#64748b',
+    marginTop: 0.5,
+    textAlign: 'center',
+  },
   personInfoCol: {
     flex: 1,
     flexDirection: 'column',
@@ -398,16 +463,15 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   personLabel: {
-    fontSize: 8.5,
+    fontSize: 7.8,
     fontFamily: 'Helvetica-Bold',
     color: '#334155',
   },
   personValue: {
-    fontSize: 8.5,
+    fontSize: 7.8,
     fontFamily: 'Helvetica-Bold',
     color: '#0f172a',
-    marginLeft: 4,
-    flex: 1,
+    marginLeft: 3,
   },
   personSubRow: {
     flexDirection: 'row',
@@ -415,15 +479,87 @@ const styles = StyleSheet.create({
     marginBottom: 2.5,
   },
   personSubLabel: {
-    fontSize: 7.2,
+    fontSize: 7.0,
     fontFamily: 'Helvetica-Bold',
     color: '#64748b',
   },
   personSubValue: {
-    fontSize: 7.2,
+    fontSize: 7.0,
     fontFamily: 'Helvetica',
     color: '#1e293b',
-    marginLeft: 4,
+    marginLeft: 3,
+  },
+  personInlineRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 2,
+  },
+  personInlineColLeft: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    flex: 1,
+    marginRight: 6,
+  },
+  personInlineColRight: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    flexShrink: 0,
+  },
+  miniTableContainer: {
+    width: '100%',
+    borderWidth: 0.6,
+    borderColor: '#cbd5e1',
+    borderRadius: 2,
+    marginTop: 2.5,
+    backgroundColor: '#ffffff',
+  },
+  miniTableHeaderRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 0.6,
+    borderBottomColor: '#cbd5e1',
+    backgroundColor: '#ffffff',
+  },
+  miniTableNivelRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#e2e8f0',
+    backgroundColor: '#ffffff',
+  },
+  miniTablePuntajeRow: {
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+  },
+  miniTableCell: {
+    flex: 1,
+    paddingHorizontal: 2,
+    paddingVertical: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRightWidth: 0.5,
+    borderRightColor: '#e2e8f0',
+  },
+  miniTableCellLast: {
+    borderRightWidth: 0,
+  },
+  miniTableHeaderText: {
+    fontSize: 6.8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#0f172a',
+    textAlign: 'center',
+  },
+  miniTableNivelText: {
+    fontSize: 6.0,
+    fontFamily: 'Helvetica',
+    color: '#334155',
+    textAlign: 'center',
+  },
+  miniTablePuntajeText: {
+    fontSize: 6.5,
+    fontFamily: 'Helvetica-Bold',
+    color: '#0f172a',
+    textAlign: 'center',
   },
   radarContainer: {
     backgroundColor: '#ffffff',
@@ -446,24 +582,24 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 5,
-    paddingBottom: 2,
-    paddingHorizontal: 12,
+    marginTop: 1,
+    paddingBottom: 0,
+    paddingHorizontal: 8,
   },
   radarLegendItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 8,
-    marginVertical: 2,
+    marginVertical: 1,
   },
   radarLegendSwatch: {
     width: 14,
-    height: 8,
+    height: 7,
     borderRadius: 1.5,
-    marginRight: 5,
+    marginRight: 4,
   },
   radarLegendText: {
-    fontSize: 7.5,
+    fontSize: 7.2,
     fontFamily: 'Helvetica-Bold',
     color: '#334155',
   },
@@ -473,7 +609,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     paddingHorizontal: 0,
-    paddingVertical: 2,
+    paddingVertical: 1,
   },
   lateralColumn: {
     flex: 1,
@@ -512,8 +648,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   radarCenterColumn: {
-    width: 365,
-    marginHorizontal: 10,
+    width: 360,
+    marginHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -530,6 +666,11 @@ const HeaderIdentificacionPDF: React.FC<{
   fotoDocenteUrl?: string;
   nombreColegio: string;
   subtituloParte?: string;
+  historialEtapas?: EtapaHistorialEstudiante[];
+  etapasConfiguradas?: { key: string; id: string; label: string; order: number }[];
+  studentEtapas?: Record<string, any>;
+  qrCodeDataUrl?: string;
+  qrVerificationUrl?: string;
 }> = ({
   estudiante,
   evaluacionActual,
@@ -537,6 +678,10 @@ const HeaderIdentificacionPDF: React.FC<{
   fotoDocenteUrl,
   nombreColegio,
   subtituloParte,
+  historialEtapas = [],
+  etapasConfiguradas = [],
+  studentEtapas = {},
+  qrCodeDataUrl,
 }) => {
   const gradoTexto = evaluacionActual?.grado
     ? getGradoTexto(evaluacionActual.grado)
@@ -552,54 +697,236 @@ const HeaderIdentificacionPDF: React.FC<{
     ? `${estudiante.nombres} ${estudiante.apellidos || ''}`.trim()
     : 'Estudiante';
 
+  // Helper para obtener el código o etiqueta corta de la etapa (EDI, EP1, EP2, etc.)
+  const getEtapaHeaderLabel = (cfgKey: string, cfgLabel?: string) => {
+    if (cfgKey) {
+      const upperKey = cfgKey.toUpperCase();
+      if (upperKey === 'EDI' || upperKey === 'EP1' || upperKey === 'EP2') {
+        return upperKey;
+      }
+    }
+    if (cfgLabel) {
+      const match = cfgLabel.match(/^(EDI|EP1|EP2)/i);
+      if (match) return match[1].toUpperCase();
+      return cfgLabel.length > 10 ? cfgLabel.substring(0, 10) : cfgLabel;
+    }
+    return (cfgKey || 'ETAPA').toUpperCase();
+  };
+
+  // Construir columnas de la mini-tabla con todas las evaluaciones
+  interface ColumnaEtapaTabla {
+    key: string;
+    label: string;
+    nivel: string;
+    puntajeTexto: string;
+  }
+
+  let etapasTabla: ColumnaEtapaTabla[] = [];
+
+  if (etapasConfiguradas && etapasConfiguradas.length > 0) {
+    const ordenadas = [...etapasConfiguradas].sort(
+      (a, b) => (a.order ?? 0) - (b.order ?? 0)
+    );
+    etapasTabla = ordenadas.map((cfg) => {
+      const histItem = (historialEtapas || []).find((h) => h.etapaKey === cfg.key);
+      const studentEtapa = studentEtapas?.[cfg.key];
+      const etapaData = studentEtapa || histItem;
+
+      const rawPuntaje = etapaData?.puntaje;
+      const tienePuntajeEtapa =
+        rawPuntaje !== undefined && rawPuntaje !== null && !isNaN(Number(rawPuntaje));
+
+      const nivelRaw = (etapaData?.nivel || '').trim();
+      const nivelValido =
+        nivelRaw &&
+        nivelRaw.toLowerCase() !== 'sin clasificar' &&
+        nivelRaw !== '-';
+
+      return {
+        key: cfg.key,
+        label: getEtapaHeaderLabel(cfg.key, cfg.label),
+        nivel: nivelValido ? nivelRaw : '—',
+        puntajeTexto: tienePuntajeEtapa ? `${rawPuntaje} pts` : '—',
+      };
+    });
+  } else if (historialEtapas && historialEtapas.length > 0) {
+    etapasTabla = historialEtapas.map((hist) => {
+      const nivelRaw = (hist.nivel || '').trim();
+      const nivelValido =
+        nivelRaw &&
+        nivelRaw.toLowerCase() !== 'sin clasificar' &&
+        nivelRaw !== '-';
+      const tienePuntajeEtapa =
+        hist.puntaje !== undefined &&
+        hist.puntaje !== null &&
+        !isNaN(Number(hist.puntaje));
+
+      return {
+        key: hist.etapaKey,
+        label: getEtapaHeaderLabel(hist.etapaKey, hist.label),
+        nivel: nivelValido ? nivelRaw : '—',
+        puntajeTexto: tienePuntajeEtapa ? `${hist.puntaje} pts` : '—',
+      };
+    });
+  } else if (estudiante?.puntaje !== undefined || estudiante?.nivel) {
+    const nivelRaw = (estudiante.nivel || '').trim();
+    const nivelValido =
+      nivelRaw &&
+      nivelRaw.toLowerCase() !== 'sin clasificar' &&
+      nivelRaw !== '-';
+    const tienePuntajeEtapa =
+      estudiante.puntaje !== undefined &&
+      estudiante.puntaje !== null &&
+      !isNaN(Number(estudiante.puntaje));
+
+    etapasTabla = [
+      {
+        key: 'actual',
+        label: evaluacionActual?.nombre
+          ? (evaluacionActual.nombre.length > 12
+              ? evaluacionActual.nombre.substring(0, 12)
+              : evaluacionActual.nombre)
+          : 'Evaluación',
+        nivel: nivelValido ? nivelRaw : '—',
+        puntajeTexto: tienePuntajeEtapa ? `${estudiante.puntaje} pts` : '—',
+      },
+    ];
+  }
+
   return (
-    <View style={styles.headerRow}>
-      {/* Bloque Izquierdo: Estudiante */}
-      <View style={styles.headerSideBlock}>
-        {estudiante?.fotoUrl ? (
-          <View style={styles.photoCarnet}>
-            <Image src={estudiante.fotoUrl} style={styles.photoImage} />
-          </View>
-        ) : (
-          <View style={styles.photoCarnetPlaceholder}>
-            <Svg width={22} height={22} viewBox="0 0 24 24">
-              <Circle cx={12} cy={8} r={4} fill="#cbd5e1" />
-              <Path
-                d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"
-                fill="none"
-                stroke="#cbd5e1"
-                strokeWidth={2}
-              />
-            </Svg>
-            <Text style={styles.photoPlaceholderText}>FOTO CARNET</Text>
-            <Text style={[styles.photoPlaceholderText, { fontSize: 5.5, marginTop: 1 }]}>
-              2.5 × 3.0 cm
-            </Text>
-          </View>
-        )}
-        <View style={styles.personInfoCol}>
-          <View style={styles.personTitleRow}>
-            <Text style={styles.personLabel}>Estudiante:</Text>
-            <Text style={styles.personValue}>{nombreEstudiante}</Text>
-          </View>
-          {estudiante?.dni && (
-            <View style={styles.personSubRow}>
-              <Text style={styles.personSubLabel}>DNI:</Text>
-              <Text style={styles.personSubValue}>{estudiante.dni}</Text>
+    <View style={styles.headerContainer} wrap={false}>
+      {/* Título Principal Institucional (Puro texto sin fondos de color, ideal para impresión) */}
+      <View style={styles.titleContainer}>
+        <Text style={styles.titleMain}>
+          INFORME DE PROGRESO Y EVOLUCIÓN DEL ESTUDIANTE
+        </Text>
+        <Text style={styles.titleSub}>
+          Monitoreo Longitudinal de Actuaciones Pedagógicas y Niveles de Logro
+        </Text>
+      </View>
+
+      <View style={styles.headerRow}>
+        {/* Bloque Izquierdo: Estudiante */}
+        <View style={styles.headerSideBlock}>
+          {estudiante?.fotoUrl ? (
+            <View style={styles.photoCarnet}>
+              <Image src={estudiante.fotoUrl} style={styles.photoImage} />
+            </View>
+          ) : (
+            <View style={styles.photoCarnetPlaceholder}>
+              <Svg width={22} height={22} viewBox="0 0 24 24">
+                <Circle cx={12} cy={8} r={4} fill="#cbd5e1" />
+                <Path
+                  d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"
+                  fill="none"
+                  stroke="#cbd5e1"
+                  strokeWidth={2}
+                />
+              </Svg>
+              <Text style={styles.photoPlaceholderText}>FOTO CARNET</Text>
+              <Text style={[styles.photoPlaceholderText, { fontSize: 5.5, marginTop: 1 }]}>
+                2.5 × 3.0 cm
+              </Text>
             </View>
           )}
-          <View style={styles.personSubRow}>
-            <Text style={styles.personSubLabel}>Grado:</Text>
-            <Text style={styles.personSubValue}>{gradoSeccion}</Text>
-          </View>
-          <View style={styles.personSubRow}>
-            <Text style={styles.personSubLabel}>Institución:</Text>
-            <Text style={styles.personSubValue}>
-              {nombreColegio || 'I.E. Sin registro'}
-            </Text>
+          <View style={styles.personInfoCol}>
+            {/* Fila 1: Estudiante y DNI juntos */}
+            <View style={styles.personInlineRow}>
+              <View style={styles.personInlineColLeft}>
+                <Text style={styles.personLabel}>Estudiante:</Text>
+                <Text style={styles.personValue}>{nombreEstudiante}</Text>
+              </View>
+              {estudiante?.dni && (
+                <View style={styles.personInlineColRight}>
+                  <Text style={styles.personSubLabel}>DNI:</Text>
+                  <Text style={styles.personSubValue}>{estudiante.dni}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Fila 2: Grado e Institución juntos */}
+            <View style={styles.personInlineRow}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'baseline',
+                  width: '38%',
+                  marginRight: 6,
+                }}
+              >
+                <Text style={styles.personSubLabel}>Grado:</Text>
+                <Text style={styles.personSubValue}>{gradoSeccion}</Text>
+              </View>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'baseline',
+                  flex: 1,
+                }}
+              >
+                <Text style={styles.personSubLabel}>Institución:</Text>
+                <Text style={styles.personSubValue}>
+                  {nombreColegio || 'I.E. Sin registro'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Fila 3: Mini-tabla compacta con todas las evaluaciones */}
+            {etapasTabla.length > 0 && (
+              <View style={styles.miniTableContainer}>
+                {/* Cabecera de la tabla con los nombres/códigos de evaluación */}
+                <View style={styles.miniTableHeaderRow}>
+                  {etapasTabla.map((col, idx) => (
+                    <View
+                      key={`th-${col.key}`}
+                      style={
+                        idx === etapasTabla.length - 1
+                          ? [styles.miniTableCell, styles.miniTableCellLast]
+                          : styles.miniTableCell
+                      }
+                    >
+                      <Text style={styles.miniTableHeaderText}>{col.label}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Fila 1: Nivel de Logro */}
+                <View style={styles.miniTableNivelRow}>
+                  {etapasTabla.map((col, idx) => (
+                    <View
+                      key={`tb-nivel-${col.key}`}
+                      style={
+                        idx === etapasTabla.length - 1
+                          ? [styles.miniTableCell, styles.miniTableCellLast]
+                          : styles.miniTableCell
+                      }
+                    >
+                      <Text style={styles.miniTableNivelText}>{col.nivel}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Fila 2: Puntaje obtenido */}
+                <View style={styles.miniTablePuntajeRow}>
+                  {etapasTabla.map((col, idx) => (
+                    <View
+                      key={`tb-pts-${col.key}`}
+                      style={
+                        idx === etapasTabla.length - 1
+                          ? [styles.miniTableCell, styles.miniTableCellLast]
+                          : styles.miniTableCell
+                      }
+                    >
+                      <Text style={styles.miniTablePuntajeText}>
+                        {col.puntajeTexto}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
           </View>
         </View>
-      </View>
 
       {/* Bloque Derecho: Docente y Evaluación */}
       <View style={styles.headerSideBlock}>
@@ -645,11 +972,11 @@ const HeaderIdentificacionPDF: React.FC<{
           </View>
           {subtituloParte && (
             <View style={styles.personSubRow}>
-              <Text style={[styles.personSubLabel, { color: '#2563eb' }]}>Hoja / Parte:</Text>
+              <Text style={styles.personSubLabel}>Hoja / Parte:</Text>
               <Text
                 style={[
                   styles.personSubValue,
-                  { fontFamily: 'Helvetica-Bold', color: '#1e40af' },
+                  { fontFamily: 'Helvetica-Bold', color: '#0f172a' },
                 ]}
               >
                 {subtituloParte}
@@ -657,9 +984,19 @@ const HeaderIdentificacionPDF: React.FC<{
             </View>
           )}
         </View>
+
+        {/* QR DE DESCARGA DIGITAL DIRECTA PARA EL PADRE DE FAMILIA */}
+        {qrCodeDataUrl ? (
+          <View style={styles.qrContainer}>
+            <Image src={qrCodeDataUrl} style={styles.qrImage} />
+            <Text style={styles.qrTitle}>COPIA DIGITAL</Text>
+            <Text style={styles.qrSubtitle}>Escanea el QR</Text>
+          </View>
+        ) : null}
       </View>
     </View>
-  );
+  </View>
+);
 };
 
 /**
@@ -927,7 +1264,7 @@ export const RadarEvaluacionesLegendPDF: React.FC<{
   if (evaluatedStages.length === 0) return null;
 
   return (
-    <View style={styles.radarLegendContainer}>
+    <View style={styles.radarLegendContainer} wrap={false}>
       {evaluatedStages.map((st) => (
         <View key={`pdf-eval-legend-${st.key}`} style={styles.radarLegendItem}>
           <View
@@ -990,9 +1327,9 @@ const VectorRadarChartPDFFlotante: React.FC<{
   // ViewBox: 0 0 1000 656 (Aprovecha todo el ancho y alto disponible en A4)
   const cx = 500;
   const cy = 328;
-  const R = N > 16 ? 128 : 118; // Radio exterior del radar web
-  const r1 = R / 2; // Anillo 1: NO (64 o 59)
-  const r2 = R; // Anillo 2: SÍ (128 o 118)
+  const R = 195; // Radio exterior del radar web (mismo tamaño físico que diseño columnas: ~240pt)
+  const r1 = R / 2; // Anillo 1: NO (97.5)
+  const r2 = R; // Anillo 2: SÍ (195)
 
   // Filtrar etapas activas respetando el orden cronológico
   const activeEtapasList = sortedEtapas.filter(
@@ -1058,16 +1395,18 @@ const VectorRadarChartPDFFlotante: React.FC<{
     const stepY = totalSpanY / Math.max(rightGroup.length, 1);
     const targetY = yStart + (idx + 0.5) * stepY;
 
-    let targetX = 660;
+    let targetX = 720;
     if (rightGroup.length >= 8) {
       const colPattern = [1, 2, 0];
       const col = colPattern[idx % 3];
       if (col === 2) targetX = 990 - spoke.boxW;
-      else if (col === 1) targetX = 765;
-      else targetX = 650;
+      else if (col === 1) targetX = 810;
+      else targetX = 715;
     } else if (rightGroup.length >= 4) {
       const isOuterCol = idx % 2 === 1;
-      targetX = isOuterCol ? 780 : 660;
+      targetX = isOuterCol ? 810 : 715;
+    } else {
+      targetX = 720;
     }
 
     const boxX = targetX;
@@ -1083,16 +1422,18 @@ const VectorRadarChartPDFFlotante: React.FC<{
     const stepY = totalSpanY / Math.max(leftGroup.length, 1);
     const targetY = yStart + (idx + 0.5) * stepY;
 
-    let targetX = 340;
+    let targetX = 285;
     if (leftGroup.length >= 8) {
       const colPattern = [1, 2, 0];
       const col = colPattern[idx % 3];
       if (col === 2) targetX = 10 + spoke.boxW;
-      else if (col === 1) targetX = 235;
-      else targetX = 350;
+      else if (col === 1) targetX = 190;
+      else targetX = 285;
     } else if (leftGroup.length >= 4) {
       const isOuterCol = idx % 2 === 1;
-      targetX = isOuterCol ? 220 : 340;
+      targetX = isOuterCol ? 190 : 285;
+    } else {
+      targetX = 280;
     }
 
     const boxX = targetX - spoke.boxW;
@@ -1148,7 +1489,7 @@ const VectorRadarChartPDFFlotante: React.FC<{
   // Aplicar ajustes manuales personalizados (posicionamiento x, y / dx, dy y dimensiones customW, customH)
   // guardados para la configuración de N actuaciones (ej. 7, 25 o 28 actuaciones)
   const webSvgWidth = 1680;
-  const webSvgHeight = Math.max(760, 520 + N * 18);
+  const webSvgHeight = Math.max(800, 540 + N * 18);
   const cxWeb = webSvgWidth / 2; // 840
   const cyWeb = webSvgHeight / 2;
   const scaleX = 1000 / webSvgWidth;
@@ -1189,6 +1530,17 @@ const VectorRadarChartPDFFlotante: React.FC<{
         effectiveBoxY = Math.round(cy + relY * scaleY);
       } else if (hasDy) {
         effectiveBoxY = spoke.boxY + Math.round(adj.dy * scaleY);
+      }
+
+      // Clamping de seguridad para evitar solapamiento con el círculo central ampliado
+      if (spoke.side === 'right') {
+        effectiveBoxX = Math.max(cx + R + 12, effectiveBoxX);
+      } else if (spoke.side === 'left') {
+        effectiveBoxX = Math.min(cx - R - 12 - effectiveBoxW, effectiveBoxX);
+      } else if (spoke.side === 'top') {
+        effectiveBoxY = Math.min(cy - R - 8 - effectiveBoxH, effectiveBoxY);
+      } else if (spoke.side === 'bottom') {
+        effectiveBoxY = Math.max(cy + R + 8, effectiveBoxY);
       }
 
       // Clamping para garantizar que la tarjeta nunca quede fuera de los bordes imprimibles del PDF
@@ -1361,8 +1713,8 @@ const VectorRadarChartPDFFlotante: React.FC<{
   });
 
   return (
-    <View style={styles.radarContainerFlotante}>
-      <Svg width={800} height={430} viewBox="0 0 1000 656">
+    <View style={styles.radarContainerFlotante} wrap={false}>
+      <Svg width={800} height={395} viewBox="0 0 1000 656">
         {/* Anillo 1 (Interior: NO acertó = 1) */}
         <Circle
           cx={cx}
@@ -1450,7 +1802,8 @@ const VectorRadarChartPDFFlotante: React.FC<{
           // Coordenadas polares para cada actuación
           const points = orderedActuaciones.map((act, i) => {
             const val = etapaData.actuacionesResultados?.[act.order] ?? 1;
-            const rVal = (val * R) / 2;
+            const offset = getCoincidentRadiusOffset(etapa.key, act.order, activeEtapasList, studentEtapas);
+            const rVal = (val * R) / 2 + offset;
             const angle = spokeEndpoints[i].angle;
             return {
               x: cx + rVal * Math.cos(angle),
@@ -1468,7 +1821,7 @@ const VectorRadarChartPDFFlotante: React.FC<{
               <Polygon
                 points={pointsString}
                 fill={color.bg}
-                fillOpacity={color.fillOpacity}
+                fillOpacity={isMostRecent ? 0.12 : (color.fillOpacity ?? 0.07)}
                 stroke={color.border}
                 strokeWidth={isMostRecent ? 2.5 : 1.5}
               />
@@ -1550,7 +1903,7 @@ const VectorRadarChartPDFFlotante: React.FC<{
 export function calibratePdfColumnMetrics(
   leftItems: ActuacionCatalogoItem[],
   rightItems: ActuacionCatalogoItem[],
-  maxAvailableHeight: number = 515,
+  maxAvailableHeight: number = 365,
   textScale: number = 1.0
 ): {
   cardFontSize: number;
@@ -1678,15 +2031,15 @@ const VectorRadarChartPDFColumnas: React.FC<{
     ? orderedActuaciones.slice(0, midPoint)
     : orderedActuaciones.slice(midPoint);
 
-  // Dimensiones del SVG central: 365 x 450 (calibrado para marco físico real de mini carnet 2.5x3cm)
-  const svgWidth = 365;
-  const svgHeight = 450;
+  // Dimensiones del SVG central: 360 x 355 (calibrado para que la leyenda quede pegada al gráfico y nunca desborde a una 2da página)
+  const svgWidth = 360;
+  const svgHeight = 355;
   const cx = svgWidth / 2;
   const cy = svgHeight / 2;
-  const R = 130; // Radio exterior del radar calibrado con holgura para mini carnet
-  const r1 = R / 2; // Radio intermedio (NO = 1) = 65
-  const r2 = R; // Radio exterior = 130
-  const rBadge = R + 20; // Radio de los badges numéricos = 150
+  const R = 120; // Radio exterior del radar calibrado para A4 landscape
+  const r1 = R / 2; // Radio intermedio (NO = 1) = 60
+  const r2 = R; // Radio exterior = 120
+  const rBadge = R + 18; // Radio de los badges numéricos = 138
 
   const spokeEndpoints = orderedActuaciones.map((act, i) => {
     const angle = isAntihorario
@@ -1720,7 +2073,7 @@ const VectorRadarChartPDFColumnas: React.FC<{
     cardMarginB,
     badgeSize,
     badgeFontSize,
-  } = calibratePdfColumnMetrics(leftColumn, rightColumn, 450, textScale);
+  } = calibratePdfColumnMetrics(leftColumn, rightColumn, 365, textScale);
   const cardPadX = 0;
 
   const renderPdfCompactCard = (act: ActuacionCatalogoItem) => (
@@ -1763,8 +2116,8 @@ const VectorRadarChartPDFColumnas: React.FC<{
   );
 
   return (
-    <View style={styles.radarContainer}>
-      <View style={styles.columnsContainer}>
+    <View style={styles.radarContainer} wrap={false}>
+      <View style={styles.columnsContainer} wrap={false}>
         {/* Columna Izquierda: Actuaciones Hemisferio Izquierdo */}
         <View style={styles.lateralColumn}>
           {leftColumn.length > 0 && (
@@ -1862,7 +2215,8 @@ const VectorRadarChartPDFColumnas: React.FC<{
 
               const points = orderedActuaciones.map((act, i) => {
                 const val = etapaData.actuacionesResultados?.[act.order] ?? 1;
-                const rVal = (val * R) / 2;
+                const offset = getCoincidentRadiusOffset(etapa.key, act.order, activeEtapasList, studentEtapas);
+                const rVal = (val * R) / 2 + offset;
                 const angle = spokeEndpoints[i].angle;
                 return {
                   x: cx + rVal * Math.cos(angle),
@@ -1879,7 +2233,7 @@ const VectorRadarChartPDFColumnas: React.FC<{
                   <Polygon
                     points={pointsString}
                     fill={color.bg}
-                    fillOpacity={color.fillOpacity}
+                    fillOpacity={isMostRecent ? 0.12 : (color.fillOpacity ?? 0.07)}
                     stroke={color.border}
                     strokeWidth={isMostRecent ? 2.5 : 1.5}
                   />
@@ -1949,9 +2303,10 @@ const VectorRadarChartPDFColumnas: React.FC<{
 };
 
 /**
- * Componente Documento React-PDF para la Ficha Evolutiva Horizontal (Solo Gráfico y Actuaciones a Página Completa)
+ * Genera la(s) página(s) A4 en orientación horizontal para un estudiante individual
+ * (1 página estándar o 2 páginas si está configurado para dividir en dos hemisferios)
  */
-export const FichaEvolutivaEstudiantePDFDocument: React.FC<
+export const FichaEvolutivaEstudiantePages: React.FC<
   EstudianteEvolutivoPDFProps
 > = ({
   estudiante,
@@ -1969,6 +2324,8 @@ export const FichaEvolutivaEstudiantePDFDocument: React.FC<
   orderDirection = 'horario',
   cardAdjustments: externalCardAdjustments,
   textScale,
+  qrCodeDataUrl,
+  qrVerificationUrl,
 }) => {
   // Factor de escala de tipografía efectivo para el PDF
   const effectiveTextScale = parsePdfTextScale(textScale);
@@ -2034,9 +2391,9 @@ export const FichaEvolutivaEstudiantePDFDocument: React.FC<
     };
 
     return (
-      <Document>
+      <React.Fragment>
         {/* PÁGINA 1: Primera Mitad de Actuaciones */}
-        <Page size="A4" orientation="landscape" style={styles.page}>
+        <Page size="A4" orientation="landscape" style={styles.page} wrap={false}>
           <HeaderIdentificacionPDF
             estudiante={estudiante}
             evaluacionActual={evaluacionActual}
@@ -2044,12 +2401,17 @@ export const FichaEvolutivaEstudiantePDFDocument: React.FC<
             fotoDocenteUrl={fotoDocenteUrl}
             nombreColegio={nombreColegio}
             subtituloParte={labelMitad1}
+            historialEtapas={historialEtapas}
+            etapasConfiguradas={etapasConfiguradas}
+            studentEtapas={studentEtapas}
+            qrCodeDataUrl={qrCodeDataUrl}
+            qrVerificationUrl={qrVerificationUrl}
           />
           {renderChartForSubset(primeraMitad)}
         </Page>
 
         {/* PÁGINA 2: Segunda Mitad de Actuaciones */}
-        <Page size="A4" orientation="landscape" style={styles.page}>
+        <Page size="A4" orientation="landscape" style={styles.page} wrap={false}>
           <HeaderIdentificacionPDF
             estudiante={estudiante}
             evaluacionActual={evaluacionActual}
@@ -2057,74 +2419,179 @@ export const FichaEvolutivaEstudiantePDFDocument: React.FC<
             fotoDocenteUrl={fotoDocenteUrl}
             nombreColegio={nombreColegio}
             subtituloParte={labelMitad2}
+            historialEtapas={historialEtapas}
+            etapasConfiguradas={etapasConfiguradas}
+            studentEtapas={studentEtapas}
+            qrCodeDataUrl={qrCodeDataUrl}
+            qrVerificationUrl={qrVerificationUrl}
           />
           {renderChartForSubset(segundaMitad)}
         </Page>
-      </Document>
+      </React.Fragment>
     );
   }
 
   return (
-    <Document>
-      <Page
-        size="A4"
-        orientation="landscape"
-        style={styles.page}
-      >
-        {/* Cabecera institucional sobria con fotos carnet y datos de identificación */}
-        <HeaderIdentificacionPDF
-          estudiante={estudiante}
-          evaluacionActual={evaluacionActual}
-          nombreDocente={nombreDocente}
-          fotoDocenteUrl={fotoDocenteUrl}
-          nombreColegio={nombreColegio}
-        />
+    <Page
+      size="A4"
+      orientation="landscape"
+      style={styles.page}
+      wrap={false}
+    >
+      {/* Cabecera institucional sobria con fotos carnet y datos de identificación */}
+      <HeaderIdentificacionPDF
+        estudiante={estudiante}
+        evaluacionActual={evaluacionActual}
+        nombreDocente={nombreDocente}
+        fotoDocenteUrl={fotoDocenteUrl}
+        nombreColegio={nombreColegio}
+        historialEtapas={historialEtapas}
+        etapasConfiguradas={etapasConfiguradas}
+        studentEtapas={studentEtapas}
+        qrCodeDataUrl={qrCodeDataUrl}
+        qrVerificationUrl={qrVerificationUrl}
+      />
 
-        {/* Gráfico Radar Vectorial de Actuaciones Pedagógicas */}
-        {orderedActuaciones.length > 0 ? (
-          chartLayoutMode === 'flotante' ? (
-            <VectorRadarChartPDFFlotante
-              orderedActuaciones={orderedActuaciones}
-              sortedEtapas={sortedEtapas}
-              studentEtapas={studentEtapas}
-              historialEtapas={historialEtapas}
-              evaluacionActual={evaluacionActual}
-              activeStages={activeStages}
-              cardAdjustments={effectiveCardAdjustments}
-              textScale={effectiveTextScale}
-            />
-          ) : (
-            <VectorRadarChartPDFColumnas
-              orderedActuaciones={orderedActuaciones}
-              sortedEtapas={sortedEtapas}
-              studentEtapas={studentEtapas}
-              historialEtapas={historialEtapas}
-              evaluacionActual={evaluacionActual}
-              activeStages={activeStages}
-              orderDirection={orderDirection}
-              textScale={effectiveTextScale}
-            />
-          )
+      {/* Gráfico Radar Vectorial de Actuaciones Pedagógicas */}
+      {orderedActuaciones.length > 0 ? (
+        chartLayoutMode === 'flotante' ? (
+          <VectorRadarChartPDFFlotante
+            orderedActuaciones={orderedActuaciones}
+            sortedEtapas={sortedEtapas}
+            studentEtapas={studentEtapas}
+            historialEtapas={historialEtapas}
+            evaluacionActual={evaluacionActual}
+            activeStages={activeStages}
+            cardAdjustments={effectiveCardAdjustments}
+            textScale={effectiveTextScale}
+          />
         ) : (
-          <View style={styles.radarContainer}>
-            <Text style={{ fontSize: 9, color: '#64748b', padding: 20 }}>
-              No se registraron actuaciones pedagógicas para esta evaluación.
-            </Text>
-          </View>
-        )}
-      </Page>
-    </Document>
+          <VectorRadarChartPDFColumnas
+            orderedActuaciones={orderedActuaciones}
+            sortedEtapas={sortedEtapas}
+            studentEtapas={studentEtapas}
+            historialEtapas={historialEtapas}
+            evaluacionActual={evaluacionActual}
+            activeStages={activeStages}
+            orderDirection={orderDirection}
+            textScale={effectiveTextScale}
+          />
+        )
+      ) : (
+        <View style={styles.radarContainer}>
+          <Text style={{ fontSize: 9, color: '#64748b', padding: 20 }}>
+            No se registraron actuaciones pedagógicas para esta evaluación.
+          </Text>
+        </View>
+      )}
+    </Page>
   );
 };
 
 /**
- * Función principal para compilar el PDF vectorial nativo y descargarlo en el navegador
+ * Componente Documento React-PDF para la Ficha Evolutiva Horizontal de un solo estudiante
+ */
+export const FichaEvolutivaEstudiantePDFDocument: React.FC<
+  EstudianteEvolutivoPDFProps
+> = (props) => (
+  <Document>
+    <FichaEvolutivaEstudiantePages {...props} />
+  </Document>
+);
+
+/**
+ * Componente Documento React-PDF para consolidar a TODOS los estudiantes del aula en un único PDF
+ */
+export const FichaEvolutivaConsolidadoPDFDocument: React.FC<{
+  estudiantes: EstudianteEvolutivoPDFProps[];
+}> = ({ estudiantes }) => (
+  <Document>
+    {estudiantes.map((props, idx) => (
+      <FichaEvolutivaEstudiantePages
+        key={`consolidado-est-${props.estudiante.dni || idx}`}
+        {...props}
+      />
+    ))}
+  </Document>
+);
+
+/**
+ * Genera un token determinista seguro de verificación para la ficha del estudiante.
+ * Garantiza que solo quien tiene el QR físico pueda consultar o descargar la ficha digital.
+ */
+export function generateFichaToken(dni: string, evaluacionId: string): string {
+  const secret = 'eva_ugel_ficha_token_secret_salt_2026';
+  const str = `${dni}:${evaluacionId}:${secret}`;
+  let hash1 = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash1 = (hash1 << 5) - hash1 + char;
+    hash1 |= 0;
+  }
+  const hex1 = (hash1 >>> 0).toString(16).padStart(8, '0');
+
+  let hash2 = 5381;
+  for (let i = str.length - 1; i >= 0; i--) {
+    hash2 = (hash2 * 33) ^ str.charCodeAt(i);
+    hash2 |= 0;
+  }
+  const hex2 = (hash2 >>> 0).toString(16).padStart(8, '0');
+  return `${hex1}${hex2}`;
+}
+
+/**
+ * Asegura que las props del estudiante contengan el código QR vectorial/PNG generado
+ * para la descarga digital directa por parte de padres de familia y estudiantes.
+ */
+export const asegurarQrPropsEstudiante = async (
+  props: EstudianteEvolutivoPDFProps,
+  baseUrl?: string
+): Promise<EstudianteEvolutivoPDFProps> => {
+  if (props.qrCodeDataUrl) return props;
+
+  const origin =
+    baseUrl ||
+    (typeof window !== 'undefined' && window.location.origin
+      ? window.location.origin
+      : 'https://evaluaciones-ugel.web.app');
+
+  const dni = props.estudiante.dni || '';
+  const evalId = props.evaluacionActual?.id || '';
+  const token = generateFichaToken(dni, evalId);
+
+  const targetUrl = `${origin}/descargar-ficha?dni=${encodeURIComponent(
+    dni
+  )}&evalId=${encodeURIComponent(evalId)}&token=${encodeURIComponent(token)}`;
+
+  try {
+    const QRCodeMod = await import('qrcode');
+    const QRCode = QRCodeMod.default || QRCodeMod;
+    const qrCodeDataUrl = await QRCode.toDataURL(targetUrl, {
+      margin: 1,
+      width: 130,
+      color: { dark: '#0f172a', light: '#ffffff' },
+    });
+
+    return {
+      ...props,
+      qrCodeDataUrl,
+      qrVerificationUrl: targetUrl,
+    };
+  } catch (err) {
+    console.warn('No se pudo generar código QR para el PDF del estudiante:', err);
+    return props;
+  }
+};
+
+/**
+ * Función principal para compilar el PDF vectorial nativo de un estudiante individual y descargarlo en el navegador
  */
 export const exportarFichaEvolutivaEstudiantePDF = async (
   props: EstudianteEvolutivoPDFProps
 ): Promise<Blob> => {
+  const propsConQr = await asegurarQrPropsEstudiante(props);
   const blob = await pdf(
-    <FichaEvolutivaEstudiantePDFDocument {...props} />
+    <FichaEvolutivaEstudiantePDFDocument {...propsConQr} />
   ).toBlob();
 
   if (typeof window !== 'undefined' && typeof document !== 'undefined') {
@@ -2145,4 +2612,186 @@ export const exportarFichaEvolutivaEstudiantePDF = async (
   }
 
   return blob;
+};
+
+/**
+ * Función para compilar y descargar el PDF consolidado con todas las fichas de los estudiantes en un solo archivo
+ */
+export const exportarFichaEvolutivaConsolidadoPDF = async (
+  estudiantesProps: EstudianteEvolutivoPDFProps[],
+  nombreArchivo?: string
+): Promise<Blob> => {
+  if (!estudiantesProps || estudiantesProps.length === 0) {
+    throw new Error('No hay estudiantes para exportar en el consolidado.');
+  }
+
+  const propsConQr = await Promise.all(
+    estudiantesProps.map((p) => asegurarQrPropsEstudiante(p))
+  );
+
+  const blob = await pdf(
+    <FichaEvolutivaConsolidadoPDFDocument estudiantes={propsConQr} />
+  ).toBlob();
+
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nombreArchivo || 'Radar_Consolidado_Aula_Completa.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  return blob;
+};
+
+/**
+ * Abre el cuadro de diálogo de la impresora nativo del navegador para un Blob de PDF,
+ * utilizando un iframe invisible en background y con respaldo directo por si el navegador
+ * restringe la interacción en iframes con plugins PDF.
+ */
+export const imprimirBlobPDF = async (blob: Blob): Promise<void> => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+  const blobUrl = URL.createObjectURL(blob);
+
+  return new Promise<void>((resolve) => {
+    try {
+      const frameId = 'eva-pdf-print-iframe';
+      const existingFrame = document.getElementById(frameId);
+      if (existingFrame && existingFrame.parentNode) {
+        existingFrame.parentNode.removeChild(existingFrame);
+      }
+
+      const iframe = document.createElement('iframe');
+      iframe.id = frameId;
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.style.visibility = 'hidden';
+      iframe.src = blobUrl;
+
+      let isFinished = false;
+      const finish = () => {
+        if (isFinished) return;
+        isFinished = true;
+        window.removeEventListener('afterprint', finish);
+        window.removeEventListener('focus', onFocus);
+        resolve();
+      };
+
+      const onFocus = () => {
+        // Al recuperar el foco tras cerrar el diálogo modal de impresión nativo
+        setTimeout(finish, 150);
+      };
+
+      // Escuchar eventos globales de fin de impresión y recuperación de foco
+      window.addEventListener('afterprint', finish);
+      window.addEventListener('focus', onFocus);
+
+      // Limpieza de recursos (iframe y blobUrl) en segundo plano después de 1 minuto (no bloquea la UI)
+      setTimeout(() => {
+        try {
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe);
+          }
+          URL.revokeObjectURL(blobUrl);
+        } catch {
+          // ignore
+        }
+      }, 60000);
+
+      let hasTriggered = false;
+      const doPrint = () => {
+        if (hasTriggered) return;
+        hasTriggered = true;
+
+        try {
+          if (iframe.contentWindow) {
+            try {
+              iframe.contentWindow.addEventListener('afterprint', finish);
+            } catch {
+              // ignore si el navegador bloquea listener interno en el iframe
+            }
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            // Si print() fue bloqueante (síncrono), el usuario ya cerró el diálogo al llegar aquí.
+            // Si fue asíncrono, liberamos tras un breve respiro para que el loader no quede colgado.
+            setTimeout(finish, 500);
+          } else {
+            throw new Error('No contentWindow in iframe');
+          }
+        } catch (e) {
+          console.warn('Iframe print no admitido en este navegador, abriendo ventana directa:', e);
+          const printWin = window.open(blobUrl, '_blank');
+          if (printWin) {
+            printWin.focus();
+            try {
+              printWin.print();
+            } catch {
+              // ignore
+            }
+          }
+          finish();
+        }
+      };
+
+      iframe.onload = () => {
+        setTimeout(doPrint, 400);
+      };
+
+      document.body.appendChild(iframe);
+
+      // Respaldo por si el evento onload de plugins PDF internos no dispara
+      setTimeout(doPrint, 1800);
+
+      // Timeout máximo de seguridad: a los 4 segundos liberar siempre el estado de carga
+      setTimeout(finish, 4000);
+    } catch (err) {
+      console.error('Error al inicializar diálogo de impresión:', err);
+      const printWin = window.open(blobUrl, '_blank');
+      if (printWin) {
+        printWin.focus();
+      }
+      resolve();
+    }
+  });
+};
+
+/**
+ * Compila la ficha evolutiva del estudiante y abre directamente el diálogo nativo de la impresora
+ */
+export const imprimirFichaEvolutivaEstudiantePDF = async (
+  props: EstudianteEvolutivoPDFProps
+): Promise<void> => {
+  const propsConQr = await asegurarQrPropsEstudiante(props);
+  const blob = await pdf(
+    <FichaEvolutivaEstudiantePDFDocument {...propsConQr} />
+  ).toBlob();
+  await imprimirBlobPDF(blob);
+};
+
+/**
+ * Compila el consolidado de todas las fichas del aula y abre directamente el diálogo nativo de la impresora
+ */
+export const imprimirFichaEvolutivaConsolidadoPDF = async (
+  estudiantesProps: EstudianteEvolutivoPDFProps[]
+): Promise<void> => {
+  if (!estudiantesProps || estudiantesProps.length === 0) {
+    throw new Error('No hay estudiantes para imprimir en el consolidado.');
+  }
+
+  const propsConQr = await Promise.all(
+    estudiantesProps.map((p) => asegurarQrPropsEstudiante(p))
+  );
+
+  const blob = await pdf(
+    <FichaEvolutivaConsolidadoPDFDocument estudiantes={propsConQr} />
+  ).toBlob();
+  await imprimirBlobPDF(blob);
 };

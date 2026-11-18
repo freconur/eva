@@ -288,8 +288,8 @@ const LayoutMenu = ({ children }: Props) => {
     )
   }
 
-  const hasSidebar = Boolean(currentUserData.perfil?.rol && router.pathname !== '/login');
-  const isFullScreenPage = router.pathname === '/admin/pruebas' || router.pathname === '/login';
+  const hasSidebar = Boolean(currentUserData.perfil?.rol && router.pathname !== '/login' && !router.pathname.startsWith('/descargar-ficha'));
+  const isFullScreenPage = router.pathname === '/admin/pruebas' || router.pathname === '/login' || router.pathname.startsWith('/descargar-ficha');
 
   return (
     <div className={`${styles.container} ${hasSidebar ? styles.withSidebar : ''} ${isSidebarCollapsed ? styles.collapsedSidebar : ''}`}>

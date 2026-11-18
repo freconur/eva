@@ -8,7 +8,7 @@ import { useGlobalContext, useGlobalContextDispatch } from '@/features/context/G
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import { AppAction } from '@/features/actions/appAction'
 import { getMonthName } from '@/fuctions/dates'
-import { getGradoTexto } from '@/fuctions/regiones'
+import { getGradoTexto, tieneAccesoPorUgel } from '@/fuctions/regiones'
 import SegmentedFilterBar from '@/components/common/SegmentedFilterBar'
 import EvaluacionesHeroBanner from '@/components/evaluaciones/EvaluacionesHeroBanner'
 import EvaluacionesTable from '@/components/evaluaciones/EvaluacionesTable'
@@ -77,10 +77,13 @@ const Evaluaciones = () => {
         if (!eva.active) return false
 
         const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel
-        return nivelDeInstitucion.includes(Number(nivelEva))
+        if (!nivelDeInstitucion.includes(Number(nivelEva))) return false
+
+        // Filtro por alcance de UGEL
+        return tieneAccesoPorUgel(eva, currentUserData?.region)
       }) || []
     )
-  }, [evaluaciones, currentUserData?.nivelDeInstitucion])
+  }, [evaluaciones, currentUserData?.nivelDeInstitucion, currentUserData?.region])
 
   // Helper para obtener el mes más reciente disponible para un año dado entre las evaluaciones visibles
   const getLatestMonthForYear = (year: number) => {

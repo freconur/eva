@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   MdTimeline,
@@ -8,6 +8,8 @@ import {
   MdSearch,
   MdFilterList,
   MdFileDownload,
+  MdPrint,
+  MdKeyboardArrowDown,
   MdCheckCircle,
   MdWarning,
   MdInfoOutline,
@@ -24,7 +26,8 @@ import {
   MdPeople,
   MdLayers,
 } from 'react-icons/md';
-import { RiLoader4Line, RiSparklingLine, RiUser3Line, RiRadarLine } from 'react-icons/ri';
+import { RiLoader4Line, RiSparklingLine, RiUser3Line } from 'react-icons/ri';
+import { TbChartRadar } from 'react-icons/tb';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -73,6 +76,7 @@ interface DocenteEvolucionEstudiantesTabProps {
   evaluacionesDb?: any[];
   dniDocente: string | number;
   nombreDocente?: string;
+  fotoDocenteUrl?: string;
   nombreColegio?: string;
   currentEstudiantes: Estudiante[];
   yearSelected: number | string;
@@ -88,6 +92,7 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
   evaluacionesDb = [],
   dniDocente,
   nombreDocente = 'Docente',
+  fotoDocenteUrl,
   nombreColegio = 'Institución Educativa',
   currentEstudiantes = [],
   yearSelected,
@@ -99,7 +104,7 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
   const {
     estudiantesEvolutivos,
     etapasConfiguradas,
-    catalogoActuaciones,
+    catalogoActuaciones = [],
     kpis,
     loading,
     error,
@@ -174,8 +179,54 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
   // Control de montaje en cliente para ReactDOM Portal (garantiza renderizado por delante de todo)
   const [mounted, setMounted] = useState<boolean>(false);
   const [exportingDni, setExportingDni] = useState<string | null>(null);
+  const [isExportingAll, setIsExportingAll] = useState<boolean>(false);
+  const [isCardDropdownOpen, setIsCardDropdownOpen] = useState<boolean>(false);
+  const [isModalDropdownOpen, setIsModalDropdownOpen] = useState<boolean>(false);
+  const cardDropdownRef = useRef<HTMLDivElement>(null);
+  const modalDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Estados y referencias para la función de impresión directa a impresora
+  const [printingDni, setPrintingDni] = useState<string | null>(null);
+  const [isPrintingAll, setIsPrintingAll] = useState<boolean>(false);
+  const [isCardPrintDropdownOpen, setIsCardPrintDropdownOpen] = useState<boolean>(false);
+  const [isModalPrintDropdownOpen, setIsModalPrintDropdownOpen] = useState<boolean>(false);
+  const cardPrintDropdownRef = useRef<HTMLDivElement>(null);
+  const modalPrintDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Manejo de cierre de menús desplegables al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        cardDropdownRef.current &&
+        !cardDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsCardDropdownOpen(false);
+      }
+      if (
+        modalDropdownRef.current &&
+        !modalDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsModalDropdownOpen(false);
+      }
+      if (
+        cardPrintDropdownRef.current &&
+        !cardPrintDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsCardPrintDropdownOpen(false);
+      }
+      if (
+        modalPrintDropdownRef.current &&
+        !modalPrintDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsModalPrintDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Filtrado reactivo inteligente de estudiantes (Multi-criterio: nombres, apellidos, DNI, sección)
@@ -213,6 +264,11 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
     }
     return filteredStudents[0];
   }, [filteredStudents, selectedStudentDni]);
+
+  // Lista de estudiantes para exportación consolidada (respeta filtros actuales de sección o aula)
+  const studentsToExport = useMemo(() => {
+    return filteredStudents.length > 0 ? filteredStudents : estudiantesEvolutivos;
+  }, [filteredStudents, estudiantesEvolutivos]);
 
   // Manejo de apertura y cierre del Modal de Ficha Individual a Pantalla Completa
   const handleOpenModal = (student: EstudianteEvolutivo) => {
@@ -256,6 +312,11 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
 
       // 2. Cerrar con Escape
       if (e.key === 'Escape') {
+        if (isCardDropdownOpen || isModalDropdownOpen) {
+          setIsCardDropdownOpen(false);
+          setIsModalDropdownOpen(false);
+          return;
+        }
         if (isSpotlightOpen) {
           e.preventDefault();
           e.stopPropagation();
@@ -283,69 +344,143 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
     };
   }, [isSpotlightOpen, modalStudent]);
 
+  // Helper para construir los props de PDF de cualquier estudiante
+  const buildStudentPDFProps = (estudiante: EstudianteEvolutivo) => {
+    const etapasPDF = estudiante.historial.map((hist) => ({
+      etapaKey: hist.etapaKey,
+      label: hist.label,
+      nombreEvaluacion: hist.nombreEvaluacion,
+      puntaje: hist.puntaje,
+      maxPuntaje: hist.maxPuntaje,
+      nivel: hist.nivel,
+      nivelColor: hist.nivelColor,
+      respuestasCorrectas: hist.respuestasCorrectas,
+      totalPreguntas: hist.totalPreguntas,
+      porcentaje: hist.porcentaje,
+      fecha: hist.fecha,
+    }));
+
+    const numActuaciones = (catalogoActuaciones || []).length;
+    const effectiveAdjustments =
+      Object.keys(liveCardAdjustments).length > 0
+        ? { ...loadStoredCardAdjustments(numActuaciones, radarSplitInTwo), ...liveCardAdjustments }
+        : loadStoredCardAdjustments(numActuaciones, radarSplitInTwo);
+
+    return {
+      estudiante: {
+        dni: estudiante.dni,
+        nombres: estudiante.nombres,
+        apellidos: estudiante.apellidos,
+        seccion: estudiante.seccion,
+        genero: estudiante.genero,
+        fotoUrl: (estudiante as any).fotoUrl || (estudiante as any).foto || undefined,
+        puntaje: estudiante.puntajeFinal ?? estudiante.puntajeInicial,
+        maxPuntaje: (estudiante.historial && estudiante.historial.length > 0)
+          ? estudiante.historial[estudiante.historial.length - 1].maxPuntaje
+          : undefined,
+        nivel: estudiante.nivelFinal || estudiante.nivelInicial,
+      },
+      evaluacionActual: {
+        id: evaluacion.id,
+        nombre: evaluacion.nombre,
+        grado: evaluacion.grado,
+        añoDelExamen: evaluacion.añoDelExamen,
+        mesDelExamen: evaluacion.mesDelExamen,
+      },
+      nombreDocente,
+      fotoDocenteUrl: fotoDocenteUrl || (evaluacion as any).fotoDocenteUrl || undefined,
+      nombreColegio,
+      historialEtapas: etapasPDF,
+      deltaPuntaje: estudiante.deltaPuntaje,
+      estadoTrayectoria: estudiante.estadoTrayectoria,
+      promedioAula: kpis.promedioAulaActual,
+      diferenciaConAula: estudiante.diferenciaConAula,
+      catalogoActuaciones,
+      etapasConfiguradas,
+      studentEtapas: estudiante.etapas,
+      activeStages,
+      chartLayoutMode: radarLayoutMode,
+      splitInTwo: radarSplitInTwo,
+      orderDirection: radarOrderDirection,
+      textScale: radarTextScale,
+      cardAdjustments: effectiveAdjustments,
+    };
+  };
+
   // Manejo de exportación individual en PDF con carga dinámica de @react-pdf/renderer (100% vectorial nítido)
   const handleExportPDF = async (estudiante: EstudianteEvolutivo) => {
-    if (exportingDni) return;
+    if (exportingDni || isExportingAll) return;
     try {
       setExportingDni(estudiante.dni);
-      const etapasPDF = estudiante.historial.map((hist) => ({
-        etapaKey: hist.etapaKey,
-        label: hist.label,
-        nombreEvaluacion: hist.nombreEvaluacion,
-        puntaje: hist.puntaje,
-        maxPuntaje: hist.maxPuntaje,
-        nivel: hist.nivel,
-        nivelColor: hist.nivelColor,
-        respuestasCorrectas: hist.respuestasCorrectas,
-        totalPreguntas: hist.totalPreguntas,
-        porcentaje: hist.porcentaje,
-        fecha: hist.fecha,
-      }));
-
       const { exportarFichaEvolutivaEstudiantePDF } = await import(
         '@/features/utils/exportarFichaEvolutivaEstudiantePDF'
       );
-
-      await exportarFichaEvolutivaEstudiantePDF({
-        estudiante: {
-          dni: estudiante.dni,
-          nombres: estudiante.nombres,
-          apellidos: estudiante.apellidos,
-          seccion: estudiante.seccion,
-          genero: estudiante.genero,
-          fotoUrl: (estudiante as any).fotoUrl || (estudiante as any).foto || undefined,
-        },
-        evaluacionActual: {
-          nombre: evaluacion.nombre,
-          grado: evaluacion.grado,
-          añoDelExamen: evaluacion.añoDelExamen,
-          mesDelExamen: evaluacion.mesDelExamen,
-        },
-        nombreDocente,
-        fotoDocenteUrl: (evaluacion as any).fotoDocenteUrl || undefined,
-        nombreColegio,
-        historialEtapas: etapasPDF,
-        deltaPuntaje: estudiante.deltaPuntaje,
-        estadoTrayectoria: estudiante.estadoTrayectoria,
-        promedioAula: kpis.promedioAulaActual,
-        diferenciaConAula: estudiante.diferenciaConAula,
-        catalogoActuaciones,
-        etapasConfiguradas,
-        studentEtapas: estudiante.etapas,
-        activeStages,
-        chartLayoutMode: radarLayoutMode,
-        splitInTwo: radarSplitInTwo,
-        orderDirection: radarOrderDirection,
-        textScale: radarTextScale,
-        cardAdjustments:
-          Object.keys(liveCardAdjustments).length > 0
-            ? { ...loadStoredCardAdjustments(catalogoActuaciones.length, radarSplitInTwo), ...liveCardAdjustments }
-            : loadStoredCardAdjustments(catalogoActuaciones.length, radarSplitInTwo),
-      });
+      await exportarFichaEvolutivaEstudiantePDF(buildStudentPDFProps(estudiante));
     } catch (err) {
       console.error('Error al exportar ficha evolutiva en PDF:', err);
     } finally {
       setExportingDni(null);
+    }
+  };
+
+  // Manejo de exportación consolidada de todos los estudiantes en un único PDF
+  const handleExportAllPDF = async () => {
+    if (exportingDni || isExportingAll) return;
+    const studentsToExport = filteredStudents.length > 0 ? filteredStudents : estudiantesEvolutivos;
+    if (studentsToExport.length === 0) return;
+
+    try {
+      setIsExportingAll(true);
+      const { exportarFichaEvolutivaConsolidadoPDF } = await import(
+        '@/features/utils/exportarFichaEvolutivaEstudiantePDF'
+      );
+
+      const allProps = studentsToExport.map(buildStudentPDFProps);
+      const sanitizedEval = (evaluacion.nombre || 'Aula').replace(/\s+/g, '_');
+      const sec = selectedSeccion ? `_Sec_${selectedSeccion}` : '';
+      const fileName = `Radar_Consolidado_${sanitizedEval}${sec}.pdf`;
+
+      await exportarFichaEvolutivaConsolidadoPDF(allProps, fileName);
+    } catch (err) {
+      console.error('Error al exportar consolidado de aula en PDF:', err);
+    } finally {
+      setIsExportingAll(false);
+    }
+  };
+
+  // Manejo de impresión directa individual (abre diálogo nativo de impresora)
+  const handlePrintPDF = async (estudiante: EstudianteEvolutivo) => {
+    if (exportingDni || isExportingAll || printingDni || isPrintingAll) return;
+    try {
+      setPrintingDni(estudiante.dni);
+      const { imprimirFichaEvolutivaEstudiantePDF } = await import(
+        '@/features/utils/exportarFichaEvolutivaEstudiantePDF'
+      );
+      await imprimirFichaEvolutivaEstudiantePDF(buildStudentPDFProps(estudiante));
+    } catch (err) {
+      console.error('Error al imprimir ficha evolutiva en PDF:', err);
+    } finally {
+      setPrintingDni(null);
+    }
+  };
+
+  // Manejo de impresión consolidada directa de todos los estudiantes
+  const handlePrintAllPDF = async () => {
+    if (exportingDni || isExportingAll || printingDni || isPrintingAll) return;
+    const studentsToExport = filteredStudents.length > 0 ? filteredStudents : estudiantesEvolutivos;
+    if (studentsToExport.length === 0) return;
+
+    try {
+      setIsPrintingAll(true);
+      const { imprimirFichaEvolutivaConsolidadoPDF } = await import(
+        '@/features/utils/exportarFichaEvolutivaEstudiantePDF'
+      );
+      const allProps = studentsToExport.map(buildStudentPDFProps);
+      await imprimirFichaEvolutivaConsolidadoPDF(allProps);
+    } catch (err) {
+      console.error('Error al imprimir consolidado de aula en PDF:', err);
+    } finally {
+      setIsPrintingAll(false);
     }
   };
 
@@ -983,16 +1118,176 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
                     <span>Pantalla Completa</span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleExportPDF(activeStudent)}
-                    disabled={exportingDni === activeStudent.dni}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-400 text-white shadow-2xs hover:shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed shrink-0"
-                    title="Descargar ficha pedagógica individual en PDF"
-                  >
-                    <MdFileDownload className={`w-4 h-4 ${exportingDni === activeStudent.dni ? 'animate-bounce' : ''}`} />
-                    <span>{exportingDni === activeStudent.dni ? 'Generando PDF...' : 'Descargar Ficha PDF'}</span>
-                  </button>
+                  {/* Dropdown de Impresión directa: Ficha individual o Consolidado a impresora */}
+                  <div className="relative inline-block" ref={cardPrintDropdownRef}>
+                    <button
+                      type="button"
+                      data-testid="print-card-dropdown-trigger"
+                      onClick={() => setIsCardPrintDropdownOpen((prev) => !prev)}
+                      disabled={Boolean(exportingDni) || isExportingAll || Boolean(printingDni) || isPrintingAll}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 shadow-2xs hover:shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed shrink-0"
+                      title="Imprimir ficha directamente con el diálogo de la impresora"
+                      aria-haspopup="true"
+                      aria-expanded={isCardPrintDropdownOpen}
+                    >
+                      <MdPrint
+                        className={`w-3.5 h-3.5 text-slate-600 ${(printingDni || isPrintingAll) ? 'animate-bounce text-blue-600' : ''}`}
+                      />
+                      <span>
+                        {isPrintingAll
+                          ? `Preparando todas (${studentsToExport.length})...`
+                          : printingDni === activeStudent.dni
+                          ? 'Preparando...'
+                          : 'Imprimir'}
+                      </span>
+                      <MdKeyboardArrowDown
+                        className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                          isCardPrintDropdownOpen ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {isCardPrintDropdownOpen && (
+                      <div className="absolute right-0 mt-1.5 w-64 bg-white rounded-xl shadow-xl border border-slate-200/90 py-1.5 z-50 animate-fadeIn text-left">
+                        <div className="px-3 py-1.5 border-b border-slate-100">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                            Opciones de impresión
+                          </span>
+                        </div>
+
+                        {/* Opción 1: Imprimir estudiante */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCardPrintDropdownOpen(false);
+                            handlePrintPDF(activeStudent);
+                          }}
+                          disabled={Boolean(exportingDni) || isExportingAll || Boolean(printingDni) || isPrintingAll}
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 text-slate-700 hover:text-blue-700 flex items-start gap-2.5 transition-colors cursor-pointer"
+                        >
+                          <div className="p-1.5 rounded-lg bg-blue-100/60 text-blue-600 shrink-0 mt-0.5">
+                            <MdPrint className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="font-bold block text-slate-800">
+                              Imprimir estudiante
+                            </span>
+                            <span className="text-[11px] text-slate-500 block truncate">
+                              Ficha de {activeStudent.nombresApellidos || activeStudent.nombres}
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* Opción 2: Imprimir todas */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCardPrintDropdownOpen(false);
+                            handlePrintAllPDF();
+                          }}
+                          disabled={Boolean(exportingDni) || isExportingAll || Boolean(printingDni) || isPrintingAll}
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 text-slate-700 hover:text-emerald-700 flex items-start gap-2.5 transition-colors cursor-pointer border-t border-slate-100"
+                        >
+                          <div className="p-1.5 rounded-lg bg-emerald-100/60 text-emerald-600 shrink-0 mt-0.5">
+                            <MdPrint className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="font-bold block text-slate-800">
+                              Imprimir todas
+                            </span>
+                            <span className="text-[11px] text-slate-500 block">
+                              Consolidado ({studentsToExport.length} {studentsToExport.length === 1 ? 'estudiante' : 'estudiantes'})
+                            </span>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dropdown de descarga en PDF: Individual o Todas las fichas consolidadas */}
+                  <div className="relative inline-block" ref={cardDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsCardDropdownOpen((prev) => !prev)}
+                      disabled={Boolean(exportingDni) || isExportingAll}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-400 text-white shadow-2xs hover:shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed shrink-0"
+                      title="Opciones de descarga de fichas en PDF"
+                      aria-haspopup="true"
+                      aria-expanded={isCardDropdownOpen}
+                    >
+                      <MdFileDownload
+                        className={`w-4 h-4 ${(exportingDni || isExportingAll) ? 'animate-bounce' : ''}`}
+                      />
+                      <span>
+                        {isExportingAll
+                          ? `Generando todas (${studentsToExport.length})...`
+                          : exportingDni === activeStudent.dni
+                          ? 'Generando estudiante...'
+                          : 'Descargar PDF'}
+                      </span>
+                      <MdKeyboardArrowDown
+                        className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                          isCardDropdownOpen ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {isCardDropdownOpen && (
+                      <div className="absolute right-0 mt-1.5 w-64 bg-white rounded-xl shadow-xl border border-slate-200/90 py-1.5 z-50 animate-fadeIn">
+                        <div className="px-3 py-1.5 border-b border-slate-100">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                            Opciones de descarga
+                          </span>
+                        </div>
+
+                        {/* Opción 1: Descargar estudiante */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCardDropdownOpen(false);
+                            handleExportPDF(activeStudent);
+                          }}
+                          disabled={Boolean(exportingDni) || isExportingAll}
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50/70 text-slate-700 hover:text-blue-700 flex items-start gap-2.5 transition-colors cursor-pointer"
+                        >
+                          <div className="p-1.5 rounded-lg bg-blue-100/60 text-blue-600 shrink-0 mt-0.5">
+                            <MdPerson className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="font-bold block text-slate-800">
+                              Descargar estudiante
+                            </span>
+                            <span className="text-[11px] text-slate-500 block truncate">
+                              Ficha de {activeStudent.nombresApellidos || activeStudent.nombres}
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* Opción 2: Descargar todas */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCardDropdownOpen(false);
+                            handleExportAllPDF();
+                          }}
+                          disabled={Boolean(exportingDni) || isExportingAll}
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-emerald-50/70 text-slate-700 hover:text-emerald-700 flex items-start gap-2.5 transition-colors cursor-pointer border-t border-slate-100"
+                        >
+                          <div className="p-1.5 rounded-lg bg-emerald-100/60 text-emerald-600 shrink-0 mt-0.5">
+                            <MdPeople className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="font-bold block text-slate-800">
+                              Descargar todas
+                            </span>
+                            <span className="text-[11px] text-slate-500 block">
+                              Consolidado en un solo PDF ({studentsToExport.length} {studentsToExport.length === 1 ? 'estudiante' : 'estudiantes'})
+                            </span>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1085,7 +1380,7 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <RiRadarLine className="w-3.5 h-3.5" />
+                    <TbChartRadar className="w-3.5 h-3.5" />
                     <span>Mapa Reticular de Actuaciones</span>
                   </button>
                 </div>
@@ -1447,11 +1742,23 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
                               e.stopPropagation();
                               handleExportPDF(est);
                             }}
-                            disabled={exportingDni === est.dni}
+                            disabled={exportingDni === est.dni || printingDni === est.dni}
                             className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
                             title="Descargar Ficha PDF del estudiante"
                           >
                             <MdFileDownload className={`w-4 h-4 ${exportingDni === est.dni ? 'animate-bounce text-blue-600' : ''}`} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePrintPDF(est);
+                            }}
+                            disabled={exportingDni === est.dni || printingDni === est.dni}
+                            className="p-1 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                            title="Imprimir Ficha del estudiante"
+                          >
+                            <MdPrint className={`w-4 h-4 ${printingDni === est.dni ? 'animate-bounce text-blue-600' : ''}`} />
                           </button>
                         </div>
                       </td>
@@ -1548,16 +1855,172 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
                 </div>
               )}
 
-              <button
-                type="button"
-                onClick={() => handleExportPDF(modalStudent)}
-                disabled={exportingDni === modalStudent.dni}
-                className="inline-flex items-center justify-center p-2.5 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-400 text-white shadow-2xs transition-colors cursor-pointer disabled:cursor-not-allowed"
-                title={exportingDni === modalStudent.dni ? 'Generando PDF...' : 'Descargar ficha pedagógica individual en PDF'}
-                aria-label={exportingDni === modalStudent.dni ? 'Generando PDF...' : 'Descargar PDF'}
-              >
-                <MdFileDownload className={`w-4 h-4 ${exportingDni === modalStudent.dni ? 'animate-bounce' : ''}`} />
-              </button>
+              {/* Dropdown de impresión directa dentro del Modal */}
+              <div className="relative inline-block" ref={modalPrintDropdownRef}>
+                <button
+                  type="button"
+                  data-testid="print-modal-dropdown-trigger"
+                  onClick={() => setIsModalPrintDropdownOpen((prev) => !prev)}
+                  disabled={Boolean(exportingDni) || isExportingAll || Boolean(printingDni) || isPrintingAll}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-white hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 text-slate-700 hover:text-slate-900 border border-slate-200 shadow-2xs transition-colors cursor-pointer disabled:cursor-not-allowed"
+                  title="Opciones de impresión directa"
+                  aria-haspopup="true"
+                  aria-expanded={isModalPrintDropdownOpen}
+                >
+                  <MdPrint
+                    className={`w-4 h-4 text-slate-600 ${(printingDni || isPrintingAll) ? 'animate-bounce text-blue-600' : ''}`}
+                  />
+                  <span className="hidden sm:inline">
+                    {isPrintingAll
+                      ? `Preparando todas (${studentsToExport.length})...`
+                      : printingDni === modalStudent.dni
+                      ? 'Preparando...'
+                      : 'Imprimir'}
+                  </span>
+                  <MdKeyboardArrowDown
+                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                      isModalPrintDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+
+                {isModalPrintDropdownOpen && (
+                  <div className="absolute right-0 mt-1.5 w-64 bg-white rounded-xl shadow-xl border border-slate-200/90 py-1.5 z-50 animate-fadeIn text-left">
+                    <div className="px-3 py-1.5 border-b border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        Opciones de impresión directa
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsModalPrintDropdownOpen(false);
+                        handlePrintPDF(modalStudent);
+                      }}
+                      disabled={Boolean(exportingDni) || isExportingAll || Boolean(printingDni) || isPrintingAll}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 text-slate-700 hover:text-blue-700 flex items-start gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <div className="p-1.5 rounded-lg bg-blue-100/60 text-blue-600 shrink-0 mt-0.5">
+                        <MdPrint className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-bold block text-slate-800">
+                          Imprimir estudiante
+                        </span>
+                        <span className="text-[11px] text-slate-500 block truncate">
+                          Ficha de {modalStudent.nombresApellidos || modalStudent.nombres}
+                        </span>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsModalPrintDropdownOpen(false);
+                        handlePrintAllPDF();
+                      }}
+                      disabled={Boolean(exportingDni) || isExportingAll || Boolean(printingDni) || isPrintingAll}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 text-slate-700 hover:text-emerald-700 flex items-start gap-2.5 transition-colors cursor-pointer border-t border-slate-100"
+                    >
+                      <div className="p-1.5 rounded-lg bg-emerald-100/60 text-emerald-600 shrink-0 mt-0.5">
+                        <MdPrint className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-bold block text-slate-800">
+                          Imprimir todas
+                        </span>
+                        <span className="text-[11px] text-slate-500 block">
+                          Consolidado ({studentsToExport.length} {studentsToExport.length === 1 ? 'estudiante' : 'estudiantes'})
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Dropdown de descarga en PDF dentro del Modal */}
+              <div className="relative inline-block" ref={modalDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsModalDropdownOpen((prev) => !prev)}
+                  disabled={Boolean(exportingDni) || isExportingAll}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-400 text-white shadow-2xs transition-colors cursor-pointer disabled:cursor-not-allowed"
+                  title="Opciones de descarga en PDF"
+                  aria-haspopup="true"
+                  aria-expanded={isModalDropdownOpen}
+                >
+                  <MdFileDownload
+                    className={`w-4 h-4 ${(exportingDni || isExportingAll) ? 'animate-bounce' : ''}`}
+                  />
+                  <span className="hidden sm:inline">
+                    {isExportingAll
+                      ? `Generando todas (${studentsToExport.length})...`
+                      : exportingDni === modalStudent.dni
+                      ? 'Generando...'
+                      : 'Descargar PDF'}
+                  </span>
+                  <MdKeyboardArrowDown
+                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                      isModalDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+
+                {isModalDropdownOpen && (
+                  <div className="absolute right-0 mt-1.5 w-64 bg-white rounded-xl shadow-xl border border-slate-200/90 py-1.5 z-50 animate-fadeIn text-left">
+                    <div className="px-3 py-1.5 border-b border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        Opciones de descarga
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsModalDropdownOpen(false);
+                        handleExportPDF(modalStudent);
+                      }}
+                      disabled={Boolean(exportingDni) || isExportingAll}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50/70 text-slate-700 hover:text-blue-700 flex items-start gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <div className="p-1.5 rounded-lg bg-blue-100/60 text-blue-600 shrink-0 mt-0.5">
+                        <MdPerson className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-bold block text-slate-800">
+                          Descargar estudiante
+                        </span>
+                        <span className="text-[11px] text-slate-500 block truncate">
+                          Ficha de {modalStudent.nombresApellidos || modalStudent.nombres}
+                        </span>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsModalDropdownOpen(false);
+                        handleExportAllPDF();
+                      }}
+                      disabled={Boolean(exportingDni) || isExportingAll}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-emerald-50/70 text-slate-700 hover:text-emerald-700 flex items-start gap-2.5 transition-colors cursor-pointer border-t border-slate-100"
+                    >
+                      <div className="p-1.5 rounded-lg bg-emerald-100/60 text-emerald-600 shrink-0 mt-0.5">
+                        <MdPeople className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-bold block text-slate-800">
+                          Descargar todas
+                        </span>
+                        <span className="text-[11px] text-slate-500 block">
+                          Consolidado en un solo PDF ({studentsToExport.length} {studentsToExport.length === 1 ? 'estudiante' : 'estudiantes'})
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <button
                 type="button"
@@ -1719,7 +2182,7 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
                   title="Actuaciones (Radar)"
                   aria-label="Actuaciones (Radar)"
                 >
-                  <RiRadarLine className="w-4 h-4" />
+                  <TbChartRadar className="w-4 h-4" />
                 </button>
               </div>
             </div>

@@ -6,8 +6,16 @@ jest.mock('@react-pdf/renderer', () => {
   const React = require('react');
   return {
     Document: ({ children }: any) => <div data-testid="pdf-document">{children}</div>,
-    Page: ({ children }: any) => <div data-testid="pdf-page">{children}</div>,
-    View: ({ children }: any) => <div data-testid="pdf-view">{children}</div>,
+    Page: ({ children, wrap }: any) => (
+      <div data-testid="pdf-page" data-wrap={String(wrap)}>
+        {children}
+      </div>
+    ),
+    View: ({ children, wrap }: any) => (
+      <div data-testid="pdf-view" data-wrap={String(wrap)}>
+        {children}
+      </div>
+    ),
     Text: ({ children }: any) => <span data-testid="pdf-text">{children}</span>,
     Svg: ({ children, viewBox }: any) => (
       <svg data-testid="pdf-svg" viewBox={viewBox}>
@@ -39,7 +47,9 @@ import {
   resolveMesTexto,
   RadarEvaluacionesLegendPDF,
   exportarFichaEvolutivaEstudiantePDF,
+  exportarFichaEvolutivaConsolidadoPDF,
   FichaEvolutivaEstudiantePDFDocument,
+  FichaEvolutivaConsolidadoPDFDocument,
   EstudianteEvolutivoPDFProps,
 } from '../exportarFichaEvolutivaEstudiantePDF';
 import {
@@ -167,7 +177,7 @@ describe('exportarFichaEvolutivaEstudiantePDF', () => {
 
       expect(result.cardFontSize).toBeLessThanOrEqual(7.0);
       expect(result.cardPadY).toBeLessThan(3.0);
-      expect(result.estimatedH).toBeLessThanOrEqual(515);
+      expect(result.estimatedH).toBeLessThanOrEqual(365);
     });
   });
 
@@ -176,7 +186,9 @@ describe('exportarFichaEvolutivaEstudiantePDF', () => {
       render(<FichaEvolutivaEstudiantePDFDocument {...mockProps} />);
 
       expect(screen.getByTestId('pdf-document')).toBeInTheDocument();
-      expect(screen.getByTestId('pdf-page')).toBeInTheDocument();
+      const page = screen.getByTestId('pdf-page');
+      expect(page).toBeInTheDocument();
+      expect(page).toHaveAttribute('data-wrap', 'false');
       // Ya no muestra cabecera azul ni resumen inferior para maximizar el espacio del gráfico
       expect(
         screen.queryByText('SISTEMA EVA - MAPA RETICULAR DE ACTUACIONES PEDAGÓGICAS')
@@ -252,7 +264,7 @@ describe('exportarFichaEvolutivaEstudiantePDF', () => {
 
     it('proyecta con precisión las coordenadas absolutas (x, y) de la web al PDF, logrando una columna vertical recta perfecta entre múltiples tarjetas', () => {
       // Configuramos dos tarjetas (1 y 2) alineadas verticalmente en el mismo X en el espacio Web
-      const alignedWebX = 1150;
+      const alignedWebX = 1200;
       const customAdjustments = {
         1: { dx: 100, dy: 20, x: alignedWebX, y: 150, customW: 200, customH: 45 },
         2: { dx: -50, dy: 60, x: alignedWebX, y: 220, customW: 200, customH: 45 },
@@ -277,7 +289,7 @@ describe('exportarFichaEvolutivaEstudiantePDF', () => {
 
     it('separa verticalmente actuaciones consecutivas en la misma columna para evitar que se toquen o solapen en el PDF', () => {
       // Configuramos dos tarjetas en la misma columna X donde la segunda inicialmente solaparía a la primera
-      const alignedWebX = 1150;
+      const alignedWebX = 1200;
       const overlappingAdjustments = {
         1: { dx: 100, dy: 20, x: alignedWebX, y: 150, customW: 200, customH: 45 },
         2: { dx: 100, dy: 20, x: alignedWebX, y: 155, customW: 200, customH: 45 }, // muy cerca en Y
@@ -500,9 +512,17 @@ describe('exportarFichaEvolutivaEstudiantePDF', () => {
       expect(screen.getByText('Evaluación Diagnóstica (Marzo)')).toBeInTheDocument();
       expect(screen.getByText('Evaluación Progresiva 1 (Julio)')).toBeInTheDocument();
 
-      // NO debe mostrar EP2 porque el estudiante no fue evaluado en ella
+      // En la leyenda inferior NO debe mostrar la Evaluación Progresiva 2 porque el estudiante no fue evaluado en ella
       expect(screen.queryByText(/Progresiva 2/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/EP2/i)).not.toBeInTheDocument();
+      expect(screen.queryByText('Evaluación Progresiva 2 (Noviembre)')).not.toBeInTheDocument();
+
+      // En la cabecera, la mini-tabla muestra todas las etapas con sus puntajes y guión para las no evaluadas
+      expect(screen.getByText('EDI')).toBeInTheDocument();
+      expect(screen.getByText('EP1')).toBeInTheDocument();
+      expect(screen.getByText('EP2')).toBeInTheDocument();
+      expect(screen.getByText('14 pts')).toBeInTheDocument();
+      expect(screen.getByText('18 pts')).toBeInTheDocument();
+      expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(2);
       unmount();
 
       // También debe funcionar en diseño Columnas
@@ -608,8 +628,8 @@ describe('exportarFichaEvolutivaEstudiantePDF', () => {
     });
   });
 
-  describe('exportarFichaEvolutivaEstudiantePDF', () => {
-    it('compila y retorna un Blob de PDF válido y activa la descarga', async () => {
+  describe('exportarFichaEvolutivaEstudiantePDF y exportarFichaEvolutivaConsolidadoPDF', () => {
+    it('compila y retorna un Blob de PDF válido y activa la descarga individual', async () => {
       // Mock de URL.createObjectURL y revokeObjectURL
       const mockCreateObjectURL = jest.fn(() => 'blob:mock-url');
       const mockRevokeObjectURL = jest.fn();
@@ -621,6 +641,59 @@ describe('exportarFichaEvolutivaEstudiantePDF', () => {
       expect(blob).toBeDefined();
       expect(blob instanceof Blob).toBe(true);
       expect(mockCreateObjectURL).toHaveBeenCalled();
+    });
+
+    it('FichaEvolutivaConsolidadoPDFDocument renderiza a todos los estudiantes en un único PDF', () => {
+      const student1: EstudianteEvolutivoPDFProps = {
+        ...mockProps,
+        estudiante: {
+          ...mockProps.estudiante,
+          dni: '11111111',
+          nombres: 'ANA LUCÍA',
+          apellidos: 'GARCÍA',
+        },
+      };
+
+      const student2: EstudianteEvolutivoPDFProps = {
+        ...mockProps,
+        estudiante: {
+          ...mockProps.estudiante,
+          dni: '22222222',
+          nombres: 'BETHOVEN',
+          apellidos: 'MENDOZA',
+        },
+      };
+
+      render(
+        <FichaEvolutivaConsolidadoPDFDocument estudiantes={[student1, student2]} />
+      );
+
+      // Un solo documento pero con 2 páginas (una por estudiante)
+      expect(screen.getByTestId('pdf-document')).toBeInTheDocument();
+      expect(screen.getAllByTestId('pdf-page').length).toBe(2);
+
+      // Ambos estudiantes deben estar presentes en el PDF consolidado
+      expect(screen.getByText('ANA LUCÍA GARCÍA')).toBeInTheDocument();
+      expect(screen.getByText('BETHOVEN MENDOZA')).toBeInTheDocument();
+    });
+
+    it('exportarFichaEvolutivaConsolidadoPDF compila y activa la descarga del consolidado', async () => {
+      const mockCreateObjectURL = jest.fn(() => 'blob:mock-url-consolidado');
+      const mockRevokeObjectURL = jest.fn();
+      window.URL.createObjectURL = mockCreateObjectURL;
+      window.URL.revokeObjectURL = mockRevokeObjectURL;
+
+      const blob = await exportarFichaEvolutivaConsolidadoPDF([mockProps], 'Consolidado_Test.pdf');
+
+      expect(blob).toBeDefined();
+      expect(blob instanceof Blob).toBe(true);
+      expect(mockCreateObjectURL).toHaveBeenCalled();
+    });
+
+    it('exportarFichaEvolutivaConsolidadoPDF lanza un error si la lista está vacía', async () => {
+      await expect(exportarFichaEvolutivaConsolidadoPDF([])).rejects.toThrow(
+        'No hay estudiantes para exportar en el consolidado.'
+      );
     });
   });
 });

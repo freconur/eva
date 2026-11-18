@@ -4,6 +4,7 @@ import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import { AppAction } from '@/features/actions/appAction'
 import { getFirestore, doc, getDoc } from 'firebase/firestore'
 import { getAllMonths, getMonthName } from '@/fuctions/dates'
+import { tieneAccesoPorUgel } from '@/fuctions/regiones'
 import { useRouter } from 'next/router'
 import React, { useEffect, useMemo, useState } from 'react'
 import SegmentedFilterBar from '@/components/common/SegmentedFilterBar'
@@ -74,10 +75,13 @@ const Evaluaciones = () => {
 
         const nivelEva = Array.isArray(eva.nivel) ? eva.nivel[0] : eva.nivel;
         // Filtro por nivel de institución (permisos)
-        return nivelDeInstitucion.includes(Number(nivelEva));
+        if (!nivelDeInstitucion.includes(Number(nivelEva))) return false;
+
+        // Filtro por alcance de UGEL
+        return tieneAccesoPorUgel(eva, currentUserData?.region);
       }) || []
     );
-  }, [evaluaciones, currentUserData?.nivelDeInstitucion]);
+  }, [evaluaciones, currentUserData?.nivelDeInstitucion, currentUserData?.region]);
 
   // Helper para obtener el mes más reciente disponible para un año dado entre las evaluaciones visibles
   const getLatestMonthForYear = (year: number) => {

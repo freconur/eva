@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
-import { RiCloseLine, RiUserAddLine, RiLoader4Line } from 'react-icons/ri';
+import { RiCloseLine, RiUserAddLine, RiLoader4Line, RiCameraLine } from 'react-icons/ri';
 import { gradosDeColegio, sectionByGrade, genero } from '@/fuctions/regiones';
 import { EstudianteImportado } from '@/features/types/estudiante';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
+import { compressCarnetImage } from '@/features/utils/compressCarnetImage';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'react-toastify';
 
 interface ModalCrearEstudianteGeneralProps {
@@ -17,7 +19,12 @@ interface ModalCrearEstudianteGeneralProps {
         grado?: string | number;
         seccion?: string;
         genero?: string;
+        fotoUrl?: string;
+        foto?: string;
+        dniDocente?: string;
     } | null;
+    dniDocente?: string;
+    docentesList?: { dni: string; nombre: string }[];
     onSuccess?: () => void;
 }
 
@@ -26,10 +33,18 @@ const ModalCrearEstudianteGeneral: React.FC<ModalCrearEstudianteGeneralProps> = 
     onClose,
     mode = 'create',
     estudianteData,
+    dniDocente,
+    docentesList,
     onSuccess,
 }) => {
     const { crearEstudianteIndividual, actualizarEstudiante, loaderCrearEstudiantes } = useAgregarEvaluaciones();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [selectedDocenteState, setSelectedDocenteState] = useState<string>('');
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+    const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
+    const [photoSizeKb, setPhotoSizeKb] = useState<number | null>(null);
+    const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
 
     const {
         register,
@@ -40,6 +55,7 @@ const ModalCrearEstudianteGeneral: React.FC<ModalCrearEstudianteGeneralProps> = 
 
     useEffect(() => {
         if (isOpen) {
+            setSelectedDocenteState(dniDocente || estudianteData?.dniDocente || (docentesList && docentesList.length > 0 ? docentesList[0].dni : ''));
             if (mode === 'edit' && estudianteData) {
                 reset({
                     dni: estudianteData.dni || '',
@@ -48,6 +64,7 @@ const ModalCrearEstudianteGeneral: React.FC<ModalCrearEstudianteGeneralProps> = 
                     seccion: estudianteData.seccion || '',
                     genero: estudianteData.genero || '',
                 });
+                setPhotoPreviewUrl(estudianteData.fotoUrl || estudianteData.foto || null);
             } else {
                 reset({
                     dni: '',
@@ -56,14 +73,57 @@ const ModalCrearEstudianteGeneral: React.FC<ModalCrearEstudianteGeneralProps> = 
                     seccion: '',
                     genero: '',
                 });
+                setPhotoPreviewUrl(null);
             }
+            setPhotoBlob(null);
+            setPhotoSizeKb(null);
             setErrorMessage(null);
         }
-    }, [isOpen, mode, estudianteData, reset]);
+    }, [isOpen, mode, estudianteData, dniDocente, docentesList, reset]);
+
+    const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setIsProcessingPhoto(true);
+            const res = await compressCarnetImage(file);
+            setPhotoPreviewUrl(res.dataUrl);
+            setPhotoBlob(res.blob);
+            setPhotoSizeKb(res.sizeInKb);
+        } catch (err: any) {
+            console.error('Error al comprimir foto carnet:', err);
+            toast.error(err?.message || 'Error al procesar la imagen');
+        } finally {
+            setIsProcessingPhoto(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
 
     const onSubmit = async (data: any) => {
         try {
             setErrorMessage(null);
+
+            // Manejo de subida de foto a Storage si hay un blob nuevo
+            let finalFotoUrl: string | undefined = undefined;
+            if (photoBlob) {
+                try {
+                    const storage = getStorage();
+                    const sRef = storageRef(storage, `estudiantes/${data.dni}/foto.jpg`);
+                    const snapshot = await uploadBytes(sRef, photoBlob, { contentType: 'image/jpeg' });
+                    finalFotoUrl = await getDownloadURL(snapshot.ref);
+                } catch (storageErr) {
+                    console.warn('No se pudo subir a Storage, guardando vista previa:', storageErr);
+                    finalFotoUrl = photoPreviewUrl || undefined;
+                }
+            } else if (photoPreviewUrl === null && mode === 'edit') {
+                // Usuario removió la foto explícitamente
+                finalFotoUrl = '';
+            } else if (estudianteData?.fotoUrl || estudianteData?.foto) {
+                finalFotoUrl = estudianteData.fotoUrl || estudianteData.foto;
+            }
 
             const estudiante: EstudianteImportado = {
                 id: data.dni,
@@ -74,17 +134,24 @@ const ModalCrearEstudianteGeneral: React.FC<ModalCrearEstudianteGeneralProps> = 
                 genero: data.genero,
                 isValid: true,
                 errors: [],
+                ...(finalFotoUrl ? { fotoUrl: finalFotoUrl } : {}),
             };
 
+            const targetDocenteDni = selectedDocenteState || dniDocente || estudianteData?.dniDocente;
+            if (!targetDocenteDni && docentesList && docentesList.length > 0) {
+                setErrorMessage('Debe seleccionar el docente a cargo');
+                return;
+            }
+
             if (mode === 'edit') {
-                await actualizarEstudiante(estudiante);
+                await actualizarEstudiante(estudiante, targetDocenteDni);
                 toast.success('Estudiante actualizado exitosamente');
                 if (onSuccess) {
                     onSuccess();
                 }
                 handleClose();
             } else {
-                await crearEstudianteIndividual(estudiante);
+                await crearEstudianteIndividual(estudiante, targetDocenteDni);
                 toast.success('Estudiante creado exitosamente');
                 if (onSuccess) {
                     onSuccess();
@@ -97,6 +164,9 @@ const ModalCrearEstudianteGeneral: React.FC<ModalCrearEstudianteGeneralProps> = 
                     seccion: data.seccion,
                     genero: data.genero,
                 });
+                setPhotoPreviewUrl(null);
+                setPhotoBlob(null);
+                setPhotoSizeKb(null);
             }
         } catch (error: any) {
             console.error('Error al procesar estudiante:', error);
@@ -107,6 +177,9 @@ const ModalCrearEstudianteGeneral: React.FC<ModalCrearEstudianteGeneralProps> = 
 
     const handleClose = () => {
         reset();
+        setPhotoPreviewUrl(null);
+        setPhotoBlob(null);
+        setPhotoSizeKb(null);
         setErrorMessage(null);
         onClose();
     };
@@ -157,6 +230,27 @@ const ModalCrearEstudianteGeneral: React.FC<ModalCrearEstudianteGeneralProps> = 
                     {errorMessage && (
                         <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-100">
                             {errorMessage}
+                        </div>
+                    )}
+
+                    {/* Docente selector (cuando es invocado por Director) */}
+                    {docentesList && docentesList.length > 0 && mode === 'create' && (
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                                Docente a cargo *
+                            </label>
+                            <select
+                                value={selectedDocenteState}
+                                onChange={(e) => setSelectedDocenteState(e.target.value)}
+                                className="w-full rounded-xl border border-gray-200 p-3 text-sm focus:border-colorTercero focus:ring-2 focus:ring-colorTercero focus:ring-opacity-20 outline-none transition-all bg-white"
+                            >
+                                <option value="">Seleccione un docente...</option>
+                                {docentesList.map((d) => (
+                                    <option key={d.dni} value={d.dni}>
+                                        {d.nombre} ({d.dni})
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     )}
 
@@ -270,6 +364,69 @@ const ModalCrearEstudianteGeneral: React.FC<ModalCrearEstudianteGeneralProps> = 
                         {errors.genero && (
                             <span className="mt-1 block text-xs text-red-500">{errors.genero.message as string}</span>
                         )}
+                    </div>
+
+                    {/* Foto Carnet (Opcional) */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                            Foto Carnet (Opcional)
+                        </label>
+                        <div className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-gray-200 bg-gray-50/60 hover:bg-gray-50 transition-colors">
+                            <div className="relative w-12 h-14 rounded-lg border border-gray-200 bg-white overflow-hidden flex items-center justify-center shrink-0 shadow-2xs">
+                                {photoPreviewUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                        src={photoPreviewUrl}
+                                        alt="Foto carnet estudiante"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <RiCameraLine className="text-xl text-gray-400" />
+                                )}
+                                {isProcessingPhoto && (
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white">
+                                        <RiLoader4Line className="animate-spin text-sm" />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <span className="block text-xs font-semibold text-gray-700">
+                                    {photoPreviewUrl ? 'Foto carnet seleccionada' : 'Adjuntar fotografía carnet'}
+                                </span>
+                                <span className="block text-[11px] text-gray-400 truncate">
+                                    {photoSizeKb ? `Optimizada (${photoSizeKb} KB)` : 'Proporción 2.5 × 3.0 cm (máx. 45 KB)'}
+                                </span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isProcessingPhoto}
+                                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                            >
+                                {photoPreviewUrl ? 'Cambiar' : 'Subir'}
+                            </button>
+                            {photoPreviewUrl && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setPhotoPreviewUrl(null);
+                                        setPhotoBlob(null);
+                                        setPhotoSizeKb(null);
+                                    }}
+                                    className="p-1.5 rounded-lg text-xs text-red-500 hover:bg-red-50 transition-all cursor-pointer"
+                                    title="Quitar foto"
+                                >
+                                    <RiCloseLine className="text-base" />
+                                </button>
+                            )}
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={handlePhotoSelect}
+                                className="hidden"
+                            />
+                        </div>
                     </div>
 
                     {/* Footer Actions */}

@@ -46,6 +46,7 @@ export interface SidebarLabels {
   // === DIRECTORES ===
   director_miCuenta?: string;
   director_estudiantes?: string;
+  director_estudiantes_nomina?: string;
   director_estudiantes_seguimiento?: string;
   director_docentes?: string;
   director_docentes_mediacion?: string;
@@ -113,6 +114,7 @@ export const DEFAULT_SIDEBAR_LABELS: Record<SidebarLabelKey, string> = {
   // Directores
   director_miCuenta: 'Mi cuenta',
   director_estudiantes: 'Estudiantes',
+  director_estudiantes_nomina: 'Padrón de estudiantes',
   director_estudiantes_seguimiento: 'Seguimiento de aprendizaje',
   director_docentes: 'Docentes',
   director_docentes_mediacion: 'Mediación didáctica',
@@ -246,6 +248,7 @@ export const SIDEBAR_ROLES_METADATA: SidebarRoleMeta[] = [
         items: [
           { key: 'director_miCuenta', labelOriginal: 'Mi cuenta', description: 'Perfil del director', route: '/mi-cuenta' },
           { key: 'director_estudiantes', labelOriginal: 'Estudiantes', description: 'Título del grupo de estudiantes' },
+          { key: 'director_estudiantes_nomina', labelOriginal: 'Padrón de estudiantes', description: 'Padrón general de estudiantes de la institución', route: '/directores/estudiantes' },
           { key: 'director_estudiantes_seguimiento', labelOriginal: 'Seguimiento de aprendizaje', description: 'Evaluaciones escolares de estudiantes', route: '/directores/evaluaciones' },
           { key: 'director_docentes', labelOriginal: 'Docentes', description: 'Título del grupo de docentes' },
           { key: 'director_docentes_mediacion', labelOriginal: 'Mediación didáctica', description: 'Evaluación de desempeño docente', route: '/directores/evaluaciones-docentes' },

@@ -108,54 +108,72 @@ const useUsuario = () => {
 
   const getUser = async (id: string) => {
     const auditedUserStr = typeof window !== 'undefined' ? sessionStorage.getItem('audited_user') : null;
+    let targetDocId = id as string;
+    let auditedUserFallback: any = null;
+
     if (auditedUserStr) {
       try {
-        const auditedUser = JSON.parse(auditedUserStr);
-        dispatch({ type: AppAction.LOADER_LOGIN, payload: false });
-        dispatch({
-          type: AppAction.CURRENT_USER_DATA,
-          payload: auditedUser,
-        });
-        return;
+        auditedUserFallback = JSON.parse(auditedUserStr);
+        if (auditedUserFallback?.dni) {
+          targetDocId = String(auditedUserFallback.dni);
+        } else if (auditedUserFallback?.id) {
+          targetDocId = String(auditedUserFallback.id);
+        }
       } catch (e) {
         console.error('Error parsing audited_user from sessionStorage:', e);
       }
     }
 
-    const refUser = doc(db, 'usuarios', id as string);
+    const refUser = doc(db, 'usuarios', targetDocId);
     const user = await getDoc(refUser);
 
     if (user.exists()) {
+      const userData = user.data();
+      const userPayload = {
+        ...userData,
+        id: user.id,
+        nombres: userData?.nombres || '',
+        apellidos: userData?.apellidos || '',
+        dni: userData?.dni || '',
+        foto: userData?.foto || '',
+        institucion: userData?.institucion || '',
+        dniDirector: userData?.dniDirector || '',
+        modular: userData?.modular || '',
+        perfil: userData?.perfil || {},
+        region: userData?.region || 0,
+        rol: userData?.rol || 0,
+        nivelDeInstitucion: userData?.nivelDeInstitucion || [],
+        nivel: userData?.nivel || 0,
+        nivelesInstitucion: userData?.nivelesInstitucion || [],
+        area: userData?.area,
+        caracteristicaCurricular: userData?.caracteristicaCurricular,
+        distrito: userData?.distrito || '',
+        email: userData?.email || '',
+        celular: userData?.celular || '',
+        tipoGestion: userData?.tipoGestion || undefined,
+        seguridad: userData?.seguridad || undefined,
+        debeCambiarContrasena: userData?.debeCambiarContrasena || false,
+        asignaciones: userData?.asignaciones || [],
+        grados: userData?.grados || [],
+        secciones: userData?.secciones || [],
+      };
+
+      // Si está en modo auditoría, sincronizar el sessionStorage con los datos frescos de Firestore
+      if (auditedUserStr && typeof window !== 'undefined') {
+        sessionStorage.setItem('audited_user', JSON.stringify(userPayload));
+      }
+
       dispatch({ type: AppAction.LOADER_LOGIN, payload: false });
       dispatch({
         type: AppAction.CURRENT_USER_DATA,
-        payload: {
-          ...user.data(),
-          id: user.id,
-          nombres: user.data()?.nombres || '',
-          apellidos: user.data()?.apellidos || '',
-          dni: user.data()?.dni || '',
-          institucion: user.data()?.institucion || '',
-          dniDirector: user.data()?.dniDirector || '',
-          modular: user.data()?.modular || '',
-          perfil: user.data()?.perfil || {},
-          region: user.data()?.region || 0,
-          rol: user.data()?.rol || 0,
-          nivelDeInstitucion: user.data()?.nivelDeInstitucion || [],
-          nivel: user.data()?.nivel || 0,
-          nivelesInstitucion: user.data()?.nivelesInstitucion || [],
-          area: user.data()?.area,
-          caracteristicaCurricular: user.data()?.caracteristicaCurricular,
-          distrito: user.data()?.distrito || '',
-          email: user.data()?.email || '',
-          celular: user.data()?.celular || '',
-          tipoGestion: user.data()?.tipoGestion || undefined,
-          seguridad: user.data()?.seguridad || undefined,
-          debeCambiarContrasena: user.data()?.debeCambiarContrasena || false,
-          asignaciones: user.data()?.asignaciones || [],
-          grados: user.data()?.grados || [],
-          secciones: user.data()?.secciones || [],
-        },
+        payload: userPayload,
+      });
+    } else if (auditedUserFallback) {
+      // Fallback a los datos de auditoría en memoria si no se pudo cargar el doc
+      dispatch({ type: AppAction.LOADER_LOGIN, payload: false });
+      dispatch({
+        type: AppAction.CURRENT_USER_DATA,
+        payload: auditedUserFallback,
       });
     } else {
       console.log('usuario incorrecto o la contraseña no es valida.');

@@ -50,6 +50,7 @@ import DirectorTabsNav, { DirectorTabKey } from '@/components/reportes/director/
 import DirectorBrechasTab from '@/components/reportes/director/DirectorBrechasTab';
 import DirectorTendenciasTab from '@/components/reportes/director/DirectorTendenciasTab';
 import DirectorComparativaTab from '@/components/reportes/director/DirectorComparativaTab';
+import { DirectorEvolucionEstudiantesTab } from '@/components/reportes/director/DirectorEvolucionEstudiantesTab';
 import DirectorExportMenu from '@/components/reportes/director/DirectorExportMenu';
 import DirectorHeroBanner from '@/components/reportes/director/DirectorHeroBanner';
 import useReportesBannerConfig from '@/components/reportes/director/useReportesBannerConfig';
@@ -69,6 +70,7 @@ import {
   MdShowChart,
   MdAssignment,
   MdKeyboardArrowUp,
+  MdTimeline,
 } from 'react-icons/md';
 import {
   RiSparklingLine,
@@ -334,11 +336,10 @@ const Reporte = () => {
     }
   }, [isConfigLoaded, isEtapaConfigurada, activeTab]);
 
-  // Pestañas visibles según si Brechas está habilitada (evolución es exclusiva de docentes)
+  // Pestañas visibles según si Brechas está habilitada
   const visibleTabOrder = useMemo(() => {
     return tabOrder.filter((id) => {
       if (id === 'brechas') return isEtapaConfigurada;
-      if (id === 'evolucion') return false;
       return true;
     });
   }, [tabOrder, isEtapaConfigurada]);
@@ -1368,6 +1369,30 @@ const Reporte = () => {
     />
   );
 
+  // Helper de renderizado: TAB 6 (Evolución Longitudinal de Estudiantes por Secciones)
+  const renderEvolucionContent = () => (
+    <DirectorEvolucionEstudiantesTab
+      evaluacion={evaluacion}
+      matrizConfigGrados={matrizConfigGrados}
+      evaluacionesDb={evaluacionesDb}
+      dniDirector={effectiveDirectorDni}
+      nombreDirector={
+        isDemoMode
+          ? fakeDirectorInfo?.fullName || 'Director'
+          : `${currentUserData?.nombres || ''} ${currentUserData?.apellidos || ''}`.trim() || 'Director'
+      }
+      nombreColegio={effectiveInstitucion}
+      currentEstudiantes={estudiantesBase as any}
+      yearSelected={yearSelected}
+      monthSelected={monthSelected}
+      isDemoMode={isDemoMode}
+      availableSections={availableSections}
+      docentesMap={docentesMap}
+      docentesDeDirectores={docentesDeDirectores}
+      preguntasRespuestas={preguntasRespuestas}
+    />
+  );
+
   // Metadatos de diseño por sección para el modo Cascada
   const getSectionMeta = (tabId: DirectorTabKey) => {
     switch (tabId) {
@@ -1437,6 +1462,17 @@ const Reporte = () => {
           ),
         };
       case 'evolucion':
+        return {
+          icon: MdTimeline,
+          iconColor: 'text-teal-600',
+          iconBg: 'bg-teal-50 border-teal-200/80',
+          description: 'Seguimiento longitudinal de estudiantes por secciones, gráficos de radar y descarga de fichas con QR.',
+          badge: (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200/60">
+              {estudiantesBase.length} evaluados
+            </span>
+          ),
+        };
       default:
         return {
           icon: MdShowChart,
@@ -1516,6 +1552,7 @@ const Reporte = () => {
                 {tabId === 'tendencia' && renderTendenciaContent()}
                 {tabId === 'comparativa' && renderComparativaContent()}
                 {tabId === 'preguntas' && renderPreguntasContent()}
+                {tabId === 'evolucion' && renderEvolucionContent()}
               </div>
             </section>
           );
@@ -1695,7 +1732,6 @@ const Reporte = () => {
                 totalPreguntas={preguntasRespuestas.length}
                 isAuditing={canEditTabNames}
                 hideBrechas={isConfigLoaded && !isEtapaConfigurada}
-                hiddenTabs={['evolucion']}
               />
             </div>
 
@@ -1750,6 +1786,18 @@ const Reporte = () => {
                         tabIndex={0}
                       >
                         {renderPreguntasContent()}
+                      </div>
+                    )}
+
+                    {/* TAB 6: EVOLUCIÓN LONGITUDINAL DE ESTUDIANTES POR SECCIONES */}
+                    {activeTab === 'evolucion' && (
+                      <div
+                        key="evolucion"
+                        className={tabsStyles.tabContentPanel}
+                        role="tabpanel"
+                        tabIndex={0}
+                      >
+                        {renderEvolucionContent()}
                       </div>
                     )}
                   </>

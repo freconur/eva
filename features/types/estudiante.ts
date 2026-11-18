@@ -10,6 +10,8 @@ export interface EstudianteImportado extends EstudianteExcel {
   errors: string[];
   grado?: string;
   seccion?: string;
+  fotoUrl?: string;
+  foto?: string;
 }
 
 export interface ExcelValidationResult {

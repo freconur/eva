@@ -52,13 +52,30 @@ const GradosAcordeon: React.FC<GradosAcordeonProps> = ({
 
   // Filtrar grados según el rol del usuario
   const gradosFiltrados = React.useMemo(() => {
-    if (currentUserData?.perfil?.rol === 5 && Array.isArray(currentUserData?.nivelesInstitucion)) {
-      const niveles = currentUserData.nivelesInstitucion
-      return grados.filter(grado => grado.nivel !== undefined && niveles.includes(grado.nivel))
+    let list = grados
+    const rol = currentUserData?.perfil?.rol
+
+    // Rol 1: Especialista UGEL usa 'nivelDeInstitucion'
+    // Rol 5: Especialista Regional usa 'nivelesInstitucion'
+    let rawNiveles: any = null
+    if (rol === 1) {
+      rawNiveles = currentUserData?.nivelDeInstitucion
+    } else if (rol === 5) {
+      rawNiveles = currentUserData?.nivelesInstitucion
+    }
+
+    if (rawNiveles !== null && rawNiveles !== undefined) {
+      const nivelesArray = Array.isArray(rawNiveles) ? rawNiveles : [rawNiveles]
+      const nivelesNumericos = nivelesArray.map(n => Number(n)).filter(n => !isNaN(n))
+      return list.filter(grado => {
+        const gradoNum = grado.grado ?? 1
+        const nivel = grado.nivel !== undefined ? Number(grado.nivel) : (gradoNum === 12 ? 0 : gradoNum <= 6 ? 1 : 2)
+        return nivelesNumericos.includes(nivel)
+      })
     }
     // Para otros roles, mostrar todos los grados
-    return grados
-  }, [grados, currentUserData?.perfil?.rol, currentUserData?.nivelesInstitucion])
+    return list
+  }, [grados, currentUserData?.perfil?.rol, currentUserData?.nivelDeInstitucion, currentUserData?.nivelesInstitucion])
 
   const toggleGrado = (gradoId: string) => {
     setExpandedGrado(expandedGrado === gradoId ? null : gradoId)

@@ -5,6 +5,7 @@ import PrivateRouteDocentes from '@/components/layouts/PrivateRoutesDocentes';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones';
 import ModalCrearEstudianteGeneral from '@/components/estudiantes/ModalCrearEstudianteGeneral';
+import ModalFotoEstudiante from '@/components/estudiantes/ModalFotoEstudiante';
 import ModalImportarEstudiantes from '@/pages/docentes/evaluaciones/secundaria/pruebas/prueba/evaluar-estudiante/ModalImportarEstudiantes';
 import { EstudianteImportado } from '@/features/types/estudiante';
 import GenericDropdown from '@/components/common/GenericDropdown';
@@ -25,7 +26,8 @@ import {
     RiUserStarLine,
     RiTeamLine,
     RiArrowGoBackLine,
-    RiUploadLine
+    RiUploadLine,
+    RiCameraLine,
 } from 'react-icons/ri';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
@@ -101,6 +103,25 @@ const GestiónEstudiantes = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
     const [selectedStudent, setSelectedStudent] = useState<UserEstudiante | null>(null);
+
+    // Photo carnet modal states
+    const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+    const [studentForPhoto, setStudentForPhoto] = useState<UserEstudiante | null>(null);
+
+    const handleOpenPhotoModal = (student: UserEstudiante) => {
+        setStudentForPhoto(student);
+        setIsPhotoModalOpen(true);
+    };
+
+    const handlePhotoSuccess = (dni: string, fotoUrl: string | null) => {
+        setEstudiantes((prev) =>
+            prev.map((s) =>
+                s.dni === dni || s.id === dni
+                    ? { ...s, fotoUrl: fotoUrl || undefined, foto: fotoUrl || undefined }
+                    : s
+            )
+        );
+    };
 
     // Import states
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -561,6 +582,7 @@ const GestiónEstudiantes = () => {
                                                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                                 />
                                             </th>
+                                            <th scope="col" className="px-3 py-4 w-16 text-center">Foto</th>
                                             <th scope="col" className="px-6 py-4">DNI</th>
                                             <th scope="col" className="px-6 py-4">Apellidos y Nombres</th>
                                             <th scope="col" className="px-6 py-4">Grado</th>
@@ -588,6 +610,33 @@ const GestiónEstudiantes = () => {
                                                     }}
                                                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                                 />
+                                            </td>
+                                            <td className="px-3 py-2.5 text-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleOpenPhotoModal(student)}
+                                                    className="relative inline-block group focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg cursor-pointer transition-transform active:scale-95"
+                                                    title={student.fotoUrl || student.foto ? 'Clic para ver o cambiar foto carnet' : 'Clic para registrar foto carnet'}
+                                                >
+                                                    {student.fotoUrl || student.foto ? (
+                                                        <div className="relative">
+                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                            <img
+                                                                src={student.fotoUrl || student.foto}
+                                                                alt={student.nombresApellidos}
+                                                                className="w-9 h-11 rounded-lg object-cover ring-1 ring-slate-200/90 shadow-2xs group-hover:opacity-85 transition-all bg-slate-50"
+                                                            />
+                                                            <span className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-blue-600 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-xs">
+                                                                <RiCameraLine className="text-[10px]" />
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="w-9 h-11 rounded-lg border border-dashed border-slate-300 bg-slate-50/80 hover:bg-blue-50 hover:border-blue-300 flex flex-col items-center justify-center text-slate-400 hover:text-blue-600 transition-all group-hover:shadow-2xs">
+                                                            <RiCameraLine className="text-sm" />
+                                                            <span className="text-[8px] font-medium leading-none mt-0.5">Foto</span>
+                                                        </div>
+                                                    )}
+                                                </button>
                                             </td>
                                             <td className="px-6 py-4 font-mono font-medium text-gray-700">
                                                 {student.dni}
@@ -621,15 +670,22 @@ const GestiónEstudiantes = () => {
                                             <td className="px-6 py-4">
                                                 <div className="flex justify-end gap-2">
                                                     <button
+                                                        onClick={() => handleOpenPhotoModal(student)}
+                                                        className="rounded-lg p-2 text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer"
+                                                        title="Foto carnet del estudiante"
+                                                    >
+                                                        <RiCameraLine className="text-lg" />
+                                                    </button>
+                                                    <button
                                                         onClick={() => handleOpenEditModal(student)}
-                                                        className="rounded-lg p-2 text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-all"
+                                                        className="rounded-lg p-2 text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-all cursor-pointer"
                                                         title="Editar estudiante"
                                                     >
                                                         <RiEditLine className="text-lg" />
                                                     </button>
                                                     <button
                                                         onClick={() => setStudentToDelete(student)}
-                                                        className="rounded-lg p-2 text-red-600 hover:bg-red-50 hover:text-red-700 transition-all"
+                                                        className="rounded-lg p-2 text-red-600 hover:bg-red-50 hover:text-red-700 transition-all cursor-pointer"
                                                         title="Eliminar estudiante"
                                                     >
                                                         <RiDeleteBin6Line className="text-lg" />
@@ -748,6 +804,15 @@ const GestiónEstudiantes = () => {
                 onClose={() => setIsModalOpen(false)}
                 mode={modalMode}
                 estudianteData={selectedStudent}
+            />
+
+            {/* Modal de Foto Carnet del Estudiante */}
+            <ModalFotoEstudiante
+                isOpen={isPhotoModalOpen}
+                onClose={() => setIsPhotoModalOpen(false)}
+                student={studentForPhoto}
+                dniDocente={currentUserData?.dni}
+                onSuccess={handlePhotoSuccess}
             />
 
             {/* Import Students Modal */}

@@ -1,7 +1,7 @@
 import { User } from '@/features/types/types';
 import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom';
-import { regionTexto, gradosDeColegio, sectionByGrade, genero, area, nivelInstitucion } from '@/fuctions/regiones';
+import { regionTexto, gradosDeColegio, sectionByGrade, genero, area, nivelInstitucion, tipoEspecialista } from '@/fuctions/regiones';
 import styles from './styles.module.css';
 import { useGlobalContext } from '@/features/context/GlolbalContext';
 import useEvaluacionCurricular from '@/features/hooks/useEvaluacionCurricular';
@@ -19,31 +19,39 @@ interface UserWithCaracteristica extends Omit<User, 'nivelDeInstitucion'> {
   area?: number;
   distrito?: string;
   nivelDeInstitucion?: number[];
+  tipoEspecialista?: number;
 }
 
 const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
-  // Inicializar nivelDeInstitucion basado en dataDocente.nivel
+  // Inicializar nivelDeInstitucion unificando nivelDeInstitucion, nivelesInstitucion y nivel
   const getInitialNivelInstitucion = (): number[] => {
-    // Si existe dataDocente.nivelDeInstitucion como array
-    if (dataDocente.nivelDeInstitucion && Array.isArray(dataDocente.nivelDeInstitucion)) {
-      return dataDocente.nivelDeInstitucion;
-    }
-    // Si existe dataDocente.nivelDeInstitucion como número único (legacy)
-    if (dataDocente.nivelDeInstitucion !== undefined && typeof dataDocente.nivelDeInstitucion === 'number') {
-      return [dataDocente.nivelDeInstitucion];
-    }
-    // Si existe dataDocente.nivel (número único)
+    const set = new Set<number>();
+    const agregar = (val: any) => {
+      if (Array.isArray(val)) {
+        val.forEach((v) => {
+          if (v !== undefined && v !== null && v !== '' && !isNaN(Number(v))) {
+            set.add(Number(v));
+          }
+        });
+      } else if (val !== undefined && val !== null && val !== '' && !isNaN(Number(val))) {
+        set.add(Number(val));
+      }
+    };
+
+    agregar(dataDocente.nivelDeInstitucion);
+    agregar(dataDocente.nivelesInstitucion);
     if (dataDocente.nivel !== undefined && dataDocente.nivel !== null) {
-      return [dataDocente.nivel];
+      agregar(dataDocente.nivel);
     }
-    return [];
+    return Array.from(set).sort((a, b) => a - b);
   };
 
   const [formData, setFormData] = useState<UserWithCaracteristica>({
     ...dataDocente,
     grados: Array.isArray(dataDocente.grados) ? dataDocente.grados : [],
     secciones: Array.isArray(dataDocente.secciones) ? dataDocente.secciones : [],
-    nivelDeInstitucion: getInitialNivelInstitucion()
+    nivelDeInstitucion: getInitialNivelInstitucion(),
+    tipoEspecialista: dataDocente.tipoEspecialista !== undefined ? Number(dataDocente.tipoEspecialista) : undefined
   });
 
   const [distritosDisponibles, setDistritosDisponibles] = useState<string[]>([]);
@@ -66,11 +74,41 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
   const { getCaracteristicaCurricular, caracteristicaCurricular } = useOptions();
   const { currentUserData } = useGlobalContext();
 
+  // Obtener niveles a mostrar en el modal:
+  // Administradores y especialistas tienen acceso a todos los niveles (Inicial, Primaria, Secundaria).
+  const nivelesDisponibles = React.useMemo(() => {
+    const esAdmin =
+      currentUserData?.rol === 4 ||
+      currentUserData?.rol === 5 ||
+      currentUserData?.perfil?.rol === 4 ||
+      currentUserData?.perfil?.rol === 5;
+    const esEspecialista =
+      dataDocente?.rol === 1 ||
+      dataDocente?.perfil?.rol === 1;
+
+    // Si es administrador o especialista, o si el usuario no tiene niveles restringidos, mostrar todos (Inicial, Primaria, Secundaria)
+    if (
+      esAdmin ||
+      esEspecialista ||
+      !currentUserData?.nivelDeInstitucion ||
+      currentUserData.nivelDeInstitucion.length === 0
+    ) {
+      return nivelInstitucion;
+    }
+
+    // Para directores u otros perfiles, incluir niveles del usuario actual y los asignados previamente al usuario
+    return nivelInstitucion.filter(
+      (nivel) =>
+        currentUserData.nivelDeInstitucion?.includes(nivel.id) ||
+        formData.nivelDeInstitucion?.includes(nivel.id)
+    );
+  }, [currentUserData, dataDocente, formData.nivelDeInstitucion]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'tipoEspecialista' ? (value ? Number(value) : undefined) : value
     }));
   };
 
@@ -123,17 +161,19 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('formData', formData);
+    
+    // Descartar explícitamente propiedades no estandarizadas 'nivel' y 'nivelesInstitucion'
+    const { nivel, nivelesInstitucion, ...cleanFormData } = formData as any;
+
     // Convertir nivelDeInstitucion de number a number[] para cumplir con el tipo User
     const dataToSubmit: User = {
-      ...formData,
+      ...cleanFormData,
       area: currentUserData?.area,
       distrito: currentUserData?.distrito,
-      nivel: (formData.nivelDeInstitucion && formData.nivelDeInstitucion.length > 0)
-        ? formData.nivelDeInstitucion[0]
-        : undefined,
-      nivelDeInstitucion: formData.nivelDeInstitucion
+      nivelDeInstitucion: formData.nivelDeInstitucion || [],
+      tipoEspecialista: formData.tipoEspecialista ? Number(formData.tipoEspecialista) : undefined
     };
-    console.log('dataToSubmit', dataToSubmit)
+    console.log('dataToSubmit', dataToSubmit);
     updateDocenteParaCoberturaCurricular(`${dataDocente.dni}`, dataToSubmit, dataDocente);
     onClose();
   };
@@ -267,27 +307,45 @@ const UpdateDataDocente = ({ dataDocente, onClose }: Props) => {
                 minLength={9}
               />
             </div>
+            {(dataDocente.rol === 1 || dataDocente.perfil?.rol === 1 || formData.rol === 1) && (
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Tipo de Especialista</label>
+                <select
+                  name="tipoEspecialista"
+                  value={formData.tipoEspecialista ?? ''}
+                  onChange={handleChange}
+                  className={styles.input}
+                >
+                  <option value="">Seleccione tipo de especialista</option>
+                  {tipoEspecialista.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name.charAt(0).toUpperCase() + item.name.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className={styles.formGroup}>
               <label className={styles.label}>Nivel de Institución</label>
               <div className={styles.chipGroup}>
-                {nivelInstitucion
-                  .filter(nivel => currentUserData.nivelDeInstitucion?.includes(nivel.id))
-                  .map((nivel) => (
-                    <label key={nivel.id} className={styles.chip}>
-                      <input
-                        type="checkbox"
-                        name="nivelDeInstitucion"
-                        value={nivel.id}
-                        checked={formData.nivelDeInstitucion?.includes(nivel.id)}
-                        onChange={handleCheckboxChange}
-                        className={styles.chipInput}
-                      />
-                      <span className={styles.chipLabel}>{nivel.name.charAt(0).toUpperCase() + nivel.name.slice(1)}</span>
-                    </label>
-                  ))}
+                {nivelesDisponibles.map((nivel) => (
+                  <label key={nivel.id} className={styles.chip}>
+                    <input
+                      type="checkbox"
+                      name="nivelDeInstitucion"
+                      value={nivel.id}
+                      checked={formData.nivelDeInstitucion?.includes(nivel.id)}
+                      onChange={handleCheckboxChange}
+                      className={styles.chipInput}
+                    />
+                    <span className={styles.chipLabel}>
+                      {nivel.name.charAt(0).toUpperCase() + nivel.name.slice(1)}
+                    </span>
+                  </label>
+                ))}
               </div>
             </div>
-            {formData.rol !== 2 && (
+            {(formData.rol !== 2 && formData.rol !== 1 && formData.perfil?.rol !== 1) && (
               <>
                 {formData.nivelDeInstitucion && formData.nivelDeInstitucion.length > 0 && (
                   <div className={`${styles.formGroup} ${styles.fullWidth}`}>
