@@ -1001,7 +1001,6 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
   // Estados específicos para el Diseño 3: Diana de Progresión
   const [selectedDianaOrder, setSelectedDianaOrder] = useState<number | null>(null);
   const [hoveredDianaOrder, setHoveredDianaOrder] = useState<number | null>(null);
-  const [dianaSearchQuery, setDianaSearchQuery] = useState<string>('');
   const [isEvolutionPlaying, setIsEvolutionPlaying] = useState<boolean>(false);
   const [evolutionStep, setEvolutionStep] = useState<number>(1);
 
@@ -1889,57 +1888,50 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
     return list;
   }, [student, activeEtapasList, orderedActuaciones, spokeGeometry, totalActive, N]);
 
-  // 4. Estadísticas resumidas por etapa (todas las etapas visibles o configuradas)
-  const statsPorEtapa = useMemo(() => {
-    const stagesToDisplay = sortedEtapas.filter(
-      (etapa) => effectiveActiveStages[etapa.key] ?? true
-    );
-    return stagesToDisplay.map((et, idx) => {
-      const etapaData = student.etapas[et.key];
-      const colorConfig =
-        ETAPA_COLORS[et.key] ||
-        (idx === 0
-          ? ETAPA_COLORS.edi
-          : idx === 1
-          ? ETAPA_COLORS.ep1
-          : ETAPA_COLORS.ep2);
+  // 4. Estadísticas globales por nivel de logro formativo (Autonomía, Consolidación, Iniciándose, Por desarrollar)
+  const statsPorNivel = useMemo(() => {
+    const counts: Record<string, number> = {};
+    nivelesActuacionGlobal.forEach((n) => {
+      counts[n.key] = 0;
+    });
 
-      if (
-        !etapaData ||
-        (typeof etapaData.puntaje !== 'number' && !etapaData.actuacionesResultados)
-      ) {
-        return {
-          key: et.key,
-          label: et.label,
-          totalLogradas: 0,
-          total: orderedActuaciones.length,
-          porcentaje: 0,
-          activa: false,
-          colorConfig,
-        };
+    orderedActuaciones.forEach((act) => {
+      const superadas = activeEtapasList.filter(
+        (et) => student.etapas[et.key]?.actuacionesResultados?.[act.order] === 2
+      ).length;
+      const nivel = determinarNivelActuacion(
+        superadas,
+        activeEtapasList.length,
+        nivelesActuacionGlobal
+      );
+      if (nivel) {
+        counts[nivel.key] = (counts[nivel.key] || 0) + 1;
       }
+    });
 
-      let logradas = 0;
-      orderedActuaciones.forEach((act) => {
-        if (etapaData.actuacionesResultados?.[act.order] === 2) {
-          logradas++;
-        }
-      });
+    const total = orderedActuaciones.length;
+    // Orden institucional requerido: Autonomía -> Consolidación -> Iniciándose -> Por desarrollar
+    const ordenPreferido = ['autonomia', 'consolidacion', 'iniciandose', 'por_desarrollo'];
+    const listaOrdenada = [...nivelesActuacionGlobal].sort((a, b) => {
+      const idxA = ordenPreferido.indexOf(a.key);
+      const idxB = ordenPreferido.indexOf(b.key);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      return b.id - a.id;
+    });
 
+    return listaOrdenada.map((niv) => {
+      const cantidad = counts[niv.key] || 0;
+      const porcentaje = total > 0 ? Math.round((cantidad / total) * 100) : 0;
       return {
-        key: et.key,
-        label: et.label,
-        totalLogradas: logradas,
-        total: orderedActuaciones.length,
-        porcentaje:
-          orderedActuaciones.length > 0
-            ? Math.round((logradas / orderedActuaciones.length) * 100)
-            : 0,
-        activa: true,
-        colorConfig,
+        key: niv.key,
+        nombre: niv.nombre,
+        color: niv.color,
+        cantidad,
+        total,
+        porcentaje,
       };
     });
-  }, [student, sortedEtapas, effectiveActiveStages, orderedActuaciones]);
+  }, [orderedActuaciones, activeEtapasList, student, nivelesActuacionGlobal]);
 
   // Renderizado de tarjeta individual compacta para las columnas laterales (Diseño 2)
   const renderColumnCard = (act: ActuacionCatalogoItem) => {
@@ -2974,17 +2966,8 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
     // highlightedOrder: Para el resalte visual dentro del propio SVG vectorial (cuña envolvente y hover de fila)
     const highlightedOrder = hoveredDianaOrder ?? selectedDianaOrder ?? null;
 
-    // Filtrado de la tabla lateral según la búsqueda del usuario
-    const normalizedQuery = dianaSearchQuery.trim().toLowerCase();
-    const filteredList = normalizedQuery
-      ? actuacionesList.filter((act) => {
-          const matchOrder = act.order.toString().includes(normalizedQuery);
-          const matchDesc = (act.actuacion || act.pregunta || '').toLowerCase().includes(normalizedQuery);
-          const matchCap = ((act as any).capacidad || '').toLowerCase().includes(normalizedQuery);
-          const matchComp = ((act as any).competencia || '').toLowerCase().includes(normalizedQuery);
-          return matchOrder || matchDesc || matchCap || matchComp;
-        })
-      : actuacionesList;
+    // Lista de habilidades evaluadas para la tabla lateral interactiva
+    const filteredList = actuacionesList;
 
     // Geometría polar SVG de la Diana
     const cx = 290;
@@ -3122,251 +3105,81 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
           </div>
         )}
 
-        {/* Fila superior: Leyenda interactiva de anillos y botón de reproducción */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-2 sm:px-4 py-2 bg-slate-50/70 border border-slate-200/70 rounded-2xl">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1">
-              Anillos (Evaluaciones):
-            </span>
-            {activeEtapasList.map((et, idx) => {
-              const colorCfg = getEtapaColorConfig(et.key, idx);
-              const isCurrentPlaying = isEvolutionPlaying && evolutionStep === idx + 1;
-              return (
-                <div
-                  key={`diana-stage-pill-${et.key}`}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border transition-all ${
-                    isCurrentPlaying
-                      ? 'bg-blue-50 border-blue-400 text-blue-900 shadow-2xs scale-105'
-                      : 'bg-white border-slate-200 text-slate-700'
-                  }`}
-                  title={`Anillo ${idx + 1}: ${et.label || et.key.toUpperCase()}`}
-                >
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: colorCfg.border }}
-                  />
-                  <span>{et.label || et.key.toUpperCase()}</span>
-                  <span className="text-[10px] text-slate-400 font-normal">
-                    (Anillo {idx + 1})
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Botón de reproducción de la evolución */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              data-testid="toggle-evolution-play"
-              onClick={handleToggleEvolutionPlay}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-2xs ${
-                isEvolutionPlaying
-                  ? 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600'
-                  : 'bg-white text-slate-700 border-slate-200 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/40'
-              }`}
-              title={isEvolutionPlaying ? 'Pausar reproducción' : 'Reproducir evolución de adentro hacia afuera'}
-            >
-              {isEvolutionPlaying ? (
-                <>
-                  <MdPause className="w-4 h-4 shrink-0" />
-                  <span>Pausar ({evolutionStep}/{activeEtapasList.length})</span>
-                </>
-              ) : (
-                <>
-                  <MdPlayArrow className="w-4 h-4 shrink-0 text-blue-600" />
-                  <span>Reproducir evolución</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Bloque Superior de Resumen: Cards por Evaluación (Global Inicial o Actuación Seleccionada) */}
-        {selectedAct && trayectoriaInfo ? (
-          <div
-            data-testid="diana-card-actuacion-detalle"
-            className="rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-50/40 via-white to-slate-50/30 p-4 sm:p-5 shadow-2xs"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-col gap-0.5 max-w-2xl">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">
-                    ACTUACIÓN {selectedAct.order} DE {M} · SELECCIONADA EN EL RADAR
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDianaOrder(null)}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-blue-600 bg-white hover:bg-blue-50/80 px-2.5 py-0.5 rounded-md border border-slate-200 transition-colors cursor-pointer"
-                    title="Volver a la vista general de todas las actuaciones"
-                  >
-                    ✕ Ver resumen global
-                  </button>
-                </div>
-                <h4 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
-                  {selectedAct.actuacion || selectedAct.pregunta || `Actuación ${selectedAct.order}`}
-                </h4>
-                <p className="text-xs text-slate-500">
-                  Resultado individual y trayectoria acumulada por cada evaluación.
-                </p>
-              </div>
-
-              {/* Badge del Nivel Formativo Global Alcanzado */}
-              {trayectoriaInfo.nivelAlcanzado && (
-                <div
-                  data-testid="badge-nivel-actuacion-global"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border shadow-2xs shrink-0"
-                  style={{
-                    backgroundColor: `${trayectoriaInfo.nivelAlcanzado.color}15`,
-                    color: trayectoriaInfo.nivelAlcanzado.color,
-                    borderColor: `${trayectoriaInfo.nivelAlcanzado.color}40`,
-                  }}
-                  title={trayectoriaInfo.nivelAlcanzado.descripcion}
-                >
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: trayectoriaInfo.nivelAlcanzado.color }}
-                  />
-                  <span>Nivel: {trayectoriaInfo.nivelAlcanzado.nombre}</span>
-                </div>
-              )}
+        {/* Fila de Cards de Evaluación a Todo el Ancho (Sin barra de anillos ni textos laterales redundantes) */}
+        <div className="w-full flex flex-col gap-1.5">
+          {selectedAct && (
+            <div className="flex items-center justify-between px-1 text-xs">
+              <span className="font-bold text-blue-700 uppercase tracking-wider text-[11px]">
+                Actuación {selectedAct.order} de {M} seleccionada
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedDianaOrder(null)}
+                className="text-[11px] font-bold text-slate-500 hover:text-blue-600 bg-white hover:bg-blue-50 px-2.5 py-0.5 rounded-md border border-slate-200 transition-colors cursor-pointer"
+                title="Volver a ver todas las actuaciones"
+              >
+                ✕ Ver todas
+              </button>
             </div>
+          )}
 
-            {/* Fila de tarjetas por evaluación para la actuación seleccionada */}
-            <div
-              className={`grid grid-cols-2 sm:grid-cols-${Math.min(
-                activeEtapasList.length,
-                4
-              )} lg:grid-cols-${Math.min(activeEtapasList.length, 6)} gap-3 my-4`}
-            >
-              {trayectoriaInfo.steps.map((st) => {
-                const isSuccess = st.val === 2;
-                return (
+          <div
+            data-testid={selectedAct ? "diana-card-actuacion-detalle" : "diana-card-global-resumen"}
+            className="grid gap-3 sm:gap-4 w-full"
+            style={{
+              gridTemplateColumns: `repeat(${Math.max(1, activeEtapasList.length)}, minmax(0, 1fr))`,
+            }}
+          >
+            {selectedAct && trayectoriaInfo
+              ? trayectoriaInfo.steps.map((st) => {
+                  const isSuccess = st.val === 2;
+                  return (
+                    <div
+                      key={`detail-card-${st.key}`}
+                      data-testid={`detail-card-${st.key}`}
+                      className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col items-center text-center justify-center p-3 sm:p-4 border-t-4 transition-all"
+                      style={{ borderTopColor: isSuccess ? st.color : '#f43f5e' }}
+                    >
+                      <span className="text-[11px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        {st.label}
+                      </span>
+                      <span
+                        className={`text-2xl sm:text-3xl font-black leading-tight my-1 ${
+                          isSuccess ? 'text-slate-900' : 'text-rose-600'
+                        }`}
+                      >
+                        {isSuccess ? '1/1' : '0/1'}
+                      </span>
+                      <span
+                        className={`text-xs sm:text-sm font-bold whitespace-nowrap ${
+                          isSuccess ? 'text-emerald-600' : 'text-rose-600'
+                        }`}
+                      >
+                        Trayectoria: {st.acumuladoHastaEtapa}/{st.evaluacionesHastaEtapa}
+                      </span>
+                    </div>
+                  );
+                })
+              : globalResumenInfo.stageSummaries.map((st) => (
                   <div
-                    key={`detail-card-${st.key}`}
-                    className="p-3 bg-white rounded-xl border border-slate-200/90 shadow-2xs flex flex-col items-center text-center gap-1 border-t-4"
-                    style={{ borderTopColor: isSuccess ? st.color : '#f43f5e' }}
+                    key={`global-card-${st.key}`}
+                    data-testid={`global-card-${st.key}`}
+                    className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col items-center text-center justify-center p-3 sm:p-4 border-t-4 transition-all"
+                    style={{ borderTopColor: st.color }}
                   >
-                    <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    <span className="text-[11px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">
                       {st.label}
                     </span>
-                    <span
-                      className={`text-2xl font-black ${
-                        isSuccess ? 'text-slate-900' : 'text-rose-600'
-                      }`}
-                    >
-                      {isSuccess ? '1/1' : '0/1'}
+                    <span className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight my-1">
+                      {st.aciertos}/{st.total}
                     </span>
-                    {/* Acumulado como trayectoria en vez de 'Logrado' */}
-                    <span
-                      className={`text-[10.5px] font-bold px-2 py-0.5 rounded-md border shadow-2xs whitespace-nowrap ${
-                        isSuccess
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-rose-50 text-rose-700 border-rose-200'
-                      }`}
-                      title={`Trayectoria acumulada hasta ${st.label}: ${st.acumuladoHastaEtapa} de ${st.evaluacionesHastaEtapa} aciertos`}
-                    >
-                      Trayectoria: {st.acumuladoHastaEtapa}/{st.evaluacionesHastaEtapa}
+                    <span className="text-xs sm:text-sm font-bold text-blue-600 whitespace-nowrap">
+                      {st.pct}% aciertos
                     </span>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Resumen de trayectoria temporal */}
-            <div className="pt-3 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-bold text-slate-700">Trayectoria:</span>
-                <span className="text-slate-600 font-mono">
-                  {trayectoriaInfo.steps
-                    .map((s) => `${s.key.toUpperCase()} (${s.val === 2 ? '1/1' : '0/1'})`)
-                    .join(' → ')}
-                </span>
-                <span className={`font-bold ml-1.5 ${trayectoriaInfo.trendColor}`}>
-                  · {trayectoriaInfo.trendText}
-                </span>
-              </div>
-              <div className="text-slate-500 font-medium">
-                {trayectoriaInfo.superadas} de {trayectoriaInfo.total} superadas ({trayectoriaInfo.pct}%)
-              </div>
-            </div>
+                ))}
           </div>
-        ) : (
-          <div
-            data-testid="diana-card-global-resumen"
-            className="rounded-2xl border border-slate-200/90 bg-gradient-to-r from-slate-50/60 via-white to-blue-50/30 p-4 sm:p-5 shadow-2xs"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                    RESUMEN GLOBAL DE EVALUACIONES ({M} HABILIDADES)
-                  </span>
-                </div>
-                <h4 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
-                  Total de aciertos por evaluación
-                </h4>
-                <p className="text-xs text-slate-500">
-                  Haz clic en cualquier sector de la diana o en una habilidad de la tabla para ver su trayectoria individual.
-                </p>
-              </div>
-
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border border-blue-200 bg-blue-50 text-blue-700 shadow-2xs">
-                <MdSearch className="w-3.5 h-3.5 shrink-0" />
-                <span>Explora la diana o la tabla para filtrar</span>
-              </div>
-            </div>
-
-            {/* Fila de tarjetas globales por evaluación con X/M aciertos */}
-            <div
-              className={`grid grid-cols-2 sm:grid-cols-${Math.min(
-                activeEtapasList.length,
-                4
-              )} lg:grid-cols-${Math.min(activeEtapasList.length, 6)} gap-3 my-4`}
-            >
-              {globalResumenInfo.stageSummaries.map((st) => (
-                <div
-                  key={`global-card-${st.key}`}
-                  data-testid={`global-card-${st.key}`}
-                  className="p-3 bg-white rounded-xl border border-slate-200/90 shadow-2xs flex flex-col items-center text-center gap-1 border-t-4"
-                  style={{ borderTopColor: st.color }}
-                >
-                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                    {st.label}
-                  </span>
-                  <span className="text-2xl font-black text-slate-900">
-                    {st.aciertos}/{st.total}
-                  </span>
-                  <span
-                    className="text-[10.5px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs whitespace-nowrap"
-                    title={`Porcentaje de aciertos: ${st.pct}%`}
-                  >
-                    Trayectoria: {st.pct}% aciertos
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Resumen de trayectoria global acumulada */}
-            <div className="pt-3 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-bold text-slate-700">Trayectoria global:</span>
-                <span className="text-slate-600 font-mono">
-                  {globalResumenInfo.stageSummaries
-                    .map((s) => `${s.key.toUpperCase()} (${s.aciertos}/${s.total})`)
-                    .join(' → ')}
-                </span>
-                <span className={`font-bold ml-1.5 ${globalResumenInfo.trendColor}`}>
-                  · {globalResumenInfo.trendText}
-                </span>
-              </div>
-              <div className="text-slate-500 font-medium">
-                Consolidado de las {M} habilidades evaluadas
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Cuerpo principal en 2 columnas: Diana a la izquierda y Buscador + Tabla a la derecha */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -3636,35 +3449,11 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
             </div>
           </div>
 
-          {/* Columna Derecha: Buscador de Habilidades + Tabla interactiva */}
+          {/* Columna Derecha: Tabla interactiva scrolleable de Habilidades Evaluadas */}
           <div className="lg:col-span-6 flex flex-col gap-3">
-            {/* Buscador de habilidades */}
-            <div className="relative w-full">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                <MdSearch className="w-5 h-5" />
-              </div>
-              <input
-                type="text"
-                data-testid="diana-search-input"
-                value={dianaSearchQuery}
-                onChange={(e) => setDianaSearchQuery(e.target.value)}
-                placeholder="Buscar habilidad: tema, información, inferencias, propósito..."
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-2xs"
-              />
-              {dianaSearchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setDianaSearchQuery('')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 text-xs font-bold"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-
             {/* Tabla interactiva scrolleable */}
             <div className="border border-slate-200/90 rounded-2xl bg-white shadow-2xs overflow-hidden">
-              <div className="max-h-[460px] overflow-y-auto">
+              <div className="max-h-[520px] overflow-y-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead className="sticky top-0 bg-slate-100/95 backdrop-blur-xs border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider z-10">
                     <tr>
@@ -3810,7 +3599,7 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                           colSpan={activeEtapasList.length + 4}
                           className="py-8 text-center text-slate-400 text-xs"
                         >
-                          No se encontraron habilidades que coincidan con &ldquo;{dianaSearchQuery}&rdquo;.
+                          No se encontraron habilidades registradas.
                         </td>
                       </tr>
                     )}
@@ -3968,47 +3757,39 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
           return null;
         })()}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-3 sm:px-5 sm:py-3 shadow-2xs flex flex-wrap items-center justify-around gap-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
-          {statsPorEtapa.map((st) => (
+          {statsPorNivel.map((st) => (
             <div
               key={st.key}
-              onMouseEnter={() => setHoveredStageKey(st.key)}
-              onMouseLeave={() => setHoveredStageKey(null)}
-              className={`flex items-center gap-3 sm:px-4 py-1.5 sm:py-0 flex-1 min-w-[160px] justify-between sm:justify-start rounded-xl transition-all cursor-pointer ${
-                hoveredStageKey === st.key ? 'bg-slate-50 scale-[1.02]' : ''
-              }`}
+              data-testid={`stats-nivel-${st.key}`}
+              className="flex items-center gap-3 sm:px-4 py-1.5 sm:py-0 flex-1 min-w-[160px] justify-between sm:justify-start rounded-xl transition-all"
             >
               <div className="flex items-center gap-2">
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: st.activa ? st.colorConfig.border : '#cbd5e1' }}
+                  style={{ backgroundColor: st.color }}
                 />
                 <div className="min-w-0">
                   <span
                     className="text-xs font-bold block truncate"
-                    style={{ color: st.activa ? st.colorConfig.border : '#94a3b8' }}
+                    style={{ color: st.color }}
                   >
-                    {st.label}
+                    {st.nombre}
                   </span>
                   <span className="text-[11px] text-slate-500 font-medium">
-                    {st.activa ? (
-                      <>
-                        <strong className="text-slate-800 font-bold">{st.totalLogradas}</strong> / {st.total} SÍ
-                      </>
-                    ) : (
-                      <span className="text-slate-400 italic">No evaluado</span>
-                    )}
+                    <strong className="text-slate-800 font-bold">{st.cantidad}</strong> / {st.total}
                   </span>
                 </div>
               </div>
 
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                  st.activa
-                    ? `${st.colorConfig.lightBadgeBg} ${st.colorConfig.lightBadgeText} ${st.colorConfig.lightBadgeBorder}`
-                    : 'bg-slate-100 text-slate-400 border-slate-200'
-                } shrink-0 ml-auto`}
+                className="text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ml-auto"
+                style={{
+                  backgroundColor: `${st.color}15`,
+                  color: st.color,
+                  borderColor: `${st.color}40`,
+                }}
               >
-                {st.activa ? `${st.porcentaje}%` : '—'}
+                {st.porcentaje}%
               </span>
             </div>
           ))}

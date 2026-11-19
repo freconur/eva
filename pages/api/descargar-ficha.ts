@@ -107,7 +107,7 @@ export default async function handler(
     return res.status(405).json({ error: 'Método no permitido. Use GET.' });
   }
 
-  const { dni, evalId, token } = req.query;
+  const { dni, evalId, token, layout, split, dir, scale } = req.query;
 
   if (!dni || !evalId || !token) {
     return res.status(400).json({
@@ -429,8 +429,13 @@ export default async function handler(
       etapasConfiguradas,
       studentEtapas,
       activeStages: { edi: true, ep1: true, ep2: true },
-      chartLayoutMode: 'columnas',
-      splitInTwo: false,
+      chartLayoutMode:
+        layout === 'flotante' || layout === 'columnas' || layout === 'dividido' || layout === 'diana'
+          ? (layout as any)
+          : 'diana',
+      splitInTwo: split === '1' || split === 'true' || layout === 'dividido',
+      orderDirection: dir === 'antihorario' ? 'antihorario' : 'horario',
+      textScale: scale && !isNaN(Number(scale)) ? Number(scale) : 1,
     };
 
     return res.status(200).json({ ok: true, props });

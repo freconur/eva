@@ -3169,8 +3169,6 @@ export const asegurarQrPropsEstudiante = async (
   props: EstudianteEvolutivoPDFProps,
   baseUrl?: string
 ): Promise<EstudianteEvolutivoPDFProps> => {
-  if (props.qrCodeDataUrl) return props;
-
   const origin =
     baseUrl ||
     (typeof window !== 'undefined' && window.location.origin
@@ -3181,9 +3179,35 @@ export const asegurarQrPropsEstudiante = async (
   const evalId = props.evaluacionActual?.id || '';
   const token = generateFichaToken(dni, evalId);
 
-  const targetUrl = `${origin}/descargar-ficha?dni=${encodeURIComponent(
-    dni
-  )}&evalId=${encodeURIComponent(evalId)}&token=${encodeURIComponent(token)}`;
+  // Preservar exactamente el diseño seleccionado al generar el QR
+  const layout = props.chartLayoutMode || 'diana';
+  const isSplit = Boolean(props.splitInTwo || props.chartLayoutMode === 'dividido');
+  const dir = props.orderDirection || 'horario';
+  const scale = props.textScale !== undefined ? String(props.textScale) : '1';
+
+  const queryParams = new URLSearchParams({
+    dni,
+    evalId,
+    token,
+    layout,
+  });
+
+  if (isSplit) {
+    queryParams.set('split', '1');
+  }
+  if (dir && dir !== 'horario') {
+    queryParams.set('dir', dir);
+  }
+  if (scale && scale !== '1') {
+    queryParams.set('scale', scale);
+  }
+
+  const targetUrl = `${origin}/descargar-ficha?${queryParams.toString()}`;
+
+  // Si ya tiene QR generado para exactamente esta misma URL de destino, reutilizarlo
+  if (props.qrCodeDataUrl && props.qrVerificationUrl === targetUrl) {
+    return props;
+  }
 
   try {
     const QRCodeMod = await import('qrcode');

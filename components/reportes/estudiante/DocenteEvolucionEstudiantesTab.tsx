@@ -2191,7 +2191,13 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
           </div>
 
           {/* 3. Modal Scrollable Body a toda la pantalla (Un solo gráfico a la vez) */}
-          <main className="flex-1 w-full overflow-y-auto px-4 sm:px-6 md:px-8 py-6 space-y-6 bg-slate-100/70">
+          <main
+            className={`flex-1 w-full overflow-y-auto bg-slate-100/70 ${
+              modalVisualMode === 'radar'
+                ? 'p-2 sm:p-3 space-y-3'
+                : 'px-4 sm:px-6 md:px-8 py-6 space-y-6'
+            }`}
+          >
             {modalVisualMode === 'line' ? (
               /* SOLO GRÁFICO LINEAL A TODO EL ANCHO */
               <div className="max-w-6xl mx-auto space-y-6 w-full animate-fadeIn">
@@ -2285,7 +2291,7 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
               </div>
             ) : (
               /* SOLO GRÁFICO RETICULAR (RADAR) A TODO EL ANCHO */
-              <div className="w-full max-w-[1920px] mx-auto animate-fadeIn px-1 sm:px-2">
+              <div className="w-full max-w-full mx-auto animate-fadeIn p-0">
                 <DocenteActuacionesRadarChart
                   student={modalStudent}
                   etapasConfiguradas={etapasConfiguradas}

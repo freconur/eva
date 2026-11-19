@@ -9,13 +9,28 @@ import {
   MdPerson,
   MdAutoGraph,
   MdOutlineVerified,
+  MdDonutLarge,
 } from 'react-icons/md';
 import { RiLoader4Line } from 'react-icons/ri';
 import type { EstudianteEvolutivoPDFProps } from '@/features/utils/exportarFichaEvolutivaEstudiantePDF';
 
+const getLayoutLabel = (mode?: string, split?: boolean) => {
+  if (split || mode === 'dividido') return 'Diseño Dividido (2 págs)';
+  switch (mode) {
+    case 'diana':
+      return 'Diseño Diana Polar';
+    case 'flotante':
+      return 'Diseño Radar Flotante';
+    case 'columnas':
+      return 'Diseño Columnas Laterales';
+    default:
+      return 'Diseño Oficial';
+  }
+};
+
 export default function DescargarFichaPublicPage() {
   const router = useRouter();
-  const { dni, evalId, token } = router.query;
+  const { dni, evalId, token, layout, split, dir, scale } = router.query;
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +40,7 @@ export default function DescargarFichaPublicPage() {
 
   const hasAutoDownloaded = useRef<boolean>(false);
 
-  // 1. Consultar la API segura con el token del QR
+  // 1. Consultar la API segura con el token del QR y preservar el diseño exacto
   useEffect(() => {
     if (!router.isReady) return;
 
@@ -42,13 +57,17 @@ export default function DescargarFichaPublicPage() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(
-          `/api/descargar-ficha?dni=${encodeURIComponent(
-            String(dni)
-          )}&evalId=${encodeURIComponent(String(evalId))}&token=${encodeURIComponent(
-            String(token)
-          )}`
-        );
+        const apiParams = new URLSearchParams({
+          dni: String(dni),
+          evalId: String(evalId),
+          token: String(token),
+        });
+        if (layout) apiParams.set('layout', String(layout));
+        if (split) apiParams.set('split', String(split));
+        if (dir) apiParams.set('dir', String(dir));
+        if (scale) apiParams.set('scale', String(scale));
+
+        const res = await fetch(`/api/descargar-ficha?${apiParams.toString()}`);
 
         const data = await res.json();
 
@@ -59,7 +78,31 @@ export default function DescargarFichaPublicPage() {
           throw new Error(`${baseMsg}${detailMsg}`);
         }
 
-        setPropsEstudiante(data.props);
+        // Aplicar el diseño exacto recibido en la URL del QR (o el devuelto por la API)
+        const validLayoutModes = ['columnas', 'flotante', 'dividido', 'diana'];
+        const rawLayout = typeof layout === 'string' ? layout.toLowerCase().trim() : '';
+        const effectiveLayout = validLayoutModes.includes(rawLayout)
+          ? (rawLayout as any)
+          : (data.props?.chartLayoutMode || 'diana');
+
+        const effectiveSplit =
+          split !== undefined
+            ? split === '1' || split === 'true'
+            : Boolean(data.props?.splitInTwo || effectiveLayout === 'dividido');
+
+        const rawDir = typeof dir === 'string' ? dir.toLowerCase().trim() : '';
+        const effectiveDir = rawDir === 'antihorario' ? 'antihorario' : (data.props?.orderDirection || 'horario');
+        const effectiveScale = scale && !isNaN(Number(scale)) ? Number(scale) : (data.props?.textScale || 1);
+
+        const propsFinal: EstudianteEvolutivoPDFProps = {
+          ...data.props,
+          chartLayoutMode: effectiveLayout,
+          splitInTwo: effectiveSplit,
+          orderDirection: effectiveDir,
+          textScale: effectiveScale,
+        };
+
+        setPropsEstudiante(propsFinal);
       } catch (err: any) {
         console.error('Error al consultar ficha:', err);
         setError(err?.message || 'Error al conectar con el servidor.');
@@ -69,7 +112,7 @@ export default function DescargarFichaPublicPage() {
     };
 
     fetchData();
-  }, [router.isReady, dni, evalId, token]);
+  }, [router.isReady, dni, evalId, token, layout, split, dir, scale]);
 
   // 2. Función para compilar y descargar el PDF oficial
   const handleDownloadPdf = async (customProps?: EstudianteEvolutivoPDFProps) => {
@@ -187,9 +230,15 @@ export default function DescargarFichaPublicPage() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 block mb-0.5">
-                      Estudiante Evaluado
-                    </span>
+                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 block">
+                        Estudiante Evaluado
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                        <MdDonutLarge className="w-2.5 h-2.5 text-indigo-500" />
+                        {getLayoutLabel(propsEstudiante.chartLayoutMode, propsEstudiante.splitInTwo)}
+                      </span>
+                    </div>
                     <h2 className="text-base font-extrabold text-slate-900 leading-snug">
                       {estudiante?.apellidos}, {estudiante?.nombres}
                     </h2>

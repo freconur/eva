@@ -1110,8 +1110,8 @@ describe('DocenteActuacionesRadarChart Component', () => {
       expect(screen.getByTestId('diana-badge-1')).toBeInTheDocument();
       expect(screen.getByTestId('diana-badge-2')).toBeInTheDocument();
 
-      // 4. Debe renderizar el buscador de habilidades
-      expect(screen.getByTestId('diana-search-input')).toBeInTheDocument();
+      // 4. No debe renderizar el buscador de habilidades encima de la tabla
+      expect(screen.queryByTestId('diana-search-input')).not.toBeInTheDocument();
 
       // 5. Debe renderizar el botón de reproducción de la evolución
       expect(screen.getByTestId('toggle-evolution-play')).toBeInTheDocument();
@@ -1134,7 +1134,7 @@ describe('DocenteActuacionesRadarChart Component', () => {
       expect(handleModeChange).toHaveBeenCalledWith('diana');
     });
 
-    it('filtra habilidades al escribir en el buscador y selecciona actuaciones al hacer clic', () => {
+    it('selecciona actuaciones al hacer clic en la fila de la tabla interactiva', () => {
       render(
         <DocenteActuacionesRadarChart
           student={mockStudent}
@@ -1144,11 +1144,7 @@ describe('DocenteActuacionesRadarChart Component', () => {
         />
       );
 
-      const searchInput = screen.getByTestId('diana-search-input');
-      // Buscar una palabra que solo esté en la primera actuación
-      fireEvent.change(searchInput, { target: { value: 'información' } });
-
-      // Debe seguir visible la fila 1 y el badge 1
+      // Debe estar visible la fila 1
       expect(screen.getByTestId('diana-row-1')).toBeInTheDocument();
 
       // Al hacer clic en la fila 1, la tarjeta superior debe mostrar los detalles de la actuación 1
@@ -1230,8 +1226,8 @@ describe('DocenteActuacionesRadarChart Component', () => {
       expect(screen.getAllByText('3').length).toBeGreaterThan(0);
 
       // 4. Ubicación de las cards: el contenedor de cards globales debe estar antes de la tabla en el DOM
-      const searchInput = screen.getByTestId('diana-search-input');
-      expect(globalCard.compareDocumentPosition(searchInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      const dianaRow1 = screen.getByTestId('diana-row-1');
+      expect(globalCard.compareDocumentPosition(dianaRow1) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
       // 5. Al seleccionar una actuación (haciendo clic en la actuación 2)
       fireEvent.click(screen.getByTestId('diana-row-2'));
