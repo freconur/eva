@@ -2010,8 +2010,8 @@ const VectorRadarChartPDFFlotante: React.FC<{
                   {rawSpokes.map(({ act }, i) => {
                     const startDeg = -90 + i * sliceAngle;
                     const endDeg = -90 + (i + 1) * sliceAngle;
-                    const val =
-                      studentEtapas[etapa.key]?.actuacionesResultados?.[act.order];
+                    const dict = studentEtapas[etapa.key]?.actuacionesResultados as Record<string | number, any> | undefined;
+                    const val = dict?.[act.order] ?? dict?.[String(act.order)];
                     let fillColor = '#f1f5f9';
                     if (val === 2) {
                       fillColor = etapaColor.border;
@@ -2078,10 +2078,10 @@ const VectorRadarChartPDFFlotante: React.FC<{
 
             {/* Badges perimetrales con números 1..N y color del nivel de logro */}
             {rawSpokes.map(({ act, sx, sy }) => {
-              const superadasAct = activeEtapasList.filter(
-                (et) =>
-                  studentEtapas[et.key]?.actuacionesResultados?.[act.order] === 2
-              ).length;
+              const superadasAct = activeEtapasList.filter((et) => {
+                const dict = studentEtapas[et.key]?.actuacionesResultados as Record<string | number, any> | undefined;
+                return (dict?.[act.order] ?? dict?.[String(act.order)]) === 2;
+              }).length;
               const nivelBadge = determinarNivelActuacion(
                 superadasAct,
                 activeEtapasList.length,
@@ -2577,8 +2577,8 @@ const VectorRadarChartPDFColumnas: React.FC<{
                           ? -90 - i * sliceAngle
                           : -90 + (i + 1) * sliceAngle;
 
-                        const val =
-                          studentEtapas[etapa.key]?.actuacionesResultados?.[act.order];
+                        const dict = studentEtapas[etapa.key]?.actuacionesResultados as Record<string | number, any> | undefined;
+                        const val = dict?.[act.order] ?? dict?.[String(act.order)];
                         let fillColor = '#f1f5f9';
                         if (val === 2) {
                           fillColor = etapaColor.border;
@@ -2653,10 +2653,10 @@ const VectorRadarChartPDFColumnas: React.FC<{
                   const bx = cx + 134 * Math.cos(rad);
                   const by = cy + 134 * Math.sin(rad);
 
-                  const superadasAct = activeEtapasList.filter(
-                    (et) =>
-                      studentEtapas[et.key]?.actuacionesResultados?.[act.order] === 2
-                  ).length;
+                  const superadasAct = activeEtapasList.filter((et) => {
+                    const dict = studentEtapas[et.key]?.actuacionesResultados as Record<string | number, any> | undefined;
+                    return (dict?.[act.order] ?? dict?.[String(act.order)]) === 2;
+                  }).length;
                   const nivelBadge = determinarNivelActuacion(
                     superadasAct,
                     activeEtapasList.length,
@@ -2774,7 +2774,8 @@ const VectorRadarChartPDFColumnas: React.FC<{
                   const isMostRecent = idx === totalActive - 1;
 
                   const points = orderedActuaciones.map((act, i) => {
-                    const val = etapaData.actuacionesResultados?.[act.order] ?? 1;
+                    const dict = etapaData.actuacionesResultados as Record<string | number, any> | undefined;
+                    const val = dict?.[act.order] ?? dict?.[String(act.order)] ?? 1;
                     const offset = getCoincidentRadiusOffset(etapa.key, act.order, activeEtapasList, studentEtapas);
                     const rVal = (val * R) / 2 + offset;
                     const angle = spokeEndpoints[i].angle;
@@ -2897,8 +2898,21 @@ const VectorRadarChartPDFDiana: React.FC<{
 
   // Filtrar etapas activas y evaluadas respetando el orden cronológico
   const activeEtapasList = sortedEtapas.filter(
-    (et) => activeStages?.[et.key] !== false
+    (et) => activeStages?.[et.key] !== false && activeStages?.[et.key.toLowerCase()] !== false
   );
+  const effectiveActiveEtapas = activeEtapasList.length > 0 ? activeEtapasList : sortedEtapas;
+
+  // Helper para resolver el valor de la actuación (2 = SÍ, 1 = NO) con resiliencia a tipos de clave
+  const getActVal = (stageKey: string, order: number): 1 | 2 | undefined => {
+    const etapaData =
+      studentEtapas[stageKey] ||
+      studentEtapas[stageKey.toLowerCase()] ||
+      studentEtapas[stageKey.toUpperCase()];
+    const dict = etapaData?.actuacionesResultados as Record<string | number, any> | undefined;
+    if (!dict) return undefined;
+    const v = dict[order] ?? dict[String(order)] ?? dict[Number(order)];
+    return v === 2 || v === 1 ? v : undefined;
+  };
 
   // Geometría polar SVG de la Diana
   const cx = 290;
@@ -2907,7 +2921,7 @@ const VectorRadarChartPDFDiana: React.FC<{
   const rMax = 224;
   const rBadges = 254;
 
-  const ringThickness = (rMax - rHub) / Math.max(1, activeEtapasList.length);
+  const ringThickness = (rMax - rHub) / Math.max(1, effectiveActiveEtapas.length);
   const sliceAngle = 360 / Math.max(M, 1);
 
   // Cálculo angular por actuación
@@ -2943,7 +2957,7 @@ const VectorRadarChartPDFDiana: React.FC<{
             />
 
             {/* Celdas anulares concéntricas por evaluación y actuación */}
-            {activeEtapasList.map((etapa, k) => {
+            {effectiveActiveEtapas.map((etapa, k) => {
               const innerR = rHub + k * ringThickness;
               const outerR = innerR + ringThickness;
               const etapaColor = getEtapaColorConfig(etapa.key, k);
@@ -2951,8 +2965,7 @@ const VectorRadarChartPDFDiana: React.FC<{
               return (
                 <G key={`pdf-diana-ring-${etapa.key}-${k}`}>
                   {actsGeometry.map(({ act, startDeg, endDeg }) => {
-                    const val =
-                      studentEtapas[etapa.key]?.actuacionesResultados?.[act.order];
+                    const val = getActVal(etapa.key, act.order);
                     let fillColor = '#f1f5f9';
                     if (val === 2) {
                       fillColor = etapaColor.border;
@@ -3023,13 +3036,12 @@ const VectorRadarChartPDFDiana: React.FC<{
               const bx = cx + rBadges * Math.cos(rad);
               const by = cy + rBadges * Math.sin(rad);
 
-              const superadasAct = activeEtapasList.filter(
-                (et) =>
-                  studentEtapas[et.key]?.actuacionesResultados?.[act.order] === 2
+              const superadasAct = effectiveActiveEtapas.filter(
+                (et) => getActVal(et.key, act.order) === 2
               ).length;
               const nivelBadge = determinarNivelActuacion(
                 superadasAct,
-                activeEtapasList.length,
+                effectiveActiveEtapas.length,
                 DEFAULT_NIVELES_ACTUACIONES
               );
 
@@ -3062,7 +3074,7 @@ const VectorRadarChartPDFDiana: React.FC<{
 
           {/* Leyenda de Anillos (Evaluaciones) */}
           <View style={styles.dianaLegendRow}>
-            {activeEtapasList.map((et, idx) => {
+            {effectiveActiveEtapas.map((et, idx) => {
               const colorCfg = getEtapaColorConfig(et.key, idx);
               return (
                 <View key={`pdf-leg-stage-${et.key}`} style={styles.dianaLegendItem}>
@@ -3100,13 +3112,12 @@ const VectorRadarChartPDFDiana: React.FC<{
         <View style={styles.dianaRightColumn}>
           {/* Filas de la tabla */}
           {orderedActuaciones.map((act, rIdx) => {
-            const superadasRow = activeEtapasList.filter(
-              (et) =>
-                studentEtapas[et.key]?.actuacionesResultados?.[act.order] === 2
+            const superadasRow = effectiveActiveEtapas.filter(
+              (et) => getActVal(et.key, act.order) === 2
             ).length;
             const nivelRow = determinarNivelActuacion(
               superadasRow,
-              activeEtapasList.length,
+              effectiveActiveEtapas.length,
               DEFAULT_NIVELES_ACTUACIONES
             );
 

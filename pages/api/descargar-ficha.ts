@@ -261,7 +261,8 @@ export default async function handler(
     const studentEtapas: Record<string, any> = {};
     const historialEtapas: EtapaHistorialEstudiante[] = [];
     let studentBasicInfo: any = null;
-    let docenteIdFound = evalData.idDocente || '';
+    let docenteIdFound = '';
+    let nombreColegio = evalData.institucion || evalData.colegio || '';
 
     for (const etapa of etapasConfiguradas) {
       try {
@@ -303,29 +304,191 @@ export default async function handler(
           if (!studentBasicInfo) {
             studentBasicInfo = estData;
           }
-          if (estData.dniDocente && !docenteIdFound) {
-            docenteIdFound = estData.dniDocente;
+          if (estData.institucion && !nombreColegio) {
+            nombreColegio = String(estData.institucion);
+          }
+          if (estData.dniDocente) {
+            docenteIdFound = String(estData.dniDocente);
+          } else if (!docenteIdFound && evalData.idDocente) {
+            docenteIdFound = String(evalData.idDocente);
           }
 
           const rawPuntaje = Number(estData.puntaje) || 0;
           const nivel = estData.nivel || '';
 
-          // Mapear aciertos en las actuaciones pedagógicas (2 = acertó, 1 = no acertó)
-          const actuacionesResultados: Record<number, 1 | 2> = {};
-          if (Array.isArray(estData.respuestas)) {
-            estData.respuestas.forEach((resp: any, idx: number) => {
-              const actOrder = idx + 1;
-              const isCorrect =
-                resp?.esCorrecta === true ||
-                resp?.acerto === true ||
-                resp?.correcta === true ||
-                (resp?.respuesta &&
-                  catalogoActuaciones[idx]?.respuestaCorrecta &&
-                  String(resp.respuesta).trim().toLowerCase() ===
-                    String(catalogoActuaciones[idx].respuestaCorrecta).trim().toLowerCase());
-
-              actuacionesResultados[actOrder] = isCorrect ? 2 : 1;
+          // 4.1 Cargar el banco de preguntas oficial de esta etapa para cotejar aciertos
+          const bancoPreguntas: { id: string; order: number; respuestaCorrecta: string }[] = [];
+          if (etapa.id === strEvalId && catalogoActuaciones.length > 0) {
+            catalogoActuaciones.forEach((c) => {
+              bancoPreguntas.push({
+                id: c.id,
+                order: c.order,
+                respuestaCorrecta: String(c.respuestaCorrecta || c.respuesta || '').trim(),
+              });
             });
+          } else {
+            try {
+              const epPrSnap = await db
+                .collection('evaluaciones')
+                .doc(etapa.id)
+                .collection('preguntasRespuestas')
+                .orderBy('order', 'asc')
+                .get();
+
+              if (!epPrSnap.empty) {
+                epPrSnap.forEach((pDoc) => {
+                  const pd = pDoc.data();
+                  bancoPreguntas.push({
+                    id: pDoc.id,
+                    order: Number(pd.order) || bancoPreguntas.length + 1,
+                    respuestaCorrecta: String(pd.respuesta || pd.respuestaCorrecta || '').trim(),
+                  });
+                });
+              } else if (Array.isArray(etapaEvalData.preguntasRespuestas)) {
+                etapaEvalData.preguntasRespuestas.forEach((pd: any, idx: number) => {
+                  bancoPreguntas.push({
+                    id: pd.id || `p_${idx + 1}`,
+                    order: Number(pd.order) || idx + 1,
+                    respuestaCorrecta: String(pd.respuesta || pd.respuestaCorrecta || '').trim(),
+                  });
+                });
+              }
+            } catch (errEpPr) {
+              console.warn(`Advertencia al cargar preguntas de etapa ${etapa.id}:`, errEpPr);
+            }
+          }
+
+          const preguntasParaCotejo = bancoPreguntas.length > 0 ? bancoPreguntas : catalogoActuaciones;
+
+          // 4.2 Resolver la respuesta marcada por el estudiante (soporta Array y Map/Object)
+          const obtenerRespuestaMarcada = (p: any, idx: number): string | undefined => {
+            if (!estData.respuestas) return undefined;
+
+            if (Array.isArray(estData.respuestas)) {
+              const respItem =
+                estData.respuestas.find(
+                  (r: any) =>
+                    (p.id && (r.id === p.id || r.idPregunta === p.id)) ||
+                    (p.order !== undefined && r.order !== undefined && Number(r.order) === Number(p.order))
+                ) || estData.respuestas[idx];
+
+              if (respItem) {
+                if (respItem.alternativas && Array.isArray(respItem.alternativas)) {
+                  const sel = respItem.alternativas.find((a: any) => a.selected);
+                  if (sel?.alternativa) return String(sel.alternativa).trim();
+                }
+                if (respItem.alternativaSeleccionada) return String(respItem.alternativaSeleccionada).trim();
+                if (respItem.alternativa) return String(respItem.alternativa).trim();
+                if (respItem.respuestaMarcada) return String(respItem.respuestaMarcada).trim();
+                if (respItem.respuesta && !p.respuestaCorrecta) return String(respItem.respuesta).trim();
+              }
+              return undefined;
+            }
+
+            if (typeof estData.respuestas === 'object' && estData.respuestas !== null) {
+              const map = estData.respuestas as Record<string, any>;
+              if (p.id && map[p.id] !== undefined) return String(map[p.id]).trim();
+              if (p.order !== undefined && map[String(p.order)] !== undefined) return String(map[String(p.order)]).trim();
+              if (map[String(idx + 1)] !== undefined) return String(map[String(idx + 1)]).trim();
+              if (map[String(idx)] !== undefined) return String(map[String(idx)]).trim();
+              return undefined;
+            }
+
+            return undefined;
+          };
+
+          // 4.3 Cotejar aciertos pregunta a pregunta
+          let aciertosEvaluados = 0;
+          let preguntasCotejadas = 0;
+          const aciertosPorPreguntaEtapa: boolean[] = [];
+
+          preguntasParaCotejo.forEach((p: any, idx: number) => {
+            const marcada = obtenerRespuestaMarcada(p, idx);
+            const correcta = p.respuestaCorrecta || p.respuesta || '';
+            if (marcada && correcta) {
+              preguntasCotejadas++;
+              const cleanMarcada = String(marcada).toLowerCase().replace(/\s+/g, '');
+              const cleanCorrecta = String(correcta).toLowerCase().replace(/\s+/g, '');
+              const esCorrecta = cleanMarcada === cleanCorrecta;
+              aciertosPorPreguntaEtapa.push(esCorrecta);
+              if (esCorrecta) aciertosEvaluados++;
+            } else {
+              aciertosPorPreguntaEtapa.push(false);
+            }
+          });
+
+          // 4.4 Calcular puntaje máximo y aciertos totales
+          let maxP = Number(etapaEvalData.puntajeMaximo) || 0;
+          if (etapaEvalData.nivelYPuntaje && Array.isArray(etapaEvalData.nivelYPuntaje) && etapaEvalData.nivelYPuntaje.length > 0) {
+            maxP = Math.max(...etapaEvalData.nivelYPuntaje.map((np: any) => Number(np.max) || 0));
+          }
+          if (maxP <= 0) maxP = 20;
+
+          const totalP = catalogoActuaciones.length || preguntasParaCotejo.length || 20;
+          const ptsRatio = maxP > 0 ? Math.min(1, Math.max(0, rawPuntaje / maxP)) : 0;
+          const expectedFromScore = Math.round(ptsRatio * totalP);
+
+          let correctas: number | undefined = undefined;
+          if (rawPuntaje >= maxP && maxP > 0) {
+            correctas = totalP;
+          } else if (rawPuntaje <= 0) {
+            correctas = 0;
+          } else if (preguntasCotejadas >= Math.min(totalP, preguntasParaCotejo.length) * 0.4) {
+            correctas = aciertosEvaluados;
+          } else if (estData.respuestasCorrectas !== undefined && !isNaN(Number(estData.respuestasCorrectas))) {
+            correctas = Number(estData.respuestasCorrectas);
+          } else {
+            correctas = expectedFromScore;
+          }
+          correctas = Math.max(0, Math.min(totalP, correctas));
+
+          // 4.5 Mapear resultados binarios por actuación pedagógica (2 = SÍ / acertó, 1 = NO / no acertó)
+          const actuacionesResultados: Record<number, 1 | 2> = {};
+
+          if (rawPuntaje >= maxP && maxP > 0) {
+            catalogoActuaciones.forEach((act) => {
+              actuacionesResultados[act.order] = 2;
+            });
+          } else if (rawPuntaje <= 0) {
+            catalogoActuaciones.forEach((act) => {
+              actuacionesResultados[act.order] = 1;
+            });
+          } else {
+            let assignedCount = 0;
+
+            if (preguntasParaCotejo.length > 0 && preguntasCotejadas >= preguntasParaCotejo.length * 0.3) {
+              catalogoActuaciones.forEach((act, actIdx) => {
+                let targetIdx = act.id ? preguntasParaCotejo.findIndex((bp: any) => bp.id === act.id) : -1;
+                if (targetIdx === -1) {
+                  targetIdx = preguntasParaCotejo.findIndex(
+                    (bp: any) => bp.order !== undefined && Number(bp.order) === act.order
+                  );
+                }
+                if (targetIdx === -1 && actIdx < preguntasParaCotejo.length) {
+                  targetIdx = actIdx;
+                }
+
+                const acerto = targetIdx !== -1 ? !!aciertosPorPreguntaEtapa[targetIdx] : false;
+                if (acerto) {
+                  actuacionesResultados[act.order] = 2;
+                  assignedCount++;
+                } else {
+                  actuacionesResultados[act.order] = 1;
+                }
+              });
+            }
+
+            // Salvaguarda si no se pudo asignar por preguntas o discrepa severamente
+            const discrepa =
+              assignedCount === 0 ||
+              (correctas > 2 && assignedCount < Math.floor(correctas * 0.6)) ||
+              (correctas > 0 && Math.abs(assignedCount - correctas) > 4);
+
+            if (discrepa && correctas > 0) {
+              catalogoActuaciones.forEach((act, idx) => {
+                actuacionesResultados[act.order] = idx < correctas ? 2 : 1;
+              });
+            }
           }
 
           studentEtapas[etapa.key] = {
@@ -333,23 +496,24 @@ export default async function handler(
             label: etapa.label,
             puntaje: rawPuntaje,
             actuacionesResultados,
-            maxPuntaje: Number(etapaEvalData.puntajeMaximo || 20),
+            maxPuntaje: maxP,
             nivel,
+            respuestasCorrectas: correctas,
+            totalPreguntas: totalP,
+            porcentaje: totalP > 0 ? Math.round((correctas / totalP) * 100) : 0,
           };
 
-          const totalQ = catalogoActuaciones.length || 20;
-          const numCorrectas = Object.values(actuacionesResultados).filter((v) => v === 2).length;
-          const pct = totalQ > 0 ? Math.round((numCorrectas / totalQ) * 100) : 0;
+          const pct = totalP > 0 ? Math.round((correctas / totalP) * 100) : 0;
 
           historialEtapas.push({
             etapaKey: etapa.key,
             label: etapa.label,
             nombreEvaluacion: etapaEvalData.nombre || etapa.label,
             puntaje: rawPuntaje,
-            maxPuntaje: Number(etapaEvalData.puntajeMaximo || 20),
+            maxPuntaje: maxP,
             nivel,
-            respuestasCorrectas: numCorrectas,
-            totalPreguntas: totalQ,
+            respuestasCorrectas: correctas,
+            totalPreguntas: totalP,
             porcentaje: pct,
           });
         }
@@ -367,7 +531,7 @@ export default async function handler(
     // 5. Cargar información del docente e institución
     let nombreDocente = 'Docente de Aula';
     let fotoDocenteUrl = '';
-    let nombreColegio = studentBasicInfo?.institucion || evalData.institucion || '';
+    nombreColegio = nombreColegio || studentBasicInfo?.institucion || evalData.institucion || '';
 
     if (docenteIdFound) {
       try {
@@ -386,8 +550,22 @@ export default async function handler(
     }
 
     // 6. Ensamblar las props para la Ficha Evolutiva
-    const nombres = studentBasicInfo?.nombres || 'Estudiante';
-    const apellidos = studentBasicInfo?.apellidos || '';
+    let nombres = studentBasicInfo?.nombres || studentBasicInfo?.nombre || '';
+    let apellidos = studentBasicInfo?.apellidos || '';
+    if (!nombres && studentBasicInfo?.nombresApellidos) {
+      const rawFull = String(studentBasicInfo.nombresApellidos).trim();
+      const parts = rawFull.split(',');
+      if (parts.length > 1) {
+        apellidos = parts[0].trim();
+        nombres = parts.slice(1).join(',').trim();
+      } else {
+        nombres = rawFull;
+      }
+    }
+    if (!nombres && !apellidos) {
+      nombres = 'Estudiante';
+    }
+
     const seccion = studentBasicInfo?.seccion || evalData.seccion || '';
     const nivelActual =
       studentBasicInfo?.nivel ||
@@ -398,6 +576,26 @@ export default async function handler(
         ? Number(studentBasicInfo.puntaje)
         : historialEtapas[historialEtapas.length - 1]?.puntaje || 0;
 
+    let maxPuntajeEvaluacion = Number(evalData.puntajeMaximo) || 0;
+    if (evalData.nivelYPuntaje && Array.isArray(evalData.nivelYPuntaje) && evalData.nivelYPuntaje.length > 0) {
+      maxPuntajeEvaluacion = Math.max(...evalData.nivelYPuntaje.map((np: any) => Number(np.max) || 0));
+    }
+    if (maxPuntajeEvaluacion <= 0) maxPuntajeEvaluacion = 20;
+
+    const activeStages: Record<string, boolean> = {
+      edi: true,
+      ep1: true,
+      ep2: true,
+      EDI: true,
+      EP1: true,
+      EP2: true,
+    };
+    etapasConfiguradas.forEach((et) => {
+      activeStages[et.key] = true;
+      activeStages[et.key.toLowerCase()] = true;
+      activeStages[et.key.toUpperCase()] = true;
+    });
+
     const props: EstudianteEvolutivoPDFProps = {
       estudiante: {
         dni: strDni,
@@ -407,7 +605,7 @@ export default async function handler(
         genero: studentBasicInfo?.genero || '',
         fotoUrl: studentBasicInfo?.fotoUrl || studentBasicInfo?.fotoCarnetUrl || '',
         puntaje: puntajeActual,
-        maxPuntaje: 20,
+        maxPuntaje: maxPuntajeEvaluacion,
         nivel: nivelActual,
       },
       evaluacionActual: {
@@ -428,14 +626,13 @@ export default async function handler(
       catalogoActuaciones,
       etapasConfiguradas,
       studentEtapas,
-      activeStages: { edi: true, ep1: true, ep2: true },
+      activeStages,
       chartLayoutMode:
         layout === 'flotante' || layout === 'columnas' || layout === 'dividido' || layout === 'diana'
           ? (layout as any)
           : 'diana',
       splitInTwo: split === '1' || split === 'true' || layout === 'dividido',
       orderDirection: dir === 'antihorario' ? 'antihorario' : 'horario',
-      centerChartType: center === 'diana' ? 'diana' : 'radar',
       textScale: scale && !isNaN(Number(scale)) ? Number(scale) : 1,
     };
 
