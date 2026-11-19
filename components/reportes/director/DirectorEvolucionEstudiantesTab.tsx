@@ -56,6 +56,8 @@ import {
   DocenteRadarControls,
   loadStoredCardAdjustments,
   saveStoredTextScale,
+  RadarCenterChartType,
+  loadStoredCenterChartType,
 } from '@/components/reportes/estudiante/DocenteActuacionesRadarChart';
 import { searchAndRankStudents } from '@/components/reportes/estudiante/searchEstudiantesUtils';
 import type { EstudianteEvolutivoPDFProps } from '@/features/utils/exportarFichaEvolutivaEstudiantePDF';
@@ -262,6 +264,9 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
 
   // Modos de visualización del Gráfico Radar Individual ('columnas', 'flotante' o 'diana')
   const [radarLayoutMode, setRadarLayoutMode] = useState<'columnas' | 'flotante' | 'diana'>('diana');
+  const [radarCenterChartType, setRadarCenterChartType] = useState<RadarCenterChartType>(() => {
+    return loadStoredCenterChartType();
+  });
   const [radarSplitInTwo, setRadarSplitInTwo] = useState<boolean>(false);
   const [radarOrderDirection, setRadarOrderDirection] = useState<'horario' | 'antihorario'>('horario');
   const [radarTextScale, setRadarTextScale] = useState<number>(1);
@@ -1079,6 +1084,7 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
       studentEtapas: estudiante.etapas,
       activeStages,
       chartLayoutMode: radarLayoutMode,
+      centerChartType: radarCenterChartType,
       splitInTwo: radarSplitInTwo,
       orderDirection: radarOrderDirection,
       textScale: radarTextScale,
@@ -2218,6 +2224,8 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
                   <DocenteRadarControls
                     chartLayoutMode={radarLayoutMode}
                     onLayoutModeSelect={setRadarLayoutMode}
+                    centerChartType={radarCenterChartType}
+                    onCenterChartTypeChange={setRadarCenterChartType}
                     orderDirection={radarOrderDirection}
                     onOrderDirectionChange={setRadarOrderDirection}
                     splitInTwo={radarSplitInTwo}
@@ -2544,6 +2552,8 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
                       onToggleStage={toggleStage}
                       layoutMode={radarLayoutMode}
                       onLayoutModeChange={setRadarLayoutMode}
+                      centerChartType={radarCenterChartType}
+                      onCenterChartTypeChange={setRadarCenterChartType}
                       splitInTwo={radarSplitInTwo}
                       onSplitInTwoChange={setRadarSplitInTwo}
                       orderDirection={radarOrderDirection}

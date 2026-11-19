@@ -228,6 +228,37 @@ export function saveStoredTextScale(scale: number): void {
   }
 }
 
+// =========================================================================
+// CONMUTADOR DEL TIPO DE GRÁFICO CENTRAL (RED RADAR VS DIANA POLAR)
+// =========================================================================
+export type RadarCenterChartType = 'radar' | 'diana';
+export const RADAR_CENTER_CHART_TYPE_STORAGE_KEY = 'eva_radar_center_chart_type';
+
+export function loadStoredCenterChartType(): RadarCenterChartType {
+  if (typeof window === 'undefined') return 'radar';
+  try {
+    const val = window.localStorage?.getItem(RADAR_CENTER_CHART_TYPE_STORAGE_KEY);
+    if (val === 'diana' || val === 'radar') return val;
+  } catch (err) {
+    console.warn('No se pudo recuperar el tipo de gráfico central de localStorage:', err);
+  }
+  return 'radar';
+}
+
+export function saveStoredCenterChartType(type: RadarCenterChartType): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage?.setItem(RADAR_CENTER_CHART_TYPE_STORAGE_KEY, type);
+    window.dispatchEvent(
+      new CustomEvent('eva_radar_center_chart_type_changed', {
+        detail: { type },
+      })
+    );
+  } catch (err) {
+    console.warn('No se pudo guardar el tipo de gráfico central en localStorage:', err);
+  }
+}
+
 // Paleta de colores institucional EVA para las etapas evaluativas:
 // EDI: Azul (#2563eb) | EP1: Ámbar (#f59e0b) | EP2: Esmeralda (#10b981)
 export const ETAPA_COLORS: Record<
@@ -666,6 +697,8 @@ export interface DocenteActuacionesRadarChartProps {
   hideStageSelector?: boolean;
   layoutMode?: 'columnas' | 'flotante' | 'diana';
   onLayoutModeChange?: (mode: 'columnas' | 'flotante' | 'diana') => void;
+  centerChartType?: RadarCenterChartType;
+  onCenterChartTypeChange?: (type: RadarCenterChartType) => void;
   splitInTwo?: boolean;
   onSplitInTwoChange?: (split: boolean) => void;
   orderDirection?: 'horario' | 'antihorario';
@@ -681,6 +714,8 @@ export interface DocenteActuacionesRadarChartProps {
 export interface DocenteRadarControlsProps {
   chartLayoutMode: 'columnas' | 'flotante' | 'diana';
   onLayoutModeSelect: (mode: 'columnas' | 'flotante' | 'diana') => void;
+  centerChartType?: RadarCenterChartType;
+  onCenterChartTypeChange?: (type: RadarCenterChartType) => void;
   orderDirection?: 'horario' | 'antihorario';
   onOrderDirectionChange?: (dir: 'horario' | 'antihorario') => void;
   splitInTwo?: boolean;
@@ -697,6 +732,8 @@ export interface DocenteRadarControlsProps {
 export const DocenteRadarControls: React.FC<DocenteRadarControlsProps> = ({
   chartLayoutMode,
   onLayoutModeSelect,
+  centerChartType: controlledCenterChartType,
+  onCenterChartTypeChange,
   orderDirection = 'horario',
   onOrderDirectionChange,
   splitInTwo = false,
@@ -709,6 +746,30 @@ export const DocenteRadarControls: React.FC<DocenteRadarControlsProps> = ({
   onTextScaleChange,
   className = '',
 }) => {
+  const [internalCenterChartType, setInternalCenterChartType] = useState<RadarCenterChartType>(() => loadStoredCenterChartType());
+  const effectiveCenterChartType = controlledCenterChartType ?? internalCenterChartType;
+
+  useEffect(() => {
+    const handleTypeSync = (e: any) => {
+      const type = e?.detail?.type;
+      if (type === 'radar' || type === 'diana') {
+        setInternalCenterChartType(type);
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('eva_radar_center_chart_type_changed', handleTypeSync);
+      return () => {
+        window.removeEventListener('eva_radar_center_chart_type_changed', handleTypeSync);
+      };
+    }
+  }, []);
+
+  const handleCenterTypeSelect = (type: RadarCenterChartType) => {
+    setInternalCenterChartType(type);
+    saveStoredCenterChartType(type);
+    onCenterChartTypeChange?.(type);
+  };
+
   const isAntihorario = orderDirection === 'antihorario';
   const effectiveScale = parseRadarTextScale(textScale);
   const currentPresetIndex = Math.max(
@@ -851,6 +912,50 @@ export const DocenteRadarControls: React.FC<DocenteRadarControlsProps> = ({
         </button>
       </div>
 
+      {/* 3.1 Conmutador de Gráfico Central (Red Radar vs Diana Polar) cuando está en Columnas o Flotante */}
+      {(chartLayoutMode === 'columnas' || chartLayoutMode === 'flotante') && (
+        <div
+          className="inline-flex items-center p-0.5 bg-slate-200/70 rounded-xl border border-slate-200 shadow-2xs"
+          role="group"
+          aria-label="Tipo de gráfico central"
+        >
+          <button
+            type="button"
+            data-testid="toggle-center-radar"
+            onClick={() => handleCenterTypeSelect('radar')}
+            className={`group inline-flex items-center gap-0 hover:gap-1.5 px-2 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
+              effectiveCenterChartType === 'radar'
+                ? 'bg-blue-600 text-white shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+            }`}
+            title="Gráfico central: Red Radar tradicional (poligonal)"
+            aria-label="Centro: Red Radar"
+          >
+            <TbChartRadar className="w-3.5 h-3.5 shrink-0" />
+            <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:max-w-[85px] group-hover:opacity-100 transition-all duration-200 ease-in-out">
+              Red Radar
+            </span>
+          </button>
+          <button
+            type="button"
+            data-testid="toggle-center-diana"
+            onClick={() => handleCenterTypeSelect('diana')}
+            className={`group inline-flex items-center gap-0 hover:gap-1.5 px-2 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
+              effectiveCenterChartType === 'diana'
+                ? 'bg-blue-600 text-white shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+            }`}
+            title="Gráfico central: Diana Polar (rueda concéntrica de la captura)"
+            aria-label="Centro: Diana Polar"
+          >
+            <MdDonutLarge className="w-3.5 h-3.5 shrink-0" />
+            <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:max-w-[85px] group-hover:opacity-100 transition-all duration-200 ease-in-out">
+              Diana Polar
+            </span>
+          </button>
+        </div>
+      )}
+
       {/* 4. Conmutador para dividir en 2 gráficos */}
       {onToggleSplitInTwo && (
         <button
@@ -968,6 +1073,8 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
   hideStageSelector: _hideStageSelector = true,
   layoutMode: controlledLayoutMode,
   onLayoutModeChange,
+  centerChartType: controlledCenterChartType,
+  onCenterChartTypeChange,
   splitInTwo: controlledSplitInTwo,
   onSplitInTwoChange,
   orderDirection: controlledOrderDirection,
@@ -989,6 +1096,31 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
   // Modo de diseño del gráfico: 'columnas' (Diseño 2), 'flotante' (Diseño 1) o 'diana' (Diseño 3: Diana Polar)
   const [internalLayoutMode, setInternalLayoutMode] = useState<'columnas' | 'flotante' | 'diana'>('columnas');
   const chartLayoutMode = (controlledLayoutMode as 'columnas' | 'flotante' | 'diana') ?? internalLayoutMode;
+
+  // Tipo de gráfico central en diseños columnas y flotante: 'radar' (Red poligonal) o 'diana' (Diana Polar)
+  const [internalCenterChartType, setInternalCenterChartType] = useState<RadarCenterChartType>(() => loadStoredCenterChartType());
+  const effectiveCenterChartType = controlledCenterChartType ?? internalCenterChartType;
+
+  useEffect(() => {
+    const handleTypeSync = (e: any) => {
+      const type = e?.detail?.type;
+      if (type === 'radar' || type === 'diana') {
+        setInternalCenterChartType(type);
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('eva_radar_center_chart_type_changed', handleTypeSync);
+      return () => {
+        window.removeEventListener('eva_radar_center_chart_type_changed', handleTypeSync);
+      };
+    }
+  }, []);
+
+  const handleCenterChartTypeChange = (type: RadarCenterChartType) => {
+    setInternalCenterChartType(type);
+    saveStoredCenterChartType(type);
+    onCenterChartTypeChange?.(type);
+  };
 
   // Configuración global de niveles por actuación en Firestore
   const { niveles: nivelesActuacionGlobal } = useNivelesActuacionesConfig();
@@ -1933,6 +2065,334 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
     });
   }, [orderedActuaciones, activeEtapasList, student, nivelesActuacionGlobal]);
 
+  // Renderizado del núcleo SVG de Diana Polar para el centro conmutable (Diseño 1 y Diseño 2)
+  const renderDianaCenterCore = (
+    cx: number,
+    cy: number,
+    rHub: number,
+    rMax: number,
+    rBadges: number,
+    actuacionesList: ActuacionCatalogoItem[],
+    subKey: string,
+    isReverse: boolean,
+    renderBadges: boolean = true
+  ) => {
+    const M = actuacionesList.length;
+    if (M === 0) return null;
+
+    const sliceAngle = 360 / M;
+    const actsGeom = actuacionesList.map((act, i) => {
+      const startDeg = isReverse ? -90 - (i + 1) * sliceAngle : -90 + i * sliceAngle;
+      const endDeg = isReverse ? -90 - i * sliceAngle : -90 + (i + 1) * sliceAngle;
+      const midDeg = isReverse ? -90 - (i + 0.5) * sliceAngle : -90 + (i + 0.5) * sliceAngle;
+      const rad = (midDeg * Math.PI) / 180;
+      const bx = cx + rBadges * Math.cos(rad);
+      const by = cy + rBadges * Math.sin(rad);
+      return { act, i, startDeg, endDeg, midDeg, rad, bx, by };
+    });
+
+    const activeGeom = actsGeom.find((g) => g.act.order === hoveredCardOrder);
+    const kStagesCount = activeEtapasList.length;
+    const ringThickness = (rMax - rHub) / Math.max(1, kStagesCount);
+
+    const hoveredAct =
+      hoveredCardOrder !== null
+        ? actuacionesList.find((a) => a.order === hoveredCardOrder)
+        : null;
+    const superadasHovered = hoveredAct
+      ? activeEtapasList.filter(
+          (et) => student.etapas[et.key]?.actuacionesResultados?.[hoveredAct.order] === 2
+        ).length
+      : 0;
+    const nivelHovered = hoveredAct
+      ? determinarNivelActuacion(superadasHovered, activeEtapasList.length, nivelesActuacionGlobal)
+      : null;
+    const hubBgColor = nivelHovered ? nivelHovered.color : '#3b82f6';
+
+    return (
+      <g key={`diana-center-core-${subKey}`}>
+        <defs>
+          <filter id={`diana-glow-${subKey}`} x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#2563eb" floodOpacity="0.45" />
+          </filter>
+          <filter id={`diana-shadow-${subKey}`} x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#000000" floodOpacity="0.12" />
+          </filter>
+        </defs>
+
+        {/* Círculo guía exterior */}
+        <circle
+          cx={cx}
+          cy={cy}
+          r={rMax}
+          fill="none"
+          stroke="#e2e8f0"
+          strokeWidth={1}
+          strokeDasharray="2 2"
+        />
+
+        {/* Celdas anulares concéntricas por evaluación y actuación */}
+        {Array.from({ length: kStagesCount }).map((_, k) => {
+          const etapa = activeEtapasList[k];
+          if (!etapa) return null;
+          const innerR = rHub + k * ringThickness;
+          const outerR = innerR + ringThickness;
+          const etapaColor = getEtapaColorConfig(etapa.key, k);
+
+          return (
+            <g key={`core-ring-${subKey}-${etapa.key}-${k}`}>
+              {actsGeom.map(({ act, startDeg, endDeg, bx, by }) => {
+                const val = student.etapas[etapa.key]?.actuacionesResultados?.[act.order];
+                let fillColor = '#f1f5f9';
+                if (val === 2) {
+                  fillColor = etapaColor.border;
+                } else if (val === 1) {
+                  fillColor = '#f43f5e';
+                }
+
+                const d = describeAnnularSector(cx, cy, innerR, outerR, startDeg, endDeg);
+                const isHovered = hoveredCardOrder === act.order;
+
+                return (
+                  <path
+                    key={`core-sector-${subKey}-${etapa.key}-${act.order}`}
+                    d={d}
+                    fill={fillColor}
+                    stroke="#ffffff"
+                    strokeWidth={1.5}
+                    opacity={isHovered ? 1 : 0.9}
+                    className="cursor-pointer transition-all duration-150"
+                    onMouseEnter={() => {
+                      setHoveredCardOrder(act.order);
+                      setActiveTooltip({
+                        act: act,
+                        order: act.order,
+                        etapaLabel: etapa.label,
+                        etapaKey: etapa.key,
+                        valor: val ?? 1,
+                        x: bx,
+                        y: by,
+                        allStages: activeEtapasList.map((et) => {
+                          const stData = student.etapas[et.key];
+                          const v = stData?.actuacionesResultados?.[act.order] ?? 1;
+                          const cfg = ETAPA_COLORS[et.key] || etapaColor;
+                          return {
+                            key: et.key,
+                            label: et.label,
+                            valor: v,
+                            color: cfg.border,
+                          };
+                        }),
+                      });
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredCardOrder(null);
+                      setActiveTooltip(null);
+                    }}
+                  >
+                    <title>{`Actuación ${act.order} - ${etapa.label || etapa.key.toUpperCase()}: ${val === 2 ? 'Acertó' : 'No acertó'}`}</title>
+                  </path>
+                );
+              })}
+            </g>
+          );
+        })}
+
+        {/* Resalte envolvente de la cuña activa */}
+        {activeGeom && (
+          <path
+            d={describeAnnularSector(
+              cx,
+              cy,
+              rHub - 1,
+              rMax + 2,
+              activeGeom.startDeg,
+              activeGeom.endDeg
+            )}
+            fill="none"
+            stroke="#2563eb"
+            strokeWidth={2.8}
+            pointerEvents="none"
+            className="transition-all duration-150"
+          />
+        )}
+
+        {/* Centro / Hub con conteo de habilidades */}
+        <circle
+          cx={cx}
+          cy={cy}
+          r={rHub - 2}
+          fill={hubBgColor}
+          className="transition-colors duration-200 shadow-inner"
+        />
+        <circle
+          cx={cx}
+          cy={cy}
+          r={rHub - 5}
+          fill="none"
+          stroke="rgba(255,255,255,0.4)"
+          strokeWidth={1.5}
+          pointerEvents="none"
+        />
+        {hoveredAct && nivelHovered ? (
+          <g pointerEvents="none">
+            <text
+              x={cx}
+              y={cy - 5}
+              textAnchor="middle"
+              fill="#ffffff"
+              fontSize={25}
+              fontWeight="800"
+            >
+              {hoveredAct.order}
+            </text>
+            <text
+              x={cx}
+              y={cy + 14}
+              textAnchor="middle"
+              fill="#ffffff"
+              fontSize={8.5}
+              fontWeight="800"
+              letterSpacing="0.04em"
+            >
+              {nivelHovered.nombre.toUpperCase()}
+            </text>
+          </g>
+        ) : (
+          <g pointerEvents="none">
+            <text
+              x={cx}
+              y={cy - 5}
+              textAnchor="middle"
+              fill="#ffffff"
+              fontSize={26}
+              fontWeight="800"
+            >
+              {M}
+            </text>
+            <text
+              x={cx}
+              y={cy + 15}
+              textAnchor="middle"
+              fill="rgba(255,255,255,0.92)"
+              fontSize={9.5}
+              fontWeight="700"
+              letterSpacing="0.08em"
+            >
+              {M === 1 ? 'HABILIDAD' : 'HABILIDADES'}
+            </text>
+          </g>
+        )}
+
+        {/* Badges perimetrales con números 1..M y color de nivel */}
+        {renderBadges &&
+          actsGeom.map(({ act, bx, by }) => {
+            const superadasAct = activeEtapasList.filter(
+              (et) => student.etapas[et.key]?.actuacionesResultados?.[act.order] === 2
+            ).length;
+            const nivelBadge = determinarNivelActuacion(
+              superadasAct,
+              activeEtapasList.length,
+              nivelesActuacionGlobal
+            );
+            const isHovered = hoveredCardOrder === act.order;
+
+            return (
+              <g
+                key={`core-badge-${subKey}-${act.order}`}
+                data-testid={`radar-vertex-badge-${act.order}`}
+                className="cursor-pointer transition-transform duration-150"
+                onMouseEnter={() => {
+                  setHoveredCardOrder(act.order);
+                  setActiveTooltip({
+                    act: act,
+                    order: act.order,
+                    etapaLabel: activeEtapasList[activeEtapasList.length - 1]?.label || '',
+                    etapaKey: activeEtapasList[activeEtapasList.length - 1]?.key || '',
+                    valor:
+                      student.etapas[activeEtapasList[activeEtapasList.length - 1]?.key]
+                        ?.actuacionesResultados?.[act.order] ?? 1,
+                    x: bx,
+                    y: by,
+                    allStages: activeEtapasList.map((et) => {
+                      const stData = student.etapas[et.key];
+                      const v = stData?.actuacionesResultados?.[act.order] ?? 1;
+                      const cfg = ETAPA_COLORS[et.key] || { border: '#3b82f6' };
+                      return {
+                        key: et.key,
+                        label: et.label,
+                        valor: v,
+                        color: cfg.border,
+                      };
+                    }),
+                  });
+                }}
+                onMouseLeave={() => {
+                  setHoveredCardOrder(null);
+                  setActiveTooltip(null);
+                }}
+              >
+                {isHovered ? (
+                  <>
+                    <circle
+                      cx={bx}
+                      cy={by}
+                      r={15}
+                      fill={nivelBadge.color}
+                      opacity={0.35}
+                      filter={`url(#diana-glow-${subKey})`}
+                    />
+                    <circle
+                      cx={bx}
+                      cy={by}
+                      r={12}
+                      fill={nivelBadge.color}
+                      stroke="#ffffff"
+                      strokeWidth={2}
+                    />
+                    <text
+                      x={bx}
+                      y={by}
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fill="#ffffff"
+                      fontSize={11}
+                      fontWeight="800"
+                    >
+                      {act.order}
+                    </text>
+                  </>
+                ) : (
+                  <>
+                    <circle
+                      cx={bx}
+                      cy={by}
+                      r={10.5}
+                      fill="#ffffff"
+                      stroke={nivelBadge.color}
+                      strokeWidth={2.2}
+                      filter={`url(#diana-shadow-${subKey})`}
+                    />
+                    <text
+                      x={bx}
+                      y={by}
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fill="#1e293b"
+                      fontSize={9.5}
+                      fontWeight="800"
+                    >
+                      {act.order}
+                    </text>
+                  </>
+                )}
+              </g>
+            );
+          })}
+      </g>
+    );
+  };
+
   // Renderizado de tarjeta individual compacta para las columnas laterales (Diseño 2)
   const renderColumnCard = (act: ActuacionCatalogoItem) => {
     const isHovered = hoveredCardOrder === act.order;
@@ -2182,181 +2642,187 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
               className="w-full max-w-[560px] h-auto select-none overflow-visible"
               preserveAspectRatio="xMidYMid meet"
             >
-              {/* Anillo 1 (Interior: NO acertó = 1) */}
-              <circle
-                cx={cxCol}
-                cy={cyCol}
-                r={r1Col}
-                fill="none"
-                stroke="#e2e8f0"
-                strokeWidth="1.5"
-                strokeDasharray="4 4"
-              />
+              {effectiveCenterChartType === 'diana' ? (
+                renderDianaCenterCore(cxCol, cyCol, 64, 224, 254, actuacionesList, `col-${subKey}`, isAntihorario, true)
+              ) : (
+                <>
+                  {/* Anillo 1 (Interior: NO acertó = 1) */}
+                  <circle
+                    cx={cxCol}
+                    cy={cyCol}
+                    r={r1Col}
+                    fill="none"
+                    stroke="#e2e8f0"
+                    strokeWidth="1.5"
+                    strokeDasharray="4 4"
+                  />
 
-              {/* Anillo 2 (Exterior: SÍ acertó = 2) */}
-              <circle
-                cx={cxCol}
-                cy={cyCol}
-                r={r2Col}
-                fill="none"
-                stroke="#cbd5e1"
-                strokeWidth="1.5"
-              />
+                  {/* Anillo 2 (Exterior: SÍ acertó = 2) */}
+                  <circle
+                    cx={cxCol}
+                    cy={cyCol}
+                    r={r2Col}
+                    fill="none"
+                    stroke="#cbd5e1"
+                    strokeWidth="1.5"
+                  />
 
-              {/* Hub Central */}
-              <circle cx={cxCol} cy={cyCol} r="3.5" fill="#94a3b8" />
+                  {/* Hub Central */}
+                  <circle cx={cxCol} cy={cyCol} r="3.5" fill="#94a3b8" />
 
-              {/* Indicadores numéricos de escala en el eje superior */}
-              <text
-                x={cxCol + 6}
-                y={cyCol - r1Col + 14}
-                className="text-[10px] font-bold fill-slate-400 select-none pointer-events-none"
-              >
-                1 (NO)
-              </text>
-              <text
-                x={cxCol + 6}
-                y={cyCol - r2Col + 14}
-                className="text-[10px] font-bold fill-slate-400 select-none pointer-events-none"
-              >
-                2 (SÍ)
-              </text>
-
-              {/* Ejes radiales (Spokes) hacia cada vértice exterior del radar */}
-              {spokes.map((spoke) => {
-                const isHovered = hoveredCardOrder === spoke.act.order;
-                return (
-                  <g key={`spoke-${subKey}-${spoke.act.order}`}>
-                    <line
-                      x1={cxCol}
-                      y1={cyCol}
-                      x2={spoke.vx}
-                      y2={spoke.vy}
-                      stroke={isHovered ? '#93c5fd' : '#e2e8f0'}
-                      strokeWidth={isHovered ? 1.8 : 1.2}
-                      className="transition-colors duration-150"
-                    />
-                    <line
-                      x1={spoke.vx}
-                      y1={spoke.vy}
-                      x2={spoke.nx}
-                      y2={spoke.ny}
-                      stroke={isHovered ? '#2563eb' : '#cbd5e1'}
-                      strokeWidth={isHovered ? 2 : 1}
-                      strokeDasharray={isHovered ? undefined : '2 2'}
-                      className="transition-colors duration-150"
-                    />
-                  </g>
-                );
-              })}
-
-              {/* Polígonos de evaluación */}
-              {datasets.map((ds) => {
-                const isHovered = hoveredStageKey === ds.key;
-                return (
-                  <g key={`dataset-${subKey}-${ds.key}`} className="transition-all duration-200">
-                    <polygon
-                      points={ds.pointsString}
-                      fill={ds.colorConfig.bg}
-                      stroke={ds.colorConfig.border}
-                      strokeWidth={ds.isMostRecent ? (isHovered ? 3.5 : 2.5) : isHovered ? 2.8 : 1.8}
-                      className="cursor-pointer transition-all duration-200"
-                      style={{
-                        fillOpacity: isHovered
-                          ? 0.22
-                          : ds.isMostRecent
-                          ? 0.12
-                          : 0.07,
-                      }}
-                      onMouseEnter={() => setHoveredStageKey(ds.key)}
-                      onMouseLeave={() => setHoveredStageKey(null)}
-                    />
-
-                    {ds.points.map((pt: any, ptIdx: number) => {
-                      const isPtActive =
-                        activeTooltip?.etapaKey === ds.key &&
-                        activeTooltip?.order === pt.order;
-
-                      return (
-                        <circle
-                          key={`pt-${subKey}-${ds.key}-${ptIdx}`}
-                          cx={pt.x}
-                          cy={pt.y}
-                          r={isPtActive ? 8 : ds.isMostRecent ? 5.5 : 4.5}
-                          fill={ds.colorConfig.border}
-                          stroke="#ffffff"
-                          strokeWidth={isPtActive ? 2.5 : 1.5}
-                          className="cursor-pointer transition-all duration-150 hover:opacity-100"
-                          onMouseEnter={() => {
-                            setHoveredStageKey(ds.key);
-                            setHoveredCardOrder(pt.order);
-                            setActiveTooltip({
-                              act: pt.act,
-                              order: pt.order,
-                              etapaLabel: ds.label,
-                              etapaKey: ds.key,
-                              valor: pt.val,
-                              x: pt.x,
-                              y: pt.y,
-                              allStages: activeEtapasList.map((et) => {
-                                const stData = student.etapas[et.key];
-                                const v = stData?.actuacionesResultados?.[pt.order] ?? 1;
-                                const cfg = ETAPA_COLORS[et.key] || ds.colorConfig;
-                                return {
-                                  key: et.key,
-                                  label: et.label,
-                                  valor: v,
-                                  color: cfg.border,
-                                };
-                              }),
-                            });
-                          }}
-                          onMouseLeave={() => {
-                            setHoveredStageKey(null);
-                            setHoveredCardOrder(null);
-                            setActiveTooltip(null);
-                          }}
-                        />
-                      );
-                    })}
-                  </g>
-                );
-              })}
-
-              {/* Números en el perímetro exterior indicando cada actuación */}
-              {spokes.map((spoke) => {
-                const isBadgeHovered = hoveredCardOrder === spoke.act.order;
-                return (
-                  <g
-                    key={`badge-${subKey}-${spoke.act.order}`}
-                    data-testid={`radar-vertex-badge-${spoke.act.order}`}
-                    className="cursor-pointer transition-transform duration-150"
-                    onMouseEnter={() => setHoveredCardOrder(spoke.act.order)}
-                    onMouseLeave={() => setHoveredCardOrder(null)}
+                  {/* Indicadores numéricos de escala en el eje superior */}
+                  <text
+                    x={cxCol + 6}
+                    y={cyCol - r1Col + 14}
+                    className="text-[10px] font-bold fill-slate-400 select-none pointer-events-none"
                   >
-                    <circle
-                      cx={spoke.nx}
-                      cy={spoke.ny}
-                      r={isBadgeHovered ? 16 : 13}
-                      fill={isBadgeHovered ? '#2563eb' : '#ffffff'}
-                      stroke={isBadgeHovered ? '#1d4ed8' : '#cbd5e1'}
-                      strokeWidth={isBadgeHovered ? 2.2 : 1.5}
-                      className="transition-all duration-150 drop-shadow-xs"
-                    />
-                    <text
-                      x={spoke.nx}
-                      y={spoke.ny + 4}
-                      textAnchor="middle"
-                      style={{ fontSize: isBadgeHovered ? '11px' : '10px' }}
-                      className={`font-extrabold select-none pointer-events-none transition-colors duration-150 ${
-                        isBadgeHovered ? 'fill-white' : 'fill-slate-700'
-                      }`}
-                    >
-                      {spoke.act.order}
-                    </text>
-                  </g>
-                );
-              })}
+                    1 (NO)
+                  </text>
+                  <text
+                    x={cxCol + 6}
+                    y={cyCol - r2Col + 14}
+                    className="text-[10px] font-bold fill-slate-400 select-none pointer-events-none"
+                  >
+                    2 (SÍ)
+                  </text>
+
+                  {/* Ejes radiales (Spokes) hacia cada vértice exterior del radar */}
+                  {spokes.map((spoke) => {
+                    const isHovered = hoveredCardOrder === spoke.act.order;
+                    return (
+                      <g key={`spoke-${subKey}-${spoke.act.order}`}>
+                        <line
+                          x1={cxCol}
+                          y1={cyCol}
+                          x2={spoke.vx}
+                          y2={spoke.vy}
+                          stroke={isHovered ? '#93c5fd' : '#e2e8f0'}
+                          strokeWidth={isHovered ? 1.8 : 1.2}
+                          className="transition-colors duration-150"
+                        />
+                        <line
+                          x1={spoke.vx}
+                          y1={spoke.vy}
+                          x2={spoke.nx}
+                          y2={spoke.ny}
+                          stroke={isHovered ? '#2563eb' : '#cbd5e1'}
+                          strokeWidth={isHovered ? 2 : 1}
+                          strokeDasharray={isHovered ? undefined : '2 2'}
+                          className="transition-colors duration-150"
+                        />
+                      </g>
+                    );
+                  })}
+
+                  {/* Polígonos de evaluación */}
+                  {datasets.map((ds) => {
+                    const isHovered = hoveredStageKey === ds.key;
+                    return (
+                      <g key={`dataset-${subKey}-${ds.key}`} className="transition-all duration-200">
+                        <polygon
+                          points={ds.pointsString}
+                          fill={ds.colorConfig.bg}
+                          stroke={ds.colorConfig.border}
+                          strokeWidth={ds.isMostRecent ? (isHovered ? 3.5 : 2.5) : isHovered ? 2.8 : 1.8}
+                          className="cursor-pointer transition-all duration-200"
+                          style={{
+                            fillOpacity: isHovered
+                              ? 0.22
+                              : ds.isMostRecent
+                              ? 0.12
+                              : 0.07,
+                          }}
+                          onMouseEnter={() => setHoveredStageKey(ds.key)}
+                          onMouseLeave={() => setHoveredStageKey(null)}
+                        />
+
+                        {ds.points.map((pt: any, ptIdx: number) => {
+                          const isPtActive =
+                            activeTooltip?.etapaKey === ds.key &&
+                            activeTooltip?.order === pt.order;
+
+                          return (
+                            <circle
+                              key={`pt-${subKey}-${ds.key}-${ptIdx}`}
+                              cx={pt.x}
+                              cy={pt.y}
+                              r={isPtActive ? 8 : ds.isMostRecent ? 5.5 : 4.5}
+                              fill={ds.colorConfig.border}
+                              stroke="#ffffff"
+                              strokeWidth={isPtActive ? 2.5 : 1.5}
+                              className="cursor-pointer transition-all duration-150 hover:opacity-100"
+                              onMouseEnter={() => {
+                                setHoveredStageKey(ds.key);
+                                setHoveredCardOrder(pt.order);
+                                setActiveTooltip({
+                                  act: pt.act,
+                                  order: pt.order,
+                                  etapaLabel: ds.label,
+                                  etapaKey: ds.key,
+                                  valor: pt.val,
+                                  x: pt.x,
+                                  y: pt.y,
+                                  allStages: activeEtapasList.map((et) => {
+                                    const stData = student.etapas[et.key];
+                                    const v = stData?.actuacionesResultados?.[pt.order] ?? 1;
+                                    const cfg = ETAPA_COLORS[et.key] || ds.colorConfig;
+                                    return {
+                                      key: et.key,
+                                      label: et.label,
+                                      valor: v,
+                                      color: cfg.border,
+                                    };
+                                  }),
+                                });
+                              }}
+                              onMouseLeave={() => {
+                                setHoveredStageKey(null);
+                                setHoveredCardOrder(null);
+                                setActiveTooltip(null);
+                              }}
+                            />
+                          );
+                        })}
+                      </g>
+                    );
+                  })}
+
+                  {/* Números en el perímetro exterior indicando cada actuación */}
+                  {spokes.map((spoke) => {
+                    const isBadgeHovered = hoveredCardOrder === spoke.act.order;
+                    return (
+                      <g
+                        key={`badge-${subKey}-${spoke.act.order}`}
+                        data-testid={`radar-vertex-badge-${spoke.act.order}`}
+                        className="cursor-pointer transition-transform duration-150"
+                        onMouseEnter={() => setHoveredCardOrder(spoke.act.order)}
+                        onMouseLeave={() => setHoveredCardOrder(null)}
+                      >
+                        <circle
+                          cx={spoke.nx}
+                          cy={spoke.ny}
+                          r={isBadgeHovered ? 16 : 13}
+                          fill={isBadgeHovered ? '#2563eb' : '#ffffff'}
+                          stroke={isBadgeHovered ? '#1d4ed8' : '#cbd5e1'}
+                          strokeWidth={isBadgeHovered ? 2.2 : 1.5}
+                          className="transition-all duration-150 drop-shadow-xs"
+                        />
+                        <text
+                          x={spoke.nx}
+                          y={spoke.ny + 4}
+                          textAnchor="middle"
+                          style={{ fontSize: isBadgeHovered ? '11px' : '10px' }}
+                          className={`font-extrabold select-none pointer-events-none transition-colors duration-150 ${
+                            isBadgeHovered ? 'fill-white' : 'fill-slate-700'
+                          }`}
+                        >
+                          {spoke.act.order}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </>
+              )}
             </svg>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mt-2">
@@ -2422,19 +2888,31 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
     // Si no está dividido, usa los ajustes de vista completa (cardAdjustments).
     const activeAdjustments = isSplitBlock ? splitCardAdjustments : cardAdjustments;
 
+    const isCenterDiana = effectiveCenterChartType === 'diana';
     const subSvgHeight = Math.max(800, 540 + M * 18);
     const subCx = svgWidth / 2;
     const subCy = subSvgHeight / 2;
     const subR = 240; // Radio exterior del radar web (mismo tamaño que en diseño de columnas: RCol = 240)
+    const subRBadges = 254; // Radio de badges exteriores para Diana Polar
     const subR1 = subR / 2; // Radio intermedio (Anillo 1: NO acertó) = 120
     const subR2 = subR; // Radio exterior (Anillo 2: SÍ acertó) = 240
 
     const rawSpokes = actuacionesList.map((act, i) => {
-      const angle = -Math.PI / 2 + (2 * Math.PI * i) / M;
+      let angle = -Math.PI / 2 + (2 * Math.PI * i) / M;
+      let sx: number;
+      let sy: number;
+      if (isCenterDiana) {
+        const midDeg = -90 + (i + 0.5) * (360 / M);
+        const rad = (midDeg * Math.PI) / 180;
+        angle = rad;
+        sx = subCx + subRBadges * Math.cos(rad);
+        sy = subCy + subRBadges * Math.sin(rad);
+      } else {
+        sx = subCx + subR * Math.cos(angle);
+        sy = subCy + subR * Math.sin(angle);
+      }
       const cos = Math.cos(angle);
       const sin = Math.sin(angle);
-      const sx = subCx + subR * cos;
-      const sy = subCy + subR * sin;
 
       let side: "top" | "bottom" | "right" | "left" = "right";
       if (Math.abs(cos) <= 0.16 && sin < 0) side = "top";
@@ -2674,17 +3152,23 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
           className="w-full h-auto select-none overflow-visible"
           preserveAspectRatio="xMidYMid meet"
         >
-          {/* Anillos de escala */}
-          <circle cx={subCx} cy={subCy} r={subR1} fill="none" stroke="#e2e8f0" strokeWidth="1.5" strokeDasharray="4 4" />
-          <circle cx={subCx} cy={subCy} r={subR2} fill="none" stroke="#cbd5e1" strokeWidth="1.5" />
-          <circle cx={subCx} cy={subCy} r="3.5" fill="#94a3b8" />
-          <text x={subCx + 5} y={subCy - subR1 + 13} className="text-[10px] font-bold fill-slate-400 select-none pointer-events-none">1 (NO)</text>
-          <text x={subCx + 5} y={subCy - subR2 + 13} className="text-[10px] font-bold fill-slate-400 select-none pointer-events-none">2 (SÍ)</text>
+          {isCenterDiana ? (
+            renderDianaCenterCore(subCx, subCy, 64, 224, subRBadges, actuacionesList, `flot-${subKey}`, false, true)
+          ) : (
+            <>
+              {/* Anillos de escala */}
+              <circle cx={subCx} cy={subCy} r={subR1} fill="none" stroke="#e2e8f0" strokeWidth="1.5" strokeDasharray="4 4" />
+              <circle cx={subCx} cy={subCy} r={subR2} fill="none" stroke="#cbd5e1" strokeWidth="1.5" />
+              <circle cx={subCx} cy={subCy} r="3.5" fill="#94a3b8" />
+              <text x={subCx + 5} y={subCy - subR1 + 13} className="text-[10px] font-bold fill-slate-400 select-none pointer-events-none">1 (NO)</text>
+              <text x={subCx + 5} y={subCy - subR2 + 13} className="text-[10px] font-bold fill-slate-400 select-none pointer-events-none">2 (SÍ)</text>
 
-          {/* Ejes radiales */}
-          {rawSpokes.map((spoke) => (
-            <line key={"spoke-" + subKey + "-" + spoke.index} x1={subCx} y1={subCy} x2={spoke.sx} y2={spoke.sy} stroke="#e2e8f0" strokeWidth="1.5" />
-          ))}
+              {/* Ejes radiales */}
+              {rawSpokes.map((spoke) => (
+                <line key={"spoke-" + subKey + "-" + spoke.index} x1={subCx} y1={subCy} x2={spoke.sx} y2={spoke.sy} stroke="#e2e8f0" strokeWidth="1.5" />
+              ))}
+            </>
+          )}
 
           {/* Líneas guía hacia tarjetas */}
           {rawSpokes.map((spoke) => {
@@ -2735,73 +3219,74 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
             );
           })}
 
-          {/* Polígonos de evaluación */}
-          {subDatasets.map((ds) => {
-            const isHovered = hoveredStageKey === ds.key;
-            return (
-              <g key={"dataset-group-" + subKey + "-" + ds.key} className="transition-all duration-200">
-                <polygon
-                  points={ds.pointsString}
-                  fill={ds.colorConfig.bg}
-                  stroke={ds.colorConfig.border}
-                  strokeWidth={ds.isMostRecent ? (isHovered ? 3.5 : 2.5) : isHovered ? 2.8 : 1.8}
-                  className="cursor-pointer transition-all duration-200"
-                  style={{
-                    fillOpacity: isHovered ? 0.22 : ds.isMostRecent ? 0.12 : 0.07,
-                  }}
-                  onMouseEnter={() => setHoveredStageKey(ds.key)}
-                  onMouseLeave={() => setHoveredStageKey(null)}
-                />
-                {ds.points.map((pt: any, ptIdx: number) => {
-                  const isPtActive =
-                    activeTooltip?.etapaKey === ds.key &&
-                    activeTooltip?.order === pt.order;
+          {/* Polígonos de evaluación (solo en modo radar) */}
+          {!isCenterDiana &&
+            subDatasets.map((ds) => {
+              const isHovered = hoveredStageKey === ds.key;
+              return (
+                <g key={"dataset-group-" + subKey + "-" + ds.key} className="transition-all duration-200">
+                  <polygon
+                    points={ds.pointsString}
+                    fill={ds.colorConfig.bg}
+                    stroke={ds.colorConfig.border}
+                    strokeWidth={ds.isMostRecent ? (isHovered ? 3.5 : 2.5) : isHovered ? 2.8 : 1.8}
+                    className="cursor-pointer transition-all duration-200"
+                    style={{
+                      fillOpacity: isHovered ? 0.22 : ds.isMostRecent ? 0.12 : 0.07,
+                    }}
+                    onMouseEnter={() => setHoveredStageKey(ds.key)}
+                    onMouseLeave={() => setHoveredStageKey(null)}
+                  />
+                  {ds.points.map((pt: any, ptIdx: number) => {
+                    const isPtActive =
+                      activeTooltip?.etapaKey === ds.key &&
+                      activeTooltip?.order === pt.order;
 
-                  return (
-                    <circle
-                      key={"pt-" + subKey + "-" + ds.key + "-" + ptIdx}
-                      cx={pt.x}
-                      cy={pt.y}
-                      r={isPtActive ? 8 : ds.isMostRecent ? 5.5 : 4.5}
-                      fill={ds.colorConfig.border}
-                      stroke="#ffffff"
-                      strokeWidth={isPtActive ? 2.5 : 1.5}
-                      className="cursor-pointer transition-all duration-150 hover:opacity-100"
-                      onMouseEnter={() => {
-                        setHoveredStageKey(ds.key);
-                        setHoveredCardOrder(pt.order);
-                        setActiveTooltip({
-                          act: pt.act,
-                          order: pt.order,
-                          etapaLabel: ds.label,
-                          etapaKey: ds.key,
-                          valor: pt.val,
-                          x: pt.x,
-                          y: pt.y,
-                          allStages: activeEtapasList.map((et) => {
-                            const stData = student.etapas[et.key];
-                            const v = stData?.actuacionesResultados?.[pt.order] ?? 1;
-                            const cfg = ETAPA_COLORS[et.key] || ds.colorConfig;
-                            return {
-                              key: et.key,
-                              label: et.label,
-                              valor: v,
-                              color: cfg.border,
-                            };
-                          }),
-                        });
-                      }}
-                      onMouseLeave={() => {
-                        setHoveredStageKey(null);
-                        setHoveredCardOrder(null);
-                        setActiveTooltip(null);
-                      }}
-                    />
-                  );
-                })}
-              </g>
-            );
-          })}
+                    return (
+                      <circle
+                        key={"pt-" + subKey + "-" + ds.key + "-" + ptIdx}
+                        cx={pt.x}
+                        cy={pt.y}
+                        r={isPtActive ? 8 : ds.isMostRecent ? 5.5 : 4.5}
+                        fill={ds.colorConfig.border}
+                        stroke="#ffffff"
+                        strokeWidth={isPtActive ? 2.5 : 1.5}
+                        className="cursor-pointer transition-all duration-150 hover:opacity-100"
+                        onMouseEnter={() => {
+                          setHoveredStageKey(ds.key);
+                          setHoveredCardOrder(pt.order);
+                          setActiveTooltip({
+                            act: pt.act,
+                            order: pt.order,
+                            etapaLabel: ds.label,
+                            etapaKey: ds.key,
+                            valor: pt.val,
+                            x: pt.x,
+                            y: pt.y,
+                            allStages: activeEtapasList.map((et) => {
+                              const stData = student.etapas[et.key];
+                              const v = stData?.actuacionesResultados?.[pt.order] ?? 1;
+                              const cfg = ETAPA_COLORS[et.key] || ds.colorConfig;
+                              return {
+                                key: et.key,
+                                label: et.label,
+                                valor: v,
+                                color: cfg.border,
+                              };
+                            }),
+                          });
+                        }}
+                        onMouseLeave={() => {
+                          setHoveredStageKey(null);
+                          setHoveredCardOrder(null);
+                          setActiveTooltip(null);
+                        }}
+                      />
+                    );
+                  })}
+                </g>
+              );
+            })}
 
           {/* Tarjetas interactivas Callout */}
           {rawSpokes.map((spoke) => {
@@ -3621,6 +4106,8 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
           <DocenteRadarControls
             chartLayoutMode={chartLayoutMode}
             onLayoutModeSelect={handleLayoutModeSelect}
+            centerChartType={effectiveCenterChartType}
+            onCenterChartTypeChange={handleCenterChartTypeChange}
             orderDirection={effectiveOrderDirection}
             onOrderDirectionChange={handleOrderDirectionChange}
             splitInTwo={effectiveSplitInTwo}

@@ -107,7 +107,7 @@ export default async function handler(
     return res.status(405).json({ error: 'Método no permitido. Use GET.' });
   }
 
-  const { dni, evalId, token, layout, split, dir, scale } = req.query;
+  const { dni, evalId, token, layout, split, dir, scale, center } = req.query;
 
   if (!dni || !evalId || !token) {
     return res.status(400).json({
@@ -435,6 +435,7 @@ export default async function handler(
           : 'diana',
       splitInTwo: split === '1' || split === 'true' || layout === 'dividido',
       orderDirection: dir === 'antihorario' ? 'antihorario' : 'horario',
+      centerChartType: center === 'diana' ? 'diana' : 'radar',
       textScale: scale && !isNaN(Number(scale)) ? Number(scale) : 1,
     };
 

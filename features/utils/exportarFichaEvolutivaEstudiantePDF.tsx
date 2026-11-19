@@ -22,6 +22,8 @@ import {
   getCoincidentRadiusOffset,
   describeAnnularSector,
   getEtapaColorConfig,
+  loadStoredCenterChartType,
+  RadarCenterChartType,
 } from '../../components/reportes/estudiante/DocenteActuacionesRadarChart';
 import {
   determinarNivelActuacion,
@@ -86,6 +88,7 @@ export interface EstudianteEvolutivoPDFProps {
   >;
   activeStages?: Record<string, boolean>;
   chartLayoutMode?: 'columnas' | 'flotante' | 'dividido' | 'diana';
+  centerChartType?: RadarCenterChartType;
   splitInTwo?: boolean;
   orderDirection?: 'horario' | 'antihorario';
   cardAdjustments?: Record<
@@ -1559,6 +1562,7 @@ const VectorRadarChartPDFFlotante: React.FC<{
     }
   >;
   textScale?: number;
+  centerChartType?: RadarCenterChartType;
 }> = ({
   orderedActuaciones,
   sortedEtapas,
@@ -1568,9 +1572,13 @@ const VectorRadarChartPDFFlotante: React.FC<{
   activeStages = { edi: true, ep1: true, ep2: true },
   cardAdjustments = {},
   textScale = 1.0,
+  centerChartType = 'radar',
 }) => {
   const N = orderedActuaciones.length;
   if (N === 0) return null;
+
+  const isCenterDiana = centerChartType === 'diana';
+  const rBadgesFlot = 216;
 
   // Centro geométrico y radios adaptados al lienzo apaisado A4 completo (Landscape)
   // ViewBox: 0 0 1000 656 (Aprovecha todo el ancho y alto disponible en A4)
@@ -1590,11 +1598,21 @@ const VectorRadarChartPDFFlotante: React.FC<{
   // Separa las tarjetas en zonas perimetrales (Top, Bottom, Right, Left)
   // y las distribuye vertical y horizontalmente ocupando todo el lienzo A4 sin colisiones.
   const rawSpokes = orderedActuaciones.map((act, i) => {
-    const angle = -Math.PI / 2 + (2 * Math.PI * i) / N;
+    let angle = -Math.PI / 2 + (2 * Math.PI * i) / N;
+    let sx: number;
+    let sy: number;
+    if (isCenterDiana) {
+      const midDeg = -90 + (i + 0.5) * (360 / N);
+      const rad = (midDeg * Math.PI) / 180;
+      angle = rad;
+      sx = cx + rBadgesFlot * Math.cos(rad);
+      sy = cy + rBadgesFlot * Math.sin(rad);
+    } else {
+      sx = cx + R * Math.cos(angle);
+      sy = cy + R * Math.sin(angle);
+    }
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
-    const sx = cx + R * cos;
-    const sy = cy + R * sin;
 
     // Clasificación direccional de zona
     let side: 'top' | 'bottom' | 'right' | 'left' = 'right';
@@ -1964,58 +1982,194 @@ const VectorRadarChartPDFFlotante: React.FC<{
   return (
     <View style={styles.radarContainerFlotante} wrap={false}>
       <Svg width={800} height={395} viewBox="0 0 1000 656">
-        {/* Anillo 1 (Interior: NO acertó = 1) */}
-        <Circle
-          cx={cx}
-          cy={cy}
-          r={r1}
-          fill="none"
-          stroke="#e2e8f0"
-          strokeWidth={1}
-          strokeDasharray="4 4"
-        />
+        {isCenterDiana ? (
+          <React.Fragment>
+            {/* Círculo guía exterior */}
+            <Circle
+              cx={cx}
+              cy={cy}
+              r={190}
+              fill="none"
+              stroke="#e2e8f0"
+              strokeWidth={1}
+              strokeDasharray="3 3"
+            />
 
-        {/* Anillo 2 (Exterior: SÍ acertó = 2) */}
-        <Circle
-          cx={cx}
-          cy={cy}
-          r={r2}
-          fill="none"
-          stroke="#cbd5e1"
-          strokeWidth={1.2}
-        />
+            {/* Celdas anulares concéntricas por evaluación y actuación */}
+            {activeEtapasList.map((etapa, k) => {
+              const rHubFlot = 55;
+              const rMaxFlot = 190;
+              const ringThicknessFlot = (rMaxFlot - rHubFlot) / Math.max(1, activeEtapasList.length);
+              const innerR = rHubFlot + k * ringThicknessFlot;
+              const outerR = innerR + ringThicknessFlot;
+              const etapaColor = getEtapaColorConfig(etapa.key, k);
+              const sliceAngle = 360 / Math.max(N, 1);
 
-        {/* Hub central */}
-        <Circle cx={cx} cy={cy} r={2.5} fill="#94a3b8" />
+              return (
+                <G key={`pdf-flot-diana-ring-${etapa.key}-${k}`}>
+                  {rawSpokes.map(({ act }, i) => {
+                    const startDeg = -90 + i * sliceAngle;
+                    const endDeg = -90 + (i + 1) * sliceAngle;
+                    const val =
+                      studentEtapas[etapa.key]?.actuacionesResultados?.[act.order];
+                    let fillColor = '#f1f5f9';
+                    if (val === 2) {
+                      fillColor = etapaColor.border;
+                    } else if (val === 1) {
+                      fillColor = '#f43f5e';
+                    }
 
-        {/* Indicadores numéricos de escala en el eje superior */}
-        <Text
-          x={cx + 4}
-          y={cy - r1 + 3}
-          style={{ fontSize: 6, fill: '#94a3b8', fontFamily: 'Helvetica' }}
-        >
-          1 (NO)
-        </Text>
-        <Text
-          x={cx + 4}
-          y={cy - r2 + 3}
-          style={{ fontSize: 6, fill: '#94a3b8', fontFamily: 'Helvetica' }}
-        >
-          2 (SÍ)
-        </Text>
+                    const d = describeAnnularSector(
+                      cx,
+                      cy,
+                      innerR,
+                      outerR,
+                      startDeg,
+                      endDeg
+                    );
+                    return (
+                      <Path
+                        key={`pdf-flot-sector-${etapa.key}-${act.order}`}
+                        d={d}
+                        fill={fillColor}
+                        stroke="#ffffff"
+                        strokeWidth={1.2}
+                      />
+                    );
+                  })}
+                </G>
+              );
+            })}
 
-        {/* Ejes radiales (Spokes) hacia cada actuación */}
-        {spokeEndpoints.map((ep) => (
-          <Line
-            key={`spoke-${ep.index}`}
-            x1={cx}
-            y1={cy}
-            x2={ep.sx}
-            y2={ep.sy}
-            stroke="#e2e8f0"
-            strokeWidth={1}
-          />
-        ))}
+            {/* Centro / Hub de la Diana Polar */}
+            <Circle cx={cx} cy={cy} r={53} fill="#3b82f6" />
+            <Circle
+              cx={cx}
+              cy={cy}
+              r={49.5}
+              fill="none"
+              stroke="rgba(255,255,255,0.4)"
+              strokeWidth={1.5}
+            />
+            <Text
+              x={cx}
+              y={cy - 4}
+              style={{
+                fill: '#ffffff',
+                fontSize: 24,
+                fontFamily: 'Helvetica-Bold',
+                textAnchor: 'middle',
+              }}
+            >
+              {N}
+            </Text>
+            <Text
+              x={cx}
+              y={cy + 13}
+              style={{
+                fill: '#ffffff',
+                fontSize: 7.5,
+                fontFamily: 'Helvetica-Bold',
+                textAnchor: 'middle',
+              }}
+            >
+              HABILIDADES
+            </Text>
+
+            {/* Badges perimetrales con números 1..N y color del nivel de logro */}
+            {rawSpokes.map(({ act, sx, sy }) => {
+              const superadasAct = activeEtapasList.filter(
+                (et) =>
+                  studentEtapas[et.key]?.actuacionesResultados?.[act.order] === 2
+              ).length;
+              const nivelBadge = determinarNivelActuacion(
+                superadasAct,
+                activeEtapasList.length,
+                DEFAULT_NIVELES_ACTUACIONES
+              );
+
+              return (
+                <G key={`pdf-flot-diana-badge-${act.order}`}>
+                  <Circle
+                    cx={sx}
+                    cy={sy}
+                    r={8.5}
+                    fill="#ffffff"
+                    stroke={nivelBadge.color}
+                    strokeWidth={1.5}
+                  />
+                  <Text
+                    x={sx}
+                    y={sy + 2.5}
+                    textAnchor="middle"
+                    style={{
+                      fontSize: 7,
+                      fontFamily: 'Helvetica-Bold',
+                      fill: '#1e293b',
+                    }}
+                  >
+                    {act.order}
+                  </Text>
+                </G>
+              );
+            })}
+          </React.Fragment>
+        ) : (
+          <React.Fragment>
+            {/* Anillo 1 (Interior: NO acertó = 1) */}
+            <Circle
+              cx={cx}
+              cy={cy}
+              r={r1}
+              fill="none"
+              stroke="#e2e8f0"
+              strokeWidth={1}
+              strokeDasharray="4 4"
+            />
+
+            {/* Anillo 2 (Exterior: SÍ acertó = 2) */}
+            <Circle
+              cx={cx}
+              cy={cy}
+              r={r2}
+              fill="none"
+              stroke="#cbd5e1"
+              strokeWidth={1.2}
+            />
+
+            {/* Hub central */}
+            <Circle cx={cx} cy={cy} r={2.5} fill="#94a3b8" />
+
+            {/* Indicadores numéricos de escala en el eje superior */}
+            <Text
+              x={cx + 4}
+              y={cy - r1 + 3}
+              style={{ fontSize: 6, fill: '#94a3b8', fontFamily: 'Helvetica' }}
+            >
+              1 (NO)
+            </Text>
+            <Text
+              x={cx + 4}
+              y={cy - r2 + 3}
+              style={{ fontSize: 6, fill: '#94a3b8', fontFamily: 'Helvetica' }}
+            >
+              2 (SÍ)
+            </Text>
+
+            {/* Ejes radiales (Spokes) hacia cada actuación */}
+            {spokeEndpoints.map((ep) => (
+              <Line
+                key={`spoke-${ep.index}`}
+                x1={cx}
+                y1={cy}
+                x2={ep.sx}
+                y2={ep.sy}
+                stroke="#e2e8f0"
+                strokeWidth={1}
+              />
+            ))}
+          </React.Fragment>
+        )}
 
         {/* Líneas guía conectoras hacia las tarjetas contenedoras */}
         {spokeEndpoints.map((ep) => (
@@ -2028,67 +2182,70 @@ const VectorRadarChartPDFFlotante: React.FC<{
               stroke="#94a3b8"
               strokeWidth={0.9}
             />
-            <Circle cx={ep.sx} cy={ep.sy} r={2.0} fill="#94a3b8" />
+            {!isCenterDiana && (
+              <Circle cx={ep.sx} cy={ep.sy} r={2.0} fill="#94a3b8" />
+            )}
           </React.Fragment>
         ))}
 
         {/* Polígonos de evaluación: del más antiguo (edi) al más actual (ep2).
             En SVG, los últimos elementos se dibujan ENCIMA, por lo que el más actual queda superpuesto. */}
-        {activeEtapasList.map((etapa, idx) => {
-          const etapaData = studentEtapas[etapa.key];
-          if (!etapaData) return null;
+        {!isCenterDiana &&
+          activeEtapasList.map((etapa, idx) => {
+            const etapaData = studentEtapas[etapa.key];
+            if (!etapaData) return null;
 
-          const color =
-            PDF_ETAPA_COLORS[etapa.key] ||
-            (idx === 0
-              ? PDF_ETAPA_COLORS.edi
-              : idx === 1
-              ? PDF_ETAPA_COLORS.ep1
-              : PDF_ETAPA_COLORS.ep2);
+            const color =
+              PDF_ETAPA_COLORS[etapa.key] ||
+              (idx === 0
+                ? PDF_ETAPA_COLORS.edi
+                : idx === 1
+                ? PDF_ETAPA_COLORS.ep1
+                : PDF_ETAPA_COLORS.ep2);
 
-          const isMostRecent = idx === totalActive - 1;
+            const isMostRecent = idx === totalActive - 1;
 
-          // Coordenadas polares para cada actuación
-          const points = orderedActuaciones.map((act, i) => {
-            const val = etapaData.actuacionesResultados?.[act.order] ?? 1;
-            const offset = getCoincidentRadiusOffset(etapa.key, act.order, activeEtapasList, studentEtapas);
-            const rVal = (val * R) / 2 + offset;
-            const angle = spokeEndpoints[i].angle;
-            return {
-              x: cx + rVal * Math.cos(angle),
-              y: cy + rVal * Math.sin(angle),
-            };
-          });
+            // Coordenadas polares para cada actuación
+            const points = orderedActuaciones.map((act, i) => {
+              const val = etapaData.actuacionesResultados?.[act.order] ?? 1;
+              const offset = getCoincidentRadiusOffset(etapa.key, act.order, activeEtapasList, studentEtapas);
+              const rVal = (val * R) / 2 + offset;
+              const angle = spokeEndpoints[i].angle;
+              return {
+                x: cx + rVal * Math.cos(angle),
+                y: cy + rVal * Math.sin(angle),
+              };
+            });
 
-          const pointsString = points
-            .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-            .join(' ');
+            const pointsString = points
+              .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+              .join(' ');
 
-          return (
-            <React.Fragment key={`dataset-${etapa.key}`}>
-              {/* Polígono de área */}
-              <Polygon
-                points={pointsString}
-                fill={color.bg}
-                fillOpacity={isMostRecent ? 0.12 : (color.fillOpacity ?? 0.07)}
-                stroke={color.border}
-                strokeWidth={isMostRecent ? 2.5 : 1.5}
-              />
-              {/* Vértices circulares */}
-              {points.map((p, pIdx) => (
-                <Circle
-                  key={`pt-${etapa.key}-${pIdx}`}
-                  cx={p.x}
-                  cy={p.y}
-                  r={isMostRecent ? 3.5 : 2.5}
-                  fill={color.border}
-                  stroke="#ffffff"
-                  strokeWidth={0.8}
+            return (
+              <React.Fragment key={`dataset-${etapa.key}`}>
+                {/* Polígono de área */}
+                <Polygon
+                  points={pointsString}
+                  fill={color.bg}
+                  fillOpacity={isMostRecent ? 0.12 : (color.fillOpacity ?? 0.07)}
+                  stroke={color.border}
+                  strokeWidth={isMostRecent ? 2.5 : 1.5}
                 />
-              ))}
-            </React.Fragment>
-          );
-        })}
+                {/* Vértices circulares */}
+                {points.map((p, pIdx) => (
+                  <Circle
+                    key={`pt-${etapa.key}-${pIdx}`}
+                    cx={p.x}
+                    cy={p.y}
+                    r={isMostRecent ? 3.5 : 2.5}
+                    fill={color.border}
+                    stroke="#ffffff"
+                    strokeWidth={0.8}
+                  />
+                ))}
+              </React.Fragment>
+            );
+          })}
 
         {/* Tarjetas contenedoras de cada actuación pedagógica (Callout Cards) */}
         {spokeEndpoints.map((ep) => {
@@ -2249,6 +2406,7 @@ const VectorRadarChartPDFColumnas: React.FC<{
   activeStages?: Record<string, boolean>;
   orderDirection?: 'horario' | 'antihorario';
   textScale?: number;
+  centerChartType?: RadarCenterChartType;
 }> = ({
   orderedActuaciones,
   sortedEtapas,
@@ -2258,6 +2416,7 @@ const VectorRadarChartPDFColumnas: React.FC<{
   activeStages = { edi: true, ep1: true, ep2: true },
   orderDirection = 'horario',
   textScale = 1.0,
+  centerChartType = 'radar',
 }) => {
   const N = orderedActuaciones.length;
   if (N === 0) return null;
@@ -2382,155 +2541,304 @@ const VectorRadarChartPDFColumnas: React.FC<{
           {leftColumn.map(renderPdfCompactCard)}
         </View>
 
-        {/* Columna Central: Radar Limpio con Números en el Perímetro */}
+        {/* Columna Central: Radar Limpio con Números en el Perímetro o Diana Polar Concéntrica */}
         <View style={styles.radarCenterColumn}>
           <Svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
-            {/* Anillo 1 (NO = 1) */}
-            <Circle
-              cx={cx}
-              cy={cy}
-              r={r1}
-              fill="none"
-              stroke="#e2e8f0"
-              strokeWidth={1}
-              strokeDasharray="4 4"
-            />
-
-            {/* Anillo 2 (SÍ = 2) */}
-            <Circle
-              cx={cx}
-              cy={cy}
-              r={r2}
-              fill="none"
-              stroke="#cbd5e1"
-              strokeWidth={1.2}
-            />
-
-            {/* Hub Central */}
-            <Circle cx={cx} cy={cy} r={2.5} fill="#94a3b8" />
-
-            {/* Escala */}
-            <Text
-              x={cx + 4}
-              y={cy - r1 + 3}
-              style={{ fontSize: 6.5, fill: '#94a3b8', fontFamily: 'Helvetica' }}
-            >
-              1 (NO)
-            </Text>
-            <Text
-              x={cx + 4}
-              y={cy - r2 + 3}
-              style={{ fontSize: 6.5, fill: '#94a3b8', fontFamily: 'Helvetica' }}
-            >
-              2 (SÍ)
-            </Text>
-
-            {/* Ejes radiales (Spokes) */}
-            {spokeEndpoints.map((ep) => (
-              <Line
-                key={`spoke-col-${ep.index}`}
-                x1={cx}
-                y1={cy}
-                x2={ep.vx}
-                y2={ep.vy}
-                stroke="#e2e8f0"
-                strokeWidth={1}
-              />
-            ))}
-
-            {/* Conectores hacia badges numéricos */}
-            {spokeEndpoints.map((ep) => (
-              <Line
-                key={`spoke-tick-${ep.index}`}
-                x1={ep.vx}
-                y1={ep.vy}
-                x2={ep.nx}
-                y2={ep.ny}
-                stroke="#cbd5e1"
-                strokeWidth={0.8}
-                strokeDasharray="2 2"
-              />
-            ))}
-
-            {/* Polígonos de evaluación del más antiguo al más actual */}
-            {activeEtapasList.map((etapa, idx) => {
-              const etapaData = studentEtapas[etapa.key];
-              if (!etapaData) return null;
-
-              const color =
-                PDF_ETAPA_COLORS[etapa.key] ||
-                (idx === 0
-                  ? PDF_ETAPA_COLORS.edi
-                  : idx === 1
-                  ? PDF_ETAPA_COLORS.ep1
-                  : PDF_ETAPA_COLORS.ep2);
-
-              const isMostRecent = idx === totalActive - 1;
-
-              const points = orderedActuaciones.map((act, i) => {
-                const val = etapaData.actuacionesResultados?.[act.order] ?? 1;
-                const offset = getCoincidentRadiusOffset(etapa.key, act.order, activeEtapasList, studentEtapas);
-                const rVal = (val * R) / 2 + offset;
-                const angle = spokeEndpoints[i].angle;
-                return {
-                  x: cx + rVal * Math.cos(angle),
-                  y: cy + rVal * Math.sin(angle),
-                };
-              });
-
-              const pointsString = points
-                .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-                .join(' ');
-
-              return (
-                <React.Fragment key={`dataset-col-${etapa.key}`}>
-                  <Polygon
-                    points={pointsString}
-                    fill={color.bg}
-                    fillOpacity={isMostRecent ? 0.12 : (color.fillOpacity ?? 0.07)}
-                    stroke={color.border}
-                    strokeWidth={isMostRecent ? 2.5 : 1.5}
-                  />
-                  {points.map((p, pIdx) => (
-                    <Circle
-                      key={`pt-col-${etapa.key}-${pIdx}`}
-                      cx={p.x}
-                      cy={p.y}
-                      r={isMostRecent ? 3.5 : 2.5}
-                      fill={color.border}
-                      stroke="#ffffff"
-                      strokeWidth={0.8}
-                    />
-                  ))}
-                </React.Fragment>
-              );
-            })}
-
-            {/* Badges numéricos en el perímetro exterior */}
-            {spokeEndpoints.map((ep) => (
-              <React.Fragment key={`badge-outer-${ep.act.order}`}>
+            {centerChartType === 'diana' ? (
+              <React.Fragment>
+                {/* Círculo guía exterior */}
                 <Circle
-                  cx={ep.nx}
-                  cy={ep.ny}
-                  r={8}
-                  fill="#ffffff"
-                  stroke="#94a3b8"
-                  strokeWidth={0.8}
+                  cx={cx}
+                  cy={cy}
+                  r={115}
+                  fill="none"
+                  stroke="#e2e8f0"
+                  strokeWidth={1}
+                  strokeDasharray="3 3"
+                />
+
+                {/* Celdas anulares concéntricas por evaluación y actuación */}
+                {activeEtapasList.map((etapa, k) => {
+                  const rHubCol = 34;
+                  const rMaxCol = 115;
+                  const ringThicknessCol = (rMaxCol - rHubCol) / Math.max(1, activeEtapasList.length);
+                  const innerR = rHubCol + k * ringThicknessCol;
+                  const outerR = innerR + ringThicknessCol;
+                  const etapaColor = getEtapaColorConfig(etapa.key, k);
+                  const sliceAngle = 360 / Math.max(N, 1);
+
+                  return (
+                    <G key={`pdf-col-diana-ring-${etapa.key}-${k}`}>
+                      {spokeEndpoints.map(({ act }, i) => {
+                        const startDeg = isAntihorario
+                          ? -90 - (i + 1) * sliceAngle
+                          : -90 + i * sliceAngle;
+                        const endDeg = isAntihorario
+                          ? -90 - i * sliceAngle
+                          : -90 + (i + 1) * sliceAngle;
+
+                        const val =
+                          studentEtapas[etapa.key]?.actuacionesResultados?.[act.order];
+                        let fillColor = '#f1f5f9';
+                        if (val === 2) {
+                          fillColor = etapaColor.border;
+                        } else if (val === 1) {
+                          fillColor = '#f43f5e';
+                        }
+
+                        const d = describeAnnularSector(
+                          cx,
+                          cy,
+                          innerR,
+                          outerR,
+                          startDeg,
+                          endDeg
+                        );
+                        return (
+                          <Path
+                            key={`pdf-col-sector-${etapa.key}-${act.order}`}
+                            d={d}
+                            fill={fillColor}
+                            stroke="#ffffff"
+                            strokeWidth={1.2}
+                          />
+                        );
+                      })}
+                    </G>
+                  );
+                })}
+
+                {/* Centro / Hub de la Diana Polar */}
+                <Circle cx={cx} cy={cy} r={32} fill="#3b82f6" />
+                <Circle
+                  cx={cx}
+                  cy={cy}
+                  r={29.5}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.4)"
+                  strokeWidth={1.2}
                 />
                 <Text
-                  x={ep.nx}
-                  y={ep.ny + 2.4}
-                  textAnchor="middle"
+                  x={cx}
+                  y={cy - 3}
                   style={{
-                    fontSize: 6,
+                    fill: '#ffffff',
+                    fontSize: 16,
                     fontFamily: 'Helvetica-Bold',
-                    fill: '#1e293b',
+                    textAnchor: 'middle',
                   }}
                 >
-                  {ep.act.order}
+                  {N}
                 </Text>
+                <Text
+                  x={cx}
+                  y={cy + 8}
+                  style={{
+                    fill: '#ffffff',
+                    fontSize: 5,
+                    fontFamily: 'Helvetica-Bold',
+                    textAnchor: 'middle',
+                  }}
+                >
+                  HABILIDADES
+                </Text>
+
+                {/* Badges perimetrales con números 1..N y color del nivel de logro */}
+                {spokeEndpoints.map(({ act }, i) => {
+                  const sliceAngle = 360 / Math.max(N, 1);
+                  const midDeg = isAntihorario
+                    ? -90 - (i + 0.5) * sliceAngle
+                    : -90 + (i + 0.5) * sliceAngle;
+                  const rad = (midDeg * Math.PI) / 180;
+                  const bx = cx + 134 * Math.cos(rad);
+                  const by = cy + 134 * Math.sin(rad);
+
+                  const superadasAct = activeEtapasList.filter(
+                    (et) =>
+                      studentEtapas[et.key]?.actuacionesResultados?.[act.order] === 2
+                  ).length;
+                  const nivelBadge = determinarNivelActuacion(
+                    superadasAct,
+                    activeEtapasList.length,
+                    DEFAULT_NIVELES_ACTUACIONES
+                  );
+
+                  return (
+                    <G key={`pdf-col-diana-badge-${act.order}`}>
+                      <Circle
+                        cx={bx}
+                        cy={by}
+                        r={6.5}
+                        fill="#ffffff"
+                        stroke={nivelBadge.color}
+                        strokeWidth={1.2}
+                      />
+                      <Text
+                        x={bx}
+                        y={by + 2}
+                        textAnchor="middle"
+                        style={{
+                          fontSize: 5,
+                          fontFamily: 'Helvetica-Bold',
+                          fill: '#1e293b',
+                        }}
+                      >
+                        {act.order}
+                      </Text>
+                    </G>
+                  );
+                })}
               </React.Fragment>
-            ))}
+            ) : (
+              <React.Fragment>
+                {/* Anillo 1 (NO = 1) */}
+                <Circle
+                  cx={cx}
+                  cy={cy}
+                  r={r1}
+                  fill="none"
+                  stroke="#e2e8f0"
+                  strokeWidth={1}
+                  strokeDasharray="4 4"
+                />
+
+                {/* Anillo 2 (SÍ = 2) */}
+                <Circle
+                  cx={cx}
+                  cy={cy}
+                  r={r2}
+                  fill="none"
+                  stroke="#cbd5e1"
+                  strokeWidth={1.2}
+                />
+
+                {/* Hub Central */}
+                <Circle cx={cx} cy={cy} r={2.5} fill="#94a3b8" />
+
+                {/* Escala */}
+                <Text
+                  x={cx + 4}
+                  y={cy - r1 + 3}
+                  style={{ fontSize: 6.5, fill: '#94a3b8', fontFamily: 'Helvetica' }}
+                >
+                  1 (NO)
+                </Text>
+                <Text
+                  x={cx + 4}
+                  y={cy - r2 + 3}
+                  style={{ fontSize: 6.5, fill: '#94a3b8', fontFamily: 'Helvetica' }}
+                >
+                  2 (SÍ)
+                </Text>
+
+                {/* Ejes radiales (Spokes) */}
+                {spokeEndpoints.map((ep) => (
+                  <Line
+                    key={`spoke-col-${ep.index}`}
+                    x1={cx}
+                    y1={cy}
+                    x2={ep.vx}
+                    y2={ep.vy}
+                    stroke="#e2e8f0"
+                    strokeWidth={1}
+                  />
+                ))}
+
+                {/* Conectores hacia badges numéricos */}
+                {spokeEndpoints.map((ep) => (
+                  <Line
+                    key={`spoke-tick-${ep.index}`}
+                    x1={ep.vx}
+                    y1={ep.vy}
+                    x2={ep.nx}
+                    y2={ep.ny}
+                    stroke="#cbd5e1"
+                    strokeWidth={0.8}
+                    strokeDasharray="2 2"
+                  />
+                ))}
+
+                {/* Polígonos de evaluación del más antiguo al más actual */}
+                {activeEtapasList.map((etapa, idx) => {
+                  const etapaData = studentEtapas[etapa.key];
+                  if (!etapaData) return null;
+
+                  const color =
+                    PDF_ETAPA_COLORS[etapa.key] ||
+                    (idx === 0
+                      ? PDF_ETAPA_COLORS.edi
+                      : idx === 1
+                      ? PDF_ETAPA_COLORS.ep1
+                      : PDF_ETAPA_COLORS.ep2);
+
+                  const isMostRecent = idx === totalActive - 1;
+
+                  const points = orderedActuaciones.map((act, i) => {
+                    const val = etapaData.actuacionesResultados?.[act.order] ?? 1;
+                    const offset = getCoincidentRadiusOffset(etapa.key, act.order, activeEtapasList, studentEtapas);
+                    const rVal = (val * R) / 2 + offset;
+                    const angle = spokeEndpoints[i].angle;
+                    return {
+                      x: cx + rVal * Math.cos(angle),
+                      y: cy + rVal * Math.sin(angle),
+                    };
+                  });
+
+                  const pointsString = points
+                    .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+                    .join(' ');
+
+                  return (
+                    <React.Fragment key={`dataset-col-${etapa.key}`}>
+                      <Polygon
+                        points={pointsString}
+                        fill={color.bg}
+                        fillOpacity={isMostRecent ? 0.12 : (color.fillOpacity ?? 0.07)}
+                        stroke={color.border}
+                        strokeWidth={isMostRecent ? 2.5 : 1.5}
+                      />
+                      {points.map((p, pIdx) => (
+                        <Circle
+                          key={`pt-col-${etapa.key}-${pIdx}`}
+                          cx={p.x}
+                          cy={p.y}
+                          r={isMostRecent ? 3.5 : 2.5}
+                          fill={color.border}
+                          stroke="#ffffff"
+                          strokeWidth={0.8}
+                        />
+                      ))}
+                    </React.Fragment>
+                  );
+                })}
+
+                {/* Badges numéricos en el perímetro exterior */}
+                {spokeEndpoints.map((ep) => (
+                  <React.Fragment key={`badge-outer-${ep.act.order}`}>
+                    <Circle
+                      cx={ep.nx}
+                      cy={ep.ny}
+                      r={8}
+                      fill="#ffffff"
+                      stroke="#94a3b8"
+                      strokeWidth={0.8}
+                    />
+                    <Text
+                      x={ep.nx}
+                      y={ep.ny + 2.4}
+                      textAnchor="middle"
+                      style={{
+                        fontSize: 6,
+                        fontFamily: 'Helvetica-Bold',
+                        fill: '#1e293b',
+                      }}
+                    >
+                      {ep.act.order}
+                    </Text>
+                  </React.Fragment>
+                ))}
+              </React.Fragment>
+            )}
           </Svg>
         </View>
 
@@ -2901,12 +3209,18 @@ export const FichaEvolutivaEstudiantePages: React.FC<
   splitInTwo = false,
   orderDirection = 'horario',
   cardAdjustments: externalCardAdjustments,
+  centerChartType: controlledCenterChartType,
   textScale,
   qrCodeDataUrl,
   qrVerificationUrl,
 }) => {
   // Factor de escala de tipografía efectivo para el PDF
   const effectiveTextScale = parsePdfTextScale(textScale);
+
+  // Tipo de gráfico central efectivo (radar poligonal o diana polar)
+  const effectiveCenterChartType =
+    controlledCenterChartType ||
+    (typeof window !== 'undefined' ? loadStoredCenterChartType() : 'radar');
 
   // Catálogo ordenado y normalizado de actuaciones pedagógicas
   const orderedActuaciones = [...(catalogoActuaciones || [])]
@@ -2977,6 +3291,7 @@ export const FichaEvolutivaEstudiantePages: React.FC<
             activeStages={activeStages}
             // Si el usuario movió/agrandó tarjetas en la vista dividida, se respetan; si no, actúa el algoritmo puro
             cardAdjustments={effectiveCardAdjustments}
+            centerChartType={effectiveCenterChartType}
             textScale={effectiveTextScale}
           />
         );
@@ -2990,6 +3305,7 @@ export const FichaEvolutivaEstudiantePages: React.FC<
           evaluacionActual={evaluacionActual}
           activeStages={activeStages}
           orderDirection={orderDirection}
+          centerChartType={effectiveCenterChartType}
           textScale={effectiveTextScale}
         />
       );
@@ -3085,6 +3401,7 @@ export const FichaEvolutivaEstudiantePages: React.FC<
             evaluacionActual={evaluacionActual}
             activeStages={activeStages}
             cardAdjustments={effectiveCardAdjustments}
+            centerChartType={effectiveCenterChartType}
             textScale={effectiveTextScale}
           />
         ) : (
@@ -3096,6 +3413,7 @@ export const FichaEvolutivaEstudiantePages: React.FC<
             evaluacionActual={evaluacionActual}
             activeStages={activeStages}
             orderDirection={orderDirection}
+            centerChartType={effectiveCenterChartType}
             textScale={effectiveTextScale}
           />
         )
@@ -3184,6 +3502,9 @@ export const asegurarQrPropsEstudiante = async (
   const isSplit = Boolean(props.splitInTwo || props.chartLayoutMode === 'dividido');
   const dir = props.orderDirection || 'horario';
   const scale = props.textScale !== undefined ? String(props.textScale) : '1';
+  const centerType =
+    props.centerChartType ||
+    (typeof window !== 'undefined' ? loadStoredCenterChartType() : 'radar');
 
   const queryParams = new URLSearchParams({
     dni,
@@ -3200,6 +3521,9 @@ export const asegurarQrPropsEstudiante = async (
   }
   if (scale && scale !== '1') {
     queryParams.set('scale', scale);
+  }
+  if (centerType && centerType !== 'radar') {
+    queryParams.set('center', centerType);
   }
 
   const targetUrl = `${origin}/descargar-ficha?${queryParams.toString()}`;

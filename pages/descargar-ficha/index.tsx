@@ -14,15 +14,15 @@ import {
 import { RiLoader4Line } from 'react-icons/ri';
 import type { EstudianteEvolutivoPDFProps } from '@/features/utils/exportarFichaEvolutivaEstudiantePDF';
 
-const getLayoutLabel = (mode?: string, split?: boolean) => {
+const getLayoutLabel = (mode?: string, split?: boolean, center?: string) => {
   if (split || mode === 'dividido') return 'Diseño Dividido (2 págs)';
   switch (mode) {
     case 'diana':
       return 'Diseño Diana Polar';
     case 'flotante':
-      return 'Diseño Radar Flotante';
+      return center === 'diana' ? 'Diseño Flotante (Diana Polar)' : 'Diseño Red Conectada';
     case 'columnas':
-      return 'Diseño Columnas Laterales';
+      return center === 'diana' ? 'Diseño Columnas (Diana Polar)' : 'Diseño Columnas Laterales';
     default:
       return 'Diseño Oficial';
   }
@@ -30,7 +30,7 @@ const getLayoutLabel = (mode?: string, split?: boolean) => {
 
 export default function DescargarFichaPublicPage() {
   const router = useRouter();
-  const { dni, evalId, token, layout, split, dir, scale } = router.query;
+  const { dni, evalId, token, layout, split, dir, scale, center } = router.query;
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +66,7 @@ export default function DescargarFichaPublicPage() {
         if (split) apiParams.set('split', String(split));
         if (dir) apiParams.set('dir', String(dir));
         if (scale) apiParams.set('scale', String(scale));
+        if (center) apiParams.set('center', String(center));
 
         const res = await fetch(`/api/descargar-ficha?${apiParams.toString()}`);
 
@@ -93,12 +94,15 @@ export default function DescargarFichaPublicPage() {
         const rawDir = typeof dir === 'string' ? dir.toLowerCase().trim() : '';
         const effectiveDir = rawDir === 'antihorario' ? 'antihorario' : (data.props?.orderDirection || 'horario');
         const effectiveScale = scale && !isNaN(Number(scale)) ? Number(scale) : (data.props?.textScale || 1);
+        const rawCenter = typeof center === 'string' ? center.toLowerCase().trim() : '';
+        const effectiveCenter = rawCenter === 'diana' ? 'diana' : (data.props?.centerChartType || 'radar');
 
         const propsFinal: EstudianteEvolutivoPDFProps = {
           ...data.props,
           chartLayoutMode: effectiveLayout,
           splitInTwo: effectiveSplit,
           orderDirection: effectiveDir,
+          centerChartType: effectiveCenter,
           textScale: effectiveScale,
         };
 
@@ -112,7 +116,7 @@ export default function DescargarFichaPublicPage() {
     };
 
     fetchData();
-  }, [router.isReady, dni, evalId, token, layout, split, dir, scale]);
+  }, [router.isReady, dni, evalId, token, layout, split, dir, scale, center]);
 
   // 2. Función para compilar y descargar el PDF oficial
   const handleDownloadPdf = async (customProps?: EstudianteEvolutivoPDFProps) => {
@@ -236,7 +240,7 @@ export default function DescargarFichaPublicPage() {
                       </span>
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
                         <MdDonutLarge className="w-2.5 h-2.5 text-indigo-500" />
-                        {getLayoutLabel(propsEstudiante.chartLayoutMode, propsEstudiante.splitInTwo)}
+                        {getLayoutLabel(propsEstudiante.chartLayoutMode, propsEstudiante.splitInTwo, propsEstudiante.centerChartType)}
                       </span>
                     </div>
                     <h2 className="text-base font-extrabold text-slate-900 leading-snug">
