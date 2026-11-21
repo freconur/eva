@@ -1,0 +1,297 @@
+/* ==========================================================================
+   EVALUACION SCOPE BADGE & POPOVER (UGEL EXCLUSIVA VS REGIONAL)
+   ========================================================================== */
+
+/* Contenedor del trigger interactivo */
+.badgeWrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  vertical-align: middle;
+}
+
+/* Base del botón distintivo */
+.badgeTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 9999px;
+  font-family: inherit;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  text-decoration: none;
+  background: transparent;
+  padding: 0;
+  outline: none;
+}
+
+.badgeTrigger:focus-visible {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #9333ea;
+}
+
+/* Tamaños */
+.sizeXs {
+  font-size: 0.68rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.sizeSm {
+  font-size: 0.72rem;
+  padding: 0.25rem 0.6rem;
+}
+
+.sizeMd {
+  font-size: 0.8rem;
+  padding: 0.32rem 0.75rem;
+}
+
+/* ── ESTILO: EVALUACIÓN EXCLUSIVA UGEL (PÚRPURA / VIOLETA) ── */
+.badgeExclusive {
+  background: #fbf7ff;
+  color: #6b21a8;
+  border-color: #d8b4fe;
+  box-shadow: 0 1px 2px rgba(147, 51, 234, 0.08);
+}
+
+.badgeExclusive:hover {
+  background: #f3e8ff;
+  border-color: #c084fc;
+  color: #581c87;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px -1px rgba(147, 51, 234, 0.16);
+}
+
+.badgeIconExclusive {
+  font-size: 0.85em;
+  color: #9333ea;
+  flex-shrink: 0;
+}
+
+.exclusivePulseDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background-color: #a855f7;
+  box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7);
+  animation: pulseExclusive 2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes pulseExclusive {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 5px rgba(168, 85, 247, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(168, 85, 247, 0);
+  }
+}
+
+/* ── ESTILO: EVALUACIÓN GLOBAL / REGIONAL (AZUL / SKY) ── */
+.badgeGlobal {
+  background: #f0f9ff;
+  color: #0369a1;
+  border-color: #bae6fd;
+  box-shadow: 0 1px 2px rgba(2, 132, 199, 0.05);
+}
+
+.badgeGlobal:hover {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+  color: #075985;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px -1px rgba(2, 132, 199, 0.12);
+}
+
+.badgeIconGlobal {
+  font-size: 0.85em;
+  color: #0284c7;
+  flex-shrink: 0;
+}
+
+/* ── POPOVER FLOTANTE (PORTAL A BODY) ── */
+.popoverCard {
+  position: fixed;
+  z-index: 99999;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow:
+    0 10px 25px -5px rgba(15, 23, 42, 0.18),
+    0 8px 10px -6px rgba(15, 23, 42, 0.1),
+    0 0 0 1px rgba(15, 23, 42, 0.08);
+  padding: 1rem;
+  animation: popoverFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: auto;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.popoverCardExclusive {
+  border-top: 3px solid #9333ea;
+}
+
+.popoverCardGlobal {
+  border-top: 3px solid #0284c7;
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Cabecera del popover */
+.popoverHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.popoverTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.popoverIconCircleExclusive {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f3e8ff;
+  color: #9333ea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.popoverIconCircleGlobal {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.popoverCategoryText {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.popoverCategoryTextExclusive {
+  color: #7e22ce;
+}
+
+.popoverCategoryTextGlobal {
+  color: #0369a1;
+}
+
+.popoverCloseBtn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.popoverCloseBtn:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+/* Cuerpo del Popover */
+.popoverBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.highlightPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.highlightPillExclusive {
+  background: #faf5ff;
+  color: #6b21a8;
+  border: 1px solid #e9d5ff;
+}
+
+.highlightPillGlobal {
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.highlightPillIcon {
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.popoverDescription {
+  font-size: 0.78rem;
+  color: #475569;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Pie del Popover */
+.popoverFooter {
+  margin-top: 0.4rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  color: #10b981;
+  font-weight: 600;
+}
+
+.popoverFooterGlobal {
+  color: #0284c7;
+}
+
+.footerCheckIcon {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}

@@ -159,6 +159,13 @@ export interface DirectorTendenciasTabProps {
   isAuditing?: boolean;
 }
 
+// Caché en memoria a nivel de módulo para evitar lecturas repetidas de etapas al alternar pestañas
+const globalTendenciasEtapasCache = new Map<string, Record<string, EtapaData>>();
+
+export const clearTendenciasEtapasCache = () => {
+  globalTendenciasEtapasCache.clear();
+};
+
 export const DirectorTendenciasTab: React.FC<DirectorTendenciasTabProps> = ({
   evaluacion,
   datosPorMes,
@@ -523,8 +530,20 @@ export const DirectorTendenciasTab: React.FC<DirectorTendenciasTabProps> = ({
   // =========================================================================
   // CARGA Y MAPEO LONGITUDINAL DE LAS 3 ETAPAS DEL ÁREA: EDI, EP1, EP2
   // =========================================================================
-  const [etapasCache, setEtapasCache] = useState<Record<string, EtapaData>>({});
+  const tendenciasCacheKey = useMemo(() => {
+    return `${evaluacion?.id || ''}_${dniDocente || ''}_${dniDirector || ''}_${yearSelected || ''}_${monthSelected || ''}`;
+  }, [evaluacion?.id, dniDocente, dniDirector, yearSelected, monthSelected]);
+
+  const [etapasCache, setEtapasCache] = useState<Record<string, EtapaData>>(() => {
+    return (tendenciasCacheKey && globalTendenciasEtapasCache.get(tendenciasCacheKey)) || {};
+  });
   const [loadingEtapas, setLoadingEtapas] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (tendenciasCacheKey && globalTendenciasEtapasCache.has(tendenciasCacheKey)) {
+      setEtapasCache(globalTendenciasEtapasCache.get(tendenciasCacheKey)!);
+    }
+  }, [tendenciasCacheKey]);
 
   // 1. Registrar inmediatamente los datos de la evaluación actualmente activa
   useEffect(() => {
@@ -555,19 +574,25 @@ export const DirectorTendenciasTab: React.FC<DirectorTendenciasTabProps> = ({
 
     const avg = total > 0 ? Number((sumPts / total).toFixed(2)) : 0;
 
-    setEtapasCache((prevCache) => ({
-      ...prevCache,
-      [evalId]: {
-        promedio: avg,
-        totalEstudiantes: total,
-        satisfactorio: sat,
-        proceso: proc,
-        inicio: ini,
-        previo: prev,
-        hasData: total > 0,
-      },
-    }));
-  }, [evaluacion?.id, evaluacion?.nivelYPuntaje, estudiantesFiltrados]);
+    setEtapasCache((prevCache) => {
+      const nextCache = {
+        ...prevCache,
+        [evalId]: {
+          promedio: avg,
+          totalEstudiantes: total,
+          satisfactorio: sat,
+          proceso: proc,
+          inicio: ini,
+          previo: prev,
+          hasData: total > 0,
+        },
+      };
+      if (tendenciasCacheKey) {
+        globalTendenciasEtapasCache.set(tendenciasCacheKey, nextCache);
+      }
+      return nextCache;
+    });
+  }, [evaluacion?.id, evaluacion?.nivelYPuntaje, estudiantesFiltrados, tendenciasCacheKey]);
 
   // 2. Cargar asíncronamente las etapas restantes asignadas (EDI, EP1, EP2)
   useEffect(() => {
@@ -734,7 +759,13 @@ export const DirectorTendenciasTab: React.FC<DirectorTendenciasTabProps> = ({
 
       if (isMounted) {
         if (Object.keys(updates).length > 0) {
-          setEtapasCache((prev) => ({ ...prev, ...updates }));
+          setEtapasCache((prev) => {
+            const next = { ...prev, ...updates };
+            if (tendenciasCacheKey) {
+              globalTendenciasEtapasCache.set(tendenciasCacheKey, next);
+            }
+            return next;
+          });
         }
         setLoadingEtapas(false);
       }

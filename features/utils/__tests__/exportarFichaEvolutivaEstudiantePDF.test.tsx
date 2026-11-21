@@ -1,6 +1,10 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
+jest.mock('@/firebase/firebase.config', () => ({
+  db: {},
+}));
+
 // Mock de @react-pdf/renderer para entorno Jest jsdom
 jest.mock('@react-pdf/renderer', () => {
   const React = require('react');
@@ -516,12 +520,12 @@ describe('exportarFichaEvolutivaEstudiantePDF', () => {
       expect(screen.queryByText(/Progresiva 2/i)).not.toBeInTheDocument();
       expect(screen.queryByText('Evaluación Progresiva 2 (Noviembre)')).not.toBeInTheDocument();
 
-      // En la cabecera, la mini-tabla muestra todas las etapas con sus puntajes y guión para las no evaluadas
+      // En la cabecera, la mini-tabla muestra todas las etapas con sus aciertos/puntajes y guión para las no evaluadas
       expect(screen.getByText('EDI')).toBeInTheDocument();
       expect(screen.getByText('EP1')).toBeInTheDocument();
       expect(screen.getByText('EP2')).toBeInTheDocument();
-      expect(screen.getByText('14 pts')).toBeInTheDocument();
-      expect(screen.getByText('18 pts')).toBeInTheDocument();
+      expect(screen.getAllByText('2/3').length).toBe(2);
+      expect(screen.getAllByText('67% aciertos').length).toBe(2);
       expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(2);
       unmount();
 

@@ -59,6 +59,11 @@ import {
   RadarCenterChartType,
   loadStoredCenterChartType,
 } from '@/components/reportes/estudiante/DocenteActuacionesRadarChart';
+import { DirectorSeccionRadarChart } from './DirectorSeccionRadarChart';
+import {
+  useNivelesActuacionesConfig,
+  determinarNivelActuacion,
+} from '@/features/hooks/useNivelesActuacionesConfig';
 import { searchAndRankStudents } from '@/components/reportes/estudiante/searchEstudiantesUtils';
 import type { EstudianteEvolutivoPDFProps } from '@/features/utils/exportarFichaEvolutivaEstudiantePDF';
 
@@ -138,6 +143,7 @@ export interface SeccionDetalleAnalytics {
   label: string;
   docenteNombre: string;
   totalEstudiantes: number;
+  estudiantes?: EstudianteEvolutivo[];
   etapas: Record<string, SeccionEtapaDetalle>;
   deltaPuntaje: number;
   deltaPorcentaje: number;
@@ -250,6 +256,8 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
   // Secciones activas para la comparativa en el Radar (por defecto solo las primeras 3 para no saturar)
   const [activeCompareSections, setActiveCompareSections] = useState<Record<string, boolean>>({});
   const [showIeBenchmark, setShowIeBenchmark] = useState<boolean>(true);
+  const [searchQueryComparativa, setSearchQueryComparativa] = useState<string>('');
+  const [highlightedComparativaOrder, setHighlightedComparativaOrder] = useState<number | null>(null);
 
   // Estado para el Buscador Centralizado Spotlight tipo Command Palette (Ctrl + K)
   const [isSpotlightOpen, setIsSpotlightOpen] = useState<boolean>(false);
@@ -261,6 +269,9 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Configuración global de niveles por actuación en Firestore (Autonomía, Consolidación, Iniciándose, Por desarrollar)
+  const { niveles: nivelesActuacionGlobal } = useNivelesActuacionesConfig();
 
   // Modos de visualización del Gráfico Radar Individual ('columnas', 'flotante' o 'diana')
   const [radarLayoutMode, setRadarLayoutMode] = useState<'columnas' | 'flotante' | 'diana'>('diana');
@@ -514,6 +525,7 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
         label,
         docenteNombre,
         totalEstudiantes: estudiantesGrupo.length,
+        estudiantes: estudiantesGrupo,
         etapas: etapasObj,
         deltaPuntaje: deltaPts,
         deltaPorcentaje: deltaPct,
@@ -538,10 +550,8 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
 
   // 1.2 Configuración de datasets dinámicos para el Radar de Comparativa de Salones en Chart.js
   const seccionRadarChartData = useMemo(() => {
-    const labels = catalogoActuaciones.map((act) => {
-      const txt = act.actuacion || `Actuación ${act.order}`;
-      return txt.length > 25 ? `${act.order}. ${txt.slice(0, 23)}...` : `${act.order}. ${txt}`;
-    });
+    // Vértices limpios numerados del 1 al M para máxima claridad y legibilidad en el mapa radial
+    const labels = catalogoActuaciones.map((act) => String(act.order));
 
     // Solo se grafican las secciones seleccionadas por el usuario (las 3 primeras por defecto)
     const datasets: any[] = seccionesResumen
@@ -562,8 +572,10 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
           borderWidth: 2.5,
           pointBackgroundColor: color,
           pointBorderColor: '#ffffff',
-          pointHoverRadius: 6,
-          pointRadius: 4,
+          pointHoverRadius: 7,
+          pointRadius: catalogoActuaciones.map((act) =>
+            highlightedComparativaOrder === act.order ? 7 : 4
+          ),
         };
       });
 
@@ -581,8 +593,10 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
           borderWidth: 2,
           pointBackgroundColor: '#475569',
           pointBorderColor: '#ffffff',
-          pointHoverRadius: 5,
-          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointRadius: catalogoActuaciones.map((act) =>
+            highlightedComparativaOrder === act.order ? 6 : 3
+          ),
           borderDash: [5, 5],
         });
       }
@@ -596,7 +610,118 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
     comparativaEtapaKey,
     catalogoActuaciones,
     seccionesResumen,
+    highlightedComparativaOrder,
   ]);
+
+  // Estudiantes tomados en cuenta para la distribución por nivel en la comparativa de habilidades:
+  const targetEstudiantesComparativa = useMemo(() => {
+    if (selectedSeccion) {
+      const secObj = seccionesResumen.find((s) => s.id === selectedSeccion);
+      if (secObj && secObj.estudiantes.length > 0) return secObj.estudiantes;
+    }
+    if (showIeBenchmark) {
+      return estudiantesEvolutivos;
+    }
+    const activeSecIds = new Set(
+      seccionesResumen.filter((s) => activeCompareSections[s.id] ?? false).map((s) => s.id)
+    );
+    if (activeSecIds.size > 0) {
+      return estudiantesEvolutivos.filter((e) =>
+        activeSecIds.has(String(e.seccion || 'sin_seccion').trim())
+      );
+    }
+    return estudiantesEvolutivos;
+  }, [selectedSeccion, seccionesResumen, showIeBenchmark, activeCompareSections, estudiantesEvolutivos]);
+
+  // Distribución real individual de estudiantes por cada nivel de logro pedagógico en la etapa seleccionada
+  const distribucionPorActuacionMap = useMemo(() => {
+    const map: Record<
+      number,
+      {
+        total: number;
+        autonomia: number;
+        consolidacion: number;
+        iniciandose: number;
+        por_desarrollo: number;
+        pctAutonomia: number;
+        pctConsolidacion: number;
+        pctIniciandose: number;
+        pctPorDesarrollo: number;
+      }
+    > = {};
+
+    const etapaIndex = etapasConfiguradas.findIndex((e) => e.key === comparativaEtapaKey);
+    const maxEtapaIdx = etapaIndex >= 0 ? etapaIndex : etapasConfiguradas.length - 1;
+    const activeEtapasList = etapasConfiguradas.slice(0, maxEtapaIdx + 1);
+
+    catalogoActuaciones.forEach((act) => {
+      let aut = 0;
+      let con = 0;
+      let ini = 0;
+      let des = 0;
+      let total = 0;
+
+      targetEstudiantesComparativa.forEach((student) => {
+        let superadas = 0;
+        let tieneEvaluacion = false;
+
+        for (let j = 0; j <= maxEtapaIdx; j++) {
+          const et = activeEtapasList[j];
+          if (et && student.etapas?.[et.key]) {
+            tieneEvaluacion = true;
+            if (student.etapas[et.key]?.actuacionesResultados?.[act.order] === 2) {
+              superadas++;
+            }
+          }
+        }
+
+        if (tieneEvaluacion) {
+          total++;
+          const nivel = determinarNivelActuacion(
+            superadas,
+            activeEtapasList.length,
+            nivelesActuacionGlobal
+          );
+          const k = nivel?.key || 'por_desarrollo';
+          if (k === 'autonomia') aut++;
+          else if (k === 'consolidacion') con++;
+          else if (k === 'iniciandose') ini++;
+          else des++;
+        }
+      });
+
+      map[act.order] = {
+        total,
+        autonomia: aut,
+        consolidacion: con,
+        iniciandose: ini,
+        por_desarrollo: des,
+        pctAutonomia: total > 0 ? Math.round((aut / total) * 100) : 0,
+        pctConsolidacion: total > 0 ? Math.round((con / total) * 100) : 0,
+        pctIniciandose: total > 0 ? Math.round((ini / total) * 100) : 0,
+        pctPorDesarrollo: total > 0 ? Math.round((des / total) * 100) : 0,
+      };
+    });
+
+    return map;
+  }, [
+    catalogoActuaciones,
+    targetEstudiantesComparativa,
+    etapasConfiguradas,
+    comparativaEtapaKey,
+    nivelesActuacionGlobal,
+  ]);
+
+  // Lista filtrada del catálogo de habilidades para la búsqueda en la tabla comparativa
+  const filteredCatalogoComparativa = useMemo(() => {
+    if (!searchQueryComparativa.trim()) return catalogoActuaciones;
+    const q = searchQueryComparativa.toLowerCase().trim();
+    return catalogoActuaciones.filter((act) => {
+      const matchOrder = String(act.order).includes(q);
+      const matchText = (act.actuacion || act.pregunta || '').toLowerCase().includes(q);
+      return matchOrder || matchText;
+    });
+  }, [catalogoActuaciones, searchQueryComparativa]);
 
   // 1.3 Opciones visuales avanzadas de Chart.js para el Radar de Secciones
   const seccionRadarOptions = useMemo(() => {
@@ -621,8 +746,8 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
             color: 'rgba(226, 232, 240, 0.9)',
           },
           pointLabels: {
-            font: { size: 10, weight: '600' as const },
-            color: '#334155',
+            font: { size: 11, weight: 'bold' as const },
+            color: '#1e293b',
           },
         },
       },
@@ -641,7 +766,7 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
               if (!items || items.length === 0) return '';
               const idx = items[0].dataIndex;
               const act = catalogoActuaciones[idx];
-              return act ? `Actuación N° ${act.order}: ${act.actuacion}` : '';
+              return act ? `Actuación N° ${act.order}: ${act.actuacion || act.pregunta || ''}` : '';
             },
             label: (context: any) => {
               const datasetLabel = context.dataset.label || '';
@@ -1772,10 +1897,288 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
             </div>
           </div>
 
-          {/* Gráfico Radar de Comparativa de Salones */}
-          <div className="p-4 w-full flex flex-col items-center justify-center bg-white">
-            <div className="w-full max-w-[950px] h-[400px] sm:h-[480px] lg:h-[540px] relative">
-              <Radar data={seccionRadarChartData} options={seccionRadarOptions as any} />
+          {/* Disposición en 2 Columnas a Todo el Ancho (Gráfico a la Izquierda + Tabla Comparativa a la Derecha) */}
+          <div className="p-4 sm:p-5 w-full bg-white border-t border-slate-100">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full">
+              {/* Columna Izquierda: Radar Limpio Numerado */}
+              <div className="xl:col-span-5 flex flex-col items-center justify-center p-3 sm:p-4 bg-slate-50/50 rounded-3xl border border-slate-200/80 w-full shadow-2xs">
+                <div className="h-[440px] sm:h-[500px] w-full flex items-center justify-center relative">
+                  <Radar data={seccionRadarChartData} options={seccionRadarOptions as any} />
+                </div>
+                <div className="w-full mt-3 pt-2.5 border-t border-slate-200/80 flex items-center justify-between text-[11px] text-slate-500 font-semibold px-2">
+                  <span>Escala radial: <strong>0% a 100%</strong></span>
+                  <span>Vértices: <strong>1 a {catalogoActuaciones.length} habilidades</strong></span>
+                </div>
+              </div>
+
+              {/* Columna Derecha: Tabla Completa de Habilidades Evaluadas con Comparativa por Salón */}
+              <div className="xl:col-span-7 flex flex-col gap-3 w-full">
+                {/* Cabecera y Buscador de la tabla */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                      Detalle completo de habilidades por sección
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {catalogoActuaciones.length} habilidades · Tasa de logro por aula y distribución de estudiantes en {etapasConfiguradas.find((e) => e.key === comparativaEtapaKey)?.label || comparativaEtapaKey.toUpperCase()}
+                    </p>
+                  </div>
+
+                  {/* Barra de Búsqueda */}
+                  <div className="relative w-full sm:w-64">
+                    <MdSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchQueryComparativa}
+                      onChange={(e) => setSearchQueryComparativa(e.target.value)}
+                      placeholder="Buscar habilidad o N.°..."
+                      className="w-full pl-9 pr-8 py-1.5 text-xs rounded-xl border border-slate-200 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-2xs"
+                    />
+                    {searchQueryComparativa && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQueryComparativa('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                        title="Limpiar búsqueda"
+                      >
+                        <MdClose className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tabla Scrolleable Interactiva */}
+                <div className="border border-slate-200/90 rounded-2xl bg-white shadow-2xs overflow-hidden w-full">
+                  <div className="max-h-[500px] overflow-y-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="sticky top-0 bg-slate-100/95 backdrop-blur-xs border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider z-10">
+                        <tr>
+                          <th className="py-2.5 px-3 text-center w-10 shrink-0">N.°</th>
+                          <th className="py-2.5 px-3 min-w-[200px]">Habilidad Evaluada</th>
+                          {/* Columnas para cada salón activo */}
+                          {seccionesResumen
+                            .filter((sec) => activeCompareSections[sec.id] ?? false)
+                            .map((sec) => {
+                              const i = seccionesResumen.findIndex((s) => s.id === sec.id);
+                              const color = SECTION_COLORS[i % SECTION_COLORS.length];
+                              return (
+                                <th
+                                  key={`th-comp-sec-${sec.id}`}
+                                  className="py-2.5 px-2 text-center w-16 shrink-0"
+                                  style={{ color }}
+                                  title={`Sección ${sec.label}`}
+                                >
+                                  {sec.label}
+                                </th>
+                              );
+                            })}
+                          {/* Columna I.E. si está activa */}
+                          {showIeBenchmark && (
+                            <th className="py-2.5 px-2 text-center w-16 shrink-0 text-slate-700 font-extrabold" title="Promedio Institucional I.E.">
+                              I.E.
+                            </th>
+                          )}
+                          <th
+                            className="py-2.5 px-3 text-center min-w-[210px] shrink-0"
+                            title="Distribución de estudiantes por nivel formativo de desempeño individual"
+                          >
+                            <div className="flex flex-col items-center leading-tight">
+                              <span className="font-extrabold text-slate-700">Estudiantes por Nivel</span>
+                              <span className="text-[9px] text-slate-400 font-normal">Aut · Con · Ini · Des</span>
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredCatalogoComparativa.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={3 + seccionesResumen.filter((sec) => activeCompareSections[sec.id] ?? false).length + (showIeBenchmark ? 1 : 0)}
+                              className="py-8 text-center text-slate-400 text-xs"
+                            >
+                              No se encontraron habilidades que coincidan con la búsqueda.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredCatalogoComparativa.map((act) => {
+                            const isHovered = highlightedComparativaOrder === act.order;
+
+                            // Tasas de las secciones activas
+                            const activeSecs = seccionesResumen.filter((sec) => activeCompareSections[sec.id] ?? false);
+                            const tasasActivas = activeSecs.map((sec) => {
+                              const secMetrica = seccionEtapasMetricasMap[sec.id]?.etapas[comparativaEtapaKey];
+                              return secMetrica?.tasaLogroPorActuacion[act.order] ?? 0;
+                            });
+
+                            // Promedio entre las secciones activas (o I.E. si existe)
+                            const ieTasa = seccionEtapasMetricasMap['__global__']?.etapas[comparativaEtapaKey]?.tasaLogroPorActuacion[act.order];
+
+                            return (
+                              <tr
+                                key={`comp-row-${act.order}`}
+                                onMouseEnter={() => setHighlightedComparativaOrder(act.order)}
+                                onMouseLeave={() => setHighlightedComparativaOrder(null)}
+                                className={`transition-colors duration-150 ${
+                                  isHovered
+                                    ? 'bg-indigo-50/80 text-indigo-950 font-medium'
+                                    : 'hover:bg-slate-50/70 text-slate-700'
+                                }`}
+                              >
+                                {/* N.° */}
+                                <td className="py-2.5 px-3 text-center">
+                                  <span
+                                    className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold ${
+                                      isHovered
+                                        ? 'bg-indigo-600 text-white shadow-2xs'
+                                        : 'bg-slate-100 text-slate-700'
+                                    }`}
+                                  >
+                                    {act.order}
+                                  </span>
+                                </td>
+
+                                {/* Habilidad Evaluada (Texto completo sin truncar) */}
+                                <td className="py-2.5 px-3 text-slate-800 leading-snug">
+                                  <p className="font-medium">{act.actuacion || act.pregunta || `Actuación ${act.order}`}</p>
+                                </td>
+
+                                {/* Valores por sección activa */}
+                                {activeSecs.map((sec) => {
+                                  const i = seccionesResumen.findIndex((s) => s.id === sec.id);
+                                  const color = SECTION_COLORS[i % SECTION_COLORS.length];
+                                  const secMetrica = seccionEtapasMetricasMap[sec.id]?.etapas[comparativaEtapaKey];
+                                  const tasa = secMetrica?.tasaLogroPorActuacion[act.order] ?? 0;
+
+                                  return (
+                                    <td key={`cell-comp-${act.order}-${sec.id}`} className="py-2.5 px-2 text-center">
+                                      <span
+                                        className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-[10px] font-extrabold shadow-2xs text-white"
+                                        style={{ backgroundColor: color }}
+                                        title={`${sec.label}: ${tasa}% de acierto`}
+                                      >
+                                        {tasa}%
+                                      </span>
+                                    </td>
+                                  );
+                                })}
+
+                                {/* Columna I.E. */}
+                                {showIeBenchmark && (
+                                  <td className="py-2.5 px-2 text-center">
+                                    <span
+                                      className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-[10px] font-extrabold shadow-2xs bg-slate-700 text-white"
+                                      title={`Promedio I.E.: ${ieTasa ?? 0}%`}
+                                    >
+                                      {ieTasa ?? 0}%
+                                    </span>
+                                  </td>
+                                )}
+
+                                {/* Distribución individual de estudiantes por nivel */}
+                                <td className="py-2 px-3 text-center">
+                                  {(() => {
+                                    const dist = distribucionPorActuacionMap[act.order] || {
+                                      total: 0,
+                                      autonomia: 0,
+                                      consolidacion: 0,
+                                      iniciandose: 0,
+                                      por_desarrollo: 0,
+                                      pctAutonomia: 0,
+                                      pctConsolidacion: 0,
+                                      pctIniciandose: 0,
+                                      pctPorDesarrollo: 0,
+                                    };
+
+                                    return (
+                                      <div className="flex flex-col items-center gap-1 min-w-[190px]">
+                                        {/* Micro-píldoras con conteos exactos por nivel formativo */}
+                                        <div className="flex items-center justify-center gap-1 text-[11px] font-bold">
+                                          {/* Autonomía (Verde) */}
+                                          <span
+                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs"
+                                            title={`Autonomía: ${dist.autonomia} estudiante${dist.autonomia === 1 ? '' : 's'} (${dist.pctAutonomia}%)`}
+                                          >
+                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                            <span className="font-extrabold">{dist.autonomia}</span>
+                                            <span className="text-[9px] text-emerald-600/80 font-medium">Aut</span>
+                                          </span>
+
+                                          {/* Consolidación (Naranja) */}
+                                          <span
+                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-orange-50 text-orange-700 border border-orange-200/80 shadow-2xs"
+                                            title={`Consolidación: ${dist.consolidacion} estudiante${dist.consolidacion === 1 ? '' : 's'} (${dist.pctConsolidacion}%)`}
+                                          >
+                                            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
+                                            <span className="font-extrabold">{dist.consolidacion}</span>
+                                            <span className="text-[9px] text-orange-600/80 font-medium">Con</span>
+                                          </span>
+
+                                          {/* Iniciándose (Marrón/Café institucional) */}
+                                          <span
+                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/80 shadow-2xs"
+                                            title={`Iniciándose: ${dist.iniciandose} estudiante${dist.iniciandose === 1 ? '' : 's'} (${dist.pctIniciandose}%)`}
+                                          >
+                                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                                            <span className="font-extrabold">{dist.iniciandose}</span>
+                                            <span className="text-[9px] text-rose-600/80 font-medium">Ini</span>
+                                          </span>
+
+                                          {/* Por desarrollar (Plomo/Gris) */}
+                                          <span
+                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 text-slate-600 border border-slate-200/80 shadow-2xs"
+                                            title={`Por desarrollar: ${dist.por_desarrollo} estudiante${dist.por_desarrollo === 1 ? '' : 's'} (${dist.pctPorDesarrollo}%)`}
+                                          >
+                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                                            <span className="font-extrabold">{dist.por_desarrollo}</span>
+                                            <span className="text-[9px] text-slate-500 font-medium">Des</span>
+                                          </span>
+                                        </div>
+
+                                        {/* Barra de distribución apilada visual y delgada */}
+                                        {dist.total > 0 && (
+                                          <div
+                                            className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden flex shadow-2xs"
+                                            title={`Total: ${dist.total} estudiantes evaluados • Aut: ${dist.autonomia} | Con: ${dist.consolidacion} | Ini: ${dist.iniciandose} | Des: ${dist.por_desarrollo}`}
+                                          >
+                                            {dist.autonomia > 0 && (
+                                              <div
+                                                style={{ width: `${(dist.autonomia / dist.total) * 100}%` }}
+                                                className="h-full bg-emerald-500 transition-all duration-300"
+                                              />
+                                            )}
+                                            {dist.consolidacion > 0 && (
+                                              <div
+                                                style={{ width: `${(dist.consolidacion / dist.total) * 100}%` }}
+                                                className="h-full bg-orange-500 transition-all duration-300"
+                                              />
+                                            )}
+                                            {dist.iniciandose > 0 && (
+                                              <div
+                                                style={{ width: `${(dist.iniciandose / dist.total) * 100}%` }}
+                                                className="h-full bg-rose-500 transition-all duration-300"
+                                              />
+                                            )}
+                                            {dist.por_desarrollo > 0 && (
+                                              <div
+                                                style={{ width: `${(dist.por_desarrollo / dist.total) * 100}%` }}
+                                                className="h-full bg-slate-400 transition-all duration-300"
+                                              />
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2143,7 +2546,7 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
                   }`}
                 >
                   <MdTableChart className="w-4 h-4" />
-                  <span>{modalShowRadarTable ? 'Ver Radar' : 'Ver Matriz de Criterios'}</span>
+                  <span>{modalShowRadarTable ? 'Ver Gráfico' : 'Ver Matriz de Criterios'}</span>
                 </button>
               </div>
             </div>
@@ -2280,173 +2683,238 @@ export const DirectorEvolucionEstudiantesTab: React.FC<DirectorEvolucionEstudian
             className={`flex-1 w-full overflow-y-auto bg-slate-100/70 ${
               modalViewMode === 'estudiante' && modalVisualMode === 'radar'
                 ? 'p-2 sm:p-3 space-y-3'
-                : 'px-4 sm:px-6 md:px-8 py-6 space-y-6'
+                : 'px-3 sm:px-5 md:px-6 py-4 space-y-4'
             }`}
           >
             {modalViewMode === 'seccion' ? (
               /* ======================================================= */
               /* PERSPECTIVA 1: EVOLUCIÓN GLOBAL DEL SALÓN SELECCIONADO  */
               /* ======================================================= */
-              <div className="max-w-7xl mx-auto space-y-6 w-full animate-fadeIn">
-                {/* 1.1 Tarjetas de resumen por Etapa Evaluativa */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              <div className="w-full max-w-full space-y-4 animate-fadeIn">
+                {/* 1.1 Tarjetas de resumen por Etapa Evaluativa (Siempre en 1 sola fila con diseño atractivo y llamativo) */}
+                <div
+                  className="grid gap-3 sm:gap-3.5 w-full overflow-x-auto pb-1.5 scrollbar-thin"
+                  style={{
+                    gridTemplateColumns: `repeat(${Math.max(
+                      1,
+                      etapasConfiguradas.filter((etapa) => activeStages[etapa.key] ?? true).length
+                    )}, minmax(min(100%, 210px), 1fr))`,
+                  }}
+                >
                   {etapasConfiguradas
                     .filter((etapa) => activeStages[etapa.key] ?? true)
-                    .map((etapa) => {
+                    .map((etapa, idx) => {
                       const targetSecKey = modalSeccionId || selectedSeccion || '__global__';
                       const metrica = seccionEtapasMetricasMap[targetSecKey]?.etapas[etapa.key];
                       const pts = metrica?.promedioPuntaje || 0;
+                      const participantes = metrica?.totalParticipantes || 0;
+                      const porcentajeAciertos = metrica?.promedioPorcentaje || 0;
                       const nivelInfo = resolveNivelBadge(pts);
-                      const color = etapa.key === 'edi' ? '#2563eb' : etapa.key === 'ep1' ? '#f59e0b' : '#10b981';
+
+                      // Paleta de colores oficial por etapa
+                      const stageKey = etapa.key.toLowerCase();
+                      const color =
+                        stageKey === 'edi'
+                          ? '#2563eb'
+                          : stageKey === 'ep1'
+                          ? '#d97706'
+                          : stageKey === 'ep2'
+                          ? '#059669'
+                          : stageKey === 'ep3'
+                          ? '#7c3aed'
+                          : idx === 0
+                          ? '#2563eb'
+                          : idx === 1
+                          ? '#d97706'
+                          : idx === 2
+                          ? '#059669'
+                          : '#7c3aed';
+
+                      const isPending = participantes === 0 && pts === 0;
 
                       return (
                         <div
                           key={`modal-kpi-stage-${etapa.key}`}
-                          className="p-4 rounded-2xl border border-slate-200/90 bg-white shadow-2xs hover:shadow-xs transition-shadow"
+                          className="group relative bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between p-4 sm:p-5 border-t-4 text-left"
+                          style={{ borderTopColor: color }}
                         >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-                              <span className="text-xs font-bold text-slate-700 truncate">{etapa.label}</span>
+                          {/* Cabecera de la tarjeta: Nombre de etapa + Badge de Nivel */}
+                          <div>
+                            <div className="flex items-center justify-between gap-1.5 mb-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span
+                                  className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs transition-transform duration-200 group-hover:scale-125"
+                                  style={{ backgroundColor: color }}
+                                />
+                                <span className="text-xs font-bold text-slate-700 truncate" title={etapa.label}>
+                                  {etapa.label}
+                                </span>
+                              </div>
+                              <span
+                                className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 transition-colors uppercase tracking-wider"
+                                style={{
+                                  backgroundColor: isPending ? '#f1f5f9' : `${nivelInfo.color}15`,
+                                  borderColor: isPending ? '#cbd5e1' : `${nivelInfo.color}40`,
+                                  color: isPending ? '#64748b' : nivelInfo.color,
+                                }}
+                              >
+                                {isPending ? 'Pendiente' : nivelInfo.nombre}
+                              </span>
                             </div>
-                            <span
-                              className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border"
+
+                            {/* Métrica principal: Puntaje Promedio */}
+                            <div className="my-1.5 flex items-baseline gap-2">
+                              <span
+                                className={`text-3xl sm:text-4xl font-black tracking-tight ${
+                                  isPending ? 'text-slate-300' : 'text-slate-900'
+                                }`}
+                              >
+                                {isPending ? '--' : pts}
+                              </span>
+                              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                                {isPending ? 'por aplicar' : 'pts promedio'}
+                              </span>
+                            </div>
+
+                            {/* Subtítulo / Datos de evaluación: Aciertos y Evaluados */}
+                            <div className="flex items-center justify-between text-xs text-slate-500 font-medium pt-1">
+                              <span>
+                                Aciertos: <strong className="text-slate-800 font-black">{porcentajeAciertos}%</strong>
+                              </span>
+                              <span>
+                                Evaluados: <strong className="text-slate-800 font-black">{participantes}</strong>
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Barra de progreso visual inferior con el color de la etapa */}
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full mt-3 overflow-hidden shadow-2xs">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
                               style={{
-                                backgroundColor: `${nivelInfo.color}15`,
-                                borderColor: `${nivelInfo.color}40`,
-                                color: nivelInfo.color,
+                                width: `${Math.min(100, Math.max(0, porcentajeAciertos))}%`,
+                                backgroundColor: color,
                               }}
-                            >
-                              {nivelInfo.nombre}
-                            </span>
-                          </div>
-                          <div className="flex items-baseline gap-1 mt-1">
-                            <span className="text-2xl font-black text-slate-900">{pts}</span>
-                            <span className="text-xs text-slate-400 font-semibold">pts promedio</span>
-                          </div>
-                          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                            <span>Aciertos: <strong className="text-slate-700 font-bold">{metrica?.promedioPorcentaje || 0}%</strong></span>
-                            <span>Evaluados: <strong className="text-slate-700 font-bold">{metrica?.totalParticipantes || 0}</strong></span>
+                            />
                           </div>
                         </div>
                       );
                     })}
                 </div>
 
-                {/* 1.2 Radar de Competencias del Salón */}
+                {/* 1.2 Gráfico de Competencias del Salón (Radar con Modo Claro y Modo Oscuro) */}
                 {!modalShowRadarTable && (
-                  <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-2xs animate-fadeIn">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-slate-100 gap-2">
+                  <DirectorSeccionRadarChart
+                    catalogoActuaciones={catalogoActuaciones}
+                    seccionData={seccionEtapasMetricasMap[modalSeccionId || selectedSeccion || '__global__']}
+                    etapasConfiguradas={etapasConfiguradas}
+                    activeStages={activeStages}
+                    seccionLabel={modalSeccionItem?.label || 'Salón'}
+                    ieMetrica={
+                      modalSeccionId !== '__global__' && seccionEtapasMetricasMap['__global__']
+                        ? seccionEtapasMetricasMap['__global__']?.etapas[etapasConfiguradas[etapasConfiguradas.length - 1]?.key || 'actual']
+                        : undefined
+                    }
+                    onToggleStage={toggleStage}
+                  />
+                )}
+
+                {/* 1.3 Matriz de Desglose Pedagógico cuando activa 'Ver Matriz de Criterios' */}
+                {modalShowRadarTable && (
+                  <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs animate-fadeIn">
+                    <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                       <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-4 bg-emerald-600 rounded-xs" />
+                        <div className="w-2.5 h-4 bg-blue-600 rounded-xs" />
                         <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
-                          Radar de Competencias y Actuaciones Pedagógicas • {modalSeccionItem?.label}
+                          Matriz de Desglose Pedagógico por Actuación / Criterio ({catalogoActuaciones.length} criterios evaluados)
                         </h4>
                       </div>
-                      <span className="text-xs font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
-                        Escala 0 a 100% de Logro Pedagógico
+                      <span className="text-xs text-slate-500 font-semibold">
+                        Logro promedio del aula en cada etapa
                       </span>
                     </div>
-                    <div className="h-[480px] sm:h-[580px] md:h-[620px] w-full flex items-center justify-center relative">
-                      <Radar data={seccionModalRadarChartData} options={seccionRadarOptions as any} />
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="border-b border-slate-200 bg-slate-50/75 text-slate-600 font-bold">
+                            <th className="py-2.5 px-3 text-center w-12">N°</th>
+                            <th className="py-2.5 px-3 min-w-[240px]">Actuación / Competencia Pedagógica</th>
+                            {etapasConfiguradas
+                              .filter((e) => activeStages[e.key] ?? true)
+                              .map((e) => (
+                                <th key={`modal-th-criterio-${e.key}`} className="py-2.5 px-3 text-center min-w-[110px]">
+                                  {e.label}
+                                </th>
+                              ))}
+                            <th className="py-2.5 px-3 text-center min-w-[100px]">Variación (Δ)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {catalogoActuaciones.map((act) => {
+                            const targetSecKey = modalSeccionId || selectedSeccion || '__global__';
+                            const modalSecMetrica = seccionEtapasMetricasMap[targetSecKey];
+                            const activeEtapas = etapasConfiguradas.filter((e) => activeStages[e.key] ?? true);
+                            const firstEtapa = activeEtapas[0];
+                            const lastEtapa = activeEtapas[activeEtapas.length - 1];
+
+                            const firstTasa = firstEtapa ? (modalSecMetrica?.etapas[firstEtapa.key]?.tasaLogroPorActuacion[act.order] ?? 0) : 0;
+                            const lastTasa = lastEtapa ? (modalSecMetrica?.etapas[lastEtapa.key]?.tasaLogroPorActuacion[act.order] ?? 0) : 0;
+                            const deltaCriterio = Number((lastTasa - firstTasa).toFixed(1));
+
+                            return (
+                              <tr key={`modal-row-criterio-${act.order}`} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="py-2 px-3 text-center font-mono font-bold text-slate-500">
+                                  {act.order}
+                                </td>
+                                <td className="py-2 px-3">
+                                  <span className="font-semibold text-slate-800">{act.actuacion}</span>
+                                </td>
+                                {activeEtapas.map((etapa) => {
+                                  const metricaEtapa = modalSecMetrica?.etapas[etapa.key];
+                                  const tasa = metricaEtapa?.tasaLogroPorActuacion[act.order] ?? 0;
+
+                                  return (
+                                    <td key={`modal-cell-crit-${act.order}-${etapa.key}`} className="py-2 px-3 text-center">
+                                      <div className="flex flex-col items-center">
+                                        <span className="font-extrabold text-slate-900 text-xs">
+                                          {tasa}%
+                                        </span>
+                                        <div className="w-16 h-1 rounded-full bg-slate-100 overflow-hidden mt-1">
+                                          <div
+                                            style={{ width: `${Math.min(100, Math.max(0, tasa))}%` }}
+                                            className={`h-full ${
+                                              tasa >= 75
+                                                ? 'bg-emerald-500'
+                                                : tasa >= 50
+                                                ? 'bg-amber-500'
+                                                : 'bg-rose-500'
+                                            }`}
+                                          />
+                                        </div>
+                                      </div>
+                                    </td>
+                                  );
+                                })}
+                                <td className="py-2 px-3 text-center">
+                                  <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-black ${
+                                    deltaCriterio > 0
+                                      ? 'bg-emerald-50 text-emerald-700'
+                                      : deltaCriterio < 0
+                                      ? 'bg-rose-50 text-rose-700'
+                                      : 'bg-slate-50 text-slate-600'
+                                  }`}>
+                                    {deltaCriterio > 0 ? `+${deltaCriterio}%` : `${deltaCriterio}%`}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 )}
-
-                {/* 1.3 Tabla de Desglose Pedagógico por Actuación / Criterio */}
-                <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs animate-fadeIn">
-                  <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-4 bg-blue-600 rounded-xs" />
-                      <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
-                        Desglose Pedagógico por Actuación / Criterio ({catalogoActuaciones.length} criterios evaluados)
-                      </h4>
-                    </div>
-                    <span className="text-xs text-slate-500 font-semibold">
-                      Logro promedio del aula en cada etapa
-                    </span>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-slate-200 bg-slate-50/75 text-slate-600 font-bold">
-                          <th className="py-2.5 px-3 text-center w-12">N°</th>
-                          <th className="py-2.5 px-3 min-w-[240px]">Actuación / Competencia Pedagógica</th>
-                          {etapasConfiguradas
-                            .filter((e) => activeStages[e.key] ?? true)
-                            .map((e) => (
-                              <th key={`modal-th-criterio-${e.key}`} className="py-2.5 px-3 text-center min-w-[110px]">
-                                {e.label}
-                              </th>
-                            ))}
-                          <th className="py-2.5 px-3 text-center min-w-[100px]">Variación (Δ)</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {catalogoActuaciones.map((act) => {
-                          const targetSecKey = modalSeccionId || selectedSeccion || '__global__';
-                          const modalSecMetrica = seccionEtapasMetricasMap[targetSecKey];
-                          const activeEtapas = etapasConfiguradas.filter((e) => activeStages[e.key] ?? true);
-                          const firstEtapa = activeEtapas[0];
-                          const lastEtapa = activeEtapas[activeEtapas.length - 1];
-
-                          const firstTasa = firstEtapa ? (modalSecMetrica?.etapas[firstEtapa.key]?.tasaLogroPorActuacion[act.order] ?? 0) : 0;
-                          const lastTasa = lastEtapa ? (modalSecMetrica?.etapas[lastEtapa.key]?.tasaLogroPorActuacion[act.order] ?? 0) : 0;
-                          const deltaCriterio = Number((lastTasa - firstTasa).toFixed(1));
-
-                          return (
-                            <tr key={`modal-row-criterio-${act.order}`} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="py-2 px-3 text-center font-mono font-bold text-slate-500">
-                                {act.order}
-                              </td>
-                              <td className="py-2 px-3">
-                                <span className="font-semibold text-slate-800">{act.actuacion}</span>
-                              </td>
-                              {activeEtapas.map((etapa) => {
-                                const metricaEtapa = modalSecMetrica?.etapas[etapa.key];
-                                const tasa = metricaEtapa?.tasaLogroPorActuacion[act.order] ?? 0;
-
-                                return (
-                                  <td key={`modal-cell-crit-${act.order}-${etapa.key}`} className="py-2 px-3 text-center">
-                                    <div className="flex flex-col items-center">
-                                      <span className="font-extrabold text-slate-900 text-xs">
-                                        {tasa}%
-                                      </span>
-                                      <div className="w-16 h-1 rounded-full bg-slate-100 overflow-hidden mt-1">
-                                        <div
-                                          style={{ width: `${Math.min(100, Math.max(0, tasa))}%` }}
-                                          className={`h-full ${
-                                            tasa >= 75
-                                              ? 'bg-emerald-500'
-                                              : tasa >= 50
-                                              ? 'bg-amber-500'
-                                              : 'bg-rose-500'
-                                          }`}
-                                        />
-                                      </div>
-                                    </div>
-                                  </td>
-                                );
-                              })}
-                              <td className="py-2 px-3 text-center">
-                                <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-black ${
-                                  deltaCriterio > 0
-                                    ? 'bg-emerald-50 text-emerald-700'
-                                    : deltaCriterio < 0
-                                    ? 'bg-rose-50 text-rose-700'
-                                    : 'bg-slate-50 text-slate-600'
-                                }`}>
-                                  {deltaCriterio > 0 ? `+${deltaCriterio}%` : `${deltaCriterio}%`}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
               </div>
             ) : (
               /* ======================================================= */

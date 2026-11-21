@@ -1062,6 +1062,10 @@ interface HoveredPointInfo {
   x: number;
   y: number;
   allStages?: { key: string; label: string; valor: number; color: string }[];
+  aciertosAcumulados?: number;
+  totalEtapas?: number;
+  nivelNombre?: string;
+  nivelColor?: string;
 }
 
 export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChartProps> = ({
@@ -1133,6 +1137,18 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
   // Estados específicos para el Diseño 3: Diana de Progresión
   const [selectedDianaOrder, setSelectedDianaOrder] = useState<number | null>(null);
   const [hoveredDianaOrder, setHoveredDianaOrder] = useState<number | null>(null);
+  const [hoveredDianaStageIndex, setHoveredDianaStageIndex] = useState<number | null>(null);
+  const [hoveredDianaSource, setHoveredDianaSource] = useState<'chart' | 'table' | null>(null);
+  const [hoveredBadgeTooltip, setHoveredBadgeTooltip] = useState<{
+    subKey: string;
+    order: number;
+    x: number;
+    y: number;
+    superadas: number;
+    total: number;
+    nivelNombre: string;
+    nivelColor: string;
+  } | null>(null);
   const [isEvolutionPlaying, setIsEvolutionPlaying] = useState<boolean>(false);
   const [evolutionStep, setEvolutionStep] = useState<number>(1);
 
@@ -2144,10 +2160,26 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
               {actsGeom.map(({ act, startDeg, endDeg, bx, by }) => {
                 const val = student.etapas[etapa.key]?.actuacionesResultados?.[act.order];
                 let fillColor = '#f1f5f9';
-                if (val === 2) {
-                  fillColor = etapaColor.border;
-                } else if (val === 1) {
-                  fillColor = '#f43f5e';
+
+                // Cálculo del acumulado de aciertos desde la primera etapa hasta la etapa actual k
+                let aciertosAcumulados = 0;
+                for (let j = 0; j <= k; j++) {
+                  const prevEtapa = activeEtapasList[j];
+                  if (prevEtapa && student.etapas[prevEtapa.key]?.actuacionesResultados?.[act.order] === 2) {
+                    aciertosAcumulados++;
+                  }
+                }
+
+                const nivelAcumulado = (val === 1 || val === 2)
+                  ? determinarNivelActuacion(
+                      aciertosAcumulados,
+                      activeEtapasList.length,
+                      nivelesActuacionGlobal
+                    )
+                  : null;
+
+                if (nivelAcumulado) {
+                  fillColor = nivelAcumulado.color;
                 }
 
                 const d = describeAnnularSector(cx, cy, innerR, outerR, startDeg, endDeg);
@@ -2167,11 +2199,15 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                       setActiveTooltip({
                         act: act,
                         order: act.order,
-                        etapaLabel: etapa.label,
+                        etapaLabel: etapa.label || etapa.key.toUpperCase(),
                         etapaKey: etapa.key,
                         valor: val ?? 1,
                         x: bx,
                         y: by,
+                        aciertosAcumulados,
+                        totalEtapas: activeEtapasList.length,
+                        nivelNombre: nivelAcumulado?.nombre || 'Por desarrollar',
+                        nivelColor: nivelAcumulado?.color || '#9ca3af',
                         allStages: activeEtapasList.map((et) => {
                           const stData = student.etapas[et.key];
                           const v = stData?.actuacionesResultados?.[act.order] ?? 1;
@@ -2190,7 +2226,11 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                       setActiveTooltip(null);
                     }}
                   >
-                    <title>{`Actuación ${act.order} - ${etapa.label || etapa.key.toUpperCase()}: ${val === 2 ? 'Acertó' : 'No acertó'}`}</title>
+                    <title>
+                      {val === undefined
+                        ? `Actuación ${act.order} · ${etapa.key.toUpperCase()} · ${etapa.label || etapa.key.toUpperCase()}: Sin datos - ${act.actuacion || act.pregunta || ''}`
+                        : `Actuación ${act.order} · ${etapa.key.toUpperCase()} · ${etapa.label || etapa.key.toUpperCase()} · ${aciertosAcumulados}/${activeEtapasList.length} correctas · ${nivelAcumulado?.nombre || 'Por desarrollar'} - ${act.actuacion || act.pregunta || ''}`}
+                    </title>
                   </path>
                 );
               })}
@@ -2632,6 +2672,11 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                       </div>
                     ))}
                   </div>
+                  {activeTooltip.nivelNombre && activeTooltip.aciertosAcumulados !== undefined && activeTooltip.totalEtapas !== undefined && (
+                    <div className="mt-2 pt-1.5 border-t border-slate-800 text-[10px] text-slate-300 font-mono tracking-tight bg-slate-950/70 px-2 py-1 rounded border border-slate-800/80 truncate">
+                      Actuación {activeTooltip.order} · {activeTooltip.etapaKey.toUpperCase()} · {activeTooltip.etapaLabel} · {activeTooltip.aciertosAcumulados}/{activeTooltip.totalEtapas} correctas · {activeTooltip.nivelNombre}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -3139,6 +3184,11 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                   </div>
                 ))}
               </div>
+              {activeTooltip.nivelNombre && activeTooltip.aciertosAcumulados !== undefined && activeTooltip.totalEtapas !== undefined && (
+                <div className="mt-2 pt-1.5 border-t border-slate-800 text-[10px] text-slate-300 font-mono tracking-tight bg-slate-950/70 px-2 py-1 rounded border border-slate-800/80 truncate">
+                  Actuación {activeTooltip.order} · {activeTooltip.etapaKey.toUpperCase()} · {activeTooltip.etapaLabel} · {activeTooltip.aciertosAcumulados}/{activeTooltip.totalEtapas} correctas · {activeTooltip.nivelNombre}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -3429,6 +3479,26 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
     );
   };
 
+  // Descripción pedagógica completa según el nivel de logro acumulado
+  const getDescripcionCompletaNivel = (key?: string, nombre?: string): string => {
+    const normalizedKey = (key || '').toLowerCase();
+    const normalizedNombre = (nombre || '').toLowerCase();
+
+    if (normalizedKey.includes('desarrollo') || normalizedNombre.includes('desarrollo')) {
+      return 'Por desarrollar la habilidad';
+    }
+    if (normalizedKey.includes('inici') || normalizedNombre.includes('inici')) {
+      return 'Iniciándose en el desarrollo de la habilidad';
+    }
+    if (normalizedKey.includes('consolida') || normalizedNombre.includes('consolida')) {
+      return 'Consolidándose la habilidad';
+    }
+    if (normalizedKey.includes('autonom') || normalizedNombre.includes('autonom')) {
+      return 'Autonomía de la habilidad';
+    }
+    return nombre || 'Por desarrollar la habilidad';
+  };
+
   // Renderizado del Diseño 3: Diana Polar de Progresión Continua
   const renderDianaWheel = (
     actuacionesList: ActuacionCatalogoItem[],
@@ -3451,8 +3521,13 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
     // highlightedOrder: Para el resalte visual dentro del propio SVG vectorial (cuña envolvente y hover de fila)
     const highlightedOrder = hoveredDianaOrder ?? selectedDianaOrder ?? null;
 
-    // Lista de habilidades evaluadas para la tabla lateral interactiva
-    const filteredList = actuacionesList;
+    // Lista de habilidades evaluadas para la tabla lateral interactiva:
+    // Al hacer hover sobre el gráfico diana polar, la tabla se enfoca en esa habilidad.
+    // Al interactuar con la tabla, se muestran todas las habilidades para permitir explorar y hacer clic libremente.
+    const activeFilterOrder = hoveredDianaSource === 'chart' ? hoveredDianaOrder : null;
+    const filteredList = activeFilterOrder !== null
+      ? actuacionesList.filter((a) => a.order === activeFilterOrder)
+      : actuacionesList;
 
     // Geometría polar SVG de la Diana
     const cx = 290;
@@ -3481,18 +3556,46 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
       const stageSummaries = activeEtapasList.map((et, k) => {
         const colorCfg = getEtapaColorConfig(et.key, k);
         let aciertos = 0;
+        let autonomiaCount = 0;
         actuacionesList.forEach((act) => {
           if (student.etapas[et.key]?.actuacionesResultados?.[act.order] === 2) {
             aciertos++;
           }
+          // Calcular aciertos acumulados hasta esta etapa (de 0 a k) para saber si la habilidad alcanzó Autonomía
+          let aciertosHastaEtapa = 0;
+          for (let j = 0; j <= k; j++) {
+            const prevEtapaKey = activeEtapasList[j]?.key;
+            if (student.etapas[prevEtapaKey]?.actuacionesResultados?.[act.order] === 2) {
+              aciertosHastaEtapa++;
+            }
+          }
+          const nivelHastaEtapa = determinarNivelActuacion(
+            aciertosHastaEtapa,
+            activeEtapasList.length,
+            nivelesActuacionGlobal
+          );
+          if (
+            nivelHastaEtapa?.key === 'autonomia' ||
+            nivelHastaEtapa?.nombre?.toLowerCase().includes('autonom')
+          ) {
+            autonomiaCount++;
+          }
         });
-        const pct = M > 0 ? Math.round((aciertos / M) * 100) : 0;
+
+        const etapaData = student.etapas[et.key];
+        const pctRaw = typeof etapaData?.porcentaje === 'number'
+          ? etapaData.porcentaje
+          : (M > 0 ? (aciertos / M) * 100 : 0);
+        const pctFormatted = pctRaw % 1 === 0 ? `${pctRaw.toFixed(0)}%` : `${pctRaw.toFixed(1)}%`;
+
         return {
           key: et.key,
           label: et.label || et.key.toUpperCase(),
           aciertos,
           total: M,
-          pct,
+          pct: pctRaw,
+          pctFormatted,
+          autonomiaCount,
           color: colorCfg.border,
         };
       });
@@ -3515,6 +3618,15 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
       }
 
       return { stageSummaries, trendText, trendColor };
+    })();
+
+    const momentosTexto = (() => {
+      const count = activeEtapasList.length;
+      if (count === 1) return 'Un momento de aprendizaje';
+      if (count === 2) return 'Dos momentos de aprendizaje';
+      if (count === 3) return 'Tres momentos de aprendizaje';
+      if (count === 4) return 'Cuatro momentos de aprendizaje';
+      return `${count} momentos de aprendizaje`;
     })();
 
     // Cálculos de trayectoria para la tarjeta de la actuación seleccionada
@@ -3622,26 +3734,43 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                     <div
                       key={`detail-card-${st.key}`}
                       data-testid={`detail-card-${st.key}`}
-                      className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col items-center text-center justify-center p-3 sm:p-4 border-t-4 transition-all"
+                      className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between p-4 sm:p-5 border-t-4 transition-all text-left"
                       style={{ borderTopColor: isSuccess ? st.color : '#f43f5e' }}
                     >
-                      <span className="text-[11px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">
-                        {st.label}
-                      </span>
-                      <span
-                        className={`text-2xl sm:text-3xl font-black leading-tight my-1 ${
-                          isSuccess ? 'text-slate-900' : 'text-rose-600'
-                        }`}
-                      >
-                        {isSuccess ? '1/1' : '0/1'}
-                      </span>
-                      <span
-                        className={`text-xs sm:text-sm font-bold whitespace-nowrap ${
-                          isSuccess ? 'text-emerald-600' : 'text-rose-600'
-                        }`}
-                      >
-                        Trayectoria: {st.acumuladoHastaEtapa}/{st.evaluacionesHastaEtapa}
-                      </span>
+                      <div>
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                          <span
+                            className="w-2 h-2 rounded-full shrink-0"
+                            style={{ backgroundColor: isSuccess ? st.color : '#f43f5e' }}
+                          />
+                          <span className="truncate">
+                            {st.key.toUpperCase()} · {st.label}
+                          </span>
+                        </div>
+                        <div
+                          className={`text-3xl sm:text-4xl font-black tracking-tight my-1 ${
+                            isSuccess ? 'text-slate-900' : 'text-rose-600'
+                          }`}
+                        >
+                          {isSuccess ? '1/1' : '0/1'}
+                        </div>
+                        <div
+                          className={`text-xs font-semibold ${
+                            isSuccess ? 'text-emerald-600' : 'text-rose-600'
+                          }`}
+                        >
+                          Trayectoria: {st.acumuladoHastaEtapa}/{st.evaluacionesHastaEtapa}
+                        </div>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full mt-3 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: isSuccess ? '100%' : '0%',
+                            backgroundColor: isSuccess ? st.color : '#f43f5e',
+                          }}
+                        />
+                      </div>
                     </div>
                   );
                 })
@@ -3649,18 +3778,37 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                   <div
                     key={`global-card-${st.key}`}
                     data-testid={`global-card-${st.key}`}
-                    className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col items-center text-center justify-center p-3 sm:p-4 border-t-4 transition-all"
+                    className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between p-4 sm:p-5 border-t-4 transition-all text-left"
                     style={{ borderTopColor: st.color }}
                   >
-                    <span className="text-[11px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">
-                      {st.label}
-                    </span>
-                    <span className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight my-1">
-                      {st.aciertos}/{st.total}
-                    </span>
-                    <span className="text-xs sm:text-sm font-bold text-blue-600 whitespace-nowrap">
-                      {st.pct}% aciertos
-                    </span>
+                    <div>
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: st.color }}
+                        />
+                        <span className="truncate">
+                          {st.key.toUpperCase()} · {st.label}
+                        </span>
+                      </div>
+                      <div className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight my-1 flex items-baseline gap-2">
+                        <span>{st.pctFormatted}</span>
+                        <span className="sr-only">{st.aciertos}/{st.total}</span>
+                      </div>
+                      <div className="text-xs text-slate-400 font-medium">
+                        Índice de desarrollo · {st.autonomiaCount} en autonomía
+                      </div>
+                    </div>
+                    {/* Barra de progreso visual con track suave */}
+                    <div className="w-full h-1.5 bg-slate-100 rounded-full mt-3 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, Math.max(0, st.pct))}%`,
+                          backgroundColor: st.color,
+                        }}
+                      />
+                    </div>
                   </div>
                 ))}
           </div>
@@ -3668,9 +3816,51 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
 
         {/* Cuerpo principal en 2 columnas: Diana a la izquierda y Buscador + Tabla a la derecha */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Columna Izquierda: Rueda Diana Polar SVG */}
-          <div className="lg:col-span-6 flex flex-col items-center justify-center p-2 sm:p-4 bg-slate-50/40 rounded-3xl border border-slate-200/70">
-            <div className="w-full max-w-[540px] aspect-square relative flex items-center justify-center">
+          {/* Columna Izquierda: Rueda Diana Polar SVG con Cabecera y Reproductor */}
+          <div className="lg:col-span-6 flex flex-col rounded-3xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">
+            {/* Cabecera estilo Radar del Aprendizaje */}
+            <div className="w-full bg-gradient-to-r from-blue-900 via-indigo-700 to-indigo-600 px-5 py-4 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xs">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-300 text-sm sm:text-base font-bold">✦</span>
+                  <h3 className="text-sm sm:text-base font-bold text-white tracking-wide">
+                    Radar del Aprendizaje · {M} habilidades
+                  </h3>
+                </div>
+                <p className="text-[11px] sm:text-xs text-blue-100/90 font-normal mt-0.5">
+                  {momentosTexto}, {M} caminos de progreso. Selecciona un número para descubrir su historia.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleEvolutionPlay}
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 transform active:scale-95 shadow-md cursor-pointer shrink-0 ${
+                  isEvolutionPlaying
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white ring-2 ring-emerald-300/60 shadow-emerald-500/30'
+                    : 'bg-white/20 hover:bg-white/30 text-white border border-white/30 hover:border-white/50 backdrop-blur-xs'
+                }`}
+                title={isEvolutionPlaying ? 'Pausar evolución' : 'Reproducir evolución'}
+              >
+                {isEvolutionPlaying ? (
+                  <>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                    </span>
+                    <MdPause className="text-sm" />
+                    <span>Pausar ({evolutionStep}/{activeEtapasList.length})</span>
+                  </>
+                ) : (
+                  <>
+                    <MdPlayArrow className="text-base text-amber-300" />
+                    <span>Reproducir evolución</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center justify-center p-2 sm:p-4 bg-slate-50/40">
+              <div className="w-full max-w-[540px] aspect-square relative flex items-center justify-center">
               <svg
                 viewBox="0 0 580 580"
                 className="w-full h-full select-none"
@@ -3707,22 +3897,45 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
 
                   return (
                     <g key={`diana-ring-${subKey}-${etapa.key}-${k}`}>
-                      {actsGeometry.map(({ act, startDeg, endDeg }) => {
+                      {actsGeometry.map(({ act, startDeg, endDeg, midDeg }) => {
                         const val = student.etapas[etapa.key]?.actuacionesResultados?.[act.order];
                         let fillColor = '#f1f5f9'; // Sin datos
-                        if (val === 2) {
-                          fillColor = etapaColor.border; // Logrado / Sí
-                        } else if (val === 1) {
-                          fillColor = '#f43f5e'; // No logrado / No (Rojo coral)
+
+                        // Cálculo del acumulado de aciertos desde la primera etapa hasta la etapa actual k
+                        let aciertosAcumulados = 0;
+                        for (let j = 0; j <= k; j++) {
+                          const prevEtapa = activeEtapasList[j];
+                          if (prevEtapa && student.etapas[prevEtapa.key]?.actuacionesResultados?.[act.order] === 2) {
+                            aciertosAcumulados++;
+                          }
+                        }
+
+                        const nivelAcumulado = (val === 1 || val === 2)
+                          ? determinarNivelActuacion(
+                              aciertosAcumulados,
+                              activeEtapasList.length,
+                              nivelesActuacionGlobal
+                            )
+                          : null;
+
+                        if (nivelAcumulado) {
+                          fillColor = nivelAcumulado.color;
                         }
 
                         const d = describeAnnularSector(cx, cy, innerR, outerR, startDeg, endDeg);
                         const isHovered = hoveredDianaOrder === act.order;
                         const isSelected = selectedDianaOrder === act.order;
 
+                        // Coordenadas del punto medio del sector para ubicar el tooltip interactivo
+                        const midR = (innerR + outerR) / 2;
+                        const rad = (midDeg * Math.PI) / 180;
+                        const px = cx + midR * Math.cos(rad);
+                        const py = cy + midR * Math.sin(rad);
+
                         return (
                           <path
                             key={`sector-${subKey}-${etapa.key}-${act.order}`}
+                            data-testid={`diana-sector-${etapa.key}-${act.order}`}
                             d={d}
                             fill={fillColor}
                             stroke="#ffffff"
@@ -3730,11 +3943,19 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                             opacity={isHovered || isSelected ? 1 : 0.9}
                             className="cursor-pointer transition-all duration-150"
                             onClick={() => setSelectedDianaOrder((prev) => (prev === act.order ? null : act.order))}
-                            onMouseEnter={() => setHoveredDianaOrder(act.order)}
-                            onMouseLeave={() => setHoveredDianaOrder(null)}
-                          >
-                            <title>{`Actuación ${act.order} - ${etapa.label || etapa.key.toUpperCase()}: ${val === 2 ? 'Acertó' : 'No acertó'}`}</title>
-                          </path>
+                            onMouseEnter={() => {
+                              setHoveredDianaOrder(act.order);
+                              setHoveredDianaStageIndex(k);
+                              setHoveredDianaSource('chart');
+                              setHoveredBadgeTooltip(null);
+                            }}
+                            onMouseLeave={() => {
+                              setHoveredDianaOrder(null);
+                              setHoveredDianaStageIndex(null);
+                              setHoveredDianaSource(null);
+                              setHoveredBadgeTooltip(null);
+                            }}
+                          />
                         );
                       })}
                     </g>
@@ -3796,7 +4017,7 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                         pointerEvents="none"
                       />
                       {selectedAct && nivelActive ? (
-                        <g pointerEvents="none">
+                        <g pointerEvents="none" data-testid="badge-nivel-actuacion-global">
                           <text
                             x={cx}
                             y={cy - 6}
@@ -3870,8 +4091,27 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                       data-testid={`diana-badge-${act.order}`}
                       className="cursor-pointer transition-transform duration-150"
                       onClick={() => setSelectedDianaOrder((prev) => (prev === act.order ? null : act.order))}
-                      onMouseEnter={() => setHoveredDianaOrder(act.order)}
-                      onMouseLeave={() => setHoveredDianaOrder(null)}
+                      onMouseEnter={() => {
+                        setHoveredDianaOrder(act.order);
+                        setHoveredDianaStageIndex(null);
+                        setHoveredDianaSource('chart');
+                        setHoveredBadgeTooltip({
+                          subKey,
+                          order: act.order,
+                          x: bx,
+                          y: by,
+                          superadas: superadasAct,
+                          total: activeEtapasList.length,
+                          nivelNombre: nivelBadge.nombre,
+                          nivelColor: nivelBadge.color,
+                        });
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredDianaOrder(null);
+                        setHoveredDianaStageIndex(null);
+                        setHoveredDianaSource(null);
+                        setHoveredBadgeTooltip(null);
+                      }}
                     >
                       {isSelected ? (
                         <>
@@ -3931,13 +4171,58 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                   );
                 })}
               </svg>
+
+              {/* Tooltip instantáneo al hacer hover sobre el número encerrado en el círculo perimetral */}
+              {hoveredBadgeTooltip && hoveredBadgeTooltip.subKey === subKey && (
+                <div
+                  data-testid="diana-badge-tooltip"
+                  className="absolute z-30 pointer-events-none select-none transition-opacity duration-75"
+                  style={{
+                    left: `${Math.min(Math.max((hoveredBadgeTooltip.x / 580) * 100, 18), 82)}%`,
+                    top: hoveredBadgeTooltip.y < 130
+                      ? `${(hoveredBadgeTooltip.y / 580) * 100 + 4.5}%`
+                      : `${(hoveredBadgeTooltip.y / 580) * 100 - 4.5}%`,
+                    transform: hoveredBadgeTooltip.y < 130
+                      ? 'translate(-50%, 0%)'
+                      : 'translate(-50%, -100%)',
+                  }}
+                >
+                  <div className="bg-slate-900/95 backdrop-blur-xs text-white px-3 py-1.5 rounded-xl shadow-2xl border border-slate-700/80 flex items-center gap-2 whitespace-nowrap text-xs font-semibold">
+                    <span className="font-bold text-blue-300">Actuación {hoveredBadgeTooltip.order}</span>
+                    <span className="opacity-40">•</span>
+                    <span className="text-slate-300">Consolidado global</span>
+                    <span className="opacity-40">•</span>
+                    <span className="font-bold text-white">
+                      {hoveredBadgeTooltip.superadas}/{hoveredBadgeTooltip.total} correctas
+                    </span>
+                    <span className="opacity-40">•</span>
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold text-white shadow-xs"
+                      style={{ backgroundColor: hoveredBadgeTooltip.nivelColor }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/90" />
+                      {hoveredBadgeTooltip.nivelNombre}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+        </div>
 
           {/* Columna Derecha: Tabla interactiva scrolleable de Habilidades Evaluadas */}
           <div className="lg:col-span-6 flex flex-col gap-3">
             {/* Tabla interactiva scrolleable */}
             <div className="border border-slate-200/90 rounded-2xl bg-white shadow-2xs overflow-hidden">
+              {/* Cabecera de la tabla de habilidades */}
+              <div className="px-5 py-4 border-b border-slate-100 bg-white">
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+                  Detalle completo de habilidades
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {M} actuaciones · Respuestas correctas sobre {activeEtapasList.length} por evaluación · Haz clic en una fila para ubicarla en el radar.
+                </p>
+              </div>
               <div className="max-h-[520px] overflow-y-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead className="sticky top-0 bg-slate-100/95 backdrop-blur-xs border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider z-10">
@@ -3949,7 +4234,7 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                           {et.key.toUpperCase()}
                         </th>
                       ))}
-                      <th className="py-2.5 px-2 text-center w-28">Nivel</th>
+                      <th className="py-2.5 px-2 text-center w-32">Nivel</th>
                       <th className="py-2.5 px-2 text-center w-10">Δ</th>
                     </tr>
                   </thead>
@@ -3958,14 +4243,29 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                       const isSelected = selectedDianaOrder === act.order;
                       const isHovered = hoveredDianaOrder === act.order;
 
-                      // Tendencia de la fila
-                      const firstVal = student.etapas[activeEtapasList[0]?.key]?.actuacionesResultados?.[act.order] ?? 1;
-                      const lastVal = student.etapas[activeEtapasList[activeEtapasList.length - 1]?.key]?.actuacionesResultados?.[act.order] ?? 1;
+                      // Límite de etapa para mostrar según el hover en el anillo del gráfico diana polar
+                      const isHoveredFromChart = hoveredDianaSource === 'chart' && hoveredDianaOrder === act.order;
+                      const maxStageIndex = (isHoveredFromChart && hoveredDianaStageIndex !== null)
+                        ? hoveredDianaStageIndex
+                        : activeEtapasList.length - 1;
 
-                      // Nivel formativo acumulado según la configuración global (Opción A)
-                      const superadasRow = activeEtapasList.filter(
-                        (et) => student.etapas[et.key]?.actuacionesResultados?.[act.order] === 2
-                      ).length;
+                      // El detalle interactivo se muestra:
+                      // 1) En la tabla: al hacer clic sobre la habilidad (isSelected)
+                      // 2) Desde el gráfico: al hacer hover sobre una etapa de la habilidad (isHoveredFromChart)
+                      const showDetail = isHoveredFromChart || isSelected;
+
+                      // Tendencia de la fila hasta maxStageIndex
+                      const firstVal = student.etapas[activeEtapasList[0]?.key]?.actuacionesResultados?.[act.order] ?? 1;
+                      const lastVal = student.etapas[activeEtapasList[maxStageIndex]?.key]?.actuacionesResultados?.[act.order] ?? 1;
+
+                      // Nivel formativo acumulado hasta maxStageIndex
+                      let superadasRow = 0;
+                      for (let j = 0; j <= maxStageIndex; j++) {
+                        const prevEtapa = activeEtapasList[j];
+                        if (prevEtapa && student.etapas[prevEtapa.key]?.actuacionesResultados?.[act.order] === 2) {
+                          superadasRow++;
+                        }
+                      }
                       const nivelRow = determinarNivelActuacion(
                         superadasRow,
                         activeEtapasList.length,
@@ -3973,108 +4273,252 @@ export const DocenteActuacionesRadarChart: React.FC<DocenteActuacionesRadarChart
                       );
 
                       return (
-                        <tr
-                          key={`diana-row-${subKey}-${act.order}`}
-                          data-testid={`diana-row-${act.order}`}
-                          onClick={() => setSelectedDianaOrder((prev) => (prev === act.order ? null : act.order))}
-                          onMouseEnter={() => setHoveredDianaOrder(act.order)}
-                          onMouseLeave={() => setHoveredDianaOrder(null)}
-                          className={`cursor-pointer transition-colors duration-150 ${
-                            isSelected
-                              ? 'bg-blue-50/90 text-blue-950 font-medium'
-                              : isHovered
-                              ? 'bg-slate-50/90 text-slate-800'
-                              : 'hover:bg-slate-50/60 text-slate-700'
-                          }`}
-                        >
-                          {/* N.° */}
-                          <td className="py-2 px-3 text-center">
-                            <span
-                              className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold ${
-                                isSelected
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-slate-100 text-slate-700'
-                              }`}
-                            >
-                              {act.order}
-                            </span>
-                          </td>
-
-                          {/* Habilidad evaluada */}
-                          <td className="py-2 px-3 text-slate-800 leading-snug">
-                            <span>{act.actuacion || act.pregunta || `Actuación ${act.order}`}</span>
-                          </td>
-
-                          {/* Pills por etapa */}
-                          {activeEtapasList.map((et, k) => {
-                            const val = student.etapas[et.key]?.actuacionesResultados?.[act.order];
-                            const etapaColor = getEtapaColorConfig(et.key, k);
-
-                            if (val === 2) {
-                              return (
-                                <td key={`cell-${act.order}-${et.key}`} className="py-2 px-2 text-center">
-                                  <span
-                                    className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold text-white shadow-2xs"
-                                    style={{ backgroundColor: etapaColor.border }}
-                                    title={`${et.key.toUpperCase()}: Acertó (1/1)`}
-                                  >
-                                    {k + 1}
-                                  </span>
-                                </td>
-                              );
-                            }
-
-                            if (val === 1) {
-                              return (
-                                <td key={`cell-${act.order}-${et.key}`} className="py-2 px-2 text-center">
-                                  <span
-                                    className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold text-white bg-rose-500 shadow-2xs"
-                                    title={`${et.key.toUpperCase()}: No acertó (0/1)`}
-                                  >
-                                    0
-                                  </span>
-                                </td>
-                              );
-                            }
-
-                            return (
-                              <td key={`cell-${act.order}-${et.key}`} className="py-2 px-2 text-center text-slate-300">
-                                -
-                              </td>
-                            );
-                          })}
-
-                          {/* Nivel de Logro (Opción A) */}
-                          <td className="py-2 px-2 text-center">
-                            <span
-                              data-testid={`diana-table-nivel-${act.order}`}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold whitespace-nowrap shadow-2xs border"
-                              style={{
-                                backgroundColor: `${nivelRow.color}15`,
-                                color: nivelRow.color,
-                                borderColor: `${nivelRow.color}40`,
-                              }}
-                              title={`${nivelRow.nombre}: ${superadasRow} de ${activeEtapasList.length} evaluaciones superadas`}
-                            >
+                        <React.Fragment key={`diana-row-frag-${subKey}-${act.order}`}>
+                          <tr
+                            key={`diana-row-${subKey}-${act.order}`}
+                            data-testid={`diana-row-${act.order}`}
+                            data-row-group={act.order}
+                            onClick={() => setSelectedDianaOrder((prev) => (prev === act.order ? null : act.order))}
+                            onMouseEnter={() => {
+                              setHoveredDianaOrder(act.order);
+                              setHoveredDianaStageIndex(null);
+                              setHoveredDianaSource('table');
+                            }}
+                            onMouseLeave={(e) => {
+                              const related = e.relatedTarget as HTMLElement | null;
+                              if (related && typeof related.closest === 'function' && related.closest(`[data-row-group="${act.order}"]`)) return;
+                              setHoveredDianaOrder(null);
+                              setHoveredDianaStageIndex(null);
+                              setHoveredDianaSource(null);
+                            }}
+                            className={`cursor-pointer transition-colors duration-150 ${
+                              isSelected
+                                ? 'bg-blue-50/90 text-blue-950 font-medium'
+                                : isHovered
+                                ? 'bg-slate-50/90 text-slate-800'
+                                : 'hover:bg-slate-50/60 text-slate-700'
+                            }`}
+                          >
+                            {/* N.° */}
+                            <td className="py-2 px-3 text-center">
                               <span
-                                className="w-1.5 h-1.5 rounded-full shrink-0"
-                                style={{ backgroundColor: nivelRow.color }}
-                              />
-                              <span>{nivelRow.nombre}</span>
-                            </span>
-                          </td>
+                                className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold ${
+                                  isSelected
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-slate-100 text-slate-700'
+                                }`}
+                              >
+                                {act.order}
+                              </span>
+                            </td>
 
-                          {/* Δ Tendencia */}
-                          <td className="py-2 px-2 text-center font-bold text-sm">
-                            {lastVal > firstVal ? (
-                              <span className="text-emerald-600 font-extrabold" title="Progreso">↗</span>
-                            ) : lastVal < firstVal ? (
-                              <span className="text-rose-500 font-extrabold" title="Retroceso">↘</span>
-                            ) : (
-                              <span className="text-slate-400 font-bold" title="Sin variación">→</span>
-                            )}
-                          </td>
-                        </tr>
+                            {/* Habilidad evaluada */}
+                            <td className="py-2 px-3 text-slate-800 leading-snug">
+                              <span>{act.actuacion || `Actuación ${act.order}`}</span>
+                            </td>
+
+                            {/* Pills por etapa */}
+                            {activeEtapasList.map((et, k) => {
+                              // Si la etapa k es posterior a la etapa en la que se hizo hover, no mostramos el resultado
+                              if (k > maxStageIndex) {
+                                return (
+                                  <td
+                                    key={`cell-${act.order}-${et.key}`}
+                                    className="py-2 px-2 text-center text-slate-300"
+                                  >
+                                    -
+                                  </td>
+                                );
+                              }
+
+                              const val = student.etapas[et.key]?.actuacionesResultados?.[act.order];
+
+                              // Cálculo del acumulado de aciertos hasta esta etapa k
+                              let aciertosAcumuladosEtapa = 0;
+                              for (let j = 0; j <= k; j++) {
+                                const prevEtapa = activeEtapasList[j];
+                                if (prevEtapa && student.etapas[prevEtapa.key]?.actuacionesResultados?.[act.order] === 2) {
+                                  aciertosAcumuladosEtapa++;
+                                }
+                              }
+
+                              const nivelEtapa = determinarNivelActuacion(
+                                aciertosAcumuladosEtapa,
+                                activeEtapasList.length,
+                                nivelesActuacionGlobal
+                              );
+
+                              if (val === 2) {
+                                return (
+                                  <td
+                                    key={`cell-${act.order}-${et.key}`}
+                                    className="py-2 px-2 text-center"
+                                  >
+                                    <span
+                                      data-testid={`diana-table-cell-${act.order}-${et.key}`}
+                                      className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[10px] font-black text-white shadow-2xs"
+                                      style={{ backgroundColor: nivelEtapa.color }}
+                                      title={`${et.key.toUpperCase()}: Acertó (+1) • Nivel en esta etapa: ${nivelEtapa.nombre}`}
+                                    >
+                                      +1
+                                    </span>
+                                  </td>
+                                );
+                              }
+
+                              if (val === 1) {
+                                return (
+                                  <td
+                                    key={`cell-${act.order}-${et.key}`}
+                                    className="py-2 px-2 text-center"
+                                  >
+                                    <span
+                                      data-testid={`diana-table-cell-${act.order}-${et.key}`}
+                                      className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[10px] font-black text-white shadow-2xs"
+                                      style={{ backgroundColor: nivelEtapa.color }}
+                                      title={`${et.key.toUpperCase()}: No acertó (0) • Nivel acumulado en esta etapa: ${nivelEtapa.nombre}`}
+                                    >
+                                      0
+                                    </span>
+                                  </td>
+                                );
+                              }
+
+                              return (
+                                <td key={`cell-${act.order}-${et.key}`} className="py-2 px-2 text-center text-slate-300">
+                                  -
+                                </td>
+                              );
+                            })}
+
+                            {/* Nivel de Logro: Total o acumulado hasta la etapa y nombre del nivel */}
+                            <td className="py-2 px-2 text-center">
+                              <span
+                                data-testid={`diana-table-nivel-${act.order}`}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold whitespace-nowrap shadow-2xs border"
+                                style={{
+                                  backgroundColor: `${nivelRow.color}15`,
+                                  color: nivelRow.color,
+                                  borderColor: `${nivelRow.color}40`,
+                                }}
+                                title={`${nivelRow.nombre}: ${superadasRow} de ${activeEtapasList.length} evaluaciones superadas`}
+                              >
+                                <span
+                                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                                  style={{ backgroundColor: nivelRow.color }}
+                                />
+                                <span className="font-extrabold">{superadasRow}</span>
+                                <span className="opacity-40">•</span>
+                                <span>{nivelRow.nombre}</span>
+                              </span>
+                            </td>
+
+                            {/* Δ Tendencia */}
+                            <td className="py-2 px-2 text-center font-bold text-sm">
+                              {lastVal > firstVal ? (
+                                <span className="text-emerald-600 font-extrabold" title="Progreso">↗</span>
+                              ) : lastVal < firstVal ? (
+                                <span className="text-rose-500 font-extrabold" title="Retroceso">↘</span>
+                              ) : (
+                                <span className="text-slate-400 font-bold" title="Sin variación">→</span>
+                              )}
+                            </td>
+                          </tr>
+
+                          {/* Detalle interactivo por etapa: aparece al hacer clic en la tabla (isSelected) o al hacer hover sobre una etapa en el gráfico (isHoveredFromChart) */}
+                          {showDetail && (
+                            <tr
+                              key={`diana-row-detail-${subKey}-${act.order}`}
+                              data-testid={`diana-row-detail-${act.order}`}
+                              data-row-group={act.order}
+                              onMouseEnter={() => {
+                                setHoveredDianaOrder(act.order);
+                                setHoveredDianaSource(hoveredDianaSource || 'table');
+                              }}
+                              onMouseLeave={(e) => {
+                                const related = e.relatedTarget as HTMLElement | null;
+                                if (related && typeof related.closest === 'function' && related.closest(`[data-row-group="${act.order}"]`)) return;
+                                setHoveredDianaOrder(null);
+                                setHoveredDianaStageIndex(null);
+                                setHoveredDianaSource(null);
+                              }}
+                              className="bg-slate-50/90 border-b border-slate-200"
+                            >
+                              <td colSpan={4 + activeEtapasList.length} className="py-3 px-6 sm:px-10">
+                                <div className="flex flex-col gap-2 w-full max-w-2xl">
+                                  {activeEtapasList.slice(0, maxStageIndex + 1).map((et, k) => {
+                                    const stageVal = student.etapas[et.key]?.actuacionesResultados?.[act.order];
+
+                                    // Color oficial de la evaluación
+                                    const colorEtapa = getEtapaColorConfig(et.key, k).border;
+
+                                    // Cálculo de aciertos acumulados hasta esta etapa k
+                                    let aciertosHastaEtapa = 0;
+                                    for (let j = 0; j <= k; j++) {
+                                      const prevEt = activeEtapasList[j];
+                                      if (prevEt && student.etapas[prevEt.key]?.actuacionesResultados?.[act.order] === 2) {
+                                        aciertosHastaEtapa++;
+                                      }
+                                    }
+
+                                    const nivelEtapa = determinarNivelActuacion(
+                                      aciertosHastaEtapa,
+                                      activeEtapasList.length,
+                                      nivelesActuacionGlobal
+                                    );
+
+                                    const isAcerto = stageVal === 2;
+
+                                    return (
+                                      <div
+                                        key={`detail-stage-${act.order}-${et.key}`}
+                                        data-testid={`diana-detail-stage-${act.order}-${et.key}`}
+                                        className="flex items-center justify-between gap-4 text-xs sm:text-sm py-1.5 border-b border-slate-200/50 last:border-none"
+                                      >
+                                        {/* 1. Nombre completo de la etapa con el color de la evaluación */}
+                                        <span
+                                          className="font-bold flex-1"
+                                          style={{ color: colorEtapa }}
+                                        >
+                                          {et.label || et.key.toUpperCase()}
+                                        </span>
+
+                                        {/* 2. Badge +1 o 0 con el color del nivel acumulado */}
+                                        <div className="w-12 flex items-center justify-center">
+                                          <span
+                                            className="inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-full text-xs font-black text-white shadow-2xs"
+                                            style={{ backgroundColor: nivelEtapa.color }}
+                                          >
+                                            {isAcerto ? '+1' : '0'}
+                                          </span>
+                                        </div>
+
+                                        {/* 3. Acumulado alcanzado (ej. 1/4, 2/4) */}
+                                        <span className="font-bold text-slate-700 w-14 text-center text-xs sm:text-sm">
+                                          {aciertosHastaEtapa}/{activeEtapasList.length}
+                                        </span>
+
+                                        {/* 4. Nombre del nivel acumulado y descripción completa al lado sin color */}
+                                        <div className="flex items-center justify-end gap-2 text-xs sm:text-sm text-right">
+                                          <span
+                                            className="font-bold capitalize whitespace-nowrap"
+                                            style={{ color: nivelEtapa.color }}
+                                          >
+                                            {nivelEtapa.nombre.toLowerCase()}
+                                          </span>
+                                          <span className="text-slate-300 font-normal">•</span>
+                                          <span className="text-slate-600 font-medium text-[11px] sm:text-xs">
+                                            {getDescripcionCompletaNivel(nivelEtapa.key, nivelEtapa.nombre)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       );
                     })}
 

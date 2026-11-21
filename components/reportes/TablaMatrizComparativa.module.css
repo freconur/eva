@@ -449,6 +449,42 @@
   color: #0c4a6e !important;
 }
 
+.subEp3 {
+  background-color: #ecfdf5 !important;
+  color: #065f46 !important;
+  border-right: 1px solid #a7f3d0 !important;
+  border-bottom: 2px solid #059669 !important;
+}
+
+.subEp3:hover {
+  background-color: #d1fae5 !important;
+  color: #064e3b !important;
+}
+
+.subEp4 {
+  background-color: #f0fdfa !important;
+  color: #0f766e !important;
+  border-right: 1px solid #99f6e4 !important;
+  border-bottom: 2px solid #0d9488 !important;
+}
+
+.subEp4:hover {
+  background-color: #ccfbf1 !important;
+  color: #115e59 !important;
+}
+
+.subGeneric {
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+  border-right: 1px solid #e2e8f0 !important;
+  border-bottom: 2px solid #64748b !important;
+}
+
+.subGeneric:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
 /* Fila de Resumen Regional */
 .summaryRow td {
   background-color: #f8fafc;

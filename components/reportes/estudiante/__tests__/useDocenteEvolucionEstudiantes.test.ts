@@ -1,5 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { useDocenteEvolucionEstudiantes } from '../useDocenteEvolucionEstudiantes';
+import { isEvaluacionEnMatriz } from '@/components/reportes/director/useEvaluacionesMatriz';
 import { Evaluaciones } from '@/features/types/types';
 
 // Mock de Firestore
@@ -179,5 +180,131 @@ describe('useDocenteEvolucionEstudiantes Hook', () => {
       (v) => v === 2
     ).length;
     expect(aciertosCount).toBe(13);
+  });
+
+  it('mantiene los datos en caché de módulo y evita consultas redundantes a Firestore en remount', async () => {
+    const { clearEvolucionModuleCache } = require('../useDocenteEvolucionEstudiantes');
+    clearEvolucionModuleCache();
+    const { getDocs } = require('firebase/firestore');
+    const initialCallCount = getDocs.mock.calls.length;
+
+    // Primer render (simula abrir la pestaña "Evolución" por primera vez)
+    const hook1 = renderHook(() =>
+      useDocenteEvolucionEstudiantes({
+        evaluacion: mockEvaluacion,
+        dniDocente: '10203040',
+        currentEstudiantes: [],
+        yearSelected: 2026,
+        monthSelected: 6,
+        isDemoMode: false,
+      })
+    );
+
+    await waitFor(() => {
+      expect(hook1.result.current.loading).toBe(false);
+    });
+
+    const callsAfterFirst = getDocs.mock.calls.length;
+    expect(callsAfterFirst).toBeGreaterThan(initialCallCount);
+
+    // Desmontar el hook (simula que el usuario cambió a otra pestaña como "Grilla")
+    hook1.unmount();
+
+    // Segundo render (simula que el usuario regresa a la pestaña "Evolución")
+    const hook2 = renderHook(() =>
+      useDocenteEvolucionEstudiantes({
+        evaluacion: mockEvaluacion,
+        dniDocente: '10203040',
+        currentEstudiantes: [],
+        yearSelected: 2026,
+        monthSelected: 6,
+        isDemoMode: false,
+      })
+    );
+
+    // Debe cargar inmediatamente desde caché sin estado de carga prolongado
+    expect(hook2.result.current.loading).toBe(false);
+    expect(hook2.result.current.estudiantesEvolutivos.length).toBeGreaterThan(0);
+
+    // Verificamos que NO se hayan hecho llamadas adicionales a Firestore
+    expect(getDocs.mock.calls.length).toBe(callsAfterFirst);
+  });
+
+  it('detecta automáticamente la etapa EP3 cuando el administrador la configuró en la matriz', async () => {
+    const { clearEvolucionModuleCache } = require('../useDocenteEvolucionEstudiantes');
+    clearEvolucionModuleCache();
+
+    const matrizConEp3 = {
+      '3_1': {
+        gradoId: 3,
+        categoriaId: 1,
+        ediId: 'eval-edi',
+        ep1Id: 'eval-ep1',
+        ep2Id: 'eval-ep2',
+        ep3Id: 'eval-ep3',
+        etapas: [
+          { id: 'edi', codigo: 'EDI', nombre: 'Evaluación Diagnóstica', evaluacionId: 'eval-edi' },
+          { id: 'ep1', codigo: 'EP1', nombre: 'Evaluación Progresiva 1', evaluacionId: 'eval-ep1' },
+          { id: 'ep2', codigo: 'EP2', nombre: 'Evaluación Progresiva 2', evaluacionId: 'eval-ep2' },
+          { id: 'ep3', codigo: 'EP3', nombre: 'Evaluación Progresiva 3', evaluacionId: 'eval-ep3' },
+        ],
+      },
+    };
+
+    const { result } = renderHook(() =>
+      useDocenteEvolucionEstudiantes({
+        evaluacion: mockEvaluacion,
+        matrizConfigGrados: matrizConEp3,
+        dniDocente: '10203040',
+        currentEstudiantes: [],
+        yearSelected: 2026,
+        monthSelected: 6,
+        isDemoMode: false,
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    const etapas = result.current.etapasConfiguradas;
+    expect(etapas.length).toBe(4);
+
+    const ep3 = etapas.find((e) => e.key === 'ep3');
+    expect(ep3).toBeDefined();
+    expect(ep3?.id).toBe('eval-ep3');
+    expect(ep3?.label).toBe('EP3 (Progresiva 3)');
+    expect(ep3?.order).toBe(4);
+
+    // Los estudiantes deben tener la etapa ep3 procesada
+    const quispe = result.current.estudiantesEvolutivos.find((e) => e.dni === '91280388');
+    expect(quispe).toBeDefined();
+    expect(quispe?.etapas['ep3']).toBeDefined();
+    expect(quispe?.etapas['ep3'].evaluacionId).toBe('eval-ep3');
+  });
+
+  it('isEvaluacionEnMatriz reconoce evaluaciones de etapas dinámicas (como EP3)', () => {
+    const matriz = {
+      '3_1': {
+        gradoId: 3,
+        categoriaId: 1,
+        ediId: 'eval-edi',
+        ep1Id: 'eval-ep1',
+        ep2Id: 'eval-ep2',
+        ep3Id: 'eval-ep3',
+        etapas: [
+          { id: 'edi', codigo: 'EDI', evaluacionId: 'eval-edi' },
+          { id: 'ep1', codigo: 'EP1', evaluacionId: 'eval-ep1' },
+          { id: 'ep2', codigo: 'EP2', evaluacionId: 'eval-ep2' },
+          { id: 'ep3', codigo: 'EP3', evaluacionId: 'eval-ep3' },
+        ],
+      },
+    };
+
+    expect(isEvaluacionEnMatriz('eval-edi', matriz)).toBe(true);
+    expect(isEvaluacionEnMatriz('eval-ep1', matriz)).toBe(true);
+    expect(isEvaluacionEnMatriz('eval-ep2', matriz)).toBe(true);
+    expect(isEvaluacionEnMatriz('eval-ep3', matriz)).toBe(true);
+    expect(isEvaluacionEnMatriz('eval-inexistente', matriz)).toBe(false);
   });
 });

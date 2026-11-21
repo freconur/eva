@@ -56,6 +56,7 @@ import {
   saveStoredTextScale,
   RadarCenterChartType,
   loadStoredCenterChartType,
+  getEtapaColorConfig,
 } from './DocenteActuacionesRadarChart';
 import { searchAndRankStudents } from './searchEstudiantesUtils';
 import { Evaluaciones, Estudiante, PreguntasRespuestas } from '@/features/types/types';
@@ -202,6 +203,23 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Sincronizar capas de evaluación activas cuando se detectan nuevas etapas en la matriz
+  useEffect(() => {
+    if (etapasConfiguradas.length > 0) {
+      setActiveStages((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        etapasConfiguradas.forEach((et) => {
+          if (next[et.key] === undefined) {
+            next[et.key] = true;
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    }
+  }, [etapasConfiguradas]);
 
   // Manejo de cierre de menús desplegables al hacer clic fuera
   useEffect(() => {
@@ -1441,7 +1459,7 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
                   Detalle por Etapa Evaluativa
                 </h4>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className={`grid grid-cols-1 ${etapasConfiguradas.length > 3 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'} gap-2.5`}>
                   {etapasConfiguradas
                     .filter((etapa) => activeStages[etapa.key] ?? true)
                     .map((etapa) => {
@@ -1468,12 +1486,7 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
                             <span
                               className="w-2 h-2 rounded-full inline-block shrink-0"
                               style={{
-                                backgroundColor:
-                                  etapa.key === 'edi'
-                                    ? '#2563eb'
-                                    : etapa.key === 'ep1'
-                                    ? '#f59e0b'
-                                    : '#10b981',
+                                backgroundColor: getEtapaColorConfig(etapa.key).border,
                               }}
                             />
                             {etapa.label}
@@ -1619,12 +1632,7 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
                   <th className="py-2.5 px-3 text-center w-24">DNI</th>
                   <th className="py-2.5 px-3 text-center w-16">Sec.</th>
                   {etapasConfiguradas.map((et) => {
-                    const color =
-                      et.key === 'edi'
-                        ? '#2563eb'
-                        : et.key === 'ep1'
-                        ? '#f59e0b'
-                        : '#10b981';
+                    const color = getEtapaColorConfig(et.key).border;
                     return (
                       <th key={et.key} className="py-2.5 px-3 text-center min-w-[90px]">
                         <span className="inline-flex items-center gap-1.5 justify-center">
@@ -2089,12 +2097,7 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
                 <div className="flex items-center gap-1">
                   {etapasConfiguradas.map((etapa) => {
                     const isChecked = activeStages[etapa.key] ?? true;
-                    const color =
-                      etapa.key === 'edi'
-                        ? '#2563eb'
-                        : etapa.key === 'ep1'
-                        ? '#f59e0b'
-                        : '#10b981';
+                    const color = getEtapaColorConfig(etapa.key).border;
 
                     const tieneDatos = !!modalStudent.etapas[etapa.key];
 
@@ -2237,17 +2240,12 @@ export const DocenteEvolucionEstudiantesTab: React.FC<DocenteEvolucionEstudiante
                   <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
                     Detalle por Etapa Evaluativa
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className={`grid grid-cols-1 ${etapasConfiguradas.length > 3 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'} gap-3`}>
                     {etapasConfiguradas
                       .filter((etapa) => activeStages[etapa.key] ?? true)
                       .map((etapa) => {
                         const item = modalStudent.etapas[etapa.key];
-                        const color =
-                          etapa.key === 'edi'
-                            ? '#2563eb'
-                            : etapa.key === 'ep1'
-                            ? '#f59e0b'
-                            : '#10b981';
+                        const color = getEtapaColorConfig(etapa.key).border;
 
                         if (!item) {
                           return (

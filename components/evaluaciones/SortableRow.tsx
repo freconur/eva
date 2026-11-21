@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import {
   MdDeleteForever,
@@ -88,19 +89,130 @@ const SortableRow = ({
   onToggleSelect,
   searchQuery,
 }: SortableRowProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: eva.id })
+
   const [showEstadoMenu, setShowEstadoMenu] = useState(false)
+  const [dropdownPos, setDropdownPos] = useState<{
+    top: number
+    left: number
+    placement: 'top' | 'bottom'
+  } | null>(null)
+  const [mounted, setMounted] = useState(false)
+
   const estadoMenuRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const calculateDropdownPosition = useCallback(() => {
+    if (!estadoMenuRef.current) return
+    const rect = estadoMenuRef.current.getBoundingClientRect()
+    const menuEl = dropdownRef.current
+    const menuHeight = menuEl ? menuEl.offsetHeight : 230
+    const menuWidth = menuEl ? menuEl.offsetWidth : 275
+
+    const spaceBelow = window.innerHeight - rect.bottom
+    const spaceAbove = rect.top
+
+    // Si no hay suficiente espacio abajo (menos de menuHeight + 12px) y arriba hay más espacio, abrir hacia arriba (dropup)
+    const openUpward = spaceBelow < menuHeight + 12 && spaceAbove > spaceBelow
+
+    // Alinear horizontalmente a la izquierda del botón de estado
+    let left = rect.left
+    if (left + menuWidth > window.innerWidth - 12) {
+      left = Math.max(12, rect.right - menuWidth)
+    }
+    if (left + menuWidth > window.innerWidth - 12) {
+      left = Math.max(12, window.innerWidth - menuWidth - 12)
+    }
+
+    const top = openUpward
+      ? Math.max(10, rect.top - menuHeight - 6)
+      : Math.min(window.innerHeight - menuHeight - 10, rect.bottom + 6)
+
+    setDropdownPos({
+      top,
+      left,
+      placement: openUpward ? 'top' : 'bottom',
+    })
+  }, [])
+
+  const toggleEstadoMenu = () => {
+    setShowEstadoMenu((prev) => {
+      const next = !prev
+      if (next) {
+        calculateDropdownPosition()
+      }
+      return next
+    })
+  }
+
+  // Refinar la posición una vez que el dropdown se monta en el DOM para medir su altura exacta
+  useEffect(() => {
+    if (showEstadoMenu && dropdownRef.current) {
+      calculateDropdownPosition()
+    }
+  }, [showEstadoMenu, calculateDropdownPosition])
+
+  // Cerrar el menú si la fila comienza a arrastrarse
+  useEffect(() => {
+    if (isDragging) {
+      setShowEstadoMenu(false)
+    }
+  }, [isDragging])
+
+  // Cierre por click exterior, scroll, resize o Escape
+  useEffect(() => {
     if (!showEstadoMenu) return
+
+    calculateDropdownPosition()
+
     const handleOutsideClick = (e: MouseEvent) => {
-      if (estadoMenuRef.current && !estadoMenuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (
+        estadoMenuRef.current &&
+        !estadoMenuRef.current.contains(target) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target)
+      ) {
         setShowEstadoMenu(false)
       }
     }
+
+    const handleScrollOrResize = (e: Event) => {
+      if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
+        return
+      }
+      setShowEstadoMenu(false)
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowEstadoMenu(false)
+      }
+    }
+
     document.addEventListener('mousedown', handleOutsideClick)
-    return () => document.removeEventListener('mousedown', handleOutsideClick)
-  }, [showEstadoMenu])
+    window.addEventListener('scroll', handleScrollOrResize, true)
+    window.addEventListener('resize', handleScrollOrResize)
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick)
+      window.removeEventListener('scroll', handleScrollOrResize, true)
+      window.removeEventListener('resize', handleScrollOrResize)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showEstadoMenu, calculateDropdownPosition])
 
   const handleSelectEstado = async (nuevoEstado: 'activa' | 'cerrada' | 'inactiva') => {
     setShowEstadoMenu(false)
@@ -110,15 +222,6 @@ const SortableRow = ({
       await toggleActiveStatus(eva)
     }
   }
-
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: eva.id })
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -317,7 +420,7 @@ const SortableRow = ({
               {isActiva ? (
                 <button
                   type="button"
-                  onClick={() => setShowEstadoMenu((prev) => !prev)}
+                  onClick={toggleEstadoMenu}
                   className={`${styles.actionIcon} ${styles.activeIcon}`}
                   title="Evaluación Activa (Abierta para calificar) - Clic para cambiar estado"
                   aria-label="Estado activa. Clic para cambiar estado."
@@ -327,7 +430,7 @@ const SortableRow = ({
               ) : isCerrada ? (
                 <button
                   type="button"
-                  onClick={() => setShowEstadoMenu((prev) => !prev)}
+                  onClick={toggleEstadoMenu}
                   className={`${styles.actionIcon} ${styles.cerradaIcon}`}
                   title="Evaluación Cerrada (Solo lectura, visible para docentes) - Clic para cambiar estado"
                   aria-label="Estado cerrada solo lectura. Clic para cambiar estado."
@@ -337,7 +440,7 @@ const SortableRow = ({
               ) : (
                 <button
                   type="button"
-                  onClick={() => setShowEstadoMenu((prev) => !prev)}
+                  onClick={toggleEstadoMenu}
                   className={`${styles.actionIcon} ${styles.inactiveIcon}`}
                   title="Evaluación Inactiva (Oculta para docentes) - Clic para cambiar estado"
                   aria-label="Estado inactiva. Clic para cambiar estado."
@@ -346,8 +449,17 @@ const SortableRow = ({
                 </button>
               )}
 
-              {showEstadoMenu && (
-                <div className={styles.estadoDropdownMenu}>
+              {mounted && showEstadoMenu && dropdownPos && typeof document !== 'undefined' && createPortal(
+                <div
+                  ref={dropdownRef}
+                  className={`${styles.estadoDropdownMenu} ${dropdownPos.placement === 'top' ? styles.estadoDropdownDropup : ''}`}
+                  style={{
+                    position: 'fixed',
+                    top: `${dropdownPos.top}px`,
+                    left: `${dropdownPos.left}px`,
+                    zIndex: 9999,
+                  }}
+                >
                   <div className={styles.estadoDropdownHeader}>
                     <span>Estado para Docentes</span>
                   </div>
@@ -396,7 +508,8 @@ const SortableRow = ({
                     </div>
                     {isInactiva && <MdCheck className={styles.estadoCheckIcon} />}
                   </button>
-                </div>
+                </div>,
+                document.body
               )}
             </div>
           )}

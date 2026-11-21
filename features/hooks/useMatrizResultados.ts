@@ -17,7 +17,7 @@ import { useGlobalContext } from '@/features/context/GlolbalContext';
 import { getCategoriasParaGrado } from '@/fuctions/categorias';
 import { regiones } from '@/fuctions/regiones';
 import { currentMonth, currentYear } from '@/fuctions/dates';
-import { GradoConfigAssignment } from '@/components/modals/ConfigurarMatrizModal';
+import { GradoConfigAssignment, EtapaMatrizConfig, getEtapasFromConfig } from '@/components/modals/ConfigurarMatrizModal';
 import {
   BaremoDecisiones,
   DEFAULT_BAREMO_DECISIONES,
@@ -30,6 +30,7 @@ export interface NivelComparativoStat {
   edi?: { cantidad: number; porcentaje: number };
   ep1?: { cantidad: number; porcentaje: number };
   ep2?: { cantidad: number; porcentaje: number };
+  [key: string]: any;
 }
 
 export interface PreguntaComparativaStat {
@@ -39,6 +40,7 @@ export interface PreguntaComparativaStat {
   edi?: { total: number; correctas: number; porcentaje: number };
   ep1?: { total: number; correctas: number; porcentaje: number };
   ep2?: { total: number; correctas: number; porcentaje: number };
+  [key: string]: any;
 }
 
 export interface UgelMatrizComparativaRow {
@@ -50,16 +52,19 @@ export interface UgelMatrizComparativaRow {
     edi?: number;
     ep1?: number;
     ep2?: number;
+    [key: string]: number | undefined;
   };
   rc: {
     edi?: number;
     ep1?: number;
     ep2?: number;
+    [key: string]: number | undefined;
   };
   puntaje: {
     edi?: number;
     ep1?: number;
     ep2?: number;
+    [key: string]: number | undefined;
   };
   niveles: NivelComparativoStat[];
   preguntas: Record<number, PreguntaComparativaStat>;
@@ -117,6 +122,9 @@ export const useMatrizResultados = () => {
         masked[key] = {
           ...val,
           ediId: undefined,
+          etapas: val.etapas?.map((e) =>
+            e.id === 'edi' ? { ...e, evaluacionId: undefined } : e
+          ),
         };
       } else {
         masked[key] = val;
@@ -139,6 +147,10 @@ export const useMatrizResultados = () => {
   // Estado de cálculo y filas comparativas
   const [loadingMatriz, setLoadingMatriz] = useState<boolean>(false);
   const [matrizRows, setMatrizRows] = useState<UgelMatrizComparativaRow[]>([]);
+  const [etapasConfiguradas, setEtapasConfiguradas] = useState<EtapaMatrizConfig[]>([]);
+  const [evaluacionesPorEtapa, setEvaluacionesPorEtapa] = useState<
+    Array<{ etapa: EtapaMatrizConfig; evaluacion: Evaluaciones | null }>
+  >([]);
   const [evaluacionEdi, setEvaluacionEdi] = useState<Evaluaciones | null>(null);
   const [evaluacionEp1, setEvaluacionEp1] = useState<Evaluaciones | null>(null);
   const [evaluacionEp2, setEvaluacionEp2] = useState<Evaluaciones | null>(null);
@@ -314,6 +326,15 @@ export const useMatrizResultados = () => {
         categoriaId,
         updatedAt: newConfig.updatedAt || new Date().toISOString(),
       };
+      if (newConfig.etapas && Array.isArray(newConfig.etapas)) {
+        cleanAssignment.etapas = newConfig.etapas.map((et) => ({
+          id: et.id,
+          codigo: et.codigo,
+          nombre: et.nombre,
+          subtitulo: et.subtitulo || '',
+          evaluacionId: et.evaluacionId || '',
+        }));
+      }
       if (newConfig.ediId && newConfig.ediId.trim()) {
         cleanAssignment.ediId = newConfig.ediId.trim();
       } else if (BLOQUEAR_EDI_3RO_A_6TO && gradoId >= 3 && gradoId <= 6) {
@@ -327,6 +348,13 @@ export const useMatrizResultados = () => {
       if (newConfig.ep2Id && newConfig.ep2Id.trim()) {
         cleanAssignment.ep2Id = newConfig.ep2Id.trim();
       }
+
+      // Preservar cualquier clave dinámica de etapa (ej. ep3Id, ep4Id...)
+      Object.keys(newConfig).forEach((k) => {
+        if (cleanAssignment[k] === undefined && newConfig[k] !== undefined) {
+          cleanAssignment[k] = newConfig[k];
+        }
+      });
 
       const updatedGrados = {
         ...configGrados,
@@ -729,74 +757,94 @@ export const useMatrizResultados = () => {
     }
   };
 
-  // 4. Calcular la matriz comparativa multi-evaluación (EDI, EP1, EP2)
+  // 4. Calcular la matriz comparativa multi-evaluación dinámica (EDI, EP1, EP2, EP3, EP4...)
   const computeComparativeMatrix = useCallback(async () => {
     setLoadingMatriz(true);
     try {
       const cfgKey = `${selectedGrado}_${selectedCategoria}`;
       const cfg = effectiveConfigGrados[cfgKey] || effectiveConfigGrados[String(selectedGrado)] || {};
-      const { ediId, ep1Id, ep2Id } = cfg;
+      const etapas = getEtapasFromConfig(cfg);
+      setEtapasConfiguradas(etapas);
 
-      // Cargar en paralelo las 3 evaluaciones asignadas
-      const [resEdi, resEp1, resEp2] = await Promise.all([
-        fetchSingleEvalData(ediId, yearSelected),
-        fetchSingleEvalData(ep1Id, yearSelected),
-        fetchSingleEvalData(ep2Id, yearSelected),
-      ]);
-
-      setEvaluacionEdi(resEdi.evaluacion);
-      setEvaluacionEp1(resEp1.evaluacion);
-      setEvaluacionEp2(resEp2.evaluacion);
-
-      // Unificar preguntas de las evaluaciones activas (secuencialmente por posición)
-      const maxQuestions = Math.max(
-        resEdi.preguntas.length,
-        resEp1.preguntas.length,
-        resEp2.preguntas.length
+      // Cargar en paralelo todas las evaluaciones asignadas dinámicamente
+      const evalResults = await Promise.all(
+        etapas.map(async (etapa) => {
+          const isBlockedEdi =
+            etapa.id === 'edi' &&
+            BLOQUEAR_EDI_3RO_A_6TO &&
+            selectedGrado >= 3 &&
+            selectedGrado <= 6;
+          const evalId = isBlockedEdi ? undefined : etapa.evaluacionId;
+          const res = await fetchSingleEvalData(evalId, yearSelected);
+          return { etapa, ...res };
+        })
       );
+
+      setEvaluacionesPorEtapa(
+        evalResults.map((r) => ({ etapa: r.etapa, evaluacion: r.evaluacion }))
+      );
+
+      // Compatibilidad hacia atrás para evaluacionEdi, evaluacionEp1, evaluacionEp2
+      const foundEdi = evalResults.find((r) => r.etapa.id === 'edi')?.evaluacion || null;
+      const foundEp1 = evalResults.find((r) => r.etapa.id === 'ep1')?.evaluacion || null;
+      const foundEp2 = evalResults.find((r) => r.etapa.id === 'ep2')?.evaluacion || null;
+      setEvaluacionEdi(foundEdi);
+      setEvaluacionEp1(foundEp1);
+      setEvaluacionEp2(foundEp2);
+
+      // Unificar preguntas de todas las evaluaciones activas (secuencialmente por posición)
+      const maxQuestions = Math.max(0, ...evalResults.map((r) => r.preguntas.length));
       const positions = Array.from({ length: maxQuestions }, (_, i) => i + 1);
 
       const unifiedPreguntas: PreguntasRespuestas[] = positions.map((pos) => {
         const idx = pos - 1;
-        const ediP = resEdi.preguntas[idx];
-        const ep1P = resEp1.preguntas[idx];
-        const ep2P = resEp2.preguntas[idx];
+        const preguntasMap: Record<string, PreguntasRespuestas | undefined> = {};
+        let firstAvailable: PreguntasRespuestas | null = null;
 
-        const base = ediP || ep1P || ep2P || { order: pos };
+        evalResults.forEach(({ etapa, preguntas }) => {
+          const p = preguntas[idx];
+          preguntasMap[etapa.id] = p;
+          if (!firstAvailable && p) {
+            firstAvailable = p;
+          }
+        });
+
+        const ediP = preguntasMap.edi;
+        const ep1P = preguntasMap.ep1;
+        const ep2P = preguntasMap.ep2;
+        const base: Partial<PreguntasRespuestas> & { order: number } = firstAvailable || { order: pos };
 
         return {
           ...base,
           order: pos,
           preguntaDocente:
-            ediP?.preguntaDocente ||
-            ep1P?.preguntaDocente ||
-            ep2P?.preguntaDocente ||
             base.preguntaDocente ||
+            evalResults.find((r) => r.preguntas[idx]?.preguntaDocente)?.preguntas[idx]
+              ?.preguntaDocente ||
             '',
           pregunta:
-            ediP?.pregunta ||
-            ep1P?.pregunta ||
-            ep2P?.pregunta ||
             base.pregunta ||
+            evalResults.find((r) => r.preguntas[idx]?.pregunta)?.preguntas[idx]?.pregunta ||
             '',
           ediPregunta: ediP,
           ep1Pregunta: ep1P,
           ep2Pregunta: ep2P,
+          preguntasPorEtapa: preguntasMap,
         } as any;
       });
 
       setPreguntasUnificadas(unifiedPreguntas);
 
-      // Niveles de referencia (tomar de la primera evaluación que los tenga definidos o por defecto)
-      const nivelesConfig: NivelYPuntaje[] =
-        resEp2.evaluacion?.nivelYPuntaje ||
-        resEp1.evaluacion?.nivelYPuntaje ||
-        resEdi.evaluacion?.nivelYPuntaje || [
-          { nivel: 'Satisfactorio', color: '#9bbb58' },
-          { nivel: 'En proceso', color: '#f89646' },
-          { nivel: 'En inicio', color: '#a64e4d' },
-          { nivel: 'Previo al inicio', color: '#a5a5a5' },
-        ];
+      // Niveles de referencia: tomar de la primera evaluación que los tenga definidos o por defecto
+      const evalConNiveles = evalResults.find(
+        (r) => r.evaluacion?.nivelYPuntaje && r.evaluacion.nivelYPuntaje.length > 0
+      );
+      const nivelesConfig: NivelYPuntaje[] = evalConNiveles?.evaluacion?.nivelYPuntaje || [
+        { nivel: 'Satisfactorio', color: '#9bbb58' },
+        { nivel: 'En proceso', color: '#f89646' },
+        { nivel: 'En inicio', color: '#a64e4d' },
+        { nivel: 'Previo al inicio', color: '#a5a5a5' },
+      ];
 
       const cleanKey = (s: string) =>
         (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
@@ -804,56 +852,48 @@ export const useMatrizResultados = () => {
       // Construir filas comparativas para las 14 UGELs
       const rows: UgelMatrizComparativaRow[] = regiones.map((reg, index) => {
         const ugelId = reg.id;
-        const dataEdi = resEdi.ugelDataMap.get(ugelId);
-        const dataEp1 = resEp1.ugelDataMap.get(ugelId);
-        const dataEp2 = resEp2.ugelDataMap.get(ugelId);
 
-        // R.C
-        const rc = {
-          edi: dataEdi?.rcPromedio,
-          ep1: dataEp1?.rcPromedio,
-          ep2: dataEp2?.rcPromedio,
-        };
+        // R.C, Puntaje, TotalEstudiantes dinámicos para todas las etapas configuradas
+        const rc: Record<string, number | undefined> = {};
+        const puntaje: Record<string, number | undefined> = {};
+        const totalEstudiantes: Record<string, number | undefined> = {};
 
-        // Puntaje Promedio
-        const puntaje = {
-          edi: dataEdi?.puntajePromedio,
-          ep1: dataEp1?.puntajePromedio,
-          ep2: dataEp2?.puntajePromedio,
-        };
+        evalResults.forEach(({ etapa, ugelDataMap }) => {
+          const dataEtapa = ugelDataMap.get(ugelId);
+          rc[etapa.id] = dataEtapa?.rcPromedio;
+          puntaje[etapa.id] = dataEtapa?.puntajePromedio;
+          totalEstudiantes[etapa.id] = dataEtapa?.totalEstudiantes;
+        });
 
-        // Total Estudiantes
-        const totalEstudiantes = {
-          edi: dataEdi?.totalEstudiantes,
-          ep1: dataEp1?.totalEstudiantes,
-          ep2: dataEp2?.totalEstudiantes,
-        };
-
-        // Niveles comparativos
+        // Niveles comparativos dinámicos
         const niveles: NivelComparativoStat[] = nivelesConfig.map((nc) => {
           const k = cleanKey(nc.nivel || '');
-          return {
+          const statObj: any = {
             id: nc.id ? String(nc.id) : undefined,
             nivel: nc.nivel || 'Sin Nombre',
             color: nc.color || '#94a3b8',
-            edi: dataEdi?.niveles?.[k],
-            ep1: dataEp1?.niveles?.[k],
-            ep2: dataEp2?.niveles?.[k],
           };
+          evalResults.forEach(({ etapa, ugelDataMap }) => {
+            const dataEtapa = ugelDataMap.get(ugelId);
+            statObj[etapa.id] = dataEtapa?.niveles?.[k];
+          });
+          return statObj as NivelComparativoStat;
         });
 
-        // Preguntas comparativas
+        // Preguntas comparativas dinámicas
         const preguntasRow: Record<number, PreguntaComparativaStat> = {};
         unifiedPreguntas.forEach((p, pIdx) => {
           const order = p.order !== undefined ? Number(p.order) : pIdx + 1;
-          preguntasRow[order] = {
+          const pStatObj: any = {
             order,
             id: p.id,
             enunciado: p.pregunta,
-            edi: dataEdi?.preguntas?.[order],
-            ep1: dataEp1?.preguntas?.[order],
-            ep2: dataEp2?.preguntas?.[order],
           };
+          evalResults.forEach(({ etapa, ugelDataMap }) => {
+            const dataEtapa = ugelDataMap.get(ugelId);
+            pStatObj[etapa.id] = dataEtapa?.preguntas?.[order];
+          });
+          preguntasRow[order] = pStatObj as PreguntaComparativaStat;
         });
 
         return {
@@ -861,9 +901,9 @@ export const useMatrizResultados = () => {
           id: ugelId,
           nombre: reg.region,
           nombreCorto: (reg as any).nombreCorto || reg.region,
-          totalEstudiantes,
-          rc,
-          puntaje,
+          totalEstudiantes: totalEstudiantes as any,
+          rc: rc as any,
+          puntaje: puntaje as any,
           niveles,
           preguntas: preguntasRow,
         };
@@ -897,6 +937,8 @@ export const useMatrizResultados = () => {
     setMonthSelected,
     matrizRows,
     loadingMatriz,
+    etapasConfiguradas,
+    evaluacionesPorEtapa,
     evaluacionEdi,
     evaluacionEp1,
     evaluacionEp2,

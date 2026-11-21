@@ -13,15 +13,23 @@ export interface CompressedCarnetResult {
   height: number;
 }
 
+export interface CustomCropArea {
+  cropX: number;
+  cropY: number;
+  cropWidth: number;
+  cropHeight: number;
+}
+
 export interface CompressCarnetOptions {
   targetWidth?: number;
   targetHeight?: number;
   maxSizeBytes?: number;
   initialQuality?: number;
+  customCrop?: CustomCropArea;
 }
 
 export const compressCarnetImage = async (
-  file: File,
+  file: File | Blob,
   options: CompressCarnetOptions = {}
 ): Promise<CompressedCarnetResult> => {
   const {
@@ -54,17 +62,25 @@ export const compressCarnetImage = async (
           let cropWidth = img.width;
           let cropHeight = img.height;
 
-          // Recorte centrado (Center-Crop) según la relación de aspecto del carnet
-          if (sourceRatio > targetRatio) {
-            // La imagen es más ancha que el carnet: recortamos los laterales
-            cropWidth = Math.round(img.height * targetRatio);
-            cropX = Math.round((img.width - cropWidth) / 2);
-          } else if (sourceRatio < targetRatio) {
-            // La imagen es más alta que el carnet: recortamos superior/inferior con ligero énfasis superior
-            cropHeight = Math.round(img.width / targetRatio);
-            // En fotos de personas, los rostros suelen estar en el tercio superior
-            const yOffsetFactor = 0.35;
-            cropY = Math.max(0, Math.round((img.height - cropHeight) * yOffsetFactor));
+          if (options.customCrop) {
+            // Recorte personalizado manual definido por el usuario (ej. encuadre interactivo)
+            cropX = Math.max(0, Math.min(img.width - 1, Math.round(options.customCrop.cropX)));
+            cropY = Math.max(0, Math.min(img.height - 1, Math.round(options.customCrop.cropY)));
+            cropWidth = Math.max(1, Math.min(img.width - cropX, Math.round(options.customCrop.cropWidth)));
+            cropHeight = Math.max(1, Math.min(img.height - cropY, Math.round(options.customCrop.cropHeight)));
+          } else {
+            // Recorte centrado automático (Center-Crop) según la relación de aspecto del carnet
+            if (sourceRatio > targetRatio) {
+              // La imagen es más ancha que el carnet: recortamos los laterales
+              cropWidth = Math.round(img.height * targetRatio);
+              cropX = Math.round((img.width - cropWidth) / 2);
+            } else if (sourceRatio < targetRatio) {
+              // La imagen es más alta que el carnet: recortamos superior/inferior con ligero énfasis superior
+              cropHeight = Math.round(img.width / targetRatio);
+              // En fotos de personas, los rostros suelen estar en el tercio superior
+              const yOffsetFactor = 0.35;
+              cropY = Math.max(0, Math.round((img.height - cropHeight) * yOffsetFactor));
+            }
           }
 
           let currentWidth = targetWidth;

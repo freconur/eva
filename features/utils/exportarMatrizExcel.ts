@@ -8,31 +8,23 @@ import { ColumnVisibilityConfig } from '@/components/reportes/TablaMatrizCompara
 interface ExportarMatrizExcelOptions {
   data: UgelMatrizComparativaRow[];
   totalGeneral?: {
-    rc?: { edi?: number; ep1?: number; ep2?: number };
-    puntaje?: { edi?: number; ep1?: number; ep2?: number };
+    rc?: Record<string, number | undefined>;
+    puntaje?: Record<string, number | undefined>;
     niveles?: Array<{
       id?: string | number;
       nivel: string;
       color?: string;
-      edi?: { cantidad: number; porcentaje: number };
-      ep1?: { cantidad: number; porcentaje: number };
-      ep2?: { cantidad: number; porcentaje: number };
+      [stageKey: string]: { cantidad: number; porcentaje: number } | any;
     }>;
     preguntas?: Record<
       number,
-      {
-        edi?: { total: number; correctas: number; porcentaje: number };
-        ep1?: { total: number; correctas: number; porcentaje: number };
-        ep2?: { total: number; correctas: number; porcentaje: number };
-      }
+      Record<string, { total: number; correctas: number; porcentaje: number } | undefined>
     > | Array<{
       order: number;
-      edi?: { total: number; correctas: number; porcentaje: number };
-      ep1?: { total: number; correctas: number; porcentaje: number };
-      ep2?: { total: number; correctas: number; porcentaje: number };
+      [key: string]: { total: number; correctas: number; porcentaje: number } | any;
     }>;
   } | null;
-  activeStages: ('edi' | 'ep1' | 'ep2')[];
+  activeStages: string[];
   colVisibility: ColumnVisibilityConfig;
   visiblePreguntas: PreguntasRespuestas[];
   gradoName?: string;
@@ -59,6 +51,12 @@ const ARGB = {
   STAGE_EP1_TEXT: 'FF92400E',
   STAGE_EP2: 'FFEDE9FE', // Púrpura suave
   STAGE_EP2_TEXT: 'FF5B21B6',
+  STAGE_EP3: 'FFD1FAE5', // Esmeralda suave
+  STAGE_EP3_TEXT: 'FF065F46',
+  STAGE_EP4: 'FFE0F2FE', // Sky/Cyan suave
+  STAGE_EP4_TEXT: 'FF0369A1',
+  STAGE_GENERIC: 'FFF1F5F9', // Slate suave
+  STAGE_GENERIC_TEXT: 'FF334155',
 
   // Niveles de Logro oficiales CNEB
   NIVEL_SATISFACTORIO: 'FF9BBB58',
@@ -110,6 +108,16 @@ const getNivelCellBg = (nombreNivel: string): string => {
   return ARGB.WHITE;
 };
 
+const getStageHeaderColors = (etapa: string): { bg: string; text: string } => {
+  const norm = (etapa || '').toLowerCase().trim();
+  if (norm === 'edi') return { bg: ARGB.STAGE_EDI, text: ARGB.STAGE_EDI_TEXT };
+  if (norm === 'ep1') return { bg: ARGB.STAGE_EP1, text: ARGB.STAGE_EP1_TEXT };
+  if (norm === 'ep2') return { bg: ARGB.STAGE_EP2, text: ARGB.STAGE_EP2_TEXT };
+  if (norm === 'ep3') return { bg: ARGB.STAGE_EP3, text: ARGB.STAGE_EP3_TEXT };
+  if (norm === 'ep4') return { bg: ARGB.STAGE_EP4, text: ARGB.STAGE_EP4_TEXT };
+  return { bg: ARGB.STAGE_GENERIC, text: ARGB.STAGE_GENERIC_TEXT };
+};
+
 export const exportarMatrizComparativaExcel = async ({
   data,
   totalGeneral,
@@ -134,8 +142,8 @@ export const exportarMatrizComparativaExcel = async ({
   if (stagesCount === 0) return;
 
   // Consolidado seguro y tipado
-  const safeRc: { edi?: number; ep1?: number; ep2?: number } = totalGeneral?.rc || {};
-  const safePuntaje: { edi?: number; ep1?: number; ep2?: number } = totalGeneral?.puntaje || {};
+  const safeRc: Record<string, number | undefined> = totalGeneral?.rc || {};
+  const safePuntaje: Record<string, number | undefined> = totalGeneral?.puntaje || {};
   const safeNiveles = totalGeneral?.niveles || [];
   const safePreguntas = totalGeneral?.preguntas || {};
 
@@ -217,15 +225,8 @@ export const exportarMatrizComparativaExcel = async ({
 
     activeStages.forEach((etapa, idx) => {
       const c = worksheet.getCell(5, startCol + idx);
-      const isEdi = etapa === 'edi';
-      const isEp1 = etapa === 'ep1';
-      applyHeaderStyle(
-        c,
-        isEdi ? ARGB.STAGE_EDI : isEp1 ? ARGB.STAGE_EP1 : ARGB.STAGE_EP2,
-        isEdi ? ARGB.STAGE_EDI_TEXT : isEp1 ? ARGB.STAGE_EP1_TEXT : ARGB.STAGE_EP2_TEXT,
-        true,
-        9
-      );
+      const { bg, text } = getStageHeaderColors(etapa);
+      applyHeaderStyle(c, bg, text, true, 9);
       c.value = etapa.toUpperCase();
       worksheet.getColumn(startCol + idx).width = 11;
     });
@@ -243,15 +244,8 @@ export const exportarMatrizComparativaExcel = async ({
 
     activeStages.forEach((etapa, idx) => {
       const c = worksheet.getCell(5, startCol + idx);
-      const isEdi = etapa === 'edi';
-      const isEp1 = etapa === 'ep1';
-      applyHeaderStyle(
-        c,
-        isEdi ? ARGB.STAGE_EDI : isEp1 ? ARGB.STAGE_EP1 : ARGB.STAGE_EP2,
-        isEdi ? ARGB.STAGE_EDI_TEXT : isEp1 ? ARGB.STAGE_EP1_TEXT : ARGB.STAGE_EP2_TEXT,
-        true,
-        9
-      );
+      const { bg, text } = getStageHeaderColors(etapa);
+      applyHeaderStyle(c, bg, text, true, 9);
       c.value = etapa.toUpperCase();
       worksheet.getColumn(startCol + idx).width = 11;
     });
@@ -272,15 +266,8 @@ export const exportarMatrizComparativaExcel = async ({
 
       activeStages.forEach((etapa, idx) => {
         const c = worksheet.getCell(5, startCol + idx);
-        const isEdi = etapa === 'edi';
-        const isEp1 = etapa === 'ep1';
-        applyHeaderStyle(
-          c,
-          isEdi ? ARGB.STAGE_EDI : isEp1 ? ARGB.STAGE_EP1 : ARGB.STAGE_EP2,
-          isEdi ? ARGB.STAGE_EDI_TEXT : isEp1 ? ARGB.STAGE_EP1_TEXT : ARGB.STAGE_EP2_TEXT,
-          true,
-          9
-        );
+        const stageColors = getStageHeaderColors(etapa);
+        applyHeaderStyle(c, stageColors.bg, stageColors.text, true, 9);
         c.value = etapa.toUpperCase();
         worksheet.getColumn(startCol + idx).width = 11;
       });
@@ -303,15 +290,8 @@ export const exportarMatrizComparativaExcel = async ({
 
       activeStages.forEach((etapa, idx) => {
         const c = worksheet.getCell(5, startCol + idx);
-        const isEdi = etapa === 'edi';
-        const isEp1 = etapa === 'ep1';
-        applyHeaderStyle(
-          c,
-          isEdi ? ARGB.STAGE_EDI : isEp1 ? ARGB.STAGE_EP1 : ARGB.STAGE_EP2,
-          isEdi ? ARGB.STAGE_EDI_TEXT : isEp1 ? ARGB.STAGE_EP1_TEXT : ARGB.STAGE_EP2_TEXT,
-          true,
-          9
-        );
+        const stageColors = getStageHeaderColors(etapa);
+        applyHeaderStyle(c, stageColors.bg, stageColors.text, true, 9);
         c.value = etapa.toUpperCase();
         worksheet.getColumn(startCol + idx).width = 9.5;
       });

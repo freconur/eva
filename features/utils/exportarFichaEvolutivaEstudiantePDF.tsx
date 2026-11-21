@@ -2013,10 +2013,27 @@ const VectorRadarChartPDFFlotante: React.FC<{
                     const dict = studentEtapas[etapa.key]?.actuacionesResultados as Record<string | number, any> | undefined;
                     const val = dict?.[act.order] ?? dict?.[String(act.order)];
                     let fillColor = '#f1f5f9';
-                    if (val === 2) {
-                      fillColor = etapaColor.border;
-                    } else if (val === 1) {
-                      fillColor = '#f43f5e';
+
+                    // Cálculo del acumulado de aciertos hasta la etapa actual k
+                    let aciertosAcumulados = 0;
+                    for (let j = 0; j <= k; j++) {
+                      const prevEtapa = activeEtapasList[j];
+                      if (prevEtapa) {
+                        const prevDict = studentEtapas[prevEtapa.key]?.actuacionesResultados as Record<string | number, any> | undefined;
+                        const prevVal = prevDict?.[act.order] ?? prevDict?.[String(act.order)];
+                        if (prevVal === 2) {
+                          aciertosAcumulados++;
+                        }
+                      }
+                    }
+
+                    if (val === 1 || val === 2) {
+                      const nivelAcumulado = determinarNivelActuacion(
+                        aciertosAcumulados,
+                        activeEtapasList.length,
+                        DEFAULT_NIVELES_ACTUACIONES
+                      );
+                      fillColor = nivelAcumulado.color;
                     }
 
                     const d = describeAnnularSector(
@@ -2580,10 +2597,27 @@ const VectorRadarChartPDFColumnas: React.FC<{
                         const dict = studentEtapas[etapa.key]?.actuacionesResultados as Record<string | number, any> | undefined;
                         const val = dict?.[act.order] ?? dict?.[String(act.order)];
                         let fillColor = '#f1f5f9';
-                        if (val === 2) {
-                          fillColor = etapaColor.border;
-                        } else if (val === 1) {
-                          fillColor = '#f43f5e';
+
+                        // Cálculo del acumulado de aciertos hasta la etapa actual k
+                        let aciertosAcumulados = 0;
+                        for (let j = 0; j <= k; j++) {
+                          const prevEtapa = activeEtapasList[j];
+                          if (prevEtapa) {
+                            const prevDict = studentEtapas[prevEtapa.key]?.actuacionesResultados as Record<string | number, any> | undefined;
+                            const prevVal = prevDict?.[act.order] ?? prevDict?.[String(act.order)];
+                            if (prevVal === 2) {
+                              aciertosAcumulados++;
+                            }
+                          }
+                        }
+
+                        if (val === 1 || val === 2) {
+                          const nivelAcumulado = determinarNivelActuacion(
+                            aciertosAcumulados,
+                            activeEtapasList.length,
+                            DEFAULT_NIVELES_ACTUACIONES
+                          );
+                          fillColor = nivelAcumulado.color;
                         }
 
                         const d = describeAnnularSector(
@@ -2967,10 +3001,23 @@ const VectorRadarChartPDFDiana: React.FC<{
                   {actsGeometry.map(({ act, startDeg, endDeg }) => {
                     const val = getActVal(etapa.key, act.order);
                     let fillColor = '#f1f5f9';
-                    if (val === 2) {
-                      fillColor = etapaColor.border;
-                    } else if (val === 1) {
-                      fillColor = '#f43f5e';
+
+                    // Cálculo del acumulado de aciertos hasta la etapa actual k
+                    let aciertosAcumulados = 0;
+                    for (let j = 0; j <= k; j++) {
+                      const prevEtapa = effectiveActiveEtapas[j];
+                      if (prevEtapa && getActVal(prevEtapa.key, act.order) === 2) {
+                        aciertosAcumulados++;
+                      }
+                    }
+
+                    if (val === 1 || val === 2) {
+                      const nivelAcumulado = determinarNivelActuacion(
+                        aciertosAcumulados,
+                        effectiveActiveEtapas.length,
+                        DEFAULT_NIVELES_ACTUACIONES
+                      );
+                      fillColor = nivelAcumulado.color;
                     }
 
                     const d = describeAnnularSector(

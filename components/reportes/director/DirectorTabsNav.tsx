@@ -236,6 +236,7 @@ export const DirectorTabsNav: React.FC<DirectorTabsNavProps> = ({
   const {
     tabLabels,
     tabOrder,
+    tabVisibility,
     saveTabLabel,
     saveTabOrder,
     isSaving,
@@ -358,11 +359,12 @@ export const DirectorTabsNav: React.FC<DirectorTabsNavProps> = ({
     });
 
     return items.filter((tab) => {
+      if (tabVisibility && tabVisibility[tab.id] === false) return false;
       if (hideBrechas && tab.id === 'brechas') return false;
       if (hiddenTabs && hiddenTabs.includes(tab.id)) return false;
       return true;
     });
-  }, [baseTabs, tabOrder, hideBrechas, hiddenTabs]);
+  }, [baseTabs, tabOrder, tabVisibility, hideBrechas, hiddenTabs]);
 
   // Manejador del evento Drag & Drop (reordenamiento de pestañas)
   const handleDragEnd = (event: DragEndEvent) => {

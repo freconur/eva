@@ -1080,8 +1080,7 @@ describe('DocenteActuacionesRadarChart Component', () => {
         />
       );
 
-      // En el card de estadísticas debe mostrar "No evaluado" y "—" para EP1
-      expect(screen.getByText('No evaluado')).toBeInTheDocument();
+      // Renderiza sin errores y muestra las etapas evaluadas
       expect(screen.getAllByText(/EDI \(Diagnóstica\)/i).length).toBeGreaterThan(0);
       expect(screen.getAllByText(/EP2 \(Progresiva 2\)/i).length).toBeGreaterThan(0);
     });
@@ -1112,9 +1111,6 @@ describe('DocenteActuacionesRadarChart Component', () => {
 
       // 4. No debe renderizar el buscador de habilidades encima de la tabla
       expect(screen.queryByTestId('diana-search-input')).not.toBeInTheDocument();
-
-      // 5. Debe renderizar el botón de reproducción de la evolución
-      expect(screen.getByTestId('toggle-evolution-play')).toBeInTheDocument();
     });
 
     it('permite conmutar al modo Diana desde el selector de controles', () => {
@@ -1153,7 +1149,7 @@ describe('DocenteActuacionesRadarChart Component', () => {
       expect(screen.getAllByText(/Trayectoria:/i).length).toBeGreaterThan(0);
     });
 
-    it('reproduce la animación paso a paso al hacer clic en el botón de reproducción', () => {
+    it('asigna los colores de los anillos según el nivel acumulado por habilidad en cada etapa', () => {
       render(
         <DocenteActuacionesRadarChart
           student={mockStudent}
@@ -1163,16 +1159,29 @@ describe('DocenteActuacionesRadarChart Component', () => {
         />
       );
 
-      const playBtn = screen.getByTestId('toggle-evolution-play');
-      expect(screen.getByText(/Reproducir evolución/i)).toBeInTheDocument();
+      // Actuación 1:
+      // EDI (etapa 1): acertó (1 acierto acum.) -> Iniciándose (#9f4242 / rojo vino)
+      // EP1 (etapa 2): acertó (2 aciertos acum.) -> Consolidación (#f97316 / naranja)
+      // EP2 (etapa 3): acertó (3 aciertos acum.) -> Autonomía (#8cb346 / verde)
+      expect(screen.getByTestId('diana-sector-edi-1')).toHaveAttribute('fill', '#9f4242');
+      expect(screen.getByTestId('diana-sector-ep1-1')).toHaveAttribute('fill', '#f97316');
+      expect(screen.getByTestId('diana-sector-ep2-1')).toHaveAttribute('fill', '#8cb346');
 
-      // Iniciar reproducción
-      fireEvent.click(playBtn);
-      expect(screen.getByText(/Pausar/i)).toBeInTheDocument();
+      // Actuación 2:
+      // EDI (etapa 1): falló (0 aciertos acum.) -> Por desarrollar (#9ca3af / plomo)
+      // EP1 (etapa 2): acertó (1 acierto acum.) -> Iniciándose (#9f4242 / rojo vino)
+      // EP2 (etapa 3): acertó (2 aciertos acum.) -> Consolidación (#f97316 / naranja)
+      expect(screen.getByTestId('diana-sector-edi-2')).toHaveAttribute('fill', '#9ca3af');
+      expect(screen.getByTestId('diana-sector-ep1-2')).toHaveAttribute('fill', '#9f4242');
+      expect(screen.getByTestId('diana-sector-ep2-2')).toHaveAttribute('fill', '#f97316');
 
-      // Pausar reproducción
-      fireEvent.click(playBtn);
-      expect(screen.getByText(/Reproducir evolución/i)).toBeInTheDocument();
+      // Actuación 3:
+      // EDI (etapa 1): falló (0 aciertos acum.) -> Por desarrollar (#9ca3af / plomo)
+      // EP1 (etapa 2): falló (0 aciertos acum.) -> Por desarrollar (#9ca3af / plomo)
+      // EP2 (etapa 3): acertó (1 acierto acum.) -> Iniciándose (#9f4242 / rojo vino)
+      expect(screen.getByTestId('diana-sector-edi-3')).toHaveAttribute('fill', '#9ca3af');
+      expect(screen.getByTestId('diana-sector-ep1-3')).toHaveAttribute('fill', '#9ca3af');
+      expect(screen.getByTestId('diana-sector-ep2-3')).toHaveAttribute('fill', '#9f4242');
     });
 
     it('muestra la columna Nivel en la tabla interactiva y los badges con el color del nivel', () => {
@@ -1188,11 +1197,35 @@ describe('DocenteActuacionesRadarChart Component', () => {
       // 1. Debe existir la cabecera de la columna Nivel en la tabla (Opción A)
       expect(screen.getByRole('columnheader', { name: /^Nivel$/i })).toBeInTheDocument();
 
-      // 2. Las filas deben mostrar la píldora del nivel correspondiente
-      expect(screen.getByTestId('diana-table-nivel-1')).toBeInTheDocument();
-      expect(screen.getByTestId('diana-table-nivel-2')).toBeInTheDocument();
+      // 2. Las filas deben mostrar la píldora del nivel correspondiente con el total acumulado y nombre
+      const nivelPill1 = screen.getByTestId('diana-table-nivel-1');
+      expect(nivelPill1).toBeInTheDocument();
+      expect(nivelPill1).toHaveTextContent('3');
+      expect(nivelPill1).toHaveTextContent('Autonomía');
 
-      // 3. Al seleccionar una actuación, el badge de nivel formativo debe estar presente
+      const nivelPill2 = screen.getByTestId('diana-table-nivel-2');
+      expect(nivelPill2).toBeInTheDocument();
+      expect(nivelPill2).toHaveTextContent('2');
+      expect(nivelPill2).toHaveTextContent('Consolidación');
+
+      // 3. Las celdas de etapas muestran +1 con el color del nivel si acertó y 0 con plomo si no acertó
+      const cell1Edi = screen.getByTestId('diana-table-cell-1-edi');
+      expect(cell1Edi).toHaveTextContent('+1');
+      expect(cell1Edi).toHaveStyle({ backgroundColor: '#9f4242' }); // Iniciándose
+
+      const cell1Ep1 = screen.getByTestId('diana-table-cell-1-ep1');
+      expect(cell1Ep1).toHaveTextContent('+1');
+      expect(cell1Ep1).toHaveStyle({ backgroundColor: '#f97316' }); // Consolidación
+
+      const cell1Ep2 = screen.getByTestId('diana-table-cell-1-ep2');
+      expect(cell1Ep2).toHaveTextContent('+1');
+      expect(cell1Ep2).toHaveStyle({ backgroundColor: '#8cb346' }); // Autonomía
+
+      const cell2Edi = screen.getByTestId('diana-table-cell-2-edi');
+      expect(cell2Edi).toHaveTextContent('0');
+      expect(cell2Edi).toHaveStyle({ backgroundColor: '#9ca3af' }); // Por desarrollar
+
+      // 4. Al seleccionar una actuación, el badge de nivel formativo debe estar presente
       fireEvent.click(screen.getByTestId('diana-row-1'));
       expect(screen.getByTestId('badge-nivel-actuacion-global')).toBeInTheDocument();
     });
@@ -1250,15 +1283,147 @@ describe('DocenteActuacionesRadarChart Component', () => {
       // 7. En su lugar debe mostrar la trayectoria acumulada (ej. 'Trayectoria: 1/2', 'Trayectoria: 2/3')
       expect(screen.getAllByText(/Trayectoria: \d+\/\d+/i).length).toBeGreaterThanOrEqual(3);
 
-      // 8. Botón para volver al resumen global
-      const returnBtn = screen.getByText(/✕ Ver resumen global/i);
+      // 8. Botón para volver al resumen global o ver todas
+      const returnBtn = screen.getByText(/✕ (Ver todas|Ver resumen global)/i);
       expect(returnBtn).toBeInTheDocument();
 
-      // Al hacer clic en '✕ Ver resumen global', regresa al estado global inicial
+      // Al hacer clic en '✕ Ver todas', regresa al estado global inicial
       fireEvent.click(returnBtn);
       expect(screen.getByTestId('diana-card-global-resumen')).toBeInTheDocument();
       expect(screen.queryByTestId('diana-card-actuacion-detalle')).not.toBeInTheDocument();
       expect(screen.getByText('1/3')).toBeInTheDocument();
+    });
+
+    it('filtra la tabla interactiva de habilidades al hacer hover en el gráfico diana polar mostrando solo esa fila y datos hasta la etapa hovereada', () => {
+      render(
+        <DocenteActuacionesRadarChart
+          student={mockStudent}
+          etapasConfiguradas={mockEtapas}
+          catalogoActuaciones={mockCatalogo}
+          layoutMode="diana"
+        />
+      );
+
+      // 1. Inicialmente se muestran todas las filas en la tabla (3 actuaciones)
+      expect(screen.getByTestId('diana-row-1')).toBeInTheDocument();
+      expect(screen.getByTestId('diana-row-2')).toBeInTheDocument();
+      expect(screen.getByTestId('diana-row-3')).toBeInTheDocument();
+
+      // 2. Al hacer hover en el sector de la Actuación 2 en EP1 (etapa índice 1)
+      const sectorEp1_2 = screen.getByTestId('diana-sector-ep1-2');
+      fireEvent.mouseEnter(sectorEp1_2);
+
+      // La tabla debe filtrarse para mostrar ÚNICAMENTE la Actuación 2
+      expect(screen.getByTestId('diana-row-2')).toBeInTheDocument();
+      expect(screen.queryByTestId('diana-row-1')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('diana-row-3')).not.toBeInTheDocument();
+
+      // En la Actuación 2 hasta EP1:
+      // EDI (etapa 0): falló -> 0
+      // EP1 (etapa 1, hover): acertó -> +1
+      // EP2 (etapa 2, posterior a hover): no se muestra -> '-'
+      expect(screen.getByTestId('diana-table-cell-2-edi')).toHaveTextContent('0');
+      expect(screen.getByTestId('diana-table-cell-2-ep1')).toHaveTextContent('+1');
+      expect(screen.queryByTestId('diana-table-cell-2-ep2')).not.toBeInTheDocument();
+
+      // En el detalle desplegado, solo deben aparecer las etapas hasta EP1 (EDI y EP1), y NO EP2
+      expect(screen.getByTestId('diana-row-detail-2')).toBeInTheDocument();
+      expect(screen.getByTestId('diana-detail-stage-2-edi')).toBeInTheDocument();
+      expect(screen.getByTestId('diana-detail-stage-2-ep1')).toBeInTheDocument();
+      expect(screen.queryByTestId('diana-detail-stage-2-ep2')).not.toBeInTheDocument();
+
+      // Acumulado hasta EP1: 1 acierto (Iniciándose)
+      const nivelPill2 = screen.getByTestId('diana-table-nivel-2');
+      expect(nivelPill2).toHaveTextContent('1');
+      expect(nivelPill2).toHaveTextContent('Iniciándose');
+
+      // 3. Al retirar el mouse del sector, la tabla se restablece mostrando todas las actuaciones
+      fireEvent.mouseLeave(sectorEp1_2);
+      expect(screen.getByTestId('diana-row-1')).toBeInTheDocument();
+      expect(screen.getByTestId('diana-row-2')).toBeInTheDocument();
+      expect(screen.getByTestId('diana-row-3')).toBeInTheDocument();
+
+      // Ahora la fila 2 muestra todas las etapas incluyendo EP2 (+1) y su nivel consolidado total (2 aciertos)
+      expect(screen.getByTestId('diana-table-cell-2-ep2')).toHaveTextContent('+1');
+      expect(screen.getByTestId('diana-table-nivel-2')).toHaveTextContent('2');
+      expect(screen.getByTestId('diana-table-nivel-2')).toHaveTextContent('Consolidación');
+
+      // 4. Hover sobre el badge perimetral con número encerrado en círculo (diana-badge-2)
+      // Muestra un tooltip instantáneo sin demora con consolidado global y sin el texto largo de la habilidad
+      const badge2 = screen.getByTestId('diana-badge-2');
+      fireEvent.mouseEnter(badge2);
+
+      const instantTooltip = screen.getByTestId('diana-badge-tooltip');
+      expect(instantTooltip).toBeInTheDocument();
+      expect(instantTooltip).toHaveTextContent('Actuación 2');
+      expect(instantTooltip).toHaveTextContent('Consolidado global');
+      expect(instantTooltip).toHaveTextContent('2/3 correctas');
+      expect(instantTooltip).toHaveTextContent('Consolidación');
+      // No debe contener el texto pedagógico de la habilidad
+      expect(instantTooltip).not.toHaveTextContent(mockCatalogo[1].actuacion);
+
+      // Al retirar el mouse del badge perimetral, el tooltip instantáneo desaparece
+      fireEvent.mouseLeave(badge2);
+      expect(screen.queryByTestId('diana-badge-tooltip')).not.toBeInTheDocument();
+
+      // 5. Al hacer hover directamente en la fila de la tabla, NO se despliega el detalle automáticamente
+      fireEvent.mouseEnter(screen.getByTestId('diana-row-2'));
+      expect(screen.queryByTestId('diana-row-detail-2')).not.toBeInTheDocument();
+      fireEvent.mouseLeave(screen.getByTestId('diana-row-2'));
+
+      // 6. Al hacer clic sobre la habilidad en la tabla, recién se despliega el detalle por etapa completo
+      fireEvent.click(screen.getByTestId('diana-row-2'));
+      expect(screen.getByTestId('diana-row-detail-2')).toBeInTheDocument();
+      expect(screen.getByTestId('diana-detail-stage-2-edi')).toHaveTextContent('0');
+      expect(screen.getByTestId('diana-detail-stage-2-ep1')).toHaveTextContent('+1');
+      expect(screen.getByTestId('diana-detail-stage-2-ep2')).toHaveTextContent('+1');
+
+      // Las demás habilidades siguen visibles en la tabla (no se ocultan)
+      expect(screen.getByTestId('diana-row-1')).toBeInTheDocument();
+      expect(screen.getByTestId('diana-row-3')).toBeInTheDocument();
+
+      // Al volver a hacer clic en la misma habilidad, se pliega el detalle
+      fireEvent.click(screen.getByTestId('diana-row-2'));
+      expect(screen.queryByTestId('diana-row-detail-2')).not.toBeInTheDocument();
+    });
+
+    it('renderiza el nuevo diseño institucional de cards con porcentaje, barra y autonomía, la cabecera Radar del Aprendizaje con botón reproductor y la cabecera de la tabla', () => {
+      render(
+        <DocenteActuacionesRadarChart
+          student={mockStudent}
+          etapasConfiguradas={mockEtapas}
+          catalogoActuaciones={mockCatalogo}
+          activeStages={{ edi: true, ep1: true, ep2: true }}
+        />
+      );
+
+      // Conmutar a la vista Diana Polar
+      fireEvent.click(screen.getByTestId('toggle-mode-diana'));
+
+      // 1. Cabecera gradiente estilo Radar del Aprendizaje con número de habilidades
+      expect(screen.getByText(/Radar del Aprendizaje · 3 habilidades/i)).toBeInTheDocument();
+      expect(screen.getByText(/Tres momentos de aprendizaje, 3 caminos de progreso/i)).toBeInTheDocument();
+
+      // 2. Botón de reproducción de evolución animada
+      const playBtn = screen.getByRole('button', { name: /reproducir evolución/i });
+      expect(playBtn).toBeInTheDocument();
+
+      // Al hacer clic en reproducir, cambia a estado pausar y avanza etapas
+      fireEvent.click(playBtn);
+      expect(screen.getByRole('button', { name: /pausar/i })).toBeInTheDocument();
+
+      // 3. Cards globales de etapas con barra y datos de autonomía por estudiante
+      // Debe mostrar el subtítulo "Índice de desarrollo · X en autonomía"
+      expect(screen.getAllByText(/Índice de desarrollo · \d+ en autonomía/i).length).toBe(3);
+
+      // En mockStudent para EP2 (donde la actuación 1 tiene 3 aciertos acum. -> Autonomía):
+      expect(screen.getByText(/Índice de desarrollo · 1 en autonomía/i)).toBeInTheDocument();
+
+      // 4. Cabecera de la tabla de habilidades de la derecha
+      expect(screen.getByText('Detalle completo de habilidades')).toBeInTheDocument();
+      expect(
+        screen.getByText(/3 actuaciones · Respuestas correctas sobre 3 por evaluación · Haz clic en una fila para ubicarla en el radar/i)
+      ).toBeInTheDocument();
     });
   });
 });

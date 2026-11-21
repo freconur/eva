@@ -100,4 +100,79 @@ describe('compressCarnetImage', () => {
     expect(result.height).toBe(360);
     expect(mockDrawImage).toHaveBeenCalled();
   });
+
+  test('respeta coordenadas de recorte manual (customCrop) cuando se proveen', async () => {
+    class MockFileReader {
+      onload: any = null;
+      readAsDataURL() {
+        setTimeout(() => {
+          if (this.onload) {
+            this.onload({ target: { result: 'data:image/jpeg;base64,mockcarnet' } });
+          }
+        }, 10);
+      }
+    }
+    // @ts-ignore
+    global.FileReader = MockFileReader;
+
+    class MockImage {
+      width = 1600;
+      height = 900;
+      onload: any = null;
+      set src(_val: string) {
+        setTimeout(() => {
+          if (this.onload) this.onload();
+        }, 10);
+      }
+    }
+    // @ts-ignore
+    global.Image = MockImage;
+
+    const mockDrawImage = jest.fn();
+    const mockToBlob = jest.fn((callback) => {
+      callback(new Blob([new Uint8Array(20 * 1024)], { type: 'image/jpeg' }));
+    });
+
+    jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
+      if (tagName === 'canvas') {
+        return {
+          width: 0,
+          height: 0,
+          getContext: jest.fn(() => ({
+            fillStyle: '',
+            fillRect: jest.fn(),
+            drawImage: mockDrawImage,
+            imageSmoothingEnabled: false,
+            imageSmoothingQuality: 'low',
+          })),
+          toBlob: mockToBlob,
+          toDataURL: jest.fn(() => 'data:image/jpeg;base64,customCropMock'),
+        } as any;
+      }
+      return document.createElement(tagName);
+    });
+
+    const file = new File(['dummy'], 'horizontal_photo.jpg', { type: 'image/jpeg' });
+    const customCrop = {
+      cropX: 850,
+      cropY: 50,
+      cropWidth: 500,
+      cropHeight: 600,
+    };
+
+    const result = await compressCarnetImage(file, { customCrop });
+
+    expect(result).toBeDefined();
+    expect(mockDrawImage).toHaveBeenCalledWith(
+      expect.anything(),
+      850,
+      50,
+      500,
+      600,
+      0,
+      0,
+      expect.any(Number),
+      expect.any(Number)
+    );
+  });
 });

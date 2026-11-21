@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   MdTableChart,
   MdSearch,
@@ -22,6 +22,7 @@ import {
   UgelMatrizComparativaRow,
   NivelComparativoStat,
 } from '@/features/hooks/useMatrizResultados';
+import { EtapaMatrizConfig } from '@/components/modals/ConfigurarMatrizModal';
 import QuestionDetailPopover from './QuestionDetailPopover';
 import { exportarMatrizComparativaExcel } from '@/features/utils/exportarMatrizExcel';
 
@@ -33,6 +34,7 @@ export interface ColumnVisibilityConfig {
   showEdi: boolean;
   showEp1: boolean;
   showEp2: boolean;
+  etapasVisibles?: Record<string, boolean>;
   preguntasVisibles: Record<number, boolean>;
 }
 
@@ -44,6 +46,7 @@ const DEFAULT_COLUMN_VISIBILITY: ColumnVisibilityConfig = {
   showEdi: true,
   showEp1: true,
   showEp2: true,
+  etapasVisibles: {},
   preguntasVisibles: {},
 };
 
@@ -53,6 +56,8 @@ interface TablaMatrizComparativaProps {
   evaluacionEdi: Evaluaciones | null;
   evaluacionEp1: Evaluaciones | null;
   evaluacionEp2: Evaluaciones | null;
+  etapas?: EtapaMatrizConfig[];
+  evaluacionesPorEtapa?: Array<{ etapa: EtapaMatrizConfig; evaluacion: Evaluaciones | null }>;
   preguntas: PreguntasRespuestas[];
   onReload?: () => void;
   gradoName?: string;
@@ -65,6 +70,8 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
   evaluacionEdi,
   evaluacionEp1,
   evaluacionEp2,
+  etapas = [],
+  evaluacionesPorEtapa = [],
   preguntas = [],
   onReload,
   gradoName = '',
@@ -74,7 +81,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
   const [vistaPreguntas, setVistaPreguntas] = useState<'porcentaje' | 'aciertos'>('porcentaje');
   const [isExportingExcel, setIsExportingExcel] = useState<boolean>(false);
 
-  // Popover interactivo al hacer click en EDI, EP1, EP2 (cabeceras o celdas)
+  // Popover interactivo al hacer click en las etapas (cabeceras o celdas)
   const [activePopover, setActivePopover] = useState<{
     type: 'header' | 'cell';
     title: string;
@@ -82,7 +89,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
     correctas: number;
     total: number;
     porcentaje: number;
-    etapa: 'edi' | 'ep1' | 'ep2';
+    etapa: string;
     order: number;
     ugelName?: string;
     coords: { x: number; y: number };
@@ -93,14 +100,14 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
   // Popover interactivo para Pregunta y Actuación (al hacer clic en P01, P02...)
   const [questionPopover, setQuestionPopover] = useState<{
     order: number;
-    selectedEtapa: 'edi' | 'ep1' | 'ep2';
+    selectedEtapa: string;
     coords: { x: number; y: number };
   } | null>(null);
 
   // Popover interactivo de Niveles de Logro (al hacer clic en celdas de Nivel)
   const [nivelPopover, setNivelPopover] = useState<{
     row: UgelMatrizComparativaRow;
-    selectedEtapa: 'edi' | 'ep1' | 'ep2';
+    selectedEtapa: string;
     coords: { x: number; y: number };
   } | null>(null);
 
@@ -110,7 +117,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
   const [questionCellPopover, setQuestionCellPopover] = useState<{
     row: UgelMatrizComparativaRow;
     order: number;
-    selectedEtapa: 'edi' | 'ep1' | 'ep2';
+    selectedEtapa: string;
     coords: { x: number; y: number };
   } | null>(null);
 
@@ -202,10 +209,37 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
     };
   }, [activePopover, questionPopover, nivelPopover, questionCellPopover, showColMenu, isFullScreen]);
 
+  const effectiveEtapas = useMemo<EtapaMatrizConfig[]>(() => {
+    if (etapas && etapas.length > 0) return etapas;
+    return [
+      { id: 'edi', codigo: 'EDI', nombre: 'Evaluación Diagnóstica / de Inicio' },
+      { id: 'ep1', codigo: 'EP1', nombre: 'Evaluación Progresiva 1' },
+      { id: 'ep2', codigo: 'EP2', nombre: 'Evaluación Progresiva 2' },
+    ];
+  }, [etapas]);
+
+  const getEtapaCode = useCallback(
+    (etapaId: string) => {
+      const et = effectiveEtapas.find((e) => e.id === etapaId);
+      return et?.codigo || etapaId.toUpperCase();
+    },
+    [effectiveEtapas]
+  );
+
+  const getEtapaClass = (etapaId: string) => {
+    const id = etapaId.toLowerCase();
+    if (id === 'edi') return styles.subEdi;
+    if (id === 'ep1') return styles.subEp1;
+    if (id === 'ep2') return styles.subEp2;
+    if (id === 'ep3') return styles.subEp3;
+    if (id === 'ep4') return styles.subEp4;
+    return styles.subGeneric;
+  };
+
   const handleHeaderClick = (
     e: React.MouseEvent,
     order: number,
-    etapa: 'edi' | 'ep1' | 'ep2'
+    etapa: string
   ) => {
     e.stopPropagation();
     setQuestionPopover(null);
@@ -243,7 +277,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
 
     setActivePopover({
       type: 'header',
-      title: `Pregunta P${qNum} - ${etapa.toUpperCase()}`,
+      title: `Pregunta P${qNum} - ${getEtapaCode(etapa)}`,
       subtitle: 'Consolidado Regional de Aciertos',
       correctas,
       total,
@@ -257,7 +291,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
   const handleCellClick = (
     e: React.MouseEvent,
     order: number,
-    etapa: 'edi' | 'ep1' | 'ep2',
+    etapa: string,
     stat: { total: number; correctas: number; porcentaje: number } | undefined,
     ugelNombre: string
   ) => {
@@ -297,7 +331,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
     setActivePopover({
       type: 'cell',
       title: `${ugelNombre}`,
-      subtitle: `Pregunta P${qNum} (${etapa.toUpperCase()})`,
+      subtitle: `Pregunta P${qNum} (${getEtapaCode(etapa)})`,
       correctas,
       total,
       porcentaje,
@@ -335,9 +369,13 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
     const qObj = preguntas.find(
       (p, idx) => (p.order !== undefined ? Number(p.order) : idx + 1) === order
     );
-    const hasEdi = !!(qObj as any)?.ediPregunta || !!evaluacionEdi;
-    const hasEp1 = !!(qObj as any)?.ep1Pregunta || !!evaluacionEp1;
-    const initialEtapa: 'edi' | 'ep1' | 'ep2' = hasEdi ? 'edi' : hasEp1 ? 'ep1' : 'ep2';
+    let initialEtapa = activeStages[0] || 'edi';
+    for (const stg of activeStages) {
+      if ((qObj as any)?.[`${stg}Pregunta`] || (qObj as any)?.preguntasPorEtapa?.[stg]) {
+        initialEtapa = stg;
+        break;
+      }
+    }
 
     setQuestionPopover({
       order,
@@ -346,11 +384,10 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
     });
   };
 
-
   const handleNivelCellClick = (
     e: React.MouseEvent,
     row: UgelMatrizComparativaRow,
-    etapa: 'edi' | 'ep1' | 'ep2'
+    etapa: string
   ) => {
     e.stopPropagation();
     setActivePopover(null);
@@ -367,11 +404,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
     }
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const hasEp2 =
-      !!evaluacionEp2 ||
-      row.totalEstudiantes.ep2 !== undefined ||
-      row.niveles.some((n) => n.ep2 !== undefined);
-    const popoverWidth = hasEp2 ? 590 : 530;
+    const popoverWidth = Math.min(650, Math.max(480, 260 + activeStages.length * 90));
     const popoverHeight = 280;
 
     let left = rect.left + rect.width / 2 - popoverWidth / 2;
@@ -398,7 +431,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
     e: React.MouseEvent,
     row: UgelMatrizComparativaRow,
     order: number,
-    etapa: 'edi' | 'ep1' | 'ep2'
+    etapa: string
   ) => {
     e.stopPropagation();
     setActivePopover(null);
@@ -416,11 +449,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
     }
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const hasEp2 =
-      !!evaluacionEp2 ||
-      row.totalEstudiantes.ep2 !== undefined ||
-      row.preguntas[order]?.ep2 !== undefined;
-    const popoverWidth = hasEp2 ? 590 : 550;
+    const popoverWidth = Math.min(660, Math.max(500, 280 + activeStages.length * 90));
     const popoverHeight = 360;
 
     let left = rect.left + rect.width / 2 - popoverWidth / 2;
@@ -455,13 +484,14 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
 
     const etapa = questionCellPopover.selectedEtapa;
     const stageSpecificQ =
-      etapa === 'edi'
+      (q as any)?.preguntasPorEtapa?.[etapa] ||
+      (etapa === 'edi'
         ? (q as any)?.ediPregunta || q
         : etapa === 'ep1'
         ? (q as any)?.ep1Pregunta || q
         : etapa === 'ep2'
         ? (q as any)?.ep2Pregunta || q
-        : q;
+        : q);
 
     const correctAlt = stageSpecificQ?.alternativas?.find(
       (a: any) =>
@@ -488,14 +518,20 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
     );
   }, [data, searchTerm]);
 
-  // Etapas de evaluación activas (EDI, EP1, EP2)
+  // Etapas de evaluación activas (dinámicas: EDI, EP1, EP2, EP3, EP4...)
   const activeStages = useMemo(() => {
-    const list: ('edi' | 'ep1' | 'ep2')[] = [];
-    if (colVisibility.showEdi) list.push('edi');
-    if (colVisibility.showEp1) list.push('ep1');
-    if (colVisibility.showEp2) list.push('ep2');
-    return list;
-  }, [colVisibility.showEdi, colVisibility.showEp1, colVisibility.showEp2]);
+    return effectiveEtapas
+      .filter((etapa) => {
+        if (colVisibility.etapasVisibles && colVisibility.etapasVisibles[etapa.id] !== undefined) {
+          return colVisibility.etapasVisibles[etapa.id];
+        }
+        if (etapa.id === 'edi') return colVisibility.showEdi;
+        if (etapa.id === 'ep1') return colVisibility.showEp1;
+        if (etapa.id === 'ep2') return colVisibility.showEp2;
+        return true;
+      })
+      .map((e) => e.id);
+  }, [effectiveEtapas, colVisibility.etapasVisibles, colVisibility.showEdi, colVisibility.showEp1, colVisibility.showEp2]);
 
   const activeStagesCount = activeStages.length;
 
@@ -573,17 +609,13 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
     // Calcular estadísticas regionales acumuladas por pregunta y etapa
     const preguntasRegional: Record<
       number,
-      {
-        edi?: { total: number; correctas: number; porcentaje: number };
-        ep1?: { total: number; correctas: number; porcentaje: number };
-        ep2?: { total: number; correctas: number; porcentaje: number };
-      }
+      Record<string, { total: number; correctas: number; porcentaje: number } | undefined>
     > = {};
 
     preguntas.forEach((p, idx) => {
       const order = p.order !== undefined ? Number(p.order) : idx + 1;
 
-      const sumEtapa = (etapa: 'edi' | 'ep1' | 'ep2') => {
+      const sumEtapa = (etapa: string) => {
         let sumCorr = 0;
         let sumTot = 0;
         let hasData = false;
@@ -605,16 +637,16 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
         };
       };
 
-      preguntasRegional[order] = {
-        edi: sumEtapa('edi'),
-        ep1: sumEtapa('ep1'),
-        ep2: sumEtapa('ep2'),
-      };
+      const pStagesMap: Record<string, any> = {};
+      activeStages.forEach((stage) => {
+        pStagesMap[stage] = sumEtapa(stage);
+      });
+      preguntasRegional[order] = pStagesMap;
     });
 
     // Calcular estadísticas regionales de niveles de logro
     const nivelesRegional = (data[0]?.niveles || []).map((nc, nIdx) => {
-      const sumEtapaNivel = (etapa: 'edi' | 'ep1' | 'ep2') => {
+      const sumEtapaNivel = (etapa: string) => {
         let cantSum = 0;
         let totEstSum = 0;
         let hasData = false;
@@ -636,31 +668,31 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
         };
       };
 
-      return {
+      const nStagesMap: any = {
         id: nc.id,
         nivel: nc.nivel,
         color: nc.color,
-        edi: sumEtapaNivel('edi'),
-        ep1: sumEtapaNivel('ep1'),
-        ep2: sumEtapaNivel('ep2'),
       };
+      activeStages.forEach((stage) => {
+        nStagesMap[stage] = sumEtapaNivel(stage);
+      });
+      return nStagesMap;
+    });
+
+    const rcMap: Record<string, number | undefined> = {};
+    const puntajeMap: Record<string, number | undefined> = {};
+    activeStages.forEach((stage) => {
+      rcMap[stage] = calcAvg((r) => r.rc[stage]);
+      puntajeMap[stage] = calcAvg((r) => r.puntaje[stage]);
     });
 
     return {
-      rc: {
-        edi: calcAvg((r) => r.rc.edi),
-        ep1: calcAvg((r) => r.rc.ep1),
-        ep2: calcAvg((r) => r.rc.ep2),
-      },
-      puntaje: {
-        edi: calcAvg((r) => r.puntaje.edi),
-        ep1: calcAvg((r) => r.puntaje.ep1),
-        ep2: calcAvg((r) => r.puntaje.ep2),
-      },
+      rc: rcMap,
+      puntaje: puntajeMap,
       niveles: nivelesRegional,
       preguntas: preguntasRegional,
     };
-  }, [data, preguntas]);
+  }, [data, preguntas, activeStages]);
 
   // Exportar a Excel con diseño y plantilla profesional (ExcelJS)
   const exportToExcel = async () => {
@@ -711,19 +743,28 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
   // Helper para obtener el nivel de logro y color según el puntaje obtenido y la etapa evaluada
   const getNivelDataForPuntaje = (
     puntaje: number | undefined | null,
-    etapa: 'edi' | 'ep1' | 'ep2'
+    etapa: string
   ) => {
     if (puntaje === undefined || puntaje === null || isNaN(puntaje)) return null;
 
-    const targetEval =
-      etapa === 'edi'
-        ? evaluacionEdi
-        : etapa === 'ep1'
-        ? evaluacionEp1
-        : evaluacionEp2;
+    let targetEval: Evaluaciones | null | undefined = null;
+    if (evaluacionesPorEtapa && evaluacionesPorEtapa.length > 0) {
+      targetEval = evaluacionesPorEtapa.find((e) => e.etapa.id === etapa)?.evaluacion;
+    }
+    if (!targetEval) {
+      targetEval =
+        etapa === 'edi'
+          ? evaluacionEdi
+          : etapa === 'ep1'
+          ? evaluacionEp1
+          : etapa === 'ep2'
+          ? evaluacionEp2
+          : null;
+    }
 
     const rawNiveles =
       targetEval?.nivelYPuntaje ||
+      evaluacionesPorEtapa?.find((e) => e.evaluacion?.nivelYPuntaje)?.evaluacion?.nivelYPuntaje ||
       evaluacionEp2?.nivelYPuntaje ||
       evaluacionEp1?.nivelYPuntaje ||
       evaluacionEdi?.nivelYPuntaje || [
@@ -911,55 +952,41 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                     </div>
                   </div>
 
-                  {/* Etapas de Evaluación */}
+                  {/* Etapas de Evaluación Dinámicas */}
                   <div className={styles.colDropdownSection}>
                     <span className={styles.colSectionLabel}>Etapas de Evaluación:</span>
                     <div className={styles.colEtapasGrid}>
-                      <label
-                        className={`${styles.colEtapaPill} ${
-                          colVisibility.showEdi ? styles.colEtapaPillActive : ''
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={colVisibility.showEdi}
-                          onChange={(e) => {
-                            if (activeStagesCount === 1 && colVisibility.showEdi) return;
-                            setColVisibility((prev) => ({ ...prev, showEdi: e.target.checked }));
-                          }}
-                        />
-                        <span>EDI (Marzo)</span>
-                      </label>
-                      <label
-                        className={`${styles.colEtapaPill} ${
-                          colVisibility.showEp1 ? styles.colEtapaPillActive : ''
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={colVisibility.showEp1}
-                          onChange={(e) => {
-                            if (activeStagesCount === 1 && colVisibility.showEp1) return;
-                            setColVisibility((prev) => ({ ...prev, showEp1: e.target.checked }));
-                          }}
-                        />
-                        <span>EP1 (Julio)</span>
-                      </label>
-                      <label
-                        className={`${styles.colEtapaPill} ${
-                          colVisibility.showEp2 ? styles.colEtapaPillActive : ''
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={colVisibility.showEp2}
-                          onChange={(e) => {
-                            if (activeStagesCount === 1 && colVisibility.showEp2) return;
-                            setColVisibility((prev) => ({ ...prev, showEp2: e.target.checked }));
-                          }}
-                        />
-                        <span>EP2 (Nov.)</span>
-                      </label>
+                      {effectiveEtapas.map((etapa) => {
+                        const isVisible = activeStages.includes(etapa.id);
+                        return (
+                          <label
+                            key={etapa.id}
+                            className={`${styles.colEtapaPill} ${
+                              isVisible ? styles.colEtapaPillActive : ''
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isVisible}
+                              onChange={(e) => {
+                                if (activeStagesCount === 1 && isVisible) return;
+                                const isChecked = e.target.checked;
+                                setColVisibility((prev) => ({
+                                  ...prev,
+                                  ...(etapa.id === 'edi' ? { showEdi: isChecked } : {}),
+                                  ...(etapa.id === 'ep1' ? { showEp1: isChecked } : {}),
+                                  ...(etapa.id === 'ep2' ? { showEp2: isChecked } : {}),
+                                  etapasVisibles: {
+                                    ...(prev.etapasVisibles || {}),
+                                    [etapa.id]: isChecked,
+                                  },
+                                }));
+                              }}
+                            />
+                            <span>{etapa.codigo}</span>
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -1159,16 +1186,16 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                 })}
             </tr>
 
-            {/* Fila 2: Sub-cabeceras de etapas (EDI, EP1, EP2) */}
+            {/* Fila 2: Sub-cabeceras de etapas (EDI, EP1, EP2, EP3, EP4...) */}
             <tr className={styles.subHeaderRow}>
               {/* R.C Subheaders */}
               {colVisibility.showRc &&
                 activeStages.map((etapa) => (
                   <th
                     key={`sub-rc-${etapa}`}
-                    className={`${styles.thSub} ${styles[`sub${etapa.charAt(0).toUpperCase() + etapa.slice(1)}`]}`}
+                    className={`${styles.thSub} ${getEtapaClass(etapa)}`}
                   >
-                    {etapa.toUpperCase()}
+                    {getEtapaCode(etapa)}
                   </th>
                 ))}
 
@@ -1177,9 +1204,9 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                 activeStages.map((etapa) => (
                   <th
                     key={`sub-puntaje-${etapa}`}
-                    className={`${styles.thSub} ${styles[`sub${etapa.charAt(0).toUpperCase() + etapa.slice(1)}`]}`}
+                    className={`${styles.thSub} ${getEtapaClass(etapa)}`}
                   >
-                    {etapa.toUpperCase()}
+                    {getEtapaCode(etapa)}
                   </th>
                 ))}
 
@@ -1188,9 +1215,9 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                 activeStages.map((etapa) => (
                   <th
                     key={`sub-nivel-${etapa}`}
-                    className={`${styles.thSub} ${styles[`sub${etapa.charAt(0).toUpperCase() + etapa.slice(1)}`]}`}
+                    className={`${styles.thSub} ${getEtapaClass(etapa)}`}
                   >
-                    {etapa.toUpperCase()}
+                    {getEtapaCode(etapa)}
                   </th>
                 ))}
 
@@ -1209,14 +1236,14 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                         return (
                           <th
                             key={`sub-q-${order}-${etapa}`}
-                            className={`${styles.thSub} ${
-                              styles[`sub${etapa.charAt(0).toUpperCase() + etapa.slice(1)}`]
-                            } ${isActive ? styles.thSubActive : ''}`}
+                            className={`${styles.thSub} ${getEtapaClass(etapa)} ${
+                              isActive ? styles.thSubActive : ''
+                            }`}
                             onClick={(e) => handleHeaderClick(e, order, etapa)}
                             title="Haz clic para ver aciertos regionales"
                             style={{ cursor: 'pointer' }}
                           >
-                            {etapa.toUpperCase()}
+                            {getEtapaCode(etapa)}
                           </th>
                         );
                       })}
@@ -1385,7 +1412,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                     activeStages.map((etapa) => (
                       <td
                         key={`row-${row.id}-rc-${etapa}`}
-                        className={`${styles.tdVal} ${styles[`sub${etapa.charAt(0).toUpperCase() + etapa.slice(1)}`]}`}
+                        className={`${styles.tdVal} ${getEtapaClass(etapa)}`}
                       >
                         {row.rc[etapa] !== undefined ? row.rc[etapa] : '-'}
                       </td>
@@ -1401,7 +1428,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                         <td
                           key={`row-${row.id}-pt-${etapa}`}
                           className={`${styles.tdVal} ${
-                            !nivelPt ? styles[`sub${etapa.charAt(0).toUpperCase() + etapa.slice(1)}`] : styles.tdPuntajeNivel
+                            !nivelPt ? getEtapaClass(etapa) : styles.tdPuntajeNivel
                           }`}
                           style={
                             nivelPt
@@ -1424,7 +1451,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                     activeStages.map((etapa) => (
                       <td
                         key={`row-${row.id}-lvl-${etapa}`}
-                        className={`${styles.tdNivelCol} ${styles[`sub${etapa.charAt(0).toUpperCase() + etapa.slice(1)}`]} ${
+                        className={`${styles.tdNivelCol} ${getEtapaClass(etapa)} ${
                           nivelPopover?.row.id === row.id && nivelPopover?.selectedEtapa === etapa
                             ? styles.tdNivelColActive
                             : ''
@@ -1438,7 +1465,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                               key={`${etapa}-n-${row.id}-${nIdx}`}
                               className={styles.nivelColorBox}
                               style={{ backgroundColor: getNivelColor(n.nivel, n.color) }}
-                              title={`${n.nivel} (${etapa.toUpperCase()}): ${
+                              title={`${n.nivel} (${getEtapaCode(etapa)}): ${
                                 n[etapa] ? `${n[etapa].cantidad} estudiantes (${n[etapa].porcentaje}%)` : 'Sin datos'
                               }`}
                             >
@@ -1462,7 +1489,7 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                             return (
                               <td
                                 key={`q-cell-${row.id}-${order}-${etapa}`}
-                                className={`${styles.tdQuestion} ${styles[`sub${etapa.charAt(0).toUpperCase() + etapa.slice(1)}`]}`}
+                                className={`${styles.tdQuestion} ${getEtapaClass(etapa)}`}
                                 onClick={(e) => handleQuestionCellClick(e, row, order, etapa)}
                                 style={{ cursor: 'pointer' }}
                                 title="Haz clic para ver análisis comparativo del ítem"
@@ -1561,6 +1588,8 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
           evaluacionEdi={evaluacionEdi}
           evaluacionEp1={evaluacionEp1}
           evaluacionEp2={evaluacionEp2}
+          etapas={effectiveEtapas}
+          evaluacionesPorEtapa={evaluacionesPorEtapa}
           preguntas={preguntas}
           gradoName={gradoName}
         />
@@ -1603,59 +1632,45 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
           {/* Body: Matriz de Niveles a primera vista */}
           <div className={styles.nivelPopoverBody}>
             {(() => {
-              const hasEp2 =
-                !!evaluacionEp2 ||
-                nivelPopover.row.totalEstudiantes.ep2 !== undefined ||
-                nivelPopover.row.niveles.some((n) => n.ep2 !== undefined);
-
-              const totEdi = nivelPopover.row.totalEstudiantes.edi;
-              const totEp1 = nivelPopover.row.totalEstudiantes.ep1;
-              const totEp2 = nivelPopover.row.totalEstudiantes.ep2;
+              const firstStage = activeStages[0];
+              const lastStage = activeStages[activeStages.length - 1];
+              const totFirst = firstStage ? nivelPopover.row.totalEstudiantes[firstStage] : undefined;
+              const totLast =
+                lastStage && lastStage !== firstStage
+                  ? nivelPopover.row.totalEstudiantes[lastStage]
+                  : undefined;
               const totalDiff =
-                totEdi !== undefined && totEp1 !== undefined ? totEp1 - totEdi : null;
+                totFirst !== undefined && totLast !== undefined ? totLast - totFirst : null;
 
               return (
                 <table className={styles.nivelMatrixTable}>
                   <thead>
                     <tr>
                       <th className={styles.matrixThNivel}>Nivel de Logro</th>
-                      <th
-                        className={`${styles.matrixThEtapa} ${
-                          nivelPopover.selectedEtapa === 'edi' ? styles.matrixThSelected : ''
-                        }`}
-                      >
-                        <span>EDI</span>
-                        <small className={styles.matrixThSub}>(Marzo)</small>
-                      </th>
-                      <th
-                        className={`${styles.matrixThEtapa} ${
-                          nivelPopover.selectedEtapa === 'ep1' ? styles.matrixThSelected : ''
-                        }`}
-                      >
-                        <span>EP1</span>
-                        <small className={styles.matrixThSub}>(Julio)</small>
-                      </th>
-                      {hasEp2 && (
+                      {activeStages.map((etapa) => (
                         <th
+                          key={`pop-th-${etapa}`}
                           className={`${styles.matrixThEtapa} ${
-                            nivelPopover.selectedEtapa === 'ep2' ? styles.matrixThSelected : ''
+                            nivelPopover.selectedEtapa === etapa ? styles.matrixThSelected : ''
                           }`}
                         >
-                          <span>EP2</span>
-                          <small className={styles.matrixThSub}>(Nov.)</small>
+                          <span>{getEtapaCode(etapa)}</span>
+                        </th>
+                      ))}
+                      {firstStage && lastStage && firstStage !== lastStage && (
+                        <th className={styles.matrixThTrend}>
+                          Variación ({getEtapaCode(firstStage)} ➔ {getEtapaCode(lastStage)})
                         </th>
                       )}
-                      <th className={styles.matrixThTrend}>Variación (EDI ➔ EP1)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {nivelPopover.row.niveles.map((n, idx) => {
-                      const pEdi = n.edi?.porcentaje;
-                      const pEp1 = n.ep1?.porcentaje;
-                      const pEp2 = n.ep2?.porcentaje;
-
-                      const hasEdiAndEp1 = pEdi !== undefined && pEp1 !== undefined;
-                      const diffEp1Edi = hasEdiAndEp1 ? pEp1 - pEdi : null;
+                      const pFirst = firstStage ? n[firstStage]?.porcentaje : undefined;
+                      const pLast =
+                        lastStage && lastStage !== firstStage ? n[lastStage]?.porcentaje : undefined;
+                      const diffTrend =
+                        pFirst !== undefined && pLast !== undefined ? pLast - pFirst : null;
                       const nivelColor = getNivelColor(n.nivel, n.color);
 
                       return (
@@ -1670,101 +1685,71 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                             </span>
                           </td>
 
-                          {/* Columna EDI */}
-                          <td
-                            className={`${styles.matrixTdEtapa} ${
-                              nivelPopover.selectedEtapa === 'edi' ? styles.matrixTdSelected : ''
-                            }`}
-                          >
-                            {n.edi !== undefined ? (
-                              <div className={styles.matrixValGroup}>
-                                <span className={styles.matrixValPct}>{n.edi.porcentaje}%</span>
-                                <span className={styles.matrixValCount}>
-                                  {n.edi.cantidad.toLocaleString('es-PE')} est.
-                                </span>
-                              </div>
-                            ) : (
-                              <span className={styles.matrixEmpty}>-</span>
-                            )}
-                          </td>
+                          {/* Columnas dinámicas de etapas */}
+                          {activeStages.map((etapa) => {
+                            const stat = n[etapa];
+                            return (
+                              <td
+                                key={`pop-td-${etapa}`}
+                                className={`${styles.matrixTdEtapa} ${
+                                  nivelPopover.selectedEtapa === etapa ? styles.matrixTdSelected : ''
+                                }`}
+                              >
+                                {stat !== undefined ? (
+                                  <div className={styles.matrixValGroup}>
+                                    <span className={styles.matrixValPct}>{stat.porcentaje}%</span>
+                                    <span className={styles.matrixValCount}>
+                                      {stat.cantidad.toLocaleString('es-PE')} est.
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className={styles.matrixEmpty}>-</span>
+                                )}
+                              </td>
+                            );
+                          })}
 
-                          {/* Columna EP1 */}
-                          <td
-                            className={`${styles.matrixTdEtapa} ${
-                              nivelPopover.selectedEtapa === 'ep1' ? styles.matrixTdSelected : ''
-                            }`}
-                          >
-                            {n.ep1 !== undefined ? (
-                              <div className={styles.matrixValGroup}>
-                                <span className={styles.matrixValPct}>{n.ep1.porcentaje}%</span>
-                                <span className={styles.matrixValCount}>
-                                  {n.ep1.cantidad.toLocaleString('es-PE')} est.
+                          {/* Columna Variación */}
+                          {firstStage && lastStage && firstStage !== lastStage && (
+                            <td className={styles.matrixTdTrend}>
+                              {diffTrend !== null ? (
+                                <span
+                                  className={`${styles.matrixVarBadge} ${
+                                    diffTrend > 0
+                                      ? styles.variationIncrement
+                                      : diffTrend < 0
+                                      ? styles.variationDecrement
+                                      : styles.variationNeutral
+                                  }`}
+                                  title={`Variación ${getEtapaCode(firstStage)} a ${getEtapaCode(
+                                    lastStage
+                                  )}: ${diffTrend > 0 ? `+${diffTrend}%` : `${diffTrend}%`}`}
+                                >
+                                  {diffTrend > 0 ? (
+                                    <>
+                                      <MdTrendingUp className={styles.matrixVarIcon} />
+                                      <span>+{diffTrend}%</span>
+                                      <small className={styles.matrixVarLabel}>Incrementó</small>
+                                    </>
+                                  ) : diffTrend < 0 ? (
+                                    <>
+                                      <MdTrendingDown className={styles.matrixVarIcon} />
+                                      <span>{diffTrend}%</span>
+                                      <small className={styles.matrixVarLabel}>Disminuyó</small>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <MdTrendingFlat className={styles.matrixVarIcon} />
+                                      <span>0%</span>
+                                      <small className={styles.matrixVarLabel}>Sin cambio</small>
+                                    </>
+                                  )}
                                 </span>
-                              </div>
-                            ) : (
-                              <span className={styles.matrixEmpty}>-</span>
-                            )}
-                          </td>
-
-                          {/* Columna EP2 */}
-                          {hasEp2 && (
-                            <td
-                              className={`${styles.matrixTdEtapa} ${
-                                nivelPopover.selectedEtapa === 'ep2' ? styles.matrixTdSelected : ''
-                              }`}
-                            >
-                              {n.ep2 !== undefined ? (
-                                <div className={styles.matrixValGroup}>
-                                  <span className={styles.matrixValPct}>{n.ep2.porcentaje}%</span>
-                                  <span className={styles.matrixValCount}>
-                                    {n.ep2.cantidad.toLocaleString('es-PE')} est.
-                                  </span>
-                                </div>
                               ) : (
                                 <span className={styles.matrixEmpty}>-</span>
                               )}
                             </td>
                           )}
-
-                          {/* Columna Variación */}
-                          <td className={styles.matrixTdTrend}>
-                            {diffEp1Edi !== null ? (
-                              <span
-                                className={`${styles.matrixVarBadge} ${
-                                  diffEp1Edi > 0
-                                    ? styles.variationIncrement
-                                    : diffEp1Edi < 0
-                                    ? styles.variationDecrement
-                                    : styles.variationNeutral
-                                }`}
-                                title={`Variación EDI a EP1: ${
-                                  diffEp1Edi > 0 ? `+${diffEp1Edi}%` : `${diffEp1Edi}%`
-                                }`}
-                              >
-                                {diffEp1Edi > 0 ? (
-                                  <>
-                                    <MdTrendingUp className={styles.matrixVarIcon} />
-                                    <span>+{diffEp1Edi}%</span>
-                                    <small className={styles.matrixVarLabel}>Incrementó</small>
-                                  </>
-                                ) : diffEp1Edi < 0 ? (
-                                  <>
-                                    <MdTrendingDown className={styles.matrixVarIcon} />
-                                    <span>{diffEp1Edi}%</span>
-                                    <small className={styles.matrixVarLabel}>Disminuyó</small>
-                                  </>
-                                ) : (
-                                  <>
-                                    <MdTrendingFlat className={styles.matrixVarIcon} />
-                                    <span>0%</span>
-                                    <small className={styles.matrixVarLabel}>Sin cambio</small>
-                                  </>
-                                )}
-                              </span>
-                            ) : (
-                              <span className={styles.matrixEmpty}>-</span>
-                            )}
-                          </td>
                         </tr>
                       );
                     })}
@@ -1772,44 +1757,38 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                   <tfoot>
                     <tr className={styles.matrixTotalRow}>
                       <td className={styles.matrixTotalLabel}>Total Estudiantes</td>
-                      <td
-                        className={`${styles.matrixTotalVal} ${
-                          nivelPopover.selectedEtapa === 'edi' ? styles.matrixTdSelected : ''
-                        }`}
-                      >
-                        {totEdi !== undefined ? `${totEdi.toLocaleString('es-PE')} est.` : '-'}
-                      </td>
-                      <td
-                        className={`${styles.matrixTotalVal} ${
-                          nivelPopover.selectedEtapa === 'ep1' ? styles.matrixTdSelected : ''
-                        }`}
-                      >
-                        {totEp1 !== undefined ? `${totEp1.toLocaleString('es-PE')} est.` : '-'}
-                      </td>
-                      {hasEp2 && (
-                        <td
-                          className={`${styles.matrixTotalVal} ${
-                            nivelPopover.selectedEtapa === 'ep2' ? styles.matrixTdSelected : ''
-                          }`}
-                        >
-                          {totEp2 !== undefined ? `${totEp2.toLocaleString('es-PE')} est.` : '-'}
+                      {activeStages.map((etapa) => {
+                        const tot = nivelPopover.row.totalEstudiantes[etapa];
+                        return (
+                          <td
+                            key={`tot-${etapa}`}
+                            className={`${styles.matrixTotalVal} ${
+                              nivelPopover.selectedEtapa === etapa ? styles.matrixTdSelected : ''
+                            }`}
+                          >
+                            {tot !== undefined ? `${tot.toLocaleString('es-PE')} est.` : '-'}
+                          </td>
+                        );
+                      })}
+                      {firstStage && lastStage && firstStage !== lastStage && (
+                        <td className={styles.matrixTotalDiff}>
+                          {totalDiff !== null ? (
+                            <span
+                              className={totalDiff >= 0 ? styles.totalDiffPos : styles.totalDiffNeg}
+                              title={`Diferencia en total de evaluados entre ${getEtapaCode(
+                                lastStage
+                              )} y ${getEtapaCode(firstStage)}`}
+                            >
+                              {totalDiff >= 0
+                                ? `+${totalDiff.toLocaleString('es-PE')}`
+                                : totalDiff.toLocaleString('es-PE')}{' '}
+                              est.
+                            </span>
+                          ) : (
+                            '-'
+                          )}
                         </td>
                       )}
-                      <td className={styles.matrixTotalDiff}>
-                        {totalDiff !== null ? (
-                          <span
-                            className={totalDiff >= 0 ? styles.totalDiffPos : styles.totalDiffNeg}
-                            title="Diferencia en total de evaluados entre EP1 y EDI"
-                          >
-                            {totalDiff >= 0
-                              ? `+${totalDiff.toLocaleString('es-PE')}`
-                              : totalDiff.toLocaleString('es-PE')}{' '}
-                            est.
-                          </span>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
                     </tr>
                   </tfoot>
                 </table>
@@ -1859,21 +1838,22 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
             {(() => {
               const order = questionCellPopover.order;
               const qStat = questionCellPopover.row.preguntas?.[order];
-              const pEdi = qStat?.edi?.porcentaje;
-              const pEp1 = qStat?.ep1?.porcentaje;
-              const pEp2 = qStat?.ep2?.porcentaje;
-              const diffEp1Edi = pEdi !== undefined && pEp1 !== undefined ? pEp1 - pEdi : null;
-
               const regQStat = regionalSummary?.preguntas?.[order];
-              const regEdi = regQStat?.edi?.porcentaje;
-              const regEp1 = regQStat?.ep1?.porcentaje;
-              const regEp2 = regQStat?.ep2?.porcentaje;
-              const diffReg = regEdi !== undefined && regEp1 !== undefined ? regEp1 - regEdi : null;
 
-              const hasEp2 =
-                !!evaluacionEp2 ||
-                questionCellPopover.row.totalEstudiantes.ep2 !== undefined ||
-                qStat?.ep2 !== undefined;
+              const firstStage = activeStages[0];
+              const lastStage = activeStages[activeStages.length - 1];
+
+              const pFirstUgel = firstStage ? qStat?.[firstStage]?.porcentaje : undefined;
+              const pLastUgel =
+                lastStage && lastStage !== firstStage ? qStat?.[lastStage]?.porcentaje : undefined;
+              const diffUgel =
+                pFirstUgel !== undefined && pLastUgel !== undefined ? pLastUgel - pFirstUgel : null;
+
+              const regFirst = firstStage ? regQStat?.[firstStage]?.porcentaje : undefined;
+              const regLast =
+                lastStage && lastStage !== firstStage ? regQStat?.[lastStage]?.porcentaje : undefined;
+              const diffReg =
+                regFirst !== undefined && regLast !== undefined ? regLast - regFirst : null;
 
               return (
                 <>
@@ -1881,33 +1861,21 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                     <thead>
                       <tr>
                         <th className={styles.matrixThNivel}>Referencia</th>
-                        <th
-                          className={`${styles.matrixThEtapa} ${
-                            questionCellPopover.selectedEtapa === 'edi' ? styles.matrixThSelected : ''
-                          }`}
-                        >
-                          <span>EDI</span>
-                          <small className={styles.matrixThSub}>(Marzo)</small>
-                        </th>
-                        <th
-                          className={`${styles.matrixThEtapa} ${
-                            questionCellPopover.selectedEtapa === 'ep1' ? styles.matrixThSelected : ''
-                          }`}
-                        >
-                          <span>EP1</span>
-                          <small className={styles.matrixThSub}>(Julio)</small>
-                        </th>
-                        {hasEp2 && (
+                        {activeStages.map((etapa) => (
                           <th
+                            key={`qpop-th-${etapa}`}
                             className={`${styles.matrixThEtapa} ${
-                              questionCellPopover.selectedEtapa === 'ep2' ? styles.matrixThSelected : ''
+                              questionCellPopover.selectedEtapa === etapa ? styles.matrixThSelected : ''
                             }`}
                           >
-                            <span>EP2</span>
-                            <small className={styles.matrixThSub}>(Nov.)</small>
+                            <span>{getEtapaCode(etapa)}</span>
+                          </th>
+                        ))}
+                        {firstStage && lastStage && firstStage !== lastStage && (
+                          <th className={styles.matrixThTrend}>
+                            Variación ({getEtapaCode(firstStage)} ➔ {getEtapaCode(lastStage)})
                           </th>
                         )}
-                        <th className={styles.matrixThTrend}>Variación (EDI ➔ EP1)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1922,200 +1890,56 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                           </div>
                         </td>
 
-                        {/* EDI */}
-                        <td
-                          className={`${styles.matrixTdEtapa} ${
-                            questionCellPopover.selectedEtapa === 'edi' ? styles.matrixTdSelected : ''
-                          }`}
-                        >
-                          {qStat?.edi !== undefined ? (
-                            <div className={styles.matrixValGroup}>
-                              <span className={styles.matrixValPct}>{qStat.edi.porcentaje}%</span>
-                              <span className={styles.matrixValCount}>
-                                {qStat.edi.correctas.toLocaleString('es-PE')} /{' '}
-                                {qStat.edi.total.toLocaleString('es-PE')} est.
-                              </span>
-                            </div>
-                          ) : (
-                            <span className={styles.matrixEmpty}>-</span>
-                          )}
-                        </td>
-
-                        {/* EP1 */}
-                        <td
-                          className={`${styles.matrixTdEtapa} ${
-                            questionCellPopover.selectedEtapa === 'ep1' ? styles.matrixTdSelected : ''
-                          }`}
-                        >
-                          {qStat?.ep1 !== undefined ? (
-                            <div className={styles.matrixValGroup}>
-                              <span className={styles.matrixValPct}>{qStat.ep1.porcentaje}%</span>
-                              <span className={styles.matrixValCount}>
-                                {qStat.ep1.correctas.toLocaleString('es-PE')} /{' '}
-                                {qStat.ep1.total.toLocaleString('es-PE')} est.
-                              </span>
-                            </div>
-                          ) : (
-                            <span className={styles.matrixEmpty}>-</span>
-                          )}
-                        </td>
-
-                        {/* EP2 */}
-                        {hasEp2 && (
-                          <td
-                            className={`${styles.matrixTdEtapa} ${
-                              questionCellPopover.selectedEtapa === 'ep2' ? styles.matrixTdSelected : ''
-                            }`}
-                          >
-                            {qStat?.ep2 !== undefined ? (
-                              <div className={styles.matrixValGroup}>
-                                <span className={styles.matrixValPct}>{qStat.ep2.porcentaje}%</span>
-                                <span className={styles.matrixValCount}>
-                                  {qStat.ep2.correctas.toLocaleString('es-PE')} /{' '}
-                                  {qStat.ep2.total.toLocaleString('es-PE')} est.
-                                </span>
-                              </div>
-                            ) : (
-                              <span className={styles.matrixEmpty}>-</span>
-                            )}
-                          </td>
-                        )}
-
-                        {/* Variación UGEL */}
-                        <td className={styles.matrixTdTrend}>
-                          {diffEp1Edi !== null ? (
-                            <span
-                              className={`${styles.matrixVarBadge} ${
-                                diffEp1Edi > 0
-                                  ? styles.matrixVarInc
-                                  : diffEp1Edi < 0
-                                  ? styles.matrixVarDec
-                                  : styles.matrixVarNeu
-                              }`}
-                              title={`Variación en la UGEL: ${
-                                diffEp1Edi > 0 ? `+${diffEp1Edi}%` : `${diffEp1Edi}%`
-                              }`}
-                            >
-                              {diffEp1Edi > 0 ? (
-                                <>
-                                  <MdTrendingUp className={styles.matrixVarIcon} />
-                                  <span>+{diffEp1Edi}%</span>
-                                  <small className={styles.matrixVarLabel}>Incrementó</small>
-                                </>
-                              ) : diffEp1Edi < 0 ? (
-                                <>
-                                  <MdTrendingDown className={styles.matrixVarIcon} />
-                                  <span>{diffEp1Edi}%</span>
-                                  <small className={styles.matrixVarLabel}>Disminuyó</small>
-                                </>
-                              ) : (
-                                <>
-                                  <MdTrendingFlat className={styles.matrixVarIcon} />
-                                  <span>0%</span>
-                                  <small className={styles.matrixVarLabel}>Sin cambio</small>
-                                </>
-                              )}
-                            </span>
-                          ) : (
-                            <span className={styles.matrixEmpty}>-</span>
-                          )}
-                        </td>
-                      </tr>
-
-                      {/* Fila Promedio Regional */}
-                      {regQStat && (
-                        <tr className={`${styles.matrixRow} ${styles.matrixRegionalRow}`}>
-                          <td className={styles.matrixTdNivel}>
-                            <div className={styles.qRefTag}>
-                              <span className={styles.qRegionPill}>Región</span>
-                              <span className={styles.qRefTitle}>Promedio Regional</span>
-                            </div>
-                          </td>
-
-                          {/* EDI Región */}
-                          <td
-                            className={`${styles.matrixTdEtapa} ${
-                              questionCellPopover.selectedEtapa === 'edi' ? styles.matrixTdSelected : ''
-                            }`}
-                          >
-                            {regQStat.edi !== undefined ? (
-                              <div className={styles.matrixValGroup}>
-                                <span className={styles.matrixValPct}>{regQStat.edi.porcentaje}%</span>
-                                <span className={styles.matrixValCount}>
-                                  {regQStat.edi.correctas.toLocaleString('es-PE')} /{' '}
-                                  {regQStat.edi.total.toLocaleString('es-PE')} est.
-                                </span>
-                              </div>
-                            ) : (
-                              <span className={styles.matrixEmpty}>-</span>
-                            )}
-                          </td>
-
-                          {/* EP1 Región */}
-                          <td
-                            className={`${styles.matrixTdEtapa} ${
-                              questionCellPopover.selectedEtapa === 'ep1' ? styles.matrixTdSelected : ''
-                            }`}
-                          >
-                            {regQStat.ep1 !== undefined ? (
-                              <div className={styles.matrixValGroup}>
-                                <span className={styles.matrixValPct}>{regQStat.ep1.porcentaje}%</span>
-                                <span className={styles.matrixValCount}>
-                                  {regQStat.ep1.correctas.toLocaleString('es-PE')} /{' '}
-                                  {regQStat.ep1.total.toLocaleString('es-PE')} est.
-                                </span>
-                              </div>
-                            ) : (
-                              <span className={styles.matrixEmpty}>-</span>
-                            )}
-                          </td>
-
-                          {/* EP2 Región */}
-                          {hasEp2 && (
+                        {activeStages.map((etapa) => {
+                          const stat = qStat?.[etapa];
+                          return (
                             <td
+                              key={`qpop-td-ugel-${etapa}`}
                               className={`${styles.matrixTdEtapa} ${
-                                questionCellPopover.selectedEtapa === 'ep2' ? styles.matrixTdSelected : ''
+                                questionCellPopover.selectedEtapa === etapa ? styles.matrixTdSelected : ''
                               }`}
                             >
-                              {regQStat.ep2 !== undefined ? (
+                              {stat !== undefined ? (
                                 <div className={styles.matrixValGroup}>
-                                  <span className={styles.matrixValPct}>{regQStat.ep2.porcentaje}%</span>
+                                  <span className={styles.matrixValPct}>{stat.porcentaje}%</span>
                                   <span className={styles.matrixValCount}>
-                                    {regQStat.ep2.correctas.toLocaleString('es-PE')} /{' '}
-                                    {regQStat.ep2.total.toLocaleString('es-PE')} est.
+                                    {stat.correctas.toLocaleString('es-PE')} /{' '}
+                                    {stat.total.toLocaleString('es-PE')} est.
                                   </span>
                                 </div>
                               ) : (
                                 <span className={styles.matrixEmpty}>-</span>
                               )}
                             </td>
-                          )}
+                          );
+                        })}
 
-                          {/* Variación Región */}
+                        {/* Variación UGEL */}
+                        {firstStage && lastStage && firstStage !== lastStage && (
                           <td className={styles.matrixTdTrend}>
-                            {diffReg !== null ? (
+                            {diffUgel !== null ? (
                               <span
                                 className={`${styles.matrixVarBadge} ${
-                                  diffReg > 0
+                                  diffUgel > 0
                                     ? styles.matrixVarInc
-                                    : diffReg < 0
+                                    : diffUgel < 0
                                     ? styles.matrixVarDec
                                     : styles.matrixVarNeu
                                 }`}
-                                title={`Variación regional: ${
-                                  diffReg > 0 ? `+${diffReg}%` : `${diffReg}%`
+                                title={`Variación en la UGEL: ${
+                                  diffUgel > 0 ? `+${diffUgel}%` : `${diffUgel}%`
                                 }`}
                               >
-                                {diffReg > 0 ? (
+                                {diffUgel > 0 ? (
                                   <>
                                     <MdTrendingUp className={styles.matrixVarIcon} />
-                                    <span>+{diffReg}%</span>
+                                    <span>+{diffUgel}%</span>
                                     <small className={styles.matrixVarLabel}>Incrementó</small>
                                   </>
-                                ) : diffReg < 0 ? (
+                                ) : diffUgel < 0 ? (
                                   <>
                                     <MdTrendingDown className={styles.matrixVarIcon} />
-                                    <span>{diffReg}%</span>
+                                    <span>{diffUgel}%</span>
                                     <small className={styles.matrixVarLabel}>Disminuyó</small>
                                   </>
                                 ) : (
@@ -2130,6 +1954,84 @@ export const TablaMatrizComparativa: React.FC<TablaMatrizComparativaProps> = ({
                               <span className={styles.matrixEmpty}>-</span>
                             )}
                           </td>
+                        )}
+                      </tr>
+
+                      {/* Fila Promedio Regional */}
+                      {regQStat && (
+                        <tr className={`${styles.matrixRow} ${styles.matrixRegionalRow}`}>
+                          <td className={styles.matrixTdNivel}>
+                            <div className={styles.qRefTag}>
+                              <span className={styles.qRegionPill}>Región</span>
+                              <span className={styles.qRefTitle}>Promedio Regional</span>
+                            </div>
+                          </td>
+
+                          {activeStages.map((etapa) => {
+                            const rStat = regQStat[etapa];
+                            return (
+                              <td
+                                key={`qpop-td-reg-${etapa}`}
+                                className={`${styles.matrixTdEtapa} ${
+                                  questionCellPopover.selectedEtapa === etapa ? styles.matrixTdSelected : ''
+                                }`}
+                              >
+                                {rStat !== undefined ? (
+                                  <div className={styles.matrixValGroup}>
+                                    <span className={styles.matrixValPct}>{rStat.porcentaje}%</span>
+                                    <span className={styles.matrixValCount}>
+                                      {rStat.correctas.toLocaleString('es-PE')} /{' '}
+                                      {rStat.total.toLocaleString('es-PE')} est.
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className={styles.matrixEmpty}>-</span>
+                                )}
+                              </td>
+                            );
+                          })}
+
+                          {/* Variación Región */}
+                          {firstStage && lastStage && firstStage !== lastStage && (
+                            <td className={styles.matrixTdTrend}>
+                              {diffReg !== null ? (
+                                <span
+                                  className={`${styles.matrixVarBadge} ${
+                                    diffReg > 0
+                                      ? styles.matrixVarInc
+                                      : diffReg < 0
+                                      ? styles.matrixVarDec
+                                      : styles.matrixVarNeu
+                                  }`}
+                                  title={`Variación regional: ${
+                                    diffReg > 0 ? `+${diffReg}%` : `${diffReg}%`
+                                  }`}
+                                >
+                                  {diffReg > 0 ? (
+                                    <>
+                                      <MdTrendingUp className={styles.matrixVarIcon} />
+                                      <span>+{diffReg}%</span>
+                                      <small className={styles.matrixVarLabel}>Incrementó</small>
+                                    </>
+                                  ) : diffReg < 0 ? (
+                                    <>
+                                      <MdTrendingDown className={styles.matrixVarIcon} />
+                                      <span>{diffReg}%</span>
+                                      <small className={styles.matrixVarLabel}>Disminuyó</small>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <MdTrendingFlat className={styles.matrixVarIcon} />
+                                      <span>0%</span>
+                                      <small className={styles.matrixVarLabel}>Sin cambio</small>
+                                    </>
+                                  )}
+                                </span>
+                              ) : (
+                                <span className={styles.matrixEmpty}>-</span>
+                              )}
+                            </td>
+                          )}
                         </tr>
                       )}
                     </tbody>

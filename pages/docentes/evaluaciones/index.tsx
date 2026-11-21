@@ -40,6 +40,7 @@ import DocentesAsistidoOnboardingModal, {
 import DocentesAsistidoSpotlightTour, {
   ASISTIDO_SPOTLIGHT_STORAGE_KEY,
 } from "@/components/evaluaciones/DocentesAsistidoSpotlightTour";
+import EvaluacionScopeBadge from "@/components/evaluaciones/EvaluacionScopeBadge";
 import { Evaluaciones as EvaluacionesType } from "@/features/types/types";
 import { doc, getDoc, getFirestore } from "firebase/firestore";
 import { app } from "@/firebase/firebase.config";
@@ -799,12 +800,15 @@ const Evaluaciones = () => {
                           {/* Evaluación */}
                           <td className={styles.qaTableCell}>
                             <div className={styles.qaTableCellTitle}>
-                              <Link
-                                href={`${basePath}?idExamen=${eva.id}&grado=${eva.grado}&categoria=${eva.categoria}`}
-                                className={styles.qaTableTitleLink}
-                              >
-                                {eva.nombre || 'Evaluación'}
-                              </Link>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                                <Link
+                                  href={`${basePath}?idExamen=${eva.id}&grado=${eva.grado}&categoria=${eva.categoria}`}
+                                  className={styles.qaTableTitleLink}
+                                >
+                                  {eva.nombre || 'Evaluación'}
+                                </Link>
+                                <EvaluacionScopeBadge ugels={eva.ugels} size="xs" />
+                              </div>
                               {preguntasCount > 0 && (
                                 <span className={styles.qaTableSubText}>
                                   <RiQuestionLine /> {preguntasCount} preguntas
@@ -920,6 +924,7 @@ const Evaluaciones = () => {
                             {nivelBadge.label}
                           </span>
                           <span className={styles.qaGradeTag}>{gradoNombre}</span>
+                          <EvaluacionScopeBadge ugels={eva.ugels} size="xs" />
                         </div>
 
                         {isAbierta ? (

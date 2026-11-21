@@ -29,10 +29,20 @@ export const DEFAULT_DIRECTOR_TAB_ORDER: DirectorTabKey[] = [
   'evolucion',
 ];
 
+export const DEFAULT_DIRECTOR_TAB_VISIBILITY: Record<DirectorTabKey, boolean> = {
+  grilla: true,
+  brechas: true,
+  tendencia: true,
+  comparativa: true,
+  preguntas: true,
+  evolucion: true,
+};
+
 export interface DirectorTabsConfig {
   tabs?: Partial<Record<DirectorTabKey, string>>;
   tabOrder?: DirectorTabKey[];
   categorias?: Record<string, string>;
+  tabVisibility?: Partial<Record<DirectorTabKey, boolean>>;
   updatedAt?: string;
   updatedBy?: string;
 }
@@ -48,6 +58,7 @@ export const useDirectorTabsConfig = () => {
   const { currentUserData } = useGlobalContext();
   const [tabLabels, setTabLabels] = useState<Record<DirectorTabKey, string>>(DEFAULT_DIRECTOR_TAB_LABELS);
   const [tabOrder, setTabOrder] = useState<DirectorTabKey[]>(DEFAULT_DIRECTOR_TAB_ORDER);
+  const [tabVisibility, setTabVisibility] = useState<Record<DirectorTabKey, boolean>>(DEFAULT_DIRECTOR_TAB_VISIBILITY);
   const [categoriaLabels, setCategoriaLabels] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -91,6 +102,12 @@ export const useDirectorTabsConfig = () => {
               (k) => !raw.includes(k)
             );
             setTabOrder([...raw, ...missing]);
+          }
+          if (data?.tabVisibility) {
+            setTabVisibility({
+              ...DEFAULT_DIRECTOR_TAB_VISIBILITY,
+              ...data.tabVisibility,
+            });
           }
           if (data?.categorias) {
             setCategoriaLabels(data.categorias);
@@ -238,9 +255,58 @@ export const useDirectorTabsConfig = () => {
     [currentUserData]
   );
 
+  /**
+   * Guarda la visibilidad (habilitada / deshabilitada) de una pestaña
+   */
+  const saveTabVisibility = useCallback(
+    async (tabKey: DirectorTabKey, isVisible: boolean): Promise<boolean> => {
+      setIsSaving(true);
+      // Actualización optimista inmediata
+      setTabVisibility((prev) => ({
+        ...prev,
+        [tabKey]: isVisible,
+      }));
+
+      try {
+        const db = getFirestore();
+        const configDocRef = doc(db, 'configuraciones', 'reporte_director_tabs');
+
+        await setDoc(
+          configDocRef,
+          {
+            tabVisibility: {
+              [tabKey]: isVisible,
+            },
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentUserData?.dni || 'admin',
+          },
+          { merge: true }
+        );
+
+        toast.success(
+          `Pestaña "${tabLabels[tabKey] || tabKey}" ${isVisible ? 'activada' : 'desactivada'} correctamente.`
+        );
+        return true;
+      } catch (error: any) {
+        console.error('Error al guardar visibilidad de pestaña:', error);
+        toast.error(`Error al guardar en base de datos: ${error.message || 'Error desconocido'}`);
+        // Revertir optimismo en caso de error
+        setTabVisibility((prev) => ({
+          ...prev,
+          [tabKey]: !isVisible,
+        }));
+        return false;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [currentUserData, tabLabels]
+  );
+
   return {
     tabLabels,
     tabOrder,
+    tabVisibility,
     categoriaLabels,
     loading,
     isSaving,
@@ -248,6 +314,7 @@ export const useDirectorTabsConfig = () => {
     saveTabLabel,
     saveTabOrder,
     saveCategoriaLabel,
+    saveTabVisibility,
   };
 };
 

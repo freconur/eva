@@ -3,6 +3,7 @@ import { getFirestore, collection, query, where, getDocs, doc, getDoc, orderBy }
 import { Evaluaciones, Estudiante } from '@/features/types/types';
 import { generateRealisticStudentName } from '@/features/utils/fakeNamesGenerator';
 import { getMonthName } from '@/fuctions/dates';
+import { getEtapasFromConfig } from '@/components/modals/ConfigurarMatrizModal';
 
 export interface ActuacionCatalogoItem {
   order: number;
@@ -77,6 +78,19 @@ interface UseDocenteEvolucionEstudiantesProps {
   preguntasRespuestas?: any[];
 }
 
+export interface EvolucionCacheEntry {
+  etapasMapData: Record<string, { evalObj: any; estudiantes: Estudiante[] }>;
+  masterRosterMap: Record<string, any>;
+  timestamp: number;
+}
+
+// Caché en memoria a nivel de módulo para evitar lecturas redundantes en Firestore al alternar pestañas
+const evolucionModuleCache = new Map<string, EvolucionCacheEntry>();
+
+export const clearEvolucionModuleCache = () => {
+  evolucionModuleCache.clear();
+};
+
 export const useDocenteEvolucionEstudiantes = ({
   evaluacion,
   matrizConfigGrados = {},
@@ -89,11 +103,6 @@ export const useDocenteEvolucionEstudiantes = ({
   isDemoMode = false,
   preguntasRespuestas = [],
 }: UseDocenteEvolucionEstudiantesProps) => {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [etapasMapData, setEtapasMapData] = useState<Record<string, { evalObj: any; estudiantes: Estudiante[] }>>({});
-  const [masterRosterMap, setMasterRosterMap] = useState<Record<string, any>>({});
-
   const currentEstudiantesRef = useRef(currentEstudiantes);
   currentEstudiantesRef.current = currentEstudiantes;
 
@@ -105,7 +114,7 @@ export const useDocenteEvolucionEstudiantes = ({
     [matrizConfigGrados]
   );
 
-  // 1. Identificar si la evaluación actual forma parte de las etapas longitudinales (EDI, EP1, EP2)
+  // 1. Identificar si la evaluación actual forma parte de las etapas longitudinales (EDI, EP1, EP2, EP3, etc.)
   const etapasConfiguradas = useMemo(() => {
     if (!evaluacion?.id) return [];
 
@@ -119,12 +128,9 @@ export const useDocenteEvolucionEstudiantes = ({
 
     if (!assignment) {
       for (const [, asgn] of Object.entries(matrizConfigGrados || {})) {
-        if (
-          asgn &&
-          (asgn.ediId === evaluacion.id ||
-            asgn.ep1Id === evaluacion.id ||
-            asgn.ep2Id === evaluacion.id)
-        ) {
+        if (!asgn) continue;
+        const etapasMatriz = getEtapasFromConfig(asgn);
+        if (etapasMatriz.some((et) => et.evaluacionId === evaluacion.id)) {
           assignment = asgn;
           break;
         }
@@ -133,15 +139,35 @@ export const useDocenteEvolucionEstudiantes = ({
 
     const etapas: { key: string; id: string; label: string; order: number }[] = [];
     if (assignment) {
-      if (assignment.ediId) {
-        etapas.push({ key: 'edi', id: assignment.ediId, label: 'EDI (Diagnóstica)', order: 1 });
-      }
-      if (assignment.ep1Id) {
-        etapas.push({ key: 'ep1', id: assignment.ep1Id, label: 'EP1 (Progresiva 1)', order: 2 });
-      }
-      if (assignment.ep2Id) {
-        etapas.push({ key: 'ep2', id: assignment.ep2Id, label: 'EP2 (Progresiva 2)', order: 3 });
-      }
+      const etapasMatriz = getEtapasFromConfig(assignment);
+      etapasMatriz.forEach((et, index) => {
+        if (et.evaluacionId && et.evaluacionId.trim()) {
+          const key = (et.id || et.codigo || `ep${index + 1}`).toLowerCase();
+          let label = '';
+          if (key === 'edi') {
+            label = 'EDI (Diagnóstica)';
+          } else if (key === 'ep1') {
+            label = 'EP1 (Progresiva 1)';
+          } else if (key === 'ep2') {
+            label = 'EP2 (Progresiva 2)';
+          } else if (key === 'ep3') {
+            label = 'EP3 (Progresiva 3)';
+          } else if (key === 'ep4') {
+            label = 'EP4 (Progresiva 4)';
+          } else if (key === 'es') {
+            label = 'ES (Salida)';
+          } else {
+            const code = (et.codigo || key).toUpperCase();
+            label = et.nombre ? `${code} (${et.nombre})` : code;
+          }
+          etapas.push({
+            key,
+            id: et.evaluacionId.trim(),
+            label,
+            order: index + 1,
+          });
+        }
+      });
     }
 
     // Si la evaluación no está en la matriz, considerar al menos la evaluación actual
@@ -156,6 +182,37 @@ export const useDocenteEvolucionEstudiantes = ({
 
     return etapas.sort((a, b) => a.order - b.order);
   }, [evaluacion?.id, evaluacion?.grado, evaluacion?.categoria, evaluacion?.nombre, matrizConfigKey]);
+
+  const etapasIdsKey = useMemo(
+    () => etapasConfiguradas.map((e) => `${e.key}:${e.id}`).join(','),
+    [etapasConfiguradas]
+  );
+
+  const cacheKey = useMemo(() => {
+    return `${evaluacion?.id || ''}_${dniDocente || ''}_${dniDirector || ''}_${yearSelected || ''}_${monthSelected || ''}_${etapasIdsKey}`;
+  }, [evaluacion?.id, dniDocente, dniDirector, yearSelected, monthSelected, etapasIdsKey]);
+
+  const initialCached = useMemo(() => {
+    return cacheKey ? evolucionModuleCache.get(cacheKey) : undefined;
+  }, [cacheKey]);
+
+  const [loading, setLoading] = useState<boolean>(!initialCached);
+  const [error, setError] = useState<string | null>(null);
+  const [etapasMapData, setEtapasMapData] = useState<Record<string, { evalObj: any; estudiantes: Estudiante[] }>>(
+    initialCached?.etapasMapData || {}
+  );
+  const [masterRosterMap, setMasterRosterMap] = useState<Record<string, any>>(
+    initialCached?.masterRosterMap || {}
+  );
+
+  useEffect(() => {
+    if (cacheKey && evolucionModuleCache.has(cacheKey)) {
+      const cached = evolucionModuleCache.get(cacheKey)!;
+      setEtapasMapData(cached.etapasMapData);
+      setMasterRosterMap(cached.masterRosterMap);
+      setLoading(false);
+    }
+  }, [cacheKey]);
 
   // 1.1 Catálogo maestro de actuaciones pedagógicas de las preguntas de la evaluación
   const catalogoActuaciones: ActuacionCatalogoItem[] = useMemo(() => {
@@ -192,14 +249,18 @@ export const useDocenteEvolucionEstudiantes = ({
       .sort((a, b) => a.order - b.order);
   }, [preguntasRespuestas, evaluacion]);
 
-  const etapasIdsKey = useMemo(
-    () => etapasConfiguradas.map((e) => `${e.key}:${e.id}`).join(','),
-    [etapasConfiguradas]
-  );
-
   // 2. Cargar datos de etapas y el padrón oficial del docente o director desde Firestore
-  const fetchEtapasData = useCallback(async () => {
+  const fetchEtapasData = useCallback(async (forceRefresh = false) => {
     if (!evaluacion?.id || (!dniDocente && !dniDirector)) return;
+
+    if (!forceRefresh && cacheKey && evolucionModuleCache.has(cacheKey)) {
+      const cached = evolucionModuleCache.get(cacheKey)!;
+      setEtapasMapData(cached.etapasMapData);
+      setMasterRosterMap(cached.masterRosterMap);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -352,16 +413,23 @@ export const useDocenteEvolucionEstudiantes = ({
       );
 
       setEtapasMapData(resultEtapas);
+      if (cacheKey) {
+        evolucionModuleCache.set(cacheKey, {
+          etapasMapData: resultEtapas,
+          masterRosterMap: localMasterRoster,
+          timestamp: Date.now(),
+        });
+      }
     } catch (err: any) {
       console.error('Error al cargar datos evolutivos de etapas:', err);
       setError(err?.message || 'Error al sincronizar datos evolutivos');
     } finally {
       setLoading(false);
     }
-  }, [evaluacion?.id, dniDocente, dniDirector, etapasIdsKey, yearSelected, monthSelected]);
+  }, [evaluacion?.id, dniDocente, dniDirector, etapasIdsKey, yearSelected, monthSelected, cacheKey]);
 
   useEffect(() => {
-    fetchEtapasData();
+    fetchEtapasData(false);
   }, [fetchEtapasData]);
 
   // 3. Procesar y unificar la lista de estudiantes por DNI
@@ -826,7 +894,15 @@ export const useDocenteEvolucionEstudiantes = ({
     });
 
     let deltaPromedioAula = 0;
-    if (etapasConfiguradas.length >= 2) {
+    // Considerar solo etapas que registren alumnos evaluados para evitar deltas negativos artificiales con etapas futuras sin rendir
+    const etapasConEvaluaciones = etapasConfiguradas.filter(
+      (et) => (conteosPorEtapa[et.key] ?? 0) > 0
+    );
+    if (etapasConEvaluaciones.length >= 2) {
+      const firstKey = etapasConEvaluaciones[0].key;
+      const lastKey = etapasConEvaluaciones[etapasConEvaluaciones.length - 1].key;
+      deltaPromedioAula = Number((promediosPorEtapa[lastKey] - promediosPorEtapa[firstKey]).toFixed(2));
+    } else if (etapasConfiguradas.length >= 2) {
       const firstKey = etapasConfiguradas[0].key;
       const lastKey = etapasConfiguradas[etapasConfiguradas.length - 1].key;
       deltaPromedioAula = Number((promediosPorEtapa[lastKey] - promediosPorEtapa[firstKey]).toFixed(2));
@@ -871,6 +947,9 @@ export const useDocenteEvolucionEstudiantes = ({
     kpis,
     loading,
     error,
-    refetch: fetchEtapasData,
+    refetch: (force?: boolean | React.MouseEvent | unknown) => {
+      const shouldForce = force === undefined || force === true || (typeof force === 'object' && force !== null);
+      return fetchEtapasData(shouldForce);
+    },
   };
 };

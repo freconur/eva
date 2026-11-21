@@ -418,6 +418,24 @@
   border: 1px solid #7dd3fc;
 }
 
+.badgeEp3 {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.badgeEp4 {
+  background-color: #f0fdfa;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+}
+
+.badgeGeneric {
+  background-color: #f8fafc;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
 .headerActions {
   display: flex;
   align-items: center;

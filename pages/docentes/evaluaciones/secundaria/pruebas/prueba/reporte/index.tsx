@@ -186,6 +186,15 @@ const Reportes = () => {
 
   // Pestaña activa
   const [activeTab, setActiveTab] = useState<DirectorTabKey>('grilla');
+  // Registro de pestañas visitadas para conservarlas en el DOM (Keep-Alive con display:none)
+  // evitando re-renderizados costosos y lecturas redundantes en Firestore al alternar entre pestañas
+  const [visitedTabs, setVisitedTabs] = useState<Record<string, boolean>>({ grilla: true });
+
+  useEffect(() => {
+    if (activeTab) {
+      setVisitedTabs((prev) => (prev[activeTab] ? prev : { ...prev, [activeTab]: true }));
+    }
+  }, [activeTab]);
 
   // Modo de visualización superior: 'compacto' o 'ejecutivo'
   const [bannerMode, setBannerMode] = useState<'compacto' | 'ejecutivo'>(() => {
@@ -247,7 +256,7 @@ const Reportes = () => {
   };
 
   // Configuración de títulos y orden de pestañas
-  const { tabLabels, tabOrder } = useDirectorTabsConfig();
+  const { tabLabels, tabOrder, tabVisibility } = useDirectorTabsConfig();
 
   // Control de scroll programático para modo cascada
   const isProgrammaticScroll = useRef(false);
@@ -326,17 +335,24 @@ const Reportes = () => {
     return isEvaluacionEnMatriz(evaluacion.id, matrizConfigGrados);
   }, [evaluacion?.id, matrizConfigGrados]);
 
-  // Si Brechas de Aprendizaje no está habilitada para esta evaluación, redireccionar a Grilla
+  // Si Brechas o Evolución no están habilitadas para esta evaluación, redireccionar a Grilla
   useEffect(() => {
     if (isConfigLoaded && !isEtapaConfigurada && activeTab === 'brechas') {
       setActiveTab('grilla');
     }
-  }, [isConfigLoaded, isEtapaConfigurada, activeTab]);
+    if (tabVisibility && tabVisibility['evolucion'] === false && activeTab === 'evolucion') {
+      setActiveTab('grilla');
+    }
+  }, [isConfigLoaded, isEtapaConfigurada, tabVisibility, activeTab]);
 
-  // Pestañas visibles según si Brechas está habilitada
+  // Pestañas visibles según visibilidad global y si Brechas está habilitada
   const visibleTabOrder = useMemo(() => {
-    return tabOrder.filter((id) => (id === 'brechas' ? isEtapaConfigurada : true));
-  }, [tabOrder, isEtapaConfigurada]);
+    return tabOrder.filter((id) => {
+      if (tabVisibility && tabVisibility[id] === false) return false;
+      if (id === 'brechas') return isEtapaConfigurada;
+      return true;
+    });
+  }, [tabOrder, isEtapaConfigurada, tabVisibility]);
 
   // Modo solo lectura si la evaluación está inactiva o cerrada
   const isSoloLectura = Boolean(evaluacion && (!evaluacion.active || evaluacion.cerrada));
@@ -1679,38 +1695,63 @@ const Reportes = () => {
             {layoutMode === 'tabs' ? (
               <div className="bg-white border-x-2 border-b-2 border-blue-600 rounded-b-3xl p-4 sm:p-6 shadow-xs -mt-[2px] min-h-[520px]">
                 {/* TAB 1: ESTUDIANTES Y GRILLA DE RESULTADOS */}
-                {activeTab === 'grilla' && (
-                  <div key="grilla" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                {(visitedTabs['grilla'] || activeTab === 'grilla') && (
+                  <div
+                    key="grilla"
+                    className={`${tabsStyles.tabContentPanel} ${activeTab === 'grilla' ? '' : 'hidden'}`}
+                    style={{ display: activeTab === 'grilla' ? undefined : 'none' }}
+                    role="tabpanel"
+                    tabIndex={0}
+                  >
                     {renderGrillaContent()}
                   </div>
                 )}
 
                 {/* TAB 2: BRECHAS DE APRENDIZAJE (BURBUJAS Y DECISIONES) */}
-                {activeTab === 'brechas' && isEtapaConfigurada && (
-                  <div key="brechas" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                {isEtapaConfigurada && (visitedTabs['brechas'] || activeTab === 'brechas') && (
+                  <div
+                    key="brechas"
+                    className={`${tabsStyles.tabContentPanel} ${activeTab === 'brechas' ? '' : 'hidden'}`}
+                    style={{ display: activeTab === 'brechas' ? undefined : 'none' }}
+                    role="tabpanel"
+                    tabIndex={0}
+                  >
                     {renderBrechasContent()}
                   </div>
                 )}
 
                 {/* TAB 3: TENDENCIAS Y COBERTURA */}
-                {activeTab === 'tendencia' && (
-                  <div key="tendencia" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                {(visitedTabs['tendencia'] || activeTab === 'tendencia') && (
+                  <div
+                    key="tendencia"
+                    className={`${tabsStyles.tabContentPanel} ${activeTab === 'tendencia' ? '' : 'hidden'}`}
+                    style={{ display: activeTab === 'tendencia' ? undefined : 'none' }}
+                    role="tabpanel"
+                    tabIndex={0}
+                  >
                     {renderTendenciaContent()}
                   </div>
                 )}
 
                 {/* TAB 4: COMPARATIVA HISTÓRICA DE TENDENCIA */}
-                {activeTab === 'comparativa' && (
-                  <div key="comparativa" className={tabsStyles.tabContentPanel} role="tabpanel" tabIndex={0}>
+                {(visitedTabs['comparativa'] || activeTab === 'comparativa') && (
+                  <div
+                    key="comparativa"
+                    className={`${tabsStyles.tabContentPanel} ${activeTab === 'comparativa' ? '' : 'hidden'}`}
+                    style={{ display: activeTab === 'comparativa' ? undefined : 'none' }}
+                    role="tabpanel"
+                    tabIndex={0}
+                  >
                     {renderComparativaContent()}
                   </div>
                 )}
 
                 {/* TAB 5: ANÁLISIS POR PREGUNTA */}
-                {activeTab === 'preguntas' && (
+                {(visitedTabs['preguntas'] || activeTab === 'preguntas') && (
                   <div
                     key="preguntas"
-                    className={tabsStyles.tabContentPanel}
+                    className={`${tabsStyles.tabContentPanel} ${activeTab === 'preguntas' ? '' : 'hidden'}`}
+                    style={{ display: activeTab === 'preguntas' ? undefined : 'none' }}
                     role="tabpanel"
                     tabIndex={0}
                   >
@@ -1719,10 +1760,11 @@ const Reportes = () => {
                 )}
 
                 {/* TAB 6: EVOLUCIÓN INDIVIDUAL DE ESTUDIANTES */}
-                {activeTab === 'evolucion' && (
+                {(visitedTabs['evolucion'] || activeTab === 'evolucion') && (
                   <div
                     key="evolucion"
-                    className={tabsStyles.tabContentPanel}
+                    className={`${tabsStyles.tabContentPanel} ${activeTab === 'evolucion' ? '' : 'hidden'}`}
+                    style={{ display: activeTab === 'evolucion' ? undefined : 'none' }}
                     role="tabpanel"
                     tabIndex={0}
                   >

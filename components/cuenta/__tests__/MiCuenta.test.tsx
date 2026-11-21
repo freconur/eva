@@ -1,13 +1,73 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+
+const mockDispatch = jest.fn()
+const mockGetUserData = jest.fn()
 
 jest.mock('firebase/auth', () => ({
-  getAuth: jest.fn(() => ({})),
+  getAuth: jest.fn(() => ({
+    currentUser: { uid: 'auth_uid_12345' },
+  })),
   onAuthStateChanged: jest.fn(),
   signInWithEmailAndPassword: jest.fn(),
   signOut: jest.fn(),
   setPersistence: jest.fn(() => Promise.resolve()),
   browserLocalPersistence: {},
+}))
+
+const mockSetDoc = jest.fn().mockResolvedValue(undefined)
+const mockGetDoc = jest.fn()
+const mockGetDocs = jest.fn()
+
+jest.mock('firebase/firestore', () => ({
+  getFirestore: jest.fn(() => ({})),
+  doc: jest.fn((_db, collectionName, id) => ({
+    id,
+    path: `${collectionName}/${id}`,
+  })),
+  collection: jest.fn((_db, collectionName) => ({ id: collectionName })),
+  query: jest.fn((...args) => ({ queryArgs: args })),
+  where: jest.fn((field, op, val) => ({ field, op, val })),
+  limit: jest.fn((num) => ({ limit: num })),
+  serverTimestamp: jest.fn(() => 'MOCK_SERVER_TIMESTAMP'),
+  setDoc: (...args: any[]) => mockSetDoc(...args),
+  getDoc: (...args: any[]) => mockGetDoc(...args),
+  getDocs: (...args: any[]) => mockGetDocs(...args),
+}))
+
+const mockUploadBytes = jest.fn().mockResolvedValue({
+  ref: { fullPath: 'usuarios/auth_uid_12345/foto.jpg' },
+})
+const mockGetDownloadURL = jest.fn().mockResolvedValue('https://storage.mock/foto.jpg')
+const mockDeleteObject = jest.fn().mockResolvedValue(undefined)
+
+jest.mock('firebase/storage', () => ({
+  getStorage: jest.fn(() => ({})),
+  ref: jest.fn((_storage, path) => ({ fullPath: path })),
+  uploadBytes: (...args: any[]) => mockUploadBytes(...args),
+  getDownloadURL: (...args: any[]) => mockGetDownloadURL(...args),
+  deleteObject: (...args: any[]) => mockDeleteObject(...args),
+}))
+
+jest.mock('@/features/utils/compressCarnetImage', () => ({
+  compressCarnetImage: jest.fn().mockResolvedValue({
+    blob: new Blob(['fake_img'], { type: 'image/jpeg' }),
+    dataUrl: 'data:image/jpeg;base64,fake',
+    sizeInKb: 28,
+    width: 300,
+    height: 360,
+  }),
+}))
+
+jest.mock('react-toastify', () => ({
+  toast: {
+    loading: jest.fn(() => 'toast_id_1'),
+    update: jest.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+    warning: jest.fn(),
+  },
 }))
 
 jest.mock('@/firebase/firebase.config', () => ({
@@ -22,7 +82,8 @@ jest.mock('@/components/layouts/PrivateRoutesAdmin', () => {
   }
 })
 
-const mockUserData = {
+let mockUserData: any = {
+  id: 'doc_id_non_dni_999', // Rol no-docente (ej. Especialista/Admin): el doc ID en Firestore es diferente al DNI
   nombres: 'Carlos',
   apellidos: 'Mamani Flores',
   dni: '70894512',
@@ -42,12 +103,11 @@ const mockUserData = {
   },
 }
 
-const mockGetUserData = jest.fn()
-
 jest.mock('@/features/context/GlolbalContext', () => ({
   useGlobalContext: () => ({
     currentUserData: mockUserData,
   }),
+  useGlobalContextDispatch: () => mockDispatch,
 }))
 
 jest.mock('@/features/hooks/useUsuario', () => () => ({
@@ -61,6 +121,28 @@ jest.mock('@/modals/ModalUpdateCliente', () => {
       <div data-testid="modal-update-cliente">
         <span>Modal de Actualización</span>
         <button onClick={onClose}>Cerrar</button>
+      </div>
+    )
+  }
+})
+
+jest.mock('@/modals/ModalEncuadreFoto', () => {
+  return function MockModalEncuadreFoto({ isOpen, onConfirm, onClose }: any) {
+    if (!isOpen) return null
+    return (
+      <div data-testid="modal-encuadre-foto">
+        <button
+          onClick={() =>
+            onConfirm(
+              new Blob(['fake'], { type: 'image/jpeg' }),
+              'https://storage.mock/foto.jpg',
+              25
+            )
+          }
+        >
+          Confirmar Encrope
+        </button>
+        <button onClick={onClose}>Cancelar</button>
       </div>
     )
   }
@@ -131,5 +213,84 @@ describe('MiCuenta Component (UI/UX Redesign)', () => {
     fireEvent.click(closeBtn)
 
     expect(screen.queryByTestId('modal-update-cliente')).not.toBeInTheDocument()
+  })
+
+  it('permite subir foto de perfil para roles donde el ID de documento no es el DNI (resuelve doc y usa setDoc con merge)', async () => {
+    // Simulamos que el documento con el ID 'doc_id_non_dni_999' existe en Firestore,
+    // pero el documento con el ID DNI '70894512' NO existe (caso típico de roles no-docentes)
+    mockGetDoc.mockImplementation(async (docRef: any) => {
+      if (docRef.id === 'doc_id_non_dni_999') {
+        return { exists: () => true, id: 'doc_id_non_dni_999', data: () => mockUserData }
+      }
+      return { exists: () => false, id: docRef.id }
+    })
+
+    const { container } = render(<MiCuenta />)
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+    expect(fileInput).toBeInTheDocument()
+
+    const fakeFile = new File(['fake content'], 'avatar.jpg', { type: 'image/jpeg' })
+    fireEvent.change(fileInput, { target: { files: [fakeFile] } })
+
+    const confirmBtn = await screen.findByText('Confirmar Encrope')
+    fireEvent.click(confirmBtn)
+
+    await waitFor(() => {
+      // Debe haber invocado setDoc con { merge: true } sobre el documento real existente
+      expect(mockSetDoc).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'doc_id_non_dni_999' }),
+        expect.objectContaining({
+          foto: 'https://storage.mock/foto.jpg',
+          fechaActualizacion: 'MOCK_SERVER_TIMESTAMP',
+        }),
+        { merge: true }
+      )
+      // Debe haber despachado al contexto global
+      expect(mockDispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({ foto: 'https://storage.mock/foto.jpg' }),
+        })
+      )
+    })
+  })
+
+  it('permite eliminar foto de perfil exitosamente para roles no-docentes', async () => {
+    mockUserData = {
+      ...mockUserData,
+      foto: 'https://storage.mock/foto.jpg',
+    }
+
+    mockGetDoc.mockImplementation(async (docRef: any) => {
+      if (docRef.id === 'doc_id_non_dni_999') {
+        return { exists: () => true, id: 'doc_id_non_dni_999', data: () => mockUserData }
+      }
+      return { exists: () => false, id: docRef.id }
+    })
+
+    window.confirm = jest.fn(() => true)
+
+    render(<MiCuenta />)
+
+    const removeBtn = screen.getByRole('button', { name: /eliminar foto de perfil/i })
+    expect(removeBtn).toBeInTheDocument()
+
+    fireEvent.click(removeBtn)
+
+    await waitFor(() => {
+      expect(mockSetDoc).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'doc_id_non_dni_999' }),
+        expect.objectContaining({
+          foto: null,
+          fechaActualizacion: 'MOCK_SERVER_TIMESTAMP',
+        }),
+        { merge: true }
+      )
+      expect(mockDispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({ foto: undefined }),
+        })
+      )
+    })
   })
 })

@@ -19,6 +19,7 @@ import { RiLoader4Line } from 'react-icons/ri';
 import PrivateRouteAdmin from '@/components/layouts/PrivateRoutesAdmin';
 import TablaMatrizComparativa from '@/components/reportes/TablaMatrizComparativa';
 import PanelVisualizacionesMatriz from '@/components/reportes/PanelVisualizacionesMatriz';
+import PanelConfiguracionMatriz from '@/components/reportes/PanelConfiguracionMatriz';
 import ConfigurarMatrizModal from '@/components/modals/ConfigurarMatrizModal';
 import DiagnosticoIAModal from '@/components/modals/DiagnosticoIAModal';
 import { useMatrizResultados } from '@/features/hooks/useMatrizResultados';
@@ -159,6 +160,8 @@ const MatrizResultadosPage = () => {
     setYearSelected,
     matrizRows,
     loadingMatriz,
+    etapasConfiguradas,
+    evaluacionesPorEtapa,
     evaluacionEdi,
     evaluacionEp1,
     evaluacionEp2,
@@ -172,7 +175,7 @@ const MatrizResultadosPage = () => {
   const { categorias: contextCategorias } = useGlobalContext();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState<boolean>(false);
   const [isIaModalOpen, setIsIaModalOpen] = useState<boolean>(false);
-  const [mainViewMode, setMainViewMode] = useState<'tabla' | 'graficos'>('tabla');
+  const [mainViewMode, setMainViewMode] = useState<'configuracion' | 'tabla' | 'graficos'>('configuracion');
 
   const categoriasDisponibles = getCategoriasParaGrado(
     selectedGrado,
@@ -257,7 +260,7 @@ const MatrizResultadosPage = () => {
 
               <button
                 type="button"
-                onClick={() => setIsConfigModalOpen(true)}
+                onClick={() => setMainViewMode('configuracion')}
                 className={styles.configBtn}
                 title="Configurar qué evaluación corresponde a cada etapa para este grado y categoría"
               >
@@ -322,31 +325,49 @@ const MatrizResultadosPage = () => {
             </div>
           </div>
 
-          {/* Badges de Información de las 3 Evaluaciones Asignadas */}
+          {/* Badges de Información de las Evaluaciones Asignadas (Dinámico) */}
           <div className={styles.evalInfoBar}>
-            {/* Slot EDI */}
-            <div className={`${styles.evalBadge} ${styles.badgeEdi}`}>
-              <strong>EDI:</strong>
-              <span>
-                {evaluacionEdi ? evaluacionEdi.nombre : 'Sin asignar (Configure en botón superior)'}
-              </span>
-            </div>
+            {etapasConfiguradas.length > 0 ? (
+              etapasConfiguradas.map((etapa) => {
+                const evalItem = evaluacionesPorEtapa.find((e) => e.etapa.id === etapa.id)?.evaluacion;
+                const badgeClass =
+                  etapa.id === 'edi'
+                    ? styles.badgeEdi
+                    : etapa.id === 'ep1'
+                    ? styles.badgeEp1
+                    : etapa.id === 'ep2'
+                    ? styles.badgeEp2
+                    : etapa.id === 'ep3'
+                    ? styles.badgeEp3
+                    : etapa.id === 'ep4'
+                    ? styles.badgeEp4
+                    : styles.badgeGeneric;
 
-            {/* Slot EP1 */}
-            <div className={`${styles.evalBadge} ${styles.badgeEp1}`}>
-              <strong>EP1:</strong>
-              <span>
-                {evaluacionEp1 ? evaluacionEp1.nombre : 'Sin asignar (Configure en botón superior)'}
-              </span>
-            </div>
-
-            {/* Slot EP2 */}
-            <div className={`${styles.evalBadge} ${styles.badgeEp2}`}>
-              <strong>EP2:</strong>
-              <span>
-                {evaluacionEp2 ? evaluacionEp2.nombre : 'Sin asignar (Configure en botón superior)'}
-              </span>
-            </div>
+                return (
+                  <div key={etapa.id} className={`${styles.evalBadge} ${badgeClass}`}>
+                    <strong>{etapa.codigo}:</strong>
+                    <span>
+                      {evalItem ? evalItem.nombre : 'Sin asignar (Configure en botón superior)'}
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <>
+                <div className={`${styles.evalBadge} ${styles.badgeEdi}`}>
+                  <strong>EDI:</strong>
+                  <span>{evaluacionEdi ? evaluacionEdi.nombre : 'Sin asignar'}</span>
+                </div>
+                <div className={`${styles.evalBadge} ${styles.badgeEp1}`}>
+                  <strong>EP1:</strong>
+                  <span>{evaluacionEp1 ? evaluacionEp1.nombre : 'Sin asignar'}</span>
+                </div>
+                <div className={`${styles.evalBadge} ${styles.badgeEp2}`}>
+                  <strong>EP2:</strong>
+                  <span>{evaluacionEp2 ? evaluacionEp2.nombre : 'Sin asignar'}</span>
+                </div>
+              </>
+            )}
 
             {preguntasUnificadas.length > 0 && (
               <div className={styles.evalBadge} style={{ marginLeft: 'auto' }}>
@@ -357,8 +378,18 @@ const MatrizResultadosPage = () => {
           </div>
         </section>
 
-        {/* Selector de Modo de Visualización: Tabla Comparativa vs Gráficos */}
+        {/* Selector de Modo de Visualización: Configuración vs Tabla Comparativa vs Gráficos */}
         <div className={styles.mainViewSwitcher}>
+          <button
+            type="button"
+            className={`${styles.viewSwitcherBtn} ${
+              mainViewMode === 'configuracion' ? styles.viewSwitcherBtnActive : ''
+            }`}
+            onClick={() => setMainViewMode('configuracion')}
+          >
+            <MdSettings />
+            <span>Configuración</span>
+          </button>
           <button
             type="button"
             className={`${styles.viewSwitcherBtn} ${
@@ -382,27 +413,48 @@ const MatrizResultadosPage = () => {
           </button>
         </div>
 
-        {/* Vista: Tabla Comparativa Multi-Evaluación */}
-        {mainViewMode === 'tabla' ? (
+        {/* Vista 1: Configuración de Etapas de Evaluación (Inicia por defecto) */}
+        {mainViewMode === 'configuracion' && (
+          <PanelConfiguracionMatriz
+            evaluaciones={evaluacionesDisponibles}
+            configGrados={configGrados}
+            onSaveConfig={saveGradoConfig}
+            selectedGrado={selectedGrado}
+            setSelectedGrado={setSelectedGrado}
+            selectedCategoria={selectedCategoria}
+            setSelectedCategoria={setSelectedCategoria}
+            onNavigateToTabla={() => setMainViewMode('tabla')}
+            loadingConfig={loadingConfig}
+          />
+        )}
+
+        {/* Vista 2: Tabla Comparativa Multi-Evaluación */}
+        {mainViewMode === 'tabla' && (
           <TablaMatrizComparativa
             data={matrizRows}
             loading={loadingMatriz || loadingConfig}
             evaluacionEdi={evaluacionEdi}
             evaluacionEp1={evaluacionEp1}
             evaluacionEp2={evaluacionEp2}
+            etapas={etapasConfiguradas}
+            evaluacionesPorEtapa={evaluacionesPorEtapa}
             preguntas={preguntasUnificadas}
             onReload={reloadMatriz}
             gradoName={`${nombreGrado} - ${nombreCategoria.toUpperCase()}`}
             yearSelected={yearSelected}
           />
-        ) : (
-          /* Vista: Visualizaciones y Toma de Decisiones (7 pestañas) */
+        )}
+
+        {/* Vista 3: Visualizaciones y Toma de Decisiones (7 pestañas) */}
+        {mainViewMode === 'graficos' && (
           <PanelVisualizacionesMatriz
             data={matrizRows}
             loading={loadingMatriz || loadingConfig}
             evaluacionEdi={evaluacionEdi}
             evaluacionEp1={evaluacionEp1}
             evaluacionEp2={evaluacionEp2}
+            etapas={etapasConfiguradas}
+            evaluacionesPorEtapa={evaluacionesPorEtapa}
             preguntas={preguntasUnificadas}
             gradoName={`${nombreGrado} - ${nombreCategoria.toUpperCase()}`}
             onReload={reloadMatriz}

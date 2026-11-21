@@ -5,13 +5,22 @@ import {
   RiSettings4Line, 
   RiPaletteLine,
   RiShieldUserLine,
-  RiRocketLine
+  RiRocketLine,
+  RiLineChartLine,
 } from 'react-icons/ri';
 import { MdDonutLarge } from 'react-icons/md';
 import ConfigurarNivelesActuacionModal from '@/modals/ConfigurarNivelesActuacion';
+import { useDirectorTabsConfig } from '@/components/reportes/director/useDirectorTabsConfig';
 
 const ConfiguracionPage = () => {
   const [showNivelesModal, setShowNivelesModal] = useState(false);
+  const { tabVisibility, saveTabVisibility, isSaving } = useDirectorTabsConfig();
+
+  const isEvolucionActive = tabVisibility.evolucion !== false;
+
+  const handleToggleEvolucion = async () => {
+    await saveTabVisibility('evolucion', !isEvolucionActive);
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto min-h-screen">
@@ -100,6 +109,60 @@ const ConfiguracionPage = () => {
           <Link href="/admin/configuracion/actualizaciones" className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
             Gestionar Versiones →
           </Link>
+        </div>
+
+        {/* Card: Pestaña Evolución de Estudiantes (Diana Polar & Progresión) */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group w-full flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+                <RiLineChartLine className="text-2xl" />
+              </div>
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
+                  isEvolucionActive
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-slate-100 text-slate-500 border-slate-200'
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isEvolucionActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+                  }`}
+                />
+                {isEvolucionActive ? 'Pestaña Activa' : 'Pestaña Oculta'}
+              </span>
+            </div>
+            <h2 className="text-lg font-bold text-slate-800 mb-1">
+              Evolución de Estudiantes
+            </h2>
+            <p className="text-slate-500 text-sm mb-4">
+              Controla la visibilidad global de la pestaña de Evolución de Estudiantes y el gráfico Diana Polar en los reportes de docentes y directores.
+            </p>
+          </div>
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-600">
+              {isEvolucionActive ? 'Visible en reportes' : 'Oculto para todos'}
+            </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isEvolucionActive}
+              disabled={isSaving}
+              onClick={handleToggleEvolucion}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                isEvolucionActive ? 'bg-indigo-600' : 'bg-slate-300'
+              }`}
+              title={isEvolucionActive ? 'Desactivar pestaña' : 'Activar pestaña'}
+            >
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  isEvolucionActive ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
         </div>
       </div>
 

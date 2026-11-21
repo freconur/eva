@@ -4,9 +4,23 @@ import { useGlobalContext, useGlobalContextDispatch } from '@/features/context/G
 import { AppAction } from '@/features/actions/appAction'
 import useUsuario from '@/features/hooks/useUsuario'
 import ModalUpdateCliente from '@/modals/ModalUpdateCliente'
+import ModalEncuadreFoto from '@/modals/ModalEncuadreFoto'
 import { compressCarnetImage } from '@/features/utils/compressCarnetImage'
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
-import { getFirestore, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  getDocs,
+  collection,
+  query,
+  where,
+  limit,
+  serverTimestamp,
+  DocumentReference,
+} from 'firebase/firestore'
+import { getAuth } from 'firebase/auth'
 import { toast } from 'react-toastify'
 import {
   regionTexto,
@@ -45,30 +59,100 @@ const MiCuenta = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const [selectedFileForCrop, setSelectedFileForCrop] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const { getUserData } = useUsuario()
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  /**
+   * Resuelve todas las referencias a documentos en Firestore asociadas al usuario actual.
+   * Maneja tanto usuarios con document ID igual al DNI (ej. docentes) como
+   * usuarios con document ID igual al UID de Firebase Auth o ID generado (ej. admins, especialistas, directores).
+   */
+  const resolveCurrentUserDocRefs = async (): Promise<DocumentReference[]> => {
+    const db = getFirestore()
+    const auth = getAuth()
+    const currentUid = auth.currentUser?.uid
+    const docId = currentUserData?.id
+    const userDni = currentUserData?.dni ? String(currentUserData.dni).trim() : ''
+
+    // Candidatos a ID directo de documento
+    const candidateIds = Array.from(
+      new Set(
+        [docId, currentUid, userDni].filter((id): id is string => Boolean(id && String(id).trim()))
+      )
+    )
+
+    const existingRefs: DocumentReference[] = []
+
+    // 1. Verificar cuáles IDs candidatos existen directamente en la colección 'usuarios'
+    for (const cid of candidateIds) {
+      try {
+        const candidateRef = doc(db, 'usuarios', cid)
+        const snap = await getDoc(candidateRef)
+        if (snap.exists()) {
+          existingRefs.push(candidateRef)
+        }
+      } catch (err) {
+        console.warn(`Error al verificar usuarios/${cid}:`, err)
+      }
+    }
+
+    // 2. Si no se encontró ningún documento directo pero tenemos DNI, consultar por el campo dni
+    if (existingRefs.length === 0 && userDni) {
+      try {
+        const q = query(collection(db, 'usuarios'), where('dni', '==', userDni), limit(1))
+        const qSnap = await getDocs(q)
+        if (!qSnap.empty) {
+          existingRefs.push(qSnap.docs[0].ref)
+        }
+      } catch (err) {
+        console.warn('Error al buscar usuario por campo dni:', err)
+      }
+    }
+
+    // 3. Fallback: Si todavía no se localizó ningún documento existente, usar el mejor ID disponible
+    if (existingRefs.length === 0) {
+      const fallbackId = docId || currentUid || userDni
+      if (fallbackId) {
+        existingRefs.push(doc(db, 'usuarios', fallbackId))
+      }
+    }
+
+    return existingRefs
+  }
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !currentUserData?.dni) return
+    const auth = getAuth()
+    const userIdentifier = currentUserData?.dni || currentUserData?.id || auth.currentUser?.uid
+    if (!file || !userIdentifier) return
+
+    // Abrir modal de encuadre interactivo para que el usuario pueda centrar su rostro
+    setSelectedFileForCrop(file)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleCroppedPhotoUpload = async (
+    blob: Blob,
+    dataUrl: string,
+    sizeInKb: number
+  ) => {
+    const auth = getAuth()
+    const userIdentifier = currentUserData?.dni || currentUserData?.id || auth.currentUser?.uid
+    if (!userIdentifier) return
 
     try {
       setIsUploadingPhoto(true)
-      const toastId = toast.loading('Optimizando y encuadrando foto carnet...')
+      const toastId = toast.loading(`Subiendo foto de perfil (${sizeInKb} KB)...`)
 
-      // 1. Compresión estricta a carnet (5:6, max 45 KB)
-      const { blob, dataUrl, sizeInKb } = await compressCarnetImage(file)
-
-      toast.update(toastId, {
-        render: `Subiendo foto de perfil (${sizeInKb} KB)...`,
-        isLoading: true,
-      })
-
-      // 2. Subida a Firebase Storage con fallback a Base64 optimizado
-      let finalImageUrl = dataUrl || '';
+      // 1. Subida a Firebase Storage con fallback a Base64 optimizado
+      let finalImageUrl = dataUrl || ''
+      const storageKey = currentUserData?.dni || currentUserData?.id || auth.currentUser?.uid || 'usuario'
       try {
         const storage = getStorage()
-        const sRef = storageRef(storage, `usuarios/${currentUserData.dni}/foto.jpg`)
+        const sRef = storageRef(storage, `usuarios/${storageKey}/foto.jpg`)
         const snapshot = await uploadBytes(sRef, blob, {
           contentType: 'image/jpeg',
         })
@@ -80,14 +164,24 @@ const MiCuenta = () => {
         }
       }
 
-      // 3. Actualizar Firestore
-      const db = getFirestore()
-      await updateDoc(doc(db, 'usuarios', currentUserData.dni), {
-        foto: finalImageUrl,
-        fechaActualizacion: serverTimestamp(),
-      })
+      // 2. Actualizar Firestore de forma segura y compatible con todos los roles
+      const targetRefs = await resolveCurrentUserDocRefs()
+      if (targetRefs.length === 0) {
+        throw new Error('No se pudo identificar el documento del usuario en la base de datos.')
+      }
 
-      // 4. Actualizar estado global y sessionStorage si está en modo auditoría
+      for (const targetRef of targetRefs) {
+        await setDoc(
+          targetRef,
+          {
+            foto: finalImageUrl,
+            fechaActualizacion: serverTimestamp(),
+          },
+          { merge: true }
+        )
+      }
+
+      // 3. Actualizar estado global y sessionStorage si está en modo auditoría
       const updatedUserPayload = { ...currentUserData, foto: finalImageUrl }
       if (typeof window !== 'undefined' && sessionStorage.getItem('audited_user')) {
         try {
@@ -103,6 +197,14 @@ const MiCuenta = () => {
         payload: updatedUserPayload,
       })
 
+      // Refrescar en segundo plano para asegurar consistencia
+      try {
+        getUserData()
+      } catch (_) {}
+
+      // Cerrar modal de encuadre
+      setSelectedFileForCrop(null)
+
       toast.update(toastId, {
         render: `Foto de perfil actualizada exitosamente (${sizeInKb} KB).`,
         type: 'success',
@@ -114,14 +216,13 @@ const MiCuenta = () => {
       toast.error(error?.message || 'Error al actualizar la foto de perfil')
     } finally {
       setIsUploadingPhoto(false)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
     }
   }
 
   const handleRemovePhoto = async () => {
-    if (!currentUserData?.dni || !currentUserData?.foto) return
+    const auth = getAuth()
+    const userIdentifier = currentUserData?.dni || currentUserData?.id || auth.currentUser?.uid
+    if (!userIdentifier || !currentUserData?.foto) return
     const confirmed = window.confirm('¿Estás seguro de que deseas eliminar tu foto de perfil?')
     if (!confirmed) return
 
@@ -129,21 +230,44 @@ const MiCuenta = () => {
       setIsUploadingPhoto(true)
       const toastId = toast.loading('Eliminando foto de perfil...')
 
-      // 1. Intentar borrar del Storage si es posible
+      // 1. Intentar borrar del Storage si es posible en todas las ubicaciones candidatas
       try {
         const storage = getStorage()
-        const sRef = storageRef(storage, `usuarios/${currentUserData.dni}/foto.jpg`)
-        await deleteObject(sRef)
+        const storageKeys = Array.from(
+          new Set(
+            [currentUserData?.dni, currentUserData?.id, auth.currentUser?.uid].filter(
+              (id): id is string => Boolean(id && String(id).trim())
+            )
+          )
+        )
+        for (const sid of storageKeys) {
+          try {
+            const sRef = storageRef(storage, `usuarios/${sid}/foto.jpg`)
+            await deleteObject(sRef)
+          } catch (_) {
+            // Silencioso si no existe ese archivo específico en Storage
+          }
+        }
       } catch (errStorage) {
         console.warn('No se pudo borrar el archivo en Storage o ya no existe:', errStorage)
       }
 
-      // 2. Actualizar Firestore
-      const db = getFirestore()
-      await updateDoc(doc(db, 'usuarios', currentUserData.dni), {
-        foto: null,
-        fechaActualizacion: serverTimestamp(),
-      })
+      // 2. Actualizar Firestore de forma segura con setDoc merge
+      const targetRefs = await resolveCurrentUserDocRefs()
+      if (targetRefs.length === 0) {
+        throw new Error('No se pudo identificar el documento del usuario en la base de datos.')
+      }
+
+      for (const targetRef of targetRefs) {
+        await setDoc(
+          targetRef,
+          {
+            foto: null,
+            fechaActualizacion: serverTimestamp(),
+          },
+          { merge: true }
+        )
+      }
 
       // 3. Actualizar estado global y sessionStorage si está en modo auditoría
       const updatedUserPayload = { ...currentUserData, foto: undefined }
@@ -161,6 +285,10 @@ const MiCuenta = () => {
         type: AppAction.CURRENT_USER_DATA,
         payload: updatedUserPayload,
       })
+
+      try {
+        getUserData()
+      } catch (_) {}
 
       toast.update(toastId, {
         render: 'Foto de perfil eliminada correctamente.',
@@ -344,7 +472,7 @@ const MiCuenta = () => {
                     ref={fileInputRef}
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
-                    onChange={handlePhotoUpload}
+                    onChange={handlePhotoSelect}
                     className="hidden"
                   />
                 </div>
@@ -818,6 +946,16 @@ const MiCuenta = () => {
           userData={currentUserData}
           onClose={() => setIsModalOpen(false)}
           onSuccess={() => getUserData()}
+        />
+      )}
+
+      {/* MODAL DE ENCUADRE INTERACTIVO DE FOTO (CARNET 5:6) */}
+      {selectedFileForCrop && (
+        <ModalEncuadreFoto
+          isOpen={Boolean(selectedFileForCrop)}
+          file={selectedFileForCrop}
+          onClose={() => setSelectedFileForCrop(null)}
+          onConfirm={handleCroppedPhotoUpload}
         />
       )}
     </div>

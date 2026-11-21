@@ -25,6 +25,7 @@ import secundariaImg from '@/assets/secundaria.png';
 import inicialImg from '@/assets/inicial.png';
 import { getCategoriasParaGrado, getNivelFromGrado, especialidad } from '@/fuctions/categorias';
 import { getMonthName, currentYear } from '@/fuctions/dates';
+import EvaluacionScopeBadge from '@/components/evaluaciones/EvaluacionScopeBadge';
 import styles from './docentesExploracionNiveles.module.css';
 
 // Definición de Niveles y Estándares
@@ -794,6 +795,7 @@ export const DocentesExploracionNiveles: React.FC<DocentesExploracionNivelesProp
                               {year}
                             </span>
                           )}
+                          <EvaluacionScopeBadge ugels={eva.ugels} size="xs" />
                           {isCerrada ? (
                             <span className={styles.statusBadge} style={{ color: '#d97706', backgroundColor: '#fef3c7', border: '1px solid #fde68a' }}>
                               <RiLockLine style={{ marginRight: '3px' }} /> Solo Lectura
@@ -874,7 +876,10 @@ export const DocentesExploracionNiveles: React.FC<DocentesExploracionNivelesProp
                       return (
                         <tr key={`${eva.id}-${index}`}>
                           <td>
-                            <strong>{eva.nombre}</strong>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'flex-start' }}>
+                              <strong>{eva.nombre}</strong>
+                              <EvaluacionScopeBadge ugels={eva.ugels} size="xs" />
+                            </div>
                           </td>
                           <td>
                             <span className={styles.periodBadge}>

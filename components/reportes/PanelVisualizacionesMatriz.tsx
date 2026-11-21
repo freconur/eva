@@ -48,12 +48,16 @@ ChartJS.register(
   LinearScale
 );
 
+import { EtapaMatrizConfig } from '@/components/modals/ConfigurarMatrizModal';
+
 interface PanelVisualizacionesMatrizProps {
   data: UgelMatrizComparativaRow[];
   loading: boolean;
   evaluacionEdi: Evaluaciones | null;
   evaluacionEp1: Evaluaciones | null;
   evaluacionEp2: Evaluaciones | null;
+  etapas?: EtapaMatrizConfig[];
+  evaluacionesPorEtapa?: Array<{ etapa: EtapaMatrizConfig; evaluacion: Evaluaciones | null }>;
   preguntas: PreguntasRespuestas[];
   gradoName?: string;
   onReload?: () => void;
@@ -69,7 +73,7 @@ type TabKey =
   | 'lineas'
   | 'decisiones';
 
-type EtapaKey = 'edi' | 'ep1' | 'ep2';
+type EtapaKey = string;
 
 const COLORES_PALETA = [
   '#3f51b5',
@@ -94,20 +98,32 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
   evaluacionEdi,
   evaluacionEp1,
   evaluacionEp2,
+  etapas = [],
+  evaluacionesPorEtapa = [],
   preguntas = [],
   gradoName = '',
   onReload,
   baremo,
   onSaveBaremo,
 }) => {
+  const effectiveEtapas = useMemo<EtapaMatrizConfig[]>(() => {
+    if (etapas && etapas.length > 0) return etapas;
+    return [
+      { id: 'edi', codigo: 'EDI', nombre: 'Diagnóstica (EDI)' },
+      { id: 'ep1', codigo: 'EP1', nombre: 'Progresiva 1 (EP1)' },
+      { id: 'ep2', codigo: 'EP2', nombre: 'Progresiva 2 (EP2)' },
+    ];
+  }, [etapas]);
+
   // Baremo activo (usar el configurado o el predeterminado: 60, 50, 40)
   const activeBaremo = useMemo(() => baremo || DEFAULT_BAREMO_DECISIONES, [baremo]);
 
   // Pestaña activa
   const [activeTab, setActiveTab] = useState<TabKey>('decisiones');
 
-  // Filtro de Evaluación común: 'ep1' | 'edi' | 'ep2'
+  // Filtro de Evaluación común
   const [selectedEtapa, setSelectedEtapa] = useState<EtapaKey>(() => {
+    if (effectiveEtapas.length > 0) return effectiveEtapas[0].id;
     if (evaluacionEp1) return 'ep1';
     if (evaluacionEdi) return 'edi';
     if (evaluacionEp2) return 'ep2';
@@ -141,7 +157,7 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
   // Estado para el popover interactivo de detalles de pregunta (P01, P02...)
   const [questionDetailPopover, setQuestionDetailPopover] = useState<{
     order: number;
-    initialEtapa: 'edi' | 'ep1' | 'ep2';
+    initialEtapa: EtapaKey;
     coords: { x: number; y: number };
   } | null>(null);
 
@@ -286,17 +302,18 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
 
   // Helper nombres de evaluación
   const getEtapaLabel = (etapa: EtapaKey) => {
-    if (etapa === 'edi') return evaluacionEdi ? `EDI: ${evaluacionEdi.nombre}` : 'Diagnóstica (EDI)';
-    if (etapa === 'ep1') return evaluacionEp1 ? `EP1: ${evaluacionEp1.nombre}` : 'Progresiva 1 (EP1)';
-    if (etapa === 'ep2') return evaluacionEp2 ? `EP2: ${evaluacionEp2.nombre}` : 'Progresiva 2 (EP2)';
-    return String(etapa).toUpperCase();
+    const et = effectiveEtapas.find((e) => e.id === etapa);
+    const evalItem =
+      evaluacionesPorEtapa?.find((e) => e.etapa.id === etapa)?.evaluacion ||
+      (etapa === 'edi' ? evaluacionEdi : etapa === 'ep1' ? evaluacionEp1 : etapa === 'ep2' ? evaluacionEp2 : null);
+
+    if (evalItem) return `${et?.codigo || etapa.toUpperCase()}: ${evalItem.nombre}`;
+    return et?.nombre || String(etapa).toUpperCase();
   };
 
   const getEtapaShortName = (etapa: EtapaKey) => {
-    if (etapa === 'edi') return 'EDI';
-    if (etapa === 'ep1') return 'EP1';
-    if (etapa === 'ep2') return 'EP2';
-    return String(etapa);
+    const et = effectiveEtapas.find((e) => e.id === etapa);
+    return et?.codigo || String(etapa).toUpperCase();
   };
 
   const getOrderNum = (p: PreguntasRespuestas, fallbackIndex: number = 1): number => {
@@ -877,29 +894,20 @@ export const PanelVisualizacionesMatriz: React.FC<PanelVisualizacionesMatrizProp
   // =========================================================================
   // OPCIONES PARA DROPDOWNS CUSTOM
   // =========================================================================
-  const etapaOptions: FilterOption[] = useMemo(
-    () => [
-      {
-        value: 'edi',
-        label: 'EDI · Diagnóstica',
-        badge: evaluacionEdi ? '✓ Asignada' : 'Sin asignar',
-        badgeType: evaluacionEdi ? 'success' : 'neutral',
-      },
-      {
-        value: 'ep1',
-        label: 'EP1 · Progresiva 1',
-        badge: evaluacionEp1 ? '✓ Asignada' : 'Sin asignar',
-        badgeType: evaluacionEp1 ? 'success' : 'neutral',
-      },
-      {
-        value: 'ep2',
-        label: 'EP2 · Progresiva 2',
-        badge: evaluacionEp2 ? '✓ Asignada' : 'Sin asignar',
-        badgeType: evaluacionEp2 ? 'success' : 'neutral',
-      },
-    ],
-    [evaluacionEdi, evaluacionEp1, evaluacionEp2]
-  );
+  const etapaOptions: FilterOption[] = useMemo(() => {
+    return effectiveEtapas.map((et) => {
+      const evalItem =
+        evaluacionesPorEtapa?.find((e) => e.etapa.id === et.id)?.evaluacion ||
+        (et.id === 'edi' ? evaluacionEdi : et.id === 'ep1' ? evaluacionEp1 : et.id === 'ep2' ? evaluacionEp2 : null);
+
+      return {
+        value: et.id,
+        label: `${et.codigo} · ${et.nombre}`,
+        badge: evalItem ? '✓ Asignada' : 'Sin asignar',
+        badgeType: evalItem ? ('success' as const) : ('neutral' as const),
+      };
+    });
+  }, [effectiveEtapas, evaluacionesPorEtapa, evaluacionEdi, evaluacionEp1, evaluacionEp2]);
 
   const ugelOptions: FilterOption[] = useMemo(
     () => [

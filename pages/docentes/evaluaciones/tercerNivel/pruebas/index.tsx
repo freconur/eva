@@ -2,6 +2,7 @@ import { useGlobalContext } from '@/features/context/GlolbalContext'
 import { useAgregarEvaluaciones } from '@/features/hooks/useAgregarEvaluaciones'
 import { categoriaTransform } from '@/fuctions/categorias'
 import { convertGrade, tieneAccesoPorUgel } from '@/fuctions/regiones'
+import EvaluacionScopeBadge from '@/components/evaluaciones/EvaluacionScopeBadge'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useMemo } from 'react'
@@ -76,8 +77,11 @@ const Pruebas = () => {
                       <div className={styles.iconContainer}>
                         <PiFilesFill className={styles.icon} />
                       </div>
-                      <div className={`${styles.cardBadge} ${isCerrada ? styles.badgeCerrada : styles.badgeActive}`}>
-                        <span className={styles.badgeText}>{isCerrada ? 'Solo Lectura' : 'Activa'}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                        <EvaluacionScopeBadge ugels={eva.ugels} size="xs" />
+                        <div className={`${styles.cardBadge} ${isCerrada ? styles.badgeCerrada : styles.badgeActive}`}>
+                          <span className={styles.badgeText}>{isCerrada ? 'Solo Lectura' : 'Activa'}</span>
+                        </div>
                       </div>
                     </div>
 

@@ -6,12 +6,13 @@ import {
   BaremoDecisiones,
   DEFAULT_BAREMO_DECISIONES,
 } from '@/components/modals/ConfigurarBaremoModal';
+import { getEtapasFromConfig } from '@/components/modals/ConfigurarMatrizModal';
 import { toast } from 'react-toastify';
 
-export type EtapaKey = 'edi' | 'ep1' | 'ep2';
+export type EtapaKey = 'edi' | 'ep1' | 'ep2' | 'ep3' | string;
 
 /**
- * Determina si una evaluación está configurada en algún slot longitudinal (EDI, EP1, EP2)
+ * Determina si una evaluación está configurada en algún slot longitudinal (EDI, EP1, EP2, EP3, etc.)
  * en el mapa de asignaciones de grados y categorías de la matriz.
  */
 export const isEvaluacionEnMatriz = (
@@ -20,12 +21,16 @@ export const isEvaluacionEnMatriz = (
 ): boolean => {
   if (!evaluacionId || !matrizConfigGrados) return false;
   return Object.values(matrizConfigGrados).some((asgn: any) => {
-    return Boolean(
-      asgn &&
-        (asgn.ediId === evaluacionId ||
-          asgn.ep1Id === evaluacionId ||
-          asgn.ep2Id === evaluacionId)
-    );
+    if (!asgn) return false;
+    if (
+      asgn.ediId === evaluacionId ||
+      asgn.ep1Id === evaluacionId ||
+      asgn.ep2Id === evaluacionId
+    ) {
+      return true;
+    }
+    const etapas = getEtapasFromConfig(asgn);
+    return etapas.some((et) => et.evaluacionId === evaluacionId);
   });
 };
 

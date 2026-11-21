@@ -1,16 +1,19 @@
 import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
 import { MdClose, MdDragIndicator } from 'react-icons/md';
 import { Evaluaciones, PreguntasRespuestas } from '@/features/types/types';
+import { EtapaMatrizConfig } from '@/components/modals/ConfigurarMatrizModal';
 import styles from './QuestionDetailPopover.module.css';
 
 export interface QuestionDetailPopoverProps {
   order: number;
-  initialEtapa?: 'edi' | 'ep1' | 'ep2';
+  initialEtapa?: string;
   coords: { x: number; y: number };
   onClose: () => void;
   evaluacionEdi?: Evaluaciones | null;
   evaluacionEp1?: Evaluaciones | null;
   evaluacionEp2?: Evaluaciones | null;
+  etapas?: EtapaMatrizConfig[];
+  evaluacionesPorEtapa?: Array<{ etapa: EtapaMatrizConfig; evaluacion: Evaluaciones | null }>;
   preguntas: PreguntasRespuestas[];
   gradoName?: string;
 }
@@ -23,21 +26,29 @@ export const QuestionDetailPopover: React.FC<QuestionDetailPopoverProps> = ({
   evaluacionEdi,
   evaluacionEp1,
   evaluacionEp2,
+  etapas = [],
+  evaluacionesPorEtapa = [],
   preguntas = [],
   gradoName = '',
 }) => {
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  const [selectedEtapa, setSelectedEtapa] = useState<'edi' | 'ep1' | 'ep2'>(() => {
-    if (initialEtapa) {
-      if (initialEtapa === 'edi' && evaluacionEdi) return 'edi';
-      if (initialEtapa === 'ep1' && evaluacionEp1) return 'ep1';
-      if (initialEtapa === 'ep2' && evaluacionEp2) return 'ep2';
-    }
+  const effectiveEtapas = useMemo(() => {
+    if (etapas && etapas.length > 0) return etapas;
+    const list: EtapaMatrizConfig[] = [];
+    if (evaluacionEdi) list.push({ id: 'edi', codigo: 'EDI', nombre: 'EDI' });
+    if (evaluacionEp1) list.push({ id: 'ep1', codigo: 'EP1', nombre: 'EP1' });
+    if (evaluacionEp2) list.push({ id: 'ep2', codigo: 'EP2', nombre: 'EP2' });
+    return list;
+  }, [etapas, evaluacionEdi, evaluacionEp1, evaluacionEp2]);
+
+  const [selectedEtapa, setSelectedEtapa] = useState<string>(() => {
+    if (initialEtapa) return initialEtapa;
+    if (effectiveEtapas.length > 0) return effectiveEtapas[0].id;
     if (evaluacionEdi) return 'edi';
     if (evaluacionEp1) return 'ep1';
     if (evaluacionEp2) return 'ep2';
-    return initialEtapa || 'ep1';
+    return 'ep1';
   });
 
   const [adjustedCoords, setAdjustedCoords] = useState(coords);
@@ -170,6 +181,9 @@ export const QuestionDetailPopover: React.FC<QuestionDetailPopoverProps> = ({
 
   const selectedStageQuestion = useMemo(() => {
     if (!currentQ) return null;
+    if ((currentQ as any)?.preguntasPorEtapa?.[selectedEtapa]) {
+      return (currentQ as any).preguntasPorEtapa[selectedEtapa];
+    }
     if (selectedEtapa === 'edi') return (currentQ as any)?.ediPregunta || currentQ;
     if (selectedEtapa === 'ep1') return (currentQ as any)?.ep1Pregunta || currentQ;
     if (selectedEtapa === 'ep2') return (currentQ as any)?.ep2Pregunta || currentQ;
@@ -218,48 +232,42 @@ export const QuestionDetailPopover: React.FC<QuestionDetailPopoverProps> = ({
         </button>
       </div>
 
-      {/* Tabs de Etapa (EDI, EP1, EP2) */}
-      {(evaluacionEdi || evaluacionEp1 || evaluacionEp2) && (
+      {/* Tabs de Etapas (EDI, EP1, EP2, EP3, EP4...) */}
+      {effectiveEtapas.length > 0 && (
         <div className={styles.questionEtapaTabs}>
-          {evaluacionEdi && (
-            <button
-              type="button"
-              className={`${styles.questionEtapaTab} ${
-                selectedEtapa === 'edi' ? styles.questionEtapaTabActiveEdi : ''
-              }`}
-              onClick={() => setSelectedEtapa('edi')}
-              title="Ver pregunta en evaluación EDI"
-            >
-              <span>EDI</span>
-              <span className={styles.questionEtapaTag}>Marzo</span>
-            </button>
-          )}
-          {evaluacionEp1 && (
-            <button
-              type="button"
-              className={`${styles.questionEtapaTab} ${
-                selectedEtapa === 'ep1' ? styles.questionEtapaTabActiveEp1 : ''
-              }`}
-              onClick={() => setSelectedEtapa('ep1')}
-              title="Ver pregunta en evaluación EP1"
-            >
-              <span>EP1</span>
-              <span className={styles.questionEtapaTag}>Julio</span>
-            </button>
-          )}
-          {evaluacionEp2 && (
-            <button
-              type="button"
-              className={`${styles.questionEtapaTab} ${
-                selectedEtapa === 'ep2' ? styles.questionEtapaTabActiveEp2 : ''
-              }`}
-              onClick={() => setSelectedEtapa('ep2')}
-              title="Ver pregunta en evaluación EP2"
-            >
-              <span>EP2</span>
-              <span className={styles.questionEtapaTag}>Noviembre</span>
-            </button>
-          )}
+          {effectiveEtapas.map((etapa) => {
+            const isActive = selectedEtapa === etapa.id;
+            const evalItem =
+              evaluacionesPorEtapa?.find((e) => e.etapa.id === etapa.id)?.evaluacion ||
+              (etapa.id === 'edi'
+                ? evaluacionEdi
+                : etapa.id === 'ep1'
+                ? evaluacionEp1
+                : etapa.id === 'ep2'
+                ? evaluacionEp2
+                : null);
+
+            return (
+              <button
+                key={etapa.id}
+                type="button"
+                className={`${styles.questionEtapaTab} ${
+                  isActive
+                    ? etapa.id === 'edi'
+                      ? styles.questionEtapaTabActiveEdi
+                      : etapa.id === 'ep2'
+                      ? styles.questionEtapaTabActiveEp2
+                      : styles.questionEtapaTabActiveEp1
+                    : ''
+                }`}
+                onClick={() => setSelectedEtapa(etapa.id)}
+                title={evalItem ? `Ver pregunta en ${evalItem.nombre}` : `Ver pregunta en ${etapa.codigo}`}
+              >
+                <span>{etapa.codigo}</span>
+                {evalItem && <span className={styles.questionEtapaTag}>Asignada</span>}
+              </button>
+            );
+          })}
         </div>
       )}
 

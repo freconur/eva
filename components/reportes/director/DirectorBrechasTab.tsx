@@ -127,6 +127,24 @@ interface DirectorBrechasTabProps {
   baremo?: BaremoDecisiones;
 }
 
+// Caché en memoria a nivel de módulo para evitar consultas redundantes al alternar pestañas
+const globalBrechasCache = new Map<
+  string,
+  Record<
+    string,
+    {
+      evaluacion: Evaluaciones;
+      preguntas: PreguntasRespuestas[];
+      estudiantes: UserEstudiante[];
+      metricas: DirectorMetricasResumen;
+    }
+  >
+>();
+
+export const clearBrechasCache = () => {
+  globalBrechasCache.clear();
+};
+
 export const DirectorBrechasTab: React.FC<DirectorBrechasTabProps> = ({
   metricas,
   preguntas,
@@ -192,6 +210,11 @@ export const DirectorBrechasTab: React.FC<DirectorBrechasTabProps> = ({
     }
   }, [evaluacion?.id, evaluacion?.grado, evaluacion?.categoria, isDocenteView]);
 
+  // Clave de caché para datos locales cargados en Brechas
+  const brechasCacheKey = useMemo(() => {
+    return `${evaluacion?.id || ''}_${dniDocente || ''}_${dniDirector || currentUserData?.dni || ''}_${yearSelected || ''}`;
+  }, [evaluacion?.id, dniDocente, dniDirector, currentUserData?.dni, yearSelected]);
+
   // Caché local para datos de etapas cargadas asíncronamente en Brechas
   const [cacheData, setCacheData] = useState<
     Record<
@@ -203,8 +226,16 @@ export const DirectorBrechasTab: React.FC<DirectorBrechasTabProps> = ({
         metricas: DirectorMetricasResumen;
       }
     >
-  >({});
+  >(() => {
+    return (brechasCacheKey && globalBrechasCache.get(brechasCacheKey)) || {};
+  });
   const [loadingLocalEval, setLoadingLocalEval] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (brechasCacheKey && globalBrechasCache.has(brechasCacheKey)) {
+      setCacheData(globalBrechasCache.get(brechasCacheKey)!);
+    }
+  }, [brechasCacheKey]);
 
   // Determinar la instancia de evaluación activa en Brechas
   const activeEvaluacion = useMemo<Evaluaciones | undefined>(() => {
@@ -511,15 +542,21 @@ export const DirectorBrechasTab: React.FC<DirectorBrechasTabProps> = ({
         });
 
         if (isMounted) {
-          setCacheData((prev) => ({
-            ...prev,
-            [localEvaluacionId]: {
-              evaluacion: targetEval || ({ id: localEvaluacionId, grado: localGrado } as Evaluaciones),
-              preguntas: fetchedPreguntas,
-              estudiantes: reconstructedEstudiantes,
-              metricas: computedMetricas,
-            },
-          }));
+          setCacheData((prev) => {
+            const next = {
+              ...prev,
+              [localEvaluacionId]: {
+                evaluacion: targetEval || ({ id: localEvaluacionId, grado: localGrado } as Evaluaciones),
+                preguntas: fetchedPreguntas,
+                estudiantes: reconstructedEstudiantes,
+                metricas: computedMetricas,
+              },
+            };
+            if (brechasCacheKey) {
+              globalBrechasCache.set(brechasCacheKey, next);
+            }
+            return next;
+          });
         }
       } catch (err) {
         console.error('Error al cargar datos locales para Brechas:', err);
